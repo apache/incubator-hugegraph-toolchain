@@ -65,6 +65,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
+      - name: Cache Node modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            hugegraph-hubble/hubble-fe/node_modules
+            hugegraph-hubble/hubble-fe/node
+            ~/.cache/yarn
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package.json', '**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
       - name: use staged maven repo settings
         if: ${{ env.USE_STAGE == 'true' }}
         run: |

@@ -100,7 +100,7 @@
                             <goal>yarn</goal>
                         </goals>
                         <configuration>
-                            <arguments>install --network-timeout 600000</arguments>
+                            <arguments>install --frozen-lockfile --network-timeout 600000 --prefer-offline</arguments>
                         </configuration>
                     </execution>
 
