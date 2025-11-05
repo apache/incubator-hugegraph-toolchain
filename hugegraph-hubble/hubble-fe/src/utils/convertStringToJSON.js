@@ -16,7 +16,6 @@
  * under the License.
  */
 
-<<<<<<<< HEAD:hugegraph-hubble/hubble-fe/src/utils/convertStringToJSON.js
 export default function convertStringToJSON(text) {
     if (typeof text !== 'string') {
         return null;
@@ -31,13 +30,4 @@ export default function convertStringToJSON(text) {
     }
 
     return typeof context === 'object' && context !== null ? context : null;
-========
-package org.apache.hugegraph.structure.space;
-
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
-@JsonIgnoreProperties
-public class StorageService {
-
->>>>>>>> master:hugegraph-client/src/main/java/org/apache/hugegraph/structure/space/StorageService.java
 }
