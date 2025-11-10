@@ -158,8 +158,8 @@ public final class HugeGraphLoader {
     private void checkGraphExists() {
         HugeClient client = this.context.indirectClient();
         String targetGraph = this.options.graph;
-        if (this.options.createGraph
-            && !client.graphs().listGraph().contains(targetGraph)) {
+        if (this.options.createGraph &&
+            !client.graphs().listGraph().contains(targetGraph)) {
             Map<String, String> conf = new HashMap<>();
             conf.put("store", targetGraph);
             conf.put("backend", this.options.backend);
@@ -179,8 +179,10 @@ public final class HugeGraphLoader {
                 () -> this.mapping.structs().stream().filter(struct -> !struct.skip())
                                   .map(InputStruct::input);
 
-        boolean allMatch = inputsSupplier.get().allMatch(input -> SourceType.GRAPH.equals(input.type()));
-        boolean anyMatch = inputsSupplier.get().anyMatch(input -> SourceType.GRAPH.equals(input.type()));
+        boolean allMatch = inputsSupplier.get()
+                                          .allMatch(input -> SourceType.GRAPH.equals(input.type()));
+        boolean anyMatch = inputsSupplier.get()
+                                          .anyMatch(input -> SourceType.GRAPH.equals(input.type()));
 
         if (anyMatch && !allMatch) {
             throw new LoadException("All inputs must be of Graph Type");
@@ -364,7 +366,7 @@ public final class HugeGraphLoader {
 
                 if (des.getProperties() != null) {
                     des.getProperties()
-                       .forEach((p) -> label.properties().remove(p));
+                        .forEach((p) -> label.properties().remove(p));
                 }
             }
 
@@ -382,12 +384,14 @@ public final class HugeGraphLoader {
 
             if (isVertex) {
                 if (!(label instanceof VertexLabel)) {
-                    throw new IllegalArgumentException("Expected VertexLabel but got " + label.getClass());
+                    throw new IllegalArgumentException(
+                            "Expected VertexLabel but got " + label.getClass());
                 }
                 targetClient.schema().addVertexLabel((VertexLabel) label);
             } else {
                 if (!(label instanceof EdgeLabel)) {
-                    throw new IllegalArgumentException("Expected EdgeLabel but got " + label.getClass());
+                    throw new IllegalArgumentException(
+                            "Expected EdgeLabel but got " + label.getClass());
                 }
                 targetClient.schema().addEdgeLabel((EdgeLabel) label);
             }
@@ -667,7 +671,8 @@ public final class HugeGraphLoader {
             return;
         }
         if (parallelCount <= 0) {
-            parallelCount = Math.min(structs.size(), Runtime.getRuntime().availableProcessors() * 2);
+            parallelCount = Math.min(structs.size(),
+                                     Runtime.getRuntime().availableProcessors() * 2);
         }
 
         boolean scatter = this.context.options().scatterSources;
@@ -762,7 +767,8 @@ public final class HugeGraphLoader {
                 // Read next line from data source
                 if (reader.hasNext()) {
                     Line next = reader.next();
-                    // If the data source is kafka, there may be cases where the fetched data is null
+                    // If the data source is kafka, there may be cases where
+                    // the fetched data is null
                     if (next != null) {
                         lines.add(next);
                         metrics.increaseReadSuccess();

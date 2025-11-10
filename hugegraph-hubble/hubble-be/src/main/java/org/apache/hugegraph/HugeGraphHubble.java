@@ -30,13 +30,18 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
+import java.time.ZoneOffset;
+import java.util.TimeZone;
+
 @SpringBootApplication
 @EnableScheduling
 @MapperScan("org.apache.hugegraph.mapper")
 public class HugeGraphHubble extends SpringBootServletInitializer {
 
     public static void main(String[] args) {
+        System.out.println("user.dir ==> " + System.getProperty("user.dir"));
         initEnv();
+        TimeZone.setDefault(TimeZone.getTimeZone(ZoneOffset.of("+8")));
         SpringApplication.run(HugeGraphHubble.class, args);
     }
 
@@ -53,7 +58,8 @@ public class HugeGraphHubble extends SpringBootServletInitializer {
     }
 
     @Override
-    protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
+    protected SpringApplicationBuilder configure(
+            SpringApplicationBuilder builder) {
         return builder.sources(this.getClass());
     }
 }

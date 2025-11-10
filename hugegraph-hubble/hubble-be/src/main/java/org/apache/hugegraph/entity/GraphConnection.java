@@ -18,29 +18,28 @@
 
 package org.apache.hugegraph.entity;
 
-import java.util.Date;
-
-import org.apache.hugegraph.annotation.MergeProperty;
-import org.apache.hugegraph.common.Identifiable;
-import org.apache.hugegraph.common.Mergeable;
-
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.hugegraph.annotation.MergeProperty;
+import org.apache.hugegraph.common.Identifiable;
+import org.apache.hugegraph.common.Mergeable;
+
+import java.util.Date;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@JsonIgnoreProperties({"protocol", "truststore_file", "truststore_password"})
+@JsonIgnoreProperties({"protocol", "truststore_file", "truststore_password",
+        "password", "token"})
 @TableName(value = "graph_connection", autoResultMap = true)
 public class GraphConnection implements Identifiable, Mergeable {
 
@@ -52,6 +51,20 @@ public class GraphConnection implements Identifiable, Mergeable {
     @MergeProperty
     @JsonProperty("name")
     private String name;
+
+    @JsonProperty("route_type")
+    private String routeType;
+
+    @JsonProperty("pd_peers")
+    private String pdPeers;
+
+    @MergeProperty
+    @JsonProperty("cluster")
+    private String cluster;
+
+    @MergeProperty
+    @JsonProperty("graphspace")
+    private String graphSpace;
 
     @MergeProperty
     @JsonProperty("graph")
@@ -76,6 +89,10 @@ public class GraphConnection implements Identifiable, Mergeable {
     @MergeProperty
     @JsonProperty("password")
     private String password;
+
+    @MergeProperty
+    @JsonProperty("token")
+    private String token;
 
     @MergeProperty(useNew = false)
     @JsonProperty("enabled")
@@ -103,4 +120,8 @@ public class GraphConnection implements Identifiable, Mergeable {
     @MergeProperty(useNew = false)
     @JsonProperty("truststore_password")
     private String trustStorePassword;
+
+    public String getGraphId() {
+        return String.format("%s/%s/%s", cluster, graphSpace, graph);
+    }
 }

@@ -42,6 +42,7 @@
     </modules>
 
     <properties>
+        <top.level.dir>${project.basedir}/..</top.level.dir>
         <springboot.version>2.1.8.RELEASE</springboot.version>
         <okhttp.version>4.10.0</okhttp.version>
     </properties>

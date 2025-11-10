@@ -18,10 +18,10 @@
 
 package org.apache.hugegraph.controller.query;
 
-import java.util.regex.Pattern;
-
 import org.apache.hugegraph.controller.BaseController;
 import org.apache.hugegraph.util.Ex;
+
+import java.util.regex.Pattern;
 
 public abstract class GremlinController extends BaseController {
 

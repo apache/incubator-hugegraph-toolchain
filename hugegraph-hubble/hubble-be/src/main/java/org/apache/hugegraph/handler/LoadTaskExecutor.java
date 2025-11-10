@@ -31,8 +31,13 @@ public class LoadTaskExecutor {
     @Async
     public void execute(LoadTask task, Runnable callback) {
         log.info("Executing task: {}", task.getId());
-        task.run();
-        log.info("Executed task: {}, update status to db", task.getId());
-        callback.run();
+        try {
+            task.run();
+        } catch (Throwable t) {
+            log.warn("Executing task: {} error", task.getId(), t);
+        } finally {
+            log.info("Executed task: {}, update status to db", task.getId());
+            callback.run();
+        }
     }
 }

@@ -18,20 +18,18 @@
 
 package org.apache.hugegraph.entity.schema;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
-
-import org.apache.hugegraph.util.HubbleUtil;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableSet;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.hugegraph.util.HubbleUtil;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
 
 @Data
 @NoArgsConstructor
@@ -41,6 +39,15 @@ public class EdgeLabelEntity implements SchemaLabelEntity, Timefiable {
 
     @JsonProperty("name")
     private String name;
+
+    @JsonProperty("edgelabel_type")
+    private String edgeLabelType;
+
+    @JsonProperty("parent_label")
+    private String parentLabel;
+
+    @JsonProperty("children")
+    private List<String> children;
 
     @JsonProperty("source_label")
     private String sourceLabel;
@@ -61,7 +68,7 @@ public class EdgeLabelEntity implements SchemaLabelEntity, Timefiable {
     private List<PropertyIndex> propertyIndexes;
 
     @JsonProperty("open_label_index")
-    private boolean openLabelIndex;
+    private Boolean openLabelIndex;
 
     @JsonProperty("style")
     private EdgeLabelStyle style;
@@ -86,6 +93,8 @@ public class EdgeLabelEntity implements SchemaLabelEntity, Timefiable {
         }
         EdgeLabelEntity other = (EdgeLabelEntity) object;
         return this.name.equals(other.name) &&
+               this.edgeLabelType.equals(other.edgeLabelType) &&
+               this.parentLabel.equals(other.parentLabel) &&
                this.sourceLabel.equals(other.sourceLabel) &&
                this.targetLabel.equals(other.targetLabel) &&
                this.linkMultiTimes == other.linkMultiTimes &&

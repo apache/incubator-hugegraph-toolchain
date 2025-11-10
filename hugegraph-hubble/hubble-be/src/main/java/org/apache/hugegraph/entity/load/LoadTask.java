@@ -32,7 +32,6 @@ import org.apache.hugegraph.loader.executor.LoadOptions;
 import org.apache.hugegraph.util.Ex;
 import org.apache.hugegraph.util.HubbleUtil;
 import org.apache.hugegraph.util.SerializeUtil;
-
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -58,7 +57,7 @@ public class LoadTask implements Runnable {
 
     @TableField(exist = false)
     @JsonIgnore
-    private final transient Lock lock = new ReentrantLock();
+    private transient final Lock lock = new ReentrantLock();
 
     @TableField(exist = false)
     @JsonIgnore
@@ -77,6 +76,16 @@ public class LoadTask implements Runnable {
     @MergeProperty
     @JsonProperty("conn_id")
     private Integer connId;
+
+    @TableField(value = "graphspace")
+    @MergeProperty
+    @JsonProperty("graphspace")
+    private String graphSpace;
+
+    @TableField(value = "graph")
+    @MergeProperty
+    @JsonProperty("graph")
+    private String graph;
 
     @TableField(value = "job_id")
     @MergeProperty
@@ -144,6 +153,8 @@ public class LoadTask implements Runnable {
         this.finished = false;
         this.id = null;
         this.connId = connection.getId();
+        this.graphSpace = connection.getGraphSpace();
+        this.graph = connection.getGraph();
         this.jobId = mapping.getJobId();
         this.fileId = mapping.getId();
         this.fileName = mapping.getName();
@@ -156,13 +167,14 @@ public class LoadTask implements Runnable {
         this.lastDuration = 0L;
         this.currDuration = 0L;
         this.createTime = HubbleUtil.nowDate();
+
+        this.loader = new HugeGraphLoader(this.options);
     }
 
     @Override
     public void run() {
         Ex.check(this.options != null, "The load options shouldn't be null");
         log.info("LoadTask is start running : {}", this.id);
-        this.loader = new HugeGraphLoader(this.options);
 
         boolean noError;
         try {
@@ -182,7 +194,7 @@ public class LoadTask implements Runnable {
                     this.status = LoadStatus.FAILED;
                 }
             }
-            this.fileReadLines = this.context().newProgress().totalInputRead();
+            //this.fileReadLines = this.context().newProgress().totalInputReaded();//TODO Changed
             this.lastDuration += this.context().summary().totalTime();
             this.currDuration = 0L;
         } finally {

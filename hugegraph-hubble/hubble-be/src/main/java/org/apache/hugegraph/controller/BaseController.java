@@ -19,14 +19,43 @@
 package org.apache.hugegraph.controller;
 
 import java.util.List;
+import java.util.function.Function;
+import javax.servlet.http.HttpServletRequest;
 
+import org.apache.hugegraph.driver.HugeClient;
+import org.apache.hugegraph.driver.factory.PDHugeClientFactory;
+import org.apache.hugegraph.service.auth.UserService;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.hugegraph.config.HugeConfig;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+import org.apache.hugegraph.common.Constant;
+import org.apache.hugegraph.exception.ParameterizedException;
+import org.apache.hugegraph.service.HugeClientPoolService;
 import org.apache.hugegraph.common.Identifiable;
 import org.apache.hugegraph.common.Mergeable;
 import org.apache.hugegraph.util.EntityUtil;
 import org.apache.hugegraph.util.Ex;
-import org.springframework.util.StringUtils;
 
+@Component
 public abstract class BaseController {
+
+    @Autowired
+    protected String cluster;
+    @Autowired
+    protected HugeClientPoolService hugeClientPoolService;
+    @Autowired
+    protected PDHugeClientFactory pdHugeClientFactory;
+
+    @Autowired
+    private HugeConfig config;
+
+    @Autowired
+    UserService userService;
 
     public static final String ORDER_ASC = "asc";
     public static final String ORDER_DESC = "desc";
@@ -57,4 +86,142 @@ public abstract class BaseController {
     public <T extends Mergeable> T mergeEntity(T oldEntity, T newEntity) {
         return EntityUtil.merge(oldEntity, newEntity);
     }
+
+    protected void setSession(String key, Object value) {
+        HttpServletRequest request = getRequest();
+        request.getSession().setAttribute(key, value);
+    }
+
+    protected Object getSession(String key) {
+        HttpServletRequest request = getRequest();
+        return request.getSession().getAttribute(key);
+
+    }
+
+    protected String getUser() {
+        return (String) getSession("username");
+    }
+
+    protected void setUser(String username) {
+        setSession("username", username);
+    }
+
+    protected void delSession(String key) {
+        HttpServletRequest request = getRequest();
+        request.getSession().removeAttribute(key);
+    }
+
+    protected HttpServletRequest getRequest() {
+        return ((ServletRequestAttributes)
+                RequestContextHolder.getRequestAttributes()).getRequest();
+    }
+
+    protected String getToken() {
+        return (String) getSession(Constant.TOKEN_KEY);
+    }
+
+    protected void setToken(String token) {
+        this.setSession(Constant.TOKEN_KEY, token);
+    }
+
+    protected void delToken() {
+        this.delSession(Constant.TOKEN_KEY);
+    }
+
+    protected HugeClient authClient(String graphSpace, String graph) {
+        HttpServletRequest request = getRequest();
+        if (request.getAttribute("hugeClient") != null) {
+            HugeClient client = (HugeClient) request.getAttribute("hugeClient");
+            client.assignGraph(graphSpace, graph);
+            return client;
+        }
+        HugeClient client =
+                this.hugeClientPoolService.createAuthClient(
+                        graphSpace, graph, this.getToken());
+        request.setAttribute("hugeClient", client);
+        return client;
+    }
+
+    protected HugeClient unauthClient() {
+        HttpServletRequest request = getRequest();
+        if (request.getAttribute("hugeClient") != null) {
+            HugeClient client = (HugeClient) request.getAttribute("hugeClient");
+            return client;
+        }
+        HugeClient client = this.hugeClientPoolService.createUnauthClient();
+        request.setAttribute("hugeClient", client);
+        return client;
+    }
+
+    protected void clearRequestHugeClient() {
+        HttpServletRequest request = getRequest();
+        if (request.getAttribute("hugeClient") != null) {
+            HugeClient client = (HugeClient) request.getAttribute("hugeClient");
+            client.close();
+        }
+        request.setAttribute("hugeClient", null);
+    }
+
+    protected HugeClient createAuthClient(String graphSpace, String graph) {
+        return this.hugeClientPoolService.create(null, graphSpace, graph,
+                                                 this.getToken());
+    }
+
+    protected HugeClient createUnauthClient(String graphSpace, String graph) {
+        return this.hugeClientPoolService.create(null, graphSpace, graph, null);
+    }
+
+    public <T> T doAuthRequest(Function<HugeClient, T> func) {
+        try(HugeClient client = createAuthClient(null, null)) {
+            return func.apply(client);
+        } catch (Throwable t) {
+            throw t;
+        }
+    }
+
+    public <T> T doUnauthRequest(Function<HugeClient, T> func) {
+        try(HugeClient client = createUnauthClient(null, null)) {
+            return func.apply(client);
+        } catch (Throwable t) {
+            throw t;
+        }
+    }
+
+    protected HugeClient defaultClient(String graphSpace, String graph) {
+        // Get Service url From Default service
+        List<String> urls =
+                pdHugeClientFactory.getURLs(this.cluster,
+                                            PDHugeClientFactory.DEFAULT_GRAPHSPACE,
+                                            PDHugeClientFactory.DEFAULT_SERVICE);
+
+        if (CollectionUtils.isEmpty(urls)) {
+            throw new ParameterizedException("No url in service(%s/%s)",
+                                             PDHugeClientFactory.DEFAULT_GRAPHSPACE,
+                                             PDHugeClientFactory.DEFAULT_SERVICE);
+        }
+
+        String url = urls.get((int) (Math.random() * urls.size()));
+
+        HugeClient client = hugeClientPoolService.create(url, graphSpace, graph,
+                                                         this.getToken());
+
+        return client;
+    }
+
+    public String getUrl() {
+        List<String> urls =
+                pdHugeClientFactory.getURLs(this.cluster,
+                                            PDHugeClientFactory.DEFAULT_GRAPHSPACE,
+                                            PDHugeClientFactory.DEFAULT_SERVICE);
+
+        if (CollectionUtils.isEmpty(urls)) {
+            throw new ParameterizedException("No url in service(%s/%s)",
+                                             PDHugeClientFactory.DEFAULT_GRAPHSPACE,
+                                             PDHugeClientFactory.DEFAULT_SERVICE);
+        }
+
+        String url = urls.get((int) (Math.random() * urls.size()));
+        return url;
+    }
+
 }

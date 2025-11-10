@@ -18,29 +18,23 @@
 
 package org.apache.hugegraph.controller.task;
 
-import java.util.List;
-
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import lombok.extern.log4j.Log4j2;
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.controller.BaseController;
+import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.service.algorithm.AsyncTaskService;
 import org.apache.hugegraph.structure.Task;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
-
-import lombok.extern.log4j.Log4j2;
+import java.util.List;
 
 @Log4j2
 @RestController
-@RequestMapping(Constant.API_VERSION + "graph-connections/{connId}/async-tasks")
+@RequestMapping(Constant.API_VERSION + "graphspaces/{graphspace}/graphs" +
+        "/{graph}/async-tasks")
 public class AsyncTaskController extends BaseController {
 
     private final AsyncTaskService service;
@@ -51,9 +45,11 @@ public class AsyncTaskController extends BaseController {
     }
 
     @GetMapping("{id}")
-    public Task get(@PathVariable("connId") int connId,
+    public Task get(@PathVariable("graphspace") String graphSpace,
+                    @PathVariable("graph") String graph,
                     @PathVariable("id") int id) {
-        Task task = this.service.get(connId, id);
+        HugeClient client = this.authClient(graphSpace, graph);
+        Task task = this.service.get(client, id);
         if (task == null) {
             throw new ExternalException("async.task.not-exist.id", id);
         }
@@ -61,9 +57,11 @@ public class AsyncTaskController extends BaseController {
     }
 
     @PostMapping("cancel/{id}")
-    public Task cancel(@PathVariable("connId") int connId,
+    public Task cancel(@PathVariable("graphspace") String graphSpace,
+                       @PathVariable("graph") String graph,
                        @PathVariable("id") int id) {
-        Task task = this.service.cancel(connId, id);
+        HugeClient client = this.authClient(graphSpace, graph);
+        Task task = this.service.cancel(client, id);
         if (task == null) {
             throw new ExternalException("async.task.not-exist.id", id);
         }
@@ -71,45 +69,51 @@ public class AsyncTaskController extends BaseController {
     }
 
     @GetMapping("ids")
-    public List<Task> list(@PathVariable("connId") int connId,
+    public List<Task> list(@PathVariable("graphspace") String graphSpace,
+                           @PathVariable("graph") String graph,
                            @RequestParam("ids") List<Long> taskIds) {
-        return this.service.list(connId, taskIds);
+        HugeClient client = this.authClient(graphSpace, graph);
+        return this.service.list(client, taskIds);
     }
 
     @GetMapping
-    public IPage<Task> list(@PathVariable("connId") int connId,
+    public IPage<Task> list(@PathVariable("graphspace") String graphSpace,
+                            @PathVariable("graph") String graph,
                             @RequestParam(name = "page_no",
                                           required = false,
                                           defaultValue = "1")
-                            int pageNo,
+                                          int pageNo,
                             @RequestParam(name = "page_size",
                                           required = false,
                                           defaultValue = "10")
-                            int pageSize,
+                                          int pageSize,
                             @RequestParam(name = "content",
                                           required = false,
                                           defaultValue = "")
-                            String content,
+                                          String content,
                             @RequestParam(name = "type",
                                           required = false,
                                           defaultValue = "")
-                            String type,
+                                          String type,
                             @RequestParam(name = "status",
                                           required = false,
                                           defaultValue = "")
-                            String status) {
-        return this.service.list(connId, pageNo, pageSize, content, type, status);
+                                          String status) {
+        HugeClient client = this.authClient(graphSpace, graph);
+        return this.service.list(client, pageNo, pageSize, content, type, status);
     }
 
     @DeleteMapping
-    public void delete(@PathVariable("connId") int connId,
+    public void delete(@PathVariable("graphspace") String graphSpace,
+                       @PathVariable("graph") String graph,
                        @RequestParam("ids") List<Integer> ids) {
+        HugeClient client = this.authClient(graphSpace, graph);
         for (int id : ids) {
-            Task task = this.service.get(connId, id);
+            Task task = this.service.get(client, id);
             if (task == null) {
                 throw new ExternalException("async.task.not-exist.id", id);
             }
-            this.service.remove(connId, id);
+            this.service.remove(client, id);
         }
     }
 }

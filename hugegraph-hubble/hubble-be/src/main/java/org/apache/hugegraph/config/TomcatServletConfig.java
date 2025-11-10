@@ -18,9 +18,6 @@
 
 package org.apache.hugegraph.config;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
 import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.options.HubbleOptions;
 import org.apache.tomcat.util.http.LegacyCookieProcessor;
@@ -29,10 +26,15 @@ import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactor
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.stereotype.Component;
 
-// TODO: remove this class if we don't need it anymore
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
+/**
+ * Reference http://www.zizhixiaoshe.com/article/invalidcookie.html
+ */
 @Component
-public class TomcatServletConfig implements
-                                 WebServerFactoryCustomizer<TomcatServletWebServerFactory> {
+public class TomcatServletConfig
+       implements WebServerFactoryCustomizer<TomcatServletWebServerFactory> {
 
     @Autowired
     private HugeConfig config;
