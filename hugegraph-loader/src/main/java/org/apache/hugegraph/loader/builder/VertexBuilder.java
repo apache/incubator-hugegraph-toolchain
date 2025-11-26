@@ -20,27 +20,30 @@ package org.apache.hugegraph.loader.builder;
 import java.util.Collection;
 import java.util.List;
 
+import org.apache.hugegraph.util.E;
+
+import org.apache.hugegraph.loader.constant.LoaderStruct;
 import org.apache.hugegraph.loader.executor.LoadContext;
+import org.apache.hugegraph.loader.filter.util.ShortIdConfig;
 import org.apache.hugegraph.loader.mapping.InputStruct;
 import org.apache.hugegraph.loader.mapping.VertexMapping;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.schema.SchemaLabel;
 import org.apache.hugegraph.structure.schema.VertexLabel;
 
-import org.apache.spark.sql.Row;
-import org.apache.hugegraph.util.E;
-
 public class VertexBuilder extends ElementBuilder<Vertex> {
 
     private final VertexMapping mapping;
     private final VertexLabel vertexLabel;
     private final Collection<String> nonNullKeys;
+    private final ShortIdConfig shortIdConfig;
 
     public VertexBuilder(LoadContext context, InputStruct struct,
                          VertexMapping mapping) {
         super(context, struct);
         this.mapping = mapping;
         this.vertexLabel = this.getVertexLabel(this.mapping.label());
+        this.shortIdConfig = context.options().getShortIdConfig(this.mapping.label());
         this.nonNullKeys = this.nonNullableKeys(this.vertexLabel);
         // Ensure the id field is matched with id strategy
         this.checkIdField();
@@ -53,27 +56,22 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
 
     @Override
     public List<Vertex> build(String[] names, Object[] values) {
-        VertexKVPairs kvPairs = this.newKVPairs(this.vertexLabel,
-                                                this.mapping.unfold());
-        kvPairs.extractFromVertex(names, values);
-        return kvPairs.buildVertices(true);
-    }
-
-    @Override
-    public List<Vertex> build(Row row) {
-        VertexKVPairs kvPairs = this.newKVPairs(this.vertexLabel,
-                                                this.mapping.unfold());
-        String[] names = row.schema().fieldNames();
-        Object[] values = new Object[row.size()];
-        for (int i = 0; i < row.size(); i++) {
-            values[i] = row.get(i);
+        VertexKVPairs kvPairs = null;
+        // If it's Vertex OLAP properties, VertexOlapKVPairs parsing is needed
+        if (this.verifyOlapVertexBuilder()) {
+            kvPairs = new VertexOlapKVPairs(vertexLabel);
+        } else {
+            kvPairs = this.newKVPairs(this.vertexLabel,
+                                      this.mapping.unfold());
         }
+
+        kvPairs.headerCaseSensitive(this.headerCaseSensitive());
         kvPairs.extractFromVertex(names, values);
         return kvPairs.buildVertices(true);
     }
 
     @Override
-    public SchemaLabel schemaLabel() {
+    protected SchemaLabel schemaLabel() {
         return this.vertexLabel;
     }
 
@@ -84,13 +82,21 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
 
     @Override
     protected boolean isIdField(String fieldName) {
-        return fieldName.equals(this.mapping.idField());
+        if (this.headerCaseSensitive()) {
+            return fieldName.equals(this.mapping.idField());
+        } else {
+            return fieldName.equalsIgnoreCase(this.mapping.idField());
+        }
     }
 
     private void checkIdField() {
+        // OLAP property parsing does not require judgment
+        if (this.verifyOlapVertexBuilder()) {
+            return;
+        }
         String name = this.vertexLabel.name();
         if (this.vertexLabel.idStrategy().isCustomize()) {
-            E.checkState(this.mapping.idField() != null,
+            E.checkState(this.mapping.idField() != null || shortIdConfig != null,
                          "The id field can't be empty or null when " +
                          "id strategy is '%s' for vertex label '%s'",
                          this.vertexLabel.idStrategy(), name);
@@ -101,8 +107,16 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
                          this.vertexLabel.idStrategy(), name);
         } else {
             // The id strategy is automatic
-            throw new IllegalArgumentException("Unsupported AUTOMATIC id strategy for " +
-                                               "hugegraph-loader");
+            throw new IllegalArgumentException(
+                    "Unsupported AUTOMATIC id strategy for hugegraph-loader");
         }
+    }
+
+    /**
+     * Confirm whether it is OLAP property
+     * @return
+     */
+    public boolean verifyOlapVertexBuilder() {
+        return LoaderStruct.OLAP_VERTEX_ID.equals(this.mapping.idField());
     }
 }

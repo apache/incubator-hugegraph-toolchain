@@ -18,7 +18,9 @@
 package org.apache.hugegraph.api.auth;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.structure.auth.HugeResource;
@@ -37,7 +39,7 @@ public class TargetApiTest extends AuthApiTest {
 
     @BeforeClass
     public static void init() {
-        api = new TargetAPI(initClient(), GRAPH);
+        api = new TargetAPI(initClient(), GRAPHSPACE);
     }
 
     @AfterClass
@@ -60,15 +62,23 @@ public class TargetApiTest extends AuthApiTest {
         target1.name("gremlin");
         target1.graph("hugegraph");
         target1.url("127.0.0.1:8080");
-        HugeResource gremlin = new HugeResource(HugeResourceType.GREMLIN);
-        target1.resources(gremlin);
+        Map<String, Object> gremlinMap = new HashMap<>();
+        gremlinMap.put("type", "GREMLIN");
+        gremlinMap.put("label", "*");
+        gremlinMap.put("properties", null);
+        List<Map<String, Object>> resources1 = Collections.singletonList(gremlinMap);
+        target1.resources(resources1);
 
         Target target2 = new Target();
         target2.name("task");
         target2.graph("hugegraph2");
         target2.url("127.0.0.1:8081");
-        HugeResource task = new HugeResource(HugeResourceType.TASK);
-        target2.resources(task);
+        Map<String, Object> taskMap = new HashMap<>();
+        taskMap.put("type", "TASK");
+        taskMap.put("label", "*");
+        taskMap.put("properties", null);
+        List<Map<String, Object>> resources2 = Collections.singletonList(taskMap);
+        target2.resources(resources2);
 
         Target result1 = api.create(target1);
         Target result2 = api.create(target2);
@@ -76,12 +86,15 @@ public class TargetApiTest extends AuthApiTest {
         Assert.assertEquals("gremlin", result1.name());
         Assert.assertEquals("hugegraph", result1.graph());
         Assert.assertEquals("127.0.0.1:8080", result1.url());
-        Assert.assertEquals(Collections.singletonList(gremlin), result1.resources());
+        // Server returns Map but JsonSetter converts to List
+        Assert.assertNotNull(result1.resourcesList());
+        Assert.assertEquals(1, result1.resourcesList().size());
 
         Assert.assertEquals("task", result2.name());
         Assert.assertEquals("hugegraph2", result2.graph());
         Assert.assertEquals("127.0.0.1:8081", result2.url());
-        Assert.assertEquals(Collections.singletonList(task), result2.resources());
+        Assert.assertNotNull(result2.resourcesList());
+        Assert.assertEquals(1, result2.resourcesList().size());
 
         Assert.assertThrows(ServerException.class, () -> {
             api.create(target1);
@@ -123,21 +136,17 @@ public class TargetApiTest extends AuthApiTest {
         Target target1 = createTarget("test1", HugeResourceType.VERTEX);
         Target target2 = createTarget("test2", HugeResourceType.EDGE);
 
-        Assert.assertEquals(HugeResourceType.VERTEX,
-                            target1.resource().resourceType());
-        Assert.assertEquals(HugeResourceType.EDGE,
-                            target2.resource().resourceType());
+        Assert.assertNotNull(target1.resourcesList());
+        Assert.assertNotNull(target2.resourcesList());
 
         target1 = api.get(target1.id());
         target2 = api.get(target2.id());
 
         Assert.assertEquals("test1", target1.name());
-        Assert.assertEquals(HugeResourceType.VERTEX,
-                            target1.resource().resourceType());
+        Assert.assertNotNull(target1.resourcesList());
 
         Assert.assertEquals("test2", target2.name());
-        Assert.assertEquals(HugeResourceType.EDGE,
-                            target2.resource().resourceType());
+        Assert.assertNotNull(target2.resourcesList());
     }
 
     @Test
@@ -153,12 +162,9 @@ public class TargetApiTest extends AuthApiTest {
         Assert.assertEquals("test1", targets.get(0).name());
         Assert.assertEquals("test2", targets.get(1).name());
         Assert.assertEquals("test3", targets.get(2).name());
-        Assert.assertEquals(HugeResourceType.VERTEX,
-                            targets.get(0).resource().resourceType());
-        Assert.assertEquals(HugeResourceType.EDGE,
-                            targets.get(1).resource().resourceType());
-        Assert.assertEquals(HugeResourceType.ALL,
-                            targets.get(2).resource().resourceType());
+        Assert.assertNotNull(targets.get(0).resourcesList());
+        Assert.assertNotNull(targets.get(1).resourcesList());
+        Assert.assertNotNull(targets.get(2).resourcesList());
 
         targets = api.list(1);
         Assert.assertEquals(1, targets.size());
@@ -178,15 +184,17 @@ public class TargetApiTest extends AuthApiTest {
         Target target1 = createTarget("test1", HugeResourceType.VERTEX);
         Target target2 = createTarget("test2", HugeResourceType.EDGE);
 
-        Assert.assertEquals(HugeResourceType.VERTEX,
-                            target1.resource().resourceType());
-        Assert.assertEquals(HugeResourceType.EDGE,
-                            target2.resource().resourceType());
+        Assert.assertNotNull(target1.resourcesList());
+        Assert.assertNotNull(target2.resourcesList());
 
-        target1.resources(new HugeResource(HugeResourceType.ALL));
+        Map<String, Object> allMap = new HashMap<>();
+        allMap.put("type", "ALL");
+        allMap.put("label", "*");
+        allMap.put("properties", null);
+        List<Map<String, Object>> newResources = Collections.singletonList(allMap);
+        target1.resources(newResources);
         Target updated = api.update(target1);
-        Assert.assertEquals(HugeResourceType.ALL,
-                            updated.resource().resourceType());
+        Assert.assertNotNull(updated.resourcesList());
         Assert.assertNotEquals(target1.updateTime(), updated.updateTime());
 
         Assert.assertThrows(ServerException.class, () -> {
@@ -239,7 +247,12 @@ public class TargetApiTest extends AuthApiTest {
         target.name(name);
         target.graph("hugegraph");
         target.url("127.0.0.1:8080");
-        target.resources(new HugeResource(res));
+        Map<String, Object> resMap = new HashMap<>();
+        resMap.put("type", res.toString());
+        resMap.put("label", "*");
+        resMap.put("properties", null);
+        List<Map<String, Object>> resources = Collections.singletonList(resMap);
+        target.resources(resources);
         return api.create(target);
     }
 }

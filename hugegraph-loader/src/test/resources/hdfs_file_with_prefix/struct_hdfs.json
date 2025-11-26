@@ -4,7 +4,22 @@
       "label": "person",
       "input": {
         "type": "hdfs",
-        "path": "${store_path}/vertex_*",
+        "path": "hdfs://localhost:8020/files/vertex_person_0.csv",
+        "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
+        "format": "CSV",
+        "charset": "UTF-8"
+      },
+      "field_mapping": {
+        "name": "name",
+        "age": "age",
+        "city": "city"
+      }
+    },
+    {
+      "label": "person",
+      "input": {
+        "type": "hdfs",
+        "path": "hdfs://localhost:8020/files/vertex_person_1.csv",
         "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
         "format": "CSV",
         "charset": "UTF-8"

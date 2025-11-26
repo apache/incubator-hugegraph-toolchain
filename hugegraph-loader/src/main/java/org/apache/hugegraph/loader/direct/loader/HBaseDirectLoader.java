@@ -257,7 +257,13 @@ public class HBaseDirectLoader extends DirectLoader<ImmutableBytesWritable, KeyV
             switch (struct.input().type()) {
                 case FILE:
                 case HDFS:
-                    elementsElement = builder.build(row);
+                    String[] names = row.schema().fieldNames();
+                    Object[] values = new Object[row.size()];
+                    for (int i = 0; i < row.size(); i++) {
+                        values[i] = row.get(i);
+                    }
+                    //elementsElement = builder.build();
+                    elementsElement = builder.build(names, values);
                     break;
                 default:
                     throw new AssertionError(String.format("Unsupported input source '%s'",

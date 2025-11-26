@@ -18,6 +18,8 @@
 package org.apache.hugegraph.loader.test.functional;
 
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
@@ -58,15 +60,17 @@ public class HDFSLoadTest extends FileLoadTest {
                      "peter,35,Shanghai",
                      "\"li,nary\",26,\"Wu,han\"");
 
-        String[] args = new String[]{
+        List<String> argsList = new ArrayList<>(Arrays.asList(
                 "-f", structPath("hdfs_with_core_site_path/struct.json"),
                 "-s", configPath("hdfs_with_core_site_path/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
-        };
-        HugeGraphLoader loader = new HugeGraphLoader(args);
+        ));
+        argsList.addAll(Arrays.asList("--username", "admin", "--password", "pa"));
+
+        HugeGraphLoader loader = new HugeGraphLoader(argsList.toArray(new String[0]));
         loader.load();
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(5, vertices.size());
@@ -75,25 +79,27 @@ public class HDFSLoadTest extends FileLoadTest {
     @Test
     public void testHDFSWithFilePrefix() {
         ioUtil.write("vertex_person_0.csv",
-                "name,age,city",
-                "marko,29,Beijing");
+                     "name,age,city",
+                     "marko,29,Beijing");
 
         ioUtil.write("vertex_person_1.csv",
-                "name,age,city",
-                "vadas,27,Hongkong",
-                "josh,32,Beijing",
-                "peter,35,Shanghai",
-                "\"li,nary\",26,\"Wu,han\"");
+                     "name,age,city",
+                     "vadas,27,Hongkong",
+                     "josh,32,Beijing",
+                     "peter,35,Shanghai",
+                     "\"li,nary\",26,\"Wu,han\"");
 
-        String[] args = new String[]{
+        List<String> argsList = new ArrayList<>(Arrays.asList(
                 "-f", structPath("hdfs_file_with_prefix/struct.json"),
                 "-s", configPath("hdfs_file_with_prefix/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
-        };
-        HugeGraphLoader loader = new HugeGraphLoader(args);
+        ));
+        argsList.addAll(Arrays.asList("--username", "admin", "--password", "pa"));
+
+        HugeGraphLoader loader = new HugeGraphLoader(argsList.toArray(new String[0]));
         loader.load();
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(5, vertices.size());
@@ -109,16 +115,18 @@ public class HDFSLoadTest extends FileLoadTest {
                      "peter,35,Shanghai",
                      "\"li,nary\",26,\"Wu,han\"");
 
-        String[] args = new String[]{
+        List<String> argsList = new ArrayList<>(Arrays.asList(
                 "-f", structPath("hdfs_with_empty_core_site_path/struct.json"),
                 "-s", configPath("hdfs_with_empty_core_site_path/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
-        };
+        ));
+        argsList.addAll(Arrays.asList("--username", "admin", "--password", "pa"));
+
         Assert.assertThrows(LoadException.class, () -> {
-            HugeGraphLoader loader = new HugeGraphLoader(args);
+            HugeGraphLoader loader = new HugeGraphLoader(argsList.toArray(new String[0]));
             loader.load();
         });
     }
@@ -133,19 +141,21 @@ public class HDFSLoadTest extends FileLoadTest {
                      "peter,35,Shanghai",
                      "\"li,nary\",26,\"Wu,han\"");
 
-        String[] args = new String[]{
+        List<String> argsList = new ArrayList<>(Arrays.asList(
                 "-f", structPath("hdfs_with_invalid_core_site_path/struct.json"),
                 "-s", configPath("hdfs_with_invalid_core_site_path/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
-        };
+        ));
+        argsList.addAll(Arrays.asList("--username", "admin", "--password", "pa"));
+
         Assert.assertThrows(LoadException.class, () -> {
-            HugeGraphLoader loader = new HugeGraphLoader(args);
+            HugeGraphLoader loader = new HugeGraphLoader(argsList.toArray(new String[0]));
             loader.load();
         }, e -> {
-            String message = "An exception occurred while checking HDFS path";
+            String message = "Failed to init";
             Assert.assertTrue(e.getMessage().contains(message));
         });
     }
@@ -160,16 +170,18 @@ public class HDFSLoadTest extends FileLoadTest {
                      "peter,35,Shanghai",
                      "\"li,nary\",26,\"Wu,han\"");
 
-        String[] args = new String[]{
+        List<String> argsList = new ArrayList<>(Arrays.asList(
                 "-f", structPath("hdfs_with_unexist_core_site_path/struct.json"),
                 "-s", configPath("hdfs_with_unexist_core_site_path/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
-        };
+        ));
+        argsList.addAll(Arrays.asList("--username", "admin", "--password", "pa"));
+
         Assert.assertThrows(LoadException.class, () -> {
-            HugeGraphLoader loader = new HugeGraphLoader(args);
+            HugeGraphLoader loader = new HugeGraphLoader(argsList.toArray(new String[0]));
             loader.load();
         }, e -> {
             Throwable t = e.getCause();

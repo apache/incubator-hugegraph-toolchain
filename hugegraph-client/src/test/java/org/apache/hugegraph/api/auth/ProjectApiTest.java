@@ -40,7 +40,7 @@ public class ProjectApiTest extends AuthApiTest {
 
     @BeforeClass
     public static void init() {
-        api = new ProjectAPI(initClient(), GRAPH);
+        api = new ProjectAPI(initClient(), GRAPHSPACE);
     }
 
     @AfterClass

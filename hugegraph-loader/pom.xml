@@ -52,6 +52,7 @@
         <postgres.version>42.4.1</postgres.version>
         <mssql.jdbc.version>7.2.0.jre8</mssql.jdbc.version>
         <kafka.testcontainer.version>1.19.0</kafka.testcontainer.version>
+        <parboiled.version>1.1.8</parboiled.version>
     </properties>
 
     <dependencies>
@@ -541,6 +542,11 @@
             <artifactId>kafka</artifactId>
             <version>${kafka.testcontainer.version}</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.parboiled</groupId>
+            <artifactId>parboiled-core</artifactId>
+            <version>${parboiled.version}</version>
         </dependency>
     </dependencies>
 

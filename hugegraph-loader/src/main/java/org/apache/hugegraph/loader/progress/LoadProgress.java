@@ -25,7 +25,6 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 
@@ -36,6 +35,9 @@ import org.apache.hugegraph.loader.constant.Constants;
 import org.apache.hugegraph.loader.executor.LoadContext;
 import org.apache.hugegraph.loader.executor.LoadOptions;
 import org.apache.hugegraph.loader.mapping.InputStruct;
+import org.apache.hugegraph.loader.reader.Readable;
+import org.apache.hugegraph.loader.reader.file.FileReader;
+import org.apache.hugegraph.loader.reader.InputReader;
 import org.apache.hugegraph.util.E;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -83,12 +85,16 @@ public final class LoadProgress {
     public long totalInputRead() {
         long count = 0L;
         for (InputProgress inputProgress : this.inputProgress.values()) {
-            Set<InputItemProgress> itemProgresses = inputProgress.loadedItems();
-            for (InputItemProgress itemProgress : itemProgresses) {
+            Map<String, InputItemProgress> itemProgresses =
+                                           inputProgress.loadedItems();
+            for (InputItemProgress itemProgress : itemProgresses.values()) {
                 count += itemProgress.offset();
             }
-            if (inputProgress.loadingItem() != null) {
-                count += inputProgress.loadingItem().offset();
+            if (!inputProgress.loadingItems().isEmpty()) {
+                for (InputItemProgress item :
+                     inputProgress.loadingItems().values()) {
+                    count += item.offset();
+                }
             }
         }
         return count;
@@ -104,10 +110,15 @@ public final class LoadProgress {
         return this.inputProgress.get(id);
     }
 
-    public void markLoaded(InputStruct struct, boolean markAll) {
+    public void markLoaded(InputStruct struct, InputReader reader,
+                           boolean finish) {
         InputProgress progress = this.inputProgress.get(struct.id());
+        Readable readable = null;
+        if (reader instanceof FileReader) {
+            readable = ((FileReader) reader).readable();
+        }
         E.checkArgumentNotNull(progress, "Invalid mapping '%s'", struct);
-        progress.markLoaded(markAll);
+        progress.markLoaded(readable, finish);
     }
 
     public void write(LoadContext context) throws IOException {

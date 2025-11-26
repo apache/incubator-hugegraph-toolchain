@@ -25,8 +25,8 @@ jobs:
     env:
       USE_STAGE: 'true' # Whether to include the stage repository.
       TRAVIS_DIR: hugegraph-spark-connector/assembly/travis
-      # hugegraph commit date: 2024-12-09
-      COMMIT_ID: f838897
+      # hugegraph commit date: 2025-10-30
+      COMMIT_ID: 5b3d295
     strategy:
       matrix:
         JAVA_VERSION: [ '11' ]

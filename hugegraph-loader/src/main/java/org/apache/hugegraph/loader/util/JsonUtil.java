@@ -24,6 +24,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.hugegraph.rest.SerializeException;
+import org.apache.hugegraph.util.E;
+import org.apache.hugegraph.util.Log;
 import org.slf4j.Logger;
 
 import org.apache.hugegraph.loader.progress.InputProgress;
@@ -31,10 +34,6 @@ import org.apache.hugegraph.loader.serializer.DeserializeException;
 import org.apache.hugegraph.loader.serializer.InputProgressDeser;
 import org.apache.hugegraph.loader.serializer.InputSourceDeser;
 import org.apache.hugegraph.loader.source.InputSource;
-import org.apache.hugegraph.rest.SerializeException;
-import org.apache.hugegraph.util.E;
-import org.apache.hugegraph.util.Log;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
@@ -93,19 +92,19 @@ public final class JsonUtil {
     }
 
     public static <T> Set<T> convertSet(String json, Class<T> clazz) {
-        JavaType type = MAPPER.getTypeFactory()
-                              .constructCollectionType(LinkedHashSet.class, clazz);
+        JavaType type = MAPPER.getTypeFactory().constructCollectionType(
+                LinkedHashSet.class, clazz);
         try {
             return MAPPER.readValue(json, type);
-        } catch (JsonProcessingException e) {
+        } catch (Exception e) {
             LOG.error("Failed to deserialize json", e);
             throw new DeserializeException("Failed to deserialize json", e);
         }
     }
 
     public static <T> Set<T> convertSet(JsonNode node, Class<T> clazz) {
-        JavaType type = MAPPER.getTypeFactory().
-                              constructCollectionType(LinkedHashSet.class, clazz);
+        JavaType type = MAPPER.getTypeFactory().constructCollectionType(
+                LinkedHashSet.class, clazz);
         return MAPPER.convertValue(node, type);
     }
 
