@@ -43,7 +43,7 @@
     "react-scripts": "3.4.1",
     "typescript": "^3.9.6",
     "uuid": "^8.3.1",
-    "validator": "^13.1.1",
+    "validator": "^13.15.22",
     "vis-network": "7.3.5",
     "wouter": "^2.5.1"
   },
