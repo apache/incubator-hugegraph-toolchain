@@ -7,6 +7,7 @@
     "type": "git",
     "url": "https://github.com/hugegraph/hugegraph-hubble"
   },
+  "proxy": "http://localhost:8088",
   "dependencies": {
     "@types/classnames": "^2.2.10",
     "@types/codemirror": "^0.0.96",
