@@ -13,6 +13,8 @@ name: "CodeQL"
 
 on:
   workflow_dispatch:
+  push:
+    branches: [ master ]
   pull_request:
     # The branches below must be a subset of the branches above
     # branches: [ master ] # enable in all PR
@@ -43,8 +45,9 @@ jobs:
     - name: Setup Java JDK
       uses: actions/setup-java@v3
       with:
-        distribution: 'zulu'
+        distribution: 'temurin'
         java-version: '11'
+        cache: 'maven'
 
     - name: use staged maven repo settings
       if: ${{ env.USE_STAGE == 'true' }}
@@ -52,13 +55,13 @@ jobs:
         cp $HOME/.m2/settings.xml /tmp/settings.xml
         mv -vf .github/configs/settings.xml $HOME/.m2/settings.xml
 
-    - name: Use Node.js 16
+    - name: Use Node.js 16.x
       uses: actions/setup-node@v3
       with:
-        node-version: '16'
+        node-version: '16.x'
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
+      uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.language }}
         # If you wish to specify custom queries, you can do so here or in a config file.
@@ -73,12 +76,12 @@ jobs:
     # If this step fails, then you should remove it and run the build manually (see below)
     - if: matrix.language == 'python' || matrix.language == 'javascript'
       name: Autobuild
-      uses: github/codeql-action/autobuild@v2
+      uses: github/codeql-action/autobuild@v3
 
     - if: matrix.language == 'java'
       name: Build Java
       run: |
-        mvn clean package -f "pom.xml" -B -V -e -Dfindbugs.skip -Dcheckstyle.skip -Dpmd.skip=true -Dspotbugs.skip -Denforcer.skip -Dmaven.javadoc.skip -DskipTests -Dmaven.test.skip.exec -Dlicense.skip=true -Drat.skip=true -Dspotless.check.skip=true
+        mvn clean package -f "pom.xml" -B -V -e -Dfindbugs.skip -Dcheckstyle.skip -Dpmd.skip=true -Dspotbugs.skip -Denforcer.skip -Dmaven.javadoc.skip -DskipTests -Dmaven.test.skip.exec -Dlicense.skip=true -Drat.skip=true -Dspotless.check.skip=true -ntp || exit 1
 
     # ℹ️ Command-line programs to run using the OS shell.
     # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
@@ -91,7 +94,7 @@ jobs:
     #   ./location_of_script_within_repo/buildscript.sh
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+      uses: github/codeql-action/analyze@v3
 
   dependency-review:
     runs-on: ubuntu-latest
