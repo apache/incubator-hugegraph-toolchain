@@ -61,8 +61,8 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '16.x'
-          cache: 'npm'
-          cache-dependency-path: 'hugegraph-hubble/hubble-fe/package-lock.json'
+          cache: 'yarn'
+          cache-dependency-path: 'hugegraph-hubble/hubble-fe/yarn.lock'
 
       # we also should cache python & yarn & downloads to avoid useless work
       - name: use staged maven repo settings
