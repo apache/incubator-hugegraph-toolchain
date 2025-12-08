@@ -41,7 +41,8 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: '11'
-          distribution: 'adopt'
+          distribution: 'temurin'
+          cache: 'maven'
 
       - name: Cache Maven packages
         uses: actions/cache@v3

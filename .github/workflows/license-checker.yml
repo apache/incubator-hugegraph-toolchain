@@ -59,11 +59,12 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: '11'
-          distribution: 'adopt'
-      - name: Use Node.js 16
+          distribution: 'temurin'
+          cache: 'maven'
+      - name: Use Node.js 16.x
         uses: actions/setup-node@v3
         with:
-          node-version: '16'
+          node-version: '16.x'
 
       - name: use staged maven repo settings
         if: ${{ env.USE_STAGE == 'true' }}
