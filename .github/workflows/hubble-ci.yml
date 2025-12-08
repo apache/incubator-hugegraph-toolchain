@@ -65,18 +65,11 @@ jobs:
           cache-dependency-path: 'hugegraph-hubble/hubble-fe/package-lock.json'
 
       # we also should cache python & yarn & downloads to avoid useless work
-      - name: Cache Maven packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-
       - name: use staged maven repo settings
         if: ${{ env.USE_STAGE == 'true' }}
         run: |
-          cp $HOME/.m2/settings.xml /tmp/settings.xml
+          mkdir -p $HOME/.m2
+          if [ -f $HOME/.m2/settings.xml ]; then cp $HOME/.m2/settings.xml /tmp/settings.xml; fi
           mv -vf .github/configs/settings.xml $HOME/.m2/settings.xml
 
       - name: Compile
@@ -113,4 +106,4 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: target/site/jacoco/*.xml
+          files: hugegraph-hubble/hubble-be/target/site/jacoco/*.xml

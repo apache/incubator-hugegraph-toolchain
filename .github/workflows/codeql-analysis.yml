@@ -52,7 +52,8 @@ jobs:
     - name: use staged maven repo settings
       if: ${{ env.USE_STAGE == 'true' }}
       run: |
-        cp $HOME/.m2/settings.xml /tmp/settings.xml
+        mkdir -p $HOME/.m2
+        if [ -f $HOME/.m2/settings.xml ]; then cp $HOME/.m2/settings.xml /tmp/settings.xml; fi
         mv -vf .github/configs/settings.xml $HOME/.m2/settings.xml
 
     - name: Use Node.js 16.x
