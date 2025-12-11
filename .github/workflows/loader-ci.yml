@@ -58,6 +58,7 @@ jobs:
 
       - name: Compile
         run: |
+          export MAVEN_OPTS="-XX:+IgnoreUnrecognizedVMOptions --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED"
           mvn install -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp
 
       - name: Prepare env and service
@@ -68,6 +69,7 @@ jobs:
 
       - name: Run test
         run: |
+          export MAVEN_OPTS="-XX:+IgnoreUnrecognizedVMOptions --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED"
           cd hugegraph-loader
           mvn test -P unit -ntp || exit 1
           mvn test -P file -ntp || exit 1
