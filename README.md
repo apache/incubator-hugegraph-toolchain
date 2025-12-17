@@ -78,3 +78,4 @@ hugegraph-toolchain is licensed under [Apache 2.0](https://github.com/apache/hug
  - WeChat public account: Apache HugeGraph, welcome to scan this QR code to follow us.
 
  <img src="https://raw.githubusercontent.com/apache/hugegraph-doc/master/assets/images/wechat.png" alt="QR png" width="350"/>
+
