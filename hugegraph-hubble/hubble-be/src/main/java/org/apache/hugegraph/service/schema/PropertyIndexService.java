@@ -28,6 +28,10 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
+import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
+
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.entity.schema.ConflictDetail;
@@ -40,10 +44,6 @@ import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.structure.schema.IndexLabel;
 import org.apache.hugegraph.util.PageUtil;
-import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
-
 import com.baomidou.mybatisplus.core.metadata.IPage;
 
 import lombok.extern.log4j.Log4j2;
@@ -52,17 +52,17 @@ import lombok.extern.log4j.Log4j2;
 @Service
 public class PropertyIndexService extends SchemaService {
 
-    public List<PropertyIndex> list(int connId) {
-        return this.list(Collections.emptyList(), connId);
+    public List<PropertyIndex> list(HugeClient client) {
+        return this.list(Collections.emptyList(), client);
     }
 
-    public List<PropertyIndex> list(Collection<String> names, int connId) {
-        return this.list(names, connId, true);
+    public List<PropertyIndex> list(Collection<String> names,
+                                    HugeClient client) {
+        return this.list(names, client, true);
     }
 
-    public List<PropertyIndex> list(Collection<String> names, int connId,
+    public List<PropertyIndex> list(Collection<String> names, HugeClient client,
                                     boolean emptyAsAll) {
-        HugeClient client = this.client(connId);
         List<IndexLabel> indexLabels;
         if (CollectionUtils.isEmpty(names)) {
             if (emptyAsAll) {
@@ -80,9 +80,8 @@ public class PropertyIndexService extends SchemaService {
         return results;
     }
 
-    public IPage<PropertyIndex> list(int connId, HugeType type,
+    public IPage<PropertyIndex> list(HugeClient client, HugeType type,
                                      int pageNo, int pageSize) {
-        HugeClient client = this.client(connId);
         List<IndexLabel> indexLabels = client.schema().getIndexLabels();
 
         List<PropertyIndex> results = new ArrayList<>();
@@ -112,18 +111,17 @@ public class PropertyIndexService extends SchemaService {
      * --------------+------------------------+---------------------------------
      * xxxname       | xxxByName              | name
      * --------------+------------------------+---------------------------------
-     * | personByName           | name
+     *               | personByName           | name
      * person        +------------------------+---------------------------------
-     * | personByAgeAndName     | age name
+     *               | personByAgeAndName     | age name
      * --------------+------------------------+---------------------------------
-     * | softwareByName         | name
+     *               | softwareByName         | name
      * software      +------------------------+---------------------------------
-     * | softwareByPriveAndName | price name
+     *               | softwareByPriveAndName | price name
      * --------------+------------------------+---------------------------------
      */
-    public IPage<PropertyIndex> list(int connId, HugeType type, String content,
-                                     int pageNo, int pageSize) {
-        HugeClient client = this.client(connId);
+    public IPage<PropertyIndex> list(HugeClient client, HugeType type,
+                                     String content, int pageNo, int pageSize) {
         List<IndexLabel> indexLabels = client.schema().getIndexLabels();
 
         Map<String, List<PropertyIndex>> matchedResults = new HashMap<>();
@@ -138,10 +136,10 @@ public class PropertyIndexService extends SchemaService {
             boolean match = baseValue.contains(content);
             if (match) {
                 groupedIndexes = matchedResults.computeIfAbsent(baseValue,
-                                                                k -> new ArrayList<>());
+                                                k -> new ArrayList<>());
             } else {
                 groupedIndexes = unMatchResults.computeIfAbsent(baseValue,
-                                                                k -> new ArrayList<>());
+                                                k -> new ArrayList<>());
             }
             match = match || indexLabel.name().contains(content) ||
                     indexLabel.indexFields().stream()
@@ -154,12 +152,11 @@ public class PropertyIndexService extends SchemaService {
         // Sort matched results by relevance
         if (!StringUtils.isEmpty(content)) {
             for (Map.Entry<String, List<PropertyIndex>> entry :
-                    matchedResults.entrySet()) {
+                 matchedResults.entrySet()) {
                 List<PropertyIndex> groupedIndexes = entry.getValue();
                 groupedIndexes.sort(new Comparator<PropertyIndex>() {
                     final int highScore = 2;
                     final int lowScore = 1;
-
                     @Override
                     public int compare(PropertyIndex o1, PropertyIndex o2) {
                         int o1Score = 0;
@@ -190,8 +187,7 @@ public class PropertyIndexService extends SchemaService {
         return PageUtil.page(all, pageNo, pageSize);
     }
 
-    private PropertyIndex get(String name, int connId) {
-        HugeClient client = this.client(connId);
+    private PropertyIndex get(String name, HugeClient client) {
         try {
             IndexLabel indexLabel = client.schema().getIndexLabel(name);
             return convert(indexLabel);
@@ -219,14 +215,14 @@ public class PropertyIndexService extends SchemaService {
     }
 
     public void checkConflict(List<PropertyIndex> entities,
-                              ConflictDetail detail, int connId,
+                              ConflictDetail detail, HugeClient client,
                               boolean compareEachOther) {
         if (CollectionUtils.isEmpty(entities)) {
             return;
         }
 
         Map<String, PropertyIndex> originEntities = new HashMap<>();
-        for (PropertyIndex entity : this.list(connId)) {
+        for (PropertyIndex entity : this.list(client)) {
             originEntities.put(entity.getName(), entity);
         }
         for (PropertyIndex entity : entities) {
@@ -244,11 +240,10 @@ public class PropertyIndexService extends SchemaService {
         }
     }
 
-    public ConflictStatus checkConflict(PropertyIndex entity, int connId) {
-        HugeClient client = this.client(connId);
+    public ConflictStatus checkConflict(PropertyIndex entity, HugeClient client) {
         String name = entity.getName();
         IndexLabel newIndexLabel = convert(entity, client);
-        IndexLabel oldIndexLabel = convert(this.get(name, connId), client);
+        IndexLabel oldIndexLabel = convert(this.get(name, client), client);
         if (oldIndexLabel == null) {
             return ConflictStatus.PASSED;
         } else if (isEqual(newIndexLabel, oldIndexLabel)) {

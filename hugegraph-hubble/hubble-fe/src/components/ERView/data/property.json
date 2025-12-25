@@ -1,0 +1,32 @@
+[
+    {
+      "name": "姓名",
+      "data_type": "TEXT",
+      "cardinality": "SINGLE",
+      "create_time": "1970-01-01 08:00:00"
+    },
+    {
+      "name": "性别",
+      "data_type": "TEXT",
+      "cardinality": "SINGLE",
+      "create_time": "1970-01-01 08:00:00"
+    },
+    {
+      "name": "年龄",
+      "data_type": "INT",
+      "cardinality": "SINGLE",
+      "create_time": "1970-01-01 08:00:00"
+    },
+    {
+      "name": "特点",
+      "data_type": "TEXT",
+      "cardinality": "SINGLE",
+      "create_time": "1970-01-01 08:00:00"
+    },
+    {
+      "name": "亲疏",
+      "data_type": "TEXT",
+      "cardinality": "SINGLE",
+      "create_time": "1970-01-01 08:00:00"
+    }
+]

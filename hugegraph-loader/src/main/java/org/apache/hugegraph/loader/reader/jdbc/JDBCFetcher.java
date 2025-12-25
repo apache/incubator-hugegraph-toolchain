@@ -54,17 +54,23 @@ public class JDBCFetcher extends Fetcher {
     @Override
     public void close() {
         try {
-            if (result != null && !result.isClosed()) result.close();
+            if (result != null && !result.isClosed()) {
+                result.close();
+            }
         } catch (SQLException e) {
             LOG.warn("Failed to close 'ResultSet'", e);
         }
         try {
-            if (stmt != null && !stmt.isClosed()) stmt.close();
+            if (stmt != null && !stmt.isClosed()) {
+                stmt.close();
+            }
         } catch (SQLException e) {
             LOG.warn("Failed to close 'Statement'", e);
         }
         try {
-            if (this.conn != null && !conn.isClosed()) this.conn.close();
+            if (this.conn != null && !conn.isClosed()) {
+                this.conn.close();
+            }
         } catch (SQLException e) {
             LOG.warn("Failed to close 'Connection'", e);
         }

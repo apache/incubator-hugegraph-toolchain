@@ -18,13 +18,6 @@
 
 package org.apache.hugegraph.entity.load;
 
-import java.io.IOException;
-import java.util.List;
-
-import org.apache.hugegraph.annotation.MergeProperty;
-import org.apache.hugegraph.common.Constant;
-import org.apache.hugegraph.common.Mergeable;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -34,11 +27,16 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.hugegraph.annotation.MergeProperty;
+import org.apache.hugegraph.common.Constant;
+import org.apache.hugegraph.common.Mergeable;
+
+import java.io.IOException;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -80,7 +78,7 @@ public class FileSetting implements Mergeable {
 
     @MergeProperty
     @JsonProperty("skipped_line")
-    private String skippedLine = "(^#|^//).*|";
+    private String skippedLine = "(^#|^//).*";
 
     @MergeProperty
     @JsonProperty("list_format")
@@ -118,7 +116,7 @@ public class FileSetting implements Mergeable {
         @Override
         public String deserialize(JsonParser jsonParser,
                                   DeserializationContext context)
-                throws IOException {
+                                  throws IOException {
             String delimiter = jsonParser.getText();
             if ("\\t".equals(delimiter)) {
                 return "\t";

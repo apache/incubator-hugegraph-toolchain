@@ -24,7 +24,6 @@ import java.util.Set;
 
 import org.apache.hugegraph.structure.constant.IdStrategy;
 import org.apache.hugegraph.util.HubbleUtil;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.AllArgsConstructor;
@@ -54,7 +53,7 @@ public class VertexLabelEntity implements SchemaLabelEntity, Timefiable {
     private List<PropertyIndex> propertyIndexes;
 
     @JsonProperty("open_label_index")
-    private boolean openLabelIndex;
+    private Boolean openLabelIndex;
 
     @JsonProperty("style")
     private VertexLabelStyle style;

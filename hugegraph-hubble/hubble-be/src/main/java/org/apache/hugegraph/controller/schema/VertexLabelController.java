@@ -18,11 +18,29 @@
 
 package org.apache.hugegraph.controller.schema;
 
-import java.util.HashSet;
-import java.util.LinkedHashMap;
+//import java.util.*;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.stream.Collectors;
+
+import org.apache.hugegraph.driver.HugeClient;
+import org.apache.hugegraph.entity.schema.vertexlabel.ParamEntity;
+import org.apache.hugegraph.entity.schema.vertexlabel.ParamStyle;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.entity.schema.ConflictCheckEntity;
@@ -39,24 +57,12 @@ import org.apache.hugegraph.structure.constant.IdStrategy;
 import org.apache.hugegraph.util.CollectionUtil;
 import org.apache.hugegraph.util.Ex;
 import org.apache.hugegraph.util.HubbleUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.google.common.collect.ImmutableList;
 
 @RestController
-@RequestMapping(Constant.API_VERSION + "graph-connections/{connId}/schema/vertexlabels")
+@RequestMapping(Constant.API_V1_3 + "graphspaces/{graphspace}/graphs" +
+        "/{graph}/schema/vertexlabels")
 public class VertexLabelController extends SchemaController {
 
     private static final List<String> PRESET_COLORS = ImmutableList.of(
@@ -76,19 +82,22 @@ public class VertexLabelController extends SchemaController {
     private VertexLabelService vlService;
 
     @GetMapping("optional-colors")
-    public List<String> getOptionalColors(@PathVariable("connId") int connId) {
+    public List<String> getOptionalColors() {
         return PRESET_COLORS;
     }
 
     @GetMapping("{name}/link")
-    public List<String> getLinkEdgeLabels(@PathVariable("connId") int connId,
+    public List<String> getLinkEdgeLabels(@PathVariable("graphspace") String graphSpace,
+                                          @PathVariable("graph") String graph,
                                           @PathVariable("name") String name) {
-        this.vlService.checkExist(name, connId);
-        return this.vlService.getLinkEdgeLabels(name, connId);
+        HugeClient client = this.authClient(graphSpace, graph);
+        this.vlService.checkExist(name, client);
+        return this.vlService.getLinkEdgeLabels(name, client);
     }
 
     @GetMapping
-    public IPage<VertexLabelEntity> list(@PathVariable("connId") int connId,
+    public IPage<VertexLabelEntity> list(@PathVariable("graphspace") String graphSpace,
+                                         @PathVariable("graph") String graph,
                                          @RequestParam(name = "content",
                                                        required = false)
                                          String content,
@@ -103,30 +112,38 @@ public class VertexLabelController extends SchemaController {
                                                        required = false,
                                                        defaultValue = "10")
                                          int pageSize) {
-        return this.listInPage(id -> this.vlService.list(id),
-                               connId, content, nameOrder, pageNo, pageSize);
+        HugeClient client = this.authClient(graphSpace, graph);
+        return this.listInPage(c -> this.vlService.list(c),
+                               client, content, nameOrder, pageNo, pageSize);
     }
 
     @GetMapping("{name}")
-    public VertexLabelEntity get(@PathVariable("connId") int connId,
+    public VertexLabelEntity get(@PathVariable("graphspace") String graphSpace,
+                                 @PathVariable("graph") String graph,
                                  @PathVariable("name") String name) {
-        return this.vlService.get(name, connId);
+        HugeClient client = this.authClient(graphSpace, graph);
+        return this.vlService.get(name, client);
     }
 
     @PostMapping
-    public void create(@PathVariable("connId") int connId,
+    public void create(@PathVariable("graphspace") String graphSpace,
+                       @PathVariable("graph") String graph,
                        @RequestBody VertexLabelEntity entity) {
-        this.checkParamsValid(entity, connId, true);
-        this.checkEntityUnique(entity, connId, true);
+        HugeClient client = this.authClient(graphSpace, graph);
+
+        this.checkParamsValid(entity, client, true);
+        this.checkEntityUnique(entity, client, true);
         entity.setCreateTime(HubbleUtil.nowDate());
-        this.vlService.add(entity, connId);
+        this.vlService.add(entity, client);
     }
 
     @PostMapping("check_conflict")
     public ConflictDetail checkConflicts(
-            @PathVariable("connId") int connId,
-            @RequestParam("reused_conn_id") int reusedConnId,
-            @RequestBody ConflictCheckEntity entity) {
+                          @PathVariable("graphspace") String graphSpace,
+                          @PathVariable("graph") String graph,
+                          @RequestParam("reused_graphspace") String reusedGraphSpace,
+                          @RequestParam("reused_graph") String reusedGraph,
+                          @RequestBody ConflictCheckEntity entity) {
         Ex.check(!CollectionUtils.isEmpty(entity.getVlEntities()),
                  "common.param.cannot-be-empty", "vertexlabels");
         Ex.check(CollectionUtils.isEmpty(entity.getPkEntities()),
@@ -135,7 +152,8 @@ public class VertexLabelController extends SchemaController {
                  "common.param.must-be-null", "propertyindexes");
         Ex.check(CollectionUtils.isEmpty(entity.getElEntities()),
                  "common.param.must-be-null", "edgelabels");
-        Ex.check(connId != reusedConnId, "schema.conn.cannot-reuse-self");
+        Ex.check(graphSpace != reusedGraphSpace && graph != reusedGraph,
+                 "schema.conn.cannot-reuse-self");
 
         Set<String> pkNames = new HashSet<>();
         Set<String> piNames = new HashSet<>();
@@ -144,64 +162,78 @@ public class VertexLabelController extends SchemaController {
             piNames.addAll(e.getIndexProps());
         }
 
-        entity.setPkEntities(this.pkService.list(pkNames, reusedConnId, false));
-        entity.setPiEntities(this.piService.list(piNames, reusedConnId, false));
-        return this.vlService.checkConflict(entity, connId, false);
+        HugeClient client = this.authClient(graphSpace, graph);
+        HugeClient reusedClient = this.authClient(reusedGraphSpace, reusedGraph);
+
+        entity.setPkEntities(this.pkService.list(pkNames, reusedClient, false));
+        entity.setPiEntities(this.piService.list(piNames, reusedClient, false));
+        return this.vlService.checkConflict(entity, client, false);
     }
 
     @PostMapping("recheck_conflict")
     public ConflictDetail recheckConflicts(
-            @PathVariable("connId") int connId,
-            @RequestBody ConflictCheckEntity entity) {
+                          @PathVariable("graphspace") String graphSpace,
+                          @PathVariable("graph") String graph,
+                          @RequestBody ConflictCheckEntity entity) {
         Ex.check(!CollectionUtils.isEmpty(entity.getVlEntities()),
                  "common.param.cannot-be-empty", "vertexlabels");
         Ex.check(CollectionUtils.isEmpty(entity.getElEntities()),
                  "common.param.must-be-null", "edgelabels");
-        return this.vlService.checkConflict(entity, connId, true);
+
+        HugeClient client = this.authClient(graphSpace, graph);
+        return this.vlService.checkConflict(entity, client, true);
     }
 
     @PostMapping("reuse")
-    public void reuse(@PathVariable("connId") int connId,
+    public void reuse(@PathVariable("graphspace") String graphSpace,
+                      @PathVariable("graph") String graph,
                       @RequestBody ConflictDetail detail) {
-        this.vlService.reuse(detail, connId);
+        HugeClient client = this.authClient(graphSpace, graph);
+        this.vlService.reuse(detail, client);
     }
 
     @PutMapping("{name}")
-    public void update(@PathVariable("connId") int connId,
+    public void update(@PathVariable("graphspace") String graphSpace,
+                       @PathVariable("graph") String graph,
                        @PathVariable("name") String name,
                        @RequestBody VertexLabelUpdateEntity entity) {
         Ex.check(!StringUtils.isEmpty(name),
                  "common.param.cannot-be-null-or-empty", name);
         entity.setName(name);
+        HugeClient client = this.authClient(graphSpace, graph);
 
-        this.vlService.checkExist(name, connId);
-        checkParamsValid(this.pkService, entity, connId);
-        this.vlService.update(entity, connId);
+        this.vlService.checkExist(name, client);
+        checkParamsValid(this.pkService, entity, client);
+        this.vlService.update(entity, client);
     }
 
     @PostMapping("check_using")
     public Map<String, Boolean> checkUsing(
-            @PathVariable("connId") int connId,
-            @RequestBody UsingCheckEntity entity) {
+                                @PathVariable("graphspace") String graphSpace,
+                                @PathVariable("graph") String graph,
+                                @RequestBody UsingCheckEntity entity) {
         Ex.check(!CollectionUtils.isEmpty(entity.getNames()),
                  "common.param.cannot-be-empty", "names");
         Map<String, Boolean> inUsing = new LinkedHashMap<>();
+        HugeClient client = this.authClient(graphSpace, graph);
         for (String name : entity.getNames()) {
-            this.vlService.checkExist(name, connId);
-            inUsing.put(name, this.vlService.checkUsing(name, connId));
+            this.vlService.checkExist(name, client);
+            inUsing.put(name, this.vlService.checkUsing(name, client));
         }
         return inUsing;
     }
 
     @DeleteMapping
-    public void delete(@PathVariable("connId") int connId,
+    public void delete(@PathVariable("graphspace") String graphSpace,
+                       @PathVariable("graph") String graph,
                        @RequestParam("names") List<String> names,
                        @RequestParam(name = "skip_using",
                                      defaultValue = "false")
                        boolean skipUsing) {
+        HugeClient client = this.authClient(graphSpace, graph);
         for (String name : names) {
-            this.vlService.checkExist(name, connId);
-            if (this.vlService.checkUsing(name, connId)) {
+            this.vlService.checkExist(name, client);
+            if (this.vlService.checkUsing(name, client)) {
                 if (skipUsing) {
                     continue;
                 } else {
@@ -209,11 +241,11 @@ public class VertexLabelController extends SchemaController {
                                                 name);
                 }
             }
-            this.vlService.remove(name, connId);
+            this.vlService.remove(name, client);
         }
     }
 
-    private void checkParamsValid(VertexLabelEntity entity, int connId,
+    private void checkParamsValid(VertexLabelEntity entity, HugeClient client,
                                   boolean checkCreateTime) {
         String name = entity.getName();
         Ex.check(name != null, "common.param.cannot-be-null", "name");
@@ -222,11 +254,11 @@ public class VertexLabelController extends SchemaController {
         Ex.check(checkCreateTime, () -> entity.getCreateTime() == null,
                  "common.param.must-be-null", "create_time");
         // Check properties
-        checkProperties(this.pkService, entity.getProperties(), false, connId);
+        checkProperties(this.pkService, entity.getProperties(), false, client);
         // Check primary keys
         checkPrimaryKeys(entity);
         // Check property index
-        checkPropertyIndexes(entity, connId);
+        checkPropertyIndexes(entity, client);
         // Check display fields and join symbols
         checkDisplayFields(entity);
     }
@@ -271,10 +303,98 @@ public class VertexLabelController extends SchemaController {
         }
     }
 
-    private void checkEntityUnique(VertexLabelEntity newEntity, int connId,
+    private void checkEntityUnique(VertexLabelEntity newEntity,
+                                   HugeClient client,
                                    boolean creating) {
         // The name must be unique
         String name = newEntity.getName();
-        this.vlService.checkNotExist(name, connId);
+        this.vlService.checkNotExist(name, client);
+    }
+
+    @GetMapping("{name}/new")
+    public ParamEntity getNew(@PathVariable("graphspace") String graphSpace,
+                                 @PathVariable("graph") String graph,
+                                 @PathVariable("name") String name) {
+        HugeClient client = this.authClient(graphSpace, graph);
+        return this.labelDataToParam(this.vlService.get(name, client));
+    }
+
+    @PutMapping("{name}/new")
+    public void updateNew(@PathVariable("graphspace") String graphSpace,
+                       @PathVariable("graph") String graph,
+                       @PathVariable("name") String name,
+                       @RequestBody VertexLabelUpdateEntity entity) {
+        Ex.check(!StringUtils.isEmpty(name),
+                "common.param.cannot-be-null-or-empty", name);
+        entity.setName(name);
+        HugeClient client = this.authClient(graphSpace, graph);
+
+        this.vlService.checkExist(name, client);
+        checkParamsValid(this.pkService, entity, client);
+        this.vlService.update(entity, client);
+    }
+
+    @PostMapping("create_new")
+    public void createNew(@PathVariable("graphspace") String graphSpace,
+                            @PathVariable("graph") String graph,
+                            @RequestBody ParamEntity entity) {
+        HugeClient client = this.authClient(graphSpace, graph);
+
+        VertexLabelEntity formatEntity = this.paramToLabelData(entity);
+
+        this.checkParamsValid(formatEntity, client, true);
+        this.checkEntityUnique(formatEntity, client, true);
+        formatEntity.setCreateTime(HubbleUtil.nowDate());
+        this.vlService.add(formatEntity, client);
+    }
+
+    private VertexLabelEntity paramToLabelData(ParamEntity entity) {
+        List<String> displayFields = entity.getDisplayFields();
+
+        if (!CollectionUtils.isEmpty(displayFields)) {
+            displayFields.add("~id");
+        } else {
+            displayFields = ImmutableList.of("~id");
+        }
+
+        VertexLabelStyle style = new VertexLabelStyle();
+        style.setColor(entity.getStyle().getColor());
+        style.setSize(entity.getStyle().getSize());
+        style.setDisplayFields(displayFields);
+
+        VertexLabelEntity newEntity = new VertexLabelEntity();
+        newEntity.setIdStrategy(entity.getIdStrategy());
+        newEntity.setName(entity.getName());
+        newEntity.setProperties(entity.getProperties());
+        newEntity.setPropertyIndexes(entity.getPropertyIndexes());
+        newEntity.setOpenLabelIndex(entity.getOpenLabelIndex());
+        newEntity.setPrimaryKeys(entity.getPrimaryKeys());
+        newEntity.setStyle(style);
+
+        return newEntity;
+    }
+
+    // format backend data to front
+    private ParamEntity labelDataToParam(VertexLabelEntity entity) {
+//        Logger Logger = LoggerFactory.getLogger(getClass());
+
+        ParamStyle style = new ParamStyle();
+        style.setColor(entity.getStyle().getColor());
+        style.setSize(entity.getStyle().getSize());
+
+        List<String> displayFields = entity.getStyle().getDisplayFields().stream()
+                .filter(v -> !("~id".equals(v))).collect(Collectors.toList());
+
+        ParamEntity newEntity = new ParamEntity();
+        newEntity.setIdStrategy(entity.getIdStrategy());
+        newEntity.setName(entity.getName());
+        newEntity.setProperties(entity.getProperties());
+        newEntity.setPropertyIndexes(entity.getPropertyIndexes());
+        newEntity.setOpenLabelIndex(entity.getOpenLabelIndex());
+        newEntity.setPrimaryKeys(entity.getPrimaryKeys());
+        newEntity.setStyle(style);
+        newEntity.setDisplayFields(displayFields);
+
+        return newEntity;
     }
 }

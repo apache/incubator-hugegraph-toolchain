@@ -55,6 +55,7 @@ public class BaseClientTest {
     protected static final String GRAPH = "hugegraph";
     protected static final String USERNAME = "admin";
     protected static final String PASSWORD = "pa";
+    //protected static final String PASSWORD = "admin";
     protected static final int TIMEOUT = 10;
 
     private static HugeClient client;

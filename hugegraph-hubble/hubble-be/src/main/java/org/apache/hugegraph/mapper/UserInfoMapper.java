@@ -18,14 +18,12 @@
 
 package org.apache.hugegraph.mapper;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.hugegraph.entity.UserInfo;
 import org.apache.ibatis.annotations.Mapper;
 import org.springframework.stereotype.Component;
 
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-
 @Mapper
 @Component
 public interface UserInfoMapper extends BaseMapper<UserInfo> {
-
 }

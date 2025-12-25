@@ -18,49 +18,67 @@
 
 package org.apache.hugegraph.service.algorithm;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import lombok.extern.log4j.Log4j2;
+import org.apache.hugegraph.driver.HugeClient;
+import org.apache.hugegraph.structure.Task;
+import org.apache.hugegraph.util.PageUtil;
+import org.springframework.stereotype.Service;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-
-import org.apache.hugegraph.driver.HugeClient;
-import org.apache.hugegraph.service.HugeClientPoolService;
-import org.apache.hugegraph.structure.Task;
-import org.apache.hugegraph.util.PageUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import com.baomidou.mybatisplus.core.metadata.IPage;
-
-import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @Service
 public class AsyncTaskService {
 
-    @Autowired
-    private HugeClientPoolService poolService;
+    private static final String VERMEER_TASK_TYPE = "vermeer-task";
+    private static final String VERMEER_TASK_LOAD = "vermeer-task:load";
+    private static final String VERMEER_TASK_COMPUTE = "vermeer-task:compute";
 
-    private HugeClient getClient(int connId) {
-        return this.poolService.getOrCreate(connId);
+    public Task get(HugeClient client, int id) {
+        Task task = client.task().get(id);
+        if (isVermeerType(task.type())) {
+            task.type(switchVermeerType(task.name()));
+        }
+        return task;
     }
 
-    public Task get(int connId, int id) {
-        HugeClient client = this.getClient(connId);
-        return client.task().get(id);
+    private boolean isVermeerType(String type) {
+        return VERMEER_TASK_TYPE.equals(type);
     }
 
-    public List<Task> list(int connId, List<Long> taskIds) {
-        HugeClient client = this.getClient(connId);
-        return client.task().list(taskIds);
+    private String switchVermeerType(String name) {
+        if (VERMEER_TASK_LOAD.equals(name)) {
+            return name;
+        }
+        return VERMEER_TASK_COMPUTE;
     }
 
-    public IPage<Task> list(int connId, int pageNo, int pageSize, String content,
+    public List<Task> list(HugeClient client, List<Long> taskIds) {
+        List<Task> tasks = client.task().list(taskIds);
+        for (Task task: tasks) {
+            if (isVermeerType(task.type())) {
+                task.type(switchVermeerType(task.name()));
+            }
+        }
+        return tasks;
+    }
+
+    public IPage<Task> list(HugeClient client, int pageNo, int pageSize,
+                            String content,
                             String type, String status) {
-        HugeClient client = this.getClient(connId);
         if (status.isEmpty()) {
             status = null;
         }
         List<Task> tasks = client.task().list(status);
+        for (Task task: tasks) {
+            if (isVermeerType(task.type())) {
+                task.type(switchVermeerType(task.name()));
+            }
+        }
+
         List<Task> result = new ArrayList<>();
         for (Task task : tasks) {
             if (!type.isEmpty() && !type.equals(task.type())) {
@@ -78,13 +96,11 @@ public class AsyncTaskService {
         return PageUtil.page(result, pageNo, pageSize);
     }
 
-    public void remove(int connId, int id) {
-        HugeClient client = this.getClient(connId);
+    public void remove(HugeClient client, int id) {
         client.task().delete(id);
     }
 
-    public Task cancel(int connId, int id) {
-        HugeClient client = this.getClient(connId);
+    public Task cancel(HugeClient client, int id) {
         return client.task().cancel(id);
     }
 }

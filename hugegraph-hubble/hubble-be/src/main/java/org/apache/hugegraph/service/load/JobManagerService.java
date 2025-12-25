@@ -18,9 +18,12 @@
 
 package org.apache.hugegraph.service.load;
 
-import java.util.Date;
-import java.util.List;
-
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.google.common.collect.ImmutableMap;
+import lombok.extern.log4j.Log4j2;
 import org.apache.hugegraph.entity.enums.JobStatus;
 import org.apache.hugegraph.entity.enums.LoadStatus;
 import org.apache.hugegraph.entity.load.JobManager;
@@ -33,12 +36,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-
-import lombok.extern.log4j.Log4j2;
+import java.util.Date;
+import java.util.List;
 
 @Log4j2
 @Service
@@ -57,20 +56,24 @@ public class JobManagerService {
         return this.mapper.selectById(id);
     }
 
-    public JobManager getTask(String jobName, int connId) {
+    public JobManager getTask(String jobName, String graphSpace, String graph) {
         QueryWrapper<JobManager> query = Wrappers.query();
         query.eq("job_name", jobName);
-        query.eq("conn_id", connId);
+        query.eq("graphspace", graphSpace);
+        query.eq("graph", graph);
         return this.mapper.selectOne(query);
     }
 
-    public List<JobManager> list(int connId, List<Integer> jobIds) {
+    public List<JobManager> list(String graphSpace, String graph,
+                                 List<Integer> jobIds) {
         return this.mapper.selectBatchIds(jobIds);
     }
 
-    public IPage<JobManager> list(int connId, int pageNo, int pageSize, String content) {
+    public IPage<JobManager> list(String graphSpace, String graph,
+                                  int pageNo, int pageSize, String content) {
         QueryWrapper<JobManager> query = Wrappers.query();
-        query.eq("conn_id", connId);
+        query.eq("graphspace", graphSpace);
+        query.eq("graph", graph);
         if (!content.isEmpty()) {
             query.like("job_name", content);
         }
@@ -131,5 +134,11 @@ public class JobManagerService {
         if (this.mapper.deleteById(id) != 1) {
             throw new InternalException("entity.delete.failed", id);
         }
+    }
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public void removeByGraph(String graphSpace, String graph) {
+        this.mapper.deleteByMap(ImmutableMap.of("graphspace", graphSpace,
+                                                "graph", graph));
     }
 }
