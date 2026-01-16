@@ -157,15 +157,11 @@ public final class TaskManager {
             (r, e) -> {
                 if (e != null) {
                     LOG.error("Batch insert {} error, interrupting import", mapping.type(), e);
-                    this.context.occurredError();
                     this.context.stopLoading();
-                    this.batchService.shutdown();
-                    this.singleService.shutdown();
                     Printer.printError("Batch insert %s failed, stop loading, Please check the logs",
                                        mapping.type().string());
-                } else {
-                    summary.metrics(struct).minusFlighting(batch.size());
                 }
+                summary.metrics(struct).minusFlighting(batch.size());
 
                 this.batchSemaphore.release();
                 long end = System.currentTimeMillis();

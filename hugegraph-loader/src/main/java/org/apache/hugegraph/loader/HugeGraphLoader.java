@@ -667,7 +667,8 @@ public final class HugeGraphLoader {
             return;
         }
         if (parallelThreads == null) {
-            parallelThreads = Math.min(structs.size(), Runtime.getRuntime().availableProcessors());
+            parallelThreads = Math.max(2, Math.min(structs.size(),
+                                                   Runtime.getRuntime().availableProcessors()));
         }
         if (parallelThreads < 1) {
             throw new LoadException("The parallel-threads must be >= 1");
