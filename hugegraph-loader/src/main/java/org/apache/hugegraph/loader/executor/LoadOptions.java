@@ -45,6 +45,8 @@ public final class LoadOptions implements Cloneable {
     public static final String HTTPS_SCHEMA = "https";
     public static final String HTTP_SCHEMA = "http";
     private static final int CPUS = Runtime.getRuntime().availableProcessors();
+    private static final int DEFAULT_MAX_CONNECTIONS = CPUS * 4;
+    private static final int DEFAULT_MAX_CONNECTIONS_PER_ROUTE = CPUS * 2;
     private static final int MINIMUM_REQUIRED_ARGS = 3;
 
     @Parameter(names = {"-f", "--file"}, required = true, arity = 1,
@@ -156,7 +158,9 @@ public final class LoadOptions implements Cloneable {
 
     @Parameter(names = {"--batch-insert-threads"}, arity = 1,
                validateWith = {PositiveValidator.class},
-               description = "The number of threads to execute batch insert")
+               description = "The number of threads to execute batch insert. " +
+                             "If max-conn/max-conn-per-route keep defaults, " +
+                             "they may be auto-adjusted based on this value")
     public int batchInsertThreads = CPUS;
 
     @Parameter(names = {"--single-insert-threads"}, arity = 1,
@@ -165,21 +169,27 @@ public final class LoadOptions implements Cloneable {
     public int singleInsertThreads = 8;
 
     @Parameter(names = {"--max-conn"}, arity = 1,
-               description = "Max number of HTTP connections to server")
-    public int maxConnections = CPUS * 4;
+               description = "Max number of HTTP connections to server. " +
+                             "If left as default and batch-insert-threads is " +
+                             "set, this may be auto-adjusted")
+    public int maxConnections = DEFAULT_MAX_CONNECTIONS;
 
     @Parameter(names = {"--max-conn-per-route"}, arity = 1,
-               description = "Max number of HTTP connections to each route")
-    public int maxConnectionsPerRoute = CPUS * 2;
+               description = "Max number of HTTP connections to each route. " +
+                             "If left as default and batch-insert-threads is " +
+                             "set, this may be auto-adjusted")
+    public int maxConnectionsPerRoute = DEFAULT_MAX_CONNECTIONS_PER_ROUTE;
 
     @Parameter(names = {"--batch-size"}, arity = 1,
                validateWith = {PositiveValidator.class},
                description = "The number of lines in each submit")
     public int batchSize = 500;
 
-    @Parameter(names = {"--parallel-count"}, arity = 1,
-            description = "The number of parallel read pipelines")
-    public int parallelCount = 1;
+    @Parameter(names = {"--parallel-count", "--parser-threads"}, arity = 1,
+               description = "The number of parallel read pipelines. " +
+                             "Default: auto (min(struct count, cpu)). " +
+                             "Must be >= 1")
+    public Integer parallelThreads = null;
 
     @Parameter(names = {"--start-file"}, arity = 1,
             description = "start file index for partial loading")
