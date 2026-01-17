@@ -169,12 +169,14 @@ public final class LoadOptions implements Cloneable {
     public int singleInsertThreads = 8;
 
     @Parameter(names = {"--max-conn"}, arity = 1,
+               validateWith = {PositiveValidator.class},
                description = "Max number of HTTP connections to server. " +
                              "If left as default and batch-insert-threads is " +
                              "set, this may be auto-adjusted")
     public int maxConnections = DEFAULT_MAX_CONNECTIONS;
 
     @Parameter(names = {"--max-conn-per-route"}, arity = 1,
+               validateWith = {PositiveValidator.class},
                description = "Max number of HTTP connections to each route. " +
                              "If left as default and batch-insert-threads is " +
                              "set, this may be auto-adjusted")
