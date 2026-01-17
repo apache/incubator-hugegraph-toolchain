@@ -187,7 +187,7 @@ public final class LoadOptions implements Cloneable {
 
     @Parameter(names = {"--parallel-count", "--parser-threads"}, arity = 1,
                description = "The number of parallel read pipelines. " +
-                             "Default: auto (min(struct count, cpu)). " +
+                             "Default: auto max(2, (min(struct count, cpu))). " +
                              "Must be >= 1")
     public Integer parallelThreads = null;
 
