@@ -670,9 +670,6 @@ public final class HugeGraphLoader {
             parallelThreads = Math.max(2, Math.min(structs.size(),
                                                    Runtime.getRuntime().availableProcessors()));
         }
-        if (parallelThreads < 1) {
-            throw new LoadException("The parallel-threads must be >= 1");
-        }
 
         boolean scatter = this.context.options().scatterSources;
 

@@ -186,6 +186,7 @@ public final class LoadOptions implements Cloneable {
     public int batchSize = 500;
 
     @Parameter(names = {"--parallel-count", "--parser-threads"}, arity = 1,
+               validateWith = {PositiveValidator.class},
                description = "The number of parallel read pipelines. " +
                              "Default: auto max(2, (min(struct count, cpu))). " +
                              "Must be >= 1")
