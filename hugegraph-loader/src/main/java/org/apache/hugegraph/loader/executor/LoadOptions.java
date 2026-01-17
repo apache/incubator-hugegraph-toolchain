@@ -190,7 +190,7 @@ public final class LoadOptions implements Cloneable {
     @Parameter(names = {"--parallel-count", "--parser-threads"}, arity = 1,
                validateWith = {PositiveValidator.class},
                description = "The number of parallel read pipelines. " +
-                             "Default: auto max(2, cpu). " +
+                             "Default: auto max(2, cpu/2). " +
                              "Must be >= 1")
     public int parallelThreads = Math.max(2, CPUS/2);
 
