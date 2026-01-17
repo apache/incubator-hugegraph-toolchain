@@ -662,7 +662,7 @@ public final class HugeGraphLoader {
     }
 
     private void loadStructs(List<InputStruct> structs) {
-        Integer parallelThreads = this.context.options().parallelThreads;
+        int parallelThreads = this.context.options().parallelThreads;
         if (structs.size() == 0) {
             return;
         }
