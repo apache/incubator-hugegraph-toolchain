@@ -666,10 +666,6 @@ public final class HugeGraphLoader {
         if (structs.size() == 0) {
             return;
         }
-        if (parallelThreads == null) {
-            parallelThreads = Math.max(2, Math.min(structs.size(),
-                                                   Runtime.getRuntime().availableProcessors()));
-        }
 
         boolean scatter = this.context.options().scatterSources;
 

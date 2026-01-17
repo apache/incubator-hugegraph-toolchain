@@ -188,9 +188,9 @@ public final class LoadOptions implements Cloneable {
     @Parameter(names = {"--parallel-count", "--parser-threads"}, arity = 1,
                validateWith = {PositiveValidator.class},
                description = "The number of parallel read pipelines. " +
-                             "Default: auto max(2, (min(struct count, cpu))). " +
+                             "Default: auto max(2, cpu). " +
                              "Must be >= 1")
-    public Integer parallelThreads = null;
+    public Integer parallelThreads = Math.max(2, CPUS);
 
     @Parameter(names = {"--start-file"}, arity = 1,
             description = "start file index for partial loading")
