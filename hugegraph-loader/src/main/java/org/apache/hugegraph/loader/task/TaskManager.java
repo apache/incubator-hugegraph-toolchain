@@ -163,6 +163,7 @@ public final class TaskManager {
                         this.submitInSingle(struct, mapping, batch);
                     } else {
                         summary.metrics(struct).minusFlighting(batch.size());
+                        this.context.occurredError();
                         this.context.stopLoading();
                         Printer.printError("Batch insert %s failed, stop loading. Please check the logs",
                                            mapping.type().string());
