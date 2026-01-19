@@ -162,12 +162,12 @@ public final class TaskManager {
                                  mapping.type(), e);
                         this.submitInSingle(struct, mapping, batch);
                     } else {
+                        summary.metrics(struct).minusFlighting(batch.size());
                         this.context.stopLoading();
                         Printer.printError("Batch insert %s failed, stop loading. Please check the logs",
                                            mapping.type().string());
                     }
                 }
-                summary.metrics(struct).minusFlighting(batch.size());
 
                 this.batchSemaphore.release();
                 long end = System.currentTimeMillis();
