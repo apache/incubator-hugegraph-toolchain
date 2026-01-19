@@ -189,10 +189,11 @@ public final class LoadOptions implements Cloneable {
 
     @Parameter(names = {"--parallel-count", "--parser-threads"}, arity = 1,
                validateWith = {PositiveValidator.class},
-               description = "The number of parallel read pipelines. " +
-                             "Default: auto max(2, cpu/2). " +
-                             "Must be >= 1")
-    public int parallelThreads = Math.max(2, CPUS/2);
+               description = "(--parallel-count is deprecated, use --parser-threads instead) " +
+                             "The number of parallel read pipelines. " +
+                             "Default: max(2, CPUS/2) where CPUS is the number " +
+                             "of available processors. Must be >= 1")
+    public int parseThreads = Math.max(2, CPUS / 2);
 
     @Parameter(names = {"--start-file"}, arity = 1,
             description = "start file index for partial loading")
@@ -342,6 +343,11 @@ public final class LoadOptions implements Cloneable {
                description = "The task scheduler type (when creating graph if not exists")
     public String schedulerType = "distributed";
 
+    @Parameter(names = {"--batch-failure-fallback"}, arity = 1,
+               description = "Whether to fallback to single insert when batch insert fails. " +
+                             "Default: false")
+    public boolean batchFailureFallback = false;
+
     public String workModeString() {
         if (this.incrementalMode) {
             return "INCREMENTAL MODE";
@@ -419,7 +425,29 @@ public final class LoadOptions implements Cloneable {
             options.maxParseErrors = Constants.NO_LIMIT;
             options.maxInsertErrors = Constants.NO_LIMIT;
         }
+        if (options.batchInsertThreads != CPUS) {
+            adjustConnectionPoolIfDefault(options);
+        }
         return options;
+    }
+
+    private static void adjustConnectionPoolIfDefault(LoadOptions options) {
+        int batchThreads = options.batchInsertThreads;
+        int maxConn = options.maxConnections;
+        int maxConnPerRoute = options.maxConnectionsPerRoute;
+        if (maxConn == DEFAULT_MAX_CONNECTIONS && maxConn < batchThreads * 4) {
+            options.maxConnections = batchThreads * 4;
+            LOG.info("Auto adjusted max-conn to {} based on " +
+                     "batch-insert-threads({})",
+                     options.maxConnections, batchThreads);
+        }
+
+        if (maxConnPerRoute == DEFAULT_MAX_CONNECTIONS_PER_ROUTE && maxConnPerRoute < batchThreads * 2) {
+            options.maxConnectionsPerRoute = batchThreads * 2;
+            LOG.info("Auto adjusted max-conn-per-route to {} based on " +
+                     "batch-insert-threads({})",
+                     options.maxConnectionsPerRoute, batchThreads);
+        }
     }
 
     public ShortIdConfig getShortIdConfig(String vertexLabel) {

@@ -157,9 +157,15 @@ public final class TaskManager {
             (r, e) -> {
                 if (e != null) {
                     LOG.error("Batch insert {} error, interrupting import", mapping.type(), e);
-                    this.context.stopLoading();
-                    Printer.printError("Batch insert %s failed, stop loading, Please check the logs",
-                                       mapping.type().string());
+                    if (this.options.batchFailureFallback) {
+                        LOG.warn("Batch insert {} error, try single insert",
+                                 mapping.type(), e);
+                        this.submitInSingle(struct, mapping, batch);
+                    } else {
+                        this.context.stopLoading();
+                        Printer.printError("Batch insert %s failed, stop loading. Please check the logs",
+                                           mapping.type().string());
+                    }
                 }
                 summary.metrics(struct).minusFlighting(batch.size());
 
