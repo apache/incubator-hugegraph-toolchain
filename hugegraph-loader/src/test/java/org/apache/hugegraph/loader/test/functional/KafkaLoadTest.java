@@ -85,7 +85,8 @@ public class KafkaLoadTest extends LoadTest {
                 "-h", SERVER,
                 "-p", String.valueOf(PORT),
                 "--batch-insert-threads", "2",
-                "--test-mode", "true"
+                "--test-mode", "true",
+                "--parser-threads", "1"
         };
 
         loadWithAuth(args);
