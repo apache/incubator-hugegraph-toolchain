@@ -20,7 +20,6 @@ package org.apache.hugegraph.loader.test.functional;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Objects;
@@ -69,13 +68,10 @@ public class HDFSUtil implements IOUtil {
     }
 
     private static Configuration loadConfiguration() {
+        // Just use local hadoop with default config in test
         String fileName = "hdfs_with_core_site_path/core-site.xml";
-        URL resource = HDFSUtil.class.getClassLoader().getResource(fileName);
-        if (resource == null) {
-            throw new LoadException("core-site.xml not found in test classpath: "
-                                    + fileName);
-        }
-        String confPath = resource.getPath();
+        String confPath = Objects.requireNonNull(HDFSUtil.class.getClassLoader()
+                                                               .getResource(fileName)).getPath();
         Configuration conf = new Configuration();
         conf.addResource(new Path(confPath));
         return conf;
