@@ -194,7 +194,7 @@ public final class LoadOptions implements Cloneable {
                              "The number of parallel read pipelines. " +
                              "Default: max(2, CPUS/2) where CPUS is the number " +
                              "of available processors. Must be >= 1")
-    public int parseThreads = Math.max(2, CPUS / 2);
+    public int parseThreads = 1;
 
     @Parameter(names = {"--start-file"}, arity = 1,
             description = "start file index for partial loading")
