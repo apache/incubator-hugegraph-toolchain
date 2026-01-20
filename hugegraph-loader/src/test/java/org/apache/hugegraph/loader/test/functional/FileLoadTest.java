@@ -3065,7 +3065,8 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--max-read-lines", "6",
                 "--batch-insert-threads", "2",
-                "--test-mode", "true"
+                "--test-mode", "true",
+                "--parser-threads", "1"
         };
         loadWithAuth(args);
 

@@ -504,6 +504,7 @@ public class TaskManagerTest {
                 latch.await(5, TimeUnit.SECONDS);
             } catch (InterruptedException ignored) {
                 // Let the task finish on interruption.
+                Thread.currentThread().interrupt();
             }
         }
     }
