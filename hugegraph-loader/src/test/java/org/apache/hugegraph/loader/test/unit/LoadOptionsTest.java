@@ -82,7 +82,6 @@ public class LoadOptionsTest {
         options.maxConnections = 100;
         options.maxConnectionsPerRoute = 50;
 
-
         CapturingAppender appender = attachAppender();
         try {
             invokeAdjustConnectionPool(options);
