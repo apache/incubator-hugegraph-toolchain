@@ -138,12 +138,13 @@ public final class TaskManager {
 
     public void submitBatch(InputStruct struct, ElementMapping mapping,
                             List<Record> batch) {
-        if (this.context.stopped()) {
-            return;
-        }
         long start = System.currentTimeMillis();
         try {
             this.batchSemaphore.acquire();
+            if (this.context.stopped()) {
+                this.batchSemaphore.release();
+                return;
+            }
         } catch (InterruptedException e) {
             throw new LoadException("Interrupted while waiting to submit %s " +
                                     "batch in batch mode", e, mapping.type());
@@ -162,6 +163,7 @@ public final class TaskManager {
                                  mapping.type(), e);
                         this.submitInSingle(struct, mapping, batch);
                     } else {
+                        summary.metrics(struct).minusFlighting(batch.size());
                         this.context.occurredError();
                         this.context.stopLoading();
                         Printer.printError("Batch insert %s failed, stop loading. Please check the logs",

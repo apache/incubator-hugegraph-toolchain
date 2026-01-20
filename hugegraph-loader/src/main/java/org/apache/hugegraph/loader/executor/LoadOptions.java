@@ -20,6 +20,7 @@ package org.apache.hugegraph.loader.executor;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -345,8 +346,8 @@ public final class LoadOptions implements Cloneable {
 
     @Parameter(names = {"--batch-failure-fallback"}, arity = 1,
                description = "Whether to fallback to single insert when batch insert fails. " +
-                             "Default: false")
-    public boolean batchFailureFallback = false;
+                             "Default: true")
+    public boolean batchFailureFallback = true;
 
     public String workModeString() {
         if (this.incrementalMode) {
@@ -425,9 +426,11 @@ public final class LoadOptions implements Cloneable {
             options.maxParseErrors = Constants.NO_LIMIT;
             options.maxInsertErrors = Constants.NO_LIMIT;
         }
-        if (options.batchInsertThreads != CPUS) {
-            adjustConnectionPoolIfDefault(options);
+        if (Arrays.asList(args).contains("--parallel-count")) {
+            LOG.warn("Parameter --parallel-count is deprecated, " +
+                     "please use --parser-threads instead");
         }
+        adjustConnectionPoolIfDefault(options);
         return options;
     }
 
@@ -435,17 +438,16 @@ public final class LoadOptions implements Cloneable {
         int batchThreads = options.batchInsertThreads;
         int maxConn = options.maxConnections;
         int maxConnPerRoute = options.maxConnectionsPerRoute;
+
         if (maxConn == DEFAULT_MAX_CONNECTIONS && maxConn < batchThreads * 4) {
             options.maxConnections = batchThreads * 4;
-            LOG.info("Auto adjusted max-conn to {} based on " +
-                     "batch-insert-threads({})",
+            LOG.info("Auto adjusted max-conn to {} based on batch-insert-threads({})",
                      options.maxConnections, batchThreads);
         }
 
         if (maxConnPerRoute == DEFAULT_MAX_CONNECTIONS_PER_ROUTE && maxConnPerRoute < batchThreads * 2) {
             options.maxConnectionsPerRoute = batchThreads * 2;
-            LOG.info("Auto adjusted max-conn-per-route to {} based on " +
-                     "batch-insert-threads({})",
+            LOG.info("Auto adjusted max-conn-per-route to {} based on batch-insert-threads({})",
                      options.maxConnectionsPerRoute, batchThreads);
         }
     }
