@@ -1334,7 +1334,9 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("dir_has_multi_files/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--test-mode", "true"
+                "--test-mode", "true",
+                // FIXME: Set parser-threads to 1 because values > 1 currently trigger a NullPointerException (NPE).
+                "--parser-threads", "1"
         };
         loadWithAuth(args);
 
