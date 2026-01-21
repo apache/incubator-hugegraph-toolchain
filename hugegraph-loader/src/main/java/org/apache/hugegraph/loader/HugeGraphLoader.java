@@ -662,24 +662,21 @@ public final class HugeGraphLoader {
     }
 
     private void loadStructs(List<InputStruct> structs) {
-        int parallelCount = this.context.options().parallelCount;
+        int parseThreads = this.context.options().parseThreads;
         if (structs.size() == 0) {
             return;
-        }
-        if (parallelCount <= 0) {
-            parallelCount = Math.min(structs.size(), Runtime.getRuntime().availableProcessors() * 2);
         }
 
         boolean scatter = this.context.options().scatterSources;
 
-        LOG.info("{} threads for loading {} structs, from {} to {} in {} mode",
-                 parallelCount, structs.size(), this.context.options().startFile,
+        LOG.info("{} parser threads for loading {} structs, from {} to {} in {} mode",
+                 parseThreads, structs.size(), this.context.options().startFile,
                  this.context.options().endFile,
                  scatter ? "scatter" : "sequential");
 
         ExecutorService loadService = null;
         try {
-            loadService = ExecutorUtil.newFixedThreadPool(parallelCount, "loader");
+            loadService = ExecutorUtil.newFixedThreadPool(parseThreads, "loader");
             List<InputTaskItem> taskItems = prepareTaskItems(structs, scatter);
             List<CompletableFuture<Void>> loadTasks = new ArrayList<>();
 
