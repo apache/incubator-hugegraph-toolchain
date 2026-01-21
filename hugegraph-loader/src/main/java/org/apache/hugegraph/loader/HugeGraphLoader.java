@@ -669,7 +669,7 @@ public final class HugeGraphLoader {
 
         boolean scatter = this.context.options().scatterSources;
 
-        LOG.info("{} threads for loading {} structs, from {} to {} in {} mode",
+        LOG.info("{} parser threads for loading {} structs, from {} to {} in {} mode",
                  parseThreads, structs.size(), this.context.options().startFile,
                  this.context.options().endFile,
                  scatter ? "scatter" : "sequential");

@@ -159,9 +159,7 @@ public final class LoadOptions implements Cloneable {
 
     @Parameter(names = {"--batch-insert-threads"}, arity = 1,
                validateWith = {PositiveValidator.class},
-               description = "The number of threads to execute batch insert. " +
-                             "If max-conn/max-conn-per-route keep defaults, " +
-                             "they may be auto-adjusted based on this value")
+               description = "The number of threads to execute batch insert (default: CPUS)")
     public int batchInsertThreads = CPUS;
 
     @Parameter(names = {"--single-insert-threads"}, arity = 1,
@@ -171,16 +169,14 @@ public final class LoadOptions implements Cloneable {
 
     @Parameter(names = {"--max-conn"}, arity = 1,
                validateWith = {PositiveValidator.class},
-               description = "Max number of HTTP connections to server. " +
-                             "If left as default and batch-insert-threads is " +
-                             "set, this may be auto-adjusted")
+               description = "Max HTTP connections (default: CPUS*4; auto-adjusted by " +
+                             "--batch-insert-threads)")
     public int maxConnections = DEFAULT_MAX_CONNECTIONS;
 
     @Parameter(names = {"--max-conn-per-route"}, arity = 1,
                validateWith = {PositiveValidator.class},
-               description = "Max number of HTTP connections to each route. " +
-                             "If left as default and batch-insert-threads is " +
-                             "set, this may be auto-adjusted")
+               description = "Max HTTP connections per route (default: CPUS*2; " +
+                             "auto-adjusted by --batch-insert-threads)")
     public int maxConnectionsPerRoute = DEFAULT_MAX_CONNECTIONS_PER_ROUTE;
 
     @Parameter(names = {"--batch-size"}, arity = 1,
@@ -190,10 +186,8 @@ public final class LoadOptions implements Cloneable {
 
     @Parameter(names = {"--parallel-count", "--parser-threads"}, arity = 1,
                validateWith = {PositiveValidator.class},
-               description = "(--parallel-count is deprecated, use --parser-threads instead) " +
-                             "The number of parallel read pipelines. " +
-                             "Default: max(2, CPUS/2) where CPUS is the number " +
-                             "of available processors. Must be >= 1")
+               description = "Parallel read pipelines (default: max(2, CPUS/2); " +
+                             "--parallel-count is deprecated)")
     public int parseThreads = Math.max(2, CPUS / 2);
 
     @Parameter(names = {"--start-file"}, arity = 1,

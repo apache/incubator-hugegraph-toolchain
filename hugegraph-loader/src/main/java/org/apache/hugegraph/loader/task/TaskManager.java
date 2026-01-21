@@ -157,7 +157,6 @@ public final class TaskManager {
         CompletableFuture.runAsync(task, this.batchService).whenComplete(
             (r, e) -> {
                 if (e != null) {
-                    LOG.error("Batch insert {} error, interrupting import", mapping.type(), e);
                     if (this.options.batchFailureFallback) {
                         LOG.warn("Batch insert {} error, try single insert",
                                  mapping.type(), e);
@@ -166,6 +165,7 @@ public final class TaskManager {
                         summary.metrics(struct).minusFlighting(batch.size());
                         this.context.occurredError();
                         this.context.stopLoading();
+                        LOG.error("Batch insert {} error, interrupting import", mapping.type(), e);
                         Printer.printError("Batch insert %s failed, stop loading. Please check the logs",
                                            mapping.type().string());
                     }
