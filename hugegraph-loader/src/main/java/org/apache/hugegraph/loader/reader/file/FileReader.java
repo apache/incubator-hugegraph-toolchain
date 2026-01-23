@@ -104,6 +104,11 @@ public abstract class FileReader extends AbstractReader {
 
         this.fetcher = this.createLineFetcher();
         this.fetcher.readHeaderIfNeeded(readableList);
+        if (this.source().format().needHeader() && this.source().header() == null) {
+            throw new InitException("Failed to initialize header for file source '%s'. " +
+                                    "Header is required but was not read successfully.",
+                                    this.source);
+        }
 
         this.readables = readableList.iterator();
         List<InputReader> readers = new ArrayList<>();

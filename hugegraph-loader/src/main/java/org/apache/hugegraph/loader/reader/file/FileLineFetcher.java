@@ -168,7 +168,14 @@ public class FileLineFetcher extends LineFetcher {
             if (this.needSkipLine(rawLine) || this.checkMatchHeader(rawLine)) {
                 continue;
             }
-            return this.parser.parse(this.source().header(), rawLine);
+            String[] header = this.source().header();
+            if (header == null) {
+                throw new LoadException("Header is null when parsing line at offset %s, " +
+                                        "this indicates a concurrency issue or initialization failure",
+                                        this.offset());
+            }
+
+            return this.parser.parse(header, rawLine);
         }
     }
 
@@ -230,9 +237,15 @@ public class FileLineFetcher extends LineFetcher {
             return false;
         }
 
-        assert this.source().header() != null;
+        String[] header = this.source().header();
+        if (header == null) {
+            LOG.warn("Header is null when checking match for line at offset {}, " +
+                     "this should not happen in normal cases", this.offset());
+            return false;
+        }
+
         String[] columns = this.parser.split(line);
-        return Arrays.equals(this.source().header(), columns);
+        return Arrays.equals(header, columns);
     }
 
     private static BufferedReader createBufferedReader(InputStream stream,
