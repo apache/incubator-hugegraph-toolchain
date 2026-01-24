@@ -34,7 +34,7 @@ jobs:
       DB_DATABASE: load_test
     strategy:
       matrix:
-        JAVA_VERSION: ['11']
+        JAVA_VERSION: ['11', '17']
 
     steps:
       - name: Fetch Code
@@ -42,27 +42,23 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Install JDK 11
+      - name: Install JDK ${{ matrix.JAVA_VERSION }}
         uses: actions/setup-java@v4
         with:
           java-version: ${{ matrix.JAVA_VERSION }}
-          distribution: 'adopt'
-
-      - name: Cache Maven packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
+          distribution: 'temurin'
+          cache: 'maven'
 
       - name: use staged maven repo settings
         if: ${{ env.USE_STAGE == 'true' }}
         run: |
-          cp $HOME/.m2/settings.xml /tmp/settings.xml
+          mkdir -p $HOME/.m2
+          if [ -f $HOME/.m2/settings.xml ]; then cp $HOME/.m2/settings.xml /tmp/settings.xml; fi
           mv -vf .github/configs/settings.xml $HOME/.m2/settings.xml
 
       - name: Compile
         run: |
+          export MAVEN_OPTS="-XX:+IgnoreUnrecognizedVMOptions --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED"
           mvn install -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp
 
       - name: Prepare env and service
@@ -73,15 +69,19 @@ jobs:
 
       - name: Run test
         run: |
-          cd hugegraph-loader && ls
-          mvn test -P unit -ntp
-          mvn test -P file
-          mvn test -P hdfs
-          mvn test -P jdbc
-          mvn test -P kafka
+          export MAVEN_OPTS="-XX:+IgnoreUnrecognizedVMOptions --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED"
+          cd hugegraph-loader
+          mvn test -P unit -ntp || exit 1
+          mvn test -P file -ntp || exit 1
+          mvn test -P hdfs -ntp || exit 1
+          mvn test -P jdbc -ntp || exit 1
+          mvn test -P kafka -ntp || exit 1
+        continue-on-error: false
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
+        if: always() && matrix.JAVA_VERSION == '11'
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: target/jacoco.xml
+          file: hugegraph-loader/target/jacoco.xml
+          fail_ci_if_error: false

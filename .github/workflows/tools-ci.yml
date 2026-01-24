@@ -42,18 +42,14 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: ${{ matrix.JAVA_VERSION }}
-          distribution: 'adopt'
-      - name: Cache Maven packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
+          distribution: 'temurin'
+          cache: 'maven'
 
       - name: use staged maven repo settings
         if: ${{ env.USE_STAGE == 'true' }}
         run: |
-          cp $HOME/.m2/settings.xml /tmp/settings.xml
+          mkdir -p $HOME/.m2
+          if [ -f $HOME/.m2/settings.xml ]; then cp $HOME/.m2/settings.xml /tmp/settings.xml; fi
           mv -vf .github/configs/settings.xml $HOME/.m2/settings.xml
 
       - name: Compile
@@ -72,4 +68,4 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: target/jacoco.xml
+          file: hugegraph-tools/target/jacoco.xml

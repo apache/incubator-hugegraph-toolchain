@@ -39,19 +39,11 @@ jobs:
         with:
           fetch-depth: 2
 
-      # TODO: do we need it? (need test)
-      - name: Cache Maven packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-maven-
-
       - name: Install JDK 11 for graph server
         uses: actions/setup-java@v4
         with:
           java-version: '11'
-          distribution: 'zulu'
+          distribution: 'temurin'
           cache: 'maven'
 
       - name: Prepare env and service
@@ -64,13 +56,14 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: ${{ matrix.JAVA_VERSION }}
-          distribution: 'zulu'
+          distribution: 'temurin'
           cache: 'maven'
 
       - name: Use staged maven repo
         if: ${{ env.USE_STAGE == 'true' }}
         run: |
-          cp $HOME/.m2/settings.xml /tmp/settings.xml
+          mkdir -p $HOME/.m2
+          if [ -f $HOME/.m2/settings.xml ]; then cp $HOME/.m2/settings.xml /tmp/settings.xml; fi
           mv -vf .github/configs/settings.xml $HOME/.m2/settings.xml
 
       - name: Compile
@@ -88,4 +81,4 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: target/jacoco.xml
+          file: hugegraph-client/target/jacoco.xml
