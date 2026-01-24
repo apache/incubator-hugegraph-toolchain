@@ -17,21 +17,16 @@
 
 package org.apache.hugegraph.loader.test.functional;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 
-import org.apache.commons.io.IOUtils;
+import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hugegraph.loader.exception.LoadException;
+import org.apache.hugegraph.loader.source.file.Compression;
 import org.apache.hugegraph.util.Log;
 import org.slf4j.Logger;
 
@@ -39,95 +34,80 @@ public class HDFSUtil implements IOUtil {
 
     private static final Logger LOG = Log.logger(HDFSUtil.class);
 
+    private final String storePath;
     private final Configuration conf;
     private final FileSystem fs;
-    private final String storePath;
 
     public HDFSUtil(String storePath) {
         this.storePath = storePath;
         this.conf = new Configuration();
-        // --- 【修复代码开始】 ---
-        // 核心修复：禁用 HDFS 和本地文件系统的缓存
-        // 这解决了多线程并发解析时，其中一个线程关闭 FileSystem 导致其他线程报错 "Filesystem closed" 的问题
-        this.conf.set("fs.hdfs.impl.disable.cache", "true");
-        this.conf.set("fs.file.impl.disable.cache", "true");
-        // --- 【修复代码结束】 ---
         try {
-            this.fs = FileSystem.get(java.net.URI.create(storePath), this.conf);
+            this.fs = FileSystem.get(URI.create(storePath), this.conf);
         } catch (IOException e) {
-            throw new LoadException("Failed to init HDFS file system", e);
+            throw new RuntimeException("Failed to init HDFS file system", e);
         }
     }
 
     @Override
-    public String getStorePath() {
+    public String storePath() {
         return this.storePath;
     }
 
     @Override
-    public void write(String fileName, String... lines) {
-        Path path = new Path(this.storePath, fileName);
-        try (FSDataOutputStream os = this.fs.create(path, true)) {
-            for (String line : lines) {
-                os.write(line.getBytes(StandardCharsets.UTF_8));
-                os.write("\n".getBytes(StandardCharsets.UTF_8));
-            }
+    public Configuration config() {
+        return this.conf;
+    }
+
+    @Override
+    public void mkdirs(String path) {
+        try {
+            this.fs.mkdirs(new Path(this.storePath, path));
         } catch (IOException e) {
-            throw new RuntimeException(String.format(
-                      "Failed to write lines to HDFS file '%s'", path), e);
+            throw new RuntimeException("Failed to mkdirs: " + path, e);
         }
     }
 
     @Override
-    public void write(String fileName, Charset charset, String... lines) {
+    public void write(String fileName, Charset charset, Compression compression, String... lines) {
         Path path = new Path(this.storePath, fileName);
-        try (FSDataOutputStream os = this.fs.create(path, true)) {
-            for (String line : lines) {
-                os.write(line.getBytes(charset));
-                os.write("\n".getBytes(charset));
+        try (OutputStream os = this.fs.create(path, true)) {
+            if (compression == Compression.NONE) {
+                for (String line : lines) {
+                    os.write(line.getBytes(charset));
+                    os.write("\n".getBytes(charset));
+                }
+            } else {
+                IOUtil.compress(os, charset, compression, lines);
             }
-        } catch (IOException e) {
-            throw new RuntimeException(String.format(
-                      "Failed to write lines to HDFS file '%s'", path), e);
+        } catch (IOException | CompressorException e) {
+            throw new RuntimeException("Failed to write file: " + fileName, e);
         }
     }
 
     @Override
     public void copy(String srcPath, String destPath) {
-        Path src = new Path(srcPath);
-        Path dest = new Path(this.storePath, destPath);
         try {
-            this.fs.copyFromLocalFile(src, dest);
+            // 通常测试场景是将本地文件上传到 HDFS
+            Path src = new Path(srcPath);
+            Path dst = new Path(this.storePath, destPath);
+            this.fs.copyFromLocalFile(src, dst);
         } catch (IOException e) {
-            throw new RuntimeException(String.format(
-                      "Failed to copy file from '%s' to '%s'", src, dest), e);
+            throw new RuntimeException("Failed to copy file from " + srcPath + " to " + destPath, e);
         }
     }
 
     @Override
-    public void delete(String fileName) {
-        Path path = new Path(this.storePath, fileName);
+    public void delete() {
+        Path path = new Path(this.storePath);
         try {
             if (this.fs.exists(path)) {
                 this.fs.delete(path, true);
             }
         } catch (IOException e) {
-            throw new RuntimeException(String.format(
-                      "Failed to delete file '%s'", path), e);
+            throw new RuntimeException("Failed to delete path: " + this.storePath, e);
         }
     }
 
-    @Override
-    public void mkdir(String dir) {
-        Path path = new Path(this.storePath, dir);
-        try {
-            this.fs.mkdirs(path);
-        } catch (IOException e) {
-            throw new RuntimeException(String.format(
-                      "Failed to create directory '%s'", path), e);
-        }
-    }
-    
     @Override
     public void close() {
         try {
