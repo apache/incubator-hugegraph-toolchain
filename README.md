@@ -346,9 +346,9 @@ mvn clean install -DskipTests -Dmaven.javadoc.skip=true -ntp
 
 | Module | Build Command |
 |--------|---------------|
-| Client | `mvn compile -pl hugegraph-client -Dmaven.javadoc.skip=true -ntp` |
+| Client | `mvn -e compile -pl hugegraph-client -Dmaven.javadoc.skip=true -ntp` |
 | Loader | `mvn install -pl hugegraph-client,hugegraph-loader -am -DskipTests -ntp` |
-| Hubble | `mvn install -pl hugegraph-client,hugegraph-loader -am -DskipTests && cd hugegraph-hubble && mvn package -DskipTests` |
+| Hubble | `mvn install -pl hugegraph-client,hugegraph-loader -am -DskipTests -ntp && cd hugegraph-hubble && mvn package -DskipTests -ntp` |
 | Tools | `mvn install -pl hugegraph-client,hugegraph-tools -am -DskipTests -ntp` |
 | Spark | `mvn install -pl hugegraph-client,hugegraph-spark-connector -am -DskipTests -ntp` |
 | Go Client | `cd hugegraph-client-go && make all` |
