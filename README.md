@@ -12,6 +12,16 @@
 
 A comprehensive suite of client SDKs, data tools, and management utilities for [Apache HugeGraph](https://github.com/apache/hugegraph) graph database. Build applications, load data, and manage graphs with production-ready tools.
 
+**Quick Navigation**: [Architecture](#architecture-overview) | [Quick Start](#quick-start) | [Modules](#module-overview) | [Build](#build--development) | [Docker](#docker) | [Related Projects](#related-projects)
+
+## Related Projects
+
+**HugeGraph Ecosystem**:
+1. [hugegraph](https://github.com/apache/hugegraph) - Core graph database (**[pd](https://github.com/apache/hugegraph/tree/master/hugegraph-pd)** / **[store](https://github.com/apache/hugegraph/tree/master/hugegraph-store)** / **[server](https://github.com/apache/hugegraph/tree/master/hugegraph-server)** / **[commons](https://github.com/apache/hugegraph/tree/master/hugegraph-commons)**)
+2. [hugegraph-computer](https://github.com/apache/hugegraph-computer) - Distributed graph computing system
+3. [hugegraph-ai](https://github.com/apache/incubator-hugegraph-ai) - Graph AI/LLM/Knowledge Graph integration
+4. [hugegraph-website](https://github.com/apache/hugegraph-doc) - Documentation and website
+
 ## Architecture Overview
 
 ```mermaid
@@ -99,7 +109,6 @@ graph TB
 | JDK | 11+ | LTS recommended |
 | Maven | 3.6+ | For building from source |
 | HugeGraph Server | 1.5.0+ | Required for client/loader |
-| Docker | - | Optional, for quick start |
 
 ### Choose Your Path
 
@@ -410,14 +419,6 @@ cd hugegraph-hubble && docker build -t hugegraph/hugegraph-hubble:latest .
 - [hugegraph-loader Guide](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/)
 - [hugegraph-hubble Guide](https://hugegraph.apache.org/docs/quickstart/hugegraph-hubble/)
 - [API Reference](https://hugegraph.apache.org/docs/)
-
-## Related Projects
-
-**HugeGraph Ecosystem**:
-1. [hugegraph](https://github.com/apache/hugegraph) - Core graph database (**[pd](https://github.com/apache/hugegraph/tree/master/hugegraph-pd)** / **[store](https://github.com/apache/hugegraph/tree/master/hugegraph-store)** / **[server](https://github.com/apache/hugegraph/tree/master/hugegraph-server)** / **[commons](https://github.com/apache/hugegraph/tree/master/hugegraph-commons)**)
-2. [hugegraph-computer](https://github.com/apache/hugegraph-computer) - Distributed graph computing system
-3. [hugegraph-ai](https://github.com/apache/incubator-hugegraph-ai) - Graph AI/LLM/Knowledge Graph integration
-4. [hugegraph-website](https://github.com/apache/hugegraph-doc) - Documentation and website
 
 ## Contributing
 
