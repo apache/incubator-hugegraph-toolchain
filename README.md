@@ -8,74 +8,413 @@
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.apache.hugegraph/hugegraph-client/badge.svg)](https://mvnrepository.com/artifact/org.apache.hugegraph/hugegraph-client)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/apache/hugegraph-toolchain)
 
-`hugegraph-toolchain` is the integration project contains a series of utilities for [HugeGraph](https://github.com/apache/hugegraph), 
-it includes 5+ main modules.
+## What is HugeGraph Toolchain?
 
-## Modules
+A comprehensive suite of client SDKs, data tools, and management utilities for [Apache HugeGraph](https://github.com/apache/hugegraph) graph database. Build applications, load data, and manage graphs with production-ready tools.
 
-- [hugegraph-loader](./hugegraph-loader): Loading datasets into the HugeGraph from multiple data sources.
-- [hugegraph-hubble](./hugegraph-hubble): Online HugeGraph management and analysis dashboard (Include: data loading, schema management, graph traverser and display).
-- [hugegraph-tools](./hugegraph-tools): Command line tool for deploying, managing and backing-up/restoring graphs from HugeGraph.
-- [hugegraph-client](./hugegraph-client): A Java-written client for HugeGraph, providing `RESTful` APIs for accessing graph vertex/edge/schema/gremlin/variables and traversals etc.
-- [hugegraph-client-go](./hugegraph-client-go): A Go-written client for HugeGraph, providing `RESTful` APIs for accessing graph vertex/edge/schema/gremlin/variables and traversals etc. (WIP)
-- [hugegraph-spark-connector](./hugegraph-spark-connector): A Spark connector for reading & writing HugeGraph data in Spark standard format.
+## Architecture Overview
 
-## Usage
+```mermaid
+graph TB
+    subgraph server ["HugeGraph Server"]
+        SERVER[("Graph Database")]
+    end
 
-- [hugegraph-loader](./hugegraph-loader): We can follow the [doc](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/) to learn how to quickly start with `loader`.
-- [hugegraph-hubble](./hugegraph-hubble): We can follow the [doc](https://hugegraph.apache.org/docs/quickstart/hugegraph-hubble/) to learn how to quickly start with `hubble`.
-- [hugegraph-client](./hugegraph-client): We can follow the [doc](https://hugegraph.apache.org/docs/quickstart/hugegraph-client/) to learn how to quickly start with `client`.
+    subgraph clients ["Client SDKs"]
+        CLIENT["hugegraph-client<br/>(Java)"]
+        CLIENT_GO["hugegraph-client-go<br/>(Go)"]
+    end
 
-## Maven Dependencies
+    subgraph data ["Data Tools"]
+        LOADER["hugegraph-loader<br/>(Batch Import)"]
+        SPARK["hugegraph-spark-connector<br/>(Spark I/O)"]
+    end
 
-You could use import the dependencies in `maven` like this:
+    subgraph mgmt ["Management Tools"]
+        HUBBLE["hugegraph-hubble<br/>(Web UI)"]
+        TOOLS["hugegraph-tools<br/>(CLI)"]
+    end
 
-```xml
-  <!-- Note: use the latest release version in maven repo, here is just an example -->
-  <dependency>
-       <groupId>org.apache.hugegraph</groupId>
-       <artifactId>hugegraph-client</artifactId>
-       <version>1.5.0</version>
-  </dependency>
-  
-  <dependency>
-       <groupId>org.apache.hugegraph</groupId>
-       <artifactId>hugegraph-loader</artifactId>
-       <version>1.5.0</version>
-  </dependency>
+    SERVER <-->|REST API| CLIENT
+    SERVER <-->|REST API| CLIENT_GO
+
+    CLIENT --> LOADER
+    CLIENT --> HUBBLE
+    CLIENT --> TOOLS
+    CLIENT --> SPARK
+
+    LOADER -.->|Sources| SRC["CSV | JSON | HDFS<br/>MySQL | Kafka"]
+    SPARK -.->|I/O| SPK["Spark DataFrames"]
 ```
 
-And here are links of other **HugeGraph** component/repositories:
-1. [hugegraph](https://github.com/apache/hugegraph) (**[pd](https://github.com/apache/hugegraph/tree/master/hugegraph-pd)/[store](https://github.com/apache/hugegraph/tree/master/hugegraph-store)/[server](https://github.com/apache/hugegraph/tree/master/hugegraph-server)/[commons](https://github.com/apache/hugegraph/tree/master/hugegraph-commons)**)
-2. [hugegraph-computer](https://github.com/apache/hugegraph-computer) (integrated **graph computing** system)
-3. [hugegraph-ai](https://github.com/apache/incubator-hugegraph-ai) (integrated **Graph AI/LLM/KG** system)
-4. [hugegraph-website](https://github.com/apache/hugegraph-doc) (**doc & website** code)
+<details>
+<summary>ASCII diagram (for terminals/editors)</summary>
 
+```
+                           ┌─────────────────────────┐
+                           │   HugeGraph Server      │
+                           │   (Graph Database)      │
+                           └───────────┬─────────────┘
+                                       │ REST API
+                 ┌─────────────────────┼─────────────────────┐
+                 │                     │                     │
+                 ▼                     ▼                     ▼
+        ┌────────────────┐    ┌────────────────┐    ┌────────────────┐
+        │ hugegraph-     │    │ hugegraph-     │    │  Other REST    │
+        │ client (Java)  │    │ client-go      │    │  Clients       │
+        └───────┬────────┘    └────────────────┘    └────────────────┘
+                │ depends on
+    ┌───────────┼───────────┬───────────────────┐
+    │           │           │                   │
+    ▼           ▼           ▼                   ▼
+┌────────┐ ┌────────┐ ┌──────────┐ ┌───────────────────┐
+│ loader │ │ hubble │ │  tools   │ │ spark-connector   │
+│ (ETL)  │ │ (Web)  │ │  (CLI)   │ │ (Spark I/O)       │
+└────────┘ └────────┘ └──────────┘ └───────────────────┘
+```
+</details>
 
-## Doc
+## Quick Start
 
-The [project homepage](https://hugegraph.apache.org/docs/quickstart/) contains more information about `hugegraph-toolchain`. 
+### Prerequisites
 
-## License
+| Requirement | Version | Notes |
+|-------------|---------|-------|
+| JDK | 11+ | LTS recommended |
+| Maven | 3.6+ | For building from source |
+| HugeGraph Server | 1.5.0+ | Required for client/loader |
+| Docker | 20.10+ | Optional, for quick start |
 
-hugegraph-toolchain is licensed under [Apache 2.0](https://github.com/apache/hugegraph-toolchain/blob/master/LICENSE) License.
+### Choose Your Path
 
-## Contributing
+| I want to... | Use This | Get Started |
+|--------------|----------|-------------|
+| Visualize graphs via Web UI | Hubble | Docker: `docker run -p 8088:8088 hugegraph/hugegraph-hubble` |
+| Load CSV/JSON data into graph | Loader | CLI with JSON mapping config ([docs](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/)) |
+| Build a Java app with HugeGraph | Client | Maven dependency ([example](#hugegraph-client)) |
+| Backup/restore graphs | Tools | CLI commands ([docs](https://hugegraph.apache.org/docs/quickstart/hugegraph-tools/)) |
+| Process graphs with Spark | Spark Connector | DataFrame API ([module](#hugegraph-spark-connector)) |
 
-- Welcome to contribute to HugeGraph, please see [How to Contribute](https://hugegraph.apache.org/docs/contribution-guidelines/contribute/) for more information.
-- Note: It's recommended to use [GitHub Desktop](https://desktop.github.com/) to greatly simplify the PR and commit process.
-- Thank you to all the people who already contributed to HugeGraph!
+### Docker Quick Start
 
-[![contributors graph](https://contrib.rocks/image?repo=apache/hugegraph-toolchain)](https://github.com/apache/hugegraph-toolchain/graphs/contributors)
+```bash
+# Hubble Web UI (port 8088)
+docker run -d -p 8088:8088 --name hubble hugegraph/hugegraph-hubble
 
-### Contact Us
+# Loader (batch data import)
+docker run --rm hugegraph/hugegraph-loader ./bin/hugegraph-loader.sh -f example.json
+```
+
+## Module Overview
+
+### hugegraph-client
+
+**Purpose**: Official Java SDK for HugeGraph Server
+
+**Key Features**:
+- Schema management (PropertyKey, VertexLabel, EdgeLabel, IndexLabel)
+- Graph operations (CRUD vertices/edges)
+- Gremlin query execution
+- Built-in traversers (shortest path, k-neighbor, k-out, paths, etc.)
+- Multi-graph and authentication support
+
+**Entry Point**: `org.apache.hugegraph.driver.HugeClient`
+
+**Quick Example**:
+```java
+HugeClient client = HugeClient.builder("http://localhost:8080", "hugegraph").build();
+
+// Schema management
+client.schema().propertyKey("name").asText().ifNotExist().create();
+client.schema().vertexLabel("person")
+    .properties("name")
+    .ifNotExist()
+    .create();
+
+// Graph operations
+Vertex vertex = client.graph().addVertex(T.label, "person", "name", "Alice");
+```
+
+📖 [Documentation](https://hugegraph.apache.org/docs/quickstart/hugegraph-client/) | 📁 [Source](./hugegraph-client)
 
 ---
 
- - [GitHub Issues](https://github.com/apache/hugegraph-toolchain/issues): Feedback on usage issues and functional requirements (quick response)
- - Feedback Email: [dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org) ([subscriber](https://hugegraph.apache.org/docs/contribution-guidelines/subscribe/) only)
- - Slack: [ASF Online Channel](https://the-asf.slack.com/archives/C059UU2FJ23)
- - WeChat public account: Apache HugeGraph, welcome to scan this QR code to follow us.
+### hugegraph-client-go
 
- <img src="https://raw.githubusercontent.com/apache/hugegraph-doc/master/assets/images/wechat.png" alt="QR png" width="350"/>
+**Purpose**: Official Go SDK for HugeGraph Server (WIP)
 
+**Key Features**:
+- RESTful API client for HugeGraph
+- Schema and graph operations
+- Gremlin query support
+- Idiomatic Go interface
+
+**Entry Point**: `github.com/apache/hugegraph-toolchain/hugegraph-client-go`
+
+**Quick Example**:
+```go
+import "github.com/apache/hugegraph-toolchain/hugegraph-client-go"
+
+client := hugegraph.NewClient("http://localhost:8080", "hugegraph")
+// Schema and graph operations
+```
+
+📁 [Source](./hugegraph-client-go)
+
+---
+
+### hugegraph-loader
+
+**Purpose**: Batch data import tool from multiple data sources
+
+**Key Features**:
+- **Sources**: CSV, JSON, HDFS, MySQL, Kafka, existing HugeGraph
+- JSON-based mapping configuration
+- Parallel loading with configurable threads
+- Error handling and retry mechanisms
+- Progress tracking and logging
+
+**Entry Point**: `bin/hugegraph-loader.sh`
+
+**Quick Example**:
+```bash
+# Load data from CSV
+./bin/hugegraph-loader.sh -f mapping.json -g hugegraph
+
+# Example mapping.json structure
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": { "type": "file", "path": "persons.csv" },
+      "mapping": { "name": "name", "age": "age" }
+    }
+  ]
+}
+```
+
+📖 [Documentation](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/) | 📁 [Source](./hugegraph-loader)
+
+---
+
+### hugegraph-hubble
+
+**Purpose**: Web-based graph management and visualization platform
+
+**Key Features**:
+- Schema management with visual editor
+- Data loading interface
+- Graph visualization and exploration
+- Gremlin query console
+- Multi-graph workspace management
+- User authentication and authorization
+
+**Technology Stack**: Spring Boot + React + TypeScript + MobX + Ant Design
+
+**Entry Point**: `bin/start-hubble.sh` (default port: 8088)
+
+**Quick Start**:
+```bash
+cd hugegraph-hubble/apache-hugegraph-hubble-incubating-*/bin
+./start-hubble.sh      # Background mode
+./start-hubble.sh -f   # Foreground mode
+./stop-hubble.sh       # Stop server
+```
+
+📖 [Documentation](https://hugegraph.apache.org/docs/quickstart/hugegraph-hubble/) | 📁 [Source](./hugegraph-hubble)
+
+---
+
+### hugegraph-tools
+
+**Purpose**: Command-line utilities for graph operations
+
+**Key Features**:
+- Backup and restore graphs
+- Graph migration
+- Graph cloning
+- Metadata management
+- Batch operations
+
+**Entry Point**: `bin/hugegraph` CLI commands
+
+**Quick Example**:
+```bash
+# Backup graph
+bin/hugegraph backup -t all -d ./backup
+
+# Restore graph
+bin/hugegraph restore -t all -d ./backup
+```
+
+📁 [Source](./hugegraph-tools)
+
+---
+
+### hugegraph-spark-connector
+
+**Purpose**: Spark integration for reading and writing HugeGraph data
+
+**Key Features**:
+- Read HugeGraph vertices/edges as Spark DataFrames
+- Write DataFrames to HugeGraph
+- Spark SQL support
+- Distributed graph processing
+
+**Entry Point**: Scala API with Spark DataSource v2
+
+**Quick Example**:
+```scala
+// Read vertices as DataFrame
+val vertices = spark.read
+  .format("hugegraph")
+  .option("host", "localhost:8080")
+  .option("graph", "hugegraph")
+  .option("type", "vertex")
+  .load()
+
+// Write DataFrame to HugeGraph
+df.write
+  .format("hugegraph")
+  .option("host", "localhost:8080")
+  .option("graph", "hugegraph")
+  .save()
+```
+
+📁 [Source](./hugegraph-spark-connector)
+
+## Maven Dependencies
+
+```xml
+<!-- Note: Use the latest release version in Maven Central -->
+<dependency>
+    <groupId>org.apache.hugegraph</groupId>
+    <artifactId>hugegraph-client</artifactId>
+    <version>1.7.0</version>
+</dependency>
+
+<dependency>
+    <groupId>org.apache.hugegraph</groupId>
+    <artifactId>hugegraph-loader</artifactId>
+    <version>1.7.0</version>
+</dependency>
+```
+
+Check [Maven Central](https://mvnrepository.com/artifact/org.apache.hugegraph) for the latest versions.
+
+## Build & Development
+
+### Full Build
+
+```bash
+mvn clean install -DskipTests -Dmaven.javadoc.skip=true -ntp
+```
+
+### Module-Specific Builds
+
+| Module | Build Command |
+|--------|---------------|
+| Client | `mvn compile -pl hugegraph-client -Dmaven.javadoc.skip=true -ntp` |
+| Loader | `mvn install -pl hugegraph-client,hugegraph-loader -am -DskipTests -ntp` |
+| Hubble | `mvn install -pl hugegraph-client,hugegraph-loader -am -DskipTests && cd hugegraph-hubble && mvn package -DskipTests` |
+| Tools | `mvn install -pl hugegraph-client,hugegraph-tools -am -DskipTests -ntp` |
+| Spark | `mvn install -pl hugegraph-client,hugegraph-spark-connector -am -DskipTests -ntp` |
+| Go Client | `cd hugegraph-client-go && make all` |
+
+### Running Tests
+
+| Module | Test Type | Command |
+|--------|-----------|---------|
+| Client | Unit (no server) | `mvn test -pl hugegraph-client -Dtest=UnitTestSuite` |
+| Client | API (server needed) | `mvn test -pl hugegraph-client -Dtest=ApiTestSuite` |
+| Client | Functional | `mvn test -pl hugegraph-client -Dtest=FuncTestSuite` |
+| Loader | Unit | `mvn test -pl hugegraph-loader -P unit` |
+| Loader | File sources | `mvn test -pl hugegraph-loader -P file` |
+| Loader | HDFS | `mvn test -pl hugegraph-loader -P hdfs` |
+| Loader | JDBC | `mvn test -pl hugegraph-loader -P jdbc` |
+| Loader | Kafka | `mvn test -pl hugegraph-loader -P kafka` |
+| Hubble | Unit | `mvn test -P unit-test -pl hugegraph-hubble/hubble-be` |
+| Tools | Functional | `mvn test -pl hugegraph-tools -Dtest=FuncTestSuite` |
+
+### Code Style
+
+Checkstyle is enforced via `tools/checkstyle.xml`:
+- Max line length: 100 characters
+- 4-space indentation (no tabs)
+- No star imports
+- No `System.out.println`
+
+Run checkstyle:
+```bash
+mvn checkstyle:check
+```
+
+## Docker
+
+Official Docker images are available on Docker Hub:
+
+| Image | Purpose | Port |
+|-------|---------|------|
+| `hugegraph/hugegraph-hubble` | Web UI | 8088 |
+| `hugegraph/hugegraph-loader` | Data loader | - |
+
+**Examples**:
+```bash
+# Hubble
+docker run -d -p 8088:8088 --name hubble hugegraph/hugegraph-hubble
+
+# Loader (mount config and data)
+docker run --rm \
+  -v /path/to/config:/config \
+  -v /path/to/data:/data \
+  hugegraph/hugegraph-loader \
+  ./bin/hugegraph-loader.sh -f /config/mapping.json
+```
+
+Build images locally:
+```bash
+# Loader
+cd hugegraph-loader && docker build -t hugegraph/hugegraph-loader:latest .
+
+# Hubble
+cd hugegraph-hubble && docker build -t hugegraph/hugegraph-hubble:latest .
+```
+
+## Documentation
+
+- [HugeGraph Toolchain Overview](https://hugegraph.apache.org/docs/quickstart/)
+- [hugegraph-client Guide](https://hugegraph.apache.org/docs/quickstart/hugegraph-client/)
+- [hugegraph-loader Guide](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/)
+- [hugegraph-hubble Guide](https://hugegraph.apache.org/docs/quickstart/hugegraph-hubble/)
+- [API Reference](https://hugegraph.apache.org/docs/)
+
+## Related Projects
+
+**HugeGraph Ecosystem**:
+1. [hugegraph](https://github.com/apache/hugegraph) - Core graph database (**[pd](https://github.com/apache/hugegraph/tree/master/hugegraph-pd)** / **[store](https://github.com/apache/hugegraph/tree/master/hugegraph-store)** / **[server](https://github.com/apache/hugegraph/tree/master/hugegraph-server)** / **[commons](https://github.com/apache/hugegraph/tree/master/hugegraph-commons)**)
+2. [hugegraph-computer](https://github.com/apache/hugegraph-computer) - Distributed graph computing system
+3. [hugegraph-ai](https://github.com/apache/incubator-hugegraph-ai) - Graph AI/LLM/Knowledge Graph integration
+4. [hugegraph-website](https://github.com/apache/hugegraph-doc) - Documentation and website
+
+## Contributing
+
+Welcome to contribute to HugeGraph! Please see [How to Contribute](https://hugegraph.apache.org/docs/contribution-guidelines/contribute/) for more information.
+
+**Note**: It's recommended to use [GitHub Desktop](https://desktop.github.com/) to simplify the PR and commit process.
+
+Thank you to all the people who already contributed to HugeGraph!
+
+[![contributors graph](https://contrib.rocks/image?repo=apache/hugegraph-toolchain)](https://github.com/apache/hugegraph-toolchain/graphs/contributors)
+
+## Community & Contact
+
+- [GitHub Issues](https://github.com/apache/hugegraph-toolchain/issues) - Report bugs and request features
+- Email: [dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org) ([subscriber](https://hugegraph.apache.org/docs/contribution-guidelines/subscribe/) only)
+- Slack: [ASF Channel](https://the-asf.slack.com/archives/C059UU2FJ23)
+- WeChat: Apache HugeGraph (scan QR code below)
+
+<img src="https://raw.githubusercontent.com/apache/hugegraph-doc/master/assets/images/wechat.png" alt="WeChat QR code" width="350"/>
+
+## License
+
+hugegraph-toolchain is licensed under [Apache 2.0 License](https://github.com/apache/hugegraph-toolchain/blob/master/LICENSE).
