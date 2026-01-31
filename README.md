@@ -20,9 +20,13 @@ graph TB
         SERVER[("Graph Database")]
     end
 
+    subgraph distributed ["Distributed Mode (Optional)"]
+        PD["hugegraph-pd<br/>(Placement Driver)"]
+        STORE["hugegraph-store<br/>(Storage Nodes)"]
+    end
+
     subgraph clients ["Client SDKs"]
         CLIENT["hugegraph-client<br/>(Java)"]
-        CLIENT_GO["hugegraph-client-go<br/>(Go)"]
     end
 
     subgraph data ["Data Tools"]
@@ -36,37 +40,49 @@ graph TB
     end
 
     SERVER <-->|REST API| CLIENT
-    SERVER <-->|REST API| CLIENT_GO
+    PD -.->|coordinates| STORE
+    SERVER -.->|distributed backend| PD
 
     CLIENT --> LOADER
     CLIENT --> HUBBLE
     CLIENT --> TOOLS
     CLIENT --> SPARK
+    HUBBLE -.->|WIP: pd-client| PD
 
     LOADER -.->|Sources| SRC["CSV | JSON | HDFS<br/>MySQL | Kafka"]
     SPARK -.->|I/O| SPK["Spark DataFrames"]
+
+    style distributed stroke-dasharray: 5 5
 ```
 
 <details>
 <summary>ASCII diagram (for terminals/editors)</summary>
 
 ```
-                           ┌─────────────────────────┐
-                           │   HugeGraph Server      │
-                           │   (Graph Database)      │
-                           └───────────┬─────────────┘
-                                       │ REST API
-                 ┌─────────────────────┼─────────────────────┐
-                 │                     │                     │
-                 ▼                     ▼                     ▼
-        ┌────────────────┐    ┌────────────────┐    ┌────────────────┐
-        │ hugegraph-     │    │ hugegraph-     │    │  Other REST    │
-        │ client (Java)  │    │ client-go      │    │  Clients       │
-        └───────┬────────┘    └────────────────┘    └────────────────┘
-                │ depends on
-    ┌───────────┼───────────┬───────────────────┐
-    │           │           │                   │
-    ▼           ▼           ▼                   ▼
+                    ┌─────────────────────────┐
+                    │   HugeGraph Server      │
+                    │   (Graph Database)      │
+                    └───────────┬─────────────┘
+                                │ REST API
+        ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┼ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
+          Distributed (Optional)│
+        │   ┌───────────┐       │       ┌───────────┐   │
+            │hugegraph- │◄──────┴──────►│hugegraph- │
+        │   │    pd     │               │   store   │   │
+            └───────────┘               └───────────┘
+        └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘
+                                │
+          ┌─────────────────────┼─────────────────────┐
+          │                     │                     │
+          ▼                     ▼                     ▼
+ ┌────────────────┐    ┌────────────────┐    ┌────────────────┐
+ │ hugegraph-     │    │ Other Client   │    │  Other REST    │
+ │ client (Java)  │    │ SDKs (Go/Py)   │    │  Clients       │
+ └───────┬────────┘    └────────────────┘    └────────────────┘
+         │ depends on
+ ┌───────┼───────────┬───────────────────┐
+ │       │           │                   │
+ ▼       ▼           ▼                   ▼
 ┌────────┐ ┌────────┐ ┌──────────┐ ┌───────────────────┐
 │ loader │ │ hubble │ │  tools   │ │ spark-connector   │
 │ (ETL)  │ │ (Web)  │ │  (CLI)   │ │ (Spark I/O)       │
@@ -83,7 +99,7 @@ graph TB
 | JDK | 11+ | LTS recommended |
 | Maven | 3.6+ | For building from source |
 | HugeGraph Server | 1.5.0+ | Required for client/loader |
-| Docker | 20.10+ | Optional, for quick start |
+| Docker | - | Optional, for quick start |
 
 ### Choose Your Path
 
@@ -139,9 +155,12 @@ Vertex vertex = client.graph().addVertex(T.label, "person", "name", "Alice");
 
 ---
 
-### hugegraph-client-go
+### Other Client SDKs
 
-**Purpose**: Official Go SDK for HugeGraph Server (WIP)
+<details>
+<summary><b>hugegraph-client-go</b> (Go SDK - WIP)</summary>
+
+**Purpose**: Official Go SDK for HugeGraph Server
 
 **Key Features**:
 - RESTful API client for HugeGraph
@@ -160,6 +179,10 @@ client := hugegraph.NewClient("http://localhost:8080", "hugegraph")
 ```
 
 📁 [Source](./hugegraph-client-go)
+
+</details>
+
+> **Looking for other languages?** See [hugegraph-python-client](https://github.com/apache/incubator-hugegraph-ai/tree/main/hugegraph-python-client) in the hugegraph-ai repository.
 
 ---
 
