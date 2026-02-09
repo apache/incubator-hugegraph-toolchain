@@ -49,14 +49,12 @@ github:
       required_pull_request_reviews:
         dismiss_stale_reviews: true
         require_code_owner_reviews: false
-        required_approving_review_count: 2
+        required_approving_review_count: 1
   # (for non-committer): assign/edit/close issues & PR, without write access to the code
   collaborators:
-    - Pengzna
+    - kenssa4eedfd
     - haohao0103
-    - Thespica
     - FrostyHec
-    - MuLeiSY2021
 
 notifications:
   # use https://selfserve.apache.org to manage it

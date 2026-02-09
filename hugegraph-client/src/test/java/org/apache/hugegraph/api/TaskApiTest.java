@@ -46,7 +46,26 @@ public class TaskApiTest extends BaseApiTest {
 
     @After
     public void teardown() throws Exception {
-        taskAPI.list(null, -1).forEach(task -> taskAPI.delete(task.id()));
+        // Clean up all tasks (especially async tasks from testCancel)
+        cleanupTasks();
+        
+        // Clean up 'man' vertex label created in testCancel
+        cleanupManVertexLabel();
+    }
+
+    private void cleanupManVertexLabel() {
+        try {
+            if (schema().getVertexLabel("man") != null) {
+                // Drop vertices first, then delete label
+                gremlin().execute(new GremlinRequest("g.V().hasLabel('man').drop()"));
+                long taskId = vertexLabelAPI.delete("man");
+                if (taskId != 0L) {
+                    waitUntilTaskCompleted(taskId, 30);
+                }
+            }
+        } catch (Exception ignored) {
+            // Label may not exist or already deleted
+        }
     }
 
     @Test
@@ -208,11 +227,13 @@ public class TaskApiTest extends BaseApiTest {
     public void testCancel() {
         schema().vertexLabel("man").useAutomaticId().ifNotExist().create();
 
-        String groovy = "for (int i = 0; i < 10; i++) {" +
-                        "hugegraph.addVertex(T.label, 'man');" +
-                        "hugegraph.tx().commit();" +
-                        "}";
+        // Clean up any existing 'man' vertices from previous tests
+        gremlin().execute(new GremlinRequest("g.V().hasLabel('man').drop()"));
+
         // Insert 10 records in sync mode
+        String groovy = "for (int i = 0; i < 10; i++) {" +
+                        "g.addV('man').iterate();" +
+                        "}";
         GremlinRequest request = new GremlinRequest(groovy);
         gremlin().execute(request);
         // Verify insertion takes effect
@@ -226,14 +247,14 @@ public class TaskApiTest extends BaseApiTest {
         gremlin().execute(request);
 
         /*
-         * The asyn task scripts need to be able to handle interrupts,
-         * otherwise they cannot be cancelled
+         * The async task scripts need to be able to handle interrupts,
+         * otherwise they cannot be cancelled.
+         * Use 20 iterations with 200ms sleep = 4s total, enough to test cancellation
          */
-        groovy = "for (int i = 0; i < 10; i++) {" +
-                 "    hugegraph.addVertex(T.label, 'man');" +
-                 "    hugegraph.tx().commit();" +
+        groovy = "for (int i = 0; i < 20; i++) {" +
+                 "    g.addV('man').iterate();" +
                  "    try {" +
-                 "        sleep(1000);" +
+                 "        sleep(200);" +
                  "    } catch (InterruptedException e) {" +
                  "        break;" +
                  "    }" +
@@ -241,35 +262,30 @@ public class TaskApiTest extends BaseApiTest {
         request = new GremlinRequest(groovy);
         long taskId = gremlin().executeAsTask(request);
 
-        groovy = "g.V()";
-        request = new GremlinRequest(groovy);
-        // Wait async task running
-        while (true) {
-            resultSet = gremlin().execute(request);
-            if (resultSet.size() > 0) {
-                break;
-            } else {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ignored) {
-                }
-            }
+        // Wait for task to start
+        try {
+            Thread.sleep(300);
+        } catch (InterruptedException ignored) {
         }
+        
         // Cancel async task
         Task task = taskAPI.cancel(taskId);
         Assert.assertTrue(task.cancelling());
 
+        // Wait for cancellation to complete
         try {
-            Thread.sleep(1000L);
-        } catch (InterruptedException e) {
-            // ignored
+            Thread.sleep(500);
+        } catch (InterruptedException ignored) {
         }
 
         task = taskAPI.get(taskId);
         Assert.assertTrue(task.cancelled());
 
+        // Verify task was cancelled before completing all iterations
+        groovy = "g.V().hasLabel('man').count()";
+        request = new GremlinRequest(groovy);
         resultSet = gremlin().execute(request);
-        Assert.assertTrue(resultSet.size() < 10);
+        Assert.assertTrue(resultSet.iterator().next().getLong() < 20);
     }
 
     @Test

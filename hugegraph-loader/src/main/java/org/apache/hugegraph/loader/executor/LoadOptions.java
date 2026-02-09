@@ -20,6 +20,7 @@ package org.apache.hugegraph.loader.executor;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -45,6 +46,8 @@ public final class LoadOptions implements Cloneable {
     public static final String HTTPS_SCHEMA = "https";
     public static final String HTTP_SCHEMA = "http";
     private static final int CPUS = Runtime.getRuntime().availableProcessors();
+    private static final int DEFAULT_MAX_CONNECTIONS = CPUS * 4;
+    private static final int DEFAULT_MAX_CONNECTIONS_PER_ROUTE = CPUS * 2;
     private static final int MINIMUM_REQUIRED_ARGS = 3;
 
     @Parameter(names = {"-f", "--file"}, required = true, arity = 1,
@@ -156,7 +159,7 @@ public final class LoadOptions implements Cloneable {
 
     @Parameter(names = {"--batch-insert-threads"}, arity = 1,
                validateWith = {PositiveValidator.class},
-               description = "The number of threads to execute batch insert")
+               description = "The number of threads to execute batch insert (default: CPUS)")
     public int batchInsertThreads = CPUS;
 
     @Parameter(names = {"--single-insert-threads"}, arity = 1,
@@ -165,21 +168,27 @@ public final class LoadOptions implements Cloneable {
     public int singleInsertThreads = 8;
 
     @Parameter(names = {"--max-conn"}, arity = 1,
-               description = "Max number of HTTP connections to server")
-    public int maxConnections = CPUS * 4;
+               validateWith = {PositiveValidator.class},
+               description = "Max HTTP connections (default: CPUS*4; auto-adjusted by " +
+                             "--batch-insert-threads)")
+    public int maxConnections = DEFAULT_MAX_CONNECTIONS;
 
     @Parameter(names = {"--max-conn-per-route"}, arity = 1,
-               description = "Max number of HTTP connections to each route")
-    public int maxConnectionsPerRoute = CPUS * 2;
+               validateWith = {PositiveValidator.class},
+               description = "Max HTTP connections per route (default: CPUS*2; " +
+                             "auto-adjusted by --batch-insert-threads)")
+    public int maxConnectionsPerRoute = DEFAULT_MAX_CONNECTIONS_PER_ROUTE;
 
     @Parameter(names = {"--batch-size"}, arity = 1,
                validateWith = {PositiveValidator.class},
                description = "The number of lines in each submit")
     public int batchSize = 500;
 
-    @Parameter(names = {"--parallel-count"}, arity = 1,
-            description = "The number of parallel read pipelines")
-    public int parallelCount = 1;
+    @Parameter(names = {"--parallel-count", "--parser-threads"}, arity = 1,
+               validateWith = {PositiveValidator.class},
+               description = "Parallel read pipelines (default: max(2, CPUS/2); " +
+                             "--parallel-count is deprecated)")
+    public int parseThreads = Math.max(2, CPUS / 2);
 
     @Parameter(names = {"--start-file"}, arity = 1,
             description = "start file index for partial loading")
@@ -329,6 +338,11 @@ public final class LoadOptions implements Cloneable {
                description = "The task scheduler type (when creating graph if not exists")
     public String schedulerType = "distributed";
 
+    @Parameter(names = {"--batch-failure-fallback"}, arity = 1,
+               description = "Whether to fallback to single insert when batch insert fails. " +
+                             "Default: true")
+    public boolean batchFailureFallback = true;
+
     public String workModeString() {
         if (this.incrementalMode) {
             return "INCREMENTAL MODE";
@@ -406,7 +420,30 @@ public final class LoadOptions implements Cloneable {
             options.maxParseErrors = Constants.NO_LIMIT;
             options.maxInsertErrors = Constants.NO_LIMIT;
         }
+        if (Arrays.asList(args).contains("--parallel-count")) {
+            LOG.warn("Parameter --parallel-count is deprecated, " +
+                     "please use --parser-threads instead");
+        }
+        adjustConnectionPoolIfDefault(options);
         return options;
+    }
+
+    private static void adjustConnectionPoolIfDefault(LoadOptions options) {
+        int batchThreads = options.batchInsertThreads;
+        int maxConn = options.maxConnections;
+        int maxConnPerRoute = options.maxConnectionsPerRoute;
+
+        if (maxConn == DEFAULT_MAX_CONNECTIONS && maxConn < batchThreads * 4) {
+            options.maxConnections = batchThreads * 4;
+            LOG.info("Auto adjusted max-conn to {} based on batch-insert-threads({})",
+                     options.maxConnections, batchThreads);
+        }
+
+        if (maxConnPerRoute == DEFAULT_MAX_CONNECTIONS_PER_ROUTE && maxConnPerRoute < batchThreads * 2) {
+            options.maxConnectionsPerRoute = batchThreads * 2;
+            LOG.info("Auto adjusted max-conn-per-route to {} based on batch-insert-threads({})",
+                     options.maxConnectionsPerRoute, batchThreads);
+        }
     }
 
     public ShortIdConfig getShortIdConfig(String vertexLabel) {

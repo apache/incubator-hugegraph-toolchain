@@ -25,13 +25,16 @@ public class HGEnvUtils {
     public static final String DEFAULT_HOST = "127.0.0.1";
     public static final String DEFAULT_PORT = "8080";
     public static final String DEFAULT_GRAPH = "hugegraph";
+    public static final String DEFAULT_GRAPHSPACE = "DEFAULT";
     public static final String DEFAULT_URL = "http://" + DEFAULT_HOST + ":" + DEFAULT_PORT;
 
     private static HugeClient hugeClient;
 
     public static void createEnv() {
 
-        hugeClient = HugeClient.builder(DEFAULT_URL, DEFAULT_GRAPH).build();
+        hugeClient =
+                HugeClient.builder(DEFAULT_URL, DEFAULT_GRAPH)
+                          .configUser("admin", "pa").build();
 
         hugeClient.graphs().clearGraph(DEFAULT_GRAPH, "I'm sure to delete all data");
 

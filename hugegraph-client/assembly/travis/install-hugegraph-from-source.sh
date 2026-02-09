@@ -23,36 +23,35 @@ fi
 
 COMMIT_ID=$1
 HUGEGRAPH_GIT_URL="https://github.com/apache/hugegraph.git"
-GIT_DIR=hugegraph
 
-# download code and compile
-git clone --depth 150 ${HUGEGRAPH_GIT_URL} $GIT_DIR
-cd "${GIT_DIR}"
+git clone --depth 150 ${HUGEGRAPH_GIT_URL} hugegraph
+cd hugegraph
 git checkout "${COMMIT_ID}"
 mvn package -DskipTests -Dmaven.javadoc.skip=true -ntp
-
 # TODO: lack incubator after apache package release (update it later)
 cd hugegraph-server
-TAR=$(echo apache-hugegraph-*.tar.gz)
-tar zxf "${TAR}" -C ../../
+mv apache-hugegraph-*.tar.gz ../../
 cd ../../
-rm -rf "${GIT_DIR}"
-# TODO: lack incubator after apache package release (update it later)
-HTTP_SERVER_DIR=$(echo apache-hugegraph-*.*)
+rm -rf hugegraph
+tar zxf apache-hugegraph-*.tar.gz
+
 HTTPS_SERVER_DIR="hugegraph_https"
-
-cp -r "${HTTP_SERVER_DIR}" "${HTTPS_SERVER_DIR}"
-
-# config auth options just for http server (must keep '/.')
-cp -rf "${TRAVIS_DIR}"/conf/. "${HTTP_SERVER_DIR}"/conf/
-
+mkdir ${HTTPS_SERVER_DIR}
+# TODO: lack incubator after apache package release (update it later)
+cp -r apache-hugegraph-*/. ${HTTPS_SERVER_DIR}
+cd "$(find apache-hugegraph-* | head -1)"
 # start HugeGraphServer with http protocol
-cd "${HTTP_SERVER_DIR}"
+sed -i 's|gremlin.graph=org.apache.hugegraph.HugeFactory|gremlin.graph=org.apache.hugegraph.auth.HugeFactoryAuthProxy|' conf/graphs/hugegraph.properties
+sed -i 's|#auth.authenticator=.*|auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator|' conf/rest-server.properties
+sed -i 's|#auth.admin_pa=.*|auth.admin_pa=pa|' conf/rest-server.properties
 echo -e "pa" | bin/init-store.sh || exit 1
 bin/start-hugegraph.sh || exit 1
 
-# config options for https server
-cd ../"${HTTPS_SERVER_DIR}"
+# Wait for server to initialize
+echo "Waiting 5 seconds for HugeGraph server to initialize..."
+sleep 5
+
+cd ../${HTTPS_SERVER_DIR}
 REST_SERVER_CONFIG="conf/rest-server.properties"
 GREMLIN_SERVER_CONFIG="conf/gremlin-server.yaml"
 sed -i "s?http://127.0.0.1:8080?https://127.0.0.1:8443?g" "$REST_SERVER_CONFIG"
@@ -60,6 +59,9 @@ sed -i "s/#port: 8182/port: 8282/g" "$GREMLIN_SERVER_CONFIG"
 echo "gremlinserver.url=http://127.0.0.1:8282" >> ${REST_SERVER_CONFIG}
 
 # start HugeGraphServer with https protocol
-bin/init-store.sh
-# bin/start-hugegraph.sh || (cat logs/hugegraph-server.log && exit 1)
+sed -i 's|gremlin.graph=org.apache.hugegraph.HugeFactory|gremlin.graph=org.apache.hugegraph.auth.HugeFactoryAuthProxy|' conf/graphs/hugegraph.properties
+sed -i 's|#auth.authenticator=.*|auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator|' conf/rest-server.properties
+sed -i 's|#auth.admin_pa=.*|auth.admin_pa=pa|' conf/rest-server.properties
+echo -e "pa" | bin/init-store.sh || exit 1
+bin/start-hugegraph.sh
 cd ../
