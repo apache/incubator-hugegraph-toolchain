@@ -48,7 +48,8 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: ${{ matrix.JAVA_VERSION }}
-          distribution: 'adopt'
+          distribution: 'temurin'
+          cache: 'maven'
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
@@ -56,53 +57,55 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
 
-      # we also should cache python & yarn & downloads to avoid useless work
-      - name: Cache Maven packages
-        uses: actions/cache@v3
+      - name: Setup Node.js 16.x
+        uses: actions/setup-node@v3
         with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
+          node-version: '16.x'
+          cache: 'yarn'
+          cache-dependency-path: 'hugegraph-hubble/hubble-fe/yarn.lock'
 
+      # we also should cache python & yarn & downloads to avoid useless work
       - name: use staged maven repo settings
         if: ${{ env.USE_STAGE == 'true' }}
         run: |
-          cp $HOME/.m2/settings.xml /tmp/settings.xml
+          mkdir -p $HOME/.m2
+          if [ -f $HOME/.m2/settings.xml ]; then cp $HOME/.m2/settings.xml /tmp/settings.xml; fi
           mv -vf .github/configs/settings.xml $HOME/.m2/settings.xml
 
       - name: Compile
         run: |
-          mvn install -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp
-          cd hugegraph-hubble && ls *
-          mvn -e compile -Dmaven.javadoc.skip=true -ntp
+          export MAVEN_OPTS="-XX:+IgnoreUnrecognizedVMOptions --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.compiler/com.sun.tools.javac.processing=ALL-UNNAMED"
+          mvn install -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp || exit 1
+          cd hugegraph-hubble && ls * || true
+          mvn -e compile -Dmaven.javadoc.skip=true -ntp || exit 1
 
       - name: Prepare env and service
         run: |
-          
-          python -m pip install -r ${TRAVIS_DIR}/requirements.txt
+          python -m pip install -r ${TRAVIS_DIR}/requirements.txt || exit 1
+          export MAVEN_OPTS="-XX:+IgnoreUnrecognizedVMOptions --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.compiler/com.sun.tools.javac.processing=ALL-UNNAMED"
           cd hugegraph-hubble
-          mvn package -Dmaven.test.skip=true
+          mvn package -Dmaven.test.skip=true -ntp || exit 1
           cd apache-hugegraph-hubble-incubating*
           cd bin
-          ./start-hubble.sh -d
-          ./stop-hubble.sh
+          ./start-hubble.sh -d || exit 1
+          sleep 5
+          ./stop-hubble.sh || true
           cd ../../../
           pwd
-          $TRAVIS_DIR/install-hugegraph.sh $COMMIT_ID
+          $TRAVIS_DIR/install-hugegraph.sh $COMMIT_ID || exit 1
 
       - name: Unit test
-        run: mvn test -P unit-test -pl hugegraph-hubble/hubble-be -ntp
+        run: mvn test -P unit-test -pl hugegraph-hubble/hubble-be -ntp || exit 1
 
       - name: API test
         env:
           CI: false
         run: |
-          cd hugegraph-hubble && ls
-          hubble-dist/assembly/travis/run-api-test.sh
+          cd hugegraph-hubble && ls || true
+          $TRAVIS_DIR/run-api-test.sh || exit 1
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: target/site/jacoco/*.xml
+          files: hugegraph-hubble/hubble-be/target/site/jacoco/*.xml

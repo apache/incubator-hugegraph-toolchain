@@ -19,34 +19,67 @@ set -ev
 
 TRAVIS_DIR=$(dirname $0)
 
-# Need speed up it
-CONF=hugegraph-test/src/main/resources/hugegraph.properties
+# Parameters validation
+if [ $# -lt 2 ]; then
+    echo "Usage: $0 <database_name> <root_password>"
+    exit 1
+fi
+
+DB_NAME="$1"
+DB_PASS="$2"
 MYSQL_USERNAME=root
 
-# Set MySQL configurations
+echo "Attempting to start MySQL service with Docker..."
 
+# Check if Docker is available
+if command -v docker &> /dev/null; then
+    echo "Docker found, using Docker container for MySQL..."
+    
+    # Pull and run MySQL container
+    docker pull mysql:5.7 || {
+        echo "Failed to pull MySQL Docker image, will try native MySQL"
+    } && {
+        docker run -p 3306:3306 --name "${DB_NAME}" -e MYSQL_ROOT_PASSWORD="${DB_PASS}" -d mysql:5.7 || {
+            echo "Failed to start MySQL Docker container"
+            exit 1
+        }
+        
+        echo "Waiting for MySQL to be ready..."
+        sleep 15
+        
+        # Verify MySQL is accessible
+        until mysql -h 127.0.0.1 -u "${MYSQL_USERNAME}" -p"${DB_PASS}" -e "SELECT 1" > /dev/null 2>&1; do
+            echo "Waiting for MySQL connection..."
+            sleep 2
+        done
+        
+        echo "MySQL is ready"
+        exit 0
+    }
+fi
 
-# Keep for upgrade in future
-docker pull mysql:5.7
-docker run -p 3306:3306 --name "$1" -e MYSQL_ROOT_PASSWORD="$2" -d mysql:5.7
+echo "Docker not available, checking for native MySQL installation..."
 
+# Fallback to native MySQL if Docker fails
+if command -v mysqld &> /dev/null; then
+    echo "Native MySQL found, starting service..."
+    sudo service mysql start || {
+        echo "Failed to start native MySQL service"
+        exit 1
+    }
+    
+    sleep 5
+    
+    # Set root password and create database
+    mysql -u ${MYSQL_USERNAME} -e "ALTER USER '${MYSQL_USERNAME}'@'localhost' IDENTIFIED BY '${DB_PASS}';" || true
+    mysql -u ${MYSQL_USERNAME} -p"${DB_PASS}" -e "CREATE DATABASE IF NOT EXISTS ${DB_NAME};" || {
+        echo "Failed to create database"
+        exit 1
+    }
+    
+    echo "MySQL native setup completed"
+else
+    echo "Neither Docker nor native MySQL found"
+    exit 1
+fi
 
-# Old Version
-#MYSQL_DOWNLOAD_ADDRESS="http://dev.MySQL.com/get/Downloads"
-#MYSQL_VERSION="MySQL-5.7"
-#MYSQL_PACKAGE="mysql-5.7.11-Linux-glibc2.5-x86_64"
-#MYSQL_TAR="${MYSQL_PACKAGE}.tar.gz"
-
-#if [[ -d /var/lib/mysql ]]; then
-#    # Reference from https://github.com/mozilla/treeherder/blob/master/bin/travis-setup.sh
-#    # Using tmpfs for the MySQL data directory reduces travis test runtime by 6x
-#    sudo mkdir /mnt/ramdisk
-#    sudo mount -t tmpfs -o size=1024m tmpfs /mnt/ramdisk
-#    sudo mv /var/lib/mysql /mnt/ramdisk
-#    sudo ln -s /mnt/ramdisk/mysql /var/lib/mysql
-#    sudo cp "${TRAVIS_DIR}"/mysql.cnf /etc/mysql/conf.d/mysql.cnf
-#    sudo service mysql restart
-#else
-#    echo "Please install mysql firstly."
-#    exit 1
-#fi

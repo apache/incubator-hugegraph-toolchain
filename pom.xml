@@ -129,7 +129,7 @@
         <zookeeper.version>3.6.2</zookeeper.version>
         <junit.version>4.12</junit.version>
         <mockito.version>2.25.1</mockito.version>
-        <lombok.version>1.18.8</lombok.version>
+        <lombok.version>1.18.30</lombok.version>
         <commons.io.version>2.8.0</commons.io.version>
         <commons.lang3.version>3.9</commons.lang3.version>
         <commons.compress.version>1.21</commons.compress.version>
@@ -156,6 +156,12 @@
                 <groupId>org.apache.hugegraph</groupId>
                 <artifactId>hugegraph-common</artifactId>
                 <version>${hugegraph.common.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.projectlombok</groupId>
+                        <artifactId>lombok</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <!-- test -->
             <dependency>
