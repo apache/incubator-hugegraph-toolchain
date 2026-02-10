@@ -63,7 +63,8 @@ public class VermeerService {
         }
         HugeClientBuilder builder = HugeClient.builder(protocol + "://" + dashboard,
                                                        null,
-                                                       null)
+                                                       null,
+                                                       true)
                                               .configUser(username, password);
         RestClient client = new RestClient(builder.url(), builder.token(),
                                            builder.timeout(),
