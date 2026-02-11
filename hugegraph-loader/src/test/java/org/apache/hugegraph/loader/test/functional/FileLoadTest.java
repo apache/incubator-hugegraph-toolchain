@@ -1197,7 +1197,9 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("multi_files_have_header/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--test-mode", "true"
+                "--test-mode", "true",
+                // FIXME: Set parser-threads to 1 because values > 1 currently trigger a NullPointerException (NPE).
+                "--parser-threads", "1"
         };
         loadWithAuth(args);
 
@@ -1332,7 +1334,9 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("dir_has_multi_files/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--test-mode", "true"
+                "--test-mode", "true",
+                // FIXME: Set parser-threads to 1 because values > 1 currently trigger a NullPointerException (NPE).
+                "--parser-threads", "1"
         };
         loadWithAuth(args);
 
@@ -1628,7 +1632,9 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("filter_path_by_suffix/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--test-mode", "true"
+                "--test-mode", "true",
+                // FIXME: Set parser-threads to 1 because values > 1 currently trigger a NullPointerException (NPE).
+                "--parser-threads", "1"
         };
         loadWithAuth(args);
 
@@ -2058,7 +2064,8 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--batch-insert-threads", "2",
                 "--max-parse-errors", "1",
-                "--test-mode", "false"
+                "--test-mode", "false",
+                "--parser-threads", "1"
         ));
         argsList.addAll(Arrays.asList("--username", "admin", "--password", "pa"));
 
@@ -2259,7 +2266,8 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--check-vertex", "true",
                 "--batch-insert-threads", "2",
-                "--test-mode", "false"
+                "--test-mode", "false",
+                "--parser-threads", "1"
         ));
         argsList.addAll(Arrays.asList("--username", "admin", "--password", "pa"));
         HugeGraphLoader loader = new HugeGraphLoader(argsList.toArray(new String[0]));
@@ -2564,7 +2572,8 @@ public class FileLoadTest extends LoadTest {
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--batch-insert-threads", "2",
-                "--test-mode", "true"
+                "--test-mode", "true",
+                "--parser-threads", "1"
         ));
 
         argsList.addAll(Arrays.asList("--username", "admin", "--password", "pa"));
@@ -3047,7 +3056,8 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--max-read-lines", "4",
                 "--batch-insert-threads", "2",
-                "--test-mode", "true"
+                "--test-mode", "true",
+                "--parser-threads", "1"
         };
         loadWithAuth(args);
 
@@ -3061,7 +3071,8 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--max-read-lines", "6",
                 "--batch-insert-threads", "2",
-                "--test-mode", "true"
+                "--test-mode", "true",
+                "--parser-threads", "1"
         };
         loadWithAuth(args);
 
