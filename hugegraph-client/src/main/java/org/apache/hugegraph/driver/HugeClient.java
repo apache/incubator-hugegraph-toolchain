@@ -19,7 +19,8 @@ package org.apache.hugegraph.driver;
 
 import java.io.Closeable;
 
-import org.apache.commons.lang3.StringUtils;
+import lombok.Getter;
+
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.ClientException;
 import org.apache.hugegraph.rest.RestClientConfig;
@@ -43,8 +44,11 @@ public class HugeClient implements Closeable {
         ClientVersion.check();
     }
 
+    @Getter
     protected String graphSpaceName;
+    @Getter
     protected String graphName;
+
     private final boolean borrowedClient;
     private final RestClient client;
     private VersionManager version;
@@ -144,7 +148,7 @@ public class HugeClient implements Closeable {
         this.checkServerApiVersion();
 
         this.graphs = new GraphsManager(client, graphSpace);
-        this.auth = new AuthManager(client, graph);
+        this.auth = new AuthManager(client, graphSpace, graph);
         this.metrics = new MetricsManager(client);
         this.graphSpace = new GraphSpaceManager(client);
         this.schemaTemplageManager = new SchemaTemplateManager(client, graphSpace);
@@ -153,7 +157,6 @@ public class HugeClient implements Closeable {
         this.hStoreManager = new HStoreManager(client);
         this.whiteIpListManager = new WhiteIpListManager(client);
         this.vermeerManager = new VermeerManager(client);
-
 
         if (!Strings.isNullOrEmpty(graph)) {
             this.schema = new SchemaManager(client, graphSpace, graph);
@@ -175,16 +178,8 @@ public class HugeClient implements Closeable {
         //       0.81 equals to the {latest_api_version} +10
         VersionUtil.check(apiVersion, "0.38", "0.81", "hugegraph-api in server");
         this.client.apiVersion(apiVersion);
-        boolean supportGs = VersionUtil.gte(this.version.getCoreVersion(), "2.0");
+        boolean supportGs = VersionUtil.gte(this.version.getCoreVersion(), "1.7.0");
         this.client.setSupportGs(supportGs);
-    }
-
-    public String getGraphSpaceName() {
-        return graphSpaceName;
-    }
-
-    public String getGraphName() {
-        return graphName;
     }
 
     public GraphsManager graphs() {
@@ -239,11 +234,11 @@ public class HugeClient implements Closeable {
         return this.graphSpace;
     }
 
-    public WhiteIpListManager whiteIpListManager(){
+    public WhiteIpListManager whiteIpListManager() {
         return this.whiteIpListManager;
     }
 
-    public VermeerManager vermeer(){
+    public VermeerManager vermeer() {
         return this.vermeerManager;
     }
 
@@ -259,6 +254,7 @@ public class HugeClient implements Closeable {
         return pdManager;
     }
 
+    @SuppressWarnings("checkstyle:MethodName")
     public HStoreManager hStoreManager() {
         return hStoreManager;
     }

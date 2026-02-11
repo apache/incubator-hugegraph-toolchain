@@ -30,8 +30,8 @@ import com.google.common.collect.ImmutableMap;
 
 public class UserAPI extends AuthAPI {
 
-    public UserAPI(RestClient client, String graph) {
-        super(client, graph);
+    public UserAPI(RestClient client, String graphSpace) {
+        super(client, graphSpace);
     }
 
     @Override
@@ -42,6 +42,12 @@ public class UserAPI extends AuthAPI {
     public User create(User user) {
         RestResult result = this.client.post(this.path(), user);
         return result.readObject(User.class);
+    }
+
+    public Map<String, List<Map<String, String>>> createBatch(List<Map<String, String>> data) {
+        String path = String.join("/", this.path(), "batch");
+        RestResult result = this.client.post(path, data);
+        return (Map<String, List<Map<String, String>>>) result.readObject(Map.class);
     }
 
     public User get(Object id) {

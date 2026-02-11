@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -25,7 +23,8 @@ import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.api.vermeer.VermeerAPI;
 
 public class VermeerManager {
-    private VermeerAPI vermeerAPI;
+
+    private final VermeerAPI vermeerAPI;
 
     public VermeerManager(RestClient client) {
         this.vermeerAPI = new VermeerAPI(client);
@@ -55,7 +54,7 @@ public class VermeerManager {
         return this.vermeerAPI.getTasksInfo();
     }
 
-    public Map<String, Object> getTasksInfoById(String taskId){
+    public Map<String, Object> getTasksInfoById(String taskId) {
         return this.vermeerAPI.getTasksInfoById(taskId);
     }
 

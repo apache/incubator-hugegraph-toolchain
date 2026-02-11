@@ -32,17 +32,18 @@ import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.constant.GraphMode;
 import org.apache.hugegraph.structure.constant.GraphReadMode;
 import org.apache.hugegraph.structure.constant.HugeType;
-
-import com.google.common.collect.ImmutableMap;
-
 import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.util.JsonUtil;
+
+import com.google.common.collect.ImmutableMap;
 
 public class GraphsAPI extends API {
 
     private static final String DELIMITER = "/";
     private static final String MODE = "mode";
     private static final String GRAPH_READ_MODE = "graph_read_mode";
+    private static final String CLEAR = "clear";
+    private static final String CONFIRM_MESSAGE = "confirm_message";
     private static final String CLEARED = "cleared";
     private static final String RELOADED = "reloaded";
     private static final String UPDATED = "updated";
@@ -68,12 +69,18 @@ public class GraphsAPI extends API {
         return HugeType.GRAPHS.string();
     }
 
+    // TODO(@Thespcia): in inner version, clone is split into a single method, and doesn't have
+    // this parameter
     @SuppressWarnings("unchecked")
-    public Map<String, String> create(String name, String configText) {
+    public Map<String, String> create(String name, String cloneGraphName, String configText) {
         this.client.checkApiVersion("0.67", "dynamic graph add");
         RestHeaders headers = new RestHeaders().add(RestHeaders.CONTENT_TYPE, "text/plain");
+        Map<String, Object> params = null;
+        if (StringUtils.isNotEmpty(cloneGraphName)) {
+            params = ImmutableMap.of("clone_graph_name", cloneGraphName);
+        }
         RestResult result = this.client.post(joinPath(this.path(), name),
-                                             configText, headers);
+                                             configText, headers, params);
         return result.readObject(Map.class);
     }
 
@@ -95,7 +102,7 @@ public class GraphsAPI extends API {
         RestResult result = this.client.get(profilePath, params);
         List<Map> results = result.readList(Map.class);
         List<Map<String, Object>> profiles = new ArrayList<>();
-        for (Object entry: results) {
+        for (Object entry : results) {
             profiles.add(JsonUtil.fromJson(JsonUtil.toJson(entry), Map.class));
         }
         return profiles;
@@ -113,43 +120,33 @@ public class GraphsAPI extends API {
         return result.readObject(Map.class);
     }
 
-    public Map<String, String> getDefault () {
+    public Map<String, String> getDefault() {
         String defaultPath = joinPath(this.path(), "default");
         RestResult result = this.client.get(defaultPath);
         return result.readObject(Map.class);
     }
 
-    @SuppressWarnings("unchecked")
-    public Map<String, String> clear(String name) {
-        return clear(name, true);
+    public void clear(String graph) {
+        this.clear(graph, "I'm sure to delete all data");
     }
 
-    @SuppressWarnings("unchecked")
-    public Map<String, String> clear(String name, boolean clearSchema) {
-        RestResult result = this.client.put(this.path(), name,
-                                            ImmutableMap.of("action", "clear",
-                                                            "clear_schema",
-                                                            clearSchema));
-        Map<String, String> response = result.readObject(Map.class);
+    // TODO: clearSchema is not supported yet, will always be true
+    public void clear(String graph, boolean clearSchema) {
+        this.clear(graph, "I'm sure to delete all data");
+    }
 
-        E.checkState(response.size() == 1 && response.containsKey(name),
-                     "Response must be formatted to {\"%s\" : status}, " +
-                             "but got %s", name, response);
-        String status = response.get(name);
-        E.checkState(CLEARED.equals(status),
-                     "Graph %s status must be %s, but got '%s'", name, status);
-        return response;
+    public void clear(String graph, String message) {
+        this.client.delete(joinPath(this.path(), graph, CLEAR),
+                           ImmutableMap.of(CONFIRM_MESSAGE, message));
     }
 
     public Map<String, String> update(String name, String nickname) {
         Map<String, String> actionMap = new HashMap<>();
         actionMap.put("name", name);
         actionMap.put("nickname", nickname);
-        RestResult result = this.client.put(this.path(),
-                                            name,
+        RestResult result = this.client.put(this.path(), name,
                                             ImmutableMap.of("action", "update",
-                                                            "update",
-                                                            actionMap));
+                                                            "update", actionMap));
         Map<String, String> response = result.readObject(Map.class);
 
         E.checkState(response.size() == 1 && response.containsKey(name),
@@ -157,19 +154,24 @@ public class GraphsAPI extends API {
                      "but got %s", name, response);
         String status = response.get(name);
         E.checkState(UPDATED.equals(status),
-                     "Server status must be %s, but got '%s'", status);
+                     "Server status must be '%s', but got '%s'", UPDATED, status);
         return response;
     }
 
+    // wrapper for inner server
     public void delete(String graph) {
+        this.drop(graph, "I'm sure to drop the graph");
+    }
+
+    public void drop(String graph, String message) {
         this.client.checkApiVersion("0.67", "dynamic graph delete");
-        this.client.delete(joinPath(this.path(), graph), ImmutableMap.of());
+        this.client.delete(joinPath(this.path(), graph),
+                           ImmutableMap.of(CONFIRM_MESSAGE, message));
     }
 
     public Map<String, String> reload(String name) {
         RestResult result = this.client.put(this.path(), name,
-                                            ImmutableMap.of("action",
-                                                            "reload"));
+                                            ImmutableMap.of("action", "reload"));
         Map<String, String> response = result.readObject(Map.class);
 
         E.checkState(response.size() == 1 && response.containsKey(name),
@@ -177,7 +179,7 @@ public class GraphsAPI extends API {
                      "but got %s", name, response);
         String status = response.get(name);
         E.checkState(RELOADED.equals(status),
-                     "Graph %s status must be %s, but got '%s'", name, status);
+                     "Graph %s status must be %s, but got '%s'", name, RELOADED, status);
         return response;
     }
 
@@ -191,7 +193,7 @@ public class GraphsAPI extends API {
                      "but got %s", GRAPHS, response);
         String status = response.get(GRAPHS);
         E.checkState(RELOADED.equals(status),
-                     "Server status must be %s, but got '%s'", status);
+                     "Server status must be '%s', but got '%s'", RELOADED, status);
         return response;
     }
 
@@ -242,8 +244,8 @@ public class GraphsAPI extends API {
     }
 
     public String clone(String graph, Map<String, Object> body) {
-        RestResult result =  this.client.post(joinPath(this.path(), graph,
-                                                       "clone"), body);
+        RestResult result = this.client.post(joinPath(this.path(), graph,
+                                                      "clone"), body);
         Map<String, Object> resultMap = result.readObject(Map.class);
         String taskId = (String) resultMap.get("task_id");
         return taskId;

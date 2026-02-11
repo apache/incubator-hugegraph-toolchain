@@ -81,6 +81,14 @@ public class EdgeLabel extends SchemaLabel {
         return this.edgeLabelType.sub();
     }
 
+    public boolean normal() {
+        return this.edgeLabelType.normal();
+    }
+
+    public boolean general() {
+        return this.edgeLabelType.general();
+    }
+
     public String parentLabel() {
         return this.parentLabel;
     }
@@ -170,6 +178,8 @@ public class EdgeLabel extends SchemaLabel {
 
         Builder withBase(String fatherLabel);
 
+        Builder asGeneral();
+
         /**
          * Set the source label of the edge label
          */
@@ -195,6 +205,8 @@ public class EdgeLabel extends SchemaLabel {
         Builder userdata(String key, Object val);
 
         Builder ifNotExist();
+
+        Builder id(long id);
     }
 
     public static class BuilderImpl implements Builder {
@@ -274,6 +286,12 @@ public class EdgeLabel extends SchemaLabel {
         public Builder withBase(String parentLabel) {
             this.edgeLabel.edgeLabelType = EdgeLabelType.SUB;
             this.edgeLabel.parentLabel = parentLabel;
+            return this;
+        }
+
+        @Override
+        public Builder asGeneral() {
+            this.edgeLabel.edgeLabelType = EdgeLabelType.GENERAL;
             return this;
         }
 
@@ -362,6 +380,12 @@ public class EdgeLabel extends SchemaLabel {
         @Override
         public Builder ifNotExist() {
             this.edgeLabel.checkExist = false;
+            return this;
+        }
+
+        @Override
+        public Builder id(long id) {
+            this.edgeLabel.id = id;
             return this;
         }
 

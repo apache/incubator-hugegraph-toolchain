@@ -24,7 +24,8 @@ on:
 env:
   TRAVIS_DIR: hugegraph-hubble/hubble-dist/assembly/travis
   # TODO: replace it with the (latest - n) commit id (n >= 15)
-  COMMIT_ID: 6a4041e
+  # FIXME: hugegraph commit date: 2025-10-30
+  COMMIT_ID: 8c1ee71 # 5b3d295
 
 jobs:
   hubble-ci:
@@ -32,12 +33,34 @@ jobs:
     env:
       USE_STAGE: 'true' # Whether to include the stage repository.
       STATIC_DIR: hugegraph-hubble/hubble-dist/assembly/static
+    strategy:
+      matrix:
+        JAVA_VERSION: ['11']
+        python-version: ["3.11"]
+
     steps:
+      - name: Fetch Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
       - name: Install JDK 11
         uses: actions/setup-java@v3
         with:
-          java-version: '11'
+          java-version: ${{ matrix.JAVA_VERSION }}
           distribution: 'adopt'
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Set up Node.js 18.20.8
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.20.8'
+
       # we also should cache python & yarn & downloads to avoid useless work
       - name: Cache Maven packages
         uses: actions/cache@v3
@@ -47,18 +70,16 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Cache Python packages
+      - name: Cache Node modules
         uses: actions/cache@v3
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          path: |
+            hugegraph-hubble/hubble-fe/node_modules
+            hugegraph-hubble/hubble-fe/node
+            ~/.cache/yarn
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package.json', '**/yarn.lock') }}
           restore-keys: |
-            ${{ runner.os }}-pip-
-
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 2
+            ${{ runner.os }}-node-
 
       - name: use staged maven repo settings
         if: ${{ env.USE_STAGE == 'true' }}
@@ -73,8 +94,18 @@ jobs:
           mvn -e compile -Dmaven.javadoc.skip=true -ntp
 
       - name: Prepare env and service
+        env:
+          CI: false
         run: |
-          sudo pip install -r ${TRAVIS_DIR}/requirements.txt
+          echo "=== Environment Info ==="
+          node -v
+          yarn -v
+          echo "NODE_OPTIONS: $NODE_OPTIONS"
+          echo "CI: $CI"
+          free -h || true
+          echo "======================="
+          
+          python -m pip install -r ${TRAVIS_DIR}/requirements.txt
           cd hugegraph-hubble
           mvn package -Dmaven.test.skip=true
           cd apache-hugegraph-hubble-incubating*

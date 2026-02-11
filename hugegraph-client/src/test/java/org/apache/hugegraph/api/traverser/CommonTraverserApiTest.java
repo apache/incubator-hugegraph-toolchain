@@ -17,8 +17,6 @@
 
 package org.apache.hugegraph.api.traverser;
 
-import static org.apache.hugegraph.structure.constant.Traverser.DEFAULT_PAGE_LIMIT;
-
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -187,7 +185,7 @@ public class CommonTraverserApiTest extends TraverserApiTest {
 
     @Test
     public void testScanVertex() {
-        List<Shard> shards = verticesAPI.shards(1 * 1024 * 1024);
+        List<Shard> shards = verticesAPI.shards(1024 * 1024);
         List<Vertex> vertices = new LinkedList<>();
         for (Shard shard : shards) {
             Vertices results = verticesAPI.scan(shard, null, 0L);
@@ -199,7 +197,7 @@ public class CommonTraverserApiTest extends TraverserApiTest {
 
     @Test
     public void testScanVertexInPaging() {
-        List<Shard> shards = verticesAPI.shards(1 * 1024 * 1024);
+        List<Shard> shards = verticesAPI.shards(1024 * 1024);
         List<Vertex> vertices = new LinkedList<>();
         for (Shard shard : shards) {
             String page = "";
@@ -214,7 +212,7 @@ public class CommonTraverserApiTest extends TraverserApiTest {
 
     @Test
     public void testScanVertexInPagingWithNegativeLimit() {
-        List<Shard> shards = verticesAPI.shards(1 * 1024 * 1024);
+        List<Shard> shards = verticesAPI.shards(1024 * 1024);
         for (Shard shard : shards) {
             String page = "";
             Assert.assertThrows(ServerException.class, () -> {
@@ -228,7 +226,7 @@ public class CommonTraverserApiTest extends TraverserApiTest {
     @Test
     public void testScanVertexWithSplitSizeLt1MB() {
         Assert.assertThrows(ServerException.class, () -> {
-            verticesAPI.shards(1 * 1024 * 1024 - 1);
+            verticesAPI.shards(1024 * 1024 - 1);
         }, e -> {
             String expect = "The split-size must be >= 1048576 bytes, " +
                             "but got 1048575";
@@ -238,7 +236,7 @@ public class CommonTraverserApiTest extends TraverserApiTest {
 
     @Test
     public void testScanEdge() {
-        List<Shard> shards = edgesAPI.shards(1 * 1024 * 1024);
+        List<Shard> shards = edgesAPI.shards(1024 * 1024);
         List<Edge> edges = new LinkedList<>();
         for (Shard shard : shards) {
             Edges results = edgesAPI.scan(shard, null, 0L);
@@ -250,7 +248,7 @@ public class CommonTraverserApiTest extends TraverserApiTest {
 
     @Test
     public void testScanEdgeInPaging() {
-        List<Shard> shards = edgesAPI.shards(1 * 1024 * 1024);
+        List<Shard> shards = edgesAPI.shards(1024 * 1024);
         List<Edge> edges = new LinkedList<>();
         for (Shard shard : shards) {
             String page = "";
@@ -265,7 +263,7 @@ public class CommonTraverserApiTest extends TraverserApiTest {
 
     @Test
     public void testScanEdgeInPagingWithNegativeLimit() {
-        List<Shard> shards = edgesAPI.shards(1 * 1024 * 1024);
+        List<Shard> shards = edgesAPI.shards(1024 * 1024);
         for (Shard shard : shards) {
             String page = "";
             Assert.assertThrows(ServerException.class, () -> {
@@ -280,7 +278,7 @@ public class CommonTraverserApiTest extends TraverserApiTest {
     @Test
     public void testScanEdgeWithSplitSizeLt1MB() {
         Assert.assertThrows(ServerException.class, () -> {
-            edgesAPI.shards(1 * 1024 * 1024 - 1);
+            edgesAPI.shards(1024 * 1024 - 1);
         });
     }
 }

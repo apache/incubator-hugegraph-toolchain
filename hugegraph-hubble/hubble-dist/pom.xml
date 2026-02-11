@@ -34,7 +34,7 @@
         <assembly.descriptor.dir>${assembly.dir}/descriptor</assembly.descriptor.dir>
         <assembly.static.dir>${assembly.dir}/static</assembly.static.dir>
         <hubble-fe.dir>${project.basedir}/../hubble-fe</hubble-fe.dir>
-        <build.node.version>v16.20.2</build.node.version>
+        <build.node.version>v18.20.8</build.node.version>
         <build.yarn.version>v1.22.21</build.yarn.version>
     </properties>
 
@@ -100,7 +100,7 @@
                             <goal>yarn</goal>
                         </goals>
                         <configuration>
-                            <arguments>install --network-timeout 600000</arguments>
+                            <arguments>install --frozen-lockfile --network-timeout 600000 --prefer-offline</arguments>
                         </configuration>
                     </execution>
 
@@ -111,6 +111,10 @@
                         </goals>
                         <configuration>
                             <arguments>build</arguments>
+                            <environmentVariables>
+                                <CI>false</CI>
+                                <NODE_OPTIONS>--max-old-space-size=4096</NODE_OPTIONS>
+                            </environmentVariables>
                         </configuration>
                     </execution>
                 </executions>

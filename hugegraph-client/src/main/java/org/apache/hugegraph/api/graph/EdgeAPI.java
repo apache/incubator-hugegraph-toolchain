@@ -69,6 +69,12 @@ public class EdgeAPI extends GraphAPI {
         return result.readList(this.type(), Edge.class);
     }
 
+    public Edge update(String edgeid, Edge edge) {
+        Map<String, Object> params = ImmutableMap.of("action", "append");
+        RestResult result = this.client.put(this.path(), edgeid, edge, params);
+        return result.readObject(Edge.class);
+    }
+
     public Edge append(Edge edge) {
         String id = edge.id();
         Map<String, Object> params = ImmutableMap.of("action", "append");

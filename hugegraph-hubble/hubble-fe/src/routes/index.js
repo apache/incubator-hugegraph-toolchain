@@ -61,9 +61,9 @@ const RouteList = ({element}) => {
 
                 <Route path='/my' element={<My />} />
                 <Route path='/account' element={<Account />} />
-                <Route path='/role' element={<Role />} />
+                {/* <Route path='/role' element={<Role />} /> */}
                 <Route path='/role/graphspace/:graphspace/:role' element={<RoleAuth />} />
-                <Route path='/resource' element={<Resource />} />
+                {/* <Route path='/resource' element={<Resource />} /> */}
                 {/* <Route path="/:moduleName" element={<GraphAnalysis />} /> */}
                 <Route path="/gremlin" element={<GraphAnalysis moduleName={'gremlin'} />} />
                 <Route path="/algorithms" element={<GraphAnalysis moduleName={'algorithms'} />} />

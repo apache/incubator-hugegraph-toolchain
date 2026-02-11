@@ -18,14 +18,12 @@
 package org.apache.hugegraph.api.traverser;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.hugegraph.api.graph.GraphAPI;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.constant.Direction;
-import org.apache.hugegraph.structure.graph.Path;
 import org.apache.hugegraph.structure.traverser.PathWithMeasure;
 import org.apache.hugegraph.structure.traverser.PathsRequest;
 import org.apache.hugegraph.structure.traverser.PathsWithVertices;

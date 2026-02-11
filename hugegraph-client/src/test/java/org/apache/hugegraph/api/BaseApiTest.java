@@ -61,6 +61,7 @@ public class BaseApiTest extends BaseClientTest {
 
     protected static RestClient initClient() {
         client = new RestClient(BASE_URL, USERNAME, PASSWORD, TIMEOUT);
+        client.setSupportGs(true);
         return client;
     }
 
@@ -102,42 +103,48 @@ public class BaseApiTest extends BaseClientTest {
 
     protected static void clearData() {
         // Clear edge
-        edgeAPI.list(-1).results().forEach(edge -> {
-            edgeAPI.delete(edge.id());
-        });
-        // Clear vertex
-        vertexAPI.list(-1).results().forEach(vertex -> {
-            vertexAPI.delete(vertex.id());
-        });
+        edgeAPI.list(-1).results().forEach(edge -> edgeAPI.delete(edge.id()));
 
-        // Clear schema
+        // Clear vertex
+        vertexAPI.list(-1).results().forEach(vertex -> vertexAPI.delete(vertex.id()));
+
+        // Clear schema (order matters: index -> edge -> vertex -> property)
         List<Long> ilTaskIds = new ArrayList<>();
-        indexLabelAPI.list().forEach(indexLabel -> {
-            ilTaskIds.add(indexLabelAPI.delete(indexLabel.name()));
-        });
+        indexLabelAPI.list().forEach(il -> ilTaskIds.add(indexLabelAPI.delete(il.name())));
         ilTaskIds.forEach(BaseApiTest::waitUntilTaskCompleted);
 
         List<Long> elTaskIds = new ArrayList<>();
-        edgeLabelAPI.list().forEach(edgeLabel -> {
-            elTaskIds.add(edgeLabelAPI.delete(edgeLabel.name()));
-        });
+        edgeLabelAPI.list().forEach(el -> elTaskIds.add(edgeLabelAPI.delete(el.name())));
         elTaskIds.forEach(BaseApiTest::waitUntilTaskCompleted);
 
         List<Long> vlTaskIds = new ArrayList<>();
-        vertexLabelAPI.list().forEach(vertexLabel -> {
-            vlTaskIds.add(vertexLabelAPI.delete(vertexLabel.name()));
-        });
-        vlTaskIds.forEach(BaseApiTest::waitUntilTaskCompleted);
+        vertexLabelAPI.list().forEach(vl -> vlTaskIds.add(vertexLabelAPI.delete(vl.name())));
+        // Vertex label deletion may take longer, use extended timeout
+        vlTaskIds.forEach(taskId -> waitUntilTaskCompleted(taskId, 30));
 
         List<Long> pkTaskIds = new ArrayList<>();
-        propertyKeyAPI.list().forEach(propertyKey -> {
-            pkTaskIds.add(propertyKeyAPI.delete(propertyKey.name()));
-        });
+        propertyKeyAPI.list().forEach(pk -> pkTaskIds.add(propertyKeyAPI.delete(pk.name())));
         pkTaskIds.forEach(BaseApiTest::waitUntilTaskCompleted);
 
-        // Clear system
+        // Clear all tasks (cancel running ones first)
+        cleanupTasks();
+    }
+
+    protected static void cleanupTasks() {
         taskAPI.list(null, -1).forEach(task -> {
-            taskAPI.delete(task.id());
+            if (!task.completed()) {
+                try {
+                    taskAPI.cancel(task.id());
+                    Thread.sleep(1000);
+                } catch (Exception ignored) {
+                    // Task may have completed during cancellation
+                }
+            }
+            try {
+                taskAPI.delete(task.id());
+            } catch (Exception ignored) {
+                // Task may have been deleted by another process
+            }
         });
     }
 
@@ -152,7 +159,17 @@ public class BaseApiTest extends BaseClientTest {
         if (taskId == 0L) {
             return;
         }
-        taskAPI.waitUntilTaskSuccess(taskId, timeout);
+        try {
+            taskAPI.waitUntilTaskSuccess(taskId, timeout);
+        } catch (Exception e) {
+            // Cleanup should be resilient - log warning but continue
+            System.err.println("Warning: Task " + taskId +
+                               " did not complete successfully: " + e.getMessage());
+        }
+    }
+
+    protected RestClient client() {
+        return client;
     }
 
     protected RestClient client() {

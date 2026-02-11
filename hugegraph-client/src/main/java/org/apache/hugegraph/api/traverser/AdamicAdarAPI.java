@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -63,10 +61,9 @@ public class AdamicAdarAPI extends TraversersAPI {
         return res;
     }
 
-    /*
-    * 20221122 张广旭
-    * 未发现 server 有对应接口
-    * */
+    /**
+     * No corresponding interface found in server
+     */
     @SuppressWarnings("unchecked")
     public Map<Object, Double> post(SingleSourceJaccardSimilarityRequest
                                     request) {

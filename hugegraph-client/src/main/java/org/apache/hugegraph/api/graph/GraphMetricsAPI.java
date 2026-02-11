@@ -89,7 +89,7 @@ public class GraphMetricsAPI extends API {
 
         // convert json to Map<String, TypeCount>
         Map<String, Object> elementCounts = resp.readObject(Map.class);
-        for(Map.Entry<String, Object> entry : elementCounts.entrySet()) {
+        for (Map.Entry<String, Object> entry : elementCounts.entrySet()) {
             String strDate = entry.getKey();
             Object elementCountMap = entry.getValue();
             ElementCount elementCount =
@@ -117,8 +117,8 @@ public class GraphMetricsAPI extends API {
     }
 
     /**
-     * @param from 起始时间
-     * @param to   终止时间
+     * @param from Start time
+     * @param to   End time
      */
     public TypeCounts getTypeCounts(String from, String to) {
         try {
@@ -138,7 +138,7 @@ public class GraphMetricsAPI extends API {
 
         // convert json to Map<String, TypeCount>
         Map<String, Object> typeCounts = resp.readObject(Map.class);
-        for(Map.Entry<String, Object> entry : typeCounts.entrySet()) {
+        for (Map.Entry<String, Object> entry : typeCounts.entrySet()) {
             String strDate = entry.getKey();
             Object typeCountMap = entry.getValue();
             TypeCount typeCount =
@@ -152,7 +152,7 @@ public class GraphMetricsAPI extends API {
 
     @Data
     public static class ElementCount {
-        // 结果统计时间
+        // Result statistics time
         String datetime;
         long vertices;
         long edges;
@@ -172,7 +172,7 @@ public class GraphMetricsAPI extends API {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class TypeCount {
-        // 结果统计时间
+        // Result statistics time
         @JsonProperty("datetime")
         String datetime;
         @JsonProperty("vertices")

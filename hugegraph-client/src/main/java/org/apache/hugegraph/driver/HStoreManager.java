@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -26,13 +24,15 @@ import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.structure.space.HStoreNodeInfo;
 
 public class HStoreManager {
-    private HStoreAPI hStoreAPI;
+
+    private final HStoreAPI hStoreAPI;
+
     public HStoreManager(RestClient client) {
         this.hStoreAPI = new HStoreAPI(client);
     }
 
     public List<String> list() {
-       return hStoreAPI.list();
+        return hStoreAPI.list();
     }
 
     public HStoreNodeInfo get(String id) {

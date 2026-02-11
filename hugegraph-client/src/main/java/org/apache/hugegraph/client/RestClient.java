@@ -17,9 +17,6 @@
 
 package org.apache.hugegraph.client;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import org.apache.hugegraph.exception.ServerException;
@@ -42,17 +39,17 @@ import lombok.Setter;
 public class RestClient extends AbstractRestClient {
 
     private static final int SECOND = 1000;
+    private String version;
+    @Getter
+    @Setter
+    private boolean supportGs;
+    private Version apiVersion = null;
 
     static {
         SimpleModule module = new SimpleModule();
         module.addDeserializer(Path.class, new PathDeserializer());
         RestResult.registerModule(module);
     }
-
-    private Version apiVersion = null;
-    @Setter
-    @Getter
-    private boolean supportGs = false;
 
     public RestClient(String url, String username, String password, int timeout) {
         super(url, username, password, timeout * SECOND);
@@ -66,23 +63,25 @@ public class RestClient extends AbstractRestClient {
               maxConnsPerRoute, trustStoreFile, trustStorePassword);
     }
 
+    public RestClient(String url, String token, int timeout) {
+        this(url, RestClientConfig.builder().token(token).timeout(timeout * SECOND).build());
+    }
+
     public RestClient(String url, RestClientConfig config) {
         super(url, config);
+    }
+
+    public RestClient(String url, String token, int timeout, int maxConns,
+                      int maxConnsPerRoute, String trustStoreFile,
+                      String trustStorePassword) {
+        super(url, token, timeout * SECOND, maxConns,
+              maxConnsPerRoute, trustStoreFile, trustStorePassword);
     }
 
     private static String removeDefaultGsPrefix(String path) {
         final String DEFAULT_GS_PATH_PREFIX = "graphspaces/DEFAULT/";
         final String EMPTY = "";
         return path.replaceFirst(DEFAULT_GS_PATH_PREFIX, EMPTY);
-    }
-
-    // TODO: remove temporary solution, implemented by hugegraph-common: https://github.com/apache/incubator-hugegraph-commons/pull/146
-    public static String encode(String raw) {
-        try {
-            return URLEncoder.encode(raw, StandardCharsets.UTF_8.toString()).replace("+", "%2B");
-        } catch (UnsupportedEncodingException e) {
-            throw new IllegalArgumentException("Failed to encode string: " + raw, e);
-        }
     }
 
     public void apiVersion(Version version) {

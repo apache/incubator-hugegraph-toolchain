@@ -17,7 +17,10 @@
 
 package org.apache.hugegraph.functional;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -38,6 +41,7 @@ import org.apache.hugegraph.structure.auth.User.UserRole;
 import org.apache.hugegraph.testutil.Assert;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableSet;
@@ -47,6 +51,7 @@ public class AuthManagerTest extends BaseFuncTest {
     @Override
     @Before
     public void setup() {
+        super.setup();
     }
 
     @Override
@@ -70,14 +75,24 @@ public class AuthManagerTest extends BaseFuncTest {
         gremlin.name("gremlin");
         gremlin.graph("hugegraph");
         gremlin.url("127.0.0.1:8080");
-        gremlin.resources(new HugeResource(HugeResourceType.GREMLIN));
+        Map<String, Object> gremlinMap = new HashMap<>();
+        gremlinMap.put("type", "GREMLIN");
+        gremlinMap.put("label", "*");
+        gremlinMap.put("properties", null);
+        List<Map<String, Object>> gremlinRes = Collections.singletonList(gremlinMap);
+        gremlin.resources(gremlinRes);
         gremlin = auth().createTarget(gremlin);
 
         Target task = new Target();
         task.name("task");
         task.graph("hugegraph");
         task.url("127.0.0.1:8080");
-        task.resources(new HugeResource(HugeResourceType.TASK));
+        Map<String, Object> taskMap = new HashMap<>();
+        taskMap.put("type", "TASK");
+        taskMap.put("label", "*");
+        taskMap.put("properties", null);
+        List<Map<String, Object>> taskRes = Collections.singletonList(taskMap);
+        task.resources(taskRes);
         task = auth().createTarget(task);
 
         Belong belong = new Belong();
@@ -136,9 +151,9 @@ public class AuthManagerTest extends BaseFuncTest {
         Assert.assertEquals(newProjects, projects);
 
         UserRole role = auth().getUserRole(user);
-        String r = "{\"roles\":{\"hugegraph\":" +
-                   "{\"READ\":[{\"type\":\"TASK\",\"label\":\"*\",\"properties\":null}]," +
-                   "\"EXECUTE\":[{\"type\":\"GREMLIN\",\"label\":\"*\",\"properties\":null}]}}}";
+        String r = "{\"roles\":{\"DEFAULT\":{\"hugegraph\":" +
+                   "{\"READ\":{\"TASK\":[{\"type\":\"TASK\",\"label\":\"*\",\"properties\":null}]}," +
+                   "\"EXECUTE\":{\"GREMLIN\":[{\"type\":\"GREMLIN\",\"label\":\"*\",\"properties\":null}]}}}}}";
         Assert.assertEquals(r, role.toString());
 
         Login login = new Login();

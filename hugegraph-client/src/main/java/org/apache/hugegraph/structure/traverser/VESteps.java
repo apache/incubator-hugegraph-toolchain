@@ -77,6 +77,7 @@ public class VESteps {
             return this;
         }
 
+        @SuppressWarnings("checkstyle:MethodName")
         public VESteps.Builder vSteps(List<VEStep> vSteps) {
             this.steps.vSteps = vSteps;
             return this;
@@ -95,6 +96,7 @@ public class VESteps {
             return this.addVStep(label, Collections.emptyMap());
         }
 
+        @SuppressWarnings("checkstyle:MethodName")
         public VESteps.Builder eSteps(List<VEStep> eSteps) {
             this.steps.eSteps = eSteps;
             return this;

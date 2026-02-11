@@ -54,7 +54,7 @@ public class SingleSourceJaccardSimilarityRequest {
 
     public static class Builder {
 
-        private SingleSourceJaccardSimilarityRequest request;
+        private final SingleSourceJaccardSimilarityRequest request;
         private EdgeStep.Builder stepBuilder;
 
         private Builder() {

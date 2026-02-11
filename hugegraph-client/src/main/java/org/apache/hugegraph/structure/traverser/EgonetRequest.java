@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -25,6 +23,7 @@ import org.apache.hugegraph.util.E;
 
 import org.apache.hugegraph.api.traverser.TraversersAPI;
 import org.apache.hugegraph.structure.constant.Traverser;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class EgonetRequest {
@@ -73,7 +72,7 @@ public class EgonetRequest {
 
     public static class Builder {
 
-        private EgonetRequest request;
+        private final EgonetRequest request;
         private Steps.Builder stepsBuilder;
 
         private Builder() {

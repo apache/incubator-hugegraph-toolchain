@@ -24,6 +24,7 @@ import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.structure.constant.Traverser;
 import org.apache.hugegraph.structure.traverser.RanksWithMeasure;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class PersonalRankAPI extends TraversersAPI {
@@ -92,7 +93,7 @@ public class PersonalRankAPI extends TraversersAPI {
 
         public static class Builder {
 
-            private Request request;
+            private final Request request;
 
             private Builder() {
                 this.request = new Request();

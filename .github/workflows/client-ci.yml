@@ -20,16 +20,17 @@ on:
 
 jobs:
   client-ci:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env:
       USE_STAGE: 'true' # Whether to include the stage repository.
       TRAVIS_DIR: hugegraph-client/assembly/travis
       # TODO: replace it with the (latest - n) commit id (n >= 15)
-      # hugegraph commit date: 2024-10-10
-      COMMIT_ID: 29ecc0
+      # hugegraph commit date: 2025-11-4
+      COMMIT_ID: b7998c1
     strategy:
       fail-fast: false
       matrix:
+        # released pd package is compiled in version 55.0, which requires java 11 to use
         JAVA_VERSION: [ '11' ]
 
     steps:
@@ -79,9 +80,9 @@ jobs:
       - name: Run test
         run: |
           cd hugegraph-client && ls *
-          mvn test -Dtest=UnitTestSuite -ntp || true
-          mvn test -Dtest=ApiTestSuite || true
-          mvn test -Dtest=FuncTestSuite || true
+          mvn test -Dtest=UnitTestSuite -ntp
+          mvn test -Dtest=ApiTestSuite
+          mvn test -Dtest=FuncTestSuite
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3

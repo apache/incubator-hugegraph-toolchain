@@ -18,7 +18,6 @@
 package org.apache.hugegraph.loader.executor;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -28,16 +27,19 @@ import org.apache.hugegraph.loader.util.DateUtil;
 import org.apache.hugegraph.loader.util.HugeClientHolder;
 import org.slf4j.Logger;
 
+import lombok.SneakyThrows;
+
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.loader.builder.SchemaCache;
 import org.apache.hugegraph.loader.failure.FailLogger;
+import org.apache.hugegraph.loader.filter.ElementParseGroup;
 import org.apache.hugegraph.loader.mapping.InputStruct;
 import org.apache.hugegraph.loader.metrics.LoadSummary;
 import org.apache.hugegraph.structure.constant.GraphMode;
 import org.apache.hugegraph.util.Log;
 
-public final class LoadContext implements Serializable {
+public final class LoadContext implements Cloneable {
 
     private static final Logger LOG = Log.logger(LoadContext.class);
 
@@ -56,8 +58,12 @@ public final class LoadContext implements Serializable {
     private final Map<String, FailLogger> loggers;
 
     private final HugeClient client;
+    // Non-direct mode client
+    private final HugeClient indirectClient;
     private final SchemaCache schemaCache;
+    private final ElementParseGroup parseGroup;
 
+    @SneakyThrows
     public LoadContext(LoadOptions options) {
         this.timestamp = DateUtil.now("yyyyMMdd-HHmmss");
         this.closed = false;
@@ -69,21 +75,16 @@ public final class LoadContext implements Serializable {
         this.newProgress = new LoadProgress();
         this.loggers = new ConcurrentHashMap<>();
         this.client = HugeClientHolder.create(options);
+        if (this.options.direct) {
+            // options implements ShallowClone
+            LoadOptions indirectOptions = (LoadOptions) options.clone();
+            indirectOptions.direct = false;
+            this.indirectClient = HugeClientHolder.create(indirectOptions);
+        } else {
+            this.indirectClient = this.client;
+        }
         this.schemaCache = new SchemaCache(this.client);
-    }
-
-    public LoadContext(ComputerLoadOptions options) {
-        this.timestamp = DateUtil.now("yyyyMMdd-HHmmss");
-        this.closed = false;
-        this.stopped = false;
-        this.noError = true;
-        this.options = options;
-        this.summary = new LoadSummary();
-        this.oldProgress = LoadProgress.parse(options);
-        this.newProgress = new LoadProgress();
-        this.loggers = new ConcurrentHashMap<>();
-        this.client = null;
-        this.schemaCache = options.schemaCache();
+        this.parseGroup = ElementParseGroup.create(options);
     }
 
     public String timestamp() {
@@ -137,6 +138,14 @@ public final class LoadContext implements Serializable {
         return this.client;
     }
 
+    public HugeClient indirectClient() {
+        return this.indirectClient;
+    }
+
+    public ElementParseGroup filterGroup() {
+        return parseGroup;
+    }
+
     public SchemaCache schemaCache() {
         return this.schemaCache;
     }
@@ -150,6 +159,19 @@ public final class LoadContext implements Serializable {
         String graph = this.client.graph().graph();
         try {
             this.client.graphs().mode(graph, GraphMode.LOADING);
+        } catch (ServerException e) {
+            if (e.getMessage().contains("Can not deserialize value of type")) {
+                LOG.warn("HugeGraphServer doesn't support loading mode");
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    public void setRestoreMode() {
+        String graph = this.client.graph().graph();
+        try {
+            this.client.graphs().mode(graph, GraphMode.RESTORING);
         } catch (ServerException e) {
             if (e.getMessage().contains("Can not deserialize value of type")) {
                 LOG.warn("HugeGraphServer doesn't support loading mode");
@@ -193,5 +215,10 @@ public final class LoadContext implements Serializable {
         this.client.close();
         LOG.info("Close HugeClient successfully");
         this.closed = true;
+    }
+
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        return super.clone();
     }
 }

@@ -32,6 +32,8 @@ public class User extends AuthElement {
 
     @JsonProperty("user_name")
     private String name;
+    @JsonProperty("user_nickname")
+    private String nickname;
     @JsonProperty("user_password")
     private String password;
     @JsonProperty("user_phone")
@@ -42,6 +44,11 @@ public class User extends AuthElement {
     private String avatar;
     @JsonProperty("user_description")
     private String description;
+    @JsonProperty("department") // User's department
+    private String department;
+    @JsonProperty("image_url") // User's avatar URL
+    private String imageUrl;
+
 
     @JsonProperty("user_create")
     @JsonFormat(pattern = DATE_FORMAT)
@@ -80,6 +87,22 @@ public class User extends AuthElement {
         this.name = name;
     }
 
+    public String nickname() {
+        return this.nickname;
+    }
+
+    public void nickname(String nickname) {
+        this.nickname = nickname;
+    }
+
+    public String imageUrl() {
+        return imageUrl;
+    }
+
+    public void imageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
     public String password() {
         return this.password;
     }
@@ -116,16 +139,25 @@ public class User extends AuthElement {
         return this.description;
     }
 
+    public String department() {
+        return this.department;
+    }
+
+    public String department(String department) {
+        return this.department = department;
+    }
+
     public void description(String description) {
         this.description = description;
     }
 
     public static class UserRole {
 
+        // Mapping of: graphSpace -> graph -> permission -> resourceType -> resources
         @JsonProperty("roles")
-        private Map<String, Map<HugePermission, List<HugeResource>>> roles;
+        private Map<String, Map<String, Map<HugePermission, Map<String, List<HugeResource>>>>> roles;
 
-        public Map<String, Map<HugePermission, List<HugeResource>>> roles() {
+        public Map<String, Map<String, Map<HugePermission, Map<String, List<HugeResource>>>>> roles() {
             return Collections.unmodifiableMap(this.roles);
         }
 

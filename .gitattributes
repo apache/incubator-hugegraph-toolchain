@@ -10,5 +10,6 @@ apache-release.sh export-ignore
 # ignored directory
 .github/ export-ignore
 hugegraph-dist/scripts/ export-ignore
+.serena/ export-ignore
 # only exclude the root
 /assembly/ export-ignore

@@ -17,9 +17,11 @@
  */
 
 package org.apache.hugegraph.service.algorithm;
-
-import org.apache.hugegraph.client.api.traverser.NeighborRankAPI;
-import org.apache.hugegraph.client.api.traverser.PersonalRankAPI;
+// TODO import difference
+import org.apache.hugegraph.api.traverser.NeighborRankAPI;
+import org.apache.hugegraph.api.traverser.PersonalRankAPI;
+//import org.apache.hugegraph.client.api.traverser.PersonalRankAPI;
+//import org.apache.hugegraph.client.api.traverser.NeighborRankAPI;
 import org.apache.hugegraph.config.HugeConfig;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.driver.TraverserManager;
@@ -198,10 +200,11 @@ public class OltpAlgoService {
             Map<String, Edge> edges;
             Map<Object, Vertex> vertices = new HashMap<>();
             TraverserManager traverser = client.traverser();
+            // TODO withEdge set as false, check correctness
             WeightedPath result = traverser.weightedShortestPath(body.getSource(), body.getTarget(),
                     body.getDirection(), body.getLabel(),
                     body.getWeight(), body.getMaxDegree(),
-                    body.getSkipDegree(), body.getCapacity(), true);
+                    body.getSkipDegree(), body.getCapacity(), true,false);
 
             for (Iterator<Vertex> iter = result.vertices().iterator(); iter.hasNext();) {
                 Vertex vertex = iter.next();
@@ -241,10 +244,11 @@ public class OltpAlgoService {
             Map<String, Edge> edges;
             Map<Object, Vertex> vertices = new HashMap<>();
             TraverserManager traverser = client.traverser();
+            // TODO edges info set as false, check correctness
             WeightedPaths result = traverser.singleSourceShortestPath(body.getSource(),
                     body.getDirection(), body.getLabel(),
                     body.getWeight(), body.getMaxDegree(),
-                    body.getSkipDegree(), body.getCapacity(), body.getLimit(), true);
+                    body.getSkipDegree(), body.getCapacity(), body.getLimit(), true,false);
 
             for (Iterator<Vertex> iter = result.vertices().iterator(); iter.hasNext();) {
                 Vertex vertex = iter.next();

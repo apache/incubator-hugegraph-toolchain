@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -16,6 +14,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.hugegraph.api.kvstore;
 
 import java.util.LinkedHashMap;
@@ -39,7 +38,7 @@ public class KvStoreAPI extends API {
     public KvStoreAPI(RestClient client) {
         super(client);
         this.path(PATH);
-        this.batchPath = String.join("/", this.path(), "batch");
+        batchPath = String.join("/", this.path(), "batch");
     }
 
     @Override
@@ -67,7 +66,7 @@ public class KvStoreAPI extends API {
     }
 
     public Map<String, Object> setBatch(Map<String, Object> data) {
-        RestResult result = this.client.post(this.batchPath, data);
+        RestResult result = this.client.post(batchPath, data);
         return result.readObject(Map.class);
     }
 }

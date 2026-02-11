@@ -29,13 +29,13 @@ public class HStoreNodeInfo {
     // Node id
     @JsonProperty("id")
     private String id;
-    // 总空间大小
+    // Total space size
     @JsonProperty("capacity")
     private long capacity;
-    // 已使用空间
+    // Used space
     @JsonProperty("used")
     private long used;
-    // 节点状态
+    // Node status
     @JsonProperty("state")
     private String state;
     // grpc ip:port
@@ -74,10 +74,12 @@ public class HStoreNodeInfo {
         this.address = address;
     }
 
+    @SuppressWarnings("checkstyle:MethodName")
     public List<HStorePartitionInfo> hStorePartitionInfoList() {
         return hStorePartitionInfoList;
     }
 
+    @SuppressWarnings("checkstyle:MethodName")
     public void hStorePartitionInfoList(
             List<HStorePartitionInfo> hStorePartitionInfoList) {
         this.hStorePartitionInfoList = hStorePartitionInfoList;

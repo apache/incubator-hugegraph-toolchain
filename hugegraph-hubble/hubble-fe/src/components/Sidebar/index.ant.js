@@ -37,12 +37,15 @@ const items = t => {
     const RESOURCE = {label: <Link to='/resource'>{t('home.resource')}</Link>, key: 'resource'};
     const ROLE = {label: <Link to='/role'>{t('home.role')}</Link>, key: 'role'};
 
+    // TODO temporary hided the resource and role modules
     let systemList = [MY];
     if (userInfo.is_superadmin) {
-        systemList = [MY, ACCOUNT, RESOURCE, ROLE];
+        // systemList = [MY, ACCOUNT, RESOURCE, ROLE];
+        systemList = [MY, ACCOUNT];
     }
     else if (userInfo.resSpaces && userInfo.resSpaces.length > 0) {
-        systemList = [MY, RESOURCE, ROLE];
+        // systemList = [MY, RESOURCE, ROLE];
+        systemList = [MY, ACCOUNT];
     }
 
     const menu = [

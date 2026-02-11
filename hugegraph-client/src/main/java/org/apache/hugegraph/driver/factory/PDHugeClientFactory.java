@@ -1,3 +1,20 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with this
+ * work for additional information regarding copyright ownership. The ASF
+ * licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.hugegraph.driver.factory;
 
 import java.util.HashMap;
@@ -46,9 +63,9 @@ public class PDHugeClientFactory {
         this.type = type != null ? RouteType.valueOf(type) : RouteType.BOTH;
 
         PDConfig pdConfig = PDConfig.of(pdAddrs);
-        //pdConfig.setAuthority(NAME, TOKEN);
+        // TODO: Not suport now: pdConfig.setAuthority(NAME, TOKEN);
         this.client = DiscoveryClientImpl.newBuilder()
-                                                    //.setPdConfig(pdConfig)
+                                                    // TODO: Not suport now: .setPdConfig(pdConfig)
                                                     .setCenterAddress(pdAddrs)
                                                     .build();
     }
@@ -145,7 +162,6 @@ public class PDHugeClientFactory {
         return urls;
     }
 
-
     public List<String> getURLs(String cluster, String graphSpace,
                                 String service) {
 
@@ -169,7 +185,6 @@ public class PDHugeClientFactory {
                            .build();
 
         NodeInfos nodeInfos = client.getNodeInfos(query);
-
 
         List<String> urls = nodeInfos.getInfoList().stream()
                                      .map(nodeInfo -> nodeInfo.getAddress())

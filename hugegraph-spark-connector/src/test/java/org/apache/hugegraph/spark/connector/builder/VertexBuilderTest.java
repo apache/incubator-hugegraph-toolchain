@@ -77,7 +77,8 @@ public class VertexBuilderTest {
         Map<String, String> configs = new HashMap<>();
         configs.put("host", HGEnvUtils.DEFAULT_HOST);
         configs.put("port", HGEnvUtils.DEFAULT_PORT);
-
+        configs.put("username", "admin");
+        configs.put("token", "pa");
         configs.put("data-type", "vertex");
         configs.put("label", "person");
         configs.put("id", "name");
@@ -138,7 +139,8 @@ public class VertexBuilderTest {
         Map<String, String> configs = new HashMap<>();
         configs.put("host", HGEnvUtils.DEFAULT_HOST);
         configs.put("port", HGEnvUtils.DEFAULT_PORT);
-
+        configs.put("username", "admin");
+        configs.put("token", "pa");
         configs.put("data-type", "vertex");
         configs.put("label", "software");
         HGOptions options = new HGOptions(configs);

@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -16,6 +14,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.hugegraph.api.traverser;
 
 import org.apache.hugegraph.client.RestClient;

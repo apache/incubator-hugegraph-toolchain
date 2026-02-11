@@ -25,7 +25,9 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.client.api.graph.GraphMetricsAPI;
+import org.apache.hugegraph.api.graph.GraphMetricsAPI;
+// TODO fix import
+//import org.apache.hugegraph.client.api.graph.GraphMetricsAPI;
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.controller.query.GremlinController;
 import org.apache.hugegraph.driver.HugeClient;
@@ -245,11 +247,12 @@ public class GraphsService {
 
     public void truncate(HugeClient client, String graph,
                          boolean isClearSchema, boolean isClearData) {
+        // TODO client do not support clear Schema field. Check here
         if (isClearSchema) {
-            client.graphs().clear(graph, true);
+            client.graphs().clearGraph(graph,"I'm sure to delete all data");
         }
         else if (isClearData) {
-            client.graphs().clear(graph, false);
+            client.graphs().clearGraph(graph, "I'm sure to delete all data");
         }
     }
 
@@ -266,8 +269,8 @@ public class GraphsService {
     }
 
     public void delete(HugeClient client, String graph, String confirmMessage) {
-
-        client.graphs().remove(graph);
+        // TODO check if frontend support passing confirm message.
+        client.graphs().dropGraph(graph,confirmMessage);
     }
 
     public GraphReadMode graphReadMode(HugeClient client, String graph) {

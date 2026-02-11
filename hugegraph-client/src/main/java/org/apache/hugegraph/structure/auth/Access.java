@@ -26,14 +26,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Access extends AuthElement {
 
+    @JsonProperty(value = "graphspace", access = JsonProperty.Access.READ_ONLY)
+    protected String graphSpace;
     @JsonProperty("group")
     private Object group;
     @JsonProperty("target")
-    private Object target;
+    protected Object target;
     @JsonProperty("access_permission")
-    private HugePermission permission;
+    protected HugePermission permission;
     @JsonProperty("access_description")
-    private String description;
+    protected String description;
 
     @JsonProperty("access_create")
     @JsonFormat(pattern = DATE_FORMAT)
@@ -62,6 +64,14 @@ public class Access extends AuthElement {
     @Override
     public String creator() {
         return this.creator;
+    }
+
+    public String graphSpace() {
+        return this.graphSpace;
+    }
+
+    public void graphSpace(String graphSpace) {
+        this.graphSpace = graphSpace;
     }
 
     public Object group() {

@@ -26,7 +26,6 @@ import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.constant.T;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.traverser.FusiformSimilarity;
-import org.apache.hugegraph.structure.traverser.FusiformSimilarity.Similar;
 import org.apache.hugegraph.structure.traverser.FusiformSimilarityRequest;
 import org.apache.hugegraph.testutil.Assert;
 import org.junit.BeforeClass;
@@ -497,7 +496,7 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
         );
 
         for (Map.Entry<Object, Set<FusiformSimilarity.Similar>> e : results.similarsMap()
-                                                        .entrySet()) {
+                                                                           .entrySet()) {
             Object key = e.getKey();
             Set<Object> actual = e.getValue().stream().map(FusiformSimilarity.Similar::id)
                                   .collect(Collectors.toSet());

@@ -29,8 +29,8 @@ import com.google.common.collect.ImmutableMap;
 
 public class TargetAPI extends AuthAPI {
 
-    public TargetAPI(RestClient client, String graph) {
-        super(client, graph);
+    public TargetAPI(RestClient client, String graphSpace) {
+        super(client, graphSpace);
     }
 
     @Override
