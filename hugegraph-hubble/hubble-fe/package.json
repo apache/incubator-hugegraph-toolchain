@@ -76,5 +76,10 @@
     "eslint": "^8.19.0",
     "eslint-plugin-react": "^7.30.1",
     "resize-observer-polyfill": "^1.5.1"
+  },
+  "resolutions": {
+    "@types/jest": "29.5.14",
+    "expect": "29.7.0",
+    "pretty-format": "29.7.0"
   }
 }

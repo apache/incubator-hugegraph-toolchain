@@ -21,27 +21,47 @@ package org.apache.hugegraph.config;
 import org.apache.hugegraph.handler.LoginInterceptor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
-import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.resource.PathResourceResolver;
 
 import org.apache.hugegraph.handler.CustomInterceptor;
+
+import java.io.IOException;
 
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
-    public void addViewControllers(ViewControllerRegistry registry) {
-        registry.addViewController("/{spring:[\\w-]+}")
-                .setViewName("forward:/");
-        registry.addViewController("/**/{spring:[\\w-]+}")
-                .setViewName("forward:/");
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/**")
+                .addResourceLocations("classpath:/ui/")
+                .resourceChain(true)
+                .addResolver(new PathResourceResolver() {
+                    @Override
+                    protected Resource getResource(String resourcePath,
+                                                   Resource location)
+                            throws IOException {
+                        Resource requested = location.createRelative(
+                                resourcePath);
+                        // If the requested resource exists and is readable,
+                        // serve it; otherwise fall back to index.html
+                        // for SPA routing
+                        if (requested.exists() && requested.isReadable()) {
+                            return requested;
+                        }
+                        return new ClassPathResource("/ui/index.html");
+                    }
+                });
     }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(this.customInterceptor())
-                .addPathPatterns("/**");
+                .addPathPatterns("/api/**");
         registry.addInterceptor(this.loginInterceptor())
                 .addPathPatterns("/api/**")
                 .excludePathPatterns("/api/**/auth/login")
