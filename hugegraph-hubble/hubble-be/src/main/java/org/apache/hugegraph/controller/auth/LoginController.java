@@ -34,6 +34,8 @@ import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.controller.BaseController;
 import org.apache.hugegraph.structure.auth.LoginResult;
 
+import java.util.Base64;
+
 @RestController
 @RequestMapping(Constant.API_VERSION + "auth")
 public class LoginController extends BaseController {
@@ -45,8 +47,8 @@ public class LoginController extends BaseController {
     public Object login(@RequestBody Login login) {
         // Set Expire: 1 Month
         login.expire(60 * 60 * 24 * 30);
-
-        HugeClient client = unauthClient();
+        this.setToken(encodeCredentials(login));
+        HugeClient client = tempTokenClient();
         LoginResult result = client.auth().login(login);
         this.setUser(login.name());
         this.setSession("password", login.password());
@@ -60,6 +62,11 @@ public class LoginController extends BaseController {
         client.close();
 
         return u;
+    }
+
+    private String encodeCredentials(Login login) {
+        String combined = login.name() + ":" + login.password();
+        return Base64.getEncoder().encodeToString(combined.getBytes());
     }
 
     @GetMapping("/status")

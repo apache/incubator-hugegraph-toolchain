@@ -64,8 +64,9 @@ public final class HugeClientUtil {
             password = "";
         }
         HugeClient client;
+        boolean skipRequiredChecks = (graph == null || graph.isEmpty());
         try {
-            client = HugeClient.builder(url, graphSpace, graph)
+            client = HugeClient.builder(url, graphSpace, graph, skipRequiredChecks)
                                .configToken(token)
                                .configUser(username, password)
                                .configTimeout(timeout)

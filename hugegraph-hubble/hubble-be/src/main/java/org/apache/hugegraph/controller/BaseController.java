@@ -153,6 +153,19 @@ public abstract class BaseController {
         return client;
     }
 
+    protected HugeClient tempTokenClient() {
+        HttpServletRequest request = getRequest();
+        if (request.getAttribute("hugeClient") != null) {
+            HugeClient client = (HugeClient) request.getAttribute("hugeClient");
+            client.setAuthContext("Basic "+this.getToken());
+            return client;
+        }
+        HugeClient client = this.hugeClientPoolService.createTempTokenClient(this.getToken());
+        request.setAttribute("hugeClient", client);
+        return client;
+    }
+
+
     protected void clearRequestHugeClient() {
         HttpServletRequest request = getRequest();
         if (request.getAttribute("hugeClient") != null) {
