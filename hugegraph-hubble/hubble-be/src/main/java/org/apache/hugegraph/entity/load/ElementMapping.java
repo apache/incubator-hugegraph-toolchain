@@ -18,18 +18,16 @@
 
 package org.apache.hugegraph.entity.load;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.hugegraph.annotation.MergeProperty;
-import org.apache.hugegraph.common.Mergeable;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.hugegraph.annotation.MergeProperty;
+import org.apache.hugegraph.common.Mergeable;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @Data
 @NoArgsConstructor

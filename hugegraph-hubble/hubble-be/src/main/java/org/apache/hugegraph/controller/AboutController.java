@@ -18,9 +18,6 @@
 
 package org.apache.hugegraph.controller;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.handler.MessageSourceHandler;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,9 +25,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+//import org.apache.hugegraph.license.LicenseVerifier; // TODO C Remove Licence
+
+
 @RestController
 @RequestMapping("about")
-// TODO: delete the class or keep it?
 public class AboutController extends BaseController {
 
     @Autowired
@@ -38,11 +39,20 @@ public class AboutController extends BaseController {
 
     @GetMapping
     public Map<String, Object> about() {
+        //LicenseVerifier verifier = LicenseVerifier.instance();// TODO C Remove Licence
         Map<String, Object> about = new LinkedHashMap<>();
         about.put("name", Constant.SERVER_NAME);
-        about.put("version", "1.5.0");
-        about.put("allowed_datasize",
-                  this.messageHandler.getMessage("license.datasize.no-limit"));
+        about.put("version", "3.0.0");
+        //about.put("edition", verifier.edition());// TODO C Remove Licence
+        //about.put("allowed_graphs", verifier.allowedGraphs());
+        //long datasize = verifier.allowedDataSize();
+        //if (datasize == -1) {
+        //    about.put("allowed_datasize",
+        //              this.messageHandler.getMessage("license.datasize.no-limit"));
+        //} else {
+        //    about.put("allowed_datasize",
+        //              FileUtils.byteCountToDisplaySize(datasize * Bytes.MB));
+        //}
         return about;
     }
 }

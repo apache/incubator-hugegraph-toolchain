@@ -1,0 +1,127 @@
+/*!
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with this
+ * work for additional information regarding copyright ownership. The ASF
+ * licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
+.queryResult {
+    margin-top: 10px;
+
+    :global(.ant-tabs) {
+        background-color: #fff;
+    }
+
+    :global(.ant-tabs-nav) {
+        z-index: 1;
+    }
+
+    :global(.ant-tabs-tab.ant-tabs-tab.ant-tabs-tab) {
+        padding: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        line-height: 18px;
+    }
+
+    .tab {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        justify-content: center;
+        align-items: center;
+        word-break: keep-all;
+
+        .graphIcon {
+            width: 14px;
+            height: 14px;
+            background: url('../../../../assets/ic_tuzhanshi_normal.svg');
+        }
+
+        .tableIcon {
+            width: 14px;
+            height: 14px;
+            background: url('../../../../assets/ic_biaoge_normal.svg');
+        }
+
+        .jsonIcon {
+            width: 14px;
+            height: 14px;
+            background: url('../../../../assets/ic_json_normal.svg');
+        }
+    }
+
+    :global(.ant-tabs-tab-active),
+    :global(.ant-tabs-tab:hover) {
+        .graphIcon {
+            width: 14px;
+            height: 14px;
+            background: url('../../../../assets/ic_tuzhanshi_pressed.svg');
+        }
+
+        .tableIcon {
+            width: 14px;
+            height: 14px;
+            background: url('../../../../assets/ic_biaoge_pressed.svg');
+        }
+
+        .jsonIcon {
+            width: 14px;
+            height: 14px;
+            background: url('../../../../assets/ic_json_pressed.svg');
+        }
+    }
+
+    :global(.ant-tabs-left > .ant-tabs-content-holder > .ant-tabs-content > .ant-tabs-tabpane) {
+        padding-left: 0;
+    }
+
+    .graphContainer {
+        position: relative;
+        height: calc(100vh - 305px);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .loadingContent {
+        position: relative;
+        width: 144px;
+        height: 144px;
+    }
+
+    .loadingBackImage {
+        position: absolute;
+        left: 22px;
+        top: 20px;
+    }
+
+    .loadingFrontIamge {
+        position: absolute;
+        left: 57.1px;
+        top: 52.1px;
+        animation: loading-rotate 2s linear infinite;
+    }
+}
+
+@keyframes loading-rotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}

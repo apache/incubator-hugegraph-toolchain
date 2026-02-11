@@ -18,139 +18,134 @@
 
 package org.apache.hugegraph.controller.schema;
 
-import java.util.ArrayList;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.apache.hugegraph.common.Constant;
-import org.apache.hugegraph.controller.BaseController;
-import org.apache.hugegraph.entity.schema.EdgeLabelEntity;
-import org.apache.hugegraph.entity.schema.LabelUpdateEntity;
-import org.apache.hugegraph.entity.schema.Property;
-import org.apache.hugegraph.entity.schema.PropertyIndex;
-import org.apache.hugegraph.entity.schema.PropertyKeyEntity;
-import org.apache.hugegraph.entity.schema.SchemaEntity;
-import org.apache.hugegraph.entity.schema.SchemaLabelEntity;
-import org.apache.hugegraph.entity.schema.Timefiable;
-import org.apache.hugegraph.entity.schema.VertexLabelEntity;
-import org.apache.hugegraph.exception.InternalException;
-import org.apache.hugegraph.service.schema.EdgeLabelService;
-import org.apache.hugegraph.service.schema.PropertyKeyService;
-import org.apache.hugegraph.service.schema.VertexLabelService;
-import org.apache.hugegraph.structure.constant.IdStrategy;
-import org.apache.hugegraph.util.Ex;
-import org.apache.hugegraph.util.PageUtil;
+import org.apache.hugegraph.driver.HugeClient;
+import org.apache.hugegraph.exception.ExternalException;
+import org.apache.hugegraph.exception.HugeException;
+import org.apache.hugegraph.service.schema.SchemaService;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableMap;
+
+import org.apache.hugegraph.util.Log;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.apache.hugegraph.common.Constant;
+import org.apache.hugegraph.controller.BaseController;
+import org.apache.hugegraph.entity.schema.LabelUpdateEntity;
+import org.apache.hugegraph.entity.schema.Property;
+import org.apache.hugegraph.entity.schema.PropertyIndex;
+import org.apache.hugegraph.entity.schema.SchemaEntity;
+import org.apache.hugegraph.entity.schema.SchemaLabelEntity;
+import org.apache.hugegraph.entity.schema.Timefiable;
+import org.apache.hugegraph.exception.InternalException;
+import org.apache.hugegraph.service.schema.PropertyKeyService;
+import org.apache.hugegraph.util.Ex;
+import org.apache.hugegraph.util.PageUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.fasterxml.jackson.annotation.JsonProperty;
+
+import javax.servlet.http.HttpServletResponse;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @RestController
-@RequestMapping(Constant.API_VERSION + "graph-connections/{connId}/schema")
+@RequestMapping(Constant.API_VERSION + "graphspaces/{graphspace}/graphs" +
+        "/{graph}/schema")
 public class SchemaController extends BaseController {
 
+    public static Logger log = Log.logger(SchemaController.class);
+
     @Autowired
-    private PropertyKeyService pkService;
-    @Autowired
-    private VertexLabelService vlService;
-    @Autowired
-    private EdgeLabelService elService;
+    private SchemaService schemaService;
+    @GetMapping("groovy")
+    public Object schemaGroovy(@PathVariable("graphspace") String graphSpace,
+                               @PathVariable("graph") String graph) {
+        HugeClient client = this.authClient(graphSpace, graph);
+        return ImmutableMap.of("schema", client.schema().getGroovySchema());
+    }
+
+    @PostMapping("groovy")
+    public Object addSchemaGroovy(@PathVariable("graphspace") String graphSpace,
+                                  @PathVariable("graph") String graph,
+                                  @RequestBody SchemaGroovy schemaGroovy) {
+        HugeClient client = this.authClient(graphSpace, graph);
+        String content = schemaGroovy.getSchemaGroovy();
+        log.info("Add schema groovy: {}", content);
+        checkSchemaGroovy(content);
+        try {
+            client.gremlin().gremlin(content).execute();
+        }catch (Exception e) {
+            throw new HugeException(
+                    "Add schema groovy failed. caused by" + e.getMessage());
+        }
+        return ImmutableMap.of("schema-groovy", content);
+    }
+
+    private void checkSchemaGroovy(String content) {
+        String[] lines = content.split("\n|;");
+        for (String line : lines) {
+            if (StringUtils.isEmpty(line)) {
+                continue;
+            }
+            if (!line.startsWith("graph.schema()")) {
+                throw new ExternalException(
+                        "Schema Groovy each row must start with 'graph.schema" +
+                        "().'");
+            }
+        }
+    }
+
+    @GetMapping("groovy/export")
+    public void schemaGroovyExport(@PathVariable("graphspace") String graphSpace,
+                                     @PathVariable("graph") String graph,
+                                     HttpServletResponse response) {
+        HugeClient client = this.authClient(graphSpace, graph);
+        String schema = client.schema().getGroovySchema();
+
+        response.setCharacterEncoding("UTF-8");
+        response.setContentType("text/html");
+        String fileName = String.format("%s_%s.schema", graphSpace, graph);
+        response.setHeader("Content-Disposition", "attachment;fileName=" + fileName);
+        try {
+            OutputStream os = response.getOutputStream();
+            os.write(schema.getBytes(StandardCharsets.UTF_8));
+            os.close();
+        } catch (IOException e) {
+            throw new InternalException("Schema File Write Error", e);
+        }
+    }
 
     @GetMapping("graphview")
-    public SchemaView displayInSchemaView(@PathVariable("connId") int connId) {
-        List<PropertyKeyEntity> propertyKeys = this.pkService.list(connId);
-        List<VertexLabelEntity> vertexLabels = this.vlService.list(connId);
-        List<EdgeLabelEntity> edgeLabels = this.elService.list(connId);
-
-        List<Map<String, Object>> vertices = new ArrayList<>(vertexLabels.size());
-        for (VertexLabelEntity entity : vertexLabels) {
-            Map<String, Object> vertex = new LinkedHashMap<>();
-            vertex.put("id", entity.getName());
-            vertex.put("label", entity.getName());
-            if (entity.getIdStrategy() == IdStrategy.PRIMARY_KEY) {
-                vertex.put("primary_keys", entity.getPrimaryKeys());
-            } else {
-                vertex.put("primary_keys", new ArrayList<>());
-            }
-            Map<String, String> properties = new LinkedHashMap<>();
-            this.fillProperties(properties, entity, propertyKeys);
-            vertex.put("properties", properties);
-            vertex.put("~style", entity.getStyle());
-            vertices.add(vertex);
-        }
-
-        List<Map<String, Object>> edges = new ArrayList<>(edgeLabels.size());
-        for (EdgeLabelEntity entity : edgeLabels) {
-            Map<String, Object> edge = new LinkedHashMap<>();
-            String edgeId = String.format(
-                    "%s-%s->%s", entity.getSourceLabel(),
-                    entity.getName(), entity.getTargetLabel());
-            edge.put("id", edgeId);
-            edge.put("label", entity.getName());
-            edge.put("source", entity.getSourceLabel());
-            edge.put("target", entity.getTargetLabel());
-            if (entity.isLinkMultiTimes()) {
-                edge.put("sort_keys", entity.getSortKeys());
-            } else {
-                edge.put("sort_keys", new ArrayList<>());
-            }
-            Map<String, String> properties = new LinkedHashMap<>();
-            this.fillProperties(properties, entity, propertyKeys);
-            edge.put("properties", properties);
-            edge.put("~style", entity.getStyle());
-            edges.add(edge);
-        }
-        return new SchemaView(vertices, edges);
-    }
-
-    private void fillProperties(Map<String, String> properties,
-                                SchemaLabelEntity entity,
-                                List<PropertyKeyEntity> propertyKeys) {
-        for (Property property : entity.getProperties()) {
-            String name = property.getName();
-            PropertyKeyEntity pkEntity = findPropertyKey(propertyKeys, name);
-            properties.put(name, pkEntity.getDataType().string());
-        }
-    }
-
-    private PropertyKeyEntity findPropertyKey(List<PropertyKeyEntity> entities,
-                                              String name) {
-        for (PropertyKeyEntity entity : entities) {
-            if (entity.getName().equals(name)) {
-                return entity;
-            }
-        }
-        throw new InternalException("schema.propertykey.not-exist", name);
-    }
-
-    @AllArgsConstructor
-    private static class SchemaView {
-
-        @JsonProperty("vertices")
-        private List<Map<String, Object>> vertices;
-
-        @JsonProperty("edges")
-        private List<Map<String, Object>> edges;
+    public SchemaService.SchemaView displayInSchemaView(@PathVariable("graphspace") String graphSpace,
+                                          @PathVariable("graph") String graph) {
+        HugeClient client = this.authClient(graphSpace, graph);
+        return schemaService.getSchemaView(client);
     }
 
     public <T extends SchemaEntity> IPage<T> listInPage(
-            Function<Integer, List<T>> fetcher,
-            int connId, String content,
-            String nameOrder,
-            int pageNo, int pageSize) {
+                                             Function<HugeClient, List<T>> fetcher,
+                                             HugeClient client, String content,
+                                             String nameOrder,
+                                             int pageNo, int pageSize) {
         Boolean nameOrderAsc = null;
         if (!StringUtils.isEmpty(nameOrder)) {
             Ex.check(ORDER_ASC.equals(nameOrder) || ORDER_DESC.equals(nameOrder),
@@ -158,7 +153,7 @@ public class SchemaController extends BaseController {
             nameOrderAsc = ORDER_ASC.equals(nameOrder);
         }
 
-        List<T> entities = fetcher.apply(connId);
+        List<T> entities = fetcher.apply(client);
         if (!StringUtils.isEmpty(content)) {
             // Select by content
             entities = entities.stream()
@@ -238,20 +233,21 @@ public class SchemaController extends BaseController {
      */
     public static void checkProperties(PropertyKeyService service,
                                        Set<Property> properties,
-                                       boolean mustNullable, int connId) {
+                                       boolean mustNullable,
+                                       HugeClient client) {
         if (properties == null) {
             return;
         }
         for (Property property : properties) {
             String pkName = property.getName();
-            service.checkExist(pkName, connId);
+            service.checkExist(pkName, client);
             Ex.check(mustNullable, property::isNullable,
                      "schema.propertykey.must-be-nullable", pkName);
         }
     }
 
     public static void checkPropertyIndexes(SchemaLabelEntity entity,
-                                            int connId) {
+                                            HugeClient client) {
         List<PropertyIndex> propertyIndexes = entity.getPropertyIndexes();
         if (propertyIndexes != null) {
             for (PropertyIndex propertyIndex : propertyIndexes) {
@@ -268,8 +264,24 @@ public class SchemaController extends BaseController {
     }
 
     public static void checkParamsValid(PropertyKeyService service,
-                                        LabelUpdateEntity entity, int connId) {
+                                        LabelUpdateEntity entity,
+                                        HugeClient client) {
         // All append property should be nullable
-        checkProperties(service, entity.getAppendProperties(), true, connId);
+        checkProperties(service, entity.getAppendProperties(), true, client);
+    }
+
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class SchemaGroovy {
+        @JsonProperty("schema-groovy")
+        private String schemaGroovy;
+
+        @Override
+        public String toString() {
+            return this.schemaGroovy;
+        }
     }
 }

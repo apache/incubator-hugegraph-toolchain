@@ -19,11 +19,25 @@
 package org.apache.hugegraph.controller.query;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.hugegraph.driver.HugeClient;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.entity.enums.AsyncTaskStatus;
 import org.apache.hugegraph.entity.enums.ExecuteStatus;
@@ -34,52 +48,111 @@ import org.apache.hugegraph.entity.query.GremlinQuery;
 import org.apache.hugegraph.entity.query.GremlinResult;
 import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.service.query.ExecuteHistoryService;
-import org.apache.hugegraph.service.query.GremlinQueryService;
+import org.apache.hugegraph.service.query.QueryService;
 import org.apache.hugegraph.util.Ex;
 import org.apache.hugegraph.util.HubbleUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Log4j2
 @RestController
-@RequestMapping(Constant.API_VERSION + "graph-connections/{connId}/gremlin-query")
+@RequestMapping(Constant.API_VERSION + "graphspaces/{graphspace}/graphs" +
+        "/{graph}/gremlin-query")
 public class GremlinQueryController extends GremlinController {
+
+    private static final Logger LOG =
+            LoggerFactory.getLogger(GremlinQueryController.class);
 
     private static final Set<String> CONDITION_OPERATORS = ImmutableSet.of(
             "eq", "gt", "gte", "lt", "lte"
     );
 
     @Autowired
-    private GremlinQueryService queryService;
+    private QueryService queryService;
     @Autowired
     private ExecuteHistoryService historyService;
 
+
+    @GetMapping
+    public Map<String, String> execute(@PathVariable("graphspace") String graphSpace,
+                                       @PathVariable("graph") String graph) {
+
+//        HugeClient client = this.authClient(graphSpace, graph);
+//        String vertexCount = "";
+//        String edgeCount = "";
+//        try{
+//            ResultSet gremlinVertexCount = queryService.executeQueryCount(client, "g.V().count()");
+//            vertexCount = gremlinVertexCount.data().get(0).toString();
+//        } catch (Throwable e) {
+//            vertexCount = "max";
+//        }
+//        try {
+//            ResultSet gremlinEdgeCount = queryService.executeQueryCount(client, "g.E().count()");
+//            edgeCount = gremlinEdgeCount.data().get(0).toString();
+//        } catch (Throwable e) {
+//            edgeCount = "max";
+//        }
+        Map<String, String> graphCount = new HashMap<>();
+        graphCount.put("vertexcount", "0");
+        graphCount.put("edgecount", "0");
+        return graphCount;
+    }
+
+    /**
+     * 正常gremlin请求 && 图分析页面gremlin请求
+     */
     @PostMapping
-    public GremlinResult execute(@PathVariable("connId") int connId,
+    public GremlinResult gremlin(@PathVariable("graphspace") String graphSpace,
+                                 @PathVariable("graph") String graph,
                                  @RequestBody GremlinQuery query) {
+        return this.executeGremlin(graphSpace, graph, query);
+    }
+
+
+
+    /*
+    * 用户对大模型生成的gremlin评价
+    */
+    @PostMapping("text2gremlin-report")
+    public Map<String, String> reportText2Gremlin(@PathVariable("graphspace") String graphSpace,
+                                 @PathVariable("graph") String graph,
+                                 @RequestBody Text2Gremlin text2Gremlin) {
+        // username graphspace graph text llm-gremlin exec-gremlin success nice
+        text2Gremlin.setText(text2Gremlin.getText().replaceAll(",", "，"));
+        LOG.info("{},{},{},{},{},{},{},{}", text2Gremlin.getUsername(),
+                 graphSpace, graph, text2Gremlin.getText(),
+                 text2Gremlin.getLlmGremlin(), text2Gremlin.getExecGremlin(),
+                 text2Gremlin.getSuccess(),
+                 text2Gremlin.getScore());
+        return ImmutableMap.of("text2gremlin-report", "success");
+    }
+
+
+    private GremlinResult executeGremlin(String graphSpace, String graph,
+                                         GremlinQuery query) {
         this.checkParamsValid(query);
 
         Date createTime = HubbleUtil.nowDate();
         // Insert execute history
         ExecuteStatus status = ExecuteStatus.RUNNING;
         ExecuteHistory history;
-        history = new ExecuteHistory(null, connId, 0L, ExecuteType.GREMLIN,
-                                     query.getContent(), status, AsyncTaskStatus.UNKNOWN,
+        history = new ExecuteHistory(null, graphSpace, graph, 0L,
+                                     ExecuteType.GREMLIN, query.getContent(),
+                                     query.getText(), status,
+                                     AsyncTaskStatus.UNKNOWN,
                                      -1L, createTime);
         this.historyService.save(history);
 
         StopWatch timer = StopWatch.createStarted();
         try {
-            GremlinResult result = this.queryService.executeQuery(connId, query);
+            HugeClient client = this.authClient(graphSpace, graph);
+            GremlinResult result =
+                    this.queryService.executeGremlinQuery(client, query);
             status = ExecuteStatus.SUCCESS;
             return result;
         } catch (Throwable e) {
@@ -94,26 +167,36 @@ public class GremlinQueryController extends GremlinController {
         }
     }
 
+
+
     @PostMapping("async-task")
-    public ExecuteStatus executeAsyncTask(@PathVariable("connId") int connId,
-                                          @RequestBody GremlinQuery query) {
+    public Map<String, Object> executeAsyncTask(
+            @PathVariable("graphspace") String graphSpace,
+            @PathVariable("graph") String graph,
+            @RequestBody GremlinQuery query) {
         this.checkParamsValid(query);
 
         Date createTime = HubbleUtil.nowDate();
         // Insert execute history
         ExecuteStatus status = ExecuteStatus.ASYNC_TASK_RUNNING;
         ExecuteHistory history;
-        history = new ExecuteHistory(null, connId, 0L, ExecuteType.GREMLIN_ASYNC,
-                                     query.getContent(), status,
-                                     AsyncTaskStatus.UNKNOWN, -1L, createTime);
+        history = new ExecuteHistory(null, graphSpace, graph, 0L,
+                                     ExecuteType.GREMLIN_ASYNC,
+                                     query.getContent(), query.getText(),
+                                     status, AsyncTaskStatus.UNKNOWN, -1L,
+                                     createTime);
         this.historyService.save(history);
 
         StopWatch timer = StopWatch.createStarted();
         long asyncId = 0L;
+        Map<String, Object> result = new HashMap<>(3);
         try {
-            asyncId = this.queryService.executeAsyncTask(connId, query);
+            HugeClient client = this.authClient(graphSpace, graph);
+            asyncId = this.queryService.executeGremlinAsyncTask(client, query);
             status = ExecuteStatus.ASYNC_TASK_SUCCESS;
-            return status;
+            result.put("task_id", asyncId);
+            result.put("execute_status", status);
+            return result;
         } catch (Throwable e) {
             status = ExecuteStatus.ASYNC_TASK_FAILED;
             throw e;
@@ -128,11 +211,13 @@ public class GremlinQueryController extends GremlinController {
     }
 
     @PutMapping
-    public GremlinResult expand(@PathVariable("connId") int connId,
+    public GremlinResult expand(@PathVariable("graphspace") String graphSpace,
+                                @PathVariable("graph") String graph,
                                 @RequestBody AdjacentQuery query) {
         this.checkParamsValid(query);
         try {
-            return this.queryService.expandVertex(connId, query);
+            HugeClient client = this.authClient(graphSpace, graph);
+            return this.queryService.expandVertex(client, query);
         } catch (Exception e) {
             Throwable rootCause = Ex.rootCause(e);
             throw new ExternalException("gremlin.expand.failed", rootCause,
@@ -167,5 +252,34 @@ public class GremlinQueryController extends GremlinController {
                          "common.param.cannot-be-null", "condition.value");
             }
         }
+    }
+
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    private static class Text2Gremlin {
+        @JsonProperty("username")
+        private String username;
+
+        // 执行的gremlin语句
+        @JsonProperty("exec-gremlin")
+        private String execGremlin;
+
+        @JsonProperty("text")
+        private String text;
+
+        // 大模型生成的gremlin语句
+        @JsonProperty("llm-gremlin")
+        private String llmGremlin;
+
+        // 语句成功与否
+        @JsonProperty("success")
+        private Boolean success;
+
+        // 用户点赞与否
+        @JsonProperty("score")
+        private Boolean score;
     }
 }

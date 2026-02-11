@@ -18,9 +18,8 @@
 
 package org.apache.hugegraph.controller.load;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.common.Response;
@@ -38,23 +37,15 @@ import org.apache.hugegraph.service.load.LoadTaskService;
 import org.apache.hugegraph.util.Ex;
 import org.apache.hugegraph.util.HubbleUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
-
-import lombok.extern.log4j.Log4j2;
+import java.util.ArrayList;
+import java.util.List;
 
 @Log4j2
 @RestController
-@RequestMapping(Constant.API_VERSION + "graph-connections/{connId}/job-manager")
+@RequestMapping(Constant.API_VERSION + "graphspaces/{graphspace}/graphs" +
+        "/{graph}/job-manager")
 public class JobManagerController {
 
     private static final int LIMIT = 500;
@@ -71,27 +62,29 @@ public class JobManagerController {
     }
 
     @PostMapping
-    public JobManager create(@PathVariable("connId") int connId,
+    public JobManager create(@PathVariable("graphspace") String graphSpace,
+                             @PathVariable("graph") String graph,
                              @RequestBody JobManager entity) {
         synchronized (this.service) {
             Ex.check(entity.getJobName().length() <= 48,
                      "job.manager.job-name.reached-limit");
             Ex.check(entity.getJobName() != null, () ->
-                             Constant.COMMON_NAME_PATTERN.matcher(
-                                     entity.getJobName()).matches(),
+                     Constant.COMMON_NAME_PATTERN.matcher(
+                     entity.getJobName()).matches(),
                      "job.manager.job-name.unmatch-regex");
             Ex.check(entity.getJobRemarks().length() <= 200,
                      "job.manager.job-remarks.reached-limit");
             Ex.check(!StringUtils.isEmpty(entity.getJobRemarks()), () ->
-                             Constant.COMMON_REMARK_PATTERN.matcher(
-                                     entity.getJobRemarks()).matches(),
+                     Constant.COMMON_REMARK_PATTERN.matcher(
+                     entity.getJobRemarks()).matches(),
                      "job.manager.job-remarks.unmatch-regex");
             Ex.check(this.service.count() < LIMIT,
                      "job.manager.reached-limit", LIMIT);
-            if (this.service.getTask(entity.getJobName(), connId) != null) {
+            if (this.service.getTask(entity.getJobName(), graphSpace, graph) != null) {
                 throw new InternalException("job.manager.job-name.repeated");
             }
-            entity.setConnId(connId);
+            entity.setGraphSpace(graphSpace);
+            entity.setGraph(graph);
             entity.setJobStatus(JobStatus.DEFAULT);
             entity.setJobDuration(0L);
             entity.setJobSize(0L);
@@ -121,41 +114,44 @@ public class JobManagerController {
     }
 
     @GetMapping("ids")
-    public List<JobManager> list(@PathVariable("connId") int connId,
+    public List<JobManager> list(@PathVariable("graphspace") String graphSpace,
+                                 @PathVariable("graph") String graph,
                                  @RequestParam("job_ids") List<Integer> jobIds) {
-        return this.service.list(connId, jobIds);
+        return this.service.list(graphSpace, graph, jobIds);
     }
 
     @GetMapping
-    public IPage<JobManager> list(@PathVariable("connId") int connId,
+    public IPage<JobManager> list(@PathVariable("graphspace") String graphSpace,
+                                  @PathVariable("graph") String graph,
                                   @RequestParam(name = "page_no",
                                                 required = false,
                                                 defaultValue = "1")
-                                  int pageNo,
+                                                int pageNo,
                                   @RequestParam(name = "page_size",
                                                 required = false,
                                                 defaultValue = "10")
-                                  int pageSize,
+                                                int pageSize,
                                   @RequestParam(name = "content",
                                                 required = false,
                                                 defaultValue = "")
-                                  String content) {
-        return this.service.list(connId, pageNo, pageSize, content);
+                                                String content) {
+        return this.service.list(graphSpace, graph, pageNo, pageSize, content);
     }
 
     @PutMapping("{id}")
-    public JobManager update(@PathVariable("connId") int connId,
+    public JobManager update(@PathVariable("graphspace") String graphSpace,
+                             @PathVariable("graph") String graph,
                              @PathVariable("id") int id,
                              @RequestBody JobManager newEntity) {
         Ex.check(newEntity.getJobName().length() <= 48,
                  "job.manager.job-name.reached-limit");
         Ex.check(newEntity.getJobName() != null, () ->
-                         Constant.COMMON_NAME_PATTERN.matcher(
-                                 newEntity.getJobName()).matches(),
+                 Constant.COMMON_NAME_PATTERN.matcher(
+                 newEntity.getJobName()).matches(),
                  "job.manager.job-name.unmatch-regex");
         Ex.check(!StringUtils.isEmpty(newEntity.getJobRemarks()), () ->
-                         Constant.COMMON_REMARK_PATTERN.matcher(
-                                 newEntity.getJobRemarks()).matches(),
+                 Constant.COMMON_REMARK_PATTERN.matcher(
+                 newEntity.getJobRemarks()).matches(),
                  "job.manager.job-remarks.unmatch-regex");
         // Check exist Job Manager with this id
         JobManager entity = this.service.get(id);
@@ -163,7 +159,7 @@ public class JobManagerController {
             throw new ExternalException("job-manager.not-exist.id", id);
         }
         if (!newEntity.getJobName().equals(entity.getJobName()) &&
-            this.service.getTask(newEntity.getJobName(), connId) != null) {
+            this.service.getTask(newEntity.getJobName(), graphSpace, graph) != null) {
             throw new InternalException("job.manager.job-name.repeated");
         }
         entity.setJobName(newEntity.getJobName());
@@ -173,7 +169,8 @@ public class JobManagerController {
     }
 
     @GetMapping("{id}/reason")
-    public Response reason(@PathVariable("connId") int connId,
+    public Response reason(@PathVariable("graphspace") String graphSpace,
+                           @PathVariable("graph") String graph,
                            @PathVariable("id") int id) {
         JobManager job = this.service.get(id);
         if (job == null) {

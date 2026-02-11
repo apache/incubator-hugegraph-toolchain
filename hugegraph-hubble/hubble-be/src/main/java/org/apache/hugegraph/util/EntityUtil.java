@@ -18,11 +18,11 @@
 
 package org.apache.hugegraph.util;
 
-import java.lang.reflect.Field;
-
 import org.apache.hugegraph.annotation.MergeProperty;
 import org.apache.hugegraph.common.Mergeable;
 import org.apache.hugegraph.exception.InternalException;
+
+import java.lang.reflect.Field;
 
 public final class EntityUtil {
 

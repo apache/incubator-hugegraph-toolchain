@@ -1,0 +1,64 @@
+{
+    "async-tasks": {
+        "title": "Task Management",
+        "placeholders": {
+            "search": "Enter task ID or name to search"
+        },
+        "table-column-title": {
+            "task-id": "Task ID",
+            "task-name": "Task Name",
+            "task-type": "Task Type",
+            "create-time": "Create Time",
+            "time-consuming": "Time Consuming",
+            "status": "Status",
+            "manipulation": "Operation"
+        },
+        "table-filters": {
+            "task-type": {
+                "all": "All",
+                "gremlin": "Gremlin Task",
+                "algorithm": "Algorithm Task",
+                "remove-schema": "Remove Metadata",
+                "create-index": "Create Index",
+                "rebuild-index": "Rebuild Index"
+            },
+            "status": {
+                "all": "All",
+                "scheduling": "Scheduling",
+                "scheduled": "Queued",
+                "queued": "Queued",
+                "running": "Running",
+                "restoring": "Restoring",
+                "success": "Success",
+                "failed": "Failed",
+                "cancelling": "Cancelled",
+                "cancelled": "Cancelled"
+            }
+        },
+        "table-selection": {
+            "selected": "Selected {{number}} items",
+            "delete-batch": "Batch Delete"
+        },
+        "manipulations": {
+            "abort": "Abort",
+            "aborting": "Aborting",
+            "delete": "Delete",
+            "check-result": "Check Result",
+            "check-reason": "Check Reason"
+        },
+        "hint": {
+            "delete-confirm": "Delete Confirmation",
+            "delete-description": "Are you sure you want to delete this task? Deletion is irreversible, please proceed with caution",
+            "delete-succeed": "Delete Successful",
+            "delete-batch-confirm": "Batch Delete",
+            "delete-batch-description": "Confirm deletion of the following tasks? Deletion is irreversible, please proceed with caution",
+            "delete": "Delete",
+            "cancel": "Cancel",
+            "no-data": "No Data Available",
+            "empty": "You currently have no tasks",
+            "select-disabled": "Task {{id}} cannot be selected for deletion",
+            "check-details": "Check Details",
+            "creation-failed": "Creation Failed"
+        }
+    }
+}

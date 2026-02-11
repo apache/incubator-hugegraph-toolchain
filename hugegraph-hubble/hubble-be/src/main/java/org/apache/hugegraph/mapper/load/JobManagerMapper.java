@@ -18,13 +18,13 @@
 
 package org.apache.hugegraph.mapper.load;
 
-import org.apache.hugegraph.entity.load.JobManager;
-import org.apache.hugegraph.entity.load.JobManagerItem;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.springframework.stereotype.Component;
 
+import org.apache.hugegraph.entity.load.JobManager;
+import org.apache.hugegraph.entity.load.JobManagerItem;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 @Mapper
@@ -35,5 +35,5 @@ public interface JobManagerMapper extends BaseMapper<JobManager> {
             "ISNULL(SUM(l.duration),0) as duration " +
             "FROM `load_task` as l LEFT JOIN `file_mapping` as f " +
             "ON l.file_id=f.id WHERE l.job_id = #{job_id}")
-    JobManagerItem computeSizeDuration(@Param("job_id") int jobId);
+    JobManagerItem computeSizeDuration(@Param("job_id") int job_id);
 }

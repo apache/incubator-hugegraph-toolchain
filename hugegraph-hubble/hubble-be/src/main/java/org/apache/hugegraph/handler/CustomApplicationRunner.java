@@ -18,6 +18,9 @@
 
 package org.apache.hugegraph.handler;
 
+//import org.apache.hugegraph.license.LicenseVerifier; // TODO C Remove Licence
+
+import lombok.extern.log4j.Log4j2;
 import org.apache.hugegraph.config.HugeConfig;
 import org.apache.hugegraph.license.ServerInfo;
 import org.apache.hugegraph.options.HubbleOptions;
@@ -26,11 +29,8 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
-import lombok.extern.log4j.Log4j2;
-
 @Log4j2
 @Component
-// TODO: Why we need this class?
 public class CustomApplicationRunner implements ApplicationRunner {
 
     @Autowired
@@ -40,5 +40,11 @@ public class CustomApplicationRunner implements ApplicationRunner {
     public void run(ApplicationArguments args) throws Exception {
         String serverId = this.config.get(HubbleOptions.SERVER_ID);
         ServerInfo serverInfo = new ServerInfo(serverId);
+        log.info("The server info has been inited");
+        //this.installLicense(serverInfo, "9662b261c388fc5923ace0ebe2a34b02"); // TODO C Remove Licence
+    }
+
+    private void installLicense(ServerInfo serverInfo, String md5) {
+        //LicenseVerifier.instance().install(serverInfo, md5);// TODO C Remove Licence
     }
 }

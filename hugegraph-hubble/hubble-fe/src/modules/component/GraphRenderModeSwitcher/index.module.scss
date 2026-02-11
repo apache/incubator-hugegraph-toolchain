@@ -1,0 +1,87 @@
+/*!
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with this
+ * work for additional information regarding copyright ownership. The ASF
+ * licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
+.threeModeSegment {
+    :global(.ant-segmented) {
+        border-radius: 20px;
+    }
+
+    :global(.ant-segmented:not(.ant-segmented-disabled):hover) {
+        border-radius: 20px;
+    }
+
+    :global(.ant-segmented-group) {
+        background: #DBEFFF;
+        user-select: none;
+        border-radius: 20px;
+    }
+
+    :global(.ant-segmented-thumb) {
+        border-radius: 20px;
+        background-color: #DBEFFF;
+        box-shadow: none;
+     }
+
+    :global(.ant-segmented-thumb-motion-appear-active) {
+        transition: transform 0.01s cubic-bezier(0.645, 0.045, 0.355, 1), width 0.01s cubic-bezier(0.645, 0.045, 0.355, 1);
+        will-change: transform, width;
+    }
+
+    :global(.ant-segmented-group > label) {
+       border-radius: 20px;
+       box-shadow: none;
+       width: 80px;
+    }
+
+    :global(.ant-segmented-group > .ant-segmented-item) {
+        background-color: #DBEFFF;
+     }
+
+     :global(.ant-segmented-group > .ant-segmented-item-selected) {
+        background-color: #0091ff;
+     }
+
+    :global(.ant-segmented-group > .ant-segmented-item >.ant-segmented-item-label) {
+        color: #2c9ddb;
+    }
+
+    :global(.ant-segmented-group > .ant-segmented-item-selected >.ant-segmented-item-label) {
+        color: #fff;
+    }
+
+     // disable样式调整
+     :global(.ant-segmented-disabled > .ant-segmented-group) {
+        background-color: #f5f5f5;
+     }
+
+    :global(.ant-segmented-disabled > .ant-segmented-group >.ant-segmented-item) {
+        background-color: #f5f5f5;
+     }
+
+    :global(.ant-segmented-disabled > .ant-segmented-group > .ant-segmented-item-selected) {
+        background-color: #e6e6e6;
+     }
+
+     :global(.ant-segmented-disabled > .ant-segmented-group >.ant-segmented-item >.ant-segmented-item-label) {
+        color: #b8b8b8;
+     }
+
+    :global(.ant-segmented-disabled > .ant-segmented-group > .ant-segmented-item-selected >.ant-segmented-item-label) {
+        color: #b8b8b8;
+     }
+}

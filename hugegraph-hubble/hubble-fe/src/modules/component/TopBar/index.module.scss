@@ -1,0 +1,88 @@
+/*!
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with this
+ * work for additional information regarding copyright ownership. The ASF
+ * licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
+.pageHeader {
+    display: flex;
+    align-items: center;
+
+    .olapSwitchButton { 
+      margin-left: auto;
+    }
+
+    .olapSwitchTitle {
+      margin-right: 20px;
+    }
+  
+    .graphStatus {
+      margin-left: 5px;
+      margin-right: 10px;
+    }
+
+    .graphLoadTime {
+      margin-right: 10px;
+    }
+
+    .vermeerInfo{
+      margin-right: 18px;
+    }
+    
+    .questionCircleIcon{
+      margin-left: 10px;
+    }
+
+    :global(.ant-tag){
+      margin-left: 0px;
+      margin-right: 0px;
+    }
+
+    :global(.ant-btn-text){
+      padding: 0 0;
+  }
+
+    :global(.ant-btn-default){
+        height: 22px;
+        font-size: 12px;
+    }
+  
+   :global(.ant-page-header) {     
+      padding: 2px 24px;
+    }
+  
+    :global(.ant-page-header-content) {
+      padding-top: 0;
+      display: flex;
+      align-items: center;
+    }
+  }
+
+  .currentGraphSelect {
+    width: 180px !important; 
+  
+    .graphOptions{
+        display: flex;
+  
+        .graphName{
+            margin-right: 20px;
+            min-width: 60px;
+        }
+    
+        .graphStatus{
+            margin-left: auto;
+        }
+    }
+  }

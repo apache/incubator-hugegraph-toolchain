@@ -1,0 +1,65 @@
+/*!
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with this
+ * work for additional information regarding copyright ownership. The ASF
+ * licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
+.wrap {
+    line-height: 0;
+    position: relative;
+}
+
+.disable {
+    // border-top: 1px solid #FF0000;
+    width: 60px;
+    // transform: rotate(27deg);
+    position: absolute;
+    z-index: 2;
+    height: 32px;
+    top: 0;
+    // top: 17px;
+    // left: -2px;
+    // display: inline-block;
+    background: linear-gradient(28deg, transparent 49%, deeppink 49%, deeppink 50.5%, transparent 50.5%);
+}
+
+.color {
+    width: 46px;
+    height: 18px;
+    border-radius: 2px;
+}
+
+.swatch {
+    padding: 6px;
+    background: #fff;
+    border-radius: 2px;
+    // box-shadow: 0 0 0 1px rgba(0, 0, 0, .1);
+    border: 1px solid #d9d9d9;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.popover {
+    position: absolute;
+    z-index: 2;
+}
+
+.cover {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0,
+}

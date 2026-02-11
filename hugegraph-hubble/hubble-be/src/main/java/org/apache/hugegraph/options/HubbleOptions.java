@@ -23,12 +23,13 @@ import static org.apache.hugegraph.config.OptionChecker.disallowEmpty;
 import static org.apache.hugegraph.config.OptionChecker.positiveInt;
 import static org.apache.hugegraph.config.OptionChecker.rangeInt;
 
+import org.springframework.util.CollectionUtils;
+
 import org.apache.hugegraph.config.ConfigListOption;
 import org.apache.hugegraph.config.ConfigOption;
 import org.apache.hugegraph.config.OptionHolder;
 import org.apache.hugegraph.util.Bytes;
 import org.apache.hugegraph.util.HubbleUtil;
-import org.springframework.util.CollectionUtils;
 
 public class HubbleOptions extends OptionHolder {
 
@@ -56,7 +57,7 @@ public class HubbleOptions extends OptionHolder {
 
     public static final ConfigOption<String> SERVER_HOST =
             new ConfigOption<>(
-                    "hubble.host",
+                    "server.host",
                     "The host of hugegraph-hubble server.",
                     disallowEmpty(),
                     "localhost"
@@ -64,7 +65,7 @@ public class HubbleOptions extends OptionHolder {
 
     public static final ConfigOption<Integer> SERVER_PORT =
             new ConfigOption<>(
-                    "hubble.port",
+                    "server.port",
                     "The port of hugegraph-hubble server.",
                     rangeInt(1, 65535),
                     8088
@@ -102,7 +103,10 @@ public class HubbleOptions extends OptionHolder {
                         if (CollectionUtils.isEmpty(input)) {
                             return false;
                         }
-                        return !input.contains(-1) || input.size() <= 1;
+                        if (input.contains(-1) && input.size() > 1) {
+                            return false;
+                        }
+                        return true;
                     },
                     -1
             );
@@ -222,5 +226,166 @@ public class HubbleOptions extends OptionHolder {
                     "when https protocol is enabled",
                     null,
                     "hugegraph"
+            );
+
+    public static final ConfigOption<String> PD_CLUSTER =
+            new ConfigOption<>(
+                    "cluster",
+                    "The cluster which hubble connect to",
+                    null,
+                    "hg"
+            );
+
+    public static final ConfigOption<String> PD_PEERS =
+            new ConfigOption<>(
+                    "pd.peers",
+                    "The pd addresses",
+                    null,
+                    "127.0.0.1:8686"
+            );
+
+    public static final ConfigOption<String> PD_SERVER =
+            new ConfigOption<>(
+                    "pd.server",
+                    "The pd-server addresses",
+                    null,
+                    "127.0.0.1:8620"
+            );
+
+    public static final ConfigOption<String> AFS_DIR =
+            new ConfigOption<>(
+                    "afs.dir",
+                    "the directory in afs stored for the olap algorithm's result",
+                    null,
+                    "/user/hugegraph/graph_sketch/"
+            );
+    //// TODO REMOVED
+    //public static final ConfigOption<String> AFS_URI =
+    //        new ConfigOption<>(
+    //                "afs.uri",
+    //                "the uri of afs stored for the olap algorithm's result",
+    //                null,
+    //                "afs://cnn-bd-main.afs.baidu.com:9902"
+    //        );
+    //
+    //public static final ConfigOption<String> AFS_USER =
+    //        new ConfigOption<>(
+    //                "afs.user",
+    //                "the user name for accessing afs stored",
+    //                null,
+    //                "user"
+    //        );
+    //
+    //public static final ConfigOption<String> AFS_PASSWORD =
+    //        new ConfigOption<>(
+    //                "afs.password",
+    //                "the user password for accessing afs stored",
+    //                null,
+    //                "password"
+    //        );
+
+    public static final ConfigOption<String> DASHBOARD_ADDRESS =
+            new ConfigOption<>(
+                    "dashboard.address",
+                    "The dashboard addresses",
+                    null,
+                    "127.0.0.1:8092"
+            );
+
+    public static final ConfigOption<String> ROUTE_TYPE =
+            new ConfigOption<>(
+                    "route.type",
+                    "use service url",
+                    allowValues("BOTH", "NODE_PORT", "DDS"),
+                    "NODE_PORT"
+            );
+
+    public static final ConfigOption<String> PROMETHEUS_URL =
+            new ConfigOption<>(
+                    "prometheus.url",
+                    "prometheus url, for saas metrics",
+                    null,
+                    "http://127.0.0.1:8090"
+            );
+
+    public static final ConfigOption<String> IDC =
+            new ConfigOption<>(
+                    "idc",
+                    "hubble deployment location (eg:bddwd or gzbh)",
+                    disallowEmpty(),
+                    "bddwd"
+            );
+
+    public static final ConfigOption<String> MONITOR_URL =
+            new ConfigOption<>(
+                    "monitor.url",
+                    "monitor URL",
+                    null,
+                    ""
+            );
+
+    public static final ConfigOption<String> ES_URL =
+            new ConfigOption<>(
+                    "es.urls",
+                    "The addresses of Elasticsearch Cluster",
+                    null,
+                    ""
+            );
+
+    public static final ConfigOption<String> ES_USER =
+            new ConfigOption<>(
+                    "es.user",
+                    "The user of Elasticsearch Cluster",
+                    null,
+                    ""
+            );
+
+    public static final ConfigOption<String> ES_PASSWORD =
+            new ConfigOption<>(
+                    "es.password",
+                    "The password of Elasticsearch Cluster",
+                    null,
+                    ""
+            );
+
+    // ES查询: max_result_window
+    public static final ConfigOption<Integer> MAX_RESULT_WINDOW=
+            new ConfigOption<>(
+                    "es.max_result_window",
+                    "es config info: max_result_window",
+                    positiveInt(),
+                    10000
+            );
+
+    public static final ConfigOption<String> LOG_AUDIT_PATTERN =
+            new ConfigOption<>(
+                    "log.audit.pattern",
+                    "the index name of audit log",
+                    null,
+                    "hugegraphaudit"
+            );
+
+    public static final ConfigOption<Integer> LOG_EXPORT_COUNT =
+            new ConfigOption<>(
+                    "log.export.count",
+                    "max export item count of audit/log",
+                    positiveInt(),
+                    10000
+            );
+
+    public static final ConfigOption<String> PROXY_SERVLET_URL =
+            new ConfigOption<>(
+                    "proxy.servlet_url",
+                    "the servlet url to access",
+                    null,
+                    ""
+            );
+
+    public static final ConfigOption<String> PROXY_TARGET_URL =
+            new ConfigOption<>(
+                    "proxy.target_url",
+                    "the target url to access",
+                    null,
+                    ""
             );
 }

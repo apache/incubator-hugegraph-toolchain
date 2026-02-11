@@ -30,7 +30,10 @@ public enum LoadStatus implements IEnum<Byte> {
 
     PAUSED(3),
 
-    STOPPED(4);
+    STOPPED(4),
+
+    // No Used
+    INIT(5);
 
     private byte code;
 

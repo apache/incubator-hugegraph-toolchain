@@ -20,17 +20,29 @@ package org.apache.hugegraph.entity.query;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
 public class GremlinQuery {
 
     @JsonProperty("content")
     private String content;
+
+    @JsonProperty("text")
+    private String text;
+
+    public GremlinQuery() {
+        this.text = "";
+    }
+    public GremlinQuery(String content) {
+        this.content = content;
+        this.text = "";
+    }
+
+    public GremlinQuery(String content, String text) {
+        this.content = content;
+        this.text = text;
+    }
 }

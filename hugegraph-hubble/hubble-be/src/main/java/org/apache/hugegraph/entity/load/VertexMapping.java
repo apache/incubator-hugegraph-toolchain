@@ -21,7 +21,6 @@ package org.apache.hugegraph.entity.load;
 import java.util.List;
 
 import org.apache.hugegraph.annotation.MergeProperty;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.AllArgsConstructor;
@@ -38,6 +37,10 @@ public class VertexMapping extends ElementMapping {
     @MergeProperty
     @JsonProperty("id_fields")
     private List<String> idFields;
+
+    public VertexMapping(String s, boolean b) {
+        // TODO Rmving?
+    }
 
     @Override
     public boolean equals(Object object) {

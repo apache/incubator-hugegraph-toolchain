@@ -43,7 +43,10 @@ public class CacheConfig {
     public enum Caches {
 
         // No used
-        GREMLIN_QUERY;
+        GREMLIN_QUERY,
+
+        // es query cached
+        ES_QUERY(DEFAULT_MAXSIZE, 60);
 
         private int maxSize = DEFAULT_MAXSIZE;
         private int ttl = DEFAULT_TTL;

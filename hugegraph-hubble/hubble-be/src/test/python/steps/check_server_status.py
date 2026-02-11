@@ -16,13 +16,14 @@
 #  under the License.
 
 import json
-import requests
 import sys
+
+import requests
 from assertpy import assert_that
 from behave import *
-from imp import reload
 
 reload(sys)
+sys.setdefaultencoding('utf8')
 use_step_matcher("re")
 
 

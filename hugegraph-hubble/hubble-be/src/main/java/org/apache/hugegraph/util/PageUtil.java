@@ -43,13 +43,32 @@ public final class PageUtil {
         } else {
             pages = 0;
             // Return all entities when page size is negative
-            records = pageSize < 0 ? entities : Collections.emptyList();
+            if (pageSize < 0) {
+                records = entities;
+                pageSize = entities.size();
+            } else {
+                records = Collections.emptyList();
+            }
         }
 
         Page<T> page = new Page<>(current, pageSize, entities.size(), true);
         page.setRecords(records);
         page.setOrders(Collections.emptyList());
         page.setPages(pages);
+        return page;
+    }
+
+    public static <T> IPage<T> newPage(List<T> records, int pageNo,
+                                       int pageSize, int total) {
+
+        int current = pageNo > 1 ? pageNo : 1;
+        int pages = 0;
+
+        Page<T> page = new Page<>(current, pageSize, total, true);
+        page.setRecords(records);
+        page.setOrders(Collections.emptyList());
+        page.setPages(pages);
+
         return page;
     }
 }

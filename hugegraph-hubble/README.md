@@ -44,16 +44,16 @@ Then use a web browser to access `ip:8088` and you can see the `Hubble` page. Yo
 
 ### 2. Clone source code then compile and install
 
-> Note: Compiling Hubble requires the user’s local environment to have Node.js V16.x and yarn installed.
+> Note: Compiling Hubble requires the user's local environment to have Node.js V18.20.8 and yarn installed.
 
 ```bash
 apt install curl build-essential
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
 source ~/.bashrc
-nvm install 16
+nvm install 18.20.8
 ```
 
-Then, verify that the installed Node.js version is 16.x (please note that higher Node version may cause conflicts).
+Then, verify that the installed Node.js version is 18.20.8.
 
 ```bash
 node -v

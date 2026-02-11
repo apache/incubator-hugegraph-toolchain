@@ -18,12 +18,12 @@
 
 package org.apache.hugegraph.mapper.query;
 
-import org.apache.hugegraph.entity.query.GremlinCollection;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.springframework.stereotype.Component;
 
+import org.apache.hugegraph.entity.query.GremlinCollection;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 
@@ -38,12 +38,14 @@ public interface GremlinCollectionMapper extends BaseMapper<GremlinCollection> {
             "      WHEN `content` LIKE concat('%', #{content}, '%') THEN 2 " +
             "END) as relation_sort " +
             "FROM `gremlin_collection` " +
-            "WHERE `conn_id` = #{conn_id} AND " +
+            "WHERE `graphspace` = #{graphspace} AND " +
+            "`graph` = #{graph} AND `type` = #{type} AND" +
             "(`name` LIKE concat('%', #{content}, '%') OR " +
             "`content` LIKE concat('%', #{content}, '%')) " +
             "ORDER BY relation_sort ASC, `create_time` DESC")
     IPage<GremlinCollection> selectByContentInPage(IPage<GremlinCollection> page,
-                                                   @Param("conn_id") int connId,
-                                                   @Param("content")
-                                                   String content);
+                                                   @Param("graphspace") String graphSpace,
+                                                   @Param("graph") String graph,
+                                                   @Param("content") String content,
+                                                   @Param("type") String type);
 }

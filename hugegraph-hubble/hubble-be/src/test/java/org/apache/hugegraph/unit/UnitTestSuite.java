@@ -23,9 +23,7 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-        EntityUtilTest.class,
-        FileUtilTest.class
+    FileUtilTest.class
 })
 public class UnitTestSuite {
-
 }

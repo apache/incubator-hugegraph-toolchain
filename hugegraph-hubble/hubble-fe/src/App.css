@@ -1,0 +1,92 @@
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with this
+ * work for additional information regarding copyright ownership. The ASF
+ * licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
+.form_attr_add {
+    border: 1px dashed #40a9ff;
+    text-align: center;
+    padding: 4px;
+    cursor: pointer;
+}
+
+.form_attr_select {
+    display: inline-block;
+    width: calc(25% - 12px);
+    width: 120px;
+}
+
+.form_attr_val {
+    display: inline-block;
+    width: 120px;
+}
+
+.form_attr_split {
+    display: inline-block;
+    width: 24px;
+    line-height: 32px;
+    text-align: center;
+}
+
+.form_attr_border {
+    border: 1px dashed #2f54eb;
+    padding: 20px;
+    margin-bottom: 10px;
+}
+
+.form_attr_button,
+.form_attr_table {
+    margin-bottom: 10px;
+}
+
+.ant-layout-sider-trigger {
+    border-top: 1px solid rgba(0, 0, 0, .06);
+}
+
+/* .ant-modal-content {
+    width: 600px;
+} */
+
+.ant-modal-body {
+    max-height: 488px;
+    overflow: auto;
+}
+
+.ant-menu-sub.ant-menu-inline {
+    background-color: #fff;
+}
+
+.ant-page-header {
+    padding: 24px 10px 24px;
+}
+
+.ant-page-header-content {
+    padding-top: 24px;
+}
+
+/* csslint ignore:start */
+.ant-table-thead > tr > th:not(:last-child):not(.ant-table-selection-column):not(.ant-table-row-expand-icon-cell):not([colspan])::before {
+    width: 0;
+}
+/* csslint ignore:end */
+
+.ant-table-tbody > tr > td {
+    border-bottom: 0;
+}
+
+.ant-table-tbody .ant-empty-normal {
+    margin: 200px 0;
+}
