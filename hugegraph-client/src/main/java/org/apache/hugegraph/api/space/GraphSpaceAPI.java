@@ -28,6 +28,7 @@ import org.apache.hugegraph.structure.space.GraphSpace;
 import org.apache.hugegraph.util.JsonUtil;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -71,15 +72,16 @@ public class GraphSpaceAPI extends API {
     }
 
     public List<Map<String, Object>> listProfile(String prefix) {
-        String profilePath = joinPath(this.path(), "profile");
-        Map<String, Object> params = new LinkedHashMap<>();
-        params.put("prefix", prefix);
-        RestResult result = this.client.get(profilePath, params);
-        List<Map> results = result.readList(Map.class);
+        List<String> names = this.list();
         List<Map<String, Object>> profiles = new ArrayList<>();
-        for (Object entry : results) {
-            profiles.add(JsonUtil.fromJson(JsonUtil.toJson(entry), Map.class));
+        for (String name : names) {
+            if (name.startsWith(prefix)) {
+                GraphSpace space = this.get(name);
+                Map<String, Object> profileMap = JsonUtil.fromJson(JsonUtil.toJson(space), Map.class);
+                profiles.add(profileMap);
+            }
         }
+
         return profiles;
     }
 
