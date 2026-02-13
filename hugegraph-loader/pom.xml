@@ -50,7 +50,7 @@
         <xz.version>1.8</xz.version>
         <mysql.connector.version>8.0.28</mysql.connector.version>
         <postgres.version>42.4.1</postgres.version>
-        <mssql.jdbc.version>7.2.0.jre8</mssql.jdbc.version>
+        <mssql.jdbc.version>11.1.0.jre8-preview</mssql.jdbc.version>
         <kafka.testcontainer.version>1.19.0</kafka.testcontainer.version>
         <parboiled.version>1.1.8</parboiled.version>
     </properties>
