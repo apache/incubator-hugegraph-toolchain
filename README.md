@@ -19,7 +19,7 @@ A comprehensive suite of client SDKs, data tools, and management utilities for [
 **HugeGraph Ecosystem**:
 1. [hugegraph](https://github.com/apache/hugegraph) - Core graph database (**[pd](https://github.com/apache/hugegraph/tree/master/hugegraph-pd)** / **[store](https://github.com/apache/hugegraph/tree/master/hugegraph-store)** / **[server](https://github.com/apache/hugegraph/tree/master/hugegraph-server)** / **[commons](https://github.com/apache/hugegraph/tree/master/hugegraph-commons)**)
 2. [hugegraph-computer](https://github.com/apache/hugegraph-computer) - Distributed graph computing system
-3. [hugegraph-ai](https://github.com/apache/incubator-hugegraph-ai) - Graph AI/LLM/Knowledge Graph integration
+3. [hugegraph-ai](https://github.com/apache/hugegraph-ai) - Graph AI/LLM/Knowledge Graph integration
 4. [hugegraph-website](https://github.com/apache/hugegraph-doc) - Documentation and website
 
 ## Architecture Overview
@@ -191,7 +191,7 @@ client := hugegraph.NewClient("http://localhost:8080", "hugegraph")
 
 </details>
 
-> **Looking for other languages?** See [hugegraph-python-client](https://github.com/apache/incubator-hugegraph-ai/tree/main/hugegraph-python-client) in the hugegraph-ai repository.
+> **Looking for other languages?** See [hugegraph-python-client](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-python-client) in the hugegraph-ai repository.
 
 ---
 
@@ -247,7 +247,7 @@ client := hugegraph.NewClient("http://localhost:8080", "hugegraph")
 
 **Quick Start**:
 ```bash
-cd hugegraph-hubble/apache-hugegraph-hubble-incubating-*/bin
+cd hugegraph-hubble/apache-hugegraph-hubble-*/bin
 ./start-hubble.sh      # Background mode
 ./start-hubble.sh -f   # Foreground mode
 ./stop-hubble.sh       # Stop server
