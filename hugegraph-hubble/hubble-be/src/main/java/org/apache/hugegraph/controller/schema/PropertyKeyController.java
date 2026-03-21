@@ -18,11 +18,10 @@
 
 package org.apache.hugegraph.controller.schema;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import lombok.extern.log4j.Log4j2;
 import org.apache.hugegraph.common.Constant;
+import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.entity.schema.ConflictCheckEntity;
 import org.apache.hugegraph.entity.schema.ConflictDetail;
 import org.apache.hugegraph.entity.schema.PropertyKeyEntity;
@@ -33,29 +32,24 @@ import org.apache.hugegraph.util.Ex;
 import org.apache.hugegraph.util.HubbleUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
-
-import lombok.extern.log4j.Log4j2;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @Log4j2
 @RestController
-@RequestMapping(Constant.API_VERSION + "graph-connections/{connId}/schema/propertykeys")
+@RequestMapping(Constant.API_VERSION + "graphspaces/{graphspace}/graphs" +
+        "/{graph}/schema/propertykeys")
 public class PropertyKeyController extends SchemaController {
 
     @Autowired
     private PropertyKeyService service;
 
     @GetMapping
-    public IPage<PropertyKeyEntity> list(@PathVariable("connId") int connId,
+    public IPage<PropertyKeyEntity> list(@PathVariable("graphspace") String graphSpace,
+                                         @PathVariable("graph") String graph,
                                          @RequestParam(name = "content",
                                                        required = false)
                                          String content,
@@ -70,29 +64,35 @@ public class PropertyKeyController extends SchemaController {
                                                        required = false,
                                                        defaultValue = "10")
                                          int pageSize) {
+        HugeClient client = this.authClient(graphSpace, graph);
         return this.listInPage(id -> this.service.list(id),
-                               connId, content, nameOrder, pageNo, pageSize);
+                               client, content, nameOrder, pageNo, pageSize);
     }
 
     @GetMapping("{name}")
-    public PropertyKeyEntity get(@PathVariable("connId") int connId,
+    public PropertyKeyEntity get(@PathVariable("graphspace") String graphSpace,
+                                 @PathVariable("graph") String graph,
                                  @PathVariable("name") String name) {
-        return this.service.get(name, connId);
+        HugeClient client = this.authClient(graphSpace, graph);
+        return this.service.get(name, client);
     }
 
     @PostMapping
-    public void create(@PathVariable("connId") int connId,
+    public void create(@PathVariable("graphspace") String graphSpace,
+                       @PathVariable("graph") String graph,
                        @RequestBody PropertyKeyEntity entity) {
+        HugeClient client = this.authClient(graphSpace, graph);
         this.checkParamsValid(entity, true);
-        this.checkEntityUnique(entity, connId);
+        this.checkEntityUnique(entity, client);
         entity.setCreateTime(HubbleUtil.nowDate());
-        this.service.add(entity, connId);
+        this.service.add(entity, client);
     }
 
     @PostMapping("check_conflict")
     public ConflictDetail checkConflict(
-            @PathVariable("connId") int connId,
-            @RequestBody ConflictCheckEntity entity) {
+                          @PathVariable("graphspace") String graphSpace,
+                          @PathVariable("graph") String graph,
+                          @RequestBody ConflictCheckEntity entity) {
         List<PropertyKeyEntity> entities = entity.getPkEntities();
         Ex.check(!CollectionUtils.isEmpty(entities),
                  "common.param.cannot-be-empty", "entities");
@@ -103,13 +103,15 @@ public class PropertyKeyController extends SchemaController {
         Ex.check(CollectionUtils.isEmpty(entity.getElEntities()),
                  "common.param.must-be-null", "edgelabels");
         entities.forEach(e -> this.checkParamsValid(e, false));
-        return this.service.checkConflict(entity, connId, false);
+        HugeClient client = this.authClient(graphSpace, graph);
+        return this.service.checkConflict(entity, client, false);
     }
 
     @PostMapping("recheck_conflict")
     public ConflictDetail recheckConflict(
-            @PathVariable("connId") int connId,
-            @RequestBody ConflictCheckEntity entity) {
+                          @PathVariable("graphspace") String graphSpace,
+                          @PathVariable("graph") String graph,
+                          @RequestBody ConflictCheckEntity entity) {
         Ex.check(!CollectionUtils.isEmpty(entity.getPkEntities()),
                  "common.param.cannot-be-empty", "propertykeys");
         Ex.check(CollectionUtils.isEmpty(entity.getPiEntities()),
@@ -118,26 +120,31 @@ public class PropertyKeyController extends SchemaController {
                  "common.param.must-be-null", "vertexlabels");
         Ex.check(CollectionUtils.isEmpty(entity.getElEntities()),
                  "common.param.must-be-null", "edgelabels");
-        return this.service.checkConflict(entity, connId, true);
+        HugeClient client = this.authClient(graphSpace, graph);
+        return this.service.checkConflict(entity, client, true);
     }
 
     @PostMapping("reuse")
-    public void reuse(@PathVariable("connId") int connId,
+    public void reuse(@PathVariable("graphspace") String graphSpace,
+                      @PathVariable("graph") String graph,
                       @RequestBody ConflictDetail detail) {
         Ex.check(!CollectionUtils.isEmpty(detail.getPkConflicts()),
                  "common.param.cannot-be-empty", "propertykey_conflicts");
-        this.service.reuse(detail, connId);
+        HugeClient client = this.authClient(graphSpace, graph);
+        this.service.reuse(detail, client);
     }
 
     @PostMapping("check_using")
-    public Map<String, Boolean> checkUsing(@PathVariable("connId") int connId,
+    public Map<String, Boolean> checkUsing(@PathVariable("graphspace") String graphSpace,
+                                           @PathVariable("graph") String graph,
                                            @RequestBody UsingCheckEntity entity) {
         Ex.check(!CollectionUtils.isEmpty(entity.getNames()),
                  "common.param.cannot-be-empty", "names");
         Map<String, Boolean> inUsing = new LinkedHashMap<>();
+        HugeClient client = this.authClient(graphSpace, graph);
         for (String name : entity.getNames()) {
-            this.service.checkExist(name, connId);
-            inUsing.put(name, this.service.checkUsing(name, connId));
+            this.service.checkExist(name, client);
+            inUsing.put(name, this.service.checkUsing(name, client));
         }
         return inUsing;
     }
@@ -146,14 +153,16 @@ public class PropertyKeyController extends SchemaController {
      * Should request "check_using" before delete
      */
     @DeleteMapping
-    public void delete(@PathVariable("connId") int connId,
+    public void delete(@PathVariable("graphspace") String graphSpace,
+                       @PathVariable("graph") String graph,
                        @RequestParam List<String> names,
                        @RequestParam(name = "skip_using",
                                      defaultValue = "false")
                        boolean skipUsing) {
+        HugeClient client = this.authClient(graphSpace, graph);
         for (String name : names) {
-            this.service.checkExist(name, connId);
-            if (this.service.checkUsing(name, connId)) {
+            this.service.checkExist(name, client);
+            if (this.service.checkUsing(name, client)) {
                 if (skipUsing) {
                     continue;
                 } else {
@@ -161,7 +170,7 @@ public class PropertyKeyController extends SchemaController {
                                                 name);
                 }
             }
-            this.service.remove(name, connId);
+            this.service.remove(name, client);
         }
     }
 
@@ -179,9 +188,10 @@ public class PropertyKeyController extends SchemaController {
                  "common.param.must-be-null", "create_time");
     }
 
-    private void checkEntityUnique(PropertyKeyEntity newEntity, int connId) {
+    private void checkEntityUnique(PropertyKeyEntity newEntity,
+                                   HugeClient client) {
         // The name must be unique
         String name = newEntity.getName();
-        this.service.checkNotExist(name, connId);
+        this.service.checkNotExist(name, client);
     }
 }

@@ -26,6 +26,7 @@ import org.apache.hugegraph.structure.auth.User;
 import org.apache.hugegraph.testutil.Assert;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class LoginApiTest extends AuthApiTest {

@@ -56,6 +56,11 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
 
+      - name: Set up Node.js 18.20.8
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.20.8'
+
       # we also should cache python & yarn & downloads to avoid useless work
       - name: Cache Maven packages
         uses: actions/cache@v3
@@ -64,6 +69,17 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
+
+      - name: Cache Node modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            hugegraph-hubble/hubble-fe/node_modules
+            hugegraph-hubble/hubble-fe/node
+            ~/.cache/yarn
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package.json', '**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
       - name: use staged maven repo settings
         if: ${{ env.USE_STAGE == 'true' }}
@@ -78,7 +94,16 @@ jobs:
           mvn -e compile -Dmaven.javadoc.skip=true -ntp
 
       - name: Prepare env and service
+        env:
+          CI: false
         run: |
+          echo "=== Environment Info ==="
+          node -v
+          yarn -v
+          echo "NODE_OPTIONS: $NODE_OPTIONS"
+          echo "CI: $CI"
+          free -h || true
+          echo "======================="
           
           python -m pip install -r ${TRAVIS_DIR}/requirements.txt
           cd hugegraph-hubble

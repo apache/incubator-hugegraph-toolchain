@@ -1,0 +1,193 @@
+{
+  "analysis": {
+    "name": "业务分析",
+    "query": {
+      "name": "图语言分析",
+      "placeholder": "请输入查询语句"
+    },
+    "algorithm": {
+      "name": "图算法",
+      "placeholder": "算法查询",
+      "common": {
+        "instance_num": "实例数",
+        "input_limit_edges_per_vertex": "最大出边限制",
+        "max_iter_step": "最大迭代次数",
+        "worker_num": "worker计算线程数",
+        "sample_rate": "边的采样率，由于此算法是指数型增长的算法，算力要求非常高，需要根据业务需求设置合理的采样率，得到一个近似结果",
+        "weight_property": "权重属性名",
+        "property_filter": "点边属性过滤条件",
+        "min_ring_length": "输出环路的最小长度",
+        "max_ring_length": "输出环路的最大长度",
+        "max_step": "最大迭代步数",
+        "request_memory": "计算节点最小内存需求",
+        "JVM_memory": "jvm环境内存大小，默认为32g",
+        "source": "起始点ID",
+        "query_tooltip":"仅当选择的图数据加载完成后，才可以使用OLAP算法。"
+      },
+      "mode": {
+        "OLTP": "OLTP算法",
+        "OLAP": "OLAP算法"
+      },
+      "capacity_item": {
+        "tooltip": "遍历过程中最大的访问的顶点数目"
+      },
+      "direction_item": {
+        "tooltip": "顶点向外发散的方向"
+      },
+      "label_item": {
+        "tooltip": "边的类型（默认代表所有edge label）"
+      },
+      "max_degree_item": {
+        "tooltip": "查询过程中，单个顶点遍历的最大邻接边数目"
+      },
+      "max_depth_item": {
+        "tooltip": "步数"
+      },
+      "nearest_item": {
+        "tooltip": "nearest为true时，代表起始顶点到达结果顶点的最短路径长度为depth，不存在更短的路径；near\n            est为false时，代表起始顶点到结果顶点有一条长度为depth的路径（未必最短且可以有环）",
+        "placeholder": "最短路径长度"
+      },
+      "olap": {
+        "betweenness_centrality": {
+          "desc": "中介中心性算法（Betweenness Centrality）判断一个节点具有\"桥梁\"节点的值, 值越大说明它作为图中两点间必经路径的可能性越大, 典型的例子包括社交网络中的共同关注的人",
+          "sample_rate": "边的采样率",
+          "sample_rate_long": "边的采样率，由于此算法是指数型增长的算法，算力要求非常高，需要根据业务需求设置合理的采样率，得到一个近似结果",
+          "use_endpoint": "是否计算最后一个点"
+        },
+        "closeness_centrality": {
+          "desc": "计算一个节点到所有其他可达节点的最短距离的倒数，进行累积后归一化的值。用于计算图中每个节点的度中心性值，支持无向图和有向图。",
+          "weight_property": "权重属性名",
+          "TODO": "TODO weight_property,sample_rate需要移动 ",
+          "sample_rate": "边的采样率",
+          "wf_improved": "是否使用 Wasserman and Faust 紧密中心性公式"
+        },
+        "cluster_coefficient": {
+          "desc": "聚集系数，计算每个点局部的聚集系数, 暂时未提供全局聚集系数。",
+          "minimum_edges_use_superedge_cache": "利用内存减少消息量，如果内存不够，可以从100改成1000，但聚集系数可能计算不完"
+        },
+        "degree_centrality": {
+          "desc": "用于计算图中每个节点的度中心性值，支持无向图和有向图。",
+          "direction": "方向，in/out/both 入边/出边/双边"
+        },
+        "filtered_rings_detection": {
+          "desc": "带过滤条件的环路检测算法（Filtered Rings Detection）用于检测图中的环路，\n        环路的路径由环路中最小id的顶点来记录。可通过指定点、边属性过滤规则让算法选择性的做路径传播。"
+        },
+        "filter_subgraph_matching": {
+          "desc": "带属性过滤的子图匹配算法。用户可以传入一个带属性过滤的查询图结构，算法会在图中匹配所有与该查询图同构的子图。",
+          "query_graph_config": "查询图配置，json数组字符串"
+        },
+        "k_core": {
+          "desc": "K-Core算法，标记所有度数为K的顶点。",
+          "k": "K-Core算法的k值，非必需，有默认值",
+          "degree_k": "最小度数阈值"
+        },
+        "label_propagation_algorithm": {
+          "desc": "标签传递算法，是一种图聚类算法，常用在社交网络中。"
+        },
+        "links": {
+          "desc": "链路追踪算法，通过指定的一批开始顶点，按照指定的传播规则进行传播，到指定的结束条件后停止并记录下路径。",
+          "analyze_config": "链路传播条件配置"
+        },
+        "louvain": {
+          "desc": "Louvain 算法是基于模块度的社区发现算法。由于Louvain算法的特殊性，只用一个worker instance运行。"
+        },
+        "computer_item": {
+          "computer_cpu": "master最大CPU",
+          "worker_cpu": "worker最大CPU",
+          "master_request_memory": "master最小内存，不满足最小内存则分配不成功",
+          "worker_request_memory": "worker最小内存，不满足最小内存则分配不成功",
+          "master_memory": "master最大内存，超过最大内存则会被k8s中止",
+          "worker_memory": "worker最大内存，超过最大内存则会被k8s中止"
+        },
+        "item": {
+          "PAGE_RANK": "PageRank",
+          "WEAKLY_CONNECTED_COMPONENT": "Weakly Connected Component",
+          "DEGREE_CENTRALIT": "Degree Centrality",
+          "CLOSENESS_CENTRALITY": "Closeness Centrality",
+          "TRIANGLE_COUNT": "Triangle Count",
+          "K_NEIGHBOR": "K-neighbor（GET，基础版）",
+          "K_OUT": "K-out API（GET，基础版）",
+          "SAME_NEIGHBORS": "Same Neighbors",
+          "RINGS": "Rings",
+          "SHORTEST_PATH": "Shortest Path",
+          "ALLPATHS": "查找所有路径（POST，高级版）",
+          "JACCARD_SIMILARITY": "Jaccard Similarity（GET）",
+          "CROSSPOINTS": "Crosspoints",
+          "RINGS_DETECTION": "Rings Detection",
+          "FILTERED_RINGS_DETECTION": "Filtered Rings Detection",
+          "LINKS": "Links",
+          "CLUSTER_COEFFICIENT": "Cluster Coefficient",
+          "BETWEENNESS_CENTRALITY": "Betweenness Centrality",
+          "LABEL_PROPAGATION_ALGORITHM": "Label Propagation Algorithm",
+          "LOUVAIN": "Louvain",
+          "FILTER_SUBGRAPH_MATCHING": "Filter SubGraph Matching",
+          "K_CORE": "K-Core",
+          "PERSONAL_PAGE_RANK": "PersonalPageRank",
+          "KOUT_POST": "K-out API(POST, 高级版)",
+          "KNEIGHBOR_POST": "K-neighbor API（POST，高级版）",
+          "JACCARD_SIMILARITY_POST": "Jaccard Similarity（POST）",
+          "RANK_API": "rank API",
+          "NEIGHBOR_RANK_API": "Neighbor Rank API",
+          "FINDSHORTESTPATH": "查找最短路径",
+          "FINDSHORTESTPATHWITHWEIGHT": "查找带权重的最短路径",
+          "SINGLESOURCESHORTESTPATH": "(从一个顶点出发)查找最短路径",
+          "MULTINODESSHORTESTPATH": "(指定顶点集)查找最短路径",
+          "CUSTOMIZEDPATHS": "自定义路径查询",
+          "TEMPLATEPATHS": "模版路径查询",
+          "CUSTOMIZED_CROSSPOINTS": "Customized Crosspoints",
+          "RAYS": "Rays",
+          "PATHS": "查找所有路径（GET，基础版）",
+          "FUSIFORM_SIMILARITY": "Fusiform Similarity",
+          "ADAMIC_ADAR": "Adamic Adar",
+          "RESOURCE_ALLOCATION": "Resource Allocation",
+          "SAME_NEIGHBORS_BATCH": "Same Neighbors Batch",
+          "EGONET": "Egonet",
+          "SSSP": "SSSP（单元最短路径）"
+        },
+        "page_rank": {
+          "desc": "PageRank算法又称网页排名算法，是一种由搜索引擎根据网页（节点）之间相互的超链接进行计算的技术，用来体现网页（节点）的相关性和重要性。",
+          "alpha": "权重系数(又称阻尼系数)",
+          "l1": "收敛精度,为每次迭代各个点相较于上次迭代变化的绝对值累加和上限，当小于这个值时认为计算收敛，算法停止。",
+          "damping": "阻尼系数，传导到下个点的百分比",
+          "diff": "收敛精度,为每次迭代各个点相较于上次迭代变化的绝对值累加和上限，当小于这个值时认为计算收敛，算法停止。"
+        },
+        "personal_page_bank": {
+          "desc": "PersonalPageRank 算法又称个性化推荐算法，是一种由搜索引擎根据网页（节点）之间相互的超链接进行计算的技术，用来体现网页（节点）的相关性和重要性",
+          "source": "起始顶点",
+          "alpha": "权重系数(又称阻尼系数)",
+          "l1": "收敛精度",
+          "use_id_fixlength": "true时，系统采用自增id运算",
+          "use_id_fixlength_query": "是否采用自增id运算"
+        },
+        "ring_detection": {
+          "desc": "环路检测算法（Rings Detection），用于检测图中的环路，环路的路径由环路中最小id的顶点来记录。"
+        },
+        "SSSPVermeer": {
+          "desc": "单元最短路径算法，求一个点到其他所有点的最短距离"
+        },
+        "triangle_count": {
+          "desc": "三角形计数算法，用于计算通过每个顶点的三角形个数。",
+          "limit_edges_in_one_vertex": "最大出边限制",
+          "minimum_edges_use_superedge_cache": "利用内存减少消息量，如果内存不够，可以从100改成1000，但三角计数可能计算不完"
+        },
+        "weakly_connected_component": {
+          "desc":"弱连通分量，计算无向图中所有联通的子图，输出各顶点所属的弱联通子图id"
+        }
+      },
+      "oltp": {
+        "adamic_adar": {
+          "desc": "主要用于社交网络中判断两点紧密度的算法, 用来求两点间共同邻居密集度的一个系数",
+          "vertex": "起始顶点",
+          "other": "终点顶点",
+          "direction": "起始顶点到目的顶点的方向，目的地到起始点是反方向，BOTH时不考虑方向",
+          "label": "默认代表所有edge label",
+          "max_degree": "查询过程中，单个顶点遍历的最大邻接边数目",
+          "select_direction": "顶点向外发散的方向"
+        }
+      }
+    },
+    "async_task": {
+      "name": "任务管理"
+    }
+  }
+}

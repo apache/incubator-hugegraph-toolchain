@@ -30,6 +30,10 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.entity.schema.ConflictCheckEntity;
@@ -52,9 +56,6 @@ import org.apache.hugegraph.structure.schema.PropertyKey;
 import org.apache.hugegraph.structure.schema.VertexLabel;
 import org.apache.hugegraph.util.Ex;
 import org.apache.hugegraph.util.JsonUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 
 import lombok.extern.log4j.Log4j2;
 
@@ -67,17 +68,18 @@ public class VertexLabelService extends SchemaService {
     @Autowired
     private PropertyIndexService piService;
 
-    public List<VertexLabelEntity> list(int connId) {
-        return this.list(Collections.emptyList(), connId);
+    public List<VertexLabelEntity> list(HugeClient client) {
+        return this.list(Collections.emptyList(), client);
     }
 
-    public List<VertexLabelEntity> list(Collection<String> names, int connId) {
-        return this.list(names, connId, true);
+    public List<VertexLabelEntity> list(Collection<String> names,
+                                        HugeClient client) {
+        return this.list(names, client, true);
     }
 
-    public List<VertexLabelEntity> list(Collection<String> names, int connId,
+    public List<VertexLabelEntity> list(Collection<String> names,
+                                        HugeClient client,
                                         boolean emptyAsAll) {
-        HugeClient client = this.client(connId);
         List<VertexLabel> vertexLabels;
         if (CollectionUtils.isEmpty(names)) {
             if (emptyAsAll) {
@@ -92,17 +94,16 @@ public class VertexLabelService extends SchemaService {
 
         List<VertexLabelEntity> results = new ArrayList<>(vertexLabels.size());
         vertexLabels.forEach(vertexLabel -> {
-            results.add(join(vertexLabel, indexLabels));
+            results.add(join(vertexLabel, indexLabels, client));
         });
         return results;
     }
 
-    public VertexLabelEntity get(String name, int connId) {
-        HugeClient client = this.client(connId);
+    public VertexLabelEntity get(String name, HugeClient client) {
         try {
             VertexLabel vertexLabel = client.schema().getVertexLabel(name);
             List<IndexLabel> indexLabels = client.schema().getIndexLabels();
-            return join(vertexLabel, indexLabels);
+            return join(vertexLabel, indexLabels, client);
         } catch (ServerException e) {
             if (e.status() == Constant.STATUS_NOT_FOUND) {
                 throw new ExternalException("schema.vertexlabel.not-exist",
@@ -113,14 +114,14 @@ public class VertexLabelService extends SchemaService {
         }
     }
 
-    public void checkExist(String name, int connId) {
+    public void checkExist(String name, HugeClient client) {
         // Throw exception if it doesn't exist
-        this.get(name, connId);
+        this.get(name, client);
     }
 
-    public void checkNotExist(String name, int connId) {
+    public void checkNotExist(String name, HugeClient client) {
         try {
-            this.get(name, connId);
+            this.get(name, client);
         } catch (ExternalException e) {
             Throwable cause = e.getCause();
             if (cause instanceof ServerException &&
@@ -132,8 +133,7 @@ public class VertexLabelService extends SchemaService {
         throw new ExternalException("schema.vertexlabel.exist", name);
     }
 
-    public List<String> getLinkEdgeLabels(String name, int connId) {
-        HugeClient client = this.client(connId);
+    public List<String> getLinkEdgeLabels(String name, HugeClient client) {
         List<EdgeLabel> edgeLabels = client.schema().getEdgeLabels();
         List<String> results = new ArrayList<>();
         for (EdgeLabel edgeLabel : edgeLabels) {
@@ -144,8 +144,7 @@ public class VertexLabelService extends SchemaService {
         return results;
     }
 
-    public void add(VertexLabelEntity entity, int connId) {
-        HugeClient client = this.client(connId);
+    public void add(VertexLabelEntity entity, HugeClient client) {
         VertexLabel vertexLabel = convert(entity, client);
         try {
             client.schema().addVertexLabel(vertexLabel);
@@ -153,22 +152,26 @@ public class VertexLabelService extends SchemaService {
             throw new ExternalException("schema.vertexlabel.create.failed",
                                         e, entity.getName());
         }
-        List<IndexLabel> indexLabels = collectIndexLabels(entity, client);
-        this.piService.addBatch(indexLabels, client);
+        try {
+            List<IndexLabel> indexLabels = collectIndexLabels(entity, client);
+            this.piService.addBatch(indexLabels, client);
+        } catch (Exception e) {
+            client.schema().removeVertexLabel(vertexLabel.name());
+            throw new ExternalException("schema.vertexlabel.create.failed",
+                    e, entity.getName());
+        }
     }
 
-    public void update(VertexLabelUpdateEntity entity, int connId) {
-        HugeClient client = this.client(connId);
+    public void update(VertexLabelUpdateEntity entity, HugeClient client) {
         VertexLabel vertexLabel = convert(entity, client);
-
         // All existed indexlabels
         List<IndexLabel> existedIndexLabels = client.schema().getIndexLabels();
         List<String> existedIndexLabelNames = collectNames(existedIndexLabels);
 
         List<String> addedIndexLabelNames = entity.getAppendPropertyIndexNames();
         List<IndexLabel> addedIndexLabels = convertIndexLabels(
-                entity.getAppendPropertyIndexes(),
-                client, true, entity.getName());
+                                            entity.getAppendPropertyIndexes(),
+                                            client, true, entity.getName());
 
         List<String> removedIndexLabelNames = entity.getRemovePropertyIndexes();
 
@@ -176,8 +179,8 @@ public class VertexLabelService extends SchemaService {
             for (String name : addedIndexLabelNames) {
                 if (existedIndexLabelNames.contains(name)) {
                     throw new ExternalException(
-                            "schema.vertexlabel.update.append-index-existed",
-                            entity.getName(), name);
+                              "schema.vertexlabel.update.append-index-existed",
+                              entity.getName(), name);
                 }
             }
         }
@@ -185,8 +188,8 @@ public class VertexLabelService extends SchemaService {
             for (String name : removedIndexLabelNames) {
                 if (!existedIndexLabelNames.contains(name)) {
                     throw new ExternalException(
-                            "schema.vertexlabel.update.remove-index-unexisted",
-                            entity.getName(), name);
+                              "schema.vertexlabel.update.remove-index-unexisted",
+                              entity.getName(), name);
                 }
             }
         }
@@ -202,13 +205,11 @@ public class VertexLabelService extends SchemaService {
         this.piService.removeBatch(removedIndexLabelNames, client);
     }
 
-    public void remove(String name, int connId) {
-        HugeClient client = this.client(connId);
+    public void remove(String name, HugeClient client) {
         client.schema().removeVertexLabelAsync(name);
     }
 
-    public boolean checkUsing(String name, int connId) {
-        HugeClient client = this.client(connId);
+    public boolean checkUsing(String name, HugeClient client) {
         List<EdgeLabel> edgeLabels = client.schema().getEdgeLabels();
         for (EdgeLabel edgeLabel : edgeLabels) {
             if (edgeLabel.linkedVertexLabel(name)) {
@@ -219,30 +220,31 @@ public class VertexLabelService extends SchemaService {
     }
 
     public ConflictDetail checkConflict(ConflictCheckEntity entity,
-                                        int connId, boolean compareEachOther) {
+                                        HugeClient client,
+                                        boolean compareEachOther) {
         ConflictDetail detail = new ConflictDetail(SchemaType.VERTEX_LABEL);
         if (CollectionUtils.isEmpty(entity.getVlEntities())) {
             return detail;
         }
 
         this.pkService.checkConflict(entity.getPkEntities(), detail,
-                                     connId, compareEachOther);
+                                     client, compareEachOther);
         this.piService.checkConflict(entity.getPiEntities(), detail,
-                                     connId, compareEachOther);
+                                     client, compareEachOther);
         this.checkConflict(entity.getVlEntities(), detail,
-                           connId, compareEachOther);
+                           client, compareEachOther);
         return detail;
     }
 
     public void checkConflict(List<VertexLabelEntity> entities,
-                              ConflictDetail detail, int connId,
+                              ConflictDetail detail, HugeClient client,
                               boolean compareEachOther) {
         if (CollectionUtils.isEmpty(entities)) {
             return;
         }
 
         Map<String, VertexLabelEntity> originEntities = new HashMap<>();
-        for (VertexLabelEntity entity : this.list(connId)) {
+        for (VertexLabelEntity entity : this.list(client)) {
             originEntities.put(entity.getName(), entity);
         }
         for (VertexLabelEntity entity : entities) {
@@ -264,10 +266,9 @@ public class VertexLabelService extends SchemaService {
         }
     }
 
-    public void reuse(ConflictDetail detail, int connId) {
+    public void reuse(ConflictDetail detail, HugeClient client) {
         // Assume that the conflict detail is valid
         Ex.check(!detail.hasConflict(), "schema.cannot-reuse-conflict");
-        HugeClient client = this.client(connId);
 
         List<PropertyKey> propertyKeys = this.pkService.filter(detail, client);
         if (!propertyKeys.isEmpty()) {
@@ -324,14 +325,16 @@ public class VertexLabelService extends SchemaService {
         removeBatch(names, client, func, SchemaType.VERTEX_LABEL);
     }
 
-    private static VertexLabelEntity join(VertexLabel vertexLabel,
-                                          List<IndexLabel> indexLabels) {
+    private VertexLabelEntity join(VertexLabel vertexLabel,
+                                   List<IndexLabel> indexLabels,
+                                   HugeClient client) {
         if (vertexLabel == null) {
             return null;
         }
-        Set<Property> properties = collectProperties(vertexLabel);
-        List<PropertyIndex> propertyIndexes = collectPropertyIndexes(vertexLabel,
-                                                                     indexLabels);
+        Set<Property> properties = collectProperties(vertexLabel, client);
+        List<PropertyIndex> propertyIndexes =
+                collectPropertyIndexes(vertexLabel,
+                                       indexLabels);
         return VertexLabelEntity.builder()
                                 .name(vertexLabel.name())
                                 .properties(properties)
@@ -365,7 +368,7 @@ public class VertexLabelService extends SchemaService {
                      .properties(toStringArray(entity.getPropNames()))
                      .primaryKeys(toStringArray(entity.getPrimaryKeys()))
                      .nullableKeys(toStringArray(entity.getNullableProps()))
-                     .enableLabelIndex(entity.isOpenLabelIndex())
+                     .enableLabelIndex(entity.getOpenLabelIndex())
                      .userdata(USER_KEY_CREATE_TIME, entity.getCreateTime())
                      .userdata(USER_KEY_STYLE, JsonUtil.toJson(style))
                      .build();

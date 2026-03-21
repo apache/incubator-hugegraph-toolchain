@@ -50,13 +50,24 @@ public class HugeClientBuilder {
     /** Set them null by default to keep compatibility with 'timeout' */
     private Integer connectTimeout;
     private Integer readTimeout;
+    private final boolean skipRequiredChecks;
 
     public HugeClientBuilder(String url, String graphSpace, String graph) {
-        E.checkArgument(url != null && !url.isEmpty(),
-                        "Expect a string value as the url parameter argument, but got: %s", url);
-        E.checkArgument(graph != null && !graph.isEmpty(),
-                        "Expect a string value as the graph name parameter argument, but got: %s",
-                        graph);
+        this(url, graphSpace, graph, false);
+    }
+
+    public HugeClientBuilder(String url, String graphSpace, String graph,
+                             boolean skipRequiredChecks) {
+        this.skipRequiredChecks = skipRequiredChecks;
+
+        if (!skipRequiredChecks) {
+            E.checkArgument(url != null && !url.isEmpty(),
+                            "Expect a string value as the url parameter argument, but got: %s", url);
+            E.checkArgument(graph != null && !graph.isEmpty(),
+                            "Expect a string value as the graph name parameter argument, but got: %s",
+                            graph);
+        }
+
         this.url = url;
         this.graphSpace = graphSpace;
         this.graph = graph;
@@ -76,8 +87,10 @@ public class HugeClientBuilder {
     }
 
     public HugeClient build() {
-        E.checkArgument(this.url != null, "The url parameter can't be null");
-        E.checkArgument(this.graph != null, "The graph parameter can't be null");
+        if (!this.skipRequiredChecks) {
+            E.checkArgument(this.url != null, "The url parameter can't be null");
+            E.checkArgument(this.graph != null, "The graph parameter can't be null");
+        }
         return new HugeClient(this);
     }
 

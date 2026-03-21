@@ -18,12 +18,11 @@
 
 package org.apache.hugegraph.service;
 
+import lombok.extern.log4j.Log4j2;
 import org.apache.hugegraph.config.HugeConfig;
 import org.apache.hugegraph.entity.GraphConnection;
 import org.apache.hugegraph.options.HubbleOptions;
 import org.springframework.stereotype.Service;
-
-import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @Service
@@ -31,12 +30,12 @@ public class SettingSSLService {
 
     public void configSSL(HugeConfig config, GraphConnection connection) {
         String protocol = config.get(HubbleOptions.SERVER_PROTOCOL);
-        if ("https".equals(protocol)) {
+        if (protocol != null && protocol.equals("https")) {
             connection.setProtocol(protocol);
             String trustStoreFile = config.get(
-                    HubbleOptions.CLIENT_TRUSTSTORE_FILE);
+                                    HubbleOptions.CLIENT_TRUSTSTORE_FILE);
             String trustStorePass = config.get(
-                    HubbleOptions.CLIENT_TRUSTSTORE_PASSWORD);
+                                    HubbleOptions.CLIENT_TRUSTSTORE_PASSWORD);
             connection.setTrustStoreFile(trustStoreFile);
             connection.setTrustStorePassword(trustStorePass);
         }

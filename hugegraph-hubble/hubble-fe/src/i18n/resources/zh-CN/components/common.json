@@ -1,0 +1,19 @@
+{
+  "common" : {
+    "verify" : {
+      "ok": "确定",
+      "cancel": "取消",
+      "yes": "是",
+      "no": "否"
+    },
+    "status": {
+      "new": "新建",
+      "running": "执行中",
+      "success": "完成",
+      "cancelling": "停止",
+      "cancelled": "停止",
+      "failed": "失败",
+      "undefined": "未知"
+    }
+  }
+}
