@@ -277,12 +277,9 @@ public class FileUploadController {
 
         long totalFileSizeLimit = this.config.get(
                 HubbleOptions.UPLOAD_TOTAL_FILE_SIZE_LIMIT);
-        List<FileMapping> fileMappings = this.service.listAll();
-        long currentTotalSize = fileMappings.stream()
-                                            .map(FileMapping::getTotalSize)
-                                            .reduce(0L, (Long::sum));
+        long currentTotalSize = jobEntity.getJobSize();
         Ex.check(fileSize + currentTotalSize <= totalFileSizeLimit,
-                 "load.upload.file.exceed-single-size",
+                 "load.upload.file.exceed-total-size",
                  FileUtils.byteCountToDisplaySize(totalFileSizeLimit));
     }
 
