@@ -37,7 +37,7 @@
     "react-highlight-words": "^0.18.0",
     "react-i18next": "^11.7.3",
     "react-json-view": "^1.21.3",
-    "react-router-dom": "^6.3.0",
+    "react-router-dom": "^6.30.6",
     "react-scripts": "5.0.1",
     "sass": "^1.54.0",
     "screenfull": "^6.0.2",
