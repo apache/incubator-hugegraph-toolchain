@@ -109,6 +109,27 @@ sh bin/hugegraph-loader.sh -g hugegraph -f example/file/struct.json -s example/f
 
 More details is in the [doc](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/)
 
+#### Arguments from a file
+
+The launcher accepts JCommander's `@file` syntax. Put each option and its value on separate lines:
+
+```text
+--graph
+hugegraph
+--file
+example/file/struct.json
+--schema
+example/file/schema.groovy
+```
+
+```bash
+bash bin/hugegraph-loader.sh @loader.args
+```
+
+Paths in the argument file resolve from the working directory. Protect files containing credentials with mode `0600`;
+the credentials can then stay out of the process arguments. The mapping directory must be writable for progress output,
+so copy a mapping mounted from a read-only Kubernetes ConfigMap to a writable volume before running Loader.
+
 ### 3.2 Load data with docker
 
 > If the `loader` and `server` is in the same docker network (for example, you deploy `loader` and `server` with `docker-compose`), we can set `-h {server_container_name}`. In our example, the container name of `server` is `graph`
