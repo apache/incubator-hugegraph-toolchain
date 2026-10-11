@@ -45,7 +45,7 @@ runs:
       uses: actions/cache@v4
       with:
         path: ~/hugegraph-fixture-cache
-        key: server-fixture-v2-${{ runner.os }}-${{ runner.arch }}-${{ inputs.repository }}-${{ inputs.commit-id }}-release${{ inputs.release-version }}-jdk${{ inputs.java-version }}-${{ hashFiles('.github/actions/setup-hugegraph-server/action.yml', '.github/actions/setup-hugegraph-server/fixture.sh', '.github/actions/setup-hugegraph-server/manifest.py', '.github/actions/setup-hugegraph-server/release.py', '.github/actions/setup-java-env/action.yml', '.github/configs/settings.xml', 'hugegraph-client/assembly/travis/checkout-server.sh', 'hugegraph-client/assembly/travis/install-candidate-sdk.sh', 'hugegraph-client/assembly/travis/start-hugegraph-servers.sh', 'hugegraph-*/assembly/travis/install-hugegraph-from-source.sh', 'hugegraph-hubble/hubble-dist/assembly/travis/download-hugegraph.sh') }}
+        key: server-fixture-v2-${{ runner.os }}-${{ runner.arch }}-${{ inputs.repository }}-${{ inputs.commit-id }}-release${{ inputs.release-version }}-jdk${{ inputs.java-version }}-${{ hashFiles('.github/actions/setup-hugegraph-server/action.yml', '.github/actions/setup-hugegraph-server/fixture.sh', '.github/actions/setup-hugegraph-server/manifest.py', '.github/actions/setup-hugegraph-server/release.py', '.github/actions/setup-java-env/action.yml', '.github/configs/settings.xml', 'hugegraph-client/assembly/travis/checkout-server.sh', 'hugegraph-client/assembly/travis/install-candidate-sdk.sh', 'hugegraph-client/assembly/travis/start-hugegraph-servers.sh', 'hugegraph-client/assembly/travis/tls-fixture.sh', 'hugegraph-*/assembly/travis/install-hugegraph-from-source.sh', 'hugegraph-hubble/hubble-dist/assembly/travis/download-hugegraph.sh') }}
     - name: Prepare fixture or start service
       shell: bash
       env:
@@ -53,7 +53,7 @@ runs:
         FIXTURE_REPOSITORY: ${{ inputs.repository }}
         FIXTURE_COMMIT: ${{ inputs.commit-id }}
         FIXTURE_REF: ${{ inputs.fetch-ref }}
-        FIXTURE_BUILD_INPUTS: ${{ hashFiles('.github/actions/setup-hugegraph-server/action.yml', '.github/actions/setup-hugegraph-server/fixture.sh', '.github/actions/setup-hugegraph-server/manifest.py', '.github/actions/setup-hugegraph-server/release.py', '.github/actions/setup-java-env/action.yml', '.github/configs/settings.xml', 'hugegraph-client/assembly/travis/checkout-server.sh', 'hugegraph-client/assembly/travis/install-candidate-sdk.sh', 'hugegraph-client/assembly/travis/start-hugegraph-servers.sh', 'hugegraph-*/assembly/travis/install-hugegraph-from-source.sh', 'hugegraph-hubble/hubble-dist/assembly/travis/download-hugegraph.sh') }}
+        FIXTURE_BUILD_INPUTS: ${{ hashFiles('.github/actions/setup-hugegraph-server/action.yml', '.github/actions/setup-hugegraph-server/fixture.sh', '.github/actions/setup-hugegraph-server/manifest.py', '.github/actions/setup-hugegraph-server/release.py', '.github/actions/setup-java-env/action.yml', '.github/configs/settings.xml', 'hugegraph-client/assembly/travis/checkout-server.sh', 'hugegraph-client/assembly/travis/install-candidate-sdk.sh', 'hugegraph-client/assembly/travis/start-hugegraph-servers.sh', 'hugegraph-client/assembly/travis/tls-fixture.sh', 'hugegraph-*/assembly/travis/install-hugegraph-from-source.sh', 'hugegraph-hubble/hubble-dist/assembly/travis/download-hugegraph.sh') }}
         FIXTURE_PLATFORM: ${{ runner.os }}-${{ runner.arch }}
         FIXTURE_JAVA: ${{ inputs.java-version }}
         FIXTURE_RELEASE_VERSION: ${{ inputs.release-version }}

@@ -63,6 +63,9 @@ start_server() (
 start_server "${SERVER_DIRS[0]}"
 fixture_wait http://127.0.0.1:8080
 HTTPS_DIR="$SERVER_ROOT/hugegraph_https"
+bash "$(dirname "$0")/tls-fixture.sh" "$SERVER_ROOT/test-tls"
+cp "$SERVER_ROOT/test-tls/hugegraph-server.keystore" "$HTTPS_DIR/conf/hugegraph-server.keystore"
+TRUST_STORE="$SERVER_ROOT/test-tls/hugegraph.truststore"
 sed -i.bak 's?http://127.0.0.1:8080?https://127.0.0.1:8443?g' "$HTTPS_DIR/conf/rest-server.properties"
 sed -i.bak 's/rpc.server_port=8091/rpc.server_port=8092/g' "$HTTPS_DIR/conf/rest-server.properties"
 sed -i.bak 's/#port: 8182/port: 8282/g' "$HTTPS_DIR/conf/gremlin-server.yaml"
@@ -70,3 +73,10 @@ printf '\ngremlinserver.url=http://127.0.0.1:8282\n' >> "$HTTPS_DIR/conf/rest-se
 start_server "$HTTPS_DIR"
 
 fixture_wait https://127.0.0.1:8443
+printf 'HTTPS test truststore: %s\n' "$TRUST_STORE"
+if [[ -n "${GITHUB_ENV:-}" ]]; then
+    printf 'HUGEGRAPH_TEST_TRUST_STORE_FILE=%s\n' "$TRUST_STORE" >> "$GITHUB_ENV"
+fi
+if [[ -n "${HUGEGRAPH_TEST_TRUST_STORE_PATH_FILE:-}" ]]; then
+    printf '%s\n' "$TRUST_STORE" > "$HUGEGRAPH_TEST_TRUST_STORE_PATH_FILE"
+fi

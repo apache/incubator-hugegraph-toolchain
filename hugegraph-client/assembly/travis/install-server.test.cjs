@@ -91,10 +91,22 @@ function serverFixture(fixture) {
     '#!/bin/bash\nprintf "%s" "$JAVA_HOME" > started-with-jvm\n', { mode: 0o755 });
 }
 
-function runStarter(root, entries) {
+function fixtureJavaHome(root) {
+  const home = join(root, 'fixture-java11');
+  mkdirSync(join(home, 'bin'), { recursive: true });
+  writeFileSync(join(home, 'bin/keytool'), '#!/bin/bash\nset -e\noperation=$1\nshift\n' +
+    'while [[ $# -gt 0 ]]; do\ncase "$1" in\n' +
+    '  -keystore) store=$2; shift 2;;\n  -file) file=$2; shift 2;;\n  *) shift;;\nesac\ndone\n' +
+    'if [[ "$operation" == -exportcert ]]; then printf "fixture cert" > "$file";\n' +
+    'else printf "fixture store" > "$store"; fi\n', { mode: 0o755 });
+  return home;
+}
+
+function runStarter(root, entries, extraEnv = {}) {
   const archive = join(root, 'server.tar.gz');
   // Keep metadata entries as files on macOS too, matching the Linux CI extractor.
-  const env = { ...process.env, COPYFILE_DISABLE: '1', RUNNER_TEMP: root, JAVA_HOME: '/fixture/java11' };
+  const env = { ...process.env, COPYFILE_DISABLE: '1', RUNNER_TEMP: root, JAVA_HOME: fixtureJavaHome(root),
+    GITHUB_ENV: join(root, 'github-env'), ...extraEnv };
   const bin = join(root, 'tar-bin');
   mkdirSync(bin);
   writeFileSync(join(bin, 'curl'), '#!/bin/bash\nexit 0\n', { mode: 0o755 });
@@ -109,7 +121,60 @@ function runStarter(root, entries) {
   const result = spawnSync('bash', [join(__dirname, 'start-hugegraph-servers.sh'), archive],
     { env, encoding: 'utf8' });
   const serverRoot = join(root, readdirSync(root).find(name => name.startsWith('hugegraph-servers.')));
-  return { result, serverRoot };
+  return { result, serverRoot, env, archive };
+}
+
+test('legacy Loader caller transfers the generated truststore to Maven without GITHUB_ENV', t => {
+  const root = temp(t);
+  const top = 'apache-hugegraph-fixture';
+  serverFixture(join(root, top));
+  const { result, env, archive } = runStarter(root, [top], { GITHUB_ENV: '' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(existsSync(join(root, 'github-env')), false);
+  const bin = join(root, 'tar-bin');
+  writeFileSync(join(bin, 'install-hugegraph-from-source.sh'),
+    '#!/bin/bash\nexec bash "$REAL_STARTER" "$FIXTURE_ARCHIVE"\n', { mode: 0o755 });
+  writeFileSync(join(bin, 'mvn'), '#!/bin/bash\nset -e\n' +
+    'test -f "$HUGEGRAPH_TEST_TRUST_STORE_FILE"\n' +
+    'printf "%s\\n" "$HUGEGRAPH_TEST_TRUST_STORE_FILE" >> "$CONSUMED_TRUST_STORE"\n', { mode: 0o755 });
+  const legacy = readFileSync(join(__dirname, '../../../hugegraph-loader/assembly/travis/.travis.yml'), 'utf8');
+  const before = legacy.match(/before_script:\n  - \|\n((?:    .*\n)+)/)[1].replace(/^    /gm, '');
+  const script = legacy.match(/^script:\n((?:  - .*\n)+)/m)[1].replace(/^  - /gm, '');
+  const consumed = join(root, 'consumed-trust-store');
+  const run = spawnSync('bash', ['-c', `set -eo pipefail\n${before}\n${script}`], {
+    env: { ...env, TRAVIS_DIR: bin, TRAVIS_BRANCH: 'fixture', SOURCE_TYPE: 'file',
+      REAL_STARTER: join(__dirname, 'start-hugegraph-servers.sh'), FIXTURE_ARCHIVE: archive,
+      CONSUMED_TRUST_STORE: consumed }, encoding: 'utf8'
+  });
+  assert.equal(run.status, 0, run.stderr);
+  const paths = readFileSync(consumed, 'utf8').trim().split('\n');
+  assert.equal(paths.length, 2);
+  assert.equal(paths[0], paths[1]);
+  assert.ok(paths[0].startsWith(root));
+  assert.ok(existsSync(paths[0]));
+  assert.equal(existsSync(join(root, 'github-env')), false);
+});
+
+for (const status of [0, 1]) {
+  test(`legacy Loader removes the transfer marker when startup exits ${status} without a truststore`, t => {
+    const root = temp(t);
+    const bin = join(root, 'bin');
+    mkdirSync(bin);
+    writeFileSync(join(bin, 'install-hugegraph-from-source.sh'), '#!/bin/bash\n' +
+      'printf "%s" "$HUGEGRAPH_TEST_TRUST_STORE_PATH_FILE" > "$MARKER_RECORD"\n' +
+      'echo "Fixture did not become ready"\nexit "$STARTUP_EXIT"\n', { mode: 0o755 });
+    const legacy = readFileSync(join(__dirname, '../../../hugegraph-loader/assembly/travis/.travis.yml'), 'utf8');
+    const before = legacy.match(/before_script:\n  - \|\n((?:    .*\n)+)/)[1].replace(/^    /gm, '');
+    const record = join(root, 'marker-record');
+    const run = spawnSync('bash', ['-c', `set -eo pipefail\n${before}`], {
+      env: { ...process.env, GITHUB_ENV: '', TRAVIS_DIR: bin, TRAVIS_BRANCH: 'fixture',
+        MARKER_RECORD: record, STARTUP_EXIT: String(status) }, encoding: 'utf8'
+    });
+    assert.notEqual(run.status, 0, 'A missing generated truststore must fail setup');
+    const marker = readFileSync(record, 'utf8');
+    assert.ok(marker.length > 0);
+    assert.equal(existsSync(marker), false, 'Failed setup must remove its temporary transfer marker');
+  });
 }
 
 for (const layout of [
@@ -129,8 +194,8 @@ for (const layout of [
     assert.equal(result.status, 0, result.stderr);
     for (const dir of [layout.server, 'hugegraph_https']) {
       const deployed = join(serverRoot, dir);
-      assert.equal(readFileSync(join(deployed, 'started-with-jvm'), 'utf8'), '/fixture/java11');
-      assert.equal(readFileSync(join(deployed, 'initialized-with-jvm'), 'utf8'), '/fixture/java11');
+      assert.equal(readFileSync(join(deployed, 'started-with-jvm'), 'utf8'), join(root, 'fixture-java11'));
+      assert.equal(readFileSync(join(deployed, 'initialized-with-jvm'), 'utf8'), join(root, 'fixture-java11'));
       assert.match(readFileSync(join(deployed, 'conf/graphs/hugegraph.properties'), 'utf8'), /HugeFactoryAuthProxy/);
       const rest = readFileSync(join(deployed, 'conf/rest-server.properties'), 'utf8');
       assert.match(rest, /auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator/);
@@ -142,8 +207,122 @@ for (const layout of [
     }
     assert.match(readFileSync(join(serverRoot, 'hugegraph_https/conf/gremlin-server.yaml'), 'utf8'), /^port: 8282/m);
     assert.equal(existsSync(join(serverRoot, 'hugegraph_https/apache-hugegraph-pd-incubating-1.7.0')), false);
+    assert.equal(readFileSync(join(serverRoot, 'hugegraph_https/conf/hugegraph-server.keystore'), 'utf8'),
+      readFileSync(join(serverRoot, 'test-tls/hugegraph-server.keystore'), 'utf8'));
+    assert.equal(readFileSync(join(root, 'github-env'), 'utf8'),
+      `HUGEGRAPH_TEST_TRUST_STORE_FILE=${join(serverRoot, 'test-tls/hugegraph.truststore')}\n`);
   });
 }
+
+test('HTTPS fixture creates fresh matching stores with localhost identities', t => {
+  const root = temp(t);
+  const destination = join(root, 'TLS fixture with spaces');
+  const helper = join(__dirname, 'tls-fixture.sh');
+  execFileSync('bash', [helper, destination], { stdio: ['ignore', 'pipe', 'pipe'] });
+  const keytool = process.env.JAVA_HOME ? join(process.env.JAVA_HOME, 'bin/keytool') : 'keytool';
+  const inspect = file => execFileSync(keytool, ['-J-Duser.language=en', '-J-Duser.country=US',
+    '-J-Duser.timezone=UTC', '-list', '-v', '-keystore', join(destination, file),
+    '-storepass', 'hugegraph'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  const server = inspect('hugegraph-server.keystore');
+  const trust = inspect('hugegraph.truststore');
+  assert.match(server, /PrivateKeyEntry/);
+  assert.match(trust, /trustedCertEntry/);
+  assert.doesNotMatch(trust, /PrivateKeyEntry/);
+  assert.match(server, /SHA256withRSA/);
+  assert.match(server, /2048-bit RSA/);
+  assert.match(server, /DNSName: localhost/);
+  assert.match(server, /IPAddress: 127\.0\.0\.1/);
+  assert.equal(server.match(/SHA256: (\S+)/)[1], trust.match(/SHA256: (\S+)/)[1]);
+  const validity = server.match(/Valid from: (.+) until: (.+)/);
+  const now = Date.now();
+  assert.ok(Date.parse(validity[1]) <= now);
+  assert.ok(Date.parse(validity[2]) > now + 86400000);
+  assert.ok(Date.parse(validity[2]) <= now + 2 * 86400000);
+  const probe = join(root, 'TlsFixtureProbe.java');
+  writeFileSync(probe, `
+import java.io.InputStream;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.KeyStore;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.TrustManagerFactory;
+import com.sun.net.httpserver.HttpsConfigurator;
+import com.sun.net.httpserver.HttpsServer;
+
+class TlsFixtureProbe {
+    static SSLContext context(String path, boolean server) throws Exception {
+        KeyStore store = KeyStore.getInstance("PKCS12");
+        try (InputStream input = Files.newInputStream(Path.of(path))) {
+            store.load(input, "hugegraph".toCharArray());
+        }
+        TrustManagerFactory trust = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        trust.init(store);
+        KeyManager[] keys = null;
+        if (server) {
+            KeyManagerFactory manager = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            manager.init(store, "hugegraph".toCharArray());
+            keys = manager.getKeyManagers();
+        }
+        SSLContext context = SSLContext.getInstance("TLS");
+        context.init(keys, trust.getTrustManagers(), null);
+        return context;
+    }
+    public static void main(String[] args) throws Exception {
+        HttpsServer server = HttpsServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.setHttpsConfigurator(new HttpsConfigurator(context(args[0], true)));
+        server.createContext("/", exchange -> {
+            exchange.sendResponseHeaders(200, 2);
+            try (java.io.OutputStream output = exchange.getResponseBody()) {
+                output.write(new byte[]{'o', 'k'});
+            }
+        });
+        server.start();
+        try {
+            SSLContext trust = context(args[1], false);
+            HttpClient client = HttpClient.newBuilder().sslContext(trust).build();
+            int port = server.getAddress().getPort();
+            for (String host : new String[]{"localhost", "127.0.0.1"}) {
+                HttpRequest request = HttpRequest.newBuilder(URI.create("https://" + host + ":" + port)).build();
+                if (!client.send(request, HttpResponse.BodyHandlers.ofString()).body().equals("ok")) {
+                    throw new AssertionError("HTTPS fixture request failed");
+                }
+            }
+            try (Socket plain = new Socket("127.0.0.1", port);
+                 SSLSocket tls = (SSLSocket) trust.getSocketFactory().createSocket(
+                         plain, "wrong.example", port, true)) {
+                SSLParameters parameters = tls.getSSLParameters();
+                parameters.setEndpointIdentificationAlgorithm("HTTPS");
+                tls.setSSLParameters(parameters);
+                try {
+                    tls.startHandshake();
+                    throw new AssertionError("Wrong hostname was accepted");
+                } catch (SSLHandshakeException expected) {
+                    // The trusted fixture must still reject identities outside its SAN.
+                }
+            }
+        } finally {
+            server.stop(0);
+        }
+    }
+}
+`);
+  const java = process.env.JAVA_HOME ? join(process.env.JAVA_HOME, 'bin/java') : 'java';
+  execFileSync(java, [probe, join(destination, 'hugegraph-server.keystore'),
+    join(destination, 'hugegraph.truststore')], { timeout: 30000, stdio: ['ignore', 'pipe', 'pipe'] });
+  const rerun = spawnSync('bash', [helper, destination], { encoding: 'utf8' });
+  assert.notEqual(rerun.status, 0, 'Existing fixture stores must not be silently overwritten');
+});
 
 test('shared starter rejects multiple runnable server distributions before starting either', t => {
   const root = temp(t);
@@ -190,7 +369,7 @@ test('shared starter removes AppleDouble sidecars without replacing released con
   assert.equal(result.status, 0, result.stderr);
   for (const dir of [server, 'hugegraph_https']) {
     const deployed = join(serverRoot, dir);
-    assert.equal(readFileSync(join(deployed, 'started-with-jvm'), 'utf8'), '/fixture/java11');
+    assert.equal(readFileSync(join(deployed, 'started-with-jvm'), 'utf8'), join(root, 'fixture-java11'));
     assert.equal(existsSync(join(deployed, 'conf/graphs/._hugegraph.properties')), false);
     assert.equal(existsSync(join(deployed, 'lib/._released.jar')), false);
     assert.equal(readFileSync(join(deployed, 'lib/released.jar'), 'utf8'), 'original released binary');
@@ -259,7 +438,8 @@ test('Loader retains its source cache while using the selected repository and sh
     { mode: 0o755 });
   const env = { ...process.env, SERVER_REPOSITORY: 'example/server', SERVER_FETCH_REF: sha,
     SERVER_CACHE_DIR: join(root, 'cache'), FIXTURE_ARCHIVE: archive, BUILD_ARGS: join(root, 'args'),
-    PATH: `${bin}:${process.env.PATH}`, RUNNER_TEMP: root, JAVA_HOME: '/fixture/java11',
+    PATH: `${bin}:${process.env.PATH}`, RUNNER_TEMP: root, JAVA_HOME: fixtureJavaHome(root),
+    GITHUB_ENV: join(root, 'github-env'),
     GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: `url.file://${source}.insteadOf`,
     GIT_CONFIG_VALUE_0: 'https://github.com/example/server.git' };
   const installer = join(__dirname, '../../../hugegraph-loader/assembly/travis/install-hugegraph-from-source.sh');
@@ -308,7 +488,8 @@ test('Loader retains its source cache while using the selected repository and sh
   assert.equal(deployments.length, 2);
   for (const deployment of deployments) {
     for (const dir of [top, 'hugegraph_https']) {
-      assert.equal(readFileSync(join(root, deployment, dir, 'started-with-jvm'), 'utf8'), '/fixture/java11');
+      assert.equal(readFileSync(join(root, deployment, dir, 'started-with-jvm'), 'utf8'),
+        join(root, 'fixture-java11'));
     }
   }
 });

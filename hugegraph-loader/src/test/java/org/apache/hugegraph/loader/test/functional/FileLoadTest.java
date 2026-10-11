@@ -20,6 +20,7 @@ package org.apache.hugegraph.loader.test.functional;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -3127,7 +3128,8 @@ public class FileLoadTest extends LoadTest {
                      "tiny,1,1,1",
                      "mary,2,2,2");
 
-        CommonUtil.downloadFileByUrl(FILE_URL, TRUST_STORE_PATH);
+        Assert.assertTrue("Start the shared Server fixture or set hugegraph.test.trust-store-file",
+                          Files.isRegularFile(Paths.get(TRUST_STORE_PATH)));
         String[] args = new String[]{
                 "-f", structPath("value_mapping/struct.json"),
                 "-s", configPath("value_mapping/schema.groovy"),
@@ -3161,7 +3163,8 @@ public class FileLoadTest extends LoadTest {
                      "marko,1,1,1",
                      "vadas,2,2,2");
 
-        CommonUtil.downloadFileByUrl(FILE_URL, TRUST_STORE_PATH);
+        Assert.assertTrue("Start the shared Server fixture or set hugegraph.test.trust-store-file",
+                          Files.isRegularFile(Paths.get(TRUST_STORE_PATH)));
         String[] args = new String[]{
                 "-f", structPath("value_mapping/struct.json"),
                 "-s", configPath("value_mapping/schema.groovy"),
