@@ -28,8 +28,8 @@ import org.apache.hugegraph.structure.constant.HugeType;
 
 public class AccessAPI extends AuthAPI {
 
-    public AccessAPI(RestClient client, String graph) {
-        super(client, graph);
+    public AccessAPI(RestClient client, String graphSpace) {
+        super(client, graphSpace);
     }
 
     @Override

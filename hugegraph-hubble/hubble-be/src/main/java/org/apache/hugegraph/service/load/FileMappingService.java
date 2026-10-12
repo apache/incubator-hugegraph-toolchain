@@ -27,20 +27,27 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.hugegraph.exception.InternalException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -54,10 +61,14 @@ import org.apache.hugegraph.entity.enums.FileMappingStatus;
 import org.apache.hugegraph.entity.load.FileMapping;
 import org.apache.hugegraph.entity.load.FileSetting;
 import org.apache.hugegraph.entity.load.FileUploadResult;
+import org.apache.hugegraph.entity.load.JobManager;
+import org.apache.hugegraph.exception.InternalException;
 import org.apache.hugegraph.mapper.load.FileMappingMapper;
+import org.apache.hugegraph.mapper.load.JobManagerMapper;
 import org.apache.hugegraph.options.HubbleOptions;
 import org.apache.hugegraph.util.Ex;
 import org.apache.hugegraph.util.HubbleUtil;
+import org.apache.hugegraph.util.PageUtil;
 import org.apache.hugegraph.util.StringUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -74,10 +85,17 @@ public class FileMappingService {
     public static final String JOB_PREIFX = "job-";
     public static final String FILE_PREIFX = "file-mapping-";
 
+    private static final String TOKEN_SUFFIX_CHARS =
+            "0123456789abcdefghijklmnopqrstuvwxyz";
+    private static final int TOKEN_SUFFIX_LENGTH = 4;
+    private static final SecureRandom TOKEN_RANDOM = new SecureRandom();
+
     @Autowired
     private HugeConfig config;
     @Autowired
     private FileMappingMapper mapper;
+    @Autowired
+    private JobManagerMapper jobManagerMapper;
 
     private final Map<String, ReadWriteLock> uploadingTokenLocks;
 
@@ -93,9 +111,20 @@ public class FileMappingService {
         return this.mapper.selectById(id);
     }
 
-    public FileMapping get(int connId, int jobId, String fileName) {
+    public FileMapping get(String graphSpace, String graph, int jobId, int id) {
         QueryWrapper<FileMapping> query = Wrappers.query();
-        query.eq("conn_id", connId)
+        query.eq("id", id)
+             .eq("graphspace", graphSpace)
+             .eq("graph", graph)
+             .eq("job_id", jobId);
+        return this.mapper.selectOne(query);
+    }
+
+    public FileMapping get(String graphSpace, String graph, int jobId,
+                           String fileName) {
+        QueryWrapper<FileMapping> query = Wrappers.query();
+        query.eq("graphspace", graphSpace)
+             .eq("graph", graph)
              .eq("job_id", jobId)
              .eq("name", fileName);
         return this.mapper.selectOne(query);
@@ -105,13 +134,31 @@ public class FileMappingService {
         return this.mapper.selectList(null);
     }
 
-    public IPage<FileMapping> list(int connId, int jobId, int pageNo, int pageSize) {
+    public List<FileMapping> listByJob(int jobId) {
         QueryWrapper<FileMapping> query = Wrappers.query();
-        query.eq("conn_id", connId);
+        query.eq("job_id", jobId);
+        return this.mapper.selectList(query);
+    }
+
+    public List<FileMapping> listByJob(String graphSpace, String graph,
+                                       int jobId) {
+        QueryWrapper<FileMapping> query = Wrappers.query();
+        query.eq("graphspace", graphSpace)
+             .eq("graph", graph)
+             .eq("job_id", jobId);
+        return this.mapper.selectList(query);
+    }
+
+    public IPage<FileMapping> list(String graphSpace, String graph, int jobId,
+                                   int pageNo, int pageSize) {
+        QueryWrapper<FileMapping> query = Wrappers.query();
+        query.eq("graphspace", graphSpace);
+        query.eq("graph", graph);
         query.eq("job_id", jobId);
         query.eq("file_status", FileMappingStatus.COMPLETED.getValue());
         query.orderByDesc("create_time");
-        Page<FileMapping> page = new Page<>(pageNo, pageSize);
+        Page<FileMapping> page = new Page<>(pageNo,
+                                            PageUtil.boundedSize(pageSize));
         return this.mapper.selectPage(page, query);
     }
 
@@ -136,16 +183,39 @@ public class FileMappingService {
         }
     }
 
-    public String generateFileToken(String fileName) {
-        return HubbleUtil.md5(fileName) + "-" +
-               HubbleUtil.nowTime().getEpochSecond();
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public void detachFromJob(int mappingId, int jobId) {
+        if (this.mapper.detachFromJob(mappingId, jobId) != 1) {
+            throw new InternalException("entity.update.failed", mappingId);
+        }
     }
 
-    public FileUploadResult uploadFile(MultipartFile srcFile, int index,
-                                       String dirPath) {
+    public String generateFileToken(String fileName) {
+        /*
+         * Append a short random suffix so that tokens cannot be guessed
+         * from the file name and upload time alone. Note that
+         * checkFileNameMatchToken() only checks the md5 prefix, so the
+         * token still passes that check.
+         */
+        return this.fileTokenPrefix(fileName) +
+               HubbleUtil.nowTime().getEpochSecond() + "-" +
+               randomTokenSuffix();
+    }
+
+    private static String randomTokenSuffix() {
+        StringBuilder suffix = new StringBuilder(TOKEN_SUFFIX_LENGTH);
+        for (int i = 0; i < TOKEN_SUFFIX_LENGTH; i++) {
+            int index = TOKEN_RANDOM.nextInt(TOKEN_SUFFIX_CHARS.length());
+            suffix.append(TOKEN_SUFFIX_CHARS.charAt(index));
+        }
+        return suffix.toString();
+    }
+
+    public FileUploadResult uploadFile(MultipartFile srcFile, String fileName,
+                                       int index, String dirPath) {
         FileUploadResult result = new FileUploadResult();
         // Current part saved path
-        String partName = srcFile.getOriginalFilename();
+        String partName = fileName;
         result.setName(partName);
         result.setSize(srcFile.getSize());
 
@@ -186,7 +256,18 @@ public class FileMappingService {
 
         File newFile = new File(dir.getPath() + ".all");
         File destFile = new File(dir.getPath());
+        if (newFile.exists()) {
+            try {
+                FileUtils.forceDelete(newFile);
+            } catch (IOException e) {
+                log.error("Failed to delete stale merged upload file {}",
+                          newFile, e);
+                throw new InternalException("load.upload.delete-temp-dir.failed",
+                                            e);
+            }
+        }
         if (partFiles.length == 1) {
+            this.checkPartFileIndex(partFiles[0], 0);
             try {
                 // Rename file to dest file
                 FileUtils.moveFile(partFiles[0], newFile);
@@ -205,9 +286,10 @@ public class FileMappingService {
                 Integer idx2 = Integer.valueOf(file2Idx);
                 return idx1.compareTo(idx2);
             });
-            try (OutputStream os = new FileOutputStream(newFile, true)) {
+            try (OutputStream os = new FileOutputStream(newFile, false)) {
                 for (int i = 0; i < partFiles.length; i++) {
                     File partFile = partFiles[i];
+                    this.checkPartFileIndex(partFile, i);
                     try (InputStream is = new FileInputStream(partFile)) {
                         IOUtils.copy(is, os);
                     } catch (IOException e) {
@@ -237,8 +319,22 @@ public class FileMappingService {
         return true;
     }
 
+    private void checkPartFileIndex(File partFile, int expectedIndex) {
+        String fileIdx = StringUtils.substringAfterLast(partFile.getName(),
+                                                        "-");
+        try {
+            int actualIndex = Integer.parseInt(fileIdx);
+            if (actualIndex == expectedIndex) {
+                return;
+            }
+        } catch (NumberFormatException ignored) {
+            // Fall through to a uniform error below.
+        }
+        throw new InternalException("load.upload.merge-file.failed");
+    }
+
     public void extractColumns(FileMapping mapping) {
-        File file = FileUtils.getFile(mapping.getPath());
+        File file = this.requirePathUnderUploadRoot(mapping.getPath());
         BufferedReader reader;
         try {
             reader = new BufferedReader(new FileReader(file));
@@ -281,7 +377,11 @@ public class FileMappingService {
             throw new InternalException("Failed to read header and sample " +
                                         "data from file '%s'", file);
         } finally {
-            IOUtils.closeQuietly(reader);
+            try {
+                reader.close();
+            } catch (IOException ignored) {
+                log.debug("Failed to close file mapping reader", ignored);
+            }
         }
 
         setting.setColumnNames(Arrays.asList(columnNames));
@@ -289,7 +389,7 @@ public class FileMappingService {
     }
 
     public String moveToNextLevelDir(FileMapping mapping) {
-        File currFile = new File(mapping.getPath());
+        File currFile = this.requirePathUnderUploadRoot(mapping.getPath());
         String destPath = Paths.get(currFile.getParentFile().getPath(),
                                     FILE_PREIFX + mapping.getId())
                                .toString();
@@ -304,37 +404,68 @@ public class FileMappingService {
         return Paths.get(destPath, currFile.getName()).toString();
     }
 
-    public void deleteDiskFile(FileMapping mapping) {
-        File file = new File(mapping.getPath());
-        if (file.isDirectory()) {
-            log.info("Prepare to delete directory {}", file);
-            try {
-                FileUtils.forceDelete(file);
-            } catch (IOException e) {
-                throw new InternalException("Failed to delete directory " +
-                                            "corresponded to the file id %s, " +
-                                            "please delete it manually",
-                                            e, mapping.getId());
+    public void restoreMovedUpload(String movedPath, String originalPath) {
+        File movedFile = this.requirePathUnderUploadRoot(movedPath);
+        File originalFile = this.requirePathUnderUploadRoot(originalPath);
+        if (!movedFile.exists()) {
+            if (originalFile.exists()) {
+                return;
             }
+            throw new InternalException(
+                      "Failed to restore upload file after database rollback");
+        }
+        try {
+            originalFile = this.requirePathUnderUploadRoot(originalPath);
+            FileUtils.moveFile(movedFile, originalFile);
+        } catch (IOException e) {
+            throw new InternalException(
+                      "Failed to restore upload file after database rollback",
+                      e);
+        }
+
+        File movedDirectory = movedFile.getParentFile();
+        String[] children = movedDirectory == null ? null :
+                            movedDirectory.list();
+        if (children != null && children.length == 0 &&
+            !movedDirectory.delete()) {
+            log.warn("Failed to remove empty upload directory {}",
+                     movedDirectory);
+        }
+    }
+
+    public void deleteDiskFile(FileMapping mapping) {
+        File file = this.requirePathUnderUploadRoot(mapping.getPath());
+        if (file.isDirectory()) {
+            this.deletePathIfExists(file, mapping.getId());
         } else {
             File parentDir = file.getParentFile();
-            log.info("Prepare to delete directory {}", parentDir);
-            try {
-                FileUtils.forceDelete(parentDir);
-            } catch (IOException e) {
-                throw new InternalException("Failed to delete parent directory " +
-                                            "corresponded to the file id %s, " +
-                                            "please delete it manually",
-                                            e, mapping.getId());
+            if (parentDir == null) {
+                log.info("Skip deleting file mapping {} because {} has no " +
+                         "parent directory", mapping.getId(), mapping.getPath());
+                return;
             }
+            this.deletePathIfExists(parentDir, mapping.getId());
         }
+    }
+
+    public void cleanupMappings(List<FileMapping> mappings) {
+        for (FileMapping mapping : mappings) {
+            this.tryCleanupMapping(mapping);
+        }
+    }
+
+    @Async
+    @Scheduled(fixedRate = 10 * 60 * 1000)
+    public void deleteOrphanedJobFiles() {
+        this.cleanupMappings(this.listOrphanedJobFiles());
     }
 
     @Async
     @Scheduled(fixedRate = 10 * 60 * 1000)
     public void deleteUnfinishedFile() {
         QueryWrapper<FileMapping> query = Wrappers.query();
-        query.in("file_status", FileMappingStatus.UPLOADING.getValue());
+        query.in("file_status", FileMappingStatus.UPLOADING.getValue(),
+                 FileMappingStatus.FAILURE.getValue());
         List<FileMapping> mappings = this.mapper.selectList(query);
         long threshold = this.config.get(
                          HubbleOptions.UPLOAD_FILE_MAX_TIME_CONSUMING) * 1000;
@@ -343,24 +474,149 @@ public class FileMappingService {
             Date updateTime = mapping.getUpdateTime();
             long duration = now.getTime() - updateTime.getTime();
             if (duration > threshold) {
-                String filePath = mapping.getPath();
-                try {
-                    FileUtils.forceDelete(new File(filePath));
-                } catch (IOException e) {
-                    log.warn("Failed to delete expired uploading file {}",
-                             filePath, e);
-                }
-                this.remove(mapping.getId());
-                // Delete corresponding uploading tokens
-                Iterator<Map.Entry<String, ReadWriteLock>> iter;
-                iter = this.uploadingTokenLocks.entrySet().iterator();
-                iter.forEachRemaining(entry -> {
-                    String token = entry.getKey();
-                    if (token.startsWith(mapping.getName())) {
-                        iter.remove();
-                    }
-                });
+                this.tryDeleteUnfinishedMapping(mapping);
             }
         }
+    }
+
+    public File requirePathUnderUploadRoot(String filePath) {
+        return this.requirePathUnderUploadRoot(new File(filePath));
+    }
+
+    private void deletePathIfExists(File path, int mappingId) {
+        File safePath = this.requirePathUnderUploadRoot(path);
+        if (!safePath.exists()) {
+            log.info("Skip deleting path {} for mapping {} because it no " +
+                     "longer exists", safePath, mappingId);
+            return;
+        }
+
+        log.info("Prepare to delete directory {}", safePath);
+        try {
+            FileUtils.forceDelete(safePath);
+        } catch (IOException e) {
+            throw new InternalException("Failed to delete directory " +
+                                        "corresponded to the file id %s, " +
+                                        "please delete it manually",
+                                        e, mappingId);
+        }
+    }
+
+    private List<FileMapping> listOrphanedJobFiles() {
+        List<FileMapping> mappings = this.mapper.selectList(null);
+        if (mappings.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Set<Integer> jobIds = mappings.stream()
+                                      .map(FileMapping::getJobId)
+                                      .filter(jobId -> jobId != null)
+                                      .collect(Collectors.toSet());
+        if (jobIds.isEmpty()) {
+            return new ArrayList<>(mappings);
+        }
+
+        List<JobManager> jobs = this.jobManagerMapper.selectBatchIds(jobIds);
+        Set<Integer> existingJobIds = jobs.stream()
+                                          .map(JobManager::getId)
+                                          .collect(Collectors.toCollection(
+                                                  HashSet::new));
+        return mappings.stream()
+                       .filter(mapping -> mapping.getJobId() == null ||
+                                          !existingJobIds.contains(
+                                                  mapping.getJobId()))
+                       .collect(Collectors.toList());
+    }
+
+    private void tryCleanupMapping(FileMapping mapping) {
+        try {
+            this.deleteDiskFile(mapping);
+            this.removeCleanupRecord(mapping.getId());
+        } catch (RuntimeException e) {
+            log.warn("Failed to cleanup disk file for mapping {} at {}",
+                     mapping.getId(), mapping.getPath(), e);
+        }
+    }
+
+    private void removeCleanupRecord(int mappingId) {
+        int deleted = this.mapper.deleteById(mappingId);
+        if (deleted == 1) {
+            return;
+        }
+        if (deleted == 0) {
+            log.info("Skip removing file mapping {} because it no longer " +
+                     "exists", mappingId);
+            return;
+        }
+        throw new InternalException("entity.delete.failed", mappingId);
+    }
+
+    private File requirePathUnderUploadRoot(File file) {
+        Path uploadRootPath = this.normalizePath(new File(
+                this.config.get(HubbleOptions.UPLOAD_FILE_LOCATION)));
+        Path targetPath = this.normalizePath(file);
+        if (!targetPath.startsWith(uploadRootPath)) {
+            throw new InternalException("load.upload.file.path.outside-root",
+                                        targetPath, uploadRootPath);
+        }
+        return targetPath.toFile();
+    }
+
+    private Path normalizePath(File file) {
+        Path path = file.toPath().toAbsolutePath().normalize();
+        try {
+            if (file.exists()) {
+                return path.toRealPath();
+            }
+            Path existing = path.getParent();
+            while (existing != null && !Files.exists(existing)) {
+                existing = existing.getParent();
+            }
+            if (existing != null) {
+                Path resolvedParent = existing.toRealPath();
+                return resolvedParent.resolve(existing.relativize(path))
+                                     .normalize();
+            }
+        } catch (IOException e) {
+            throw new InternalException("Failed to resolve upload path '%s'",
+                                        e, file);
+        }
+        return path;
+    }
+
+    private void tryDeleteUnfinishedMapping(FileMapping mapping) {
+        String filePath = mapping.getPath();
+        try {
+            File file = this.requirePathUnderUploadRoot(filePath);
+            if (file.exists()) {
+                FileUtils.forceDelete(file);
+            }
+        } catch (IOException e) {
+            log.warn("Failed to delete expired uploading file {}",
+                     filePath, e);
+            return;
+        } catch (RuntimeException e) {
+            log.warn("Skip deleting expired uploading file {} because the " +
+                     "path is invalid", filePath, e);
+            return;
+        }
+        this.remove(mapping.getId());
+        this.removeUploadingTokens(mapping.getName());
+    }
+
+    private void removeUploadingTokens(String fileName) {
+        String tokenPrefix = this.fileTokenPrefix(fileName);
+        Iterator<Map.Entry<String, ReadWriteLock>> iter;
+        iter = this.uploadingTokenLocks.entrySet().iterator();
+        while (iter.hasNext()) {
+            Map.Entry<String, ReadWriteLock> entry = iter.next();
+            if (entry.getKey().startsWith(tokenPrefix)) {
+                iter.remove();
+            }
+        }
+    }
+
+    private String fileTokenPrefix(String fileName) {
+        return HubbleUtil.md5(fileName) + "-";
     }
 }

@@ -24,12 +24,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Set;
 
+import org.apache.hugegraph.entity.load.EdgeMapping;
 import org.apache.ibatis.type.BaseTypeHandler;
 import org.apache.ibatis.type.JdbcType;
 import org.apache.ibatis.type.MappedJdbcTypes;
 import org.apache.ibatis.type.MappedTypes;
 
-import org.apache.hugegraph.entity.load.EdgeMapping;
 import org.apache.hugegraph.loader.util.JsonUtil;
 
 @MappedTypes(value = {EdgeMapping.class})

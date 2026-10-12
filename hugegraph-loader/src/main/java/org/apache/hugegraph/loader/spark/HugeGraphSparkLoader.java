@@ -31,11 +31,14 @@ import org.apache.hugegraph.loader.metrics.LoadDistributeMetrics;
 import org.apache.hugegraph.loader.source.InputSource;
 import org.apache.hugegraph.loader.source.jdbc.JDBCSource;
 import org.apache.hugegraph.loader.util.Printer;
+import org.apache.hugegraph.loader.util.JsonUtil;
 import org.apache.hugegraph.loader.mapping.EdgeMapping;
 import org.apache.hugegraph.loader.mapping.ElementMapping;
 import org.apache.hugegraph.loader.mapping.InputStruct;
 import org.apache.hugegraph.loader.mapping.LoadMapping;
 import org.apache.hugegraph.loader.mapping.VertexMapping;
+import org.apache.hugegraph.loader.parser.TextLineParser;
+import org.apache.hugegraph.loader.reader.line.Line;
 import org.apache.hugegraph.loader.source.file.Compression;
 import org.apache.hugegraph.loader.source.file.FileFilter;
 import org.apache.hugegraph.loader.source.file.FileFormat;
@@ -51,6 +54,7 @@ import org.apache.hugegraph.util.Log;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
+import org.apache.spark.api.java.function.ForeachPartitionFunction;
 import org.apache.spark.sql.DataFrameReader;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -60,7 +64,8 @@ import org.apache.spark.util.LongAccumulator;
 import org.slf4j.Logger;
 
 import java.io.Serializable;
-import java.util.Optional;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -79,8 +84,6 @@ public class HugeGraphSparkLoader implements Serializable {
     public static final Logger LOG = Log.logger(HugeGraphSparkLoader.class);
 
     private final LoadOptions loadOptions;
-    private final Map<ElementBuilder, List<GraphElement>> builders;
-
     private final transient ExecutorService executor;
 
     public static void main(String[] args) {
@@ -90,12 +93,13 @@ public class HugeGraphSparkLoader implements Serializable {
             loader.load();
         } catch (Throwable e) {
             Printer.printError("Failed to start loading", e);
+            System.exit(1);
         }
     }
 
     public HugeGraphSparkLoader(String[] args) {
+        checkDeployment(new SparkConf());
         this.loadOptions = LoadOptions.parseOptions(args);
-        this.builders = new HashMap<>();
         this.executor = Executors.newCachedThreadPool();
     }
 
@@ -125,66 +129,111 @@ public class HugeGraphSparkLoader implements Serializable {
         }
     }
 
+    static void checkDeployment(SparkConf conf) {
+        if ("cluster".equals(conf.get("spark.submit.deployMode", "client")) &&
+            conf.get("spark.master", "").startsWith("spark://")) {
+            throw new LoadException("Standalone cluster deploy mode is not supported; " +
+                                    "use client deploy mode");
+        }
+    }
+
     public void load() throws ExecutionException, InterruptedException {
+        checkLoadOptions(this.loadOptions);
         LoadMapping mapping = LoadMapping.of(this.loadOptions.file);
         List<InputStruct> structs = mapping.structs();
-        boolean sinkType = this.loadOptions.sinkType;
-        if (!sinkType) {
-            this.loadOptions.copyBackendStoreInfo(mapping.getBackendStoreInfo());
-        }
-
+        checkHeaders(structs);
         SparkConf conf = new SparkConf();
+        boolean sinkType = this.loadOptions.sinkType;
+        //if (!sinkType) {
+        //    this.loadOptions.copyBackendStoreInfo(mapping.getBackendStoreInfo());
+        //}
+
         registerKryoClasses(conf);
         SparkSession session = SparkSession.builder().config(conf).getOrCreate();
         SparkContext sc = session.sparkContext();
+        LOG.info("Spark Loader runtime: Java {}, default charset {}",
+                 System.getProperty("java.version"), Charset.defaultCharset().name());
 
-        LongAccumulator totalInsertSuccess = sc.longAccumulator("totalInsertSuccess");
-        List<Future<?>> futures = new ArrayList<>(structs.size());
+        try {
+            LongAccumulator totalInsertSuccess = sc.longAccumulator("totalInsertSuccess");
+            List<Future<?>> futures = new ArrayList<>(structs.size());
 
+            for (InputStruct struct : structs) {
+                Future<?> future = this.executor.submit(() -> {
+                    LOG.info("\n Initializes the accumulator corresponding to the  {} ",
+                             struct.input().asFileSource().path());
+                    LoadDistributeMetrics loadDistributeMetrics = new LoadDistributeMetrics(struct);
+                    loadDistributeMetrics.init(sc);
+                    LOG.info("\n  Start to load data, data info is: \t {} ",
+                             struct.input().asFileSource().path());
+                    Dataset<Row> ds = read(session, struct);
+                    if (sinkType) {
+                        LOG.info("\n  Start to load data using spark apis  \n");
+                        ds.foreachPartition(new PartitionWriter(this.loadOptions, struct));
+
+                    } else {
+                        LOG.info("\n Start to load data using spark bulkload \n");
+                        // gen-hfile
+                        HBaseDirectLoader directLoader = new HBaseDirectLoader(loadOptions, struct,
+                                                                               loadDistributeMetrics);
+                        directLoader.bulkload(ds);
+
+                    }
+                    collectLoadMetrics(loadDistributeMetrics, totalInsertSuccess);
+                    LOG.info("\n Finished  load {}  data ", struct.input().asFileSource().path());
+                });
+                futures.add(future);
+            }
+            for (Future<?> future : futures) {
+                future.get();
+            }
+
+            Long totalInsertSuccessCnt = totalInsertSuccess.value();
+            LOG.info("\n ------------The data load task is complete-------------------\n" +
+                     "\n insertSuccessCnt:\t {} \n ---------------------------------------------\n",
+                     totalInsertSuccessCnt);
+        } finally {
+            this.executor.shutdownNow();
+            session.stop();
+        }
+    }
+
+    static void checkLoadOptions(LoadOptions options) {
+        if (options.incrementalMode || options.failureMode) {
+            throw new LoadException("Spark does not support --incremental-mode or --failure-mode; " +
+                                    "see docs/spark-java17.md");
+        }
+    }
+
+    static void checkHeaders(List<InputStruct> structs) {
         for (InputStruct struct : structs) {
-            Future<?> future = this.executor.submit(() -> {
-                LOG.info("\n Initializes the accumulator corresponding to the  {} ",
-                         struct.input().asFileSource().path());
-                LoadDistributeMetrics loadDistributeMetrics = new LoadDistributeMetrics(struct);
-                loadDistributeMetrics.init(sc);
-                LOG.info("\n  Start to load data, data info is: \t {} ",
-                         struct.input().asFileSource().path());
-                Dataset<Row> ds = read(session, struct);
-                if (sinkType) {
-                    LOG.info("\n  Start to load data using spark apis  \n");
-                    ds.foreachPartition((Iterator<Row> p) -> {
-                        LoadContext context = initPartition(this.loadOptions, struct);
-                        p.forEachRemaining((Row row) -> {
-                            loadRow(struct, row, p, context);
-                        });
-                        context.close();
-                    });
-
-                } else {
-                    LOG.info("\n Start to load data using spark bulkload \n");
-                    // gen-hfile
-                    HBaseDirectLoader directLoader = new HBaseDirectLoader(loadOptions, struct,
-                                                                           loadDistributeMetrics);
-                    directLoader.bulkload(ds);
-
-                }
-                collectLoadMetrics(loadDistributeMetrics, totalInsertSuccess);
-                LOG.info("\n Finished  load {}  data ", struct.input().asFileSource().path());
-            });
-            futures.add(future);
+            switch (struct.input().type()) {
+                case FILE:
+                case HDFS:
+                    FileSource source = struct.input().asFileSource();
+                    if ((source.format() == FileFormat.TEXT ||
+                         source.format() == FileFormat.CSV ||
+                         source.format() == FileFormat.JSON) &&
+                        !StandardCharsets.UTF_8.equals(Charset.forName(source.charset()))) {
+                        throw new LoadException("Spark %s input '%s' requires UTF-8 charset; " +
+                                                "see docs/spark-java17.md",
+                                                source.format(), source.path());
+                    }
+                    if (source.format() != FileFormat.CSV &&
+                        source.format() != FileFormat.TEXT) {
+                        break;
+                    }
+                    if (source.header() == null || Boolean.TRUE.equals(source.hasHeader())) {
+                        throw new LoadException("Spark %s input '%s' requires an explicit mapping " +
+                                                "header and headerless data (has_header must not " +
+                                                "be true); see docs/spark-java17.md",
+                                                source.format(), source.path());
+                    }
+                    break;
+                default:
+                    break;
+            }
         }
-        for (Future<?> future : futures) {
-            future.get();
-        }
-
-        Long totalInsertSuccessCnt = totalInsertSuccess.value();
-        LOG.info("\n ------------The data load task is complete-------------------\n" +
-                 "\n insertSuccessCnt:\t {} \n ---------------------------------------------\n",
-                 totalInsertSuccessCnt);
-
-        sc.stop();
-        session.close();
-        session.stop();
     }
 
     private void collectLoadMetrics(LoadDistributeMetrics loadMetrics,
@@ -195,25 +244,24 @@ public class HugeGraphSparkLoader implements Serializable {
         totalInsertSuccess.add(vertexInsertSuccess);
     }
 
-    private LoadContext initPartition(
-            LoadOptions loadOptions, InputStruct struct) {
-        LoadContext context = new LoadContext(loadOptions);
+    private static void initPartition(LoadContext context, InputStruct struct,
+                                      Map<ElementBuilder, List<GraphElement>> builders) {
+        context.updateSchemaCache();
         for (VertexMapping vertexMapping : struct.vertices()) {
-            this.builders.put(new VertexBuilder(context, struct, vertexMapping),
+            builders.put(new VertexBuilder(context, struct, vertexMapping),
                               new ArrayList<>());
         }
         for (EdgeMapping edgeMapping : struct.edges()) {
-            this.builders.put(new EdgeBuilder(context, struct, edgeMapping),
+            builders.put(new EdgeBuilder(context, struct, edgeMapping),
                               new ArrayList<>());
         }
-        context.updateSchemaCache();
-        return context;
     }
 
-    private void loadRow(InputStruct struct, Row row, Iterator<Row> p,
-                         LoadContext context) {
+    static void loadRow(InputStruct struct, Row row, LoadContext context,
+                                Map<ElementBuilder, List<GraphElement>> builders,
+                                boolean checkVertex) {
         for (Map.Entry<ElementBuilder, List<GraphElement>> builderMap :
-                this.builders.entrySet()) {
+                builders.entrySet()) {
             ElementMapping elementMapping = builderMap.getKey().mapping();
             // Parse
             if (elementMapping.skip()) {
@@ -223,9 +271,10 @@ public class HugeGraphSparkLoader implements Serializable {
 
             // Insert
             List<GraphElement> graphElements = builderMap.getValue();
-            if (graphElements.size() >= elementMapping.batchSize() ||
-                (!p.hasNext() && graphElements.size() > 0)) {
-                flush(builderMap, context.client().graph(), this.loadOptions.checkVertex);
+            if (context.options().dryRun) {
+                graphElements.clear();
+            } else {
+                flush(builderMap, context.client().graph(), checkVertex);
             }
         }
     }
@@ -281,24 +330,34 @@ public class HugeGraphSparkLoader implements Serializable {
         return ds;
     }
 
-    private void parse(Row row, Map.Entry<ElementBuilder, List<GraphElement>> builderMap,
+    private static void parse(Row row, Map.Entry<ElementBuilder, List<GraphElement>> builderMap,
                        InputStruct struct) {
         ElementBuilder builder = builderMap.getKey();
         List<GraphElement> graphElements = builderMap.getValue();
-        if ("".equals(row.mkString())) {
-            return;
-        }
         List<GraphElement> elements;
         switch (struct.input().type()) {
             case FILE:
             case HDFS:
                 FileSource fileSource = struct.input().asFileSource();
-                String delimiter = fileSource.delimiter();
-                if (Optional.ofNullable(delimiter).isPresent()) {
-                    elements = builder.build(fileSource.header(),
-                               row.mkString(delimiter).split(delimiter));
+                if (fileSource.format() == FileFormat.TEXT) {
+                    if (row.isNullAt(0) || "".equals(row.getString(0))) {
+                        return;
+                    }
+                    Line line = new TextLineParser(fileSource.delimiter())
+                                .parse(fileSource.header(), row.getString(0));
+                    elements = builder.build(line.names(), line.values());
                 } else {
-                    elements = builder.build(row);
+                    String[] names = fileSource.format() == FileFormat.CSV ?
+                                     fileSource.header() : row.schema().fieldNames();
+                    if (names.length != row.size()) {
+                        throw new LoadException("Input column count %s does not match header count %s",
+                                                row.size(), names.length);
+                    }
+                    Object[] values = new Object[row.size()];
+                    for (int i = 0; i < row.size(); i++) {
+                        values[i] = row.get(i);
+                    }
+                    elements = builder.build(names, values);
                 }
                 break;
             case JDBC:
@@ -320,7 +379,7 @@ public class HugeGraphSparkLoader implements Serializable {
         graphElements.addAll(elements);
     }
 
-    private void flush(Map.Entry<ElementBuilder, List<GraphElement>> builderMap,
+    private static void flush(Map.Entry<ElementBuilder, List<GraphElement>> builderMap,
                        GraphManager g, boolean isCheckVertex) {
         ElementBuilder builder = builderMap.getKey();
         ElementMapping elementMapping = builder.mapping();
@@ -353,4 +412,32 @@ public class HugeGraphSparkLoader implements Serializable {
         }
         graphElements.clear();
     }
+
+    static final class PartitionWriter implements ForeachPartitionFunction<Row> {
+
+        final String optionsJson;
+        final String structJson;
+
+        PartitionWriter(LoadOptions options, InputStruct struct) {
+            // Spark uses Java serialization for closures, independently of its data serializer.
+            this.optionsJson = JsonUtil.toJson(options);
+            this.structJson = JsonUtil.toJson(struct);
+        }
+
+        @Override
+        public void call(Iterator<Row> rows) {
+            LoadOptions options = JsonUtil.fromJson(this.optionsJson, LoadOptions.class);
+            InputStruct struct = JsonUtil.fromJson(this.structJson, InputStruct.class);
+            Map<ElementBuilder, List<GraphElement>> builders = new HashMap<>();
+            LoadContext context = new LoadContext(options);
+            try {
+                initPartition(context, struct, builders);
+                rows.forEachRemaining(row -> loadRow(struct, row, context, builders,
+                                                     options.checkVertex));
+            } finally {
+                context.close();
+            }
+        }
+    }
+
 }

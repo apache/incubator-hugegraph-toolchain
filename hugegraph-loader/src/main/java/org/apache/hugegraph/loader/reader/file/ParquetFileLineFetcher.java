@@ -18,7 +18,9 @@
 package org.apache.hugegraph.loader.reader.file;
 
 import java.io.IOException;
+import java.time.ZoneId;
 import java.util.List;
+import java.util.TimeZone;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -129,8 +131,9 @@ public class ParquetFileLineFetcher extends FileLineFetcher {
         int fieldSize = this.schema.getFields().size();
         Object[] values = new Object[fieldSize];
         SimpleGroup group = (SimpleGroup) this.recordReader.read();
+        ZoneId timeZone = TimeZone.getTimeZone(this.source().timeZone()).toZoneId();
         for (int fieldIndex = 0; fieldIndex < fieldSize; fieldIndex++) {
-            values[fieldIndex] = ParquetUtil.convertObject(group, fieldIndex);
+            values[fieldIndex] = ParquetUtil.convertObject(group, fieldIndex, timeZone);
         }
         String rawLine = StringUtils.join(values, Constants.COMMA_STR);
 

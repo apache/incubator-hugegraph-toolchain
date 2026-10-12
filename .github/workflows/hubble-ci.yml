@@ -1,102 +1,247 @@
 name: "hubble-ci"
 
 on:
-  workflow_dispatch:
-  push:
-    branches:
-      - master
-      - /^release-.*$/
-    paths:
-      - hugegraph-hubble/**
-      - hugegraph-dist/**
-      - hugegraph-loader/**
-      - .github/workflows/**
-      - pom.xml
-  pull_request:
-    paths:
-      - hugegraph-hubble/**
-      - hugegraph-dist/**
-      - hugegraph-loader/**
-      - hugegraph-client/**
-      - .github/workflows/**
-      - pom.xml
+  workflow_call:
+    inputs:
+      current-artifact-name:
+        type: string
+        required: true
+      current-repository:
+        type: string
+        required: true
+      current-ref:
+        type: string
+        required: true
+      current-commit:
+        type: string
+        required: true
+      server-repository:
+        type: string
+        default: apache/hugegraph
+      artifact-name:
+        type: string
+        required: true
+      server-commit:
+        type: string
+        required: true
+      server-ref:
+        type: string
+        required: true
 
 env:
   TRAVIS_DIR: hugegraph-hubble/hubble-dist/assembly/travis
-  # TODO: replace it with the (latest - n) commit id (n >= 15)
-  COMMIT_ID: b52517c
 
 jobs:
   hubble-ci:
     runs-on: ubuntu-latest
     env:
-      USE_STAGE: 'true' # Whether to include the stage repository.
       STATIC_DIR: hugegraph-hubble/hubble-dist/assembly/static
+    strategy:
+      fail-fast: false
+      matrix:
+        JAVA_VERSION: ['17']
+        SERVER_BASELINE: ['candidate', 'release-1.7']
+        python-version: ["3.11"]
+
     steps:
-      - name: Install JDK 11
-        uses: actions/setup-java@v3
-        with:
-          java-version: '11'
-          distribution: 'adopt'
-      # we also should cache python & yarn & downloads to avoid useless work
-      - name: Cache Maven packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-
-      - name: Cache Python packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      - name: Checkout
-        uses: actions/checkout@v3
+      - name: Fetch Code
+        uses: actions/checkout@v7
         with:
           fetch-depth: 2
 
-      - name: use staged maven repo settings
-        if: ${{ env.USE_STAGE == 'true' }}
+      - name: Install released Server JDK
+        if: matrix.SERVER_BASELINE == 'release-1.7'
+        id: released-java
+        uses: actions/setup-java@v5
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          overwrite-settings: false
+
+      - name: Record released Server JDK
+        if: matrix.SERVER_BASELINE == 'release-1.7'
+        run: echo "SERVER_JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
+
+      - name: Setup Java environment
+        uses: ./.github/actions/setup-java-env
+        with:
+          java-version: ${{ matrix.JAVA_VERSION }}
+          distribution: 'temurin'
+
+      - name: Record candidate Server JDK
+        if: matrix.SERVER_BASELINE == 'candidate'
+        run: echo "SERVER_JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
+
+      - name: Install locked candidate SDK
+        id: candidate-sdk
+        uses: ./.github/actions/setup-candidate-sdk
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Set up Node.js 18.20.8
+        uses: actions/setup-node@v6
+        with:
+          node-version: '18.20.8'
+
+      - name: Cache Node modules
+        uses: actions/cache@v6
+        with:
+          path: |
+            hugegraph-hubble/hubble-fe/node_modules
+            hugegraph-hubble/hubble-fe/node
+            ~/.cache/yarn
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package.json', '**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('hugegraph-hubble/hubble-fe/yarn.lock') }}
+
+      - name: Frontend i18n check
+        working-directory: hugegraph-hubble/hubble-fe
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
         run: |
-          cp $HOME/.m2/settings.xml /tmp/settings.xml
-          mv -vf .github/configs/settings.xml $HOME/.m2/settings.xml
+          yarn install --frozen-lockfile --network-timeout 600000 --prefer-offline --ignore-engines
+          yarn lint
+          yarn i18n:check
+          yarn test --watchAll=false --runInBand
+          node --test ../hubble-dist/assembly/travis/ui_auth.test.js
+
+      - name: Install Playwright Chromium
+        working-directory: hugegraph-hubble/hubble-fe
+        run: |
+          # Browser dependencies use Ubuntu repositories; this job does not use the Microsoft feed.
+          sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list /etc/apt/sources.list.d/microsoft-prod.sources
+          yarn playwright install --with-deps chromium
 
       - name: Compile
         run: |
           mvn install -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp
-          cd hugegraph-hubble && ls *
+          cd hugegraph-hubble
           mvn -e compile -Dmaven.javadoc.skip=true -ntp
 
       - name: Prepare env and service
+        env:
+          COMMIT_ID: ${{ matrix.SERVER_BASELINE == 'candidate' && inputs.current-commit || inputs.server-commit }}
+          COMMIT_REF: ${{ matrix.SERVER_BASELINE == 'candidate' && inputs.current-commit || inputs.server-ref }}
+          SERVER_REPOSITORY: ${{ matrix.SERVER_BASELINE == 'candidate' && inputs.current-repository || inputs.server-repository }}
+          HG_SERVER_BASELINE: ${{ matrix.SERVER_BASELINE }}
+          SERVER_MAVEN_REPO: ${{ runner.temp }}/hubble-fixture-${{ matrix.SERVER_BASELINE }}-m2
+          NODE_OPTIONS: --max-old-space-size=4096
         run: |
-          sudo pip install -r ${TRAVIS_DIR}/requirements.txt
+          echo "=== Environment Info ==="
+          node -v
+          yarn -v
+          echo "NODE_OPTIONS: $NODE_OPTIONS"
+          echo "COMMIT_ID: $COMMIT_ID"
+          echo "COMMIT_REF: $COMMIT_REF"
+          free -h || true
+          echo "======================="
+
+          python -m pip install -r "${TRAVIS_DIR}/requirements.txt"
           cd hugegraph-hubble
           mvn package -Dmaven.test.skip=true
-          cd apache-hugegraph-hubble-incubating*
+          cd apache-hugegraph-hubble-*
           cd bin
           ./start-hubble.sh -d
           ./stop-hubble.sh
           cd ../../../
           pwd
-          $TRAVIS_DIR/install-hugegraph.sh $COMMIT_ID
+
+
+      - name: Setup shared HugeGraph server
+        uses: ./.github/actions/setup-hugegraph-server
+        with:
+          mode: start
+          java-version: ${{ matrix.SERVER_BASELINE == 'candidate' && '17' || '11' }}
+          java-home: ${{ env.SERVER_JAVA_HOME }}
+          artifact-name: ${{ matrix.SERVER_BASELINE == 'candidate' && inputs.current-artifact-name || inputs.artifact-name }}
+          commit-id: ${{ matrix.SERVER_BASELINE == 'candidate' && inputs.current-commit || inputs.server-commit }}
+          repository: ${{ matrix.SERVER_BASELINE == 'candidate' && inputs.current-repository || inputs.server-repository }}
+          fetch-ref: ${{ matrix.SERVER_BASELINE == 'candidate' && inputs.current-ref || inputs.server-ref }}
+          travis-dir: ${{ env.TRAVIS_DIR }}
+
+      - name: Test Gremlin fixture configuration
+        run: python3 "$TRAVIS_DIR/test_configure_gremlin_fixture.py"
+
+      - name: Archive and distribution audit tests
+        run: |
+          python3 "$TRAVIS_DIR/test_archive_hubble.py"
+          python3 "$TRAVIS_DIR/test_check_hubble_dist.py"
+
+      - name: Release package audit
+        env:
+          GNUPGHOME: ${{ runner.temp }}/hubble-release-gate-gpghome
+        run: |
+          archives=(hugegraph-hubble/target/apache-hugegraph-hubble-*.tar.gz)
+          if [[ ${#archives[@]} -ne 1 || ! -f "${archives[0]}" ]]; then
+            echo "Expected exactly one Hubble tarball" >&2
+            exit 1
+          fi
+
+          HUBBLE_TARBALL="${archives[0]}"
+          mkdir -p "${GNUPGHOME}"
+          chmod 700 "${GNUPGHOME}"
+          shasum -a 512 "${HUBBLE_TARBALL}" > "${HUBBLE_TARBALL}.sha512"
+          printf '%s\n' \
+            '%no-protection' \
+            'Key-Type: RSA' \
+            'Key-Length: 2048' \
+            'Subkey-Type: RSA' \
+            'Subkey-Length: 2048' \
+            'Name-Real: Hubble CI Release Gate' \
+            'Name-Email: hubble-ci-release-gate@example.invalid' \
+            'Expire-Date: 0' \
+            '%commit' \
+            > "${RUNNER_TEMP}/hubble-release-gate-key.conf"
+          gpg --batch --generate-key "${RUNNER_TEMP}/hubble-release-gate-key.conf"
+          gpg --batch --yes --armor --detach-sign "${HUBBLE_TARBALL}"
+          bash "${TRAVIS_DIR}/check-hubble-dist.sh" "${HUBBLE_TARBALL}" \
+               --require-sidecars \
+               --json-output hugegraph-hubble/target/hubble-dist-check.json
 
       - name: Unit test
         run: mvn test -P unit-test -pl hugegraph-hubble/hubble-be -ntp
 
       - name: API test
         env:
-          CI: false
+          HG_SERVER_BASELINE: ${{ matrix.SERVER_BASELINE }}
         run: |
-          cd hugegraph-hubble && ls
-          hubble-dist/assembly/travis/run-api-test.sh
+          cd hugegraph-hubble
+          archives=(target/apache-hugegraph-hubble-*.tar.gz)
+          if [[ ${#archives[@]} -ne 1 || ! -f "${archives[0]}" ]]; then
+            echo "Expected exactly one Hubble tarball" >&2
+            exit 1
+          fi
+          HUBBLE_TARBALL="${archives[0]}"
+          HUBBLE_694_EVIDENCE_DIR=target/hubble-live-acceptance \
+            hubble-dist/assembly/travis/verify-hubble-issue-694.sh \
+            "${HUBBLE_TARBALL}" http://127.0.0.1:8080
+
+      - name: Upload Hubble smoke evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: hubble-smoke-java-${{ matrix.JAVA_VERSION }}-${{ matrix.SERVER_BASELINE }}-${{ github.run_attempt }}
+          path: |
+            hugegraph-hubble/target/hubble-dist-check.json
+            hugegraph-hubble/target/hubble-live-acceptance/**/*.json
+            hugegraph-hubble/target/hubble-live-acceptance/**/*.png
+            hugegraph-hubble/target/hubble-live-acceptance/**/*.log
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        continue-on-error: true
+        uses: ./.github/actions/upload-coverage
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: target/site/jacoco/*.xml
+          file: hugegraph-hubble/hubble-be/target/jacoco.xml

@@ -18,39 +18,48 @@
 
 package org.apache.hugegraph.service.schema;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.stream.Collectors;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
-
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.extern.log4j.Log4j2;
 import org.apache.hugegraph.config.HugeConfig;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.driver.SchemaManager;
 import org.apache.hugegraph.entity.schema.ConflictDetail;
 import org.apache.hugegraph.entity.schema.ConflictStatus;
+import org.apache.hugegraph.entity.schema.EdgeLabelEntity;
 import org.apache.hugegraph.entity.schema.Property;
 import org.apache.hugegraph.entity.schema.PropertyIndex;
+import org.apache.hugegraph.entity.schema.PropertyKeyEntity;
 import org.apache.hugegraph.entity.schema.SchemaConflict;
 import org.apache.hugegraph.entity.schema.SchemaEntity;
 import org.apache.hugegraph.entity.schema.SchemaLabelEntity;
 import org.apache.hugegraph.entity.schema.SchemaType;
-import org.apache.hugegraph.service.HugeClientPoolService;
+import org.apache.hugegraph.entity.schema.VertexLabelEntity;
+import org.apache.hugegraph.exception.InternalException;
 import org.apache.hugegraph.structure.SchemaElement;
+import org.apache.hugegraph.structure.constant.IdStrategy;
 import org.apache.hugegraph.structure.schema.IndexLabel;
+import org.apache.hugegraph.structure.schema.PropertyKey;
 import org.apache.hugegraph.structure.schema.SchemaLabel;
 import org.apache.hugegraph.util.HubbleUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.util.CollectionUtils;
 
-import lombok.extern.log4j.Log4j2;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 @Log4j2
 @Service
@@ -61,15 +70,19 @@ public class SchemaService {
 
     @Autowired
     private HugeConfig config;
+    // Subclasses inherit these collaborators, so resolve self-references lazily.
     @Autowired
-    private HugeClientPoolService poolService;
+    @Lazy
+    private PropertyKeyService pkService;
+    @Autowired
+    @Lazy
+    private VertexLabelService vlService;
+    @Autowired
+    @Lazy
+    private EdgeLabelService elService;
 
     public HugeConfig config() {
         return this.config;
-    }
-
-    public HugeClient client(int connId) {
-        return this.poolService.getOrCreate(connId);
     }
 
     public static <T extends SchemaElement> List<String> collectNames(
@@ -78,12 +91,97 @@ public class SchemaService {
                       .collect(Collectors.toList());
     }
 
-    public static Set<Property> collectProperties(SchemaLabel schemaLabel) {
+    public SchemaView getSchemaView(HugeClient client) {
+        List<PropertyKeyEntity> propertyKeys = this.pkService.list(client);
+        List<VertexLabelEntity> vertexLabels = this.vlService.list(client);
+        List<EdgeLabelEntity> edgeLabels = this.elService.list(client);
+
+        List<Map<String, Object>> vertices = new ArrayList<>(vertexLabels.size());
+        for (VertexLabelEntity entity : vertexLabels) {
+            Map<String, Object> vertex = new LinkedHashMap<>();
+            vertex.put("id", entity.getName());
+            vertex.put("label", entity.getName());
+            if (entity.getIdStrategy() == IdStrategy.PRIMARY_KEY) {
+                vertex.put("primary_keys", entity.getPrimaryKeys());
+            } else {
+                vertex.put("primary_keys", new ArrayList<>());
+            }
+            Map<String, String> properties = new LinkedHashMap<>();
+            this.fillProperties(properties, entity, propertyKeys);
+            vertex.put("properties", properties);
+            vertex.put("~style", entity.getStyle());
+            vertices.add(vertex);
+        }
+
+        List<Map<String, Object>> edges = new ArrayList<>(edgeLabels.size());
+        for (EdgeLabelEntity entity : edgeLabels) {
+            Map<String, Object> edge = new LinkedHashMap<>();
+            String edgeId = String.format(
+                    "%s-%s->%s", entity.getSourceLabel(),
+                    entity.getName(), entity.getTargetLabel());
+            edge.put("id", edgeId);
+            edge.put("label", entity.getName());
+            edge.put("source", entity.getSourceLabel());
+            edge.put("target", entity.getTargetLabel());
+            if (entity.isLinkMultiTimes()) {
+                edge.put("sort_keys", entity.getSortKeys());
+            } else {
+                edge.put("sort_keys", new ArrayList<>());
+            }
+            Map<String, String> properties = new LinkedHashMap<>();
+            this.fillProperties(properties, entity, propertyKeys);
+            edge.put("properties", properties);
+            edge.put("~style", entity.getStyle());
+            edges.add(edge);
+        }
+        return new SchemaView(vertices, edges);
+    }
+
+    @Data
+    @AllArgsConstructor
+    public static class SchemaView {
+
+        @JsonProperty("vertices")
+        private List<Map<String, Object>> vertices;
+
+        @JsonProperty("edges")
+        private List<Map<String, Object>> edges;
+    }
+
+    private void fillProperties(Map<String, String> properties,
+                                SchemaLabelEntity entity,
+                                List<PropertyKeyEntity> propertyKeys) {
+        for (Property property : entity.getProperties()) {
+            String name = property.getName();
+            PropertyKeyEntity pkEntity = findPropertyKey(propertyKeys, name);
+            properties.put(name, pkEntity.getDataType().string());
+        }
+    }
+
+    private PropertyKeyEntity findPropertyKey(List<PropertyKeyEntity> entities,
+                                              String name) {
+        for (PropertyKeyEntity entity : entities) {
+            if (entity.getName().equals(name)) {
+                return entity;
+            }
+        }
+        throw new InternalException("schema.propertykey.not-exist", name);
+    }
+
+    public Set<Property> collectProperties(SchemaLabel schemaLabel,
+                                           HugeClient client) {
         Set<Property> properties = new HashSet<>();
         Set<String> nullableKeys = schemaLabel.nullableKeys();
-        for (String property : schemaLabel.properties()) {
-            boolean nullable = nullableKeys.contains(property);
-            properties.add(new Property(property, nullable));
+        List<String> pkNames =
+                schemaLabel.properties().stream().collect(Collectors.toList());
+        if (pkNames.size() == 0) {
+            return properties;
+        }
+        List<PropertyKey> propertyKeys = this.pkService.get(pkNames, client);
+        for (PropertyKey pk : propertyKeys) {
+            boolean nullable = nullableKeys.contains(pk.name());
+            properties.add(new Property(pk.name(), nullable, pk.dataType(),
+                                        pk.cardinality()));
         }
         return properties;
     }
@@ -265,7 +363,8 @@ public class SchemaService {
     public static Date getCreateTime(SchemaElement element) {
         Object createTimeValue = element.userdata().get(USER_KEY_CREATE_TIME);
         if (!(createTimeValue instanceof Long)) {
-            return new Date(0);
+            // return new Date(0L);
+            return HubbleUtil.nowDate();
         }
         return new Date((long) createTimeValue);
     }

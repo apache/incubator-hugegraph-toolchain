@@ -1,28 +1,48 @@
-# For most projects, this workflow file will not need changing; you simply need
-# to commit it to your repository.
-#
-# You may wish to alter this file to override the set of languages analyzed,
-# or to provide custom queries or build logic.
-#
-# ******** NOTE ********
-# We have attempted to detect the languages in your repository. Please check
-# the `language` matrix defined below to confirm you have the correct set of
-# supported CodeQL languages.
-#
 name: "CodeQL"
 
 on:
   workflow_dispatch:
   pull_request:
-    # The branches below must be a subset of the branches above
-    # branches: [ master ] # enable in all PR
+  push:
+    branches: [master, 'release-*']
   schedule:
     - cron: '42 20 * * 6'
 
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}-${{ github.run_attempt == 1 && 'head' || format('rerun-{0}', github.run_id) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      security: ${{ steps.select.outputs.security }}
+      languages: ${{ steps.select.outputs.security_languages }}
+      dependency-audit: ${{ steps.select.outputs.dependency_audit }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Select scan inputs without preparing fixtures
+        id: select
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python3 .github/scripts/ci-policy.py plan --project toolchain
+          --event-path "$GITHUB_EVENT_PATH" --repository "$GITHUB_REPOSITORY"
+          --output scan-plan.json
+
   analyze:
+    needs: plan
+    if: needs.plan.outputs.security == 'true'
     env:
-      USE_STAGE: 'true' # Whether to include the stage repository.
+      # Preserve the master scan identity when invoked by a reusable-workflow caller.
+      CODEQL_ACTION_ANALYSIS_KEY: .github/workflows/codeql-analysis.yml:analyze
     name: Analyze
     runs-on: ubuntu-latest
     permissions:
@@ -33,47 +53,46 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'java', 'javascript', 'python' ]
+        language: ${{ fromJSON(needs.plan.outputs.languages) }}
         # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby' ]
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v7
 
-    - name: Setup Java JDK
-      uses: actions/setup-java@v3
+    - name: Setup Java and Maven
+      uses: ./.github/actions/setup-java-env
       with:
-        distribution: 'zulu'
-        java-version: '8'
+        distribution: zulu
+        java-version: '17'
 
-    - name: use staged maven repo settings
-      if: ${{ env.USE_STAGE == 'true' }}
-      run: |
-        cp $HOME/.m2/settings.xml /tmp/settings.xml
-        mv -vf .github/configs/settings.xml $HOME/.m2/settings.xml
-        
+    # Prepare dependency sources outside the workspace before CodeQL tracing.
+    - name: Install locked candidate SDK
+      if: matrix.language == 'java'
+      uses: ./.github/actions/setup-candidate-sdk
+
     - name: Use Node.js 16
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v6
       with:
         node-version: '16'
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
+      uses: github/codeql-action/init@v4
       with:
         languages: ${{ matrix.language }}
         # If you wish to specify custom queries, you can do so here or in a config file.
         # By default, queries listed here will override any specified in a config file.
         # Prefix the list here with "+" to use these queries and those in the config file.
-        
+
         # Details on CodeQL's query packs refer to : https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
         # queries: security-extended,security-and-quality
 
-        
+
     # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
     # If this step fails, then you should remove it and run the build manually (see below)
     - if: matrix.language == 'python' || matrix.language == 'javascript'
       name: Autobuild
-      uses: github/codeql-action/autobuild@v2
+      uses: github/codeql-action/autobuild@v4
 
     - if: matrix.language == 'java'
       name: Build Java
@@ -83,7 +102,7 @@ jobs:
     # ℹ️ Command-line programs to run using the OS shell.
     # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
 
-    #   If the Autobuild fails above, remove it and uncomment the following three lines. 
+    #   If the Autobuild fails above, remove it and uncomment the following three lines.
     #   modify them (or add more) to build your code if your project, please refer to the EXAMPLE below for guidance.
 
     # - run: |
@@ -91,12 +110,16 @@ jobs:
     #   ./location_of_script_within_repo/buildscript.sh
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+      uses: github/codeql-action/analyze@v4
+      with:
+        category: .github/workflows/codeql-analysis.yml:analyze/language:${{ matrix.language }}
 
   dependency-review:
+    needs: plan
+    if: github.event_name == 'pull_request' && needs.plan.outputs.dependency-audit == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: 'Checkout Repository'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
       - name: 'Dependency Review'
-        uses: actions/dependency-review-action@v2
+        uses: actions/dependency-review-action@v5.0.0

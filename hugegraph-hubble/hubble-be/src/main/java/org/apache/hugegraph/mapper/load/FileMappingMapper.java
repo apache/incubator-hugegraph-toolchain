@@ -19,6 +19,8 @@
 package org.apache.hugegraph.mapper.load;
 
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Update;
 import org.springframework.stereotype.Component;
 
 import org.apache.hugegraph.entity.load.FileMapping;
@@ -27,4 +29,9 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 @Mapper
 @Component
 public interface FileMappingMapper extends BaseMapper<FileMapping> {
+
+    @Update("UPDATE file_mapping SET job_id = -id " +
+            "WHERE id = #{mappingId} AND job_id = #{jobId}")
+    int detachFromJob(@Param("mappingId") int mappingId,
+                      @Param("jobId") int jobId);
 }

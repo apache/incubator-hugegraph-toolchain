@@ -29,12 +29,12 @@
     <artifactId>hugegraph-tools</artifactId>
     <packaging>jar</packaging>
 
-    <url>https://github.com/apache/incubator-hugegraph-toolchain/tree/master/hugegraph-tools</url>
+    <url>https://github.com/apache/hugegraph-toolchain/tree/master/hugegraph-tools</url>
     <name>${project.artifactId}</name>
 
     <properties>
         <release.name>${project.artifactId}</release.name>
-        <final.name>apache-${release.name}-incubating-${project.version}</final.name>
+        <final.name>apache-${release.name}-${project.version}</final.name>
         <assembly.dir>${project.basedir}/assembly</assembly.dir>
         <assembly.descriptor.dir>${assembly.dir}/descriptor</assembly.descriptor.dir>
         <shell-executable>bash</shell-executable>
@@ -115,6 +115,10 @@
                     <groupId>log4j</groupId>
                     <artifactId>log4j</artifactId>
                 </exclusion>
+                <exclusion>
+                    <artifactId>guava</artifactId>
+                    <groupId>com.google.guava</groupId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -167,10 +171,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-        </dependency>
     </dependencies>
 
     <build>
@@ -210,6 +210,18 @@
                         </goals>
                         <configuration>
                             <target>
+                                <exec executable="python3" failonerror="true">
+                                    <arg value="${project.basedir}/../.github/scripts/verify_candidate_image_sdk.py"/>
+                                    <arg value="${settings.localRepository}"/>
+                                    <arg value="--mode"/>
+                                    <arg value="${sdk.validation.mode}"/>
+                                    <arg value="--version"/>
+                                    <arg value="${hugegraph.version}"/>
+                                    <arg value="--distribution"/>
+                                    <arg value="${project.basedir}/${final.name}"/>
+                                    <arg value="--module"/>
+                                    <arg value="tools"/>
+                                </exec>
                                 <tar destfile="${project.basedir}/target/${final.name}.tar.gz"
                                      compression="gzip">
                                     <tarfileset dir="${project.basedir}" filemode="755">

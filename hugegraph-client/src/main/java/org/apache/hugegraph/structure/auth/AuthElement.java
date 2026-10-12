@@ -17,12 +17,12 @@
 
 package org.apache.hugegraph.structure.auth;
 
-import java.util.Date;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.apache.hugegraph.structure.Element;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Date;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public abstract class AuthElement extends Element {
@@ -35,6 +35,10 @@ public abstract class AuthElement extends Element {
     @Override
     public Object id() {
         return this.id;
+    }
+
+    public void setId(Object id) {
+        this.id = id;
     }
 
     public abstract Date createTime();

@@ -58,8 +58,8 @@ public class CountRequest {
 
     public static class Builder {
 
-        private CountRequest request;
-        private List<EdgeStep.Builder> stepBuilders;
+        private final CountRequest request;
+        private final List<EdgeStep.Builder> stepBuilders;
 
         private Builder() {
             this.request = new CountRequest();

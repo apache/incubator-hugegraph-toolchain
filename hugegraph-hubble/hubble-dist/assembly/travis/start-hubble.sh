@@ -33,6 +33,7 @@ PID_FILE=${BIN_PATH}/pid
 print_usage() {
     echo "  usage: start-hubble.sh [options]"
     echo "  options: "
+    echo "  -f,--foreground Start program in foreground mode"
     echo "  -d,--debug      Start program in debug mode"
     echo "  -h,--help       Display help information"
 }
@@ -50,11 +51,15 @@ for jar in "${LIB_PATH}"/*.jar; do
 done
 
 java_opts="-Xms512m"
+foreground="false"
 while [[ $# -gt 0 ]]; do
     case $1 in
         --help|-help|-h)
         print_usage
         exit 0
+        ;;
+        --foreground|-f)
+        foreground="true"
         ;;
         --debug|-d)
         java_opts="$java_opts -Xdebug -Xnoagent -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=y"
@@ -80,14 +85,18 @@ args=${CONF_PATH}/hugegraph-hubble.properties
 log=${LOG_PATH}/hugegraph-hubble.log
 
 echo -n "starting HugeGraphHubble "
-nohup nice -n 0 java -server "${java_opts}" "${agent_opts}" -Dhubble.home.path="${HOME_PATH}" -cp "${class_path}" ${main_class} "${args}" > "${log}" 2>&1 < /dev/null &
+if [[ ${foreground} == "false" ]]; then
+    nohup nice -n 0 java -server -Dfile.encoding=UTF-8 "${java_opts}" "${agent_opts}" -Dhubble.home.path="${HOME_PATH}" -cp "${class_path}" ${main_class} "${args}" > "${log}" 2>&1 < /dev/null &
+else
+    exec nice -n 0 java -server -Dfile.encoding=UTF-8 "${java_opts}" "${agent_opts}" -Dhubble.home.path="${HOME_PATH}" -cp "${class_path}" ${main_class} "${args}"
+fi
 pid=$!
 echo ${pid} > "${PID_FILE}"
 
 timeout_s=30
-server_host=$(read_property "${CONF_PATH}"/hugegraph-hubble.properties hubble.host)
-server_port=$(read_property "${CONF_PATH}"/hugegraph-hubble.properties hubble.port)
-server_url="http://${server_host}:${server_port}/actuator/health"
+server_host=$(read_property "${CONF_PATH}"/hugegraph-hubble.properties server.host)
+server_port=$(read_property "${CONF_PATH}"/hugegraph-hubble.properties server.port)
+server_url="http://${server_host}:${server_port}/about"
 
 wait_for_startup "${server_url}" ${timeout_s} || {
     cat "${log}"

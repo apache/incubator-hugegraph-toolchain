@@ -23,7 +23,7 @@ import org.apache.hugegraph.client.RestClient;
 
 public class VersionManager {
 
-    private VersionAPI versionAPI;
+    private final VersionAPI versionAPI;
 
     public VersionManager(RestClient client) {
         this.versionAPI = new VersionAPI(client);

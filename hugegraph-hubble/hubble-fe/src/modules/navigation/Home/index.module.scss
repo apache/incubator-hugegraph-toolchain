@@ -1,0 +1,240 @@
+/*!
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with this
+ * work for additional information regarding copyright ownership. The ASF
+ * licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
+.navigation {
+    margin-top: 1px;
+    padding: 24px;
+    background-color: var(--workbench-color-canvas);
+    flex: 1 1 auto;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    max-width: 1180px;
+    margin: 0 auto 24px;
+    padding: 20px 24px;
+    border: 1px solid var(--workbench-color-border);
+    border-radius: var(--workbench-radius);
+    background: var(--workbench-color-surface);
+
+    :global(.ant-tag) {
+        flex: none;
+        margin-right: 0;
+        white-space: nowrap;
+    }
+}
+
+.headerCopy {
+    flex: 1;
+    min-width: 0;
+
+    h2 {
+        margin: 0 0 4px;
+        color: var(--workbench-color-text);
+        font-size: 22px;
+        font-weight: 600;
+        line-height: 1.4;
+    }
+
+    p {
+        max-width: 760px;
+        margin: 0;
+        color: var(--workbench-color-text-secondary);
+        font-size: 14px;
+        line-height: 1.7;
+    }
+
+    .subtitle {
+        margin-bottom: 4px;
+        color: var(--workbench-color-text);
+        font-size: 15px;
+    }
+}
+
+.modeTag {
+    display: inline-flex;
+    min-height: 26px;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 9px;
+    font-weight: 500;
+}
+
+.sectionTitle {
+    max-width: 1180px;
+    margin: 0 auto 12px;
+    color: var(--workbench-color-text);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.journeyGrid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    max-width: 1180px;
+    margin: 0 auto;
+}
+
+.journeyCard {
+    min-width: 0;
+    border-color: var(--workbench-color-border);
+
+    :global {
+        .ant-card-head-title {
+            color: var(--workbench-color-text);
+            font-size: 16px;
+        }
+
+    }
+}
+
+.step {
+    display: inline-flex;
+    width: 24px;
+    height: 24px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #e8f1fd;
+    color: var(--workbench-color-brand-strong);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.description {
+    min-height: 66px;
+    margin-bottom: 16px;
+    color: var(--workbench-color-text-secondary);
+    line-height: 1.6;
+}
+
+.primaryAction {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    min-height: 32px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 4px 15px;
+    border: 1px solid var(--workbench-color-brand);
+    border-radius: 2px;
+    background: var(--workbench-color-brand);
+    color: #fff;
+    line-height: 22px;
+    overflow-wrap: anywhere;
+    text-align: center;
+    white-space: normal;
+    transition: background-color 0.2s, border-color 0.2s;
+
+    &:hover,
+    &:focus {
+        border-color: var(--workbench-color-brand-strong);
+        background: var(--workbench-color-brand-strong);
+        color: #fff;
+    }
+
+    &:focus-visible {
+        outline: none;
+        box-shadow: var(--workbench-focus-ring);
+    }
+}
+
+.secondaryActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin-top: 14px;
+}
+
+.support {
+    max-width: 1180px;
+    margin: 16px auto 0;
+}
+
+.supportCard {
+    :global(.ant-card-body) {
+        padding: 24px;
+    }
+}
+
+.supportGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+
+    > :global(*) {
+        min-width: 0;
+        padding: 0 24px;
+    }
+
+    > :global(*):first-child {
+        padding-left: 0;
+    }
+
+    > :global(*):last-child:not(:first-child) {
+        padding-right: 0;
+        border-left: 1px solid var(--workbench-color-border);
+    }
+}
+
+@media (max-width: 1100px) {
+    .journeyGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .description {
+        min-height: auto;
+    }
+
+    .supportGrid {
+        grid-template-columns: 1fr;
+
+        > :global(*) {
+            padding: 20px 0;
+        }
+
+        > :global(*):first-child {
+            padding-top: 0;
+        }
+
+        > :global(*):last-child:not(:first-child) {
+            padding-bottom: 0;
+            border-top: 1px solid var(--workbench-color-border);
+            border-left: 0;
+        }
+    }
+}
+
+@media (max-width: 720px) {
+    .navigation {
+        padding: 16px;
+    }
+
+    .header {
+        align-items: flex-start;
+        flex-direction: column;
+
+        .headerCopy {
+            max-width: none;
+        }
+    }
+}

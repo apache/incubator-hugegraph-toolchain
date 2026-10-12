@@ -17,16 +17,31 @@
 
 package org.apache.hugegraph.loader.test.unit;
 
+import org.apache.hugegraph.loader.spark.SparkPartitionWriterTest;
+import org.apache.hugegraph.loader.spark.SparkRowTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
         LineTest.class,
+        FileLineFetcherTest.class,
+        LoadOptionsTest.class,
+        LoadContextTest.class,
+        TaskManagerTest.class,
+        SparkPartitionWriterTest.class,
+        SparkRowTest.class,
         DateUtilTest.class,
+        ParquetUtilTest.class,
+        JDBCFetcherTest.class,
+        ProtobufRuntimeTest.class,
+        ParquetRuntimeTest.class,
         MappingConverterTest.class,
         LoadProgressTest.class,
-        RangesTimerTest.class
+        RangesTimerTest.class,
+        FlinkSinkSerializationTest.class,
+        org.apache.hugegraph.loader.flink.HugeGraphSinkTest.class,
+        org.apache.hugegraph.loader.flink.HugeGraphDeserializationTest.class
 })
 public class UnitTestSuite {
 }

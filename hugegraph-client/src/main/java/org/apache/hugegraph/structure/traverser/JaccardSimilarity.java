@@ -22,15 +22,24 @@ import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import lombok.Setter;
+
 public class JaccardSimilarity {
 
     @JsonProperty("jaccard_similarity")
+    @Setter
     private Map<Object, Double> similarsMap;
     @JsonProperty
     private ApiMeasure measure;
 
     public Map<Object, Double> similarsMap() {
         return this.similarsMap;
+    }
+
+    // TODO: Temp implementation?
+    public Object getJaccardSimilarity() {
+        // get first element from the map
+        return this.similarsMap.entrySet().iterator().next().getValue();
     }
 
     public ApiMeasure measure() {

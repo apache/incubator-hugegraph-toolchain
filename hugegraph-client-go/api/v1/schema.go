@@ -21,12 +21,12 @@ import (
     "context"
     "encoding/json"
     "fmt"
-    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/hgtransport"
+    "github.com/apache/hugegraph-toolchain/hugegraph-client-go/hgtransport"
     "io"
     "io/ioutil"
     "net/http"
 
-    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api"
+    "github.com/apache/hugegraph-toolchain/hugegraph-client-go/api"
 )
 
 // ----- API Definition -------------------------------------------------------
@@ -120,7 +120,12 @@ type SchemaResponseData struct {
 
 func (r SchemaRequest) Do(ctx context.Context, transport api.Transport) (*SchemaResponse, error) {
 
-    req, err := api.NewRequest("GET", fmt.Sprintf("/graphs/%s/schema", transport.GetConfig().Graph), nil, r.Body)
+    config := transport.GetConfig()
+    path := fmt.Sprintf("/graphs/%s/schema", config.Graph)
+    if len(config.GraphSpace) > 0 {
+        path = fmt.Sprintf("/graphspaces/%s%s", config.GraphSpace, path)
+    }
+    req, err := api.NewRequest("GET", path, nil, r.Body)
     if err != nil {
         return nil, err
     }

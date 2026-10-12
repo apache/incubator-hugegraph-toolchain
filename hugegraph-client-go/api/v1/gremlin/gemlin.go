@@ -23,7 +23,7 @@ import (
     "encoding/json"
     "errors"
     "fmt"
-    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api"
+    "github.com/apache/hugegraph-toolchain/hugegraph-client-go/api"
     "io"
     "io/ioutil"
     "net/http"
@@ -83,19 +83,13 @@ type PostRequest struct {
     gremlin  string
     bindings map[string]string
     language string
-    aliases  struct {
-        //Graph string `json:"graph"`
-        //G     string `json:"g"`
-    }
+    aliases  map[string]string
 }
 type PostRequestData struct {
     Gremlin  string            `json:"gremlin"`
     Bindings map[string]string `json:"bindings,omitempty"`
     Language string            `json:"language,omitempty"`
-    Aliases  struct {
-        //Graph string `json:"graph"`
-        //G     string `json:"g"`
-    } `json:"aliases,omitempty"`
+    Aliases  map[string]string `json:"aliases,omitempty"`
 }
 type PostResponse struct {
     StatusCode int               `json:"-"`
@@ -129,6 +123,22 @@ func (g Get) WithGremlin(gremlin string) func(request *GetRequest) {
 func (g Post) WithGremlin(gremlin string) func(request *PostRequest) {
     return func(r *PostRequest) {
         r.gremlin = gremlin
+    }
+}
+
+func buildDefaultAliases(transport api.Transport) map[string]string {
+    cfg := transport.GetConfig()
+    graphSpace := cfg.GraphSpace
+    if graphSpace == "" {
+        graphSpace = "DEFAULT"
+    }
+    if cfg.Graph == "" {
+        cfg.Graph = "hugegraph"
+    }
+    full := graphSpace + "-" + cfg.Graph
+    return map[string]string{
+        "graph": full,
+        "g":     "__g_" + full,
     }
 }
 
@@ -193,6 +203,10 @@ func (g PostRequest) Do(ctx context.Context, transport api.Transport) (*PostResp
 
     if len(g.language) < 1 {
         g.language = "gremlin-groovy"
+    }
+
+    if g.aliases == nil {
+        g.aliases = buildDefaultAliases(transport)
     }
 
     gd := &PostRequestData{

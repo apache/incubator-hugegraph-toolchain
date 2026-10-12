@@ -1,0 +1,290 @@
+{
+  "topbar": {
+    "current_graphspace": "当前图空间:",
+    "current_graph": "当前图:",
+    "graph_select_placeholder": "请选择",
+    "status": {
+      "loaded": "已加载",
+      "loading": "加载中",
+      "error": "加载失败",
+      "created": "未加载"
+    },
+    "last_load_time": "最近加载时间:",
+    "reload_to_vermeer": "重加载到Vermeer",
+    "load_to_vermeer": "加载到Vermeer",
+    "meta_config": "元数据配置",
+    "meta_config_tooltip": "点击可跳转到对应图的元数据配置的页面",
+    "olap_switch": "查询 OLAP 属性:",
+    "olap_on": "开启",
+    "olap_off": "关闭",
+    "load_fail": "加载Vermeer任务失败"
+  },
+  "execute_log": {
+    "col": {
+      "time": "时间",
+      "type": "执行类型",
+      "content": "执行内容",
+      "status": "状态",
+      "duration": "耗时",
+      "operation": "操作"
+    },
+    "type": {
+      "GREMLIN": "GREMLIN查询",
+      "GREMLIN_ASYNC": "GREMLIN任务",
+      "ALGORITHM": "算法任务",
+      "CYPHER": "CYPHER查询"
+    },
+    "status": {
+      "SUCCESS": "成功",
+      "ASYNC_TASK_SUCCESS": "提交成功",
+      "ASYNC_TASK_RUNNING": "提交运行中",
+      "RUNNING": "运行中",
+      "FAILED": "失败",
+      "ASYNC_TASK_FAILED": "提交失败"
+    },
+    "favorite": "收藏",
+    "load_statement": "加载语句",
+    "favorite_title": "收藏语句",
+    "favorite_placeholder": "请输入收藏名称"
+  },
+  "favorite": {
+    "col": {
+      "name": "收藏名称",
+      "content": "执行内容",
+      "create_time": "收藏时间",
+      "operation": "操作"
+    },
+    "edit_title": "修改名称",
+    "edit_placeholder": "请输入收藏名称",
+    "load_statement": "加载语句",
+    "delete_confirm": "确定删除?",
+    "search_placeholder": "搜索收藏名称"
+  },
+  "query_bar": {
+    "tab_execute": "执行记录",
+    "tab_favorite": "收藏",
+    "gremlin_placeholder": "请输入查询语句",
+    "execute": "执行",
+    "async_execute": "异步执行",
+    "clear": "清空"
+  },
+  "query_result": {
+    "tab_graph": "图结果",
+    "tab_table": "表格结果",
+    "tab_json": "JSON结果",
+    "empty": "无结果",
+    "vertex_count": "顶点数: {{count}}",
+    "edge_count": "边数: {{count}}"
+  },
+  "async_task": {
+    "col": {
+      "id": "任务ID",
+      "type": "任务类型",
+      "status": "状态",
+      "create_time": "创建时间",
+      "update_time": "更新时间",
+      "operation": "操作"
+    },
+    "detail": {
+      "title": "异步任务",
+      "id": "任务ID",
+      "type": "类型",
+      "status": "状态",
+      "create_time": "创建时间",
+      "update_time": "更新时间",
+      "content": "执行内容",
+      "result": "执行结果"
+    },
+    "cancel": "取消任务",
+    "cancel_confirm": "确定取消此任务?"
+  },
+  "graph_component": {
+    "search": {
+      "placeholder": "请输入顶点ID或属性值",
+      "search_btn": "搜索",
+      "vertex_id": "顶点ID",
+      "property": "属性",
+      "result_count": "找到 {{count}} 个结果"
+    },
+    "edit_element": {
+      "title_vertex": "编辑顶点",
+      "title_edge": "编辑边",
+      "id": "ID",
+      "label": "类型",
+      "properties": "属性",
+      "save": "保存",
+      "cancel": "取消",
+      "delete": "删除"
+    },
+    "export": {
+      "title": "导出数据",
+      "json": "导出JSON",
+      "csv": "导出CSV",
+      "image": "导出图片"
+    },
+    "menu": {
+      "expand": "展开",
+      "hide": "隐藏",
+      "show_properties": "显示属性",
+      "hide_properties": "隐藏属性",
+      "fix": "固定",
+      "unfix": "取消固定"
+    },
+    "status": {
+      "vertex_count": "顶点: {{count}}",
+      "edge_count": "边: {{count}}"
+    },
+    "clear": "清空图",
+    "clear_confirm": "确定清空图?",
+    "fit_center": "适配画布",
+    "fix_node": "固定节点",
+    "full_screen": "全屏",
+    "zoom_in": "放大",
+    "zoom_out": "缩小",
+    "redo": "重做",
+    "undo": "撤销",
+    "refresh": "刷新",
+    "zero_degree": "显示孤立节点",
+    "legend": "图例",
+    "3d_mode": "3D模式",
+    "2d_mode": "2D模式"
+  },
+  "filter": {
+    "title": "过滤器",
+    "add": "添加过滤条件",
+    "vertex_filter": "顶点过滤",
+    "edge_filter": "边过滤",
+    "property": "属性",
+    "operator": "操作符",
+    "value": "值",
+    "apply": "应用",
+    "reset": "重置",
+    "and": "且",
+    "or": "或"
+  },
+  "layout": {
+    "title": "布局配置",
+    "type": "布局类型",
+    "force": "力导向",
+    "circular": "环形",
+    "radial": "放射",
+    "dagre": "层次",
+    "grid": "网格",
+    "concentric": "同心圆",
+    "apply": "应用",
+    "node_size": "节点大小",
+    "link_distance": "边距离",
+    "node_strength": "节点强度",
+    "edge_strength": "边强度",
+    "gravity": "引力",
+    "speed": "速度",
+    "iterations": "迭代次数",
+    "radius_ratio": "半径比例",
+    "node_sep": "节点间距",
+    "rank_sep": "层间距",
+    "direction": "方向",
+    "LR": "左到右",
+    "RL": "右到左",
+    "TB": "上到下",
+    "BT": "下到上",
+    "start_radius": "起始半径",
+    "end_radius": "终止半径",
+    "sweep": "旋转角度",
+    "equal_node_spacing": "等间距",
+    "min_node_spacing": "最小间距",
+    "start_angle": "起始角度",
+    "clockwise": "顺时针",
+    "prevent_overlap": "防止重叠",
+    "node_spacing": "节点间距",
+    "cols": "列数",
+    "rows": "行数"
+  },
+  "style_config": {
+    "title": "样式配置",
+    "color_picker": "选择颜色",
+    "close_color_picker": "关闭颜色选择器",
+    "vertex_style": "顶点样式",
+    "edge_style": "边样式",
+    "vertex_appearance": "点外观",
+    "edge_appearance": "边外观",
+    "basic_properties": "基础属性",
+    "appearance_type": "点外观 / 边外观",
+    "appearance_config": "外观配置",
+    "select_placeholder": "请选择",
+    "type": "类型",
+    "shape": "形状",
+    "shape_circle": "圆型",
+    "shape_diamond": "菱形",
+    "shape_triangle": "三角形",
+    "shape_star": "五角星",
+    "shape_ellipse": "椭圆",
+    "border_color": "边框色",
+    "border_width": "边框粗细",
+    "fill_color": "填充色",
+    "icon_style": "图标样式",
+    "icon_color": "图标颜色",
+    "label_size": "标签大小",
+    "label_color": "标签颜色",
+    "node_opacity": "节点透明度",
+    "edge_width": "边的粗细",
+    "edge_color": "边的颜色",
+    "edge_animation": "边动画",
+    "line_solid": "直线",
+    "line_dashed": "虚线",
+    "color": "颜色",
+    "size": "大小",
+    "label": "标签",
+    "icon": "图标",
+    "line_type": "线型",
+    "line_width": "线宽",
+    "arrow": "箭头",
+    "display_field": "展示字段",
+    "apply": "应用",
+    "reset": "重置"
+  },
+  "statistics": {
+    "title": "图统计",
+    "vertex_count": "顶点数",
+    "edge_count": "边数",
+    "vertex_types": "顶点类型",
+    "edge_types": "边类型",
+    "loading": "加载中..."
+  },
+  "dynamic_add": {
+    "vertex": {
+      "title": "新增顶点",
+      "id": "顶点ID",
+      "type": "顶点类型",
+      "properties": "属性",
+      "submit": "提交",
+      "cancel": "取消"
+    },
+    "edge": {
+      "title": "新增边",
+      "type": "边类型",
+      "source": "起点",
+      "target": "终点",
+      "properties": "属性",
+      "submit": "提交",
+      "cancel": "取消"
+    }
+  },
+  "navigation_module": {
+    "create_data": {
+      "title": "创建数据",
+      "graph_management": "图管理",
+      "meta_management": "元数据管理",
+      "data_import": "数据导入"
+    },
+    "analysis": {
+      "title": "业务分析",
+      "graph_query": "图查询",
+      "algorithm": "图算法"
+    },
+    "system": {
+      "title": "系统管理",
+      "user_management": "用户管理",
+      "role_management": "角色管理"
+    }
+  }
+}

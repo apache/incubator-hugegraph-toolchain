@@ -36,24 +36,31 @@ import org.apache.hugegraph.structure.schema.VertexLabel;
 
 public class SchemaManager {
 
-    private PropertyKeyAPI propertyKeyAPI;
-    private VertexLabelAPI vertexLabelAPI;
-    private EdgeLabelAPI edgeLabelAPI;
-    private IndexLabelAPI indexLabelAPI;
-    private SchemaAPI schemaAPI;
-    private TaskAPI taskAPI;
+    private final PropertyKeyAPI propertyKeyAPI;
+    private final VertexLabelAPI vertexLabelAPI;
+    private final EdgeLabelAPI edgeLabelAPI;
+    private final IndexLabelAPI indexLabelAPI;
+    private final SchemaAPI schemaAPI;
+    private final TaskAPI taskAPI;
 
-    public SchemaManager(RestClient client, String graph) {
-        this.propertyKeyAPI = new PropertyKeyAPI(client, graph);
-        this.vertexLabelAPI = new VertexLabelAPI(client, graph);
-        this.edgeLabelAPI = new EdgeLabelAPI(client, graph);
-        this.indexLabelAPI = new IndexLabelAPI(client, graph);
-        this.schemaAPI = new SchemaAPI(client, graph);
-        this.taskAPI = new TaskAPI(client, graph);
+    public SchemaManager(RestClient client, String graphSpace, String graph) {
+        this.propertyKeyAPI = new PropertyKeyAPI(client, graphSpace, graph);
+        this.vertexLabelAPI = new VertexLabelAPI(client, graphSpace, graph);
+        this.edgeLabelAPI = new EdgeLabelAPI(client, graphSpace, graph);
+        this.indexLabelAPI = new IndexLabelAPI(client, graphSpace, graph);
+        this.schemaAPI = new SchemaAPI(client, graphSpace, graph);
+        this.taskAPI = new TaskAPI(client, graphSpace, graph);
     }
 
     public PropertyKey.Builder propertyKey(String name) {
         PropertyKey.Builder builder = new PropertyKey.BuilderImpl(name, this);
+        BuilderProxy<PropertyKey.Builder> proxy = new BuilderProxy<>(builder);
+        return proxy.proxy();
+    }
+
+    public PropertyKey.Builder propertyKey(Long id, String name) {
+        PropertyKey.Builder builder =
+                new PropertyKey.BuilderImpl(name, this).id(id);
         BuilderProxy<PropertyKey.Builder> proxy = new BuilderProxy<>(builder);
         return proxy.proxy();
     }
@@ -64,8 +71,22 @@ public class SchemaManager {
         return proxy.proxy();
     }
 
+    public VertexLabel.Builder vertexLabel(Long id, String name) {
+        VertexLabel.Builder builder =
+                new VertexLabel.BuilderImpl(name, this).id(id);
+        BuilderProxy<VertexLabel.Builder> proxy = new BuilderProxy<>(builder);
+        return proxy.proxy();
+    }
+
     public EdgeLabel.Builder edgeLabel(String name) {
         EdgeLabel.Builder builder = new EdgeLabel.BuilderImpl(name, this);
+        BuilderProxy<EdgeLabel.Builder> proxy = new BuilderProxy<>(builder);
+        return proxy.proxy();
+    }
+
+    public EdgeLabel.Builder edgeLabel(Long id, String name) {
+        EdgeLabel.Builder builder =
+                new EdgeLabel.BuilderImpl(name, this).id(id);
         BuilderProxy<EdgeLabel.Builder> proxy = new BuilderProxy<>(builder);
         return proxy.proxy();
     }
@@ -76,13 +97,20 @@ public class SchemaManager {
         return proxy.proxy();
     }
 
+    public IndexLabel.Builder indexLabel(Long id, String name) {
+        IndexLabel.Builder builder =
+                new IndexLabel.BuilderImpl(name, this).id(id);
+        BuilderProxy<IndexLabel.Builder> proxy = new BuilderProxy<>(builder);
+        return proxy.proxy();
+    }
+
     public PropertyKey addPropertyKey(PropertyKey propertyKey) {
         return this.addPropertyKey(propertyKey, TaskAPI.TASK_TIMEOUT);
     }
 
     public PropertyKey addPropertyKey(PropertyKey propertyKey, long seconds) {
         PropertyKey.PropertyKeyWithTask task = this.propertyKeyAPI
-                                                   .create(propertyKey);
+                .create(propertyKey);
         if (task.taskId() != 0L) {
             this.taskAPI.waitUntilTaskSuccess(task.taskId(), seconds);
         }
@@ -91,7 +119,7 @@ public class SchemaManager {
 
     public long addPropertyKeyAsync(PropertyKey propertyKey) {
         PropertyKey.PropertyKeyWithTask task = this.propertyKeyAPI
-                                                   .create(propertyKey);
+                .create(propertyKey);
         return task.taskId();
     }
 
@@ -103,13 +131,18 @@ public class SchemaManager {
         return this.propertyKeyAPI.eliminate(propertyKey).propertyKey();
     }
 
+    public PropertyKey updatePropertyKey(String oldPk,
+                                         PropertyKey newPk) {
+        return this.propertyKeyAPI.update(oldPk, newPk);
+    }
+
     public PropertyKey clearPropertyKey(PropertyKey propertyKey) {
         return this.clearPropertyKey(propertyKey, TaskAPI.TASK_TIMEOUT);
     }
 
     public PropertyKey clearPropertyKey(PropertyKey propertyKey, long seconds) {
         PropertyKey.PropertyKeyWithTask task = this.propertyKeyAPI
-                                                   .clear(propertyKey);
+                .clear(propertyKey);
         if (task.taskId() != 0L) {
             this.taskAPI.waitUntilTaskSuccess(task.taskId(), seconds);
         }
@@ -118,7 +151,7 @@ public class SchemaManager {
 
     public long clearPropertyKeyAsync(PropertyKey propertyKey) {
         PropertyKey.PropertyKeyWithTask task = this.propertyKeyAPI
-                                                   .clear(propertyKey);
+                .clear(propertyKey);
         return task.taskId();
     }
 
@@ -228,7 +261,7 @@ public class SchemaManager {
 
     public IndexLabel addIndexLabel(IndexLabel indexLabel, long seconds) {
         IndexLabel.IndexLabelWithTask cil = this.indexLabelAPI
-                                                .create(indexLabel);
+                .create(indexLabel);
         if (cil.taskId() != 0L) {
             this.taskAPI.waitUntilTaskSuccess(cil.taskId(), seconds);
         }
@@ -237,7 +270,7 @@ public class SchemaManager {
 
     public long addIndexLabelAsync(IndexLabel indexLabel) {
         IndexLabel.IndexLabelWithTask cil = this.indexLabelAPI
-                                                .create(indexLabel);
+                .create(indexLabel);
         return cil.taskId();
     }
 
@@ -276,5 +309,13 @@ public class SchemaManager {
 
     public Map<String, List<SchemaElement>> getSchema() {
         return this.schemaAPI.list();
+    }
+
+    public String getGroovySchema() {
+        return this.schemaAPI.listGroovy().getOrDefault("schema", "");
+    }
+
+    public Map<String, Object> getGroovySchema(String format, boolean attachIdFlag) {
+        return this.schemaAPI.listGroovy(format, attachIdFlag);
     }
 }

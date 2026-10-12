@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.hugegraph.util.E;
+import org.apache.hugegraph.util.InsertionOrderUtil;
 
 import org.apache.hugegraph.loader.constant.Constants;
 import org.apache.hugegraph.loader.exception.LoadException;
@@ -40,9 +42,6 @@ import org.apache.hugegraph.loader.struct.EdgeStructV1;
 import org.apache.hugegraph.loader.struct.ElementStructV1;
 import org.apache.hugegraph.loader.struct.GraphStructV1;
 import org.apache.hugegraph.loader.struct.VertexStructV1;
-import org.apache.hugegraph.util.E;
-import org.apache.hugegraph.util.InsertionOrderUtil;
-
 import com.google.common.collect.ImmutableSet;
 
 @SuppressWarnings("deprecation")
@@ -90,7 +89,8 @@ public final class MappingUtil {
     private static LoadMapping parseV1(String json) {
         GraphStructV1 graphStruct = JsonUtil.fromJson(json,
                                                       GraphStructV1.class);
-        Map<FileSourceKey, InputStruct> fileSourceInputStructs = InsertionOrderUtil.newMap();
+        Map<FileSourceKey, InputStruct> fileSourceInputStructs =
+                InsertionOrderUtil.newMap();
         List<InputStruct> jdbcSourceInputStructs = new ArrayList<>();
         for (ElementStructV1 originStruct : graphStruct.structs()) {
             InputSource inputSource = originStruct.input();
@@ -127,7 +127,7 @@ public final class MappingUtil {
             inputStruct.id(String.valueOf(++id));
             inputStructs.add(inputStruct);
         }
-        return new LoadMapping(inputStructs, graphStruct.getBackendStoreInfo());
+        return new LoadMapping(inputStructs);
     }
 
     private static ElementMapping convertV1ToV2(ElementStructV1 origin) {

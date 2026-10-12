@@ -17,19 +17,34 @@
 
 package org.apache.hugegraph.loader.test.functional;
 
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.Year;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.hugegraph.loader.HugeGraphLoader;
+import org.apache.hugegraph.loader.reader.jdbc.JDBCFetcher;
+import org.apache.hugegraph.loader.source.InputSource;
+import org.apache.hugegraph.loader.source.jdbc.JDBCSource;
+import org.apache.hugegraph.loader.util.DataTypeUtil;
+import org.apache.hugegraph.structure.constant.DataType;
+import org.apache.hugegraph.structure.schema.PropertyKey;
+import org.apache.hugegraph.loader.util.JsonUtil;
+import org.apache.hugegraph.structure.graph.Edge;
+import org.apache.hugegraph.structure.graph.Vertex;
+import org.apache.hugegraph.testutil.Assert;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import org.apache.hugegraph.structure.graph.Edge;
-import org.apache.hugegraph.structure.graph.Vertex;
-
-import org.apache.hugegraph.testutil.Assert;
 
 /**
  * TODO: add more test cases
@@ -45,17 +60,17 @@ public class JDBCLoadTest extends LoadTest {
     private static final String PASS = "root";
 
     private static final DBUtil dbUtil = new DBUtil(DRIVER, DB_URL, USER, PASS);
+    private static final boolean USE_SSL = false;
 
     @BeforeClass
     public static void setUp() {
         clearServerData();
 
-        dbUtil.connect();
+        dbUtil.connect(USE_SSL);
         // create database
-        dbUtil.execute(String.format("CREATE DATABASE IF NOT EXISTS `%s`;",
-                                     DATABASE));
+        dbUtil.execute(String.format("CREATE DATABASE IF NOT EXISTS `%s`;", DATABASE));
         // create tables
-        dbUtil.connect(DATABASE);
+        dbUtil.connect(DATABASE, USE_SSL);
         // vertex person
         dbUtil.execute("CREATE TABLE IF NOT EXISTS `person` (" +
                        "`id` int(10) unsigned NOT NULL," +
@@ -72,6 +87,17 @@ public class JDBCLoadTest extends LoadTest {
                        "`price` double(10,2) NOT NULL," +
                        "PRIMARY KEY (`id`)" +
                        ") ENGINE=InnoDB DEFAULT CHARSET=utf8;");
+        // vertex date
+        dbUtil.execute("CREATE TABLE IF NOT EXISTS `date_test` (" +
+                       "`id` int(10) unsigned NOT NULL," +
+                       "`calendar_date` DATE NOT NULL," +
+                       "`calendar_datetime` DATETIME NOT NULL," +
+                       "`calendar_timestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+                       "`calendar_time` TIME NOT NULL," +
+                       "`calendar_year` YEAR NOT NULL," +
+                       "PRIMARY KEY (`id`)" +
+                       ") ENGINE=InnoDB DEFAULT CHARSET=utf8;");
+
         // edge knows
         dbUtil.execute("CREATE TABLE IF NOT EXISTS `knows` (" +
                        "`id` int(10) unsigned NOT NULL," +
@@ -90,6 +116,7 @@ public class JDBCLoadTest extends LoadTest {
                        "`weight` double(10,2) NOT NULL," +
                        "PRIMARY KEY (`id`)" +
                        ") ENGINE=InnoDB DEFAULT CHARSET=utf8;");
+
     }
 
     @AfterClass
@@ -99,6 +126,7 @@ public class JDBCLoadTest extends LoadTest {
         dbUtil.execute("DROP TABLE IF EXISTS `software`");
         dbUtil.execute("DROP TABLE IF EXISTS `knows`");
         dbUtil.execute("DROP TABLE IF EXISTS `created`");
+        dbUtil.execute("DROP TABLE IF EXISTS `date_test`");
         // drop database
         dbUtil.execute(String.format("DROP DATABASE `%s`", DATABASE));
 
@@ -117,6 +145,7 @@ public class JDBCLoadTest extends LoadTest {
         dbUtil.execute("TRUNCATE TABLE `software`");
         dbUtil.execute("TRUNCATE TABLE `knows`");
         dbUtil.execute("TRUNCATE TABLE `created`");
+        dbUtil.execute("TRUNCATE TABLE `date_test`");
     }
 
     @Test
@@ -150,7 +179,7 @@ public class JDBCLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        HugeGraphLoader.main(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         List<Edge> edges = CLIENT.graph().listEdges();
@@ -178,7 +207,7 @@ public class JDBCLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        HugeGraphLoader.main(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         List<Edge> edges = CLIENT.graph().listEdges();
@@ -202,7 +231,7 @@ public class JDBCLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        HugeGraphLoader.main(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(2, vertices.size());
@@ -215,16 +244,16 @@ public class JDBCLoadTest extends LoadTest {
     @Test
     public void testNumberToStringInJDBCSource() {
         dbUtil.insert("INSERT INTO `person` VALUES " +
-                "(1,'marko',29,'Beijing')," +
-                "(2,'vadas',27,'HongKong')," +
-                "(3,'josh',32,'Beijing')," +
-                "(4,'peter',35,'Shanghai')," +
-                "(5,'li,nary',26,'Wu,han')," +
-                "(6,'tom',NULL,NULL);");
+                      "(1,'marko',29,'Beijing')," +
+                      "(2,'vadas',27,'HongKong')," +
+                      "(3,'josh',32,'Beijing')," +
+                      "(4,'peter',35,'Shanghai')," +
+                      "(5,'li,nary',26,'Wu,han')," +
+                      "(6,'tom',NULL,NULL);");
 
         dbUtil.insert("INSERT INTO `software` VALUES " +
-                "(100,'lop','java',328.08)," +
-                "(200,'ripple','java',199.67);");
+                      "(100,'lop','java',328.08)," +
+                      "(200,'ripple','java',199.67);");
 
         String[] args = new String[]{
                 "-f", configPath("jdbc_number_to_string/struct.json"),
@@ -235,12 +264,120 @@ public class JDBCLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        HugeGraphLoader.main(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
 
         Assert.assertEquals(8, vertices.size());
         assertContains(vertices, "person", "age", "29");
         assertContains(vertices, "software", "price", "199.67");
+    }
+
+    @Test
+    public void testJdbcDateTimeUsesNativeTimestamp() throws Exception {
+        // DATETIME is a LocalDateTime in Connector/J 8, not a java.sql.Timestamp.
+        String table = "loader_temporal_fixture";
+        JDBCSource source = (JDBCSource) JsonUtil.fromJson(JsonUtil.toJson(Map.of(
+                "type", "jdbc", "vendor", "mysql", "driver", DRIVER, "url", DB_URL,
+                "database", DATABASE, "table", table,
+                "username", USER, "password", PASS)), InputSource.class);
+        source.check();
+        JDBCFetcher fetcher = new JDBCFetcher(source);
+        try {
+            // The fixture belongs to this connection and disappears when it closes.
+            try (Statement statement = fetcher.getConn().createStatement()) {
+                statement.execute("CREATE TEMPORARY TABLE " + table + " (" +
+                                  "`datetime` DATETIME(6), before_epoch DATETIME(6), " +
+                                  "`day` DATE, clock TIME)");
+                statement.execute("INSERT INTO " + table + " VALUES (" +
+                                  "'2024-02-29 12:34:56.123456', " +
+                                  "'1969-12-31 23:59:59.999999', '2024-02-29', '12:34:56')");
+            }
+            Timestamp[] expected = new Timestamp[3];
+            Object expectedTime;
+            try (Statement statement = fetcher.getConn().createStatement();
+                 ResultSet result = statement.executeQuery(fetcher.buildSql())) {
+                Assert.assertTrue(result.next());
+                Assert.assertTrue(result.getObject(1) instanceof LocalDateTime);
+                Assert.assertTrue(result.getObject(2) instanceof LocalDateTime);
+                for (int i = 0; i < expected.length; i++) {
+                    expected[i] = result.getTimestamp(i + 1);
+                }
+                expectedTime = result.getObject(4);
+            }
+            Object[] values = fetcher.nextBatch().get(0).values();
+            PropertyKey property = new PropertyKey("temporal_value") {
+                @Override
+                public DataType dataType() {
+                    return DataType.DATE;
+                }
+            };
+            for (int i = 0; i < expected.length; i++) {
+                Date converted = (Date) DataTypeUtil.convert(values[i], property, source);
+                Assert.assertEquals(expected[i].getTime(), converted.getTime());
+            }
+            Assert.assertEquals(123456000, ((Timestamp) values[0]).getNanos());
+            Assert.assertEquals(999999000, ((Timestamp) values[1]).getNanos());
+            Assert.assertEquals(expectedTime, values[3]);
+        } finally {
+            fetcher.close();
+        }
+    }
+
+    // removed because not implemented in new version of loader
+    //@Test
+    public void testJdbcSqlDateConvert() {
+        dbUtil.execute("INSERT INTO `date_test` VALUES " +
+                       "(1, '2017-12-10', '2017-12-10 15:30:45', '2017-12-10 15:30:45', " +
+                       "'15:30:45', '2017')," +
+                       "(2, '2009-11-11', '2009-11-11 08:15:30', '2009-11-11 08:15:30', " +
+                       "'08:15:30', '2009')," +
+                       "(3, '2017-03-24', '2017-03-24 12:00:00', '2017-03-24 12:00:00', " +
+                       "'12:00:00', '2017');");
+
+        String[] args = new String[]{
+                "-f", configPath("jdbc_sql_date_convert/struct.json"),
+                "-s", configPath("jdbc_sql_date_convert/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "-p", String.valueOf(PORT),
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        loadWithAuth(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+
+        Assert.assertEquals(3, vertices.size());
+        // Define formatters
+        DateTimeFormatter serverDateFormatter =
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+
+        // DATE check
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDateTime date = LocalDate.parse("2017-12-10", dateFormatter).atStartOfDay();
+
+        DateTimeFormatter datetimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime datetime = LocalDateTime.parse("2017-12-10 15:30:45", datetimeFormatter);
+
+        DateTimeFormatter timestampFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime timestamp = LocalDateTime.parse("2017-12-10 15:30:45", timestampFormatter);
+
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+        LocalTime time = LocalTime.parse("15:30:45", timeFormatter);
+        // Supplement the date as the Epoch start
+        LocalDateTime timeWithDate = time.atDate(LocalDate.of(1970, 1, 1));
+
+        DateTimeFormatter yearFormatter = DateTimeFormatter.ofPattern("yyyy");
+        Year year = Year.parse("2017", yearFormatter);
+        // Supplement the date as the first day of the year
+        LocalDateTime yearStart = year.atDay(1).atStartOfDay();
+
+        assertContains(vertices, "date_test",
+                       "calendar_date", date.format(serverDateFormatter),
+                       "calendar_datetime", datetime.format(serverDateFormatter),
+                       "calendar_timestamp", timestamp.format(serverDateFormatter),
+                       "calendar_time", timeWithDate.format(serverDateFormatter),
+                       "calendar_year", yearStart.format(serverDateFormatter));
     }
 }

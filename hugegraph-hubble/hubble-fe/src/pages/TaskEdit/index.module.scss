@@ -1,0 +1,89 @@
+/*!
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with this
+ * work for additional information regarding copyright ownership. The ASF
+ * licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
+.state {
+    border-radius: 10px;
+    padding: 2px 10px;
+    color: #2f54eb;
+    background-color: #d6e4ff;
+    font-size: 10px;
+}
+
+.form {
+    width: 660px;
+    margin: auto;
+}
+
+form.form {
+    width: 660px;
+    margin: auto;
+
+    .select_row {
+        line-height: 32px;
+        padding: 4px;
+        cursor: pointer;
+    }
+
+    .selected {
+        background-color: #eee;
+    }
+
+    .form_attr_border {
+        border: 1px dashed #2f54eb;
+        padding: 20px;
+        margin-bottom: 10px;
+    }
+
+    .form_attr_select {
+        display: inline-block;
+        width: calc(25% - 12px);
+        width: 120px;
+    }
+
+    .form_attr_val {
+        display: inline-block;
+        // width: calc(25% - 18px);
+        width: 120px;
+    }
+
+    .form_attr_split {
+        display: inline-block;
+        width: 24px;
+        line-height: 32px;
+        text-align: center;
+    }
+
+    .form_attr_button, .form_attr_table {
+        margin-bottom: 10px;
+    }
+
+    .form_attr_add {
+        border: 1px dashed #40a9ff;
+        text-align: center;
+        padding: 4px;
+        cursor: pointer;
+    }
+}
+
+.transfer {
+    :global {
+        .ant-transfer-list-body-customize-wrapper {
+            overflow: auto;
+        }
+    }
+}

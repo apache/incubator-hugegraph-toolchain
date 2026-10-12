@@ -28,6 +28,17 @@ LIB_PATH=${HOME_PATH}/lib
 LOG_PATH=${HOME_PATH}/logs
 PID_FILE=${BIN_PATH}/pid
 
+process_start_time() {
+    local process_pid=$1
+    if [[ -r /proc/${process_pid}/stat ]]; then
+        awk '{print $22}' "/proc/${process_pid}/stat"
+    else
+        local process_stamp
+        process_stamp=$(LC_ALL=C ps -o lstart= -p "${process_pid}" 2>/dev/null) || return 1
+        printf '%s\n' "${process_stamp}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
+    fi
+}
+
 . "${BIN_PATH}"/common_functions
 
 java_env_check
@@ -42,50 +53,96 @@ for jar in "${LIB_PATH}"/*.jar; do
     class_path=${class_path}:${jar}
 done
 
-JAVA_OPTS="-Xms512m"
+# Hive ORC interns URI strings through reflection on Java 17.
+JAVA_OPTS="-Xms512m -Dfile.encoding=UTF-8 --add-opens=java.base/java.net=ALL-UNNAMED"
 JAVA_DEBUG_OPTS=""
 FOREGROUND="false"
 
-while getopts "f:d" arg; do
-    case ${arg} in
-        f) FOREGROUND="$OPTARG" ;;
-        d) JAVA_DEBUG_OPTS=" -Xdebug -Xnoagent -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n" ;;
-        ?) echo "USAGE: $0 [-f true|false] [-d] " && exit 1 ;;
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -f|--foreground)
+            FOREGROUND="true"
+            if [[ $# -gt 1 && ( "$2" == "true" || "$2" == "false" ) ]]; then
+                FOREGROUND="$2"
+                shift
+            fi
+            ;;
+        "-f true"|"--foreground true")
+            FOREGROUND="true"
+            ;;
+        "-f false"|"--foreground false")
+            FOREGROUND="false"
+            ;;
+        -d|--debug)
+            JAVA_DEBUG_OPTS=" -Xdebug -Xnoagent"
+            JAVA_DEBUG_OPTS="${JAVA_DEBUG_OPTS} -Xrunjdwp:transport=dt_socket,address=8787"
+            JAVA_DEBUG_OPTS="${JAVA_DEBUG_OPTS},server=y,suspend=n"
+            ;;
+        *)
+            echo "USAGE: $0 [-f [true|false]] [-d] "
+            exit 1
+            ;;
     esac
+    shift
 done
 
+MAIN_CLASS="org.apache.hugegraph.HugeGraphHubble"
+
 if [[ -f ${PID_FILE} ]] ; then
-    PID=$(cat "${PID_FILE}")
-    if kill -0 "${PID}" > /dev/null 2>&1; then
-        echo "HugeGraphHubble is running as process ${PID}, please stop it first!"
-        exit 1
+    read -r PID PID_START < "${PID_FILE}"
+    if [[ ! ${PID} =~ ^[0-9]+$ ]]; then
+        echo "Invalid HugeGraphHubble PID file, removing it"
+        rm "${PID_FILE}"
+    elif kill -0 "${PID}" > /dev/null 2>&1; then
+        if ! CURRENT_START=$(process_start_time "${PID}") || [[ -z ${CURRENT_START} ]]; then
+            echo "Unable to verify process ${PID} start time; retaining PID file" >&2
+            exit 1
+        fi
+        if ! PROCESS_ARGS=$(ps -p "${PID}" -o args= 2>/dev/null) ||
+           [[ ! ${PROCESS_ARGS} =~ [^[:space:]] ]]; then
+            echo "Unable to verify process ${PID} arguments; retaining PID file" >&2
+            exit 1
+        fi
+        if [[ " ${PROCESS_ARGS} " == *" ${MAIN_CLASS} "* &&
+              " ${PROCESS_ARGS} " == *" -Dhubble.home.path=${HOME_PATH} "* &&
+              ( -z ${PID_START} || ${PID_START} == "${CURRENT_START}" ) ]]; then
+            echo "HugeGraphHubble is running as process ${PID}, please stop it first!"
+            exit 1
+        fi
+        echo "Stale HugeGraphHubble PID file, removing it"
+        rm "${PID_FILE}"
     else
         rm "${PID_FILE}"
     fi
 fi
 
-MAIN_CLASS="org.apache.hugegraph.HugeGraphHubble"
 ARGS=${CONF_PATH}/hugegraph-hubble.properties
 LOG=${LOG_PATH}/hugegraph-hubble.log
 
 if [[ $FOREGROUND == "false" ]]; then
     echo "Starting Hubble in daemon mode..."
-    nice -n 0 java -server ${JAVA_OPTS} ${JAVA_DEBUG_OPTS} -Dhubble.home.path="${HOME_PATH}" \
-  -cp ${class_path} ${MAIN_CLASS} ${ARGS} > ${LOG} 2>&1 < /dev/null &
+    nohup nice -n 0 java -server ${JAVA_OPTS} ${JAVA_DEBUG_OPTS} -Dhubble.home.path="${HOME_PATH}" \
+  -cp "${class_path}" "${MAIN_CLASS}" "${ARGS}" > "${LOG}" 2>&1 < /dev/null &
 else
     echo "Starting Hubble in foreground mode..."
-    nice -n 0 java -server ${JAVA_OPTS} ${JAVA_DEBUG_OPTS} -Dhubble.home.path="${HOME_PATH}" \
-  -cp ${class_path} ${MAIN_CLASS} ${ARGS} > ${LOG} 2>&1 < /dev/null
+    exec nice -n 0 java -server ${JAVA_OPTS} ${JAVA_DEBUG_OPTS} -Dhubble.home.path="${HOME_PATH}" \
+  -cp "${class_path}" "${MAIN_CLASS}" "${ARGS}"
 fi
 
 PID=$!
-echo ${PID} > "${PID_FILE}"
+PID_START=$(process_start_time "${PID}") || PID_START=""
+if ! kill -0 "${PID}" > /dev/null 2>&1; then
+    wait "${PID}" || true
+    cat "${LOG}" || true
+    exit 1
+fi
+echo "${PID} ${PID_START}" > "${PID_FILE}"
 
 # wait hubble start
 TIMEOUT_S=30
-SERVER_HOST=$(read_property "${CONF_PATH}"/hugegraph-hubble.properties hubble.host)
-SERVER_PORT=$(read_property "${CONF_PATH}"/hugegraph-hubble.properties hubble.port)
-SERVER_URL="http://${SERVER_HOST}:${SERVER_PORT}/actuator/health"
+SERVER_HOST=$(read_property "${CONF_PATH}"/hugegraph-hubble.properties server.host)
+SERVER_PORT=$(read_property "${CONF_PATH}"/hugegraph-hubble.properties server.port)
+SERVER_URL="http://${SERVER_HOST}:${SERVER_PORT}/about"
 
 wait_for_startup "${SERVER_URL}" ${TIMEOUT_S} || {
     cat "${LOG}"

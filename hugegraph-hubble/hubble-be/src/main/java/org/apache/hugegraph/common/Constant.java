@@ -18,13 +18,13 @@
 
 package org.apache.hugegraph.common;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import com.google.common.collect.ImmutableSet;
 
 import java.nio.charset.Charset;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import com.google.common.collect.ImmutableSet;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public final class Constant {
 
@@ -44,10 +44,8 @@ public final class Constant {
     public static final String COOKIE_USER = "user";
     public static final String API_V1_1 = "/api/v1.1/";
     public static final String API_V1_2 = "/api/v1.2/";
-    public static final String API_VERSION = API_V1_2;
-
-    public static final String EDITION_COMMUNITY = "community";
-    public static final String EDITION_COMMERCIAL = "commercial";
+    public static final String API_V1_3 = "/api/v1.3/";
+    public static final String API_VERSION = API_V1_3;
 
     public static final String MAPPING_FILE_NAME = "mapping.json";
 
@@ -57,6 +55,18 @@ public final class Constant {
     public static final int STATUS_NOT_FOUND = 404;
     public static final int STATUS_ILLEGAL_GREMLIN = 460;
     public static final int STATUS_INTERNAL_ERROR = 500;
+
+    public static final String TOKEN_KEY = "auth_token";
+    public static final String USERNAME_KEY = "username";
+    /**
+     * Server-side-only legacy Gremlin credentials. 1.7's Gremlin HTTP
+     * channel accepts Basic auth while its REST APIs accept the login token.
+     */
+    public static final String PASSWORD_KEY = "auth_password";
+    public static final String PASSWORD_EXPIRE_AT_KEY =
+                               "auth_password_expire_at";
+    public static final String GRAPHSPACE_ACCESS_KEY =
+                               "validated_graphspace";
 
     public static final int NO_LIMIT = -1;
 
@@ -73,4 +83,6 @@ public final class Constant {
     );
 
     public static final String[] LIKE_WILDCARDS = {"%", "_", "^", "[", "]"};
+
+    public static final String BUILT_IN = "neizhianli";
 }

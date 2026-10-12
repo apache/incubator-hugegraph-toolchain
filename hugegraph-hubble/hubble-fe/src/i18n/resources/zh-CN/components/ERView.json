@@ -1,0 +1,30 @@
+{
+  "ERView": {
+    "edge": {
+      "name": "边",
+      "type": "边类型",
+      "start": "起点ID",
+      "end": "终点ID",
+      "create": "新增边",
+      "e1name": "边1",
+      "e2name": "边2",
+      "out": "出边",
+      "in": "入边",
+      "both": "双边"
+    },
+    "vertex": {
+      "name": "顶点",
+      "type": "顶点类型",
+      "create": "新增顶点",
+      "v1name": "顶点1",
+      "v2name": "顶点2"
+    },
+    "control": {
+      "zoom_in": "放大",
+      "zoom_out": "缩小",
+      "undo": "撤销",
+      "redo": "重做",
+      "auto_map": "自动映射"
+    }
+  }
+}

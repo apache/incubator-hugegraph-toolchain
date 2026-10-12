@@ -17,6 +17,8 @@
 
 package org.apache.hugegraph.unit;
 
+import org.apache.hugegraph.driver.HugeClientCompatibilityTest;
+import org.apache.hugegraph.driver.ServerCompatibilityTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -25,9 +27,17 @@ import org.junit.runners.Suite;
         VertexSerializerTest.class,
         PathSerializerTest.class,
         RestResultTest.class,
+        RestClientStatusTest.class,
+        AuthApiPathTest.class,
         BatchElementRequestTest.class,
         PropertyKeyTest.class,
         IndexLabelTest.class,
+        GraphSpaceAPITest.class,
+        ManagerAPITest.class,
+        GraphsAPITest.class,
+        PDHugeClientFactoryTest.class,
+        HugeClientCompatibilityTest.class,
+        ServerCompatibilityTest.class,
         CommonUtilTest.class,
         IdUtilTest.class,
         SplicingIdGeneratorTest.class,

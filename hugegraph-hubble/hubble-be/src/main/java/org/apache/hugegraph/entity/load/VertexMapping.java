@@ -38,6 +38,10 @@ public class VertexMapping extends ElementMapping {
     @JsonProperty("id_fields")
     private List<String> idFields;
 
+    public VertexMapping(String s, boolean b) {
+        // TODO Rmving?
+    }
+
     @Override
     public boolean equals(Object object) {
         if (!(object instanceof VertexMapping)) {

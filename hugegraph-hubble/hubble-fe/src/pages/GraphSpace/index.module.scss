@@ -1,0 +1,159 @@
+/*!
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with this
+ * work for additional information regarding copyright ownership. The ASF
+ * licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
+div.add_card {
+    // height: 262px;
+    height: 308px;
+    border-style: dashed;
+    font-size: 22px;
+    text-align: center;
+    // padding-top: 90px;
+    padding-top: 110px;
+    color: #8c8c8c;
+    cursor: pointer;
+
+    &:hover {
+        border-color: #1890ff;
+        color: #1890ff;
+    }
+}
+
+.card {
+    cursor: pointer;
+    height: 100%;
+
+    :global {
+        .ant-card-head-wrapper {
+            align-items: flex-start;
+            column-gap: 12px;
+            flex-wrap: nowrap;
+        }
+
+        .ant-card-head-title {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .ant-card-extra {
+            flex: 0 0 auto;
+            margin-left: auto;
+        }
+    }
+
+    .card_content {
+        height: 144px;
+        font-size: 12px;
+    }
+    &:hover {
+        border-color: #1890ff;
+    }
+}
+
+@media (max-width: 420px) {
+    .card {
+        :global {
+            .ant-card-head-wrapper {
+                row-gap: 8px;
+                flex-wrap: wrap;
+            }
+
+            .ant-card-head-title {
+                flex-basis: 100%;
+            }
+        }
+    }
+}
+
+.card_title {
+    min-width: 0;
+    width: 100%;
+}
+
+.card_title_text {
+    display: block;
+    max-width: 100%;
+}
+
+.tooltip {
+    :global {
+        .ant-tooltip-arrow {
+            display: none;
+        }
+        .ant-tooltip-inner {
+            background-color: #fff;
+            padding: 0;
+        }
+    }
+}
+
+.list {
+    :global {
+        .ant-list-item {
+            padding: 12px;
+            &:hover {
+                background-color: #bae7ff;
+                cursor: pointer;
+            }
+        }
+    }
+}
+
+.subtitle {
+    font-size: 12px;
+    font-weight: 400;
+    height: 20px;
+    color: #999;
+    font-family: PingFangSC-Regular;
+}
+
+.default {
+    border-radius: 2px;
+    background-color: #E7EEFF;
+    font-size: 12px;
+    padding: 0 4px;
+    color: #3388FF;
+    margin-right: 8px;
+}
+
+span.disable {
+    color: #8c8c8c;
+}
+
+.card_col {
+    div {
+        max-width: 100px;
+    }
+}
+
+.list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    li {
+        height: 24px;
+    }
+}
+
+.dropdown {
+    button {
+        background: transparent;
+        &:hover {
+            background: transparent;
+        }
+    }
+}

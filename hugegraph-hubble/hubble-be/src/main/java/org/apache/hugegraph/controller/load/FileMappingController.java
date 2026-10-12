@@ -18,10 +18,35 @@
 
 package org.apache.hugegraph.controller.load;
 
-import java.util.List;
-import java.util.Set;
-
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hugegraph.common.Constant;
+import org.apache.hugegraph.controller.BaseController;
+import org.apache.hugegraph.driver.HugeClient;
+import org.apache.hugegraph.entity.enums.JobStatus;
+import org.apache.hugegraph.entity.enums.LoadStatus;
+import org.apache.hugegraph.entity.load.FileMapping;
+import org.apache.hugegraph.entity.load.FileSetting;
+import org.apache.hugegraph.entity.load.ElementMapping;
+import org.apache.hugegraph.entity.load.JobManager;
+import org.apache.hugegraph.entity.load.LoadParameter;
+import org.apache.hugegraph.entity.load.LoadTask;
+import org.apache.hugegraph.entity.load.VertexMapping;
+import org.apache.hugegraph.entity.load.EdgeMapping;
+import org.apache.hugegraph.entity.schema.EdgeLabelEntity;
+import org.apache.hugegraph.entity.schema.VertexLabelEntity;
+import org.apache.hugegraph.exception.ExternalException;
+import org.apache.hugegraph.service.load.FileMappingService;
+import org.apache.hugegraph.service.load.JobManagerService;
+import org.apache.hugegraph.service.load.LoadTaskService;
+import org.apache.hugegraph.service.schema.EdgeLabelService;
+import org.apache.hugegraph.service.schema.VertexLabelService;
+import org.apache.hugegraph.util.CollectionUtil;
+import org.apache.hugegraph.util.Ex;
+import org.apache.hugegraph.util.HubbleUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -34,34 +59,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import org.apache.hugegraph.common.Constant;
-import org.apache.hugegraph.controller.BaseController;
-import org.apache.hugegraph.entity.enums.JobStatus;
-import org.apache.hugegraph.entity.load.EdgeMapping;
-import org.apache.hugegraph.entity.load.ElementMapping;
-import org.apache.hugegraph.entity.load.FileMapping;
-import org.apache.hugegraph.entity.load.FileSetting;
-import org.apache.hugegraph.entity.load.JobManager;
-import org.apache.hugegraph.entity.load.LoadParameter;
-import org.apache.hugegraph.entity.load.VertexMapping;
-import org.apache.hugegraph.entity.schema.EdgeLabelEntity;
-import org.apache.hugegraph.entity.schema.VertexLabelEntity;
-import org.apache.hugegraph.exception.ExternalException;
-import org.apache.hugegraph.service.load.FileMappingService;
-import org.apache.hugegraph.service.load.JobManagerService;
-import org.apache.hugegraph.service.schema.EdgeLabelService;
-import org.apache.hugegraph.service.schema.VertexLabelService;
-import org.apache.hugegraph.util.CollectionUtil;
-import org.apache.hugegraph.util.Ex;
-import org.apache.hugegraph.util.HubbleUtil;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-
-import lombok.extern.log4j.Log4j2;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Log4j2
 @RestController
-@RequestMapping(Constant.API_VERSION +
-                "graph-connections/{connId}/job-manager/{jobId}/file-mappings")
+@RequestMapping(Constant.API_VERSION + "graphspaces/{graphspace}/graphs" +
+        "/{graph}/job-manager/{jobId}/file-mappings")
 public class FileMappingController extends BaseController {
 
     @Autowired
@@ -72,9 +77,12 @@ public class FileMappingController extends BaseController {
     private FileMappingService service;
     @Autowired
     private JobManagerService jobService;
+    @Autowired
+    private LoadTaskService taskService;
 
     @GetMapping
-    public IPage<FileMapping> list(@PathVariable("connId") int connId,
+    public IPage<FileMapping> list(@PathVariable("graphspace") String graphSpace,
+                                   @PathVariable("graph") String graph,
                                    @PathVariable("jobId") int jobId,
                                    @RequestParam(name = "page_no",
                                                  required = false,
@@ -84,12 +92,15 @@ public class FileMappingController extends BaseController {
                                                  required = false,
                                                  defaultValue = "10")
                                    int pageSize) {
-        return this.service.list(connId, jobId, pageNo, pageSize);
+        return this.service.list(graphSpace, graph, jobId, pageNo, pageSize);
     }
 
     @GetMapping("{id}")
-    public FileMapping get(@PathVariable("id") int id) {
-        FileMapping mapping = this.service.get(id);
+    public FileMapping get(@PathVariable("graphspace") String graphSpace,
+                           @PathVariable("graph") String graph,
+                           @PathVariable("jobId") int jobId,
+                           @PathVariable("id") int id) {
+        FileMapping mapping = this.service.get(graphSpace, graph, jobId, id);
         if (mapping == null) {
             throw new ExternalException("load.file-mapping.not-exist.id", id);
         }
@@ -97,27 +108,44 @@ public class FileMappingController extends BaseController {
     }
 
     @DeleteMapping("{id}")
-    public void delete(@PathVariable("id") int id) {
-        FileMapping mapping = this.service.get(id);
+    public void delete(@PathVariable("graphspace") String graphSpace,
+                       @PathVariable("graph") String graph,
+                       @PathVariable("jobId") int jobId,
+                       @PathVariable("id") int id) {
+        this.requireGraphSpaceWrite(graphSpace);
+        FileMapping mapping = this.service.get(graphSpace, graph, jobId, id);
         if (mapping == null) {
             throw new ExternalException("load.file-mapping.not-exist.id", id);
         }
+        this.checkNoRunningTask(jobId, ImmutableSet.of(mapping.getId()));
 
-        this.service.deleteDiskFile(mapping);
-        this.service.remove(id);
+        this.jobService.deleteMappings(jobId, ImmutableList.of(mapping));
     }
 
     @DeleteMapping
-    public void clear() {
-        List<FileMapping> mappings = this.service.listAll();
+    public void clear(@PathVariable("graphspace") String graphSpace,
+                      @PathVariable("graph") String graph,
+                      @PathVariable("jobId") int jobId) {
+        this.requireGraphSpaceWrite(graphSpace);
+        List<FileMapping> mappings = this.service.listByJob(graphSpace, graph,
+                                                            jobId);
+        Set<Integer> fileIds = new HashSet<>();
         for (FileMapping mapping : mappings) {
-            this.service.remove(mapping.getId());
+            fileIds.add(mapping.getId());
         }
+        // Check them all upfront, don't delete part of the mappings then fail
+        this.checkNoRunningTask(jobId, fileIds);
+
+        this.jobService.deleteMappings(jobId, mappings);
     }
 
     @PostMapping("{id}/file-setting")
-    public FileMapping fileSetting(@PathVariable("id") int id,
+    public FileMapping fileSetting(@PathVariable("graphspace") String graphSpace,
+                                   @PathVariable("graph") String graph,
+                                   @PathVariable("jobId") int jobId,
+                                   @PathVariable("id") int id,
                                    @RequestBody FileSetting newEntity) {
+        this.requireGraphSpaceWrite(graphSpace);
         Ex.check(!StringUtils.isEmpty(newEntity.getDelimiter()),
                  "load.file-mapping.file-setting.delimiter-cannot-be-empty");
         Ex.check(!StringUtils.isEmpty(newEntity.getCharset()),
@@ -129,7 +157,7 @@ public class FileMappingController extends BaseController {
         Ex.check(!StringUtils.isEmpty(newEntity.getSkippedLine()),
                  "load.file-mapping.file-setting.skippedline-cannot-be-empty");
 
-        FileMapping mapping = this.service.get(id);
+        FileMapping mapping = this.service.get(graphSpace, graph, jobId, id);
         if (mapping == null) {
             throw new ExternalException("load.file-mapping.not-exist.id", id);
         }
@@ -145,14 +173,18 @@ public class FileMappingController extends BaseController {
     }
 
     @PostMapping("{id}/vertex-mappings")
-    public FileMapping addVertexMapping(@PathVariable("connId") int connId,
+    public FileMapping addVertexMapping(@PathVariable("graphspace") String graphSpace,
+                                        @PathVariable("graph") String graph,
+                                        @PathVariable("jobId") int jobId,
                                         @PathVariable("id") int id,
                                         @RequestBody VertexMapping newEntity) {
-        FileMapping mapping = this.service.get(id);
+        this.requireGraphSpaceWrite(graphSpace);
+        FileMapping mapping = this.service.get(graphSpace, graph, jobId, id);
         if (mapping == null) {
             throw new ExternalException("load.file-mapping.not-exist.id", id);
         }
-        this.checkVertexMappingValid(connId, newEntity, mapping);
+        HugeClient client = this.authClient(graphSpace, graph);
+        this.checkVertexMappingValid(client, newEntity, mapping);
 
         newEntity.setId(HubbleUtil.generateSimpleId());
         mapping.getVertexMappings().add(newEntity);
@@ -161,15 +193,19 @@ public class FileMappingController extends BaseController {
     }
 
     @PutMapping("{id}/vertex-mappings/{vmid}")
-    public FileMapping updateVertexMapping(@PathVariable("connId") int connId,
+    public FileMapping updateVertexMapping(@PathVariable("graphspace") String graphSpace,
+                                           @PathVariable("graph") String graph,
+                                           @PathVariable("jobId") int jobId,
                                            @PathVariable("id") int id,
                                            @PathVariable("vmid") String vmId,
                                            @RequestBody VertexMapping newEntity) {
-        FileMapping mapping = this.service.get(id);
+        this.requireGraphSpaceWrite(graphSpace);
+        FileMapping mapping = this.service.get(graphSpace, graph, jobId, id);
         if (mapping == null) {
             throw new ExternalException("load.file-mapping.not-exist.id", id);
         }
-        this.checkVertexMappingValid(connId, newEntity, mapping);
+        HugeClient client = this.authClient(graphSpace, graph);
+        this.checkVertexMappingValid(client, newEntity, mapping);
 
         VertexMapping vertexMapping = mapping.getVertexMapping(vmId);
         Ex.check(vertexMapping != null,
@@ -184,9 +220,14 @@ public class FileMappingController extends BaseController {
     }
 
     @DeleteMapping("{id}/vertex-mappings/{vmid}")
-    public FileMapping deleteVertexMapping(@PathVariable("id") int id,
+    public FileMapping deleteVertexMapping(
+                                           @PathVariable("graphspace") String graphSpace,
+                                           @PathVariable("graph") String graph,
+                                           @PathVariable("jobId") int jobId,
+                                           @PathVariable("id") int id,
                                            @PathVariable("vmid") String vmid) {
-        FileMapping mapping = this.service.get(id);
+        this.requireGraphSpaceWrite(graphSpace);
+        FileMapping mapping = this.service.get(graphSpace, graph, jobId, id);
         if (mapping == null) {
             throw new ExternalException("load.file-mapping.not-exist.id", id);
         }
@@ -202,14 +243,18 @@ public class FileMappingController extends BaseController {
     }
 
     @PostMapping("{id}/edge-mappings")
-    public FileMapping addEdgeMapping(@PathVariable("connId") int connId,
+    public FileMapping addEdgeMapping(@PathVariable("graphspace") String graphSpace,
+                                      @PathVariable("graph") String graph,
+                                      @PathVariable("jobId") int jobId,
                                       @PathVariable("id") int id,
                                       @RequestBody EdgeMapping newEntity) {
-        FileMapping mapping = this.service.get(id);
+        this.requireGraphSpaceWrite(graphSpace);
+        FileMapping mapping = this.service.get(graphSpace, graph, jobId, id);
         if (mapping == null) {
             throw new ExternalException("load.file-mapping.not-exist.id", id);
         }
-        this.checkEdgeMappingValid(connId, newEntity, mapping);
+        HugeClient client = this.authClient(graphSpace, graph);
+        this.checkEdgeMappingValid(client, newEntity, mapping);
 
         newEntity.setId(HubbleUtil.generateSimpleId());
         mapping.getEdgeMappings().add(newEntity);
@@ -218,15 +263,19 @@ public class FileMappingController extends BaseController {
     }
 
     @PutMapping("{id}/edge-mappings/{emid}")
-    public FileMapping updateEdgeMapping(@PathVariable("connId") int connId,
+    public FileMapping updateEdgeMapping(@PathVariable("graphspace") String graphSpace,
+                                         @PathVariable("graph") String graph,
+                                         @PathVariable("jobId") int jobId,
                                          @PathVariable("id") int id,
                                          @PathVariable("emid") String emId,
                                          @RequestBody EdgeMapping newEntity) {
-        FileMapping mapping = this.service.get(id);
+        this.requireGraphSpaceWrite(graphSpace);
+        FileMapping mapping = this.service.get(graphSpace, graph, jobId, id);
         if (mapping == null) {
             throw new ExternalException("load.file-mapping.not-exist.id", id);
         }
-        this.checkEdgeMappingValid(connId, newEntity, mapping);
+        HugeClient client = this.authClient(graphSpace, graph);
+        this.checkEdgeMappingValid(client, newEntity, mapping);
 
         EdgeMapping edgeMapping = mapping.getEdgeMapping(emId);
         Ex.check(edgeMapping != null,
@@ -241,9 +290,14 @@ public class FileMappingController extends BaseController {
     }
 
     @DeleteMapping("{id}/edge-mappings/{emid}")
-    public FileMapping deleteEdgeMapping(@PathVariable("id") int id,
+    public FileMapping deleteEdgeMapping(
+                                         @PathVariable("graphspace") String graphSpace,
+                                         @PathVariable("graph") String graph,
+                                         @PathVariable("jobId") int jobId,
+                                         @PathVariable("id") int id,
                                          @PathVariable("emid") String emid) {
-        FileMapping mapping = this.service.get(id);
+        this.requireGraphSpaceWrite(graphSpace);
+        FileMapping mapping = this.service.get(graphSpace, graph, jobId, id);
         if (mapping == null) {
             throw new ExternalException("load.file-mapping.not-exist.id", id);
         }
@@ -263,9 +317,14 @@ public class FileMappingController extends BaseController {
      *  in actually
      */
     @PostMapping("load-parameter")
-    public void loadParameter(@RequestBody LoadParameter newEntity) {
+    public void loadParameter(@PathVariable("graphspace") String graphSpace,
+                              @PathVariable("graph") String graph,
+                              @PathVariable("jobId") int jobId,
+                              @RequestBody LoadParameter newEntity) {
+        this.requireGraphSpaceWrite(graphSpace);
         this.checkLoadParameter(newEntity);
-        List<FileMapping> mappings = this.service.listAll();
+        List<FileMapping> mappings = this.service.listByJob(graphSpace, graph,
+                                                            jobId);
         for (FileMapping mapping : mappings) {
             LoadParameter oldEntity = mapping.getLoadParameter();
             LoadParameter entity = this.mergeEntity(oldEntity, newEntity);
@@ -275,8 +334,11 @@ public class FileMappingController extends BaseController {
     }
 
     @PutMapping("next-step")
-    public JobManager nextStep(@PathVariable("jobId") int jobId) {
-        JobManager jobEntity = this.jobService.get(jobId);
+    public JobManager nextStep(@PathVariable("graphspace") String graphSpace,
+                               @PathVariable("graph") String graph,
+                               @PathVariable("jobId") int jobId) {
+        this.requireGraphSpaceWrite(graphSpace);
+        JobManager jobEntity = this.jobService.get(graphSpace, graph, jobId);
         Ex.check(jobEntity != null, "job-manager.not-exist.id", jobId);
         Ex.check(jobEntity.getJobStatus() == JobStatus.MAPPING,
                  "job.manager.status.unexpected",
@@ -286,10 +348,32 @@ public class FileMappingController extends BaseController {
         return jobEntity;
     }
 
-    private void checkVertexMappingValid(int connId, VertexMapping vertexMapping,
+    /**
+     * Keep source and progress files while a task can still run, resume, or
+     * retry from them.
+     */
+    private void checkNoRunningTask(int jobId, Set<Integer> fileIds) {
+        for (LoadTask task : this.taskService.taskListByJob(jobId)) {
+            LoadStatus status = task.getStatus();
+            boolean needsSource = status == LoadStatus.RUNNING ||
+                                  status == LoadStatus.PAUSED ||
+                                  status == LoadStatus.FAILED ||
+                                  status == LoadStatus.STOPPED;
+            if (needsSource &&
+                task.getFileId() != null &&
+                fileIds.contains(task.getFileId())) {
+                throw new ExternalException(
+                          "load.file-mapping.delete.task-in-running",
+                          task.getFileId());
+            }
+        }
+    }
+
+    private void checkVertexMappingValid(HugeClient client,
+                                         VertexMapping vertexMapping,
                                          FileMapping fileMapping) {
         VertexLabelEntity vl = this.vlService.get(vertexMapping.getLabel(),
-                                                  connId);
+                                                  client);
         Ex.check(!vl.getIdStrategy().isAutomatic(),
                  "load.file-mapping.vertex.automatic-id-unsupported");
 
@@ -318,11 +402,11 @@ public class FileMappingController extends BaseController {
         this.checkMappingValid(vertexMapping, fileMapping);
     }
 
-    private void checkEdgeMappingValid(int connId, EdgeMapping edgeMapping,
+    private void checkEdgeMappingValid(HugeClient client, EdgeMapping edgeMapping,
                                        FileMapping fileMapping) {
-        EdgeLabelEntity el = this.elService.get(edgeMapping.getLabel(), connId);
-        VertexLabelEntity source = this.vlService.get(el.getSourceLabel(), connId);
-        VertexLabelEntity target = this.vlService.get(el.getTargetLabel(), connId);
+        EdgeLabelEntity el = this.elService.get(edgeMapping.getLabel(), client);
+        VertexLabelEntity source = this.vlService.get(el.getSourceLabel(), client);
+        VertexLabelEntity target = this.vlService.get(el.getTargetLabel(), client);
         Ex.check(!source.getIdStrategy().isAutomatic(),
                  "load.file-mapping.vertex.automatic-id-unsupported");
         Ex.check(!target.getIdStrategy().isAutomatic(),

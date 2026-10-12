@@ -1,0 +1,94 @@
+name: 'Setup same-source candidate SDK'
+description: 'Build a same-source Java 17 SDK outside the workspace in an isolated Maven repository'
+
+inputs:
+  repository:
+    description: 'GitHub owner/repository for the candidate SDK'
+    default: 'apache/hugegraph'
+  ref:
+    description: 'Immutable candidate source commit'
+    default: '68855199031d5801edb4fe41b2bacbacffe8fe68'
+  expected-commit:
+    description: 'Locked candidate source commit'
+    default: '68855199031d5801edb4fe41b2bacbacffe8fe68'
+
+outputs:
+  repository:
+    description: Resolved candidate source repository
+    value: ${{ steps.source.outputs.repository }}
+  commit_id:
+    description: Verified full candidate source SHA
+    value: ${{ steps.source.outputs.commit_id }}
+  fetch_ref:
+    description: Fetchable candidate source ref
+    value: ${{ steps.source.outputs.fetch_ref }}
+  archive:
+    description: 'Server distribution built from the same candidate source'
+    value: ${{ steps.build.outputs.archive }}
+  archive-sha256:
+    description: SHA256 of the same-source candidate distribution
+    value: ${{ steps.build.outputs.archive-sha256 }}
+  manifest:
+    description: SDK artifact hashes and source provenance manifest
+    value: ${{ steps.build.outputs.manifest }}
+  maven-repo:
+    description: Isolated Maven repository used by subsequent toolchain builds
+    value: ${{ steps.build.outputs.maven-repo }}
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve locked candidate source
+      id: source
+      uses: ./.github/actions/get-hugegraph-commit
+      with:
+        repository: ${{ inputs.repository }}
+        ref: ${{ inputs.ref }}
+        expected-commit: ${{ inputs.expected-commit }}
+    - name: Install same-source candidate reactor
+      id: build
+      shell: bash
+      env:
+        SERVER_COMMIT: ${{ steps.source.outputs.commit_id }}
+        SERVER_REPOSITORY: ${{ steps.source.outputs.repository }}
+        SERVER_FETCH_REF: ${{ steps.source.outputs.fetch_ref }}
+      run: |
+        set -euo pipefail
+        candidate_repo=$(mktemp -d "$RUNNER_TEMP/hugegraph-candidate-m2.XXXXXX")
+        server_build=$(mktemp -d "$RUNNER_TEMP/hugegraph-candidate-build.XXXXXX")
+        source_dir="$server_build/source"
+        if [[ -d "$HOME/.m2/repository" ]]; then
+          rsync -a --exclude='/org/apache/hugegraph/' --exclude='/candidate-sdk-manifest.json' \
+            "$HOME/.m2/repository/" "$candidate_repo/"
+        fi
+        bash "$GITHUB_WORKSPACE/hugegraph-client/assembly/travis/install-candidate-sdk.sh" \
+          "$SERVER_COMMIT" "$source_dir" "$candidate_repo"
+        # Retain downloaded third-party inputs for the existing Maven cache.
+        mkdir -p "$HOME/.m2/repository"
+        rsync -a --exclude='/org/apache/hugegraph/' --exclude='/candidate-sdk-manifest.json' \
+          "$candidate_repo/" "$HOME/.m2/repository/"
+        archives=("$source_dir"/hugegraph-server/apache-hugegraph-*.tar.gz)
+        if [[ ${#archives[@]} -ne 1 || ! -f "${archives[0]}" ]]; then
+          printf 'Expected one candidate server archive, found: %s\n' "${archives[*]}" >&2
+          exit 1
+        fi
+        manifest="$candidate_repo/candidate-sdk-manifest.json"
+        if [[ ! -s "$manifest" ]]; then
+          printf 'Candidate SDK installer did not produce a provenance manifest\n' >&2
+          exit 1
+        fi
+        CANDIDATE_SOURCE_COMMIT="$SERVER_COMMIT" \
+          python3 "$GITHUB_WORKSPACE/.github/scripts/verify_candidate_image_sdk.py" "$candidate_repo" \
+          --configure-upstream-env "$GITHUB_ENV"
+        manifest_artifact_id=$(python3 -c 'import uuid; print(uuid.uuid4().hex)')
+        archive_sha=$(sha256sum "${archives[0]}" | cut -d ' ' -f 1)
+        printf 'archive-sha256=%s\nmanifest=%s\n' "$archive_sha" \
+          "$manifest" >> "$GITHUB_OUTPUT"
+        printf 'manifest-artifact-id=%s\n' "$manifest_artifact_id" >> "$GITHUB_OUTPUT"
+        printf 'archive=%s\nmaven-repo=%s\n' "${archives[0]}" "$candidate_repo" >> "$GITHUB_OUTPUT"
+    - name: Retain candidate SDK provenance
+      uses: actions/upload-artifact@v7
+      with:
+        name: candidate-sdk-manifest-${{ steps.build.outputs.manifest-artifact-id }}
+        path: ${{ steps.build.outputs.manifest }}
+        if-no-files-found: error

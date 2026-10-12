@@ -1,0 +1,111 @@
+/*!
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with this
+ * work for additional information regarding copyright ownership. The ASF
+ * licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
+.actionBar,
+.secondaryActions,
+.primaryActions,
+.executionControl {
+    display: flex;
+    align-items: center;
+}
+
+.actionBar {
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.secondaryActions {
+    gap: 8px;
+    padding-right: 12px;
+    white-space: nowrap;
+}
+
+.primaryActions {
+    gap: 10px;
+    padding-left: 12px;
+    white-space: nowrap;
+}
+
+.shortcutHint {
+    color: #667085;
+    font-size: 12px;
+}
+
+.executionControl {
+    gap: 8px;
+}
+
+.executeButton {
+    min-width: 132px;
+    height: 36px;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.executionControl :global(.ant-tooltip-disabled-compatible-wrapper) {
+    display: inline-flex;
+}
+
+.executionControl :global(.ant-tooltip-disabled-compatible-wrapper .ant-btn) {
+    min-width: 132px;
+    height: 36px;
+}
+
+.modeButton {
+    min-width: 88px;
+    height: 32px;
+    color: #43516a;
+}
+
+.btn {
+    position: relative;
+}
+
+.favoriteModel {
+    :global(.ant-popover-content) {
+        width: 368px;
+    }
+
+    :global(.ant-popover-title) {
+        padding: 24px 24px 4px;
+    }
+
+    :global(.ant-popover-inner-content) {
+        padding: 28px 24px 24px;
+    }
+}
+
+@media (max-width: 1366px) {
+    .secondaryActions,
+    .primaryActions {
+        padding-right: 6px;
+        padding-left: 6px;
+    }
+
+    .shortcutHint {
+        display: none;
+    }
+
+    .executeButton {
+        min-width: 120px;
+    }
+
+    .executionControl :global(.ant-tooltip-disabled-compatible-wrapper .ant-btn) {
+        min-width: 120px;
+    }
+}

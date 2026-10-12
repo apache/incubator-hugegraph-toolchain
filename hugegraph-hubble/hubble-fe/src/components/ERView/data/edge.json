@@ -1,0 +1,232 @@
+[
+    {
+      "name": "父子",
+      "source_label": "男人",
+      "target_label": "男人",
+      "link_multi_times": false,
+      "properties": [],
+      "sort_keys": [],
+      "property_indexes": [],
+      "open_label_index": true,
+      "style": {
+        "color": "#5C73E6",
+        "with_arrow": true,
+        "line_type": "SOLID",
+        "thickness": "NORMAL",
+        "display_fields": [
+          "~id"
+        ],
+        "join_symbols": [
+          "-"
+        ]
+      },
+      "create_time": "1970-01-01 08:00:00"
+    },
+    {
+      "name": "父女",
+      "source_label": "男人",
+      "target_label": "女人",
+      "link_multi_times": false,
+      "properties": [],
+      "sort_keys": [],
+      "property_indexes": [],
+      "open_label_index": true,
+      "style": {
+        "color": "#5C73E6",
+        "with_arrow": true,
+        "line_type": "SOLID",
+        "thickness": "NORMAL",
+        "display_fields": [
+          "~id"
+        ],
+        "join_symbols": [
+          "-"
+        ]
+      },
+      "create_time": "1970-01-01 08:00:00"
+    },
+    {
+      "name": "母子",
+      "source_label": "女人",
+      "target_label": "男人",
+      "link_multi_times": false,
+      "properties": [],
+      "sort_keys": [],
+      "property_indexes": [],
+      "open_label_index": true,
+      "style": {
+        "color": "#5C73E6",
+        "with_arrow": true,
+        "line_type": "SOLID",
+        "thickness": "NORMAL",
+        "display_fields": [
+          "~id"
+        ],
+        "join_symbols": [
+          "-"
+        ]
+      },
+      "create_time": "1970-01-01 08:00:00"
+    },
+    {
+      "name": "母女",
+      "source_label": "女人",
+      "target_label": "女人",
+      "link_multi_times": false,
+      "properties": [],
+      "sort_keys": [],
+      "property_indexes": [],
+      "open_label_index": true,
+      "style": {
+        "color": "#5C73E6",
+        "with_arrow": true,
+        "line_type": "SOLID",
+        "thickness": "NORMAL",
+        "display_fields": [
+          "~id"
+        ],
+        "join_symbols": [
+          "-"
+        ]
+      },
+      "create_time": "1970-01-01 08:00:00"
+    },
+    {
+      "name": "妻",
+      "source_label": "男人",
+      "target_label": "女人",
+      "link_multi_times": false,
+      "properties": [],
+      "sort_keys": [],
+      "property_indexes": [],
+      "open_label_index": true,
+      "style": {
+        "color": "#5C73E6",
+        "with_arrow": true,
+        "line_type": "SOLID",
+        "thickness": "NORMAL",
+        "display_fields": [
+          "~id"
+        ],
+        "join_symbols": [
+          "-"
+        ]
+      },
+      "create_time": "1970-01-01 08:00:00"
+    },
+    {
+      "name": "妾",
+      "source_label": "男人",
+      "target_label": "女人",
+      "link_multi_times": false,
+      "properties": [],
+      "sort_keys": [],
+      "property_indexes": [],
+      "open_label_index": true,
+      "style": {
+        "color": "#5C73E6",
+        "with_arrow": true,
+        "line_type": "SOLID",
+        "thickness": "NORMAL",
+        "display_fields": [
+          "~id"
+        ],
+        "join_symbols": [
+          "-"
+        ]
+      },
+      "create_time": "1970-01-01 08:00:00"
+    },
+    {
+      "name": "相恋",
+      "source_label": "男人",
+      "target_label": "女人",
+      "link_multi_times": false,
+      "properties": [],
+      "sort_keys": [],
+      "property_indexes": [],
+      "open_label_index": true,
+      "style": {
+        "color": "#5C73E6",
+        "with_arrow": true,
+        "line_type": "SOLID",
+        "thickness": "NORMAL",
+        "display_fields": [
+          "~id"
+        ],
+        "join_symbols": [
+          "-"
+        ]
+      },
+      "create_time": "1970-01-01 08:00:00"
+    },
+    {
+      "name": "朋友",
+      "source_label": "男人",
+      "target_label": "女人",
+      "link_multi_times": false,
+      "properties": [],
+      "sort_keys": [],
+      "property_indexes": [],
+      "open_label_index": true,
+      "style": {
+        "color": "#5C73E6",
+        "with_arrow": true,
+        "line_type": "SOLID",
+        "thickness": "NORMAL",
+        "display_fields": [
+          "~id"
+        ],
+        "join_symbols": [
+          "-"
+        ]
+      },
+      "create_time": "1970-01-01 08:00:00"
+    },
+    {
+      "name": "姐妹",
+      "source_label": "女人",
+      "target_label": "女人",
+      "link_multi_times": false,
+      "properties": [],
+      "sort_keys": [],
+      "property_indexes": [],
+      "open_label_index": true,
+      "style": {
+        "color": "#5C73E6",
+        "with_arrow": true,
+        "line_type": "SOLID",
+        "thickness": "NORMAL",
+        "display_fields": [
+          "~id"
+        ],
+        "join_symbols": [
+          "-"
+        ]
+      },
+      "create_time": "1970-01-01 08:00:00"
+    },
+    {
+      "name": "丫环",
+      "source_label": "男人",
+      "target_label": "女人",
+      "link_multi_times": false,
+      "properties": [],
+      "sort_keys": [],
+      "property_indexes": [],
+      "open_label_index": true,
+      "style": {
+        "color": "#5C73E6",
+        "with_arrow": true,
+        "line_type": "SOLID",
+        "thickness": "NORMAL",
+        "display_fields": [
+          "~id"
+        ],
+        "join_symbols": [
+          "-"
+        ]
+      },
+      "create_time": "1970-01-01 08:00:00"
+    }
+]

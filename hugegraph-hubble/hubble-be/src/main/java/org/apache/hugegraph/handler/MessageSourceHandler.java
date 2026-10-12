@@ -18,12 +18,11 @@
 
 package org.apache.hugegraph.handler;
 
-import java.util.Locale;
-
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.LocaleUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.hugegraph.common.Constant;
+import org.apache.hugegraph.entity.UserInfo;
 import org.apache.hugegraph.service.UserInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -34,10 +33,9 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.servlet.support.RequestContextUtils;
 import org.springframework.web.util.WebUtils;
 
-import org.apache.hugegraph.common.Constant;
-import org.apache.hugegraph.entity.UserInfo;
-
-import lombok.extern.log4j.Log4j2;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import java.util.Locale;
 
 @Log4j2
 @Component
@@ -67,6 +65,10 @@ public class MessageSourceHandler {
             RequestContextHolder.currentRequestAttributes();
         } catch (IllegalStateException e) {
             return DEFAULT_LOCALE;
+        }
+
+        if (StringUtils.isNotBlank(this.request.getHeader("Accept-Language"))) {
+            return this.request.getLocale();
         }
 
         UserInfo userInfo = this.getUserInfo();

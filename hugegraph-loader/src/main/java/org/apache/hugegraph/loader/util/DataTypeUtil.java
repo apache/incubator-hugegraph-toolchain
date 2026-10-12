@@ -25,19 +25,22 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import org.apache.hugegraph.util.E;
+import org.apache.hugegraph.util.InsertionOrderUtil;
+import org.apache.hugegraph.util.ReflectionUtil;
+
 import org.apache.hugegraph.loader.constant.Constants;
 import org.apache.hugegraph.loader.source.AbstractSource;
 import org.apache.hugegraph.loader.source.InputSource;
 import org.apache.hugegraph.loader.source.file.FileSource;
 import org.apache.hugegraph.loader.source.file.ListFormat;
+import org.apache.hugegraph.loader.source.hdfs.HDFSSource;
+import org.apache.hugegraph.loader.source.jdbc.JDBCSource;
 import org.apache.hugegraph.loader.source.kafka.KafkaSource;
 import org.apache.hugegraph.structure.constant.Cardinality;
 import org.apache.hugegraph.structure.constant.DataType;
 import org.apache.hugegraph.structure.schema.PropertyKey;
-import org.apache.hugegraph.util.E;
-import org.apache.hugegraph.util.InsertionOrderUtil;
-import org.apache.hugegraph.util.ReflectionUtil;
-
+//import org.apache.hugegraph.util.StringEncoding;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
 
@@ -59,8 +62,8 @@ public final class DataTypeUtil {
 
     public static Object convert(Object value, PropertyKey propertyKey,
                                  InputSource source) {
-        E.checkArgumentNotNull(value,
-                               "The value to be converted can't be null");
+        E.checkArgumentNotNull(value, "The value of Property(%s) to be " +
+                                      "converted can't be null", propertyKey.name());
 
         String key = propertyKey.name();
         DataType dataType = propertyKey.dataType();
@@ -73,8 +76,8 @@ public final class DataTypeUtil {
                 return parseMultiValues(key, value, dataType,
                                         cardinality, source);
             default:
-                throw new AssertionError(String.format("Unsupported cardinality: '%s'",
-                                                       cardinality));
+                throw new AssertionError(String.format(
+                        "Unsupported cardinality: '%s'", cardinality));
         }
     }
 
@@ -98,9 +101,10 @@ public final class DataTypeUtil {
             // trim() is a little time-consuming
             return parseLong(((String) rawValue).trim());
         }
-        throw new IllegalArgumentException(String.format("The value(key='%s') must can be casted" +
-                                                         " to Long, but got '%s'(%s)", key,
-                                                         rawValue, rawValue.getClass().getName()));
+        throw new IllegalArgumentException(String.format(
+                "The value(key='%s') must can be casted to Long, " +
+                "but got '%s'(%s)",
+                key, rawValue, rawValue.getClass().getName()));
     }
 
     public static UUID parseUUID(String key, Object rawValue) {
@@ -119,9 +123,9 @@ public final class DataTypeUtil {
             return new UUID(Long.parseUnsignedLong(high, 16),
                             Long.parseUnsignedLong(low, 16));
         }
-        throw new IllegalArgumentException(String.format("Failed to convert value(key='%s') " +
-                                                         "'%s'(%s) to UUID", key, rawValue,
-                                                         rawValue.getClass()));
+        throw new IllegalArgumentException(String.format(
+                "Failed to convert value(key='%s') '%s'(%s) to UUID",
+                key, rawValue, rawValue.getClass()));
     }
 
     private static Object parseSingleValue(String key, Object rawValue,
@@ -137,17 +141,35 @@ public final class DataTypeUtil {
         } else if (dataType.isBoolean()) {
             return parseBoolean(key, value);
         } else if (dataType.isDate()) {
-            E.checkState(source instanceof FileSource,
-                         "Only accept FileSource when convert String value " +
-                         "to Date, but got '%s'", source.getClass().getName());
-            String dateFormat = ((FileSource) source).dateFormat();
-            String timeZone = ((FileSource) source).timeZone();
+            if (source instanceof FileSource || source instanceof HDFSSource) {
+                List<String> extraDateFormats =
+                        ((FileSource) source).extraDateFormats();
+                String dateFormat = ((FileSource) source).dateFormat();
+                String timeZone = ((FileSource) source).timeZone();
+                if (extraDateFormats == null || extraDateFormats.isEmpty()) {
+                    return parseDate(key, value, dateFormat, timeZone);
+                } else {
+                    HashSet<String> allDateFormats = new HashSet<>();
+                    allDateFormats.add(dateFormat);
+                    allDateFormats.addAll(extraDateFormats);
+                    int size =  allDateFormats.size();
+                    for (String df :  allDateFormats) {
+                        try {
+                            return parseDate(key, value, df, timeZone);
+                        } catch (Exception e) {
+                            if (--size <= 0) {
+                                throw e;
+                            }
+                        }
+                    }
+                }
+            }
 
             if (source instanceof KafkaSource) {
                 List<String> extraDateFormats =
                         ((KafkaSource) source).getExtraDateFormats();
-                dateFormat = ((KafkaSource) source).getDateFormat();
-                timeZone = ((KafkaSource) source).getTimeZone();
+                String dateFormat = ((KafkaSource) source).getDateFormat();
+                String timeZone = ((KafkaSource) source).getTimeZone();
                 if (extraDateFormats == null || extraDateFormats.isEmpty()) {
                     return parseDate(key, value, dateFormat, timeZone);
                 } else {
@@ -167,19 +189,28 @@ public final class DataTypeUtil {
                 }
             }
 
-            return parseDate(key, value, dateFormat, timeZone);
+            if (source instanceof JDBCSource) {
+                if (value instanceof java.sql.Date) {
+                    return new Date(((java.sql.Date) value).getTime());
+                } else {
+                    if (value instanceof java.sql.Timestamp) {
+                        return new Date(((java.sql.Timestamp) value).getTime());
+                    }
+                }
+            }
         } else if (dataType.isUUID()) {
             return parseUUID(key, value);
         } else if (dataType.isText()) {
-            if (!(rawValue instanceof String)) {
-                value = rawValue.toString();
+            if (value instanceof Number) {
+                return value.toString();
             }
+        } else if (dataType == DataType.BLOB) {
+            return parseBlob(key, value);
         }
         E.checkArgument(checkDataType(key, value, dataType),
                         "The value(key='%s') '%s'(%s) is not match with " +
                         "data type %s and can't convert to it",
                         key, value, value.getClass(), dataType);
-
         return value;
     }
 
@@ -227,14 +258,41 @@ public final class DataTypeUtil {
                 return false;
             } else {
                 throw new IllegalArgumentException(String.format(
-                          "Failed to convert '%s'(key='%s') to Boolean, " +
-                          "the acceptable boolean strings are %s or %s",
-                          key, rawValue, ACCEPTABLE_TRUE, ACCEPTABLE_FALSE));
+                        "Failed to convert '%s'(key='%s') to Boolean, " +
+                        "the acceptable boolean strings are %s or %s",
+                        key, rawValue, ACCEPTABLE_TRUE, ACCEPTABLE_FALSE));
             }
         }
-        throw new IllegalArgumentException(String.format("Failed to convert value(key='%s') " +
-                                                         "'%s'(%s) to Boolean", key, rawValue,
-                                                         rawValue.getClass()));
+        throw new IllegalArgumentException(String.format(
+                "Failed to convert value(key='%s') '%s'(%s) to Boolean",
+                key, rawValue, rawValue.getClass()));
+    }
+
+    public static byte[] parseBlob(String key, Object rawValue) {
+        //if (rawValue instanceof byte[]) {
+        //    return (byte[]) rawValue;
+        //} else if (rawValue instanceof String) {
+        //    // Only base64 string or hex string accepted
+        //    String str = ((String) rawValue);
+        //    if (str.startsWith("0x")) {
+        //        return Bytes.fromHex(str.substring(2));
+        //    }
+        //    return StringEncoding.decodeBase64(str);
+        //} else if (rawValue instanceof List) {
+        //    List<?> values = (List<?>) rawValue;
+        //    byte[] bytes = new byte[values.size()];
+        //    for (int i = 0; i < bytes.length; i++) {
+        //        Object v = values.get(i);
+        //        if (v instanceof Byte || v instanceof Integer) {
+        //            bytes[i] = ((Number) v).byteValue();
+        //        } else {
+        //            throw new IllegalArgumentException(String.format(
+        //                    "expect byte or int value, but got '%s'", v));
+        //        }
+        //    }
+        //    return bytes;
+        //}
+        return null;
     }
 
     private static Number parseNumber(String key, Object value,
@@ -256,16 +314,17 @@ public final class DataTypeUtil {
                 case FLOAT:
                     return Float.valueOf(value.toString());
                 case DOUBLE:
-                    return Double.valueOf(value.toString());
+                    return Double.parseDouble(value.toString());
                 default:
-                    throw new AssertionError(String.format("Number type only contains Byte, " +
-                                                           "Integer, Long, Float, Double, " +
-                                                           "but got %s", dataType.clazz()));
+                    throw new AssertionError(String.format(
+                            "Number type only contains Byte, Integer, " +
+                            "Long, Float, Double, but got %s",
+                            dataType.clazz()));
             }
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException(String.format("Failed to convert value(key=%s) " +
-                                                             "'%s'(%s) to Number", key, value,
-                                                             value.getClass()), e);
+            throw new IllegalArgumentException(String.format(
+                    "Failed to convert value(key=%s) '%s'(%s) to Number",
+                    key, value, value.getClass()), e);
         }
     }
 
@@ -290,16 +349,16 @@ public final class DataTypeUtil {
                     long timestamp = Long.parseLong((String) value);
                     return new Date(timestamp);
                 } catch (NumberFormatException e) {
-                    throw new IllegalArgumentException(String.format("Invalid timestamp value " +
-                                                                     "'%s'", value));
+                    throw new IllegalArgumentException(String.format(
+                            "Invalid timestamp value '%s'", value));
                 }
             } else {
                 return DateUtil.parse((String) value, dateFormat, timeZone);
             }
         }
-        throw new IllegalArgumentException(String.format("Failed to convert value(key='%s') " +
-                                                         "'%s'(%s) to Date", key, value,
-                                                         value.getClass()));
+        throw new IllegalArgumentException(String.format(
+                "Failed to convert value(key='%s') '%s'(%s) to Date",
+                key, value, value.getClass()));
     }
 
     private static List<Object> split(String key, String rawValue,
@@ -344,14 +403,14 @@ public final class DataTypeUtil {
      */
     private static boolean checkDataType(String key, Object value,
                                          DataType dataType) {
-        if (value instanceof Number && dataType.isNumber()) {
+        if (value instanceof Number) {
             return parseNumber(key, value, dataType) != null;
         }
         return dataType.clazz().isInstance(value);
     }
 
     /**
-     * Check type of all the values(maybe some list properties) valid
+     * Check type of all the values(may be some of list properties) valid
      */
     private static boolean checkCollectionDataType(String key,
                                                    Collection<?> values,

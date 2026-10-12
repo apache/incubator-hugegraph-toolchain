@@ -34,7 +34,7 @@ public interface SchemaLabelEntity extends SchemaEntity {
 
     List<PropertyIndex> getPropertyIndexes();
 
-    boolean isOpenLabelIndex();
+    Boolean getOpenLabelIndex();
 
     SchemaStyle getStyle();
 

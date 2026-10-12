@@ -54,7 +54,7 @@ public class BatchVertexRequest {
 
     public static class Builder {
 
-        private BatchVertexRequest req;
+        private final BatchVertexRequest req;
 
         public Builder() {
             this.req = new BatchVertexRequest();

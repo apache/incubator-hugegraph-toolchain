@@ -1,0 +1,969 @@
+{
+  "analysis": {
+    "name": "业务分析",
+    "query": {
+      "name": "GQL 图遍历",
+      "placeholder": "请输入查询语句",
+      "gremlin_tab": "Gremlin",
+      "gremlin_placeholder": "例如：g.V().limit(10)",
+      "cypher_tab": "Cypher",
+      "cypher_placeholder": "例如：MATCH (n) RETURN n LIMIT 10",
+      "text2gql_tab": "Text2GQL",
+      "text2gql_badge": "Coming Soon",
+      "text2gql_title": "Text2GQL",
+      "text2gql_description": "这是未来 Text2GQL 工作流的界面预览，尚未连接模型或查询服务",
+      "text2gql_placeholder": "描述你希望查询的图问题",
+      "text2gql_privacy": "当前不会发送、生成、保存或执行任何内容",
+      "execute_query": "执行查询",
+      "execute_task": "执行任务",
+      "switch_async_task": "切换异步任务",
+      "switch_immediate_query": "切换即时查询",
+      "execute_shortcut": "执行查询（Ctrl/Command + 回车）",
+      "shortcut_hint": "Ctrl / Command + 回车执行",
+      "execute_mode": "执行模式",
+      "execute_mode_immediate": "即时",
+      "execute_mode_async": "异步",
+      "execute_mode_desc": "查询模式适合 30 秒内可返回结果的小规模分析，任务模式适合较长时间返回结果的大规模分析，任务详情可在异步任务中查看",
+      "empty_query": "查询语句不能为空",
+      "collapse": "收起",
+      "expand": "展开",
+      "favorite": "收藏",
+      "favorite_statement": "收藏语句",
+      "favorite_name_placeholder": "请输入收藏名称",
+      "favorite_success": "收藏成功",
+      "favorite_failed": "收藏失败"
+    },
+    "query_result": {
+      "graph": "图",
+      "table": "表格",
+      "no_data": "暂无数据结果",
+      "not_started": "尚未执行图查询，点击执行查询查看结果",
+      "task_not_started": "尚未执行任务，点击执行任务查看进度",
+      "loading": "数据加载中...",
+      "run_failed": "运行失败",
+      "run_failed_action": "查询失败，请根据错误详情处理后重试。",
+      "query_failed_title": "查询失败",
+      "retry_action": "请根据上方错误详情处理后重试。",
+      "copy_error": "复制详情",
+      "copy_error_success": "错误详情已复制",
+      "copy_error_failed": "复制失败，请手动选择错误详情",
+      "submitting_task": "提交异步任务中...",
+      "submit_failed": "提交失败",
+      "import_failed": "导入失败",
+      "submit_success": "提交成功",
+      "no_graph_result": "无图结果，请查看表格或 JSON 数据",
+      "non_graph_title": "查询结果预览",
+      "non_graph_description": "查询已成功执行；当前结果不满足图渲染，以下为 JSON 预览",
+      "preview_truncated": "当前仅展示前 3 项结果",
+      "view_full_json": "查看原始 JSON",
+      "empty_success": "查询成功，结果为空",
+      "empty_success_description": "查询已成功执行，但没有返回可展示的数据",
+      "no_table_result": "无表格结果，请查看图或 JSON 数据",
+      "large_table_title": "当前结果共 {{count}} 行，已使用分页展示",
+      "large_table_description": "浏览和复制前请确认结果范围；可在查询中增加 limit 以缩短等待时间",
+      "no_json_result": "无 JSON 结果，请查看图或表格数据",
+      "expand_failed": "展开失败",
+      "no_more_neighbors": "不存在更多邻接点",
+      "graph_limit_title": "结果过大，已默认收起图画布",
+      "graph_limit_description": "当前结果包含 {{nodes}} 个节点、{{edges}} 条边，画布上限为 {{nodeLimit}} 个节点、{{edgeLimit}} 条边。请使用表格或 JSON 查看完整结果"
+    },
+    "canvas": {
+      "graph_canvas": "图画布",
+      "import": "导入",
+      "export": "导出",
+      "style": "外观设置",
+      "filter": "筛选",
+      "layout": "布局方式",
+      "setting": "设置",
+      "new": "新建",
+      "statistics": "统计",
+      "mode_2d": "2D 模式",
+      "mode_3d": "3D 模式",
+      "import_success": "导入成功",
+      "number_card": {
+        "paths": "路径",
+        "nodes": "节点",
+        "edges": "边",
+        "loading": "加载中",
+        "unavailable": "不可用",
+        "node_summary": "节点：当前结果 {{current}}，全图 {{total}}",
+        "edge_summary": "边：当前结果 {{current}}，全图 {{total}}"
+      },
+      "import_failed": "导入失败",
+      "export_json": "导出 JSON",
+      "export_png": "导出图片",
+      "export_json_title": "导出 JSON",
+      "export_image_title": "导出图片",
+      "file_name": "文件名称",
+      "file_name_required": "请输入文件名称",
+      "file_name_placeholder": "请输入文件名称",
+      "add_vertex": "新增顶点",
+      "add_in_edge": "新增入边",
+      "add_out_edge": "新增出边",
+      "toolbar": {
+        "clear_canvas": "清空画布",
+        "fit_center": "自适应",
+        "full_screen": "全屏",
+        "full_screen_shortcut": "全屏（画布聚焦后按 F）",
+        "undo": "后退",
+        "redo": "前进",
+        "refresh_layout": "刷新布局",
+        "zoom_out": "缩小",
+        "zoom_in": "放大",
+        "fix_node": "固定",
+        "isolated_nodes": "孤立点"
+      },
+      "clear_graph": {
+        "title": "是否清除当前画布",
+        "description": "清除当前画布，此次清除操作后不可以恢复",
+        "ok": "确认",
+        "cancel": "取消"
+      },
+      "context_menu": {
+        "expand": "展开",
+        "search": "查询",
+        "fix": "固定",
+        "unfix": "取消固定",
+        "hide": "隐藏",
+        "add_out_edge": "添加出边",
+        "add_in_edge": "添加入边",
+        "add_vertex": "添加顶点"
+      },
+      "tooltip": {
+        "import_2d": "当前图已有数据，请清空后再导入",
+        "import_3d": "3D 模式不支持导入",
+        "export_2d": "暂无可导出的图数据",
+        "export_3d": "3D 模式不支持导出",
+        "style_2d": "暂无可设置样式的图数据",
+        "style_3d": "3D 模式不支持外观设置",
+        "filter_2d": "暂无可筛选的图数据",
+        "filter_3d": "3D 模式不支持筛选",
+        "layout_2d": "暂无可布局的图数据",
+        "layout_3d": "3D 模式不支持布局方式",
+        "setting_2d": "暂无可配置的图数据",
+        "setting_3d": "3D 模式不支持设置",
+        "new_2d": "暂无可编辑的图数据",
+        "new_3d": "3D 模式不支持新建图元素",
+        "statistics_2d": "暂无可统计的图数据",
+        "statistics_3d": "3D 模式不支持统计",
+        "switch_2d": "暂无可切换的图数据"
+      },
+      "canvas_3d": {
+        "node": "节点",
+        "edge": "边",
+        "type": "类型",
+        "id": "ID",
+        "tip": "提示：",
+        "left_mouse": "鼠标左键",
+        "right_mouse": "鼠标右键",
+        "rotate": "旋转",
+        "move": "移动",
+        "edge_label_type": {
+          "parent": "父边",
+          "sub": "子边"
+        }
+      },
+      "filter_drawer": {
+        "title": "查询",
+        "filter": "筛选",
+        "logic": "逻辑表达式",
+        "filter_type": "筛选类型",
+        "operation_type": "操作类型",
+        "vertex": "点",
+        "edge": "边",
+        "vertex_property": "点属性",
+        "vertex_id": "点ID",
+        "vertex_label": "点类型",
+        "edge_property": "边属性",
+        "edge_id": "边ID",
+        "edge_label": "边类型",
+        "edge_direction": "边方向",
+        "property": "属性",
+        "rule": "规则",
+        "value": "值",
+        "add_expression": "添加表达式",
+        "delete_expression": "删除表达式",
+        "add_property": "添加属性",
+        "delete": "删除",
+        "duplicate_property": "属性不可重复",
+        "get_edge_failed": "获取边信息失败",
+        "get_adjacent_edge_failed": "获取邻边失败",
+        "number_placeholder": "请输入数字",
+        "string_placeholder": "请输入字符串",
+        "placeholder": "请输入",
+        "rule_option": {
+          "gt": "大于",
+          "gte": "大于等于",
+          "eq": "等于",
+          "lt": "小于",
+          "lte": "小于等于",
+          "true": "True",
+          "false": "False"
+        }
+      },
+      "legend": {
+        "title": "图例"
+      },
+      "element_tooltip": {
+        "node": "节点",
+        "edge": "边",
+        "type": "类型",
+        "edge_label_type": {
+          "parent": "父边",
+          "sub": "子边",
+          "normal": "普通边"
+        }
+      },
+      "task_navigation": {
+        "success_alt": "提交成功",
+        "task_id": "任务ID",
+        "view": "查看"
+      },
+      "setting_panel": {
+        "title": "设置",
+        "node_id": "节点ID",
+        "edge_type": "边类型",
+        "node_center": "节点中心",
+        "node_bottom": "节点底部",
+        "node_label": "节点标签",
+        "node_label_property": "节点标签属性名",
+        "node_label_position": "节点标签位置",
+        "node_label_size": "节点标签字体大小",
+        "edge_label": "边标签",
+        "edge_label_property": "边标签属性名",
+        "edge_label_size": "边标签字体大小",
+        "components": "组件",
+        "enable_minimap": "启用缩略图",
+        "enable_grid": "启用网格背景",
+        "enable_legend": "启用图例"
+      },
+      "layout_panel": {
+        "title": "布局",
+        "enable_layout": "启用布局",
+        "enable_layout_tooltip": "是否启用布局，关闭后布局将切换为默认布局",
+        "layout_type": "布局方式",
+        "force": "力导布局",
+        "circular": "环形布局",
+        "concentric": "同心圆布局",
+        "dagre": "层次布局",
+        "grid": "网格布局",
+        "radial": "径向布局",
+        "node_size": "节点大小",
+        "node_size_tooltip": "节点大小（直径），用于碰撞检测",
+        "link_distance": "边长度",
+        "node_strength": "点作用力",
+        "node_strength_tooltip": "节点作用力，正数代表节点之间的引力作用，负数代表节点之间的斥力作用",
+        "prevent_overlap": "是否防止重叠",
+        "node_spacing": "节点间距",
+        "node_spacing_tooltip": "preventOverlap开启时生效，防止重叠时节点边缘间距的最小值",
+        "start_radius": "起始半径",
+        "start_radius_tooltip": "螺旋状布局的起始半径",
+        "end_radius": "结束半径",
+        "end_radius_tooltip": "螺旋状布局的结束半径",
+        "divisions": "分段数",
+        "divisions_tooltip": "节点在环上的分段数",
+        "angle_ratio": "角度比",
+        "angle_ratio_tooltip": "从第一个节点到最后一个节点相差多少个2 * PI",
+        "ordering": "排序依据",
+        "ordering_tooltip": "节点在环上排序的依据",
+        "ordering_data": "数据",
+        "ordering_topology": "拓扑",
+        "ordering_degree": "度数",
+        "clockwise": "是否顺时针排列",
+        "sweep": "弧度差",
+        "sweep_tooltip": "第一个节点与最后一个节点之间的弧度差",
+        "start_angle": "起始弧度",
+        "start_angle_tooltip": "开始方式节点的弧度",
+        "equidistant": "环与环距离是否相等",
+        "rankdir": "布局方向",
+        "rankdir_tooltip": "布局的方向",
+        "align": "对齐",
+        "align_tooltip": "节点对齐方式",
+        "ranksep": "层间距",
+        "ranksep_tooltip": "层间距（px）。在rankdir 为 'TB' 或 'BT' 时是竖直方向相邻层间距；在rankdir 为 'LR' 或 'RL' 时代表水平方向相邻层间距",
+        "nodesep": "点间距",
+        "nodesep_tooltip": "节点间距（px）。在rankdir 为 'TB' 或 'BT' 时是节点的水平间距；在rankdir 为 'LR' 或 'RL' 时代表节点的竖直方向间距",
+        "top_bottom": "从上至下",
+        "bottom_top": "从下至上",
+        "left_right": "从左至右",
+        "right_left": "从右至左",
+        "align_center": "中间对齐",
+        "align_ul": "对齐到左上角",
+        "align_ur": "对齐到右上角",
+        "align_dl": "对齐到左下角",
+        "align_dr": "对齐到右下角",
+        "rows": "网格行数",
+        "rows_tooltip": "网格的行数，为 undefined 时算法会根据节点数量、布局空间、cols（若指定）自动计算",
+        "cols": "网格列数",
+        "cols_tooltip": "网格的列数，为 undefined 时算法根据节点数量、布局空间、rows（若指定）自动计算",
+        "unit_radius": "层级距离",
+        "unit_radius_tooltip": "每一圈距离上一圈的距离。默认填充整个画布，即根据图的大小决定",
+        "link_distance_short": "边长",
+        "focus_node": "中心节点",
+        "focus_node_tooltip": "辐射的中心点，默认为数据中第一个节点。可以传入节点 id 或节点本身",
+        "radial_node_spacing_tooltip": "preventOverlap 为 true 时生效, 防止重叠时节点边缘间距的最小值",
+        "radial_prevent_overlap_tooltip": "是否防止重叠，必须配合下面属性 nodeSize，只有设置了与当前图节点大小相同的 nodeSize 值，才能够进行节点重叠的碰撞检测",
+        "strict_radial": "严格辐射",
+        "strict_radial_tooltip": "是否必须是严格的 radial 布局"
+      },
+      "statistics_panel": {
+        "view_mode": "统计视图",
+        "label_statistics": "标签统计",
+        "graph_statistics": "图统计",
+        "type_count": "点边数量统计",
+        "type_count_desc": "当前画布中所有类型的点边和对应的点边数量",
+        "degree_top10": "节点权重Top10",
+        "degree_top10_desc": "当前画布中一度边数量最多的十个节点",
+        "zero_degree_nodes": "孤立点",
+        "zero_degree_nodes_desc": "孤立点是指和其余点没有关联，在画布中独立存在的点",
+        "zero_degree_edges": "孤立边",
+        "zero_degree_edges_desc": "只有一度关联的点的边",
+        "incidence_nodes": "关联点",
+        "incidence_nodes_desc": "只有选中图上的一个点，才能显示相应的关联点的数量",
+        "select_node": "请选择节点",
+        "highlight": "高亮",
+        "hide": "隐藏"
+      },
+      "dynamic_add": {
+        "add_success": "添加成功",
+        "save_success": "保存成功",
+        "save_failed": "保存失败",
+        "get_edge_type_failed": "获取边类型失败",
+        "get_edge_property_failed": "获取边属性失败",
+        "get_vertex_property_failed": "获取点属性失败",
+        "nullable_property": "可空属性",
+        "non_nullable_property": "不可空属性",
+        "property": "属性",
+        "property_value": "属性值",
+        "property_placeholder": "请输入属性值",
+        "add_vertex": "添加顶点",
+        "add_in_edge": "添加入边",
+        "add_out_edge": "添加出边",
+        "add": "添加",
+        "cancel": "取消",
+        "vertex_type": "顶点类型",
+        "edge_type": "边类型",
+        "source": "起点",
+        "target": "终点",
+        "id_strategy": "ID策略",
+        "primary_key": "主键属性",
+        "id_value": "ID值",
+        "id_placeholder": "请输入ID值",
+        "select_vertex_type": "请选择顶点类型",
+        "select_edge_type": "请选择边类型",
+        "select_source": "请选择起点ID",
+        "select_target": "请选择终点ID",
+        "customize_string": "自定义字符串",
+        "primary_key_id": "主键ID",
+        "customize_number": "自定义数字",
+        "automatic": "自动生成",
+        "required": "此项不能为空"
+      },
+      "edit_element": {
+        "save_success": "保存成功",
+        "save_failed": "保存失败",
+        "get_edge_property_failed": "获取边属性失败",
+        "get_vertex_property_failed": "获取点属性失败",
+        "type": "类型",
+        "edge_relation": "边类型关系",
+        "parent_edge": "父边",
+        "child_edge": "子边",
+        "id": "ID",
+        "source": "起点",
+        "target": "终点",
+        "primary_key": "主键",
+        "nullable_property": "可空属性",
+        "non_nullable_property": "不可空属性",
+        "property": "属性",
+        "property_value": "属性值",
+        "property_placeholder": "请输入属性值",
+        "edit_details": "编辑详情",
+        "data_details": "数据详情",
+        "save": "保存",
+        "edit": "编辑",
+        "close": "关闭",
+        "edge_type": "边类型",
+        "edge_id": "边ID",
+        "vertex_type": "顶点类型",
+        "vertex_id": "顶点ID",
+        "required": "此项不能为空",
+        "edge": "边",
+        "vertex": "顶点"
+      }
+    },
+    "logs": {
+      "execute_tab": "执行记录",
+      "favorite_tab": "收藏的查询",
+      "execution_load_failed": "执行记录加载失败。",
+      "retry_execution": "重试执行记录",
+      "favorite_load_failed": "收藏查询加载失败。",
+      "retry_favorites": "重试收藏查询",
+      "favorite_success": "收藏成功",
+      "favorite_failed": "收藏失败",
+      "delete_success": "删除成功",
+      "delete_failed": "删除失败",
+      "edit_success": "修改成功",
+      "edit_failed": "修改失败",
+      "favorite_statement": "收藏语句",
+      "favorite_name_placeholder": "请输入收藏名称",
+      "click_to_copy": "点击复制",
+      "copy_success": "查询语句已复制",
+      "copy_failed": "复制失败，请手动选择查询语句",
+      "edit_name": "修改名称",
+      "confirm_delete": "确认删除",
+      "delete_favorite_confirm": "是否确认删除该条收藏语句？",
+      "search_placeholder": "搜索收藏名称或语句",
+      "column": {
+        "time": "时间",
+        "type": "类型",
+        "content": "GQL 语句",
+        "status": "状态",
+        "duration": "耗时",
+        "action": "操作",
+        "name": "名称",
+        "favorite_statement": "收藏语句"
+      },
+      "column_settings": {
+        "title": "列设置",
+        "move_up": "上移",
+        "move_down": "下移",
+        "reset": "恢复默认"
+      },
+      "type": {
+        "GREMLIN": "Gremlin",
+        "GREMLIN_ASYNC": "GREMLIN 任务",
+        "ALGORITHM": "算法任务",
+        "CYPHER": "CYPHER 查询"
+      },
+      "status": {
+        "SUCCESS": "成功",
+        "ASYNC_TASK_SUCCESS": "提交成功",
+        "ASYNC_TASK_RUNNING": "提交运行中",
+        "RUNNING": "运行中",
+        "FAILED": "失败",
+        "ASYNC_TASK_FAILED": "提交失败"
+      },
+      "failure_reason": {
+        "GREMLIN_EXECUTION_FAILED": "查询失败，请检查语句后重试。"
+      },
+      "action": {
+        "favorite": "收藏",
+        "load_statement": "加载语句",
+        "copy_statement": "复制语句",
+        "edit_name": "修改名称",
+        "save": "保存"
+      }
+    },
+    "algorithm": {
+      "name": "内置图算法",
+      "guide": "快速查看局部结果请从交互式探索开始；全图计算使用异步批量分析，结果会进入异步任务",
+      "traverser_docs": "交互式算法参数文档",
+      "computer_docs": "批量图计算使用指南",
+      "api_docs": "查看此算法的官方 API 文档",
+      "api_source": "查看官方实现/API 源码",
+      "reset_parameters": "重置参数",
+      "parameter_example": "例如：{{value}}",
+      "empty_graph_title": "请先准备数据再运行算法",
+      "empty_graph_description": "当前图没有顶点或边，算法无法产生有意义的结果",
+      "create_schema": "创建 Schema",
+      "prepare_data": "准备数据",
+      "group": {
+        "neighbors": "探索邻居",
+        "paths": "查找路径与连接",
+        "similarity": "比较与排名",
+        "importance": "衡量重要性",
+        "communities": "发现社区",
+        "structure": "分析图结构"
+      },
+      "placeholder": "算法查询",
+      "run": "运行",
+      "run_shortcut": "运行（⌘/Ctrl + Enter）",
+      "computer_environment_title": "需要 HugeGraph Computer 计算环境",
+      "computer_environment_description": "这些全图算法通过 HugeGraph Computer 异步执行。提交任务前需先配置计算环境；部署要求 Kubernetes 时还需完成对应集群配置",
+      "computer_unavailable_title": "HugeGraph Computer 暂不可用",
+      "computer_unavailable_description": "当前图无法连接 HugeGraph Computer。请完成 Computer 与 Kubernetes 环境配置后再运行批量算法",
+      "task_submit_success": "{{name}} 算法任务提交成功",
+      "common": {
+        "instance_num": "实例数",
+        "input_limit_edges_per_vertex": "最大出边限制",
+        "max_iter_step": "最大迭代次数",
+        "worker_num": "worker计算线程数",
+        "sample_rate": "边的采样率，由于此算法是指数型增长的算法，算力要求非常高，需要根据业务需求设置合理的采样率，得到一个近似结果",
+        "weight_property": "权重属性名",
+        "property_filter": "点边属性过滤条件",
+        "min_ring_length": "输出环路的最小长度",
+        "max_ring_length": "输出环路的最大长度",
+        "max_step": "最大迭代步数",
+        "request_memory": "计算节点最小内存需求",
+        "JVM_memory": "jvm环境内存大小，默认为32g",
+        "source": "起始点ID",
+        "query_tooltip": "仅当选择的图数据加载完成后，才可以使用OLAP算法"
+      },
+      "form": {
+        "vertices_required": "未指定 ids 或 label 和 properties 的联合查询",
+        "vertices_ids_tooltip": "通过顶点 id 列表提供起始或终止顶点，如果没有指定 ids，则使用 label 和 properties 的联合条件查询起始或终止顶点",
+        "vertices_ids_placeholder": "例如：[\"1:marko\", \"2:lop\"]",
+        "vertices_label_placeholder": "例如：person",
+        "vertices_properties_placeholder": "例如：{\"city\": \"Beijing\"}",
+        "vertices_label_tooltip": "顶点的类型，ids 参数为空时 label 和 properties 参数才会生效",
+        "vertices_properties_tooltip": "属性 Map，key 为属性名，value 为属性值，类型由 schema 定义决定。properties 中的属性值可以是列表，表示只要 key 对应的 value 在列表中就可以",
+        "direction_options": {
+          "out": "出边",
+          "in": "入边",
+          "both": "双边"
+        },
+        "edge_steps": {
+          "label": "边类型",
+          "properties": "通过属性的值过滤边"
+        },
+        "vertex_steps": {
+          "label": "点类型",
+          "properties": "通过属性的值过滤点"
+        },
+        "step": {
+          "steps": "从起始顶点出发的 Step 集合",
+          "direction": "起始顶点向外发散的方向",
+          "labels": "边的类型列表",
+          "edge_properties": "属性 Map，通过属性的值过滤边，key 为属性名，value 为属性值，类型由 schema 定义决定。properties 中的属性值可以是列表，表示只要 key 对应的 value 在列表中就可以",
+          "max_depth": "步数",
+          "max_times": "当前 step 可以重复的次数，当为 N 时，表示从起始顶点可以经过当前 step 1-N 次",
+          "max_degree": "查询过程中，单个顶点遍历的最大邻接边数目",
+          "max_degree_compatible": "查询过程中，单个顶点遍历的最大邻接边数目。0.12 版之前 step 内仅支持 degree 作为参数名，0.12 开始统一使用 max_degree，并向下兼容 degree 写法",
+          "skip_degree": "用于设置查询过程中舍弃超级顶点的最小边数，即当某个顶点的邻接边数目大于 skip_degree 时，完全舍弃该顶点。选填项，开启时需满足 skip_degree >= max_degree，默认为 0 表示不跳过任何点。开启后会有额外遍历开销，请确认理解后再开启",
+          "edge_steps": "边 Step 集合",
+          "vertex_steps": "点 Step 集合"
+        }
+      },
+      "validation": {
+        "integer": "请输入整数",
+        "range_or_minus_one": "请输入 -1 或大于 0 的整数",
+        "max_depth_range": "请输入 (0, 5000] 范围的整数",
+        "max_limit_range": "请输入 (0, 800000) 范围的整数",
+        "non_negative_integer": "请输入大于等于 0 的整数",
+        "positive_integer": "请输入大于 0 的整数",
+        "skip_degree_range": "请输入 [0, 10000000] 的整数",
+        "group_property_range": "请输入大于 2 的整数",
+        "alpha_range": "请输入 (0, 1] 的数",
+        "top_range": "请输入 (0, 1000) 范围的数",
+        "open_unit_range": "请输入 (0, 1) 范围的数",
+        "depth_2_50": "请输入 [2, 50] 的整数",
+        "properties_format": "请按照 key=value 的格式换行输入",
+        "string_value_quote": "字符串 value 请用单引号 '' 包围",
+        "open_unit_value": "请输入 (0, 1) 范围的值",
+        "closed_unit_value": "请输入 [0, 1] 范围的值",
+        "integer_1_2000": "请输入 1 到 2000 范围的整数",
+        "value_1_100000": "请输入 1 到 100000 范围的值",
+        "integer_0_100000": "请输入 [0, 100000] 范围的整数",
+        "integer_1_10000": "请输入 1 到 10000 之间的整数值"
+      },
+      "result": {
+        "similarity_value": "相似度的值",
+        "rank_score": "排名得分:",
+        "category": "分类{{index}}",
+        "no_neighbor_at_degree": "本场景下没有第{{index}}度邻居",
+        "no_graph_result": "当前算法没有可显示的图结果"
+      },
+      "mode": {
+        "OLTP": "交互式探索",
+        "OLAP": "集群批量计算"
+      },
+      "capacity_item": {
+        "tooltip": "遍历过程中最大的访问的顶点数目"
+      },
+      "direction_item": {
+        "tooltip": "顶点向外发散的方向"
+      },
+      "label_item": {
+        "tooltip": "边的类型（默认代表所有edge label）"
+      },
+      "max_degree_item": {
+        "tooltip": "查询过程中，单个顶点遍历的最大邻接边数目"
+      },
+      "max_depth_item": {
+        "tooltip": "步数"
+      },
+      "nearest_item": {
+        "tooltip": "nearest为true时，代表起始顶点到达结果顶点的最短路径长度为depth，不存在更短的路径；near\n            est为false时，代表起始顶点到结果顶点有一条长度为depth的路径（未必最短且可以有环）",
+        "placeholder": "最短路径长度"
+      },
+      "olap": {
+        "betweenness_centrality": {
+          "desc": "中介中心性算法（Betweenness Centrality）判断一个节点具有\"桥梁\"节点的值, 值越大说明它作为图中两点间必经路径的可能性越大, 典型的例子包括社交网络中的共同关注的人",
+          "sample_rate": "边的采样率",
+          "sample_rate_long": "边的采样率，由于此算法是指数型增长的算法，算力要求非常高，需要根据业务需求设置合理的采样率，得到一个近似结果",
+          "use_endpoint": "是否计算最后一个点"
+        },
+        "closeness_centrality": {
+          "desc": "计算一个节点到所有其他可达节点的最短距离的倒数，进行累积后归一化的值。用于计算图中每个节点的度中心性值，支持无向图和有向图",
+          "weight_property": "权重属性名",
+          "sample_rate": "边的采样率",
+          "wf_improved": "是否使用 Wasserman and Faust 紧密中心性公式"
+        },
+        "cluster_coefficient": {
+          "desc": "聚集系数，计算每个点局部的聚集系数, 暂时未提供全局聚集系数",
+          "minimum_edges_use_superedge_cache": "利用内存减少消息量，如果内存不够，可以从100改成1000，但聚集系数可能计算不完"
+        },
+        "degree_centrality": {
+          "desc": "用于计算图中每个节点的度中心性值，支持无向图和有向图",
+          "direction": "方向，in/out/both 入边/出边/双边"
+        },
+        "filtered_rings_detection": {
+          "desc": "带过滤条件的环路检测算法（Filtered Rings Detection）用于检测图中的环路，\n        环路的路径由环路中最小id的顶点来记录。可通过指定点、边属性过滤规则让算法选择性的做路径传播"
+        },
+        "filter_subgraph_matching": {
+          "desc": "带属性过滤的子图匹配算法。用户可以传入一个带属性过滤的查询图结构，算法会在图中匹配所有与该查询图同构的子图",
+          "query_graph_config": "查询图配置，json数组字符串"
+        },
+        "k_core": {
+          "desc": "K-Core算法，标记所有度数为K的顶点",
+          "k": "K-Core算法的k值，非必需，有默认值",
+          "degree_k": "最小度数阈值"
+        },
+        "label_propagation_algorithm": {
+          "desc": "标签传递算法，是一种图聚类算法，常用在社交网络中"
+        },
+        "links": {
+          "desc": "链路追踪算法，通过指定的一批开始顶点，按照指定的传播规则进行传播，到指定的结束条件后停止并记录下路径",
+          "analyze_config": "链路传播条件配置"
+        },
+        "louvain": {
+          "desc": "Louvain 算法是基于模块度的社区发现算法。由于Louvain算法的特殊性，只用一个worker instance运行"
+        },
+        "computer_item": {
+          "computer_cpu": "master最大CPU",
+          "worker_cpu": "worker最大CPU",
+          "master_request_memory": "master最小内存，不满足最小内存则分配不成功",
+          "worker_request_memory": "worker最小内存，不满足最小内存则分配不成功",
+          "master_memory": "master最大内存，超过最大内存则会被k8s中止",
+          "worker_memory": "worker最大内存，超过最大内存则会被k8s中止"
+        },
+        "item": {
+          "PAGE_RANK": "PageRank",
+          "WEAKLY_CONNECTED_COMPONENT": "Weakly Connected Component",
+          "DEGREE_CENTRALIT": "Degree Centrality",
+          "CLOSENESS_CENTRALITY": "Closeness Centrality",
+          "TRIANGLE_COUNT": "Triangle Count",
+          "K_NEIGHBOR": "K-neighbor（GET，基础版）",
+          "K_OUT": "K-out API（GET，基础版）",
+          "SAME_NEIGHBORS": "Same Neighbors",
+          "RINGS": "Rings",
+          "SHORTEST_PATH": "Shortest Path",
+          "ALLPATHS": "查找所有路径（POST，高级版）",
+          "JACCARD_SIMILARITY": "Jaccard Similarity（GET）",
+          "CROSSPOINTS": "Crosspoints",
+          "RINGS_DETECTION": "Rings Detection",
+          "FILTERED_RINGS_DETECTION": "Filtered Rings Detection",
+          "LINKS": "Links",
+          "CLUSTER_COEFFICIENT": "Cluster Coefficient",
+          "BETWEENNESS_CENTRALITY": "Betweenness Centrality",
+          "LABEL_PROPAGATION_ALGORITHM": "Label Propagation Algorithm",
+          "LOUVAIN": "Louvain",
+          "FILTER_SUBGRAPH_MATCHING": "Filter SubGraph Matching",
+          "K_CORE": "K-Core",
+          "PERSONAL_PAGE_RANK": "PersonalPageRank",
+          "KOUT_POST": "K-out API（POST，高级版）",
+          "KNEIGHBOR_POST": "K-neighbor API（POST，高级版）",
+          "JACCARD_SIMILARITY_POST": "Jaccard Similarity（POST）",
+          "RANK_API": "rank API",
+          "NEIGHBOR_RANK_API": "Neighbor Rank API",
+          "FINDSHORTESTPATH": "查找最短路径",
+          "FINDSHORTESTPATHWITHWEIGHT": "查找带权重的最短路径",
+          "SINGLESOURCESHORTESTPATH": "(从一个顶点出发)查找最短路径",
+          "MULTINODESSHORTESTPATH": "(指定顶点集)查找最短路径",
+          "CUSTOMIZEDPATHS": "自定义路径查询",
+          "TEMPLATEPATHS": "模版路径查询",
+          "CUSTOMIZED_CROSSPOINTS": "Customized Crosspoints",
+          "RAYS": "Rays",
+          "PATHS": "查找所有路径（GET，基础版）",
+          "FUSIFORM_SIMILARITY": "Fusiform Similarity",
+          "ADAMIC_ADAR": "Adamic Adar",
+          "RESOURCE_ALLOCATION": "Resource Allocation",
+          "SAME_NEIGHBORS_BATCH": "Same Neighbors Batch",
+          "EGONET": "Egonet",
+          "SSSP": "SSSP（单元最短路径）"
+        },
+        "legacy_item_alias": {
+          "KOUT_POST": "K-out API(POST, 高级版)"
+        },
+        "page_rank": {
+          "desc": "PageRank算法又称网页排名算法，是一种由搜索引擎根据网页（节点）之间相互的超链接进行计算的技术，用来体现网页（节点）的相关性和重要性",
+          "alpha": "权重系数(又称阻尼系数)",
+          "l1": "收敛精度,为每次迭代各个点相较于上次迭代变化的绝对值累加和上限，当小于这个值时认为计算收敛，算法停止",
+          "damping": "阻尼系数，传导到下个点的百分比",
+          "diff": "收敛精度,为每次迭代各个点相较于上次迭代变化的绝对值累加和上限，当小于这个值时认为计算收敛，算法停止"
+        },
+        "personal_page_bank": {
+          "desc": "PersonalPageRank 算法又称个性化推荐算法，是一种由搜索引擎根据网页（节点）之间相互的超链接进行计算的技术，用来体现网页（节点）的相关性和重要性",
+          "source": "起始顶点",
+          "alpha": "权重系数(又称阻尼系数)",
+          "l1": "收敛精度",
+          "use_id_fixlength": "true时，系统采用自增id运算",
+          "use_id_fixlength_query": "是否采用自增id运算"
+        },
+        "ring_detection": {
+          "desc": "环路检测算法（Rings Detection），用于检测图中的环路，环路的路径由环路中最小id的顶点来记录"
+        },
+        "SSSPVermeer": {
+          "desc": "单元最短路径算法，求一个点到其他所有点的最短距离"
+        },
+        "triangle_count": {
+          "desc": "三角形计数算法，用于计算通过每个顶点的三角形个数",
+          "limit_edges_in_one_vertex": "最大出边限制",
+          "minimum_edges_use_superedge_cache": "利用内存减少消息量，如果内存不够，可以从100改成1000，但三角计数可能计算不完"
+        },
+        "weakly_connected_component": {
+          "desc": "弱连通分量，计算无向图中所有联通的子图，输出各顶点所属的弱联通子图id"
+        }
+      },
+      "oltp": {
+        "common": {
+          "source_vertex_id": "起始顶点 id",
+          "target_vertex_id": "目的顶点 id",
+          "vertex_id": "顶点 id",
+          "other_vertex_id": "另一个顶点 id",
+          "direction_source_target": "起始顶点到目的顶点的方向，目的点到起始点是反方向，BOTH 时不考虑方向",
+          "limit_crosspoints": "返回的交点的最大数目",
+          "max_steps": "最大步数",
+          "weight_property": "边的权重属性，属性类型必须为数字类型；如果不填，或边没有该属性，则权重为 1.0",
+          "alpha": "每轮迭代时从某个点往外走的概率，与 PageRank 算法中的 alpha 类似",
+          "iterations": "迭代次数",
+          "limit_vertices": "返回顶点的最大数目",
+          "source_target_path": "表示从起始顶点到终止顶点走过的路径"
+        },
+        "template_paths": {
+          "desc": "根据一批起始顶点、边规则（包括方向、边的类型和属性过滤）和最大深度等条件查找符合条件的所有路径",
+          "sources": "起始顶点",
+          "targets": "终止顶点",
+          "with_ring": "true 表示包含环路；false 表示不包含环路",
+          "capacity": "遍历过程中最大的访问的顶点数目",
+          "limit": "返回的路径的最大条数"
+        },
+        "kout_get": {
+          "desc": "根据起始顶点、方向、边的类型（可选）和深度 depth，查找从起始顶点出发恰好 depth 步可达的顶点"
+        },
+        "kneighbor_get": {
+          "desc": "根据起始顶点、方向、边的类型（可选）和深度 depth，查找包括起始顶点在内、depth 步之内可达的所有顶点"
+        },
+        "kout_post": {
+          "desc": "根据起始顶点、方向、边的类型（可选）和深度 depth，查找从起始顶点出发恰好 depth 步可达的顶点",
+          "source": "起始顶点 id",
+          "capacity": "遍历过程中最大的访问的顶点数目",
+          "limit": "返回的顶点的最大数目",
+          "algorithm": "遍历方式。通常 deep_first（深度优先搜索）方式会有更好的遍历性能。但当 nearest 为 true 时，可能会包含非最近邻节点，尤其在数据量较大时",
+          "algorithm_placeholder": "选择遍历方式",
+          "breadth_first": "广度优先",
+          "deep_first": "深度优先"
+        },
+        "same_neighbors": {
+          "desc": "查询两个点的共同邻居",
+          "limit": "返回的共同邻居的最大数目"
+        },
+        "rings": {
+          "desc": "根据起始顶点、方向、边的类型（可选）和最大深度等条件查找可达的环路",
+          "source_in_ring": "环路是否包含起点"
+        },
+        "shortest_path": {
+          "desc": "根据起始顶点、目的顶点、方向、边的类型（可选）和最大深度，查找一条最短路径"
+        },
+        "jaccard_similarity_get": {
+          "desc": "计算两个顶点的 Jaccard similarity，即两个顶点邻居的交集比上两个顶点邻居的并集"
+        },
+        "crosspoints": {
+          "desc": "根据起始顶点、目的顶点、方向、边的类型（可选）和最大深度等条件查找相交点"
+        },
+        "find_shortest_path": {
+          "desc": "根据起始顶点、目的顶点、方向、边的类型（可选）和最大深度，查找两点间所有的最短路径"
+        },
+        "find_shortest_path_with_weight": {
+          "desc": "根据起始顶点、目的顶点、方向、边的类型（可选）和最大深度，查找一条带权最短路径"
+        },
+        "paths": {
+          "desc": "根据起始顶点、目的顶点、方向、边的类型（可选）和最大深度等条件查找所有路径",
+          "limit": "查询到的目标顶点个数，也是返回的最短路径的条数"
+        },
+        "rays": {
+          "desc": "根据起始顶点、方向、边的类型（可选）和最大深度等条件查找发散到边界顶点的路径"
+        },
+        "rank_api": {
+          "desc": "根据某个点现有的出边，推荐具有相近或相同关系的其他点",
+          "label": "源点出发的某类边 label，须连接两类不同顶点",
+          "max_diff": "提前收敛的精度差",
+          "sorted": "返回的结果是否根据 rank 排序",
+          "with_label": "筛选结果中保留哪些结果，可从 SAME_LABEL、OTHER_LABEL、BOTH_LABEL 中选择",
+          "same_label": "仅保留与源顶点相同类别的顶点",
+          "other_label": "仅保留与源顶点不同类别（二分图的另一端）的顶点",
+          "both_label": "同时保留与源顶点相同和相反类别的顶点"
+        },
+        "neighbor_rank_api": {
+          "desc": "在一般图结构中，找出每一层与给定起点相关性最高的前 N 个顶点及其相关度",
+          "top": "在结果中每一层只保留权重最高的前 N 个结果"
+        },
+        "jaccard_similarity_post": {
+          "desc": "计算与指定顶点的 Jaccard similarity 最大的 N 个点",
+          "top": "返回一个起点的 Jaccard similarity 中最大的 top 个"
+        },
+        "kneighbor_post": {
+          "desc": "根据起始顶点、步骤（包括方向、边类型和过滤属性）和 depth，查找从起始顶点出发 depth 步内可达的所有顶点"
+        },
+        "single_source_shortest_path": {
+          "desc": "从一个顶点出发，查找该点到图中其他顶点的最短路径（可选是否带权重）"
+        },
+        "multi_nodes_shortest_path": {
+          "desc": "查找指定顶点集两两之间的最短路径",
+          "vertices": "起始顶点"
+        },
+        "all_paths": {
+          "desc": "根据起始顶点、目的顶点、步骤（step）和最大深度等条件查找所有路径"
+        },
+        "fusiform_similarity": {
+          "desc": "按照条件查询一批顶点对应的“梭形相似点”",
+          "min_neighbors": "最少邻居数目。邻居数目少于这个阈值时，认为起点不具备“梭形相似点”",
+          "alpha": "相似度，代表起点与梭形相似点的共同邻居数目占起点全部邻居数目的比例",
+          "min_similars": "“梭形相似点”的最少个数。只有当起点的“梭形相似点”数目大于或等于该值时，才会返回起点及其“梭形相似点”",
+          "top": "返回一个起点的“梭形相似点”中相似度最高的 top 个，0 表示全部",
+          "group_property": "与 min_groups 一起使用。当起点跟其所有“梭形相似点”的某个属性值有至少 min_groups 个不同值时，才会返回该起点及其“梭形相似点”；不填代表不根据属性过滤",
+          "min_groups": "与 group_property 一起使用，只有设置 group_property 时才有意义",
+          "limit": "返回的结果数目上限。一个起点及其“梭形相似点”算一个结果",
+          "with_intermediary": "是否返回起点及其“梭形相似点”共同关联的中间点"
+        },
+        "resource_allocation": {
+          "desc": "主要用于社交网络中判断两点紧密度的算法，用来求两点间共同邻居密集度的一个系数"
+        },
+        "same_neighbors_batch": {
+          "desc": "批量查询两个点的共同邻居",
+          "vertex_list": "点 ID 对列表，如：[[\"0000000001\",\"0000376440\"],[\"0000000001\",\"0001822679\"]]"
+        },
+        "egonet": {
+          "desc": "查找一批顶点的 K 层邻居，并支持针对不同点 / 边 Label 的过滤条件，结果中会包含起始顶点",
+          "sources": "起始顶点 id 集合，支持传入多个不同顶点"
+        },
+        "customized_paths": {
+          "desc": "根据一批起始顶点、边规则（包括方向、边的类型和属性过滤）和最大深度等条件查找符合条件的所有路径",
+          "sort_by": "根据路径的权重排序：NONE 表示不排序，INCR 表示按照路径权重升序排序，DECR 表示按照路径权重降序排序",
+          "sort_none": "不排序",
+          "sort_incr": "按照路径权重升序",
+          "sort_decr": "按照路径权重降序",
+          "weight_by": "根据指定的属性计算边的权重，sort_by 不为 NONE 时有效，与 default_weight 互斥",
+          "default_weight": "当边没有属性作为权重计算值时采取的默认权重，sort_by 不为 NONE 时有效，与 weight_by 互斥",
+          "sample": "当需要对某个 step 的符合条件的边进行采样时设置，-1 表示不采样"
+        },
+        "customized_crosspoints": {
+          "desc": "根据一批起始顶点、多种边规则（包括方向、边的类型和属性过滤）和最大深度等条件查找符合条件的所有路径终点的交集",
+          "path_patterns": "表示从起始顶点走过的路径规则，是一组规则的列表",
+          "limit": "返回的路径的最大数目"
+        },
+        "adamic_adar": {
+          "desc": "主要用于社交网络中判断两点紧密度的算法, 用来求两点间共同邻居密集度的一个系数",
+          "vertex": "起始顶点",
+          "other": "终点顶点",
+          "direction": "起始顶点到目的顶点的方向，目的地到起始点是反方向，BOTH时不考虑方向",
+          "label": "默认代表所有edge label",
+          "max_degree": "查询过程中，单个顶点遍历的最大邻接边数目",
+          "select_direction": "顶点向外发散的方向"
+        }
+      }
+    },
+    "async_task": {
+      "name": "异步任务",
+      "help_title": "异步任务有什么用？",
+      "help_description": "图查询或内置图算法以异步方式运行时，可在这里查看进度和结果，也可终止或删除任务。列表每 5 秒自动刷新",
+      "search_placeholder": "请输入任务ID或名称",
+      "get_failed": "获取异步任务失败",
+      "retry_list": "重试任务列表",
+      "empty_title": "还没有异步任务",
+      "empty_description": "图查询或图算法异步执行后，任务会显示在这里",
+      "no_matches_title": "没有匹配的异步任务",
+      "no_matches_description": "请调整搜索词或状态筛选后重试",
+      "clear_filters": "清除筛选",
+      "start_query": "GQL 查询",
+      "open_algorithms": "内置图算法",
+      "result_load_failed": "任务结果加载失败。",
+      "retry_result": "重试任务结果",
+      "result_loading": "正在加载任务结果",
+      "no_result": "该任务暂无可显示的结果。",
+      "result_title": "任务结果",
+      "result_context": "{{graphspace}} / {{graph}} / 任务 {{taskId}}",
+      "result_back": "返回异步任务",
+      "result_open_full": "查看完整结果",
+      "delete_failed": "删除失败",
+      "abort_failed": "终止失败",
+      "delete_confirm_title": "删除任务",
+      "delete_confirm_content": "确认删除该任务？删除后无法恢复，请谨慎操作",
+      "batch_delete_title": "批量删除",
+      "batch_delete_content": "确认删除以下任务？删除后无法恢复，请谨慎操作",
+      "selected_count": "已选{{count}}项",
+      "clear_selection": "清除选择",
+      "batch_delete": "批量删除",
+      "column": {
+        "task_id": "任务ID",
+        "task_name": "任务名称",
+        "task_type": "任务类型",
+        "create_time": "创建时间",
+        "duration": "耗时",
+        "status": "状态",
+        "action": "操作"
+      },
+      "type": {
+        "all": "全部",
+        "gremlin": "Gremlin任务",
+        "algorithm": "算法任务",
+        "remove_schema": "删除元数据",
+        "create_index": "创建索引",
+        "rebuild_index": "重建索引",
+        "cypher": "Cypher任务",
+        "vermeer_load": "vermeer图加载任务",
+        "vermeer_compute": "vermeer图计算任务"
+      },
+      "status": {
+        "all": "全部",
+        "unknown": "未知",
+        "new": "初始化",
+        "scheduling": "调度中",
+        "scheduled": "已调度",
+        "queued": "排队中",
+        "running": "运行中",
+        "restoring": "恢复中",
+        "success": "成功",
+        "failed": "失败",
+        "cancelled": "已取消",
+        "cancelling": "取消中",
+        "hanging": "挂起",
+        "pending": "挂起",
+        "deleting": "删除中"
+      },
+      "action": {
+        "abort": "终止",
+        "aborting": "终止中",
+        "delete": "删除",
+        "check_result": "查看结果",
+        "check_reason": "查看原因",
+        "collapse_result": "收起结果"
+      }
+    },
+    "topbar": {
+      "current_graph_space": "当前图空间:",
+      "default_graph_space": "DEFAULT（默认）",
+      "current_graph": "当前图:",
+      "select": "请选择",
+      "loaded": "已加载",
+      "loading": "加载中",
+      "load_failed": "加载失败",
+      "not_loaded": "未加载",
+      "recent_load_time": "最近加载时间:",
+      "load_to_vermeer": "加载到Vermeer",
+      "reload_to_vermeer": "重加载到Vermeer",
+      "metadata_config": "元数据配置",
+      "metadata_tooltip": "点击可跳转到对应图的元数据配置的页面",
+      "olap_result": "是否查询OLAP结果:",
+      "get_vermeer_failed": "获取vermeer状态失败",
+      "load_vermeer_failed": "加载Vermeer任务失败",
+      "graph_spaces_failed": "无法加载图空间",
+      "graphs_failed": "无法加载图",
+      "olap_failed": "无法读取或更新 OLAP 模式",
+      "retry_graph_spaces": "重试图空间",
+      "retry_graphs": "重试图",
+      "retry_olap": "重试 OLAP 模式",
+      "retry_vermeer": "重试 Vermeer 状态"
+    }
+  }
+}

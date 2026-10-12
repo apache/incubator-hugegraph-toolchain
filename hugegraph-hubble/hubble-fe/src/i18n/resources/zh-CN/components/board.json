@@ -1,0 +1,17 @@
+{
+  "Topbar": {
+    "super_admin": "超级管理员",
+    "user_menu": "打开 {{name}} 的账号菜单",
+    "exit":{
+      "name": "退出登录",
+      "confirm":"确定退出吗？",
+      "success":"退出成功"
+    }
+  },
+  "selector": {
+    "placeholder": "请选择"
+  },
+  "navigation": {
+    "name": "导航"
+  }
+}

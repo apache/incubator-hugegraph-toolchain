@@ -18,10 +18,9 @@
 
 package org.apache.hugegraph.handler;
 
+import org.apache.hugegraph.entity.load.LoadTask;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-
-import org.apache.hugegraph.entity.load.LoadTask;
 
 import lombok.extern.log4j.Log4j2;
 
@@ -32,8 +31,13 @@ public class LoadTaskExecutor {
     @Async
     public void execute(LoadTask task, Runnable callback) {
         log.info("Executing task: {}", task.getId());
-        task.run();
-        log.info("Executed task: {}, update status to db", task.getId());
-        callback.run();
+        try {
+            task.run();
+        } catch (Throwable t) {
+            log.warn("Executing task: {} error", task.getId(), t);
+        } finally {
+            log.info("Executed task: {}, update status to db", task.getId());
+            callback.run();
+        }
     }
 }

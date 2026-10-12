@@ -6,4 +6,4 @@ Feature: check hugegraph-hubble server health status
     Then  code:<code> response:<response>
     Examples:
       | scene                      | url            | code | response        |
-      | check server health status | localhost:8088 | 200  | {"status":"UP"} |
+      | check server health status | localhost:8088 | 200  | {"status":200,"name":"hugegraph-hubble"} |

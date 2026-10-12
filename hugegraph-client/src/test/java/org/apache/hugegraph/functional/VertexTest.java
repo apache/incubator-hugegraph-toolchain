@@ -50,7 +50,7 @@ public class VertexTest extends BaseFuncTest {
     @Override
     @After
     public void teardown() throws Exception {
-        clearData();
+        BaseFuncTest.clearData();
     }
 
     @Test

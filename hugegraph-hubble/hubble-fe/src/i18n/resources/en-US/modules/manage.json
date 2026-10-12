@@ -1,0 +1,8 @@
+{
+  "manage": {
+    "name": "Data Management",
+    "graphspace": "Graph Management",
+    "source": "Data Sources",
+    "task": "Data Import"
+  }
+}

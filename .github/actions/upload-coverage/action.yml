@@ -1,0 +1,23 @@
+name: 'Upload Coverage to Codecov'
+description: 'Upload test coverage report to Codecov'
+
+inputs:
+  token:
+    description: 'Legacy compatibility input; OIDC authenticates uploads instead'
+    required: false
+  file:
+    description: 'Path to the coverage report file'
+    required: false
+    default: 'target/jacoco.xml'
+
+runs:
+  using: composite
+  steps:
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v7
+      with:
+        use_oidc: true
+        disable_search: true
+        fail_ci_if_error: false
+        slug: ${{ github.repository }}
+        files: ${{ inputs.file }}

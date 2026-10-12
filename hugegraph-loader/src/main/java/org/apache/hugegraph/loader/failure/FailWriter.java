@@ -59,7 +59,7 @@ public final class FailWriter {
         }
     }
 
-    public void write(ReadException e) {
+    public synchronized void write(ReadException e) {
         try {
             this.writeLine("#### READ ERROR: " + e.getMessage());
             this.writeLine(e.line());
@@ -69,7 +69,7 @@ public final class FailWriter {
         }
     }
 
-    public void write(ParseException e) {
+    public synchronized void write(ParseException e) {
         try {
             this.writeLine("#### PARSE ERROR: " + e.getMessage());
             this.writeLine(e.line());
@@ -79,7 +79,7 @@ public final class FailWriter {
         }
     }
 
-    public void write(InsertException e) {
+    public synchronized void write(InsertException e) {
         try {
             this.writeLine("#### INSERT ERROR: " + e.getMessage());
             this.writeLine(e.line());
@@ -99,7 +99,7 @@ public final class FailWriter {
             // No need to flush() manually, close() will do it automatically
             this.writer.close();
         } catch (IOException e) {
-            LOG.error("Failed to close writer for file '{}'", this.file);
+            throw new LoadException("Failed to close writer for file '%s'", e, this.file);
         }
     }
 

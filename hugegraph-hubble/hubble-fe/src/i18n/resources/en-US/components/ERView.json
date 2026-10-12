@@ -1,0 +1,30 @@
+{
+  "ERView": {
+    "edge": {
+      "name": "Edge",
+      "type": "Edge Type",
+      "start": "Source ID",
+      "end": "Target ID",
+      "create": "Add Edge",
+      "e1name": "Edge 1",
+      "e2name": "Edge 2",
+      "out": "Outgoing",
+      "in": "Incoming",
+      "both": "Both"
+    },
+    "vertex": {
+      "name": "Vertex",
+      "type": "Vertex Type",
+      "create": "Add Vertex",
+      "v1name": "Vertex 1",
+      "v2name": "Vertex 2"
+    },
+    "control": {
+      "zoom_in": "Zoom In",
+      "zoom_out": "Zoom Out",
+      "undo": "Undo",
+      "redo": "Redo",
+      "auto_map": "Auto Map"
+    }
+  }
+}

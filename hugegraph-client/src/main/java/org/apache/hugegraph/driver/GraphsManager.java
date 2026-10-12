@@ -17,24 +17,39 @@
 
 package org.apache.hugegraph.driver;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.hugegraph.api.graphs.GraphsAPI;
+import org.apache.hugegraph.rest.ClientException;
 import org.apache.hugegraph.structure.constant.GraphMode;
 import org.apache.hugegraph.structure.constant.GraphReadMode;
 import org.apache.hugegraph.client.RestClient;
 
 public class GraphsManager {
 
-    private GraphsAPI graphsAPI;
+    private final GraphsAPI graphsAPI;
 
-    public GraphsManager(RestClient client) {
-        this.graphsAPI = new GraphsAPI(client);
+    public GraphsManager(RestClient client, String graphSpace) {
+        this.graphsAPI = new GraphsAPI(client, graphSpace);
     }
 
-    public Map<String, String> createGraph(String name, String configText) {
-        return this.graphsAPI.create(name, null, configText);
+    public Map<String, String> createGraph(String name, String config) {
+        return this.graphsAPI.create(name, null, config);
+    }
+
+    public Map<String, String> createGraph(String name, File file) {
+        String config;
+        try {
+            config = FileUtils.readFileToString(file, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new ClientException("Failed to read config file: %s", file);
+        }
+        return this.graphsAPI.create(name, null, config);
     }
 
     public Map<String, String> cloneGraph(String name, String cloneGraphName) {
@@ -54,12 +69,51 @@ public class GraphsManager {
         return this.graphsAPI.list();
     }
 
+    public List<Map<String, Object>> listProfile() {
+        return this.graphsAPI.listProfile(null);
+    }
+
+    public List<Map<String, Object>> listProfile(String prefix) {
+        return this.graphsAPI.listProfile(prefix);
+    }
+
+    public Map<String, Object> setDefault(String name) {
+        return this.graphsAPI.setDefault(name);
+    }
+
+    public Map<String, Object> unSetDefault(String name) {
+        return this.graphsAPI.unSetDefault(name);
+    }
+
+    public Map<String, Object> getDefault() {
+        return this.graphsAPI.getDefault();
+    }
+
+    // TODO(@Thespica): see org.apache.hugegraph.api.graphs.GraphsAPI.clear
     public void clearGraph(String graph, String message) {
         this.graphsAPI.clear(graph, message);
     }
 
+    public void update(String graph, String nickname) {
+        this.graphsAPI.update(graph, nickname);
+    }
+
+    // TODO(@Thespica): see org.apache.hugegraph.api.graphs.GraphsAPI.drop
     public void dropGraph(String graph, String message) {
         this.graphsAPI.drop(graph, message);
+    }
+
+    /**
+     * @deprecated Current Server per-graph management accepts only update.
+     *             Use {@link #reload()} for a whole-server graph reload.
+     */
+    @Deprecated
+    public void reload(String graph) {
+        this.graphsAPI.reload(graph);
+    }
+
+    public void reload() {
+        this.graphsAPI.reload();
     }
 
     public void mode(String graph, GraphMode mode) {
@@ -76,5 +130,9 @@ public class GraphsManager {
 
     public GraphReadMode readMode(String graph) {
         return this.graphsAPI.readMode(graph);
+    }
+
+    public String clone(String graph, Map<String, Object> body) {
+        return this.graphsAPI.clone(graph, body);
     }
 }

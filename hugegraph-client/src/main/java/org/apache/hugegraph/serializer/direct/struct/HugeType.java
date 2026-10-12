@@ -71,7 +71,7 @@ public enum HugeType {
     MAX_TYPE(255, "~");
 
     private byte type = 0;
-    private String name;
+    private final String name;
 
     private static final Map<String, HugeType> ALL_NAME;
 

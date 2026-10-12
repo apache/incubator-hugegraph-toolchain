@@ -1,0 +1,87 @@
+/*!
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with this
+ * work for additional information regarding copyright ownership. The ASF
+ * licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
+.statusBar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 48px;
+    margin-bottom: 16px;
+    padding: 8px 16px;
+    border: 1px solid #e5eaf0;
+    border-radius: 6px;
+    background: #fff;
+}
+
+.updatedAt {
+    color: #5b6573;
+}
+
+.statusTag-success:global(.ant-tag) {
+    color: #237804;
+}
+
+.statusTag-error:global(.ant-tag) {
+    color: #874d00;
+}
+
+.statusTag-loading:global(.ant-tag) {
+    color: #003eb3;
+}
+
+.inlineAlert {
+    margin-bottom: 16px;
+}
+
+.metricCard {
+    height: 100%;
+
+    :global(.ant-statistic) {
+        margin-bottom: 16px;
+    }
+
+    :global(.ant-statistic-content) {
+        color: #152536;
+        font-weight: 600;
+    }
+}
+
+.emptyJourney {
+    padding: 56px 24px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    background: #f8fafc;
+
+    strong {
+        display: block;
+        color: #172033;
+        font-size: 16px;
+    }
+
+    p {
+        margin: 8px 0 0;
+        color: #536179;
+    }
+}
+
+@media (max-width: 1280px) {
+    .statusBar {
+        align-items: flex-start;
+        gap: 12px;
+    }
+}

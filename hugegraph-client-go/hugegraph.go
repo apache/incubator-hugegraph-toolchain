@@ -20,18 +20,18 @@ package hugegraph
 import (
     "errors"
     "fmt"
-    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api/v1"
-    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api/v1/edgelabel"
-    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api/v1/gremlin"
-    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api/v1/propertykey"
-    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api/v1/vertex"
-    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api/v1/vertexlabel"
+    "github.com/apache/hugegraph-toolchain/hugegraph-client-go/api/v1"
+    "github.com/apache/hugegraph-toolchain/hugegraph-client-go/api/v1/edgelabel"
+    "github.com/apache/hugegraph-toolchain/hugegraph-client-go/api/v1/gremlin"
+    "github.com/apache/hugegraph-toolchain/hugegraph-client-go/api/v1/propertykey"
+    "github.com/apache/hugegraph-toolchain/hugegraph-client-go/api/v1/vertex"
+    "github.com/apache/hugegraph-toolchain/hugegraph-client-go/api/v1/vertexlabel"
     "net"
     "net/http"
     "net/url"
     "os"
 
-    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/hgtransport"
+    "github.com/apache/hugegraph-toolchain/hugegraph-client-go/hgtransport"
 )
 
 // Config 配置类型
@@ -92,11 +92,12 @@ func NewCommonClient(cfg Config) (*CommonClient, error) {
             Host:   fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
             Scheme: "http",
         },
-        Username:  cfg.Username,
-        Password:  cfg.Password,
-        Graph:     cfg.Graph,
-        Transport: cfg.Transport,
-        Logger:    cfg.Logger,
+        Username:   cfg.Username,
+        Password:   cfg.Password,
+        GraphSpace: cfg.GraphSpace,
+        Graph:      cfg.Graph,
+        Transport:  cfg.Transport,
+        Logger:     cfg.Logger,
     })
 
     return &CommonClient{

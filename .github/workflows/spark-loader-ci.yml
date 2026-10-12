@@ -1,0 +1,152 @@
+name: "spark-loader-ci"
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+      - 'release-*'
+    paths:
+      - hugegraph-loader/**
+      - hugegraph-client/**
+      - .github/actions/**
+      - .github/workflows/spark-loader-ci.yml
+      - pom.xml
+  pull_request:
+    paths:
+      - hugegraph-loader/**
+      - hugegraph-client/**
+      - .github/actions/**
+      - .github/workflows/spark-loader-ci.yml
+      - pom.xml
+
+permissions:
+  contents: read
+
+# Keep the newest PR run; preserve independent push, release and manual runs.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  spark-loader-api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        SERVER_BASELINE: [ 'candidate', 'release-1.7' ]
+    env:
+      MAVEN_OPTS: '-Xmx1g -XX:ActiveProcessorCount=2'
+      HUGEGRAPH_TEST_URL: http://127.0.0.1:8080
+      HUGEGRAPH_TEST_GRAPH: hugegraph
+
+    steps:
+      - name: Fetch Code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Setup Java environment
+        uses: ./.github/actions/setup-java-env
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Install locked same-source candidate SDK
+        id: candidate-sdk
+        uses: ./.github/actions/setup-candidate-sdk
+
+      - name: Install legacy server JVM
+        if: matrix.SERVER_BASELINE == 'release-1.7'
+        id: legacy-java
+        uses: actions/setup-java@v5
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          overwrite-settings: false
+
+      - name: Start official Server 1.7 with Java 11
+        if: matrix.SERVER_BASELINE == 'release-1.7'
+        env:
+          JAVA_HOME: ${{ steps.legacy-java.outputs.path }}
+        run: |
+          archive="$RUNNER_TEMP/apache-hugegraph-incubating-1.7.0.tar.gz"
+          curl --fail --location --retry 3 \
+            https://github.com/apache/hugegraph/releases/download/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz \
+            --output "$archive"
+          printf 'e9b95b5afac156f251a12134a03a27579cca9ed7cca7e42ad0529e639b1cde1e  %s\n' "$archive" | sha256sum --check
+          bash hugegraph-client/assembly/travis/start-hugegraph-servers.sh "$archive"
+
+      - name: Restore Loader Java 17
+        if: matrix.SERVER_BASELINE == 'release-1.7'
+        uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          overwrite-settings: false
+
+      - name: Start candidate Server with Java 17
+        if: matrix.SERVER_BASELINE == 'candidate'
+        env:
+          CANDIDATE_ARCHIVE: ${{ steps.candidate-sdk.outputs.archive }}
+        run: bash hugegraph-client/assembly/travis/start-hugegraph-servers.sh "$CANDIDATE_ARCHIVE"
+
+      - name: Build the ordinary Loader distribution
+        run: |
+          mvn install -pl hugegraph-client -am -DskipTests -Dmaven.javadoc.skip=true -ntp
+          mvn package -pl hugegraph-loader -DskipTests -Dmaven.javadoc.skip=true -ntp
+
+      - name: Prepare Spark runtime environment
+        timeout-minutes: 10
+        env:
+          SPARK_IMAGE: apache/spark:3.5.8-scala2.12-java17-ubuntu@sha256:9577096950d62dd59994f84cc3a0902fdae994a4bf238933f2fdca22053e5adb
+        run: |
+          docker pull --platform linux/amd64 "$SPARK_IMAGE"
+          container=$(docker create --platform linux/amd64 "$SPARK_IMAGE" /bin/true)
+          trap 'docker rm -f "$container" >/dev/null' EXIT
+          spark_home="$RUNNER_TEMP/spark-3.5.8"
+          docker cp "$container:/opt/spark" "$spark_home"
+          grep -q '^Spark 3\.5\.8 ' "$spark_home/RELEASE"
+          test -x "$spark_home/bin/spark-submit"
+          mkdir -p "$spark_home/conf" "$spark_home/work"
+          printf 'SPARK_HOME=%s\n' "$spark_home" >> "$GITHUB_ENV"
+
+      - name: Reuse existing Loader test authentication
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          import re
+          source = Path('hugegraph-loader/src/test/java/org/apache/hugegraph/loader/test/functional/LoadTest.java').read_text()
+          values = re.findall(r'configUser\("([^"\n]+)",\s*"([^"\n]+)"\)', source)
+          if len(values) != 1:
+              raise SystemExit('Expected one existing Loader authentication fixture')
+          with open(os.environ['GITHUB_ENV'], 'a') as output:
+              output.write('HUGEGRAPH_TEST_USERNAME=' + values[0][0] + '\n')
+              output.write('HUGEGRAPH_TEST_PASSWORD=' + values[0][1] + '\n')
+          PY
+
+      - name: Verify shaded launcher with independent executor
+        env:
+          SOURCE_COMMIT: ${{ github.sha }}
+          SERVER_COMMIT: ${{ steps.candidate-sdk.outputs.commit_id }}
+          SERVER_BASELINE: ${{ matrix.SERVER_BASELINE }}
+        run: |
+          distributions=(hugegraph-loader/apache-hugegraph-loader-*)
+          [[ ${#distributions[@]} -eq 1 && -d "${distributions[0]}" ]]
+          python3 hugegraph-loader/src/test/python/run_spark_artifact.py \
+            --loader-home "${distributions[0]}" --spark-home "$SPARK_HOME" \
+            --work-dir "$RUNNER_TEMP/spark-loader-work" \
+            --evidence-dir "$RUNNER_TEMP/spark-loader-evidence" \
+            --server-baseline "$SERVER_BASELINE"
+
+      - name: Upload sanitized Spark runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: spark-loader-${{ matrix.SERVER_BASELINE }}
+          path: ${{ runner.temp }}/spark-loader-evidence
+          if-no-files-found: ignore
+          retention-days: 14

@@ -17,12 +17,30 @@
 
 package org.apache.hugegraph.structure.constant;
 
+/**
+ * GraphReadMode defines the read modes for querying graph data.
+ * This determines which type of data (OLTP/OLAP) should be included in query results.
+ */
 public enum GraphReadMode {
 
+    /**
+     * ALL mode returns both OLTP and OLAP data.
+     * Use case: When you need complete data from both transactional and analytical storage
+     */
     ALL(1, "all"),
 
+    /**
+     * OLTP_ONLY mode returns only Online Transaction Processing data.
+     * OLTP data is optimized for real-time queries and low-latency transactions.
+     * Use case: Real-time queries, transactional operations
+     */
     OLTP_ONLY(2, "oltp_only"),
 
+    /**
+     * OLAP_ONLY mode returns only Online Analytical Processing data.
+     * OLAP data is optimized for complex analytical queries and large-scale computations.
+     * Use case: Big data analytics, graph algorithms, complex queries
+     */
     OLAP_ONLY(3, "olap_only");
 
     private final byte code;
@@ -42,6 +60,11 @@ public enum GraphReadMode {
         return this.name;
     }
 
+    /**
+     * Check if this mode includes OLAP data in query results.
+     *
+     * @return true if mode is ALL or OLAP_ONLY
+     */
     public boolean showOlap() {
         return this == ALL || this == OLAP_ONLY;
     }

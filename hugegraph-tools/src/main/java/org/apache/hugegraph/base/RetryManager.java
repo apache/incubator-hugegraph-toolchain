@@ -18,6 +18,7 @@
 package org.apache.hugegraph.base;
 
 import java.util.Queue;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -70,14 +71,42 @@ public class RetryManager extends ToolManager {
     }
 
     public void awaitTasks() {
+        ToolsException failure = null;
+        boolean interrupted = false;
         Future<?> future;
         while ((future = this.futures.poll()) != null) {
-            try {
-                future.get();
-            } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
+            boolean finished = false;
+            while (!finished) {
+                try {
+                    future.get();
+                    finished = true;
+                } catch (InterruptedException e) {
+                    interrupted = true;
+                    failure = recordFailure(failure, e);
+                } catch (ExecutionException e) {
+                    failure = recordFailure(failure, e.getCause());
+                    finished = true;
+                } catch (CancellationException e) {
+                    failure = recordFailure(failure, e);
+                    finished = true;
+                }
             }
         }
+        if (interrupted) {
+            Thread.currentThread().interrupt();
+        }
+        if (failure != null) {
+            throw failure;
+        }
+    }
+
+    private static ToolsException recordFailure(ToolsException failure,
+                                                Throwable cause) {
+        if (failure == null) {
+            return new ToolsException("Failed to complete asynchronous tasks", cause);
+        }
+        failure.addSuppressed(cause);
+        return failure;
     }
 
     public void shutdown(String taskType) {
@@ -85,11 +114,25 @@ public class RetryManager extends ToolManager {
             return;
         }
         this.pool.shutdown();
+        boolean interrupted = false;
+        long remaining = TimeUnit.HOURS.toNanos(24);
+        long start = System.nanoTime();
         try {
-            this.pool.awaitTermination(24, TimeUnit.HOURS);
-        } catch (InterruptedException e) {
-            throw new ToolsException(
-                      "Exception appears in %s threads", e, taskType);
+            while (remaining > 0) {
+                try {
+                    this.pool.awaitTermination(remaining, TimeUnit.NANOSECONDS);
+                    break;
+                } catch (InterruptedException e) {
+                    // Finish cleanup before restoring the caller's interrupt.
+                    interrupted = true;
+                    remaining = TimeUnit.HOURS.toNanos(24) -
+                                (System.nanoTime() - start);
+                }
+            }
+        } finally {
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 

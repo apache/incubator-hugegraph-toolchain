@@ -23,7 +23,6 @@ import java.util.List;
 import org.apache.hugegraph.rest.SerializeException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -63,16 +62,18 @@ public final class JsonUtil {
         }
     }
 
+    /**
+     * Deserialize a JSON array into a list of the requested element type.
+     * JSON null returns null; a null input string throws IllegalArgumentException.
+     * Invalid JSON or incompatible elements throw SerializeException.
+     */
     public static <T> List<T> fromJson2List(String json, Class<T> clazz) {
         try {
-            return MAPPER.readValue(json, getCollectionType(List.class, clazz));
+            return MAPPER.readValue(json, MAPPER.getTypeFactory()
+                                               .constructCollectionType(List.class, clazz));
         } catch (IOException e) {
-            throw new SerializeException("Failed to deserialize json '%s'", e, json);
+            throw new SerializeException("Failed to deserialize json '%s'",
+                                         e, json);
         }
-    }
-
-    private static JavaType getCollectionType(Class<?> collectionClass,
-                                              Class<?>... elementClasses) {
-        return MAPPER.getTypeFactory().constructParametricType(collectionClass, elementClasses);
     }
 }

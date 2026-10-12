@@ -26,6 +26,7 @@ import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.constant.T;
 import org.apache.hugegraph.structure.graph.Path;
 import org.apache.hugegraph.structure.graph.Vertex;
+import org.apache.hugegraph.structure.traverser.PathWithMeasure;
 import org.apache.hugegraph.structure.traverser.PathsRequest;
 import org.apache.hugegraph.structure.traverser.PathsWithVertices;
 import org.apache.hugegraph.testutil.Assert;
@@ -53,9 +54,10 @@ public class PathsApiTest extends TraverserApiTest {
         Object lopId = getVertexId("software", "name", "lop");
         Object rippleId = getVertexId("software", "name", "ripple");
 
-        List<Path> paths = pathsAPI.get(markoId, rippleId, Direction.BOTH,
-                                        null, 3, -1L, -1L, 10);
-        Assert.assertEquals(2, paths.size());
+        PathWithMeasure res = pathsAPI.get(markoId, rippleId, Direction.BOTH,
+                                           null, 3, -1L, -1L, 10);
+        List<Path> paths = res.getPaths();
+                Assert.assertEquals(2, paths.size());
         List<Object> path1 = ImmutableList.of(markoId, joshId, rippleId);
         List<Object> path2 = ImmutableList.of(markoId, lopId, joshId, rippleId);
         List<List<Object>> expectedPaths = ImmutableList.of(path1, path2);
@@ -69,8 +71,9 @@ public class PathsApiTest extends TraverserApiTest {
         Object joshId = getVertexId("person", "name", "josh");
         Object rippleId = getVertexId("software", "name", "ripple");
 
-        List<Path> paths = pathsAPI.get(markoId, rippleId, Direction.BOTH,
-                                        null, 3, -1L, -1L, 1);
+        PathWithMeasure res = pathsAPI.get(markoId, rippleId, Direction.BOTH,
+                                           null, 3, -1L, -1L, 1);
+        List<Path> paths = res.getPaths();
         Assert.assertEquals(1, paths.size());
         List<Object> path1 = ImmutableList.of(markoId, joshId, rippleId);
         Assert.assertEquals(path1, paths.get(0).objects());

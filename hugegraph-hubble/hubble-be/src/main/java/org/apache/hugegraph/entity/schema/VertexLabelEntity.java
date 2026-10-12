@@ -53,7 +53,7 @@ public class VertexLabelEntity implements SchemaLabelEntity, Timefiable {
     private List<PropertyIndex> propertyIndexes;
 
     @JsonProperty("open_label_index")
-    private boolean openLabelIndex;
+    private Boolean openLabelIndex;
 
     @JsonProperty("style")
     private VertexLabelStyle style;

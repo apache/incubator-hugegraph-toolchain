@@ -58,7 +58,7 @@ public class BatchEdgeRequest {
 
     public static class Builder {
 
-        private BatchEdgeRequest req;
+        private final BatchEdgeRequest req;
 
         public Builder() {
             this.req = new BatchEdgeRequest();

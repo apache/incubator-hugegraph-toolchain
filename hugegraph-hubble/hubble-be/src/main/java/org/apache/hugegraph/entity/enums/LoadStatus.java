@@ -18,7 +18,7 @@
 
 package org.apache.hugegraph.entity.enums;
 
-import com.baomidou.mybatisplus.core.enums.IEnum;
+import com.baomidou.mybatisplus.annotation.IEnum;
 
 public enum LoadStatus implements IEnum<Byte> {
 
@@ -30,7 +30,10 @@ public enum LoadStatus implements IEnum<Byte> {
 
     PAUSED(3),
 
-    STOPPED(4);
+    STOPPED(4),
+
+    // No Used
+    INIT(5);
 
     private byte code;
 

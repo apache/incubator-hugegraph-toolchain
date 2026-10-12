@@ -27,13 +27,17 @@
 
     <properties>
         <release.name>${project.parent.artifactId}</release.name>
-        <final.name>apache-${release.name}-incubating-${project.version}</final.name>
+        <final.name>apache-${release.name}-${project.version}</final.name>
         <top.level.dir>${project.basedir}/..</top.level.dir>
+        <repo.root.dir>${top.level.dir}/..</repo.root.dir>
         <current.basedir>${project.basedir}</current.basedir>
         <assembly.dir>${current.basedir}/assembly</assembly.dir>
         <assembly.descriptor.dir>${assembly.dir}/descriptor</assembly.descriptor.dir>
         <assembly.static.dir>${assembly.dir}/static</assembly.static.dir>
+        <release.docs.dir>${repo.root.dir}/hugegraph-dist/release-docs</release.docs.dir>
         <hubble-fe.dir>${project.basedir}/../hubble-fe</hubble-fe.dir>
+        <build.node.version>v18.20.8</build.node.version>
+        <build.yarn.version>v1.22.21</build.yarn.version>
     </properties>
 
     <dependencies>
@@ -41,6 +45,19 @@
             <groupId>org.apache.hugegraph</groupId>
             <artifactId>hubble-be</artifactId>
             <version>${revision}</version>
+            <exclusions>
+                <!-- Exclude log4j-slf4j-impl to prevent conflict with
+                     Spring Boot's logback + log4j-to-slf4j logging stack.
+                     log4j-slf4j-impl and log4j-to-slf4j cannot coexist. -->
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-slf4j-impl</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-log4j2</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 
@@ -73,8 +90,8 @@
                 <version>1.14.2</version>
 
                 <configuration>
-                    <installDirectory>target</installDirectory>
-                    <workingDirectory>../hubble-fe</workingDirectory>
+                    <installDirectory>${hubble-fe.dir}</installDirectory>
+                    <workingDirectory>${hubble-fe.dir}</workingDirectory>
                 </configuration>
 
                 <executions>
@@ -82,12 +99,10 @@
                         <id>install node and yarn</id>
                         <goals>
                             <goal>install-node-and-yarn</goal>
-                            <goal>install-node-and-npm</goal>
                         </goals>
                         <configuration>
-                            <nodeVersion>v16.16.0</nodeVersion>
-                            <npmVersion>8.19.1</npmVersion>
-                            <yarnVersion>v1.22.15</yarnVersion>
+                            <nodeVersion>${build.node.version}</nodeVersion>
+                            <yarnVersion>${build.yarn.version}</yarnVersion>
                         </configuration>
                     </execution>
 
@@ -97,7 +112,7 @@
                             <goal>yarn</goal>
                         </goals>
                         <configuration>
-                            <arguments>install</arguments>
+                            <arguments>install --frozen-lockfile --network-timeout 600000 --prefer-offline --ignore-engines</arguments>
                         </configuration>
                     </execution>
 
@@ -108,6 +123,10 @@
                         </goals>
                         <configuration>
                             <arguments>build</arguments>
+                            <environmentVariables>
+                                <CI>true</CI>
+                                <NODE_OPTIONS>--max-old-space-size=4096</NODE_OPTIONS>
+                            </environmentVariables>
                         </configuration>
                     </execution>
                 </executions>
@@ -125,20 +144,35 @@
                                 <!-- TODO: change to assembly plugin in future  -->
                                 <echo file="${top.level.dir}/dist.sh">
                                     cd ${hubble-fe.dir} || exit 1
-                                    export CI=false
+                                    export CI=true
 
                                     cd ${top.level.dir} &amp;&amp; pwd
                                     rm -rf ${final.name}/ui
                                     cp -r ${hubble-fe.dir}/build ${final.name}/ui
+                                    find ${final.name}/ui -name "*.map" -type f -delete
 
-                                    tar -zcvf ${top.level.dir}/target/${final.name}.tar.gz ${final.name} || exit 1
-                                    cp -r ${final.name} ./hubble-dist
+                                    bash ${assembly.dir}/travis/archive-hubble.sh \
+                                         ${final.name} ${top.level.dir}/target/${final.name}.tar.gz || exit 1
+                                    bash ${assembly.dir}/travis/check-hubble-dist.sh \
+                                         ${top.level.dir}/target/${final.name}.tar.gz || exit 1
                                     echo -n "${final.name} tar.gz available at: "
                                     echo "${top.level.dir}/target/${final.name}.tar.gz"
                                     rm -f ${top.level.dir}/dist.sh
                                 </echo>
+                                <exec executable="python3" failonerror="true">
+                                    <arg value="${repo.root.dir}/.github/scripts/verify_candidate_image_sdk.py"/>
+                                    <arg value="${settings.localRepository}"/>
+                                    <arg value="--mode"/>
+                                    <arg value="${sdk.validation.mode}"/>
+                                    <arg value="--version"/>
+                                    <arg value="${hugegraph.version}"/>
+                                    <arg value="--distribution"/>
+                                    <arg value="${top.level.dir}/${final.name}"/>
+                                    <arg value="--module"/>
+                                    <arg value="hubble"/>
+                                </exec>
                                 <exec executable="${shell-executable}" dir="${top.level.dir}" failonerror="true">
-                                    <arg line="./dist.sh"/>
+                                    <arg line="./dist.sh" />
                                 </exec>
                             </tasks>
                         </configuration>

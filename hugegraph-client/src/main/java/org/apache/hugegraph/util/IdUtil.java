@@ -20,7 +20,7 @@ package org.apache.hugegraph.util;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * Copied from HugeGraph(<a href="https://github.com/hugegraph/hugegraph">...</a>)
+ * Copied from HugeGraph(<a href="https://github.com/apache/hugegraph">...</a>)
  */
 public final class IdUtil {
 

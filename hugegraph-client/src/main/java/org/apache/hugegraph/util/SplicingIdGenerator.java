@@ -21,7 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Copied from HugeGraph(<a href="https://github.com/hugegraph/hugegraph">...</a>)
+ * Copied from HugeGraph(<a href="https://github.com/apache/hugegraph">...</a>)
  */
 public class SplicingIdGenerator {
 

@@ -18,8 +18,8 @@
 package org.apache.hugegraph.loader.executor;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.hugegraph.loader.exception.LoadException;
@@ -28,25 +28,34 @@ import org.apache.hugegraph.loader.util.DateUtil;
 import org.apache.hugegraph.loader.util.HugeClientHolder;
 import org.slf4j.Logger;
 
+import lombok.SneakyThrows;
+
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.loader.builder.SchemaCache;
 import org.apache.hugegraph.loader.failure.FailLogger;
+import org.apache.hugegraph.loader.filter.ElementParseGroup;
 import org.apache.hugegraph.loader.mapping.InputStruct;
 import org.apache.hugegraph.loader.metrics.LoadSummary;
 import org.apache.hugegraph.structure.constant.GraphMode;
 import org.apache.hugegraph.util.Log;
 
-public final class LoadContext implements Serializable {
+public final class LoadContext implements Cloneable {
 
     private static final Logger LOG = Log.logger(LoadContext.class);
+
+    private enum StopReason {
+        READ_LIMIT,
+        OTHER
+    }
 
     // The time at the beginning of loading, accurate to seconds
     private final String timestamp;
 
     private volatile boolean closed;
-    private volatile boolean stopped;
+    private volatile StopReason stopReason;
     private volatile boolean noError;
+    private volatile Throwable failure;
     private final LoadOptions options;
     private final LoadSummary summary;
     // The old progress just used to read
@@ -56,34 +65,47 @@ public final class LoadContext implements Serializable {
     private final Map<String, FailLogger> loggers;
 
     private final HugeClient client;
+    // Non-direct mode client
+    private final HugeClient indirectClient;
     private final SchemaCache schemaCache;
+    private final ElementParseGroup parseGroup;
 
     public LoadContext(LoadOptions options) {
-        this.timestamp = DateUtil.now("yyyyMMdd-HHmmss");
-        this.closed = false;
-        this.stopped = false;
-        this.noError = true;
-        this.options = options;
-        this.summary = new LoadSummary();
-        this.oldProgress = LoadProgress.parse(options);
-        this.newProgress = new LoadProgress();
-        this.loggers = new ConcurrentHashMap<>();
-        this.client = HugeClientHolder.create(options);
-        this.schemaCache = new SchemaCache(this.client);
+        this(options, null);
     }
 
-    public LoadContext(ComputerLoadOptions options) {
+    /**
+     * Create a file parser context without creating server clients.
+     * Supply a complete schema cache with no server client, such as one parsed from JSON.
+     * Server clients are null and close() does not save loader progress.
+     */
+    public static LoadContext forOffline(LoadOptions options, SchemaCache schemaCache) {
+        return new LoadContext(Objects.requireNonNull(options, "options"),
+                               Objects.requireNonNull(schemaCache, "schemaCache"));
+    }
+
+    @SneakyThrows
+    private LoadContext(LoadOptions options, SchemaCache schemaCache) {
         this.timestamp = DateUtil.now("yyyyMMdd-HHmmss");
         this.closed = false;
-        this.stopped = false;
+        this.stopReason = null;
         this.noError = true;
         this.options = options;
         this.summary = new LoadSummary();
         this.oldProgress = LoadProgress.parse(options);
         this.newProgress = new LoadProgress();
         this.loggers = new ConcurrentHashMap<>();
-        this.client = null;
-        this.schemaCache = options.schemaCache();
+        this.client = schemaCache == null ? HugeClientHolder.create(options) : null;
+        if (this.client != null && this.options.direct) {
+            // options implements ShallowClone
+            LoadOptions indirectOptions = (LoadOptions) options.clone();
+            indirectOptions.direct = false;
+            this.indirectClient = HugeClientHolder.create(indirectOptions);
+        } else {
+            this.indirectClient = this.client;
+        }
+        this.schemaCache = schemaCache == null ? new SchemaCache(this.client) : schemaCache;
+        this.parseGroup = ElementParseGroup.create(options);
     }
 
     public String timestamp() {
@@ -95,19 +117,49 @@ public final class LoadContext implements Serializable {
     }
 
     public boolean stopped() {
-        return this.stopped;
+        return this.stopReason != null;
     }
 
-    public void stopLoading() {
-        this.stopped = true;
+    public synchronized void stopLoading() {
+        this.stopReason = StopReason.OTHER;
+    }
+
+    public synchronized void stopLoadingAtReadLimit() {
+        if (this.stopReason == null) {
+            this.stopReason = this.noError ? StopReason.READ_LIMIT : StopReason.OTHER;
+        }
+    }
+
+    public boolean stoppedAtReadLimit() {
+        return this.stopReason == StopReason.READ_LIMIT;
     }
 
     public boolean noError() {
         return this.noError;
     }
 
-    public void occurredError() {
+    public synchronized void occurredError() {
         this.noError = false;
+        if (this.stopReason == StopReason.READ_LIMIT) {
+            this.stopReason = StopReason.OTHER;
+        }
+    }
+
+    public synchronized void failLoading(Throwable failure) {
+        this.occurredError();
+        this.stopLoading();
+        if (this.failure == null) {
+            this.failure = failure;
+        }
+    }
+
+    public void throwIfFailed() {
+        if (this.failure instanceof RuntimeException) {
+            throw (RuntimeException) this.failure;
+        }
+        if (this.failure != null) {
+            throw new LoadException("Loading failed without recoverable progress", this.failure);
+        }
     }
 
     public LoadOptions options() {
@@ -137,6 +189,14 @@ public final class LoadContext implements Serializable {
         return this.client;
     }
 
+    public HugeClient indirectClient() {
+        return this.indirectClient;
+    }
+
+    public ElementParseGroup filterGroup() {
+        return parseGroup;
+    }
+
     public SchemaCache schemaCache() {
         return this.schemaCache;
     }
@@ -150,6 +210,19 @@ public final class LoadContext implements Serializable {
         String graph = this.client.graph().graph();
         try {
             this.client.graphs().mode(graph, GraphMode.LOADING);
+        } catch (ServerException e) {
+            if (e.getMessage().contains("Can not deserialize value of type")) {
+                LOG.warn("HugeGraphServer doesn't support loading mode");
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    public void setRestoreMode() {
+        String graph = this.client.graph().graph();
+        try {
+            this.client.graphs().mode(graph, GraphMode.RESTORING);
         } catch (ServerException e) {
             if (e.getMessage().contains("Can not deserialize value of type")) {
                 LOG.warn("HugeGraphServer doesn't support loading mode");
@@ -176,22 +249,48 @@ public final class LoadContext implements Serializable {
         if (this.closed) {
             return;
         }
-        for (FailLogger logger : this.loggers.values()) {
-            logger.close();
-        }
-        LOG.info("Close all failure loggers successfully");
+        try (HugeClient secondary = this.indirectClient != this.client ? this.indirectClient : null;
+             HugeClient primary = this.client) {
+            RuntimeException loggerFailure = null;
+            for (FailLogger logger : this.loggers.values()) {
+                try {
+                    logger.close();
+                } catch (RuntimeException e) {
+                    if (loggerFailure == null) {
+                        loggerFailure = e;
+                    } else {
+                        loggerFailure.addSuppressed(e);
+                    }
+                }
+            }
+            if (loggerFailure != null) {
+                throw loggerFailure;
+            }
+            LOG.info("Close all failure loggers successfully");
 
-        this.newProgress.plusVertexLoaded(this.summary.vertexLoaded());
-        this.newProgress.plusEdgeLoaded(this.summary.edgeLoaded());
-        try {
-            this.newProgress.write(this);
-        } catch (IOException e) {
-            LOG.error("Failed to write load progress", e);
+            this.throwIfFailed();
+            this.newProgress.plusVertexLoaded(this.summary.vertexLoaded());
+            this.newProgress.plusEdgeLoaded(this.summary.edgeLoaded());
+            if (this.client != null) {
+                try {
+                    this.newProgress.write(this);
+                } catch (IOException e) {
+                    this.occurredError();
+                    throw new LoadException("Failed to write load progress", e);
+                }
+                LOG.info("Write load progress successfully");
+            }
+        } catch (RuntimeException e) {
+            this.occurredError();
+            throw e;
+        } finally {
+            this.closed = true;
         }
-        LOG.info("Write load progress successfully");
+        LOG.info("Close loader clients successfully");
+    }
 
-        this.client.close();
-        LOG.info("Close HugeClient successfully");
-        this.closed = true;
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        return super.clone();
     }
 }

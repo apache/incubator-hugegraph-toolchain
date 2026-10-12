@@ -18,16 +18,16 @@
 package org.apache.hugegraph.loader.util;
 
 import java.util.Date;
-import java.util.Map;
+import java.util.HashMap;
 import java.util.TimeZone;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.hugegraph.date.SafeDateFormat;
 import org.apache.hugegraph.loader.constant.Constants;
 
 public final class DateUtil {
 
-    private static final Map<String, SafeDateFormat> DATE_FORMATS = new ConcurrentHashMap<>();
+    private static final ThreadLocal<HashMap<String, SafeDateFormat>> DATE_FORMATS =
+            ThreadLocal.withInitial(HashMap::new);
 
     public static Date parse(String source, String df) {
         return parse(source, df, Constants.TIME_ZONE);
@@ -35,19 +35,16 @@ public final class DateUtil {
 
     public static Date parse(String source, String df, String timeZone) {
         SafeDateFormat dateFormat = getDateFormat(df);
-        // parse date with specified timezone
         dateFormat.setTimeZone(timeZone);
         return dateFormat.parse(source);
     }
 
     private static SafeDateFormat getDateFormat(String df) {
-        SafeDateFormat dateFormat = DATE_FORMATS.get(df);
+        HashMap<String, SafeDateFormat> formats = DATE_FORMATS.get();
+        SafeDateFormat dateFormat = formats.get(df);
         if (dateFormat == null) {
             dateFormat = new SafeDateFormat(df);
-            SafeDateFormat previous = DATE_FORMATS.putIfAbsent(df, dateFormat);
-            if (previous != null) {
-                dateFormat = previous;
-            }
+            formats.put(df, dateFormat);
         }
         return dateFormat;
     }
@@ -58,7 +55,9 @@ public final class DateUtil {
     }
 
     public static String now(String df) {
-        return getDateFormat(df).format(new Date());
+        SafeDateFormat dateFormat = getDateFormat(df);
+        dateFormat.setTimeZone(Constants.TIME_ZONE);
+        return dateFormat.format(new Date());
     }
 
     public static boolean checkTimeZone(String timeZone) {

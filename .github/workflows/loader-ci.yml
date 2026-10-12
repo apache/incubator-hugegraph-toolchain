@@ -1,70 +1,119 @@
 name: "loader-ci"
 
 on:
-  workflow_dispatch:
-  push:
-    branches:
-      - master
-      - /^release-.*$/
-    paths:
-      - hugegraph-loader/**
-      - hugegraph-dist/**
-      - .github/workflows/**
-      - pom.xml
-  pull_request:
-    paths:
-      - hugegraph-loader/**
-      - hugegraph-dist/**
-      - hugegraph-client/**
-      - .github/workflows/**
-      - pom.xml
+  workflow_call:
+    inputs:
+      server-repository:
+        type: string
+        default: apache/hugegraph
+      artifact-name:
+        type: string
+        required: true
+      server-commit:
+        type: string
+        required: true
+      server-ref:
+        type: string
+        required: true
 
 jobs:
   loader-ci:
     runs-on: ubuntu-latest
     env:
-      USE_STAGE: 'true' # Whether to include the stage repository.
       TRAVIS_DIR: hugegraph-loader/assembly/travis
       STATIC_DIR: hugegraph-loader/assembly/static
-      # TODO: replace it with the (latest - n) commit id (n >= 15)
-      COMMIT_ID: b52517c
       DB_USER: root
       DB_PASS: root
       DB_DATABASE: load_test
+    strategy:
+      fail-fast: false
+      matrix:
+        JAVA_VERSION: ['17']
+        SERVER_BASELINE: ['candidate', 'release-1.7']
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
     steps:
-      - name: Install JDK 11
-        uses: actions/setup-java@v3
-        with:
-          java-version: '11'
-          distribution: 'adopt'
-
-      - name: Cache Maven packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-
-      - name: Checkout
-        uses: actions/checkout@v3
+      - name: Fetch Code
+        uses: actions/checkout@v7
         with:
           fetch-depth: 2
 
-      - name: use staged maven repo settings
-        if: ${{ env.USE_STAGE == 'true' }}
+      - name: Install released Server JVM
+        if: matrix.SERVER_BASELINE == 'release-1.7'
+        id: released-java
+        uses: actions/setup-java@v5
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          overwrite-settings: false
+
+      - name: Setup Java environment
+        uses: ./.github/actions/setup-java-env
+        with:
+          java-version: ${{ matrix.JAVA_VERSION }}
+          distribution: 'temurin'
+
+      - name: Test Loader launcher arguments
         run: |
-          cp $HOME/.m2/settings.xml /tmp/settings.xml
-          mv -vf .github/configs/settings.xml $HOME/.m2/settings.xml
+          python3 hugegraph-loader/src/test/python/test_spark_launcher.py
+          python3 hugegraph-loader/src/test/python/test_loader_launcher.py
+
+      - name: Install locked candidate SDK
+        id: candidate-sdk
+        uses: ./.github/actions/setup-candidate-sdk
 
       - name: Compile
         run: |
           mvn install -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp
 
-      - name: Prepare env and service
+      - name: Test ordinary Loader Parquet distribution
         run: |
-          $TRAVIS_DIR/install-hadoop.sh
-          $TRAVIS_DIR/install-mysql.sh ${{ env.DB_DATABASE }} ${{ env.DB_PASS }}
-          $TRAVIS_DIR/install-hugegraph-from-source.sh $COMMIT_ID
+          python3 - <<'PYCODE'
+          from pathlib import Path
+          import subprocess
+          distributions = [p for p in Path('hugegraph-loader').glob('apache-hugegraph-loader-*') if p.is_dir()]
+          if len(distributions) != 1:
+              raise RuntimeError('Expected exactly one assembled Loader distribution')
+          jars = sorted((distributions[0] / 'lib').glob('*.jar'))
+          binding = [p for p in jars if p.name.startswith('log4j-slf4j-impl')]
+          sdk = [p for p in jars if p.name.startswith('hugegraph')]
+          shaded = [p for p in jars if p.name.startswith('apache-hugegraph-loader-')
+                    and p.name.endswith('-shaded.jar')]
+          other = [p for p in jars if p not in binding + sdk + shaded]
+          classpath = ':'.join(map(str, [Path('hugegraph-loader/target/test-classes')] + binding + sdk + other))
+          subprocess.run(['java', '-Xmx128m', '-cp', classpath,
+                          'org.apache.hugegraph.loader.test.unit.ParquetRuntimeTest'], check=True)
+          PYCODE
+
+      - name: Prepare HDFS from the pinned Hadoop image
+        timeout-minutes: 18
+        run: bash "$TRAVIS_DIR/start-hdfs-ci.sh"
+
+      - name: Setup released Server fixture
+        if: matrix.SERVER_BASELINE == 'release-1.7'
+        uses: ./.github/actions/setup-hugegraph-server
+        with:
+          travis-dir: ${{ env.TRAVIS_DIR }}
+          commit-id: ${{ inputs.server-commit }}
+          repository: ${{ inputs.server-repository }}
+          fetch-ref: ${{ inputs.server-ref }}
+          java-home: ${{ steps.released-java.outputs.path }}
+          mode: start
+          artifact-name: ${{ inputs.artifact-name }}
+          java-version: '11'
+
+      - name: Start candidate Server fixture
+        if: matrix.SERVER_BASELINE == 'candidate'
+        env:
+          CANDIDATE_ARCHIVE: ${{ steps.candidate-sdk.outputs.archive }}
+        run: bash hugegraph-client/assembly/travis/start-hugegraph-servers.sh "$CANDIDATE_ARCHIVE"
 
       - name: Run test
         run: |
@@ -75,8 +124,18 @@ jobs:
           mvn test -P jdbc
           mvn test -P kafka
 
+      - name: Collect HDFS logs and remove containers
+        if: ${{ always() }}
+        run: |
+          for service in namenode datanode; do
+            name="${HDFS_CONTAINER_PREFIX:-hugegraph-ci-hdfs}-$service"
+            docker logs "$name" || true
+            docker rm -f "$name" || true
+          done
+
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        continue-on-error: true
+        uses: ./.github/actions/upload-coverage
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: target/jacoco.xml
+          file: hugegraph-loader/target/jacoco.xml

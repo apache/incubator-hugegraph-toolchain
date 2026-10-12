@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
-import org.apache.hugegraph.exception.ExternalException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -40,6 +39,7 @@ import org.apache.hugegraph.entity.schema.PropertyKeyEntity;
 import org.apache.hugegraph.entity.schema.SchemaConflict;
 import org.apache.hugegraph.entity.schema.SchemaEntity;
 import org.apache.hugegraph.entity.schema.SchemaType;
+import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.structure.schema.EdgeLabel;
 import org.apache.hugegraph.structure.schema.PropertyKey;
@@ -52,17 +52,18 @@ import lombok.extern.log4j.Log4j2;
 @Service
 public class PropertyKeyService extends SchemaService {
 
-    public List<PropertyKeyEntity> list(int connId) {
-        return this.list(Collections.emptyList(), connId);
+    public List<PropertyKeyEntity> list(HugeClient client) {
+        return this.list(Collections.emptyList(), client);
     }
 
-    public List<PropertyKeyEntity> list(Collection<String> names, int connId) {
-        return this.list(names, connId, true);
+    public List<PropertyKeyEntity> list(Collection<String> names,
+                                        HugeClient client) {
+        return this.list(names, client, true);
     }
 
-    public List<PropertyKeyEntity> list(Collection<String> names, int connId,
+    public List<PropertyKeyEntity> list(Collection<String> names,
+                                        HugeClient client,
                                         boolean emptyAsAll) {
-        HugeClient client = this.client(connId);
         List<PropertyKey> propertyKeys;
         if (CollectionUtils.isEmpty(names)) {
             if (emptyAsAll) {
@@ -80,8 +81,7 @@ public class PropertyKeyService extends SchemaService {
         return results;
     }
 
-    public PropertyKeyEntity get(String name, int connId) {
-        HugeClient client = this.client(connId);
+    public PropertyKeyEntity get(String name, HugeClient client) {
         try {
             PropertyKey propertyKey = client.schema().getPropertyKey(name);
             return convert(propertyKey);
@@ -95,14 +95,27 @@ public class PropertyKeyService extends SchemaService {
         }
     }
 
-    public void checkExist(String name, int connId) {
-        // Throw exception if it doesn't exist
-        this.get(name, connId);
+    public List<PropertyKey> get(List<String> pks, HugeClient client) {
+        try {
+            return client.schema().getPropertyKeys(pks);
+        } catch (ServerException e) {
+            if (e.status() == Constant.STATUS_NOT_FOUND) {
+                throw new ExternalException("schema.propertykey.not-exist",
+                                            e, pks);
+            }
+            throw new ExternalException("schema.propertykey.get.failed",
+                                        e, pks);
+        }
     }
 
-    public void checkNotExist(String name, int connId) {
+    public void checkExist(String name, HugeClient client) {
+        // Throw exception if it doesn't exist
+        this.get(name, client);
+    }
+
+    public void checkNotExist(String name, HugeClient client) {
         try {
-            this.get(name, connId);
+            this.get(name, client);
         } catch (ExternalException e) {
             Throwable cause = e.getCause();
             if (cause instanceof ServerException &&
@@ -114,14 +127,12 @@ public class PropertyKeyService extends SchemaService {
         throw new ExternalException("schema.propertykey.exist", name);
     }
 
-    public void add(PropertyKeyEntity entity, int connId) {
-        HugeClient client = this.client(connId);
+    public void add(PropertyKeyEntity entity, HugeClient client) {
         PropertyKey propertyKey = convert(entity, client);
         client.schema().addPropertyKey(propertyKey);
     }
 
-    public void remove(String name, int connId) {
-        HugeClient client = this.client(connId);
+    public void remove(String name, HugeClient client) {
         client.schema().removePropertyKey(name);
     }
 
@@ -129,8 +140,7 @@ public class PropertyKeyService extends SchemaService {
      * Check the property key is being used, used means that there is
      * any vertex label or edge label contains the property(name)
      */
-    public boolean checkUsing(String name, int connId) {
-        HugeClient client = this.client(connId);
+    public boolean checkUsing(String name, HugeClient client) {
         List<VertexLabel> vertexLabels = client.schema().getVertexLabels();
         for (VertexLabel vertexLabel : vertexLabels) {
             if (vertexLabel.properties().contains(name)) {
@@ -147,26 +157,27 @@ public class PropertyKeyService extends SchemaService {
     }
 
     public ConflictDetail checkConflict(ConflictCheckEntity entity,
-                                        int connId, boolean compareEachOther) {
+                                        HugeClient client,
+                                        boolean compareEachOther) {
         ConflictDetail detail = new ConflictDetail(SchemaType.PROPERTY_KEY);
         if (CollectionUtils.isEmpty(entity.getPkEntities())) {
             return detail;
         }
 
         this.checkConflict(entity.getPkEntities(), detail,
-                           connId, compareEachOther);
+                           client, compareEachOther);
         return detail;
     }
 
     public void checkConflict(List<PropertyKeyEntity> entities,
-                              ConflictDetail detail, int connId,
+                              ConflictDetail detail, HugeClient client,
                               boolean compareEachOther) {
         if (CollectionUtils.isEmpty(entities)) {
             return;
         }
 
         Map<String, PropertyKeyEntity> originEntities = new HashMap<>();
-        for (PropertyKeyEntity entity : this.list(connId)) {
+        for (PropertyKeyEntity entity : this.list(client)) {
             originEntities.put(entity.getName(), entity);
         }
         // Compare reused entity with origin in target graph
@@ -181,10 +192,9 @@ public class PropertyKeyService extends SchemaService {
         }
     }
 
-    public void reuse(ConflictDetail detail, int connId) {
+    public void reuse(ConflictDetail detail, HugeClient client) {
         // Assume that the conflict detail is valid
         Ex.check(!detail.hasConflict(), "schema.cannot-reuse-conflict");
-        HugeClient client = this.client(connId);
 
         List<PropertyKey> propertyKeys = this.filter(detail, client);
         if (propertyKeys.isEmpty()) {

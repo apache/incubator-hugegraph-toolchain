@@ -15,29 +15,70 @@
 # limitations under the License.
 #
 
-FROM maven:3.9.0-eclipse-temurin-11 AS build
+ARG MAVEN_BUILDER_IMAGE=maven:3.9.11-eclipse-temurin-17
+FROM --platform=$BUILDPLATFORM ${MAVEN_BUILDER_IMAGE} AS build
 
+ENV NODE_OPTIONS=--dns-result-order=ipv4first
 
 ARG MAVEN_ARGS
 
-COPY . /pkg
 WORKDIR /pkg
 
 RUN set -x \
     && apt-get -q update \
-    && apt-get install curl -yq \
+    && apt-get install --no-install-recommends curl git python3 -yq \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+
+COPY hugegraph-client/assembly/travis/install-candidate-sdk.sh \
+     hugegraph-client/assembly/travis/checkout-server.sh /pkg/hugegraph-client/assembly/travis/
+COPY .github/scripts/verify_candidate_image_sdk.py /pkg/.github/scripts/
+
+# Direct builds bootstrap the same locked SDK; CI can supply a verified builder.
+RUN mkdir -p /opt/candidate-m2 \
+    && if [ ! -f /opt/candidate-m2/candidate-sdk-manifest.json ]; then \
+         SERVER_REPOSITORY=apache/hugegraph \
+         bash /pkg/hugegraph-client/assembly/travis/install-candidate-sdk.sh \
+           68855199031d5801edb4fe41b2bacbacffe8fe68 /opt/candidate-source /opt/candidate-m2; \
+       fi \
+    && python3 /pkg/.github/scripts/verify_candidate_image_sdk.py /opt/candidate-m2
+
+COPY . /pkg
+
 RUN set -x \
-    && mvn install $MAVEN_ARGS -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp \
+    && mvn install $MAVEN_ARGS -Dmaven.repo.local=/opt/candidate-m2 \
+       -Dhugegraph.version=1.8.0 -Dsdk.validation.mode=candidate \
+       -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp \
     && cd /pkg/hugegraph-hubble/ \
-    && mvn package $MAVEN_ARGS -e -B -ntp -DskipTests -Dmaven.javadoc.skip=true
+    && mvn package $MAVEN_ARGS -Dmaven.repo.local=/opt/candidate-m2 \
+       -Dhugegraph.version=1.8.0 -Dsdk.validation.mode=candidate \
+       -e -B -ntp -DskipTests -Dmaven.javadoc.skip=true \
+    && python3 /pkg/.github/scripts/verify_candidate_image_sdk.py /opt/candidate-m2 \
+    && set -- /pkg/hugegraph-hubble/target/apache-hugegraph-hubble-*.tar.gz \
+    && test "$#" -eq 1 \
+    && mkdir /hubble-release \
+    && tar -xzf "$1" --strip-components=1 -C /hubble-release
 
-FROM openjdk:11-slim
+FROM eclipse-temurin:17-jre-jammy
 
-COPY --from=build /pkg/hugegraph-hubble/apache-hugegraph-hubble-incubating-*/ /hubble
+RUN apt-get -q update \
+    && apt-get install --no-install-recommends curl -yq \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /hubble-release/ /hubble
+RUN sed -i \
+    -e 's/^server\.host=.*/server.host=0.0.0.0/' \
+    -e 's/^dashboard\.address=.*/dashboard.address=/' \
+    /hubble/conf/hugegraph-hubble.properties \
+    && grep -Fqx 'server.host=0.0.0.0' \
+        /hubble/conf/hugegraph-hubble.properties \
+    && grep -Fqx 'dashboard.address=' \
+        /hubble/conf/hugegraph-hubble.properties
 WORKDIR /hubble/
 
+# SECURITY: This is a plain HTTP port. Do not publish it to an untrusted network;
+# production/public deployments must put Hubble behind HTTPS and block bypasses.
 EXPOSE 8088
-ENTRYPOINT ["./bin/start-hubble.sh", "-f true"]
+ENTRYPOINT ["./bin/start-hubble.sh", "-f"]

@@ -1,0 +1,104 @@
+{
+  "common" : {
+    "verify" : {
+      "ok": "OK",
+      "cancel": "Cancel",
+      "yes": "Yes",
+      "no": "No"
+    },
+    "status": {
+      "new": "New",
+      "running": "Running",
+      "success": "Completed",
+      "cancelling": "Stopping",
+      "cancelled": "Stopped",
+      "failed": "Failed",
+      "undefined": "Unknown"
+    },
+    "validation": {
+      "required": "This field is required",
+      "max": "Maximum length is {{max}} characters",
+      "invalid_ip": "Invalid IP address",
+      "invalid_port": "Invalid port",
+      "invalid_cron": "Invalid Quartz expression",
+      "name_rule": "Start with a letter, and use lowercase letters, numbers, or underscores only",
+      "cn_name_rule": "Use Chinese characters, letters, or underscores only",
+      "property_name_rule": "Use Chinese characters, letters, numbers, or underscores only",
+      "normal_name_rule": "Use Chinese characters, letters, numbers, or underscores only, up to 48 characters",
+      "jdbc_rule": "Enter a valid JDBC URL, for example: jdbc:mysql://127.0.0.1:3306/db_name",
+      "account_name_rule": "Use 1–16 characters without spaces; letters, numbers, Chinese/CJK forms, and underscores are supported; underscores cannot be first or last",
+      "favorite_name_rule": "Use Chinese characters, letters, numbers, or underscores only, up to 48 characters",
+      "invalid_data_format": "Invalid data format"
+    }
+  },
+  "workbench": {
+    "back_home": "Back to home",
+    "language_switch": "Switch to {{language}}",
+    "route_error": {
+      "title": "This page could not be displayed",
+      "reload": "Reload page"
+    },
+    "skip_to_workspace": "Skip to main workspace",
+    "navigation": "Primary navigation",
+    "navigation_open": "Open primary navigation",
+    "navigation_close": "Close primary navigation",
+    "navigation_pin_open": "Keep primary navigation open",
+    "shortcuts": {
+      "title": "Keyboard shortcuts",
+      "description": "Press ? outside an editor to open or close this overview",
+      "open_button": "View keyboard shortcuts",
+      "open_help": "Open or close the shortcut overview",
+      "run_query": "Run the current statement in the graph query editor",
+      "fullscreen_graph": "Toggle full screen after focusing the canvas"
+    },
+    "context": {
+      "name": "Current graph context",
+      "graphspace": "Current GraphSpace",
+      "graphspace_label": "GraphSpace",
+      "graph": "Current graph",
+      "select_graphspace": "Select GraphSpace",
+      "select_graph": "Select graph",
+      "default_graphspace": "DEFAULT",
+      "non_pd_fixed": "DEFAULT fixed",
+      "graphspaces_load_failed": "GraphSpaces are temporarily unavailable. Your current page is preserved.",
+      "graphs_load_failed": "Graphs are temporarily unavailable. Your current page is preserved.",
+      "graphs_forbidden": "This account cannot read the graph list. Ask an administrator for access to the target graph.",
+      "graphspaces_forbidden": "This account cannot read graph spaces. Ask an administrator for graph-space access.",
+      "retry": "Retry",
+      "retry_graphspaces": "Retry GraphSpaces",
+      "retry_graphs": "Retry graphs"
+    },
+    "nav": {
+      "home": "Home",
+      "understand": "Graph Overview",
+      "graphs": "Graphs",
+      "graph_list": "Graph list",
+      "graph_overview": "Graph overview",
+      "prepare": "Graph Import",
+      "query": "Graph Query",
+      "support": "System and operations"
+    },
+    "page": {
+      "navigation": "Graph Data Workbench",
+      "graphs": "Graphs",
+      "schema": "Schema",
+      "graph_detail": "Graph details",
+      "graph_meta": "Graph metadata",
+      "datasource": "Data sources",
+      "import": "Data import",
+      "import_detail": "Import task details",
+      "query": "Graph Query",
+      "algorithms": "Graph Algorithms",
+      "async_tasks": "Async tasks",
+      "async_result": "Analysis task result",
+      "account": "Account management",
+      "profile": "My profile",
+      "not_found": "Page not found"
+    }
+  },
+  "request": {
+    "failed": "Request failed",
+    "error": "Request failed: {{message}}",
+    "error_with_path": "Request failed: {{message}} ({{path}})"
+  }
+}

@@ -18,23 +18,19 @@
 
 package org.apache.hugegraph.config;
 
-import java.io.File;
-
+import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.options.HubbleOptions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import org.apache.hugegraph.common.Constant;
+import java.io.File;
+import java.net.URL;
 
 @Configuration
 public class HubbleConfig {
-
-    private static final Logger LOG = LoggerFactory.getLogger(HubbleConfig.class);
 
     @Autowired
     private ApplicationArguments arguments;
@@ -52,15 +48,13 @@ public class HubbleConfig {
         // Register hubble config options
         OptionSpace.register(Constant.MODULE_NAME, HubbleOptions.instance());
         String conf = args[0];
-        try {
-            String path = HubbleConfig.class.getClassLoader()
-                                            .getResource(conf).getPath();
+        URL resource = HubbleConfig.class.getClassLoader().getResource(conf);
+        if (resource != null) {
+            String path = resource.getPath();
             File file = new File(path);
             if (file.exists() && file.isFile()) {
                 conf = path;
             }
-        } catch (Exception ignored) {
-            LOG.error("hugeConfig exception");
         }
         return new HugeConfig(conf);
     }

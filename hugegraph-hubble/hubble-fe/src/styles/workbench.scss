@@ -1,0 +1,471 @@
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with this
+ * work for additional information regarding copyright ownership. The ASF
+ * licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
+:root {
+    --workbench-color-brand: #1769e0;
+    --workbench-color-brand-strong: #0f56bd;
+    --workbench-color-text: #172033;
+    --workbench-color-text-secondary: #536179;
+    --workbench-color-text-tertiary: #7b879c;
+    --workbench-color-border: #d8dee9;
+    --workbench-color-surface: #ffffff;
+    --workbench-color-canvas: #f2f5f9;
+    --workbench-color-surface-muted: #f7f9fc;
+    --workbench-space-1: 4px;
+    --workbench-space-2: 8px;
+    --workbench-space-3: 12px;
+    --workbench-space-4: 16px;
+    --workbench-header-height: 64px;
+    --workbench-table-empty-min-height: clamp(144px, 24vh, 240px);
+    --workbench-radius: 6px;
+    --workbench-radius-lg: 10px;
+    --workbench-shadow-surface: 0 1px 2px rgba(16, 36, 64, 0.04),
+        0 8px 24px rgba(16, 36, 64, 0.05);
+    --workbench-focus-ring: 0 0 0 3px rgba(23, 105, 224, 0.28);
+}
+
+.workbench-skip-link {
+    position: fixed;
+    top: var(--workbench-space-2);
+    left: var(--workbench-space-2);
+    z-index: 1100;
+    padding: var(--workbench-space-2) var(--workbench-space-3);
+    border-radius: var(--workbench-radius);
+    background: var(--workbench-color-surface);
+    color: var(--workbench-color-brand-strong);
+    transform: translateY(-160%);
+
+    &:focus {
+        transform: translateY(0);
+    }
+
+    &:focus-visible {
+        box-shadow: var(--workbench-focus-ring);
+    }
+}
+
+.workbench-navigation {
+    display: flex;
+    flex: none;
+    position: sticky;
+    top: var(--workbench-header-height);
+    align-self: flex-start;
+    height: calc(100vh - var(--workbench-header-height));
+    background: var(--workbench-color-surface);
+    border-right: 1px solid var(--workbench-color-border);
+
+    .ant-layout-sider {
+        display: flex;
+        min-height: 0;
+        height: 100%;
+        padding-bottom: 0;
+        flex-direction: column;
+        background: var(--workbench-color-surface);
+    }
+
+    .ant-layout-sider-children {
+        position: relative;
+        min-height: 0;
+        flex: 1 1 auto;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+
+    .ant-layout-sider-trigger {
+        position: static;
+        width: 100% !important;
+        flex: 0 0 48px;
+    }
+
+    .ant-menu-inline {
+        border-right: 0;
+    }
+
+    .workbench-navigation-inline-toggle {
+        position: sticky;
+        z-index: 2;
+        top: 9px;
+        float: right;
+        width: 28px;
+        min-width: 28px;
+        height: 28px;
+        margin: 7px 12px -35px 0;
+        color: var(--workbench-color-text-secondary);
+        background: rgba(255, 255, 255, 0.88);
+
+        &:hover,
+        &:focus-visible {
+            color: var(--workbench-color-brand-strong);
+            background: #eaf2ff;
+        }
+    }
+
+    .ant-menu-item,
+    .ant-menu-submenu-title {
+        width: calc(100% - 16px);
+        margin: 4px 8px;
+        border-radius: var(--workbench-radius);
+    }
+
+    .ant-menu-item-selected {
+        color: var(--workbench-color-brand-strong);
+        background: #eaf2ff;
+        font-weight: 600;
+    }
+
+    :where(a[href], button, [role='button'], .ant-menu-item,
+        .ant-menu-submenu-title):focus-visible {
+        box-shadow: var(--workbench-focus-ring);
+    }
+
+}
+
+.workbench-mobile-navigation-toggle {
+    display: none;
+}
+
+@media (max-width: 900px) {
+    .workbench-navigation {
+        width: 0;
+        border-right: 0;
+
+        .ant-layout-sider {
+            position: fixed;
+            z-index: 1000;
+            top: var(--workbench-header-height);
+            bottom: 0;
+            left: 0;
+            height: calc(100vh - var(--workbench-header-height));
+            overflow-y: auto;
+            box-shadow: 8px 0 24px rgba(6, 28, 56, 0.18);
+        }
+
+        .ant-layout-sider-collapsed {
+            box-shadow: none;
+        }
+    }
+
+    .workbench-mobile-navigation-toggle {
+        position: fixed;
+        z-index: 1100;
+        top: 14px;
+        left: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+
+        &:hover,
+        &:focus {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.12);
+        }
+    }
+
+    .workbench-navigation-inline-toggle {
+        display: none;
+    }
+}
+
+.workbench-topbar {
+    :where(a[href], button, [role='button']):focus-visible {
+        box-shadow: var(--workbench-focus-ring);
+    }
+
+}
+
+#workbench-main {
+    color: var(--workbench-color-text);
+
+    .ant-btn,
+    .ant-input,
+    .ant-input-affix-wrapper,
+    .ant-input-number,
+    .ant-select-selector,
+    .ant-picker {
+        border-radius: var(--workbench-radius);
+    }
+
+    .ant-alert,
+    .ant-card,
+    .ant-modal-content {
+        border-radius: var(--workbench-radius-lg);
+    }
+
+    .ant-page-header-heading-title {
+        color: var(--workbench-color-text);
+        font-size: 20px;
+        line-height: 1.4;
+    }
+
+    .ant-form-item-extra {
+        color: var(--workbench-color-text-secondary);
+        line-height: 1.5;
+    }
+
+    .ant-table {
+        color: var(--workbench-color-text);
+    }
+
+    .ant-table-thead > tr > th {
+        color: #43516a;
+        background: var(--workbench-color-surface-muted);
+        font-weight: 600;
+    }
+
+    .ant-tabs-nav::before {
+        border-bottom-color: var(--workbench-color-border);
+    }
+
+    .ant-empty-description {
+        color: var(--workbench-color-text-secondary);
+    }
+
+    :where(a[href], button, [role='button'], .ant-tabs-tab-btn,
+        .ant-menu-item):focus-visible {
+        box-shadow: var(--workbench-focus-ring);
+    }
+
+}
+
+.workbench-login {
+    :where(a[href], button, [role='button']):focus-visible {
+        box-shadow: var(--workbench-focus-ring);
+    }
+}
+
+.workbench-page-title {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+#workbench-main:focus-visible {
+    box-shadow: var(--workbench-focus-ring);
+}
+
+// Ant Design renders modals in a body-level portal, outside #workbench-main.
+.ant-modal-root {
+    .ant-modal-mask {
+        background: rgba(13, 28, 50, 0.34);
+    }
+
+    .ant-modal-content {
+        overflow: hidden;
+        border: 1px solid rgba(216, 222, 233, 0.82);
+        border-radius: 12px;
+        background: var(--workbench-color-surface);
+        box-shadow: 0 20px 52px rgba(16, 36, 64, 0.18),
+            0 4px 14px rgba(16, 36, 64, 0.08);
+    }
+
+    .ant-modal-header {
+        padding: 20px 24px 16px;
+        border-bottom-color: var(--workbench-color-border);
+    }
+
+    .ant-modal-title {
+        color: var(--workbench-color-text);
+        font-size: 18px;
+        font-weight: 600;
+        line-height: 1.4;
+    }
+
+    .ant-modal-body {
+        padding: 24px;
+    }
+
+    .ant-modal-footer {
+        padding: 14px 24px;
+        border-top-color: var(--workbench-color-border);
+
+        .ant-btn {
+            min-width: 80px;
+        }
+    }
+
+    .ant-modal-close {
+        top: 8px;
+        right: 8px;
+        border-radius: var(--workbench-radius);
+        color: var(--workbench-color-text-secondary);
+
+        &:hover,
+        &:focus-visible {
+            color: var(--workbench-color-text);
+            background: var(--workbench-color-surface-muted);
+        }
+    }
+
+    .ant-form-item-label > label {
+        color: var(--workbench-color-text-secondary);
+        font-weight: 500;
+    }
+
+    .ant-form-item-label > label.ant-form-item-required::before {
+        color: #d4380d;
+    }
+
+    .ant-input,
+    .ant-input-affix-wrapper,
+    .ant-select-selector,
+    .ant-picker {
+        min-height: 40px;
+        border-color: var(--workbench-color-border);
+        border-radius: 8px !important;
+        transition: border-color 160ms ease, box-shadow 160ms ease,
+            background-color 160ms ease;
+    }
+
+    textarea.ant-input {
+        min-height: auto;
+    }
+
+    .ant-input:hover,
+    .ant-input-affix-wrapper:hover,
+    .ant-input-number:hover,
+    .ant-select:not(.ant-select-disabled):hover .ant-select-selector,
+    .ant-picker:hover {
+        border-color: #78a9ec;
+    }
+
+    .ant-input:focus,
+    .ant-input-focused,
+    .ant-input-affix-wrapper-focused,
+    .ant-input-number-focused,
+    .ant-select-focused:not(.ant-select-disabled) .ant-select-selector,
+    .ant-picker-focused {
+        border-color: var(--workbench-color-brand);
+        box-shadow: var(--workbench-focus-ring) !important;
+    }
+
+    .ant-form-item-has-error {
+        .ant-input,
+        .ant-input-affix-wrapper,
+        .ant-input-number,
+        .ant-select:not(.ant-select-disabled) .ant-select-selector,
+        .ant-picker {
+            border-color: #d4380d;
+        }
+
+        .ant-form-item-explain-error {
+            color: #c4320a;
+        }
+    }
+
+    .ant-input-disabled,
+    .ant-input-affix-wrapper-disabled,
+    .ant-input-number-disabled,
+    .ant-select-disabled .ant-select-selector,
+    .ant-picker-disabled {
+        border-color: #e2e6ed !important;
+        background: #f4f6f9 !important;
+        color: var(--workbench-color-text-tertiary);
+        cursor: not-allowed;
+    }
+
+        .ant-checkbox-wrapper:focus-within .ant-checkbox-inner,
+        .ant-radio-wrapper:focus-within .ant-radio-inner,
+        .ant-switch:focus-visible {
+            box-shadow: var(--workbench-focus-ring);
+        }
+
+    .property-create-form {
+        .ant-form-item {
+            margin-bottom: 20px;
+        }
+
+        .property-create-form__name {
+            width: 100%;
+        }
+
+        .property-create-form__select-row {
+            display: flex;
+            gap: 16px;
+
+            .ant-form-item {
+                min-width: 0;
+                flex: 1 1 0;
+                margin-bottom: 0;
+            }
+        }
+
+        .ant-select {
+            width: 100%;
+        }
+    }
+
+    .ant-modal.ant-zoom-enter,
+    .ant-modal.ant-zoom-appear {
+        opacity: 0;
+        transform: translateY(8px) scale(.985);
+    }
+
+    .ant-modal.ant-zoom-enter-active,
+    .ant-modal.ant-zoom-appear-active {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        transition: opacity 180ms ease-out, transform 180ms ease-out;
+        animation: none;
+    }
+
+    .ant-modal.ant-zoom-leave {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+
+    .ant-modal.ant-zoom-leave-active {
+        opacity: 0;
+        transform: translateY(8px) scale(.985);
+        transition: opacity 140ms ease-in, transform 140ms ease-in;
+        animation: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .ant-modal-root .property-create-form__select-row {
+        flex-direction: column;
+        gap: 0;
+
+        .ant-form-item {
+            margin-bottom: 20px;
+        }
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+
+    .ant-modal-root .ant-modal {
+        opacity: 1 !important;
+        transform: none !important;
+    }
+}

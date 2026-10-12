@@ -33,7 +33,8 @@ import org.apache.hugegraph.loader.util.Printer;
 import org.slf4j.Logger;
 
 import org.apache.hugegraph.util.Log;
-import com.ververica.cdc.connectors.mysql.source.MySqlSource;
+import org.apache.hugegraph.util.E;
+import org.apache.flink.cdc.connectors.mysql.source.MySqlSource;
 
 public class HugeGraphFlinkCDCLoader {
 
@@ -45,15 +46,18 @@ public class HugeGraphFlinkCDCLoader {
     public HugeGraphFlinkCDCLoader(String[] args) {
         this.options = args;
         this.loadOptions = LoadOptions.parseOptions(args);
+        HugeGraphOutputFormat.validateOptions(this.loadOptions);
+        E.checkArgument(this.loadOptions.sinkParallelism == 1,
+                        "CDC ordered writes require --cdc-sink-parallelism 1");
     }
 
     public static void main(String[] args) {
         HugeGraphFlinkCDCLoader loader;
         try {
             loader = new HugeGraphFlinkCDCLoader(args);
-        } catch (Throwable e) {
+        } catch (RuntimeException e) {
             Printer.printError("Failed to start loading", e);
-            return;
+            throw e;
         }
         loader.load();
     }
@@ -67,10 +71,7 @@ public class HugeGraphFlinkCDCLoader {
             MySqlSource<String> mysqlSource = buildMysqlSource(struct);
             DataStreamSource<String> source =
                     env.fromSource(mysqlSource, WatermarkStrategy.noWatermarks(), "MySQL Source");
-
-            HugeGraphOutputFormat<Object> format = new HugeGraphOutputFormat<>(struct, options);
-            source.addSink(new HugeGraphSinkFunction<>(format))
-                  .setParallelism(this.loadOptions.sinkParallelism);
+            this.configureSink(source, struct);
         }
         env.enableCheckpointing(3000);
         try {
@@ -78,6 +79,12 @@ public class HugeGraphFlinkCDCLoader {
         } catch (Exception e) {
             throw new LoadException("Failed to execute flink", e);
         }
+    }
+
+    void configureSink(DataStreamSource<String> source, InputStruct struct) {
+        source.setParallelism(1);
+        HugeGraphOutputFormat<Object> format = new HugeGraphOutputFormat<>(struct, options);
+        source.sinkTo(new HugeGraphSink<>(format)).setParallelism(1);
     }
 
     private MySqlSource<String> buildMysqlSource(InputStruct struct) {

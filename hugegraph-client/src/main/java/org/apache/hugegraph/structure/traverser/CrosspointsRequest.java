@@ -38,13 +38,13 @@ public class CrosspointsRequest {
     @JsonProperty("capacity")
     private long capacity;
     @JsonProperty("limit")
-    private int limit;
+    private long limit;
     @JsonProperty("with_path")
-    private boolean withPath;
+    public boolean withPath;
     @JsonProperty("with_vertex")
-    private boolean withVertex;
+    public boolean withVertex;
     @JsonProperty("with_edge")
-    private boolean withEdge;
+    public boolean withEdge;
 
     private CrosspointsRequest() {
         this.sources = null;
@@ -72,9 +72,9 @@ public class CrosspointsRequest {
 
     public static class Builder {
 
-        private CrosspointsRequest request;
-        private VerticesArgs.Builder sourcesBuilder;
-        private List<PathPattern.Builder> pathPatternBuilders;
+        private final CrosspointsRequest request;
+        private final VerticesArgs.Builder sourcesBuilder;
+        private final List<PathPattern.Builder> pathPatternBuilders;
 
         private Builder() {
             this.request = new CrosspointsRequest();
@@ -98,7 +98,7 @@ public class CrosspointsRequest {
             return this;
         }
 
-        public Builder limit(int limit) {
+        public Builder limit(long limit) {
             TraversersAPI.checkLimit(limit);
             this.request.limit = limit;
             return this;
@@ -146,8 +146,8 @@ public class CrosspointsRequest {
 
         public static class Builder {
 
-            private PathPattern pathPattern;
-            private List<Step.Builder> stepBuilders;
+            private final PathPattern pathPattern;
+            private final List<Step.Builder> stepBuilders;
 
             private Builder() {
                 this.pathPattern = new PathPattern();
@@ -199,7 +199,7 @@ public class CrosspointsRequest {
 
         public static class Builder {
 
-            private Step step;
+            private final Step step;
 
             private Builder() {
                 this.step = new Step();

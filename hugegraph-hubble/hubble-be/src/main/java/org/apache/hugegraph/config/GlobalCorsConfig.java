@@ -30,11 +30,11 @@ public class GlobalCorsConfig {
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
-        config.addAllowedOrigin("*");
-        config.setAllowCredentials(true);
+        // Same-origin is the secure default. Deployments that need cross-origin
+        // access must add an explicit trusted-origin allowlist.
+        config.setAllowCredentials(false);
         config.addAllowedMethod("*");
         config.addAllowedHeader("*");
-        config.addExposedHeader("/api/**");
 
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();

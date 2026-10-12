@@ -1,0 +1,97 @@
+/*!
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with this
+ * work for additional information regarding copyright ownership. The ASF
+ * licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
+.context {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  margin-left: 28px;
+}
+
+.graphspace {
+  min-width: 112px;
+  max-width: 240px;
+}
+
+.graph {
+  min-width: 112px;
+  max-width: 240px;
+}
+
+.separator {
+  color: rgba(255, 255, 255, 0.56);
+}
+
+.graphspace,
+.graph {
+  :global(.ant-select-selection-item) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.errorStack {
+  position: absolute;
+  z-index: 20;
+  top: 56px;
+  left: 148px;
+  display: grid;
+  gap: 8px;
+  min-width: 360px;
+}
+
+.error {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
+}
+
+@media (max-width: 1280px) {
+  .context {
+    margin-left: 16px;
+  }
+
+}
+
+@media (max-width: 900px) {
+  .context {
+    flex: 1 1 auto;
+    margin-left: 0;
+    overflow: hidden;
+
+    :global(.ant-space) {
+      display: flex;
+      width: 100%;
+    }
+  }
+
+  .graphspace,
+  .graph {
+    max-width: 30vw;
+    min-width: 88px;
+  }
+
+  .separator {
+    flex: none;
+  }
+
+  .errorStack {
+    right: 8px;
+    left: 8px;
+    min-width: 0;
+  }
+}

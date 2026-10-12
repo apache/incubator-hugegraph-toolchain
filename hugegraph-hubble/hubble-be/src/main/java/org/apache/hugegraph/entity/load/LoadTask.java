@@ -24,8 +24,9 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.hugegraph.annotation.MergeProperty;
-import org.apache.hugegraph.entity.enums.LoadStatus;
 import org.apache.hugegraph.entity.GraphConnection;
+import org.apache.hugegraph.entity.enums.LoadStatus;
+import org.apache.hugegraph.exception.InternalException;
 import org.apache.hugegraph.loader.HugeGraphLoader;
 import org.apache.hugegraph.loader.executor.LoadContext;
 import org.apache.hugegraph.loader.executor.LoadOptions;
@@ -76,6 +77,16 @@ public class LoadTask implements Runnable {
     @MergeProperty
     @JsonProperty("conn_id")
     private Integer connId;
+
+    @TableField(value = "graphspace")
+    @MergeProperty
+    @JsonProperty("graphspace")
+    private String graphSpace;
+
+    @TableField(value = "graph")
+    @MergeProperty
+    @JsonProperty("graph")
+    private String graph;
 
     @TableField(value = "job_id")
     @MergeProperty
@@ -143,6 +154,8 @@ public class LoadTask implements Runnable {
         this.finished = false;
         this.id = null;
         this.connId = connection.getId();
+        this.graphSpace = connection.getGraphSpace();
+        this.graph = connection.getGraph();
         this.jobId = mapping.getJobId();
         this.fileId = mapping.getId();
         this.fileName = mapping.getName();
@@ -155,13 +168,14 @@ public class LoadTask implements Runnable {
         this.lastDuration = 0L;
         this.currDuration = 0L;
         this.createTime = HubbleUtil.nowDate();
+
+        this.loader = new HugeGraphLoader(this.options);
     }
 
     @Override
     public void run() {
         Ex.check(this.options != null, "The load options shouldn't be null");
         log.info("LoadTask is start running : {}", this.id);
-        this.loader = new HugeGraphLoader(this.options);
 
         boolean noError;
         try {
@@ -181,7 +195,12 @@ public class LoadTask implements Runnable {
                     this.status = LoadStatus.FAILED;
                 }
             }
-            this.fileReadLines = this.context().newProgress().totalInputRead();
+            // Restore file read lines progress tracking
+            long readLines = this.context().newProgress().totalInputRead();
+            if (readLines == 0L) {
+                readLines = this.context().oldProgress().totalInputRead();
+            }
+            this.fileReadLines = readLines;
             this.lastDuration += this.context().summary().totalTime();
             this.currDuration = 0L;
         } finally {
@@ -211,6 +230,24 @@ public class LoadTask implements Runnable {
         log.info("LoadTask {} stopped", this.id);
     }
 
+    public void reconnect(String token) {
+        Ex.check(token != null && !token.isEmpty(),
+                 "A current authentication token is required to resume loading");
+        Ex.check(this.options != null, "Load options shouldn't be null");
+        try {
+            LoadOptions runtimeOptions = (LoadOptions) this.options.clone();
+            runtimeOptions.password = null;
+            runtimeOptions.token = token;
+            runtimeOptions.pdToken = null;
+            runtimeOptions.trustStoreToken = null;
+            this.loader = new HugeGraphLoader(runtimeOptions);
+            this.finished = false;
+        } catch (CloneNotSupportedException e) {
+            throw new InternalException("Failed to prepare load task options",
+                                        e);
+        }
+    }
+
     public LoadContext context() {
         Ex.check(this.loader != null, "loader shouldn't be null");
         return this.loader.context();
@@ -221,10 +258,14 @@ public class LoadTask implements Runnable {
         if (this.fileTotalLines == null || this.fileTotalLines == 0) {
             return 0;
         }
-        Ex.check(this.fileTotalLines >= this.fileReadLines,
-                 "The file total lines must be >= read lines, " +
-                 "but got total lines %s, read lines %s",
-                 this.fileTotalLines, this.fileReadLines);
+        // Clamp instead of throwing: this getter runs during JSON
+        // serialization, an exception here would fail the whole response
+        if (this.fileReadLines == null) {
+            return 0;
+        }
+        if (this.fileReadLines >= this.fileTotalLines) {
+            return 100;
+        }
         float actualProgress = (float) this.fileReadLines / this.fileTotalLines;
         return ((int) (actualProgress * 10000)) / 100.0F;
     }
@@ -242,7 +283,7 @@ public class LoadTask implements Runnable {
 
     @JsonProperty("load_rate")
     public String getLoadRate() {
-        long readLines = this.fileReadLines;
+        long readLines = this.fileReadLines == null ? 0L : this.fileReadLines;
         long duration = this.getDuration();
         float rate;
         if (readLines == 0L || duration == 0L) {

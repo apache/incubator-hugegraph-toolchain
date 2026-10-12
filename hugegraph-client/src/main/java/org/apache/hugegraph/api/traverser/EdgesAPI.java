@@ -32,8 +32,8 @@ import com.google.common.collect.ImmutableMap;
 
 public class EdgesAPI extends TraversersAPI {
 
-    public EdgesAPI(RestClient client, String graph) {
-        super(client, graph);
+    public EdgesAPI(RestClient client, String graphSpace, String graph) {
+        super(client, graphSpace, graph);
     }
 
     @Override

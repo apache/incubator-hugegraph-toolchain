@@ -20,50 +20,59 @@ package org.apache.hugegraph.util;
 
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hugegraph.common.Constant;
+import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.entity.GraphConnection;
 import org.apache.hugegraph.exception.ExternalException;
+import org.apache.hugegraph.exception.ServerException;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import org.apache.hugegraph.driver.HugeClient;
-import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.rest.ClientException;
-import org.apache.hugegraph.structure.gremlin.Result;
-import org.apache.hugegraph.structure.gremlin.ResultSet;
 import com.google.common.collect.ImmutableSet;
 
 public final class HugeClientUtil {
 
     private static final String DEFAULT_PROTOCOL = "http";
+    private static final String BEARER_SCHEME = "Bearer";
 
     private static final Set<String> ACCEPTABLE_EXCEPTIONS = ImmutableSet.of(
             "Permission denied: execute Resource"
     );
 
     public static HugeClient tryConnect(GraphConnection connection) {
+        String graphSpace = connection.getGraphSpace();
         String graph = connection.getGraph();
         String host = connection.getHost();
         Integer port = connection.getPort();
+        String tokenInput = connection.getToken();
+        String token = normalizeTokenPayload(tokenInput);
+        String authContext = null;
+        if (StringUtils.isNotBlank(tokenInput)) {
+            authContext = bearerAuthContext(tokenInput);
+        }
         String username = connection.getUsername();
         String password = connection.getPassword();
         int timeout = connection.getTimeout();
-        String protocol = connection.getProtocol() == null ?
+        String protocol = StringUtils.isEmpty(connection.getProtocol()) ?
                           DEFAULT_PROTOCOL :
                           connection.getProtocol();
         String trustStoreFile = connection.getTrustStoreFile();
         String trustStorePassword = connection.getTrustStorePassword();
 
         String url = UriComponentsBuilder.newInstance()
-                                         .scheme(protocol)
-                                         .host(host).port(port)
-                                         .toUriString();
+                                  .scheme(protocol)
+                                  .host(host).port(port)
+                                  .toUriString();
         if (username == null) {
             username = "";
             password = "";
         }
         HugeClient client;
+        boolean skipRequiredChecks = (graph == null || graph.isEmpty());
         try {
-            client = HugeClient.builder(url, graph)
+            client = HugeClient.builder(url, graphSpace, graph, skipRequiredChecks)
+                               .configToken(token)
                                .configUser(username, password)
                                .configTimeout(timeout)
                                .configSSL(trustStoreFile, trustStorePassword)
@@ -109,27 +118,36 @@ public final class HugeClientUtil {
             throw e;
         }
 
-        try {
-            ResultSet rs = client.gremlin().gremlin("g.V().limit(1)").execute();
-            rs.iterator().forEachRemaining(Result::getObject);
-        } catch (ServerException e) {
-            if (Constant.STATUS_UNAUTHORIZED == e.status()) {
-                throw new ExternalException(
-                          "graph-connection.username-or-password.incorrect", e);
-            }
-            String message = e.message();
-            if (message != null && message.contains("Could not rebind [g]")) {
-                throw new ExternalException("graph-connection.graph.unexist", e,
-                                            graph, host, port);
-            }
-            if (!isAcceptable(message)) {
-                throw e;
-            }
-        } catch (Exception e) {
-            client.close();
-            throw e;
+        if (authContext != null) {
+            client.setAuthContext(authContext);
         }
+
         return client;
+    }
+
+    public static String bearerAuthContext(String token) {
+        String normalized = normalizeTokenPayload(token);
+        if (StringUtils.isBlank(normalized)) {
+            throw new IllegalArgumentException(
+                    "Bearer token must contain a non-blank payload");
+        }
+        return BEARER_SCHEME + " " + normalized;
+    }
+
+    private static String normalizeTokenPayload(String token) {
+        String normalized = StringUtils.stripToNull(token);
+        if (normalized == null) {
+            return null;
+        }
+        int schemeLength = BEARER_SCHEME.length();
+        if (normalized.length() >= schemeLength &&
+            normalized.regionMatches(true, 0, BEARER_SCHEME, 0, schemeLength) &&
+            (normalized.length() == schemeLength ||
+             Character.isWhitespace(normalized.charAt(schemeLength)))) {
+            normalized = StringUtils.stripToNull(
+                    normalized.substring(schemeLength));
+        }
+        return normalized;
     }
 
     private static boolean isAcceptable(String message) {

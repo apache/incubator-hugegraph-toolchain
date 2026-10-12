@@ -1,0 +1,111 @@
+name: Setup HugeGraph Server
+description: Prepare an immutable release or candidate fixture, or start an independent test service
+inputs:
+  mode:
+    description: 'standalone (legacy), build (upload), or start (download)'
+    default: standalone
+  artifact-name:
+    description: Workflow-local immutable fixture artifact name
+    default: ''
+  repository:
+    description: Server source repository (Java 11 release requires apache/hugegraph)
+    default: apache/hugegraph
+  fetch-ref:
+    description: Fetchable source ref (must resolve to commit-id)
+    default: ''
+  commit-id:
+    description: Exact Server commit SHA (Java 11 release requires the locked 1.7.0 commit)
+    required: true
+  java-version:
+    description: JDK major used for the build and runtime
+    default: '11'
+  release-version:
+    description: Fixed official Server release used by Java 11 compatibility fixtures
+    default: '1.7.0'
+  java-home:
+    description: Optional fixture JDK scoped to this subprocess; keeps Toolchain JDK unchanged
+    default: ''
+  isolate-maven-repo:
+    description: Build fixtures without replacing Toolchain Maven dependencies
+    default: 'false'
+  travis-dir:
+    description: Module service setup directory
+    default: hugegraph-loader/assembly/travis
+runs:
+  using: composite
+  steps:
+    - name: Download shared Server fixture
+      if: inputs.mode == 'start'
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ runner.temp }}/hugegraph-fixture
+    - name: Restore exact Server fixture cache
+      if: inputs.mode == 'build'
+      uses: actions/cache@v4
+      with:
+        path: ~/hugegraph-fixture-cache
+        key: server-fixture-v2-${{ runner.os }}-${{ runner.arch }}-${{ inputs.repository }}-${{ inputs.commit-id }}-release${{ inputs.release-version }}-jdk${{ inputs.java-version }}-${{ hashFiles('.github/actions/setup-hugegraph-server/action.yml', '.github/actions/setup-hugegraph-server/fixture.sh', '.github/actions/setup-hugegraph-server/manifest.py', '.github/actions/setup-hugegraph-server/release.py', '.github/actions/setup-java-env/action.yml', '.github/configs/settings.xml', 'hugegraph-client/assembly/travis/checkout-server.sh', 'hugegraph-client/assembly/travis/install-candidate-sdk.sh', 'hugegraph-client/assembly/travis/start-hugegraph-servers.sh', 'hugegraph-client/assembly/travis/tls-fixture.sh', 'hugegraph-*/assembly/travis/install-hugegraph-from-source.sh', 'hugegraph-hubble/hubble-dist/assembly/travis/download-hugegraph.sh') }}
+    - name: Prepare fixture or start service
+      shell: bash
+      env:
+        FIXTURE_MODE: ${{ inputs.mode }}
+        FIXTURE_REPOSITORY: ${{ inputs.repository }}
+        FIXTURE_COMMIT: ${{ inputs.commit-id }}
+        FIXTURE_REF: ${{ inputs.fetch-ref }}
+        FIXTURE_BUILD_INPUTS: ${{ hashFiles('.github/actions/setup-hugegraph-server/action.yml', '.github/actions/setup-hugegraph-server/fixture.sh', '.github/actions/setup-hugegraph-server/manifest.py', '.github/actions/setup-hugegraph-server/release.py', '.github/actions/setup-java-env/action.yml', '.github/configs/settings.xml', 'hugegraph-client/assembly/travis/checkout-server.sh', 'hugegraph-client/assembly/travis/install-candidate-sdk.sh', 'hugegraph-client/assembly/travis/start-hugegraph-servers.sh', 'hugegraph-client/assembly/travis/tls-fixture.sh', 'hugegraph-*/assembly/travis/install-hugegraph-from-source.sh', 'hugegraph-hubble/hubble-dist/assembly/travis/download-hugegraph.sh') }}
+        FIXTURE_PLATFORM: ${{ runner.os }}-${{ runner.arch }}
+        FIXTURE_JAVA: ${{ inputs.java-version }}
+        FIXTURE_RELEASE_VERSION: ${{ inputs.release-version }}
+        FIXTURE_JAVA_HOME: ${{ inputs.java-home }}
+        ISOLATE_FIXTURE_REPO: ${{ inputs.isolate-maven-repo }}
+        FIXTURE_DIR: ${{ runner.temp }}/hugegraph-fixture
+        SERVER_REPOSITORY: ${{ inputs.repository }}
+        SERVER_FETCH_REF: ${{ inputs.fetch-ref }}
+        TRAVIS_DIR: ${{ inputs.travis-dir }}
+        FIXTURE_ACTION: ${{ github.action_path }}
+        FIXTURE_ARTIFACT: ${{ inputs.artifact-name }}
+      run: |
+        set -euo pipefail
+        if [[ -n "$FIXTURE_JAVA_HOME" ]]; then
+          [[ -x "$FIXTURE_JAVA_HOME/bin/java" && -x "$FIXTURE_JAVA_HOME/bin/javac" ]]
+          export JAVA_HOME="$FIXTURE_JAVA_HOME"
+          export PATH="$JAVA_HOME/bin:$PATH"
+        fi
+        if [[ "$ISOLATE_FIXTURE_REPO" == true && "$FIXTURE_MODE" != start ]]; then
+          fixture_repo=$(mktemp -d "$RUNNER_TEMP/hugegraph-fixture-m2.XXXXXX")
+          export MAVEN_ARGS="${MAVEN_ARGS:-} -Dmaven.repo.local=$fixture_repo"
+          export MAVEN_OPTS="${MAVEN_OPTS:-} -Dmaven.repo.local=$fixture_repo"
+        fi
+        if [[ "$FIXTURE_MODE" != standalone && -z "$FIXTURE_ARTIFACT" ]]; then
+          echo 'artifact-name is required for build/start mode' >&2
+          exit 1
+        fi
+        if [[ "$FIXTURE_MODE" == build ]]; then
+          bash "$FIXTURE_ACTION/fixture.sh"
+        else
+          # Keep downloaded archives and legacy source checkouts out of the caller's tree.
+          TRAVIS_DIR=$(cd "$TRAVIS_DIR" && pwd)
+          export TRAVIS_DIR
+          server_build=$(mktemp -d "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/hugegraph-build.XXXXXX")
+          cd "$server_build"
+          if [[ "$FIXTURE_MODE" == standalone ]]; then
+            FIXTURE_MODE=build bash "$FIXTURE_ACTION/fixture.sh"
+            export FIXTURE_MODE=start
+          fi
+          if [[ -f "$TRAVIS_DIR/install-hugegraph-from-source.sh" ]]; then
+            bash "$TRAVIS_DIR/install-hugegraph-from-source.sh" "$FIXTURE_COMMIT"
+          else
+            bash "$TRAVIS_DIR/install-hugegraph.sh" "$FIXTURE_COMMIT" "$FIXTURE_REF"
+          fi
+        fi
+    - name: Upload shared Server fixture
+      if: inputs.mode == 'build'
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: |
+          ${{ runner.temp }}/hugegraph-fixture/server.tar.gz
+          ${{ runner.temp }}/hugegraph-fixture/manifest.json
+        if-no-files-found: error
+        retention-days: 7

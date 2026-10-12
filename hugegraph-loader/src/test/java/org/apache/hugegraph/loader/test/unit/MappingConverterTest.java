@@ -70,19 +70,11 @@ public class MappingConverterTest {
                         "        \"Rating\": \"rate\"" +
                         "      }" +
                         "    }" +
-                        "  ]," +
-                        "  \"backendStoreInfo\":" +
-                        "  {" +
-                        "    \"edge_tablename\": \"hugegraph:g_oe\"," +
-                        "    \"vertex_tablename\": \"hugegraph:g_v\"," +
-                        "    \"hbase_zookeeper_quorum\": \"127.0.0.1\"," +
-                        "    \"hbase_zookeeper_property_clientPort\": \"2181\"," +
-                        "    \"zookeeper_znode_parent\": \"/hbase\"" +
-                        "  }" +
+                        "  ]" +
                         "}";
         String input = "struct.json";
         File inputFile = new File(input);
-        Charset charset = StandardCharsets.UTF_8;
+        Charset charset = Charset.forName("UTF-8");
         FileUtils.writeStringToFile(inputFile, v1Json, charset);
         MappingConverter.main(new String[]{input});
 
@@ -92,44 +84,41 @@ public class MappingConverterTest {
                               "\"structs\":[{\"id\":\"1\",\"skip\":false," +
                               "\"input\":{\"type\":\"FILE\",\"path\":\"users.dat\"," +
                               "\"file_filter\":{\"extensions\":[\"*\"]}," +
+                              "\"dir_filter\":{\"include_regex\":\"\",\"exclude_regex\":\"\"}," +
                               "\"format\":\"TEXT\",\"delimiter\":\"::\"," +
                               "\"date_format\":\"yyyy-MM-dd HH:mm:ss\"," +
+                              "\"extra_date_formats\":[]," +
                               "\"time_zone\":\"GMT+8\",\"skipped_line\":{\"regex\":\"" +
                               "(^#|^//).*|\"},\"compression\":\"NONE\"," +
                               "\"batch_size\":500,\"header\":[\"UserID\",\"Gender\"," +
                               "\"Age\",\"Occupation\",\"Zip-code\"]," +
-                              "\"charset\":\"UTF-8\",\"list_format\":null}," +
+                              "\"charset\":\"UTF-8\",\"list_format\":null,\"split_count\":0}," +
                               "\"vertices\":[{\"label\":\"user\",\"skip\":false," +
                               "\"id\":null,\"unfold\":false," +
                               "\"field_mapping\":{\"UserID\":\"id\"}," +
                               "\"value_mapping\":{},\"selected\":[]," +
                               "\"ignored\":[\"Occupation\",\"Zip-code\",\"Gender\"," +
                               "\"Age\"],\"null_values\":[\"\"]," +
-                              "\"update_strategies\":{},\"batch_size\":500}],\"edges\":[]}," +
-                              "{\"id\":\"2\"," +
+                              "\"update_strategies\":{}}],\"edges\":[]},{\"id\":\"2\"," +
                               "\"skip\":false,\"input\":{\"type\":\"FILE\"," +
                               "\"path\":\"ratings.dat\"," +
                               "\"file_filter\":{\"extensions\":[\"*\"]}," +
+                              "\"dir_filter\":{\"include_regex\":\"\",\"exclude_regex\":\"\"}," +
                               "\"format\":\"TEXT\",\"delimiter\":\"::\"," +
                               "\"date_format\":\"yyyy-MM-dd HH:mm:ss\"," +
+                              "\"extra_date_formats\":[]," +
                               "\"time_zone\":\"GMT+8\",\"skipped_line\":{\"regex\":\"" +
                               "(^#|^//).*|\"},\"compression\":\"NONE\"," +
                               "\"batch_size\":500,\"header\":[\"UserID\",\"MovieID\"," +
                               "\"Rating\",\"Timestamp\"],\"charset\":\"UTF-8\"," +
-                              "\"list_format\":null},\"vertices\":[]," +
+                              "\"list_format\":null,\"split_count\":0},\"vertices\":[]," +
                               "\"edges\":[{\"label\":\"rating\",\"skip\":false," +
                               "\"source\":[\"UserID\"],\"unfold_source\":false," +
                               "\"target\":[\"MovieID\"],\"unfold_target\":false," +
                               "\"field_mapping\":{\"UserID\":\"id\",\"MovieID\":\"id\"," +
                               "\"Rating\":\"rate\"},\"value_mapping\":{},\"selected\":[]," +
                               "\"ignored\":[\"Timestamp\"],\"null_values\":[\"\"]," +
-                              "\"update_strategies\":{},\"batch_size\":500}]}]," +
-                              "\"backendStoreInfo\":{" +
-                              "\"edge_tablename\":\"hugegraph:g_oe\"," +
-                              "\"vertex_tablename\":\"hugegraph:g_v\"," +
-                              "\"hbase_zookeeper_quorum\":\"127.0.0.1\"," +
-                              "\"hbase_zookeeper_property_clientPort\":\"2181\"," +
-                              "\"zookeeper_znode_parent\":\"/hbase\"}}";
+                              "\"update_strategies\":{}}]}]}";
         Assert.assertEquals(expectV2Json, actualV2Json);
 
         FileUtils.forceDelete(inputFile);

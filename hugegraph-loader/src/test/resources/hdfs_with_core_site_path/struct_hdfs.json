@@ -4,7 +4,7 @@
       "label": "person",
       "input": {
         "type": "hdfs",
-        "path": "${store_path}/vertex_person.csv",
+        "path": "hdfs://localhost:8020/files/vertex_person.csv",
         "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
         "format": "CSV",
         "charset": "UTF-8"

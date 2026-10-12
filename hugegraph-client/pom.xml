@@ -27,6 +27,7 @@
     </parent>
 
     <artifactId>hugegraph-client</artifactId>
+    <version>${revision}</version>
     <packaging>jar</packaging>
 
     <name>${project.artifactId}</name>
@@ -48,6 +49,7 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
+            <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -56,23 +58,20 @@
             <version>${lombok.version}</version>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>org.apache.hugegraph</groupId>
+            <artifactId>hg-pd-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hugegraph</groupId>
+            <artifactId>hg-pd-grpc</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.1</version>
-                <configuration>
-                    <source>${compiler.source}</source>
-                    <target>${compiler.target}</target>
-                    <compilerArguments>
-                        <Xmaxerrs>500</Xmaxerrs>
-                    </compilerArguments>
-                    <compilerArgs>
-                        <arg>-Xlint:unchecked</arg>
-                    </compilerArgs>
-                </configuration>
             </plugin>
 
             <plugin>
@@ -97,7 +96,6 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.2</version>
                 <configuration>
                     <excludes>
                         <exclude>org/apache/hugegraph/example/*.class</exclude>

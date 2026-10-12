@@ -23,7 +23,11 @@ import org.junit.BeforeClass;
 public class TraverserApiTest extends BaseApiTest {
 
     protected static SameNeighborsAPI sameNeighborsAPI;
+    protected static SameNeighborsBatchAPI sameNeighborsBatchAPI;
     protected static JaccardSimilarityAPI jaccardSimilarityAPI;
+    protected static AdamicAdarAPI adamicAdarAPI;
+    protected static ResourceAllocationAPI resouceAllocationAPI;
+
     protected static ShortestPathAPI shortestPathAPI;
     protected static AllShortestPathsAPI allShortestPathsAPI;
     protected static SingleSourceShortestPathAPI singleSourceShortestPathAPI;
@@ -55,35 +59,39 @@ public class TraverserApiTest extends BaseApiTest {
     public static void init() {
         BaseApiTest.init();
 
-        sameNeighborsAPI = new SameNeighborsAPI(client, GRAPH);
-        jaccardSimilarityAPI = new JaccardSimilarityAPI(client, GRAPH);
-        shortestPathAPI = new ShortestPathAPI(client, GRAPH);
-        allShortestPathsAPI = new AllShortestPathsAPI(client, GRAPH);
-        singleSourceShortestPathAPI = new SingleSourceShortestPathAPI(client,
+        sameNeighborsAPI = new SameNeighborsAPI(client, GRAPHSPACE, GRAPH);
+        sameNeighborsBatchAPI = new SameNeighborsBatchAPI(client, GRAPHSPACE, GRAPH);
+        jaccardSimilarityAPI = new JaccardSimilarityAPI(client, GRAPHSPACE, GRAPH);
+        adamicAdarAPI = new AdamicAdarAPI(client, GRAPHSPACE, GRAPH);
+        resouceAllocationAPI = new ResourceAllocationAPI(client, GRAPHSPACE, GRAPH);
+
+        shortestPathAPI = new ShortestPathAPI(client, GRAPHSPACE, GRAPH);
+        allShortestPathsAPI = new AllShortestPathsAPI(client, GRAPHSPACE, GRAPH);
+        singleSourceShortestPathAPI = new SingleSourceShortestPathAPI(client, GRAPHSPACE,
                                                                       GRAPH);
-        weightedShortestPathAPI = new WeightedShortestPathAPI(client, GRAPH);
-        multiNodeShortestPathAPI = new MultiNodeShortestPathAPI(client, GRAPH);
-        pathsAPI = new PathsAPI(client, GRAPH);
-        crosspointsAPI = new CrosspointsAPI(client, GRAPH);
-        koutAPI = new KoutAPI(client, GRAPH);
-        kneighborAPI = new KneighborAPI(client, GRAPH);
+        weightedShortestPathAPI = new WeightedShortestPathAPI(client, GRAPHSPACE, GRAPH);
+        multiNodeShortestPathAPI = new MultiNodeShortestPathAPI(client, GRAPHSPACE, GRAPH);
+        pathsAPI = new PathsAPI(client, GRAPHSPACE, GRAPH);
+        crosspointsAPI = new CrosspointsAPI(client, GRAPHSPACE, GRAPH);
+        koutAPI = new KoutAPI(client, GRAPHSPACE, GRAPH);
+        kneighborAPI = new KneighborAPI(client, GRAPHSPACE, GRAPH);
 
-        ringsAPI = new RingsAPI(client, GRAPH);
-        raysAPI = new RaysAPI(client, GRAPH);
+        ringsAPI = new RingsAPI(client, GRAPHSPACE, GRAPH);
+        raysAPI = new RaysAPI(client, GRAPHSPACE, GRAPH);
 
-        countAPI = new CountAPI(client, GRAPH);
+        countAPI = new CountAPI(client, GRAPHSPACE, GRAPH);
 
-        customizedPathsAPI = new CustomizedPathsAPI(client, GRAPH);
-        customizedCrosspointsAPI = new CustomizedCrosspointsAPI(client, GRAPH);
-        fusiformSimilarityAPI = new FusiformSimilarityAPI(client, GRAPH);
-        templatePathsAPI = new TemplatePathsAPI(client, GRAPH);
+        customizedPathsAPI = new CustomizedPathsAPI(client, GRAPHSPACE, GRAPH);
+        customizedCrosspointsAPI = new CustomizedCrosspointsAPI(client, GRAPHSPACE, GRAPH);
+        fusiformSimilarityAPI = new FusiformSimilarityAPI(client, GRAPHSPACE, GRAPH);
+        templatePathsAPI = new TemplatePathsAPI(client, GRAPHSPACE, GRAPH);
 
-        neighborRankAPI = new NeighborRankAPI(client, GRAPH);
-        personalRankAPI = new PersonalRankAPI(client, GRAPH);
+        neighborRankAPI = new NeighborRankAPI(client, GRAPHSPACE, GRAPH);
+        personalRankAPI = new PersonalRankAPI(client, GRAPHSPACE, GRAPH);
 
-        verticesAPI = new VerticesAPI(client, GRAPH);
-        edgesAPI = new EdgesAPI(client, GRAPH);
+        verticesAPI = new VerticesAPI(client, GRAPHSPACE, GRAPH);
+        edgesAPI = new EdgesAPI(client, GRAPHSPACE, GRAPH);
 
-        edgeExistenceAPI = new EdgeExistenceAPI(client, GRAPH);
+        edgeExistenceAPI = new EdgeExistenceAPI(client, GRAPHSPACE, GRAPH);
     }
 }

@@ -48,7 +48,7 @@ public class BatchOlapPropertyRequest {
 
     public static class Builder {
 
-        private BatchOlapPropertyRequest req;
+        private final BatchOlapPropertyRequest req;
 
         private Builder() {
             this.req = new BatchOlapPropertyRequest();
@@ -96,7 +96,7 @@ public class BatchOlapPropertyRequest {
 
         public static class Builder {
 
-            private OlapVertex vertex;
+            private final OlapVertex vertex;
 
             public Builder() {
                 this.vertex = new OlapVertex();

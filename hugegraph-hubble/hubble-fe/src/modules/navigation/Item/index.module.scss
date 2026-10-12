@@ -1,0 +1,78 @@
+/*!
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with this
+ * work for additional information regarding copyright ownership. The ASF
+ * licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
+.container {
+    min-width: 0;
+    padding: 20px;
+    border: 1px solid var(--workbench-color-border);
+    border-radius: var(--workbench-radius);
+    background: var(--workbench-color-surface);
+}
+
+.embedded {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+}
+
+.itemList {
+    display: grid;
+    gap: 10px;
+}
+
+.item {
+    min-width: 0;
+
+    :global(.ant-btn) {
+        display: flex;
+        min-height: 38px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        border-radius: 6px;
+        text-align: left;
+    }
+
+    :global(.ant-btn[disabled]) {
+        border-color: var(--workbench-color-border);
+        background: #f7f9fc;
+        color: var(--workbench-color-text-secondary);
+    }
+}
+
+.badge {
+    flex: none;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: #e8edf5;
+    color: #667085;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 18px;
+}
+
+.reason {
+    width: 100%;
+    min-width: 0;
+    color: #8c8c8c;
+    font-size: 12px;
+    line-height: 18px;
+    overflow-wrap: anywhere;
+    white-space: normal;
+}

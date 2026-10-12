@@ -23,6 +23,13 @@ function java_env_check() {
         echo "cannot find java in environment."
         exit 1
     fi
+    local java_version
+    java_version=$(java -version 2>&1 | sed -n 's/.*version "\([^"]*\)".*/\1/p' | head -1)
+    local java_major=${java_version%%.*}
+    if [[ ! "${java_major}" =~ ^[0-9]+$ ]] || [[ ${java_major} -lt 17 ]]; then
+        echo "Hubble requires Java 17 or newer; found ${java_version:-unknown}." >&2
+        exit 1
+    fi
 }
 
 # read a property from .properties file
@@ -40,19 +47,36 @@ function wait_for_startup() {
     local timeout_s=$2
     local now_s=$(date '+%s')
     local stop_s=$(( now_s + timeout_s ))
-    local status=0
+    local body=""
+    local request_timeout_s=0
+    local sleep_s=0
 
-    while [[ ${now_s} -le ${stop_s} ]]; do
+    while [[ ${now_s} -lt ${stop_s} ]]; do
         echo -n .
-        status=$(curl -o /dev/null -s -w %{http_code} "${server_url}")
-        if [[ ${status} -eq 200 ]]; then
+        request_timeout_s=$(( stop_s - now_s ))
+        if [[ ${request_timeout_s} -gt 5 ]]; then
+            request_timeout_s=5
+        fi
+        body=$(curl -fsS --connect-timeout 1 \
+                    --max-time "${request_timeout_s}" \
+                    "${server_url}" 2>/dev/null || true)
+        if [[ "${body}" == *'"status":200'* &&
+              "${body}" == *'"name":"hugegraph-hubble"'* ]]; then
             echo "OK"
             return 0
         fi
-        sleep 2
+        now_s=$(date '+%s')
+        if [[ ${now_s} -ge ${stop_s} ]]; then
+            break
+        fi
+        sleep_s=$(( stop_s - now_s ))
+        if [[ ${sleep_s} -gt 2 ]]; then
+            sleep_s=2
+        fi
+        sleep "${sleep_s}"
         now_s=$(date '+%s')
     done
 
-    echo "timed out with http status $status" >&2
+    echo "timed out waiting for HugeGraph Hubble readiness response" >&2
     return 1
 }

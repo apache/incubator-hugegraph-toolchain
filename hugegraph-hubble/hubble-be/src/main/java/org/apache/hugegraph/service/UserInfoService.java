@@ -18,12 +18,12 @@
 
 package org.apache.hugegraph.service;
 
+import org.apache.hugegraph.entity.UserInfo;
 import org.apache.hugegraph.exception.InternalException;
+import org.apache.hugegraph.mapper.UserInfoMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import org.apache.hugegraph.entity.UserInfo;
-import org.apache.hugegraph.mapper.UserInfoMapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 

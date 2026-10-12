@@ -22,14 +22,17 @@ import static org.apache.hugegraph.loader.constant.Constants.SINGLE_WORKER;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.hugegraph.loader.util.Printer;
 import org.slf4j.Logger;
 
 import org.apache.hugegraph.loader.builder.Record;
 import org.apache.hugegraph.loader.exception.LoadException;
+import org.apache.hugegraph.loader.exception.InsertException;
 import org.apache.hugegraph.loader.executor.LoadContext;
 import org.apache.hugegraph.loader.executor.LoadOptions;
 import org.apache.hugegraph.loader.mapping.ElementMapping;
@@ -49,6 +52,8 @@ public final class TaskManager {
     private final Semaphore singleSemaphore;
     private final ExecutorService batchService;
     private final ExecutorService singleService;
+    private boolean accepting = true;
+    private int submissions;
 
     public TaskManager(LoadContext context) {
         this.context = context;
@@ -86,84 +91,240 @@ public final class TaskManager {
 
     public void waitFinished(String tasksName) {
         LOG.info("Waiting for the {} to finish", tasksName);
-        try {
-            // Wait batch mode task stopped
-            this.batchSemaphore.acquire(this.batchSemaphoreNum());
-        } catch (InterruptedException e) {
-            LOG.error("Interrupted while waiting batch-mode tasks");
-        } finally {
-            this.batchSemaphore.release(this.batchSemaphoreNum());
-        }
-
-        try {
-            // Wait single mode task stopped
-            this.singleSemaphore.acquire(this.singleSemaphoreNum());
-        } catch (InterruptedException e) {
-            LOG.error("Interrupted while waiting single-mode tasks");
-        } finally {
-            this.singleSemaphore.release(this.singleSemaphoreNum());
-        }
+        this.waitForTasks(this.batchSemaphore, this.batchSemaphoreNum(), "batch-mode");
+        this.waitForTasks(this.singleSemaphore, this.singleSemaphoreNum(), "single-mode");
         LOG.info("All the {} finished", tasksName);
+        this.context.throwIfFailed();
+    }
+
+    private void waitForTasks(Semaphore semaphore, int permits, String mode) {
+        try {
+            semaphore.acquire(permits);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            this.context.failLoading(e);
+            throw new LoadException("Interrupted while waiting %s tasks", e, mode);
+        }
+        semaphore.release(permits);
     }
 
     public void shutdown() {
-        long timeout = this.options.shutdownTimeout;
-        try {
-            this.batchService.shutdown();
-            this.batchService.awaitTermination(timeout, TimeUnit.SECONDS);
-            LOG.info("The batch-mode tasks service executor shutdown");
-        } catch (InterruptedException e) {
-            LOG.error("The batch-mode tasks are interrupted");
-        } finally {
-            if (!this.batchService.isTerminated()) {
-                LOG.error("The unfinished batch-mode tasks will be cancelled");
-            }
-            this.batchService.shutdownNow();
+        synchronized (this) {
+            this.accepting = false;
         }
+        boolean interrupted = Thread.interrupted();
+        if (interrupted) {
+            this.context.failLoading(new InterruptedException("Interrupted while shutting down insert tasks"));
+        }
+        try {
+            interrupted |= this.shutdownExecutor(this.batchService, "batch-mode");
+            interrupted |= this.shutdownExecutor(this.singleService, "single-mode");
+            if (!this.batchService.isTerminated() || !this.singleService.isTerminated()) {
+                LoadException failure = new LoadException("Insert tasks did not terminate within shutdown timeout");
+                this.context.failLoading(failure);
+                throw failure;
+            }
+            this.waitForHandlers(this.batchSemaphore, this.batchSemaphoreNum());
+            this.waitForHandlers(this.singleSemaphore, this.singleSemaphoreNum());
+            this.waitForSubmissions();
+        } finally {
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
 
+    private synchronized void waitForSubmissions() {
+        boolean interrupted = false;
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(this.options.shutdownTimeout);
         try {
-            this.singleService.shutdown();
-            this.singleService.awaitTermination(timeout, TimeUnit.SECONDS);
-            LOG.info("The single-mode tasks service executor shutdown");
-        } catch (InterruptedException e) {
-            LOG.error("The single-mode tasks are interrupted");
-        } finally {
-            if (!this.singleService.isTerminated()) {
-                LOG.error("The unfinished single-mode tasks will be cancelled");
+            while (this.submissions != 0) {
+                long remaining = deadline - System.nanoTime();
+                if (remaining <= 0) {
+                    LoadException failure = new LoadException("Batch submitters did not finish within shutdown timeout");
+                    this.context.failLoading(failure);
+                    throw failure;
+                }
+                try {
+                    TimeUnit.NANOSECONDS.timedWait(this, remaining);
+                } catch (InterruptedException e) {
+                    interrupted = true;
+                    this.context.failLoading(e);
+                }
             }
-            this.singleService.shutdownNow();
+        } finally {
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
         }
+    }
+
+    private void waitForHandlers(Semaphore semaphore, int permits) {
+        boolean interrupted = false;
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(this.options.shutdownTimeout);
+        try {
+            while (true) {
+                try {
+                    if (semaphore.tryAcquire(permits, deadline - System.nanoTime(), TimeUnit.NANOSECONDS)) {
+                        semaphore.release(permits);
+                        return;
+                    }
+                    LoadException failure = new LoadException("Insert handlers did not finish within shutdown timeout");
+                    this.context.failLoading(failure);
+                    throw failure;
+                } catch (InterruptedException e) {
+                    interrupted = true;
+                    this.context.failLoading(e);
+                }
+            }
+        } finally {
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    private boolean shutdownExecutor(ExecutorService service, String mode) {
+        boolean interrupted = false;
+        service.shutdown();
+        // Bound both the graceful drain and the wait after cancellation.
+        for (int attempt = 0; attempt < 2 && !service.isTerminated(); attempt++) {
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(this.options.shutdownTimeout);
+            while (!service.isTerminated()) {
+                long remaining = deadline - System.nanoTime();
+                if (remaining <= 0) {
+                    break;
+                }
+                try {
+                    service.awaitTermination(remaining, TimeUnit.NANOSECONDS);
+                } catch (InterruptedException e) {
+                    interrupted = true;
+                    this.context.failLoading(e);
+                }
+            }
+            if (!service.isTerminated()) {
+                LOG.error("The unfinished {} tasks will be cancelled", mode);
+                this.context.failLoading(new LoadException("Cancelling unfinished %s tasks", mode));
+                for (Runnable queued : service.shutdownNow()) {
+                    if (queued instanceof InsertFuture) {
+                        ((InsertFuture) queued).cancel(false);
+                    }
+                }
+            }
+        }
+        return interrupted;
     }
 
     public void submitBatch(InputStruct struct, ElementMapping mapping,
                             List<Record> batch) {
+        synchronized (this) {
+            if (!this.accepting) {
+                LoadException failure = new LoadException("Cannot submit batch after insert tasks shutdown");
+                this.context.failLoading(failure);
+                throw failure;
+            }
+            this.submissions++;
+        }
+        try {
+            this.submitBatchInternal(struct, mapping, batch);
+        } finally {
+            synchronized (this) {
+                this.submissions--;
+                this.notifyAll();
+            }
+        }
+    }
+
+    private void submitBatchInternal(InputStruct struct, ElementMapping mapping,
+                                     List<Record> batch) {
         long start = System.currentTimeMillis();
+        this.checkAcceptingBatches();
         try {
             this.batchSemaphore.acquire();
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            this.context.failLoading(e);
             throw new LoadException("Interrupted while waiting to submit %s " +
                                     "batch in batch mode", e, mapping.type());
         }
+        try {
+            this.checkAcceptingBatches();
+        } catch (RuntimeException e) {
+            this.batchSemaphore.release();
+            throw e;
+        }
+        if (this.context.stopped()) {
+            try {
+                if (!this.context.stoppedAtReadLimit()) {
+                    this.recordFailedBatch(struct, mapping, batch,
+                                           new LoadException("Loading stopped before batch submission"));
+                }
+            } finally {
+                this.batchSemaphore.release();
+            }
+            return;
+        }
         LoadSummary summary = this.context.summary();
         summary.metrics(struct).plusFlighting(batch.size());
-
-        InsertTask task = new BatchInsertTask(this.context, struct,
-                                              mapping, batch);
-        CompletableFuture.runAsync(task, this.batchService).whenComplete(
-            (r, e) -> {
+        InsertFuture task = new InsertFuture(new BatchInsertTask(this.context, struct, mapping, batch));
+        task.whenComplete((r, e) -> {
+            boolean singleSubmitted = false;
+            try {
                 if (e != null) {
-                    LOG.warn("Batch insert {} error, try single insert",
-                             mapping.type(), e);
-                    // The time of single insert is counted separately
-                    this.submitInSingle(struct, mapping, batch);
-                } else {
-                    summary.metrics(struct).minusFlighting(batch.size());
+                    if (e instanceof CancellationException) {
+                        this.context.failLoading(e);
+                    } else if (this.options.batchFailureFallback) {
+                        LOG.warn("Batch insert {} error, try single insert", mapping.type(), e);
+                        singleSubmitted = true;
+                        this.submitInSingle(struct, mapping, batch);
+                    } else {
+                        this.context.occurredError();
+                        this.context.stopLoading();
+                        this.recordFailedBatch(struct, mapping, batch, e);
+                        LOG.error("Batch insert {} error, interrupting import", mapping.type(), e);
+                        Printer.printError("Batch insert %s failed, stop loading. " +
+                                           "Please check the logs", mapping.type().string());
+                    }
                 }
+            } catch (Throwable failure) {
+                this.context.failLoading(failure);
+            } finally {
+                try {
+                    if (!singleSubmitted) {
+                        summary.metrics(struct).minusFlighting(batch.size());
+                    }
+                    this.context.summary().addTimeRange(mapping.type(), start,
+                                                        System.currentTimeMillis());
+                } catch (Throwable failure) {
+                    this.context.failLoading(failure);
+                } finally {
+                    this.batchSemaphore.release();
+                }
+            }
+        });
+        this.execute(task, this.batchService);
+    }
 
-                this.batchSemaphore.release();
-                long end = System.currentTimeMillis();
-                this.context.summary().addTimeRange(mapping.type(), start, end);
-            });
+    private void checkAcceptingBatches() {
+        if (this.batchService.isShutdown() || this.context.closed()) {
+            LoadException failure = new LoadException("Cannot submit batch after insert tasks shutdown");
+            this.context.failLoading(failure);
+            throw failure;
+        }
+    }
+
+    private void recordFailedBatch(InputStruct struct, ElementMapping mapping,
+                                   List<Record> batch, Throwable failure) {
+        this.context.occurredError();
+        try {
+            for (Record record : batch) {
+                this.context.summary().metrics(struct).increaseInsertFailure(mapping);
+                this.context.failureLogger(struct).write(new InsertException(record.rawLine(), failure));
+            }
+        } catch (RuntimeException e) {
+            this.context.failLoading(e);
+            throw e;
+        }
     }
 
     private void submitInSingle(InputStruct struct, ElementMapping mapping,
@@ -172,20 +333,58 @@ public final class TaskManager {
         try {
             this.singleSemaphore.acquire();
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            this.context.summary().metrics(struct).minusFlighting(batch.size());
             throw new LoadException("Interrupted while waiting to submit %s " +
                                     "batch in single mode", e, mapping.type());
         }
         LoadSummary summary = this.context.summary();
+        InsertFuture task = new InsertFuture(new SingleInsertTask(this.context, struct, mapping, batch));
+        task.whenComplete((r, e) -> {
+            try {
+                if (e != null) {
+                    this.context.failLoading(e);
+                }
+            } finally {
+                try {
+                    summary.metrics(struct).minusFlighting(batch.size());
+                    this.context.summary().addTimeRange(mapping.type(), start,
+                                                        System.currentTimeMillis());
+                } catch (Throwable failure) {
+                    this.context.failLoading(failure);
+                } finally {
+                    this.singleSemaphore.release();
+                }
+            }
+        });
+        this.execute(task, this.singleService);
+    }
 
-        InsertTask task = new SingleInsertTask(this.context, struct,
-                                               mapping, batch);
-        CompletableFuture.runAsync(task, this.singleService).whenComplete(
-            (r, e) -> {
-                summary.metrics(struct).minusFlighting(batch.size());
-                this.singleSemaphore.release();
+    private void execute(InsertFuture task, ExecutorService service) {
+        try {
+            service.execute(task);
+        } catch (RuntimeException e) {
+            this.context.failLoading(e);
+            task.cancel(false);
+            throw e;
+        }
+    }
 
-                long end = System.currentTimeMillis();
-                this.context.summary().addTimeRange(mapping.type(), start, end);
-            });
+    private static final class InsertFuture extends CompletableFuture<Void> implements Runnable {
+        private final InsertTask task;
+
+        private InsertFuture(InsertTask task) {
+            this.task = task;
+        }
+
+        @Override
+        public void run() {
+            try {
+                this.task.run();
+                this.complete(null);
+            } catch (Throwable e) {
+                this.completeExceptionally(e);
+            }
+        }
     }
 }

@@ -35,7 +35,7 @@ public class HugeResource {
     private String label = ANY;
 
     @JsonProperty("properties")
-    private Map<String, Object> properties; // value can be predicate
+    private Map<String, Object> properties; // value can be predicated
 
     public HugeResource() {
         // pass

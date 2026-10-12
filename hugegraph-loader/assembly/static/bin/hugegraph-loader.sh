@@ -26,7 +26,7 @@ abs_path() {
 }
 
 BIN=$(abs_path)
-TOP="$(cd ${BIN}/../ && pwd)"
+TOP="$(cd "${BIN}/../" && pwd)"
 CONF="$TOP/conf"
 LIB="$TOP/lib"
 NATIVE="$TOP/native"
@@ -37,9 +37,6 @@ LOG="$TOP/logs"
 if [ -n "$BASH_VERSION" ]; then
     set -eo pipefail
 fi
-
-export VARS="$*"
-
 
 # Use JAVA_HOME if set, otherwise look for java in PATH
 if [ -n "$JAVA_HOME" ]; then
@@ -57,28 +54,37 @@ else
     JAVA=java
 fi
 
-if [ -z ${JAVA} ] ; then
+if [ -z "${JAVA:-}" ] || ! command -v "$JAVA" >/dev/null 2>&1; then
     echo Unable to find java executable. Check JAVA_HOME and PATH environment variables. > /dev/stderr
     exit 1;
 fi
 
 # Add the slf4j-log4j12 binding
-CP=$(find -L ${LIB} -name 'log4j-slf4j-impl*.jar' | sort | tr '\n' ':')
+CP=$(find -L "$LIB" -name 'log4j-slf4j-impl*.jar' | sort | tr '\n' ':')
 # Add the jars in lib that start with "hugegraph"
-CP="$CP":$(find -L ${LIB} -name 'hugegraph*.jar' | sort | tr '\n' ':')
+CP="$CP":$(find -L "$LIB" -name 'hugegraph*.jar' | sort | tr '\n' ':')
 # Add the remaining jars in lib.
-CP="$CP":$(find -L ${LIB} -name '*.jar' \
+CP="$CP":$(find -L "$LIB" -name '*.jar' \
                 \! -name 'hugegraph*' \
-                \! -name 'log4j-slf4j-impl*.jar' | sort | tr '\n' ':')
+                \! -name 'log4j-slf4j-impl*.jar' \
+                \! -name 'apache-hugegraph-loader-*-shaded.jar' | sort | tr '\n' ':')
 
 export LOADER_CLASSPATH="${CLASSPATH:-}:$CP"
 
-# Xmx needs to be set so that it is big enough to cache all the vertexes in the run
-export JVM_OPTS="$JVM_OPTS -Xmx10g -cp $LOADER_CLASSPATH"
+# Hive ORC interns URI fields reflectively; Java 17 requires this opening.
+# Keep the existing Java baseline usable while preparing for the upgrade.
+JAVA_VERSION=$("$JAVA" -version 2>&1 | awk -F '"' '/version/ {print $2; exit}')
+JAVA_MAJOR=${JAVA_VERSION%%[.+-]*}
+if [ "$JAVA_MAJOR" -ge 17 ] 2>/dev/null; then
+    JVM_OPTS="$JVM_OPTS --add-opens=java.base/java.net=ALL-UNNAMED"
+fi
+
+# Default to enough heap to cache vertices, while letting caller options take precedence.
+export JVM_OPTS="-Xmx10g $JVM_OPTS"
 
 # Uncomment to enable debugging
 #JVM_OPTS="$JVM_OPTS -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=1414"
 
-exec ${JAVA} -Dname="HugeGraphLoader" -Dloader.home.path=${TOP} -Dlog4j.configurationFile=${CONF}/log4j2.xml \
--Djava.library.path=${NATIVE} \
-${JVM_OPTS} org.apache.hugegraph.loader.HugeGraphLoader ${VARS}
+exec "$JAVA" -Dname="HugeGraphLoader" "-Dloader.home.path=${TOP}" \
+"-Dlog4j.configurationFile=${CONF}/log4j2.xml" "-Djava.library.path=${NATIVE}" \
+${JVM_OPTS} -cp "$LOADER_CLASSPATH" org.apache.hugegraph.loader.HugeGraphLoader "$@"

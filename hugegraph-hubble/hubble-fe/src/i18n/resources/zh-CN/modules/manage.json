@@ -1,0 +1,8 @@
+{
+  "manage": {
+    "name": "数据管理",
+    "graphspace": "图管理",
+    "source": "数据源管理",
+    "task": "数据导入"
+  }
+}

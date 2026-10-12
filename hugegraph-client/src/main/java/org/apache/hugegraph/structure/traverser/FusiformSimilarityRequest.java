@@ -93,8 +93,8 @@ public class FusiformSimilarityRequest {
 
     public static class Builder {
 
-        private FusiformSimilarityRequest request;
-        private VerticesArgs.Builder sourcesBuilder;
+        private final FusiformSimilarityRequest request;
+        private final VerticesArgs.Builder sourcesBuilder;
 
         private Builder() {
             this.request = new FusiformSimilarityRequest();

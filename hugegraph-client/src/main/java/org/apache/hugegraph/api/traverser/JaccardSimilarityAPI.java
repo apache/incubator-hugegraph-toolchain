@@ -35,8 +35,8 @@ public class JaccardSimilarityAPI extends TraversersAPI {
 
     private static final String JACCARD_SIMILARITY = "jaccard_similarity";
 
-    public JaccardSimilarityAPI(RestClient client, String graph) {
-        super(client, graph);
+    public JaccardSimilarityAPI(RestClient client, String graphSpace, String graph) {
+        super(client, graphSpace, graph);
     }
 
     @Override
@@ -44,8 +44,24 @@ public class JaccardSimilarityAPI extends TraversersAPI {
         return "jaccardsimilarity";
     }
 
-    public double get(Object vertexId, Object otherId, Direction direction,
-                      String label, long degree) {
+    private static JaccardSimilarity deserializeJaccardSimilarity(RestResult result) {
+        if (result.content().contains("similarsMap")) {
+            JaccardSimilarity jaccard = result.readObject(JaccardSimilarity.class);
+            E.checkState(jaccard.similarsMap() != null,
+                         "The result doesn't have key '%s'", JACCARD_SIMILARITY);
+            return jaccard;
+        } else {
+            JaccardSimilarity jaccard = new JaccardSimilarity();
+            @SuppressWarnings("unchecked")
+            Map<Object, Double> map = result.readObject(Map.class);
+            jaccard.setSimilarsMap(map);
+            return jaccard;
+        }
+    }
+
+    public JaccardSimilarity get(Object vertexId, Object otherId,
+                                 Direction direction, String label,
+                                 long degree) {
         this.client.checkApiVersion("0.51", "jaccard similarity");
         String vertex = GraphAPI.formatVertexId(vertexId, false);
         String other = GraphAPI.formatVertexId(otherId, false);
@@ -57,17 +73,16 @@ public class JaccardSimilarityAPI extends TraversersAPI {
         params.put("label", label);
         params.put("max_degree", degree);
         RestResult result = this.client.get(this.path(), params);
-        @SuppressWarnings("unchecked")
-        Map<String, Double> jaccard = result.readObject(Map.class);
-        E.checkState(jaccard.containsKey(JACCARD_SIMILARITY),
+        JaccardSimilarity jaccard = deserializeJaccardSimilarity(result);
+        E.checkState(jaccard.similarsMap() != null,
                      "The result doesn't have key '%s'", JACCARD_SIMILARITY);
-        return jaccard.get(JACCARD_SIMILARITY);
+        return jaccard;
     }
 
     @SuppressWarnings("unchecked")
     public JaccardSimilarity post(SingleSourceJaccardSimilarityRequest request) {
         this.client.checkApiVersion("0.58", "jaccard similar");
         RestResult result = this.client.post(this.path(), request);
-        return result.readObject(JaccardSimilarity.class);
+        return deserializeJaccardSimilarity(result);
     }
 }

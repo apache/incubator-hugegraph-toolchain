@@ -28,6 +28,7 @@ import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.constant.T;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.traverser.Ranks;
+import org.apache.hugegraph.structure.traverser.RanksWithMeasure;
 import org.apache.hugegraph.testutil.Assert;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -138,7 +139,8 @@ public class NeighborRankApiTest extends TraverserApiTest {
         builder.alpha(0.9).capacity(-1);
         NeighborRankAPI.Request request = builder.build();
 
-        List<Ranks> ranks = neighborRankAPI.post(request);
+        RanksWithMeasure res = neighborRankAPI.post(request);
+        List<Ranks> ranks = res.ranks();
         Assert.assertEquals(4, ranks.size());
         Assert.assertEquals(ImmutableMap.of("O", 1.0D), ranks.get(0));
         Assert.assertEquals(ImmutableMap.of("B", 0.4305D, "A", 0.3D, "C", 0.3D),
@@ -169,7 +171,8 @@ public class NeighborRankApiTest extends TraverserApiTest {
         builder.alpha(1.0).capacity(-1);
         NeighborRankAPI.Request request = builder.build();
 
-        List<Ranks> ranks = neighborRankAPI.post(request);
+        RanksWithMeasure res = neighborRankAPI.post(request);
+        List<Ranks> ranks = res.ranks();
         Assert.assertEquals(4, ranks.size());
         Assert.assertEquals(ImmutableMap.of("O", 1.0D), ranks.get(0));
         Assert.assertEquals(ImmutableMap.of("B", 0.5D,
@@ -202,7 +205,8 @@ public class NeighborRankApiTest extends TraverserApiTest {
         builder.alpha(0.9).capacity(-1);
         NeighborRankAPI.Request request = builder.build();
 
-        List<Ranks> ranks = neighborRankAPI.post(request);
+        RanksWithMeasure res = neighborRankAPI.post(request);
+        List<Ranks> ranks = res.ranks();
         Assert.assertEquals(4, ranks.size());
         Assert.assertEquals(ImmutableMap.of("O", 1.0D), ranks.get(0));
         Assert.assertEquals(ImmutableMap.of("A", 0.32625000000000004D,
@@ -227,7 +231,8 @@ public class NeighborRankApiTest extends TraverserApiTest {
         builder.alpha(0.9).capacity(-1);
         NeighborRankAPI.Request request = builder.build();
 
-        List<Ranks> ranks = neighborRankAPI.post(request);
+        RanksWithMeasure res = neighborRankAPI.post(request);
+        List<Ranks> ranks = res.ranks();
         Assert.assertEquals(4, ranks.size());
         Assert.assertEquals(ImmutableMap.of("O", 1.0D), ranks.get(0));
         Assert.assertEquals(ImmutableMap.of("B", 0.36075D,
@@ -260,7 +265,8 @@ public class NeighborRankApiTest extends TraverserApiTest {
         builder.alpha(0.9).capacity(-1);
         NeighborRankAPI.Request request = builder.build();
 
-        List<Ranks> ranks = neighborRankAPI.post(request);
+        RanksWithMeasure res = neighborRankAPI.post(request);
+        List<Ranks> ranks = res.ranks();
         Assert.assertEquals(4, ranks.size());
         Assert.assertEquals(ImmutableMap.of("O", 1.0D), ranks.get(0));
         Assert.assertEquals(ImmutableMap.of("B", 0.4305D, "A", 0.3D),
@@ -285,7 +291,8 @@ public class NeighborRankApiTest extends TraverserApiTest {
         builder.alpha(0.9).capacity(-1);
         NeighborRankAPI.Request request = builder.build();
 
-        List<Ranks> ranks = neighborRankAPI.post(request);
+        RanksWithMeasure res = neighborRankAPI.post(request);
+        List<Ranks> ranks = res.ranks();
         Assert.assertEquals(4, ranks.size());
         Assert.assertEquals(ImmutableMap.of("O", 1.0D), ranks.get(0));
         Assert.assertEquals(ImmutableMap.of("B", 0.855D, "A", 0.45D),
@@ -301,7 +308,8 @@ public class NeighborRankApiTest extends TraverserApiTest {
         builder.alpha(0.9).capacity(-1);
         request = builder.build();
 
-        ranks = neighborRankAPI.post(request);
+        res = neighborRankAPI.post(request);
+        ranks = res.ranks();
         Assert.assertEquals(4, ranks.size());
         Assert.assertEquals(ImmutableMap.of("O", 1.0D), ranks.get(0));
         Assert.assertEquals(ImmutableMap.of("B", 0.6525000000000001D,
@@ -346,7 +354,8 @@ public class NeighborRankApiTest extends TraverserApiTest {
         builder.steps().direction(Direction.BOTH);
         NeighborRankAPI.Request request = builder.build();
 
-        List<Ranks> ranks = neighborRankAPI.post(request);
+        RanksWithMeasure res = neighborRankAPI.post(request);
+        List<Ranks> ranks = res.ranks();
         Assert.assertEquals(2, ranks.size());
         Assert.assertEquals(ImmutableMap.of("isolate", 1.0D), ranks.get(0));
         Assert.assertEquals(ImmutableMap.of(), ranks.get(1));

@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+        "allowJs": false,
+        "noEmit": true,
+        "strict": false,
+        "target": "ES2021"
+    },
+    "include": [
+        "src/**/*.ts",
+        "src/**/*.tsx"
+    ]
+}

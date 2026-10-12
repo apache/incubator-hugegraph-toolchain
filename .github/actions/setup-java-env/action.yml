@@ -1,0 +1,48 @@
+name: 'Setup Java and Maven Environment'
+description: 'Install JDK, cache Maven packages, and configure Central with ASF Stage fallback'
+
+inputs:
+  java-version:
+    description: 'Java version to install'
+    required: false
+    default: '17'
+  distribution:
+    description: 'JDK distribution'
+    required: false
+    default: 'zulu'
+
+runs:
+  using: composite
+  steps:
+    - name: Install JDK ${{ inputs.java-version }}
+      uses: actions/setup-java@v5
+      with:
+        java-version: ${{ inputs.java-version }}
+        distribution: ${{ inputs.distribution }}
+        cache: 'maven'
+        cache-dependency-path: |
+          **/pom.xml
+          .github/configs/settings.xml
+          .github/actions/setup-candidate-sdk/action.yml
+        overwrite-settings: false
+
+    - name: Configure Maven repositories
+      shell: bash
+      run: |
+        set -euo pipefail
+        # Reuse third-party dependencies, never a previously installed HugeGraph SDK.
+        rm -rf -- "$HOME/.m2/repository/org/apache/hugegraph"
+        rm -f -- "$HOME/.m2/repository/candidate-sdk-manifest.json"
+        # Cached failed downloads must not suppress checking a recovered repository.
+        if [[ -d "$HOME/.m2/repository" ]]; then
+          find "$HOME/.m2/repository" -type f -name '*.lastUpdated' -delete
+        fi
+        maven_version=$(mvn -version | sed $'s/\033\\[[0-9;]*m//g' | sed -n 's/^Apache Maven \([0-9.]*\).*/\1/p' | head -1)
+        if [[ ! "$maven_version" =~ ^([0-9]+)\.([0-9]+)\. ]] ||
+           (( 10#${BASH_REMATCH[1]:-0} < 3 ||
+              (10#${BASH_REMATCH[1]:-0} == 3 && 10#${BASH_REMATCH[2]:-0} < 9) )); then
+          echo 'Maven 3.9 or newer is required for shared MAVEN_ARGS settings' >&2
+          exit 1
+        fi
+        printf 'MAVEN_ARGS=%s --settings %s/.github/configs/settings.xml\n' \
+          "${MAVEN_ARGS:-}" "$GITHUB_WORKSPACE" >> "$GITHUB_ENV"

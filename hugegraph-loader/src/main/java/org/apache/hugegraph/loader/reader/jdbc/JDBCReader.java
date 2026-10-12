@@ -25,14 +25,14 @@ import org.apache.hugegraph.loader.exception.InitException;
 import org.apache.hugegraph.loader.exception.LoadException;
 import org.apache.hugegraph.loader.executor.LoadContext;
 import org.apache.hugegraph.loader.mapping.InputStruct;
+import org.apache.hugegraph.loader.reader.AbstractReader;
 import org.apache.hugegraph.loader.reader.line.Line;
 import org.apache.hugegraph.loader.source.jdbc.JDBCSource;
-import org.apache.hugegraph.loader.reader.AbstractReader;
 
 public class JDBCReader extends AbstractReader {
 
     private final JDBCSource source;
-    private final RowFetcher fetcher;
+    private Fetcher fetcher;
 
     private List<Line> batch;
     private int offsetInBatch;
@@ -40,7 +40,12 @@ public class JDBCReader extends AbstractReader {
     public JDBCReader(JDBCSource source) {
         this.source = source;
         try {
-            this.fetcher = new RowFetcher(source);
+            // if JDBCFetcher works well,it should replace RowFetcher
+
+            // @2022-10-12
+            // bug: RowFetcher may lost data when source is oracle
+            // use JDBCFetcher as default fetcher
+            this.fetcher = new JDBCFetcher(source);
         } catch (Exception e) {
             throw new LoadException("Failed to connect database via '%s'",
                                     e, source.url());
@@ -54,15 +59,14 @@ public class JDBCReader extends AbstractReader {
     }
 
     @Override
-    public void init(LoadContext context, InputStruct struct) throws InitException {
+    public void init(LoadContext context, InputStruct struct)
+                     throws InitException {
         this.progress(context, struct);
-        if (!this.source.existsCustomSQL()) {
-            try {
-                this.source.header(this.fetcher.readHeader());
-                this.fetcher.readPrimaryKey();
-            } catch (SQLException e) {
-                throw new InitException("Failed to fetch table structure info", e);
-            }
+        try {
+            this.source.header(this.fetcher.readHeader());
+            this.fetcher.readPrimaryKey();
+        } catch (SQLException e) {
+            throw new InitException("Failed to fetch table structure info", e);
         }
     }
 
@@ -95,5 +99,10 @@ public class JDBCReader extends AbstractReader {
     @Override
     public void close() {
         this.fetcher.close();
+    }
+
+    @Override
+    public boolean multiReaders() {
+        return false;
     }
 }

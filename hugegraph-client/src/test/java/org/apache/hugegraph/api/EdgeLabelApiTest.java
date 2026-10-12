@@ -543,4 +543,39 @@ public class EdgeLabelApiTest extends BaseApiTest {
         createTime = DateUtil.parse(time);
         Utils.assertBeforeNow(createTime);
     }
+
+    @Test
+    public void testEdgeLabelType() {
+        EdgeLabel normalEdgeLabel = schema().edgeLabel("created")
+                                      .sourceLabel("person")
+                                      .targetLabel("software")
+                                      .singleTime()
+                                      .properties("date", "city")
+                                      .build();
+        Assert.assertTrue(normalEdgeLabel.normal());
+
+        EdgeLabel parentEdgeLabelType = schema().edgeLabel("write")
+                                  .link("person", "book")
+                                  .properties("date", "weight")
+                                  .singleTime()
+                                  .asBase()
+                                  .build();
+        Assert.assertTrue(parentEdgeLabelType.parent());
+
+        EdgeLabel subEdgeLabelType = schema().edgeLabel("knows")
+                                  .sourceLabel("person")
+                                  .targetLabel("person")
+                                  .singleTime()
+                                  .properties("date")
+                                  .withBase("write")
+                                  .build();
+        Assert.assertTrue(subEdgeLabelType.sub());
+
+        EdgeLabel generalEdgeLabelType = schema().edgeLabel("father")
+                                   .link("person", "person")
+                                   .properties("weight")
+                                   .asGeneral()
+                                   .build();
+        Assert.assertTrue(generalEdgeLabelType.general());
+    }
 }

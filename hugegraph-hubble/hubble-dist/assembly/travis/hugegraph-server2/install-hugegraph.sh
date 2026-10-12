@@ -15,20 +15,40 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-set -ev
+set -euo pipefail
 
-SERVER_CONFIG_DIR=$(dirname "$0")
+SERVER_CONFIG_DIR=$(cd "$(dirname "$0")" && pwd)
+source "$(cd "$SERVER_CONFIG_DIR/../../../../.." && pwd)/.github/actions/setup-hugegraph-server/service-wait.sh"
 SERVER_PARENT_DIR="hugegraph-server2"
 
-mkdir ${SERVER_PARENT_DIR}
-TAR=$(echo apache-hugegraph-*.tar.gz)
+mkdir "${SERVER_PARENT_DIR}"
+ARCHIVES=(apache-hugegraph-*.tar.gz)
+[[ ${#ARCHIVES[@]} -eq 1 && -f "${ARCHIVES[0]}" ]]
+TAR=${ARCHIVES[0]}
 tar -zxvf "$TAR" -C "${SERVER_PARENT_DIR}" >/dev/null 2>&1
 
-HUGEGRAPH_NAME=${TAR%%.tar*}
-SERVER_DIR="${SERVER_PARENT_DIR}"/$HUGEGRAPH_NAME
-echo $SERVER_DIR
+# Official releases wrap Server alongside PD/Store; candidate archives do not.
+# Remove macOS sidecars before graph configuration discovery, as Client CI does.
+find "$SERVER_PARENT_DIR" -type f -name '._*' -delete
+SERVER_DIRS=()
+for dir in "$SERVER_PARENT_DIR"/apache-hugegraph-*/ "$SERVER_PARENT_DIR"/apache-hugegraph-*/*/; do
+    if [[ -f "$dir/conf/graphs/hugegraph.properties" &&
+          -f "$dir/conf/rest-server.properties" &&
+          -f "$dir/conf/gremlin-server.yaml" &&
+          -x "$dir/bin/init-store.sh" && -x "$dir/bin/start-hugegraph.sh" ]]; then
+        SERVER_DIRS+=("$dir")
+    fi
+done
+if [[ ${#SERVER_DIRS[@]} -ne 1 ]]; then
+    printf 'Expected exactly one runnable server distribution, found %s\n' "${#SERVER_DIRS[@]}" >&2
+    exit 1
+fi
+SERVER_DIR=${SERVER_DIRS[0]}
+echo "$SERVER_DIR"
 
-cp "${SERVER_CONFIG_DIR}"/gremlin-server.yaml "${SERVER_DIR}"/conf
+python3 "${SERVER_CONFIG_DIR}/../configure_gremlin_fixture.py" \
+        "${SERVER_DIR}" "${SERVER_CONFIG_DIR}/gremlin-server.yaml" \
+        --json-output "${SERVER_PARENT_DIR}/fixture-serializers.json"
 cp "${SERVER_CONFIG_DIR}"/rest-server.properties "${SERVER_DIR}"/conf
 cp "${SERVER_CONFIG_DIR}"/graphs/hugegraph3.properties "${SERVER_DIR}"/conf/graphs
 
@@ -37,3 +57,5 @@ cd "${SERVER_DIR}" && pwd
 
 echo -e "pa" | bin/init-store.sh || exit 1
 bin/start-hugegraph.sh || exit 1
+
+fixture_wait http://127.0.0.1:8081

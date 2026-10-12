@@ -38,8 +38,10 @@
     </description>
 
     <properties>
+        <!-- Keep late JaCoCo argLine evaluation valid when its agent is disabled. -->
+        <argLine/>
         <release.name>${project.artifactId}</release.name>
-        <final.name>apache-${release.name}-incubating-${project.version}</final.name>
+        <final.name>apache-${release.name}-${project.version}</final.name>
         <assembly.dir>${project.basedir}/assembly</assembly.dir>
         <assembly.descriptor.dir>${assembly.dir}/descriptor</assembly.descriptor.dir>
         <assembly.static.dir>${assembly.dir}/static</assembly.static.dir>
@@ -51,10 +53,46 @@
         <mysql.connector.version>8.0.28</mysql.connector.version>
         <postgres.version>42.4.1</postgres.version>
         <mssql.jdbc.version>7.2.0.jre8</mssql.jdbc.version>
-        <kafka.testcontainer.version>1.19.0</kafka.testcontainer.version>
+        <kafka.testcontainer.version>1.21.4</kafka.testcontainer.version>
+        <parboiled.version>1.1.8</parboiled.version>
     </properties>
 
     <dependencies>
+        <!-- PD discovery needs protobuf 3; HBase otherwise selects protobuf 2.5.0. -->
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>3.25.9</version>
+        </dependency>
+        <!-- Parquet is also an ordinary Loader format, independent of Spark. -->
+        <dependency>
+            <groupId>org.apache.parquet</groupId>
+            <artifactId>parquet-hadoop</artifactId>
+            <version>1.12.2</version>
+            <exclusions>
+                <!-- Keep the existing Loader compression-library versions. -->
+                <exclusion>
+                    <groupId>org.xerial.snappy</groupId>
+                    <artifactId>snappy-java</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.github.luben</groupId>
+                    <artifactId>zstd-jni</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-mapreduce-client-core</artifactId>
+            <version>${hadoop.version}</version>
+            <!-- Parquet needs the format classes; Hadoop common/HDFS are already declared. -->
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
         <!-- use a fixed jackson for loader -->
         <dependency>
             <groupId>com.fasterxml.jackson.module</groupId>
@@ -115,45 +153,41 @@
             </exclusions>
         </dependency>
 
+        <!-- Resolve public Flink APIs before the CDC compatibility shim's duplicate classes. -->
         <dependency>
-            <groupId>com.ververica</groupId>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-core</artifactId>
+            <version>${flink.version}</version>
+            <scope>${flink.scope}</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
             <artifactId>flink-connector-mysql-cdc</artifactId>
             <version>${flinkcdc.version}</version>
-            <scope>${flink.scope}</scope>
+            <!-- CDC is user code; the Flink runtime and JDBC driver are supplied by the cluster. -->
+            <exclusions>
+                <!-- Keep the existing provided driver contract; do not redistribute GPL binaries. -->
+                <exclusion>
+                    <groupId>mysql</groupId>
+                    <artifactId>mysql-connector-java</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-java</artifactId>
+            <artifactId>flink-streaming-java</artifactId>
             <version>${flink.version}</version>
             <scope>${flink.scope}</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-streaming-java_${scala.version}</artifactId>
+            <artifactId>flink-clients</artifactId>
             <version>${flink.version}</version>
             <scope>${flink.scope}</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-table-api-java-bridge_${scala.version}</artifactId>
-            <version>${flink.version}</version>
-            <scope>${flink.scope}</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>flink-table-planner-blink_${scala.version}</artifactId>
-            <version>${flink.version}</version>
-            <scope>${flink.scope}</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>flink-clients_${scala.version}</artifactId>
-            <version>${flink.version}</version>
-            <scope>${flink.scope}</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>flink-runtime-web_${scala.version}</artifactId>
+            <artifactId>flink-runtime-web</artifactId>
             <version>${flink.version}</version>
             <scope>${flink.scope}</scope>
         </dependency>
@@ -175,6 +209,10 @@
                 <exclusion>
                     <groupId>com.fasterxml.jackson.jaxrs</groupId>
                     <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>error_prone_annotations</artifactId>
+                    <groupId>com.google.errorprone</groupId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -201,10 +239,6 @@
             <artifactId>sfm-csv</artifactId>
             <version>${sfm.csv.version}</version>
         </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-        </dependency>
 
         <!--hbase -->
         <dependency>
@@ -227,6 +261,10 @@
                 <exclusion>
                     <groupId>com.sun.jersey</groupId>
                     <artifactId>jersey-json</artifactId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>error_prone_annotations</artifactId>
+                    <groupId>com.google.errorprone</groupId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -359,6 +397,10 @@
                     <groupId>org.apache.commons</groupId>
                     <artifactId>commons-compress</artifactId>
                 </exclusion>
+                <exclusion>
+                    <artifactId>guava</artifactId>
+                    <groupId>com.google.guava</groupId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -420,6 +462,8 @@
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-exec</artifactId>
             <version>${hive.version}</version>
+            <!-- Keep Hive's embedded old Guava out of the shared Loader classpath. -->
+            <classifier>core</classifier>
             <exclusions>
                 <exclusion>
                     <groupId>log4j</groupId>
@@ -533,6 +577,11 @@
             <artifactId>kafka</artifactId>
             <version>${kafka.testcontainer.version}</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.parboiled</groupId>
+            <artifactId>parboiled-core</artifactId>
+            <version>${parboiled.version}</version>
         </dependency>
     </dependencies>
 
@@ -656,7 +705,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.4.1</version>
+                <version>3.6.1</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -666,40 +715,24 @@
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <finalName>${final.name}-shaded</finalName>
+                            <!-- CDC references Guava31; keep Flink 2.2's Guava33 dependency intact. -->
+                            <extraArtifacts>
+                                <extraArtifact>org.apache.flink:flink-shaded-guava:31.1-jre-17.0</extraArtifact>
+                            </extraArtifacts>
                             <relocations>
-                                <relocation>
-                                    <pattern>org.glassfish.jersey</pattern>
-                                    <shadedPattern>shaded.org.glassfish.jersey</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>jakarta.ws.rs</pattern>
-                                    <shadedPattern>shaded.jakarta.ws.rs</shadedPattern>
-                                </relocation>
                                 <relocation>
                                     <pattern>com.google.common.base</pattern>
                                     <shadedPattern>shaded.com.google.common.base</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>org.glassfish.hk2</pattern>
-                                    <shadedPattern>shaded.org.glassfish.hk2</shadedPattern>
+                                    <pattern>okio</pattern>
+                                    <shadedPattern>shaded.okio</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>org.jvnet.hk2</pattern>
-                                    <shadedPattern>shaded.org.jvnet.hk2</shadedPattern>
+                                    <pattern>okhttp3</pattern>
+                                    <shadedPattern>shaded.okhttp3</shadedPattern>
                                 </relocation>
                             </relocations>
-                            <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer">
-                                </transformer>
-                            </transformers>
-                            <filters>
-                                <filter>
-                                    <artifact>*:*</artifact>
-                                    <excludes>
-                                        <exclude>module-info.class</exclude>
-                                    </excludes>
-                                </filter>
-                            </filters>
                         </configuration>
                     </execution>
                 </executions>
@@ -735,6 +768,18 @@
                         </goals>
                         <configuration>
                             <target>
+                                <exec executable="python3" failonerror="true">
+                                    <arg value="${project.basedir}/../.github/scripts/verify_candidate_image_sdk.py"/>
+                                    <arg value="${settings.localRepository}"/>
+                                    <arg value="--mode"/>
+                                    <arg value="${sdk.validation.mode}"/>
+                                    <arg value="--version"/>
+                                    <arg value="${hugegraph.version}"/>
+                                    <arg value="--distribution"/>
+                                    <arg value="${project.basedir}/${final.name}"/>
+                                    <arg value="--module"/>
+                                    <arg value="loader"/>
+                                </exec>
                                 <tar destfile="${project.basedir}/target/${final.name}.tar.gz"
                                      compression="gzip">
                                     <tarfileset dir="${project.basedir}" filemode="755">
@@ -753,7 +798,6 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.4</version>
                 <executions>
                     <execution>
                         <id>pre-unit-test</id>
@@ -807,6 +851,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <!-- Tests run on Java 11+; Hive ORC needs URI access on Java 17. -->
+                    <argLine>@{argLine} --add-opens=java.base/java.net=ALL-UNNAMED</argLine>
                     <includes>
                         <include>${test-classes}</include>
                     </includes>

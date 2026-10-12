@@ -29,8 +29,8 @@ import org.apache.hugegraph.util.E;
 
 public class WeightedShortestPathAPI extends TraversersAPI {
 
-    public WeightedShortestPathAPI(RestClient client, String graph) {
-        super(client, graph);
+    public WeightedShortestPathAPI(RestClient client, String graphSpace, String graph) {
+        super(client, graphSpace, graph);
     }
 
     @Override

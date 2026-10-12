@@ -3,7 +3,7 @@
 [![License](https://img.shields.io/badge/license-Apache%202-0E78BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 [![Build Status](https://github.com/apache/hugegraph-toolchain/actions/workflows/loader-ci.yml/badge.svg)](https://github.com/apache/hugegraph-toolchain/actions/workflows/loader-ci.yml)
 [![codecov](https://codecov.io/gh/hugegraph/hugegraph-loader/branch/master/graph/badge.svg)](https://codecov.io/gh/hugegraph/hugegraph-loader)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.apache.hugegraph/hugegraph-loader/badge.svg)](https://mvnrepository.com/artifact/org.apache.hugegraph/hugegraph-loader)
+[![Maven Central](https://img.shields.io/maven-central/v/org.apache.hugegraph/hugegraph-loader)](https://mvnrepository.com/artifact/org.apache.hugegraph/hugegraph-loader)
 
 hugegraph-loader is a customizable command line utility for loading small to medium size graph datasets into the HugeGraph database from multiple data sources with various input formats.
 
@@ -30,7 +30,7 @@ And you can find more details in the [doc](https://hugegraph.apache.org/docs/qui
 Download the latest version of the HugeGraph-Toolchain release package:
 
 ``` bash
-wget https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}.tar.gz
+wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-toolchain-{version}.tar.gz
 tar zxf *hugegraph*.tar.gz
 ```
 
@@ -43,12 +43,12 @@ Clone the latest version of HugeGraph-Loader source package:
 git clone https://github.com/apache/hugegraph-toolchain.git
 
 # 2. get from direct  (e.g. here is 1.0.0, please choose the latest version)
-wget https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}-src.tar.gz
+wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-toolchain-{version}-src.tar.gz
 ```
 
 Due to the license limitation of the `Oracle OJDBC`, you need to manually install ojdbc to the local maven repository. Visit the [Oracle jdbc downloads page](https://www.oracle.com/database/technologies/appdev/jdbc-drivers-archive.html). Select Oracle Database 12c Release 2 (12.2.0.1) drivers, as shown in the following figure.
 
-After opening the link, select “ojdbc8.jar”.
+After opening the link, select "ojdbc8.jar".
 
 Install ojdbc8 to the local maven repository, enter the directory where ojdbc8.jar is located, and execute the following command.
 
@@ -56,11 +56,10 @@ Install ojdbc8 to the local maven repository, enter the directory where ojdbc8.j
 mvn install:install-file -Dfile=./ojdbc8.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
 ```
 
-Compile and generate tar package:
+For the Java 17 candidate, prepare the locked SDK using the [bootstrap instructions](../docs/java17-migration.md#build-the-locked-candidate), then compile from the Toolchain repository root with the same isolated Maven repository:
 
-```
-cd hugegraph-loader
-mvn clean package -DskipTests
+```bash
+mvn -Dmaven.repo.local="$candidate_dir/m2" -Dsdk.validation.mode=candidate clean package -pl hugegraph-client,hugegraph-loader -am -DskipTests -ntp
 ```
 
 ### 2.3 Use docker image (Convenient for Test/Dev)
@@ -72,6 +71,12 @@ Use the command `docker run -itd --name loader hugegraph/loader` to start loader
 If you want to load your data, you can mount the data folder like `-v /path/to/data/file:/loader/file`
 
 
+To build the current checkout, run from the Toolchain repository root:
+
+```bash
+docker build -f hugegraph-loader/Dockerfile -t hugegraph/hugegraph-loader:latest .
+```
+
 #### 2.3.2 Docker-compose
 
 The example `docker-compose.yml` is [here](./docker/example/docker-compose.yml). Use the command `docker-compose up -d` to deploy `loader` with `server` and `hubble`.
@@ -79,30 +84,54 @@ The example `docker-compose.yml` is [here](./docker/example/docker-compose.yml).
 > Note: 
 > 1. The docker image of hugegraph-loader is a convenience release, not **official distribution** artifacts. You can find more details from [ASF Release Distribution Policy](https://infra.apache.org/release-distribution.html#dockerhub).
 >
-> 2. Recommand to use `release tag`(like `1.0.0`) for the stable version. Use `latest` tag to experience the newest functions in development.
+> 2. Recommend to use `release tag`(like `1.0.0`) for the stable version. Use `latest` tag to experience the newest functions in development.
 
 ## 3 Load data
 
 ### 3.1 Use loader directly
 
-> notice: currently, version is `1.2.0`
+> notice: currently, version is `1.3.0`
 
 Download and unzip the compiled archive
 
 ```bash
-wget https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}.tar.gz
+wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-toolchain-{version}.tar.gz
 tar zxf *hugegraph*.tar.gz
 ```
 
 Then, load data with example file:
 
 ```bash
-cd apache-hugegraph-toolchain-incubating-{version}
-cd apache-hugegraph-loader-incubating-{version}
+cd apache-hugegraph-toolchain-{version}
+cd apache-hugegraph-loader-{version}
 sh bin/hugegraph-loader.sh -g hugegraph -f example/file/struct.json -s example/file/schema.groovy
 ```
 
 More details is in the [doc](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/)
+
+#### Arguments from a file
+
+The launcher accepts JCommander's `@file` syntax. Put each option and its value on separate lines:
+
+```text
+--graph
+hugegraph
+--file
+example/file/struct.json
+--schema
+example/file/schema.groovy
+```
+
+```bash
+bash bin/hugegraph-loader.sh @loader.args
+```
+
+Use `--parser-threads` to set read pipelines. The deprecated `--parallel-count` alias also works in argument files
+and emits one warning after successful option validation.
+
+Paths in the argument file resolve from the working directory. Protect files containing credentials with mode `0600`;
+the credentials can then stay out of the process arguments. The mapping directory must be writable for progress output,
+so copy a mapping mounted from a read-only Kubernetes ConfigMap to a writable volume before running Loader.
 
 ### 3.2 Load data with docker
 
@@ -119,8 +148,14 @@ docker exec -it loader bin/hugegraph-loader.sh -g hugegraph -f example/file/stru
 
 ## 4. Doc
 
+For Spark execution, see [Spark Loader on Java 17](docs/spark-java17.md) for the tested engine version, launcher usage, and the separate HBase bulkload boundary.
+
 The [loader homepage](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/) contains more information about it. 
+
+Server 1.7 compatibility CI uses the pinned official ASF 1.7.0 binary archive. The fixture cache verifies the release version, official source URL, official SHA-512 and cached archive SHA-256 before startup. A failed download does not fall back to rebuilding the release tag. Unpublished candidate SDKs and their Server fixture continue to use the locked ASF source build.
 
 ## 5. License
 
 hugegraph-loader is licensed under Apache 2.0 License.
+
+See the [Flink CDC Java 17 validation](docs/flink-cdc-java17.md) for its current limits and launcher syntax.

@@ -1,0 +1,330 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+name: Module validation
+
+on:
+  pull_request:
+  push:
+    branches: [master, 'release-*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}-${{ github.run_attempt == 1 && 'head' || format('rerun-{0}', github.run_id) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      server-repository: ${{ steps.baseline.outputs.repository }}
+      server-commit: ${{ steps.baseline.outputs.commit_id }}
+      server-ref: ${{ steps.baseline.outputs.fetch_ref }}
+      current-commit: ${{ steps.current-baseline.outputs.commit_id }}
+      current-repository: ${{ steps.current-baseline.outputs.repository }}
+      current-ref: ${{ steps.current-baseline.outputs.fetch_ref }}
+      client: ${{ steps.select.outputs.client }}
+      loader: ${{ steps.select.outputs.loader }}
+      tools: ${{ steps.select.outputs.tools }}
+      spark: ${{ steps.select.outputs.spark }}
+      hubble: ${{ steps.select.outputs.hubble }}
+      go: ${{ steps.select.outputs.go }}
+      needsFixture: ${{ steps.select.outputs.needsFixture }}
+      loader-image: ${{ steps.select.outputs.loader_image }}
+      hubble-image: ${{ steps.select.outputs.hubble_image }}
+      dependency-audit: ${{ steps.select.outputs.dependency_audit }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Test CI policy and retry guards
+        run: |
+          python3 -m unittest discover -s .github/scripts -p 'test_*.py'
+          python3 .github/actions/setup-hugegraph-server/runtime_test.py
+          node --test .github/actions/get-hugegraph-commit/resolve.test.cjs hugegraph-client/assembly/travis/checkout-server.test.cjs hugegraph-client/assembly/travis/install-server.test.cjs
+      - name: Determine external test input scope
+        id: scope
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >-
+          python3 .github/scripts/ci-policy.py plan --project toolchain
+          --event-path "$GITHUB_EVENT_PATH" --repository "$GITHUB_REPOSITORY"
+          --output scope.json
+      - name: Resolve historical Server 1.7 baseline
+        id: baseline
+        if: steps.scope.outputs.needsFixture == 'true'
+        uses: ./.github/actions/get-hugegraph-commit
+        with:
+          repository: apache/hugegraph
+          ref: refs/tags/1.7.0
+          expected-commit: b12425c2032bf0d21a97b8221f42a18055c2982f
+      - name: Resolve locked Java17 candidate baseline
+        id: current-baseline
+        if: steps.scope.outputs.needsFixture == 'true'
+        uses: ./.github/actions/get-hugegraph-commit
+        with:
+          repository: apache/hugegraph
+          ref: 68855199031d5801edb4fe41b2bacbacffe8fe68
+          expected-commit: 68855199031d5801edb4fe41b2bacbacffe8fe68
+      - name: Record external test inputs
+        env:
+          NEEDS_SERVER: ${{ steps.scope.outputs.needsFixture }}
+          NEEDS_CURRENT_SERVER: ${{ steps.scope.outputs.hubble == 'true' || steps.scope.outputs.go == 'true' }}
+          SERVER_REPOSITORY: ${{ steps.baseline.outputs.repository }}
+          SERVER_COMMIT: ${{ steps.baseline.outputs.commit_id }}
+          SERVER_REF: ${{ steps.baseline.outputs.fetch_ref }}
+          CURRENT_REPOSITORY: ${{ steps.current-baseline.outputs.repository }}
+          CURRENT_REF: ${{ steps.current-baseline.outputs.fetch_ref }}
+          CURRENT_COMMIT: ${{ steps.current-baseline.outputs.commit_id }}
+        run: |
+          python3 - <<'PYINPUTS'
+          import json, os
+          inputs = {}
+          if os.environ['NEEDS_SERVER'] == 'true':
+              with open('scope.json') as stream:
+                  selected = json.load(stream)['selected']
+              inputs['toolchainJDK'] = {module: ['17']
+                                        for module in selected if module != 'go'}
+              inputs['config'] = 'candidate-release-java17-ci-v4'
+              inputs['server'] = {'repository': os.environ['SERVER_REPOSITORY'],
+                                  'commit': os.environ['SERVER_COMMIT'],
+                                  'ref': os.environ['SERVER_REF'], 'jdk': '11'}
+          if os.environ['NEEDS_SERVER'] == 'true' and any(module != 'go' for module in selected):
+              inputs['candidateSDK'] = {'repository': os.environ['CURRENT_REPOSITORY'],
+                                        'commit': os.environ['CURRENT_COMMIT'],
+                                        'ref': os.environ['CURRENT_REF'], 'jdk': '17'}
+          if os.environ['NEEDS_CURRENT_SERVER'] == 'true':
+              inputs['currentServer'] = {'repository': os.environ['CURRENT_REPOSITORY'],
+                                         'commit': os.environ['CURRENT_COMMIT'],
+                                         'ref': os.environ['CURRENT_REF'], 'jdk': '17'}
+          with open('inputs.json', 'w') as stream:
+              json.dump(inputs, stream, sort_keys=True)
+          PYINPUTS
+      - name: Select affected modules and images
+        id: select
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >-
+          python3 .github/scripts/ci-policy.py plan --project toolchain
+          --event-path "$GITHUB_EVENT_PATH" --repository "$GITHUB_REPOSITORY"
+          --inputs-json inputs.json --output plan.json
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ci-plan
+          path: plan.json
+          overwrite: true
+          retention-days: 7
+
+  fixture:
+    needs: plan
+    if: needs.plan.outputs.needsFixture == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      artifact: ${{ steps.identity.outputs.artifact }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Name immutable Server artifact
+        id: identity
+        run: echo "artifact=fixture-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+      - uses: ./.github/actions/setup-java-env
+        with:
+          java-version: '11'
+          distribution: temurin
+      - name: Test isolated candidate parent metadata
+        if: needs.plan.outputs.client == 'true' || needs.plan.outputs.loader == 'true' || needs.plan.outputs.tools == 'true' || needs.plan.outputs.spark == 'true' || needs.plan.outputs.hubble == 'true'
+        env:
+          CANDIDATE_SDK_MAVEN_TEST: mvn
+        run: python3 -m unittest discover -s .github/scripts -p 'test_candidate_sdk.py'
+      - name: Build reusable Server package
+        uses: ./.github/actions/setup-hugegraph-server
+        with:
+          mode: build
+          artifact-name: ${{ steps.identity.outputs.artifact }}
+          repository: ${{ needs.plan.outputs.server-repository }}
+          commit-id: ${{ needs.plan.outputs.server-commit }}
+          fetch-ref: ${{ needs.plan.outputs.server-ref }}
+          java-version: '11'
+
+  current-fixture:
+    needs: plan
+    if: needs.plan.outputs.hubble == 'true' || needs.plan.outputs.go == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      artifact: ${{ steps.identity.outputs.artifact }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Name immutable Server artifact
+        id: identity
+        run: echo "artifact=current-fixture-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+      - uses: ./.github/actions/setup-java-env
+        with:
+          java-version: '17'
+          distribution: temurin
+      - name: Build reusable Server package
+        uses: ./.github/actions/setup-hugegraph-server
+        with:
+          mode: build
+          artifact-name: ${{ steps.identity.outputs.artifact }}
+          repository: ${{ needs.plan.outputs.current-repository }}
+          commit-id: ${{ needs.plan.outputs.current-commit }}
+          fetch-ref: ${{ needs.plan.outputs.current-ref }}
+          java-version: '17'
+
+  client:
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    needs: [plan, fixture]
+    if: ${{ needs.plan.outputs.client == 'true' }}
+    uses: ./.github/workflows/client-ci.yml
+    with:
+      artifact-name: ${{ needs.fixture.outputs.artifact }}
+      server-repository: ${{ needs.plan.outputs.server-repository }}
+      server-commit: ${{ needs.plan.outputs.server-commit }}
+      server-ref: ${{ needs.plan.outputs.server-ref }}
+    secrets: inherit
+
+  loader:
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    needs: [plan, fixture]
+    if: ${{ needs.plan.outputs.loader == 'true' }}
+    uses: ./.github/workflows/loader-ci.yml
+    with:
+      artifact-name: ${{ needs.fixture.outputs.artifact }}
+      server-repository: ${{ needs.plan.outputs.server-repository }}
+      server-commit: ${{ needs.plan.outputs.server-commit }}
+      server-ref: ${{ needs.plan.outputs.server-ref }}
+    secrets: inherit
+
+  tools:
+    needs: [plan, fixture]
+    if: ${{ needs.plan.outputs.tools == 'true' }}
+    uses: ./.github/workflows/tools-ci.yml
+    with:
+      artifact-name: ${{ needs.fixture.outputs.artifact }}
+      server-repository: ${{ needs.plan.outputs.server-repository }}
+      server-commit: ${{ needs.plan.outputs.server-commit }}
+      server-ref: ${{ needs.plan.outputs.server-ref }}
+    secrets: inherit
+
+  spark:
+    needs: [plan, fixture]
+    if: ${{ needs.plan.outputs.spark == 'true' }}
+    uses: ./.github/workflows/spark-connector-ci.yml
+    with:
+      artifact-name: ${{ needs.fixture.outputs.artifact }}
+      server-repository: ${{ needs.plan.outputs.server-repository }}
+      server-commit: ${{ needs.plan.outputs.server-commit }}
+      server-ref: ${{ needs.plan.outputs.server-ref }}
+    secrets: inherit
+
+  hubble:
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    needs: [plan, fixture, current-fixture]
+    if: ${{ needs.plan.outputs.hubble == 'true' }}
+    uses: ./.github/workflows/hubble-ci.yml
+    with:
+      current-artifact-name: ${{ needs.current-fixture.outputs.artifact }}
+      current-commit: ${{ needs.plan.outputs.current-commit }}
+      current-repository: ${{ needs.plan.outputs.current-repository }}
+      current-ref: ${{ needs.plan.outputs.current-ref }}
+      artifact-name: ${{ needs.fixture.outputs.artifact }}
+      server-repository: ${{ needs.plan.outputs.server-repository }}
+      server-commit: ${{ needs.plan.outputs.server-commit }}
+      server-ref: ${{ needs.plan.outputs.server-ref }}
+    secrets: inherit
+
+  go:
+    needs: [plan, fixture, current-fixture]
+    if: ${{ needs.plan.outputs.go == 'true' }}
+    uses: ./.github/workflows/client-go-ci.yml
+    with:
+      current-artifact-name: ${{ needs.current-fixture.outputs.artifact }}
+      current-commit: ${{ needs.plan.outputs.current-commit }}
+      current-repository: ${{ needs.plan.outputs.current-repository }}
+      current-ref: ${{ needs.plan.outputs.current-ref }}
+      artifact-name: ${{ needs.fixture.outputs.artifact }}
+      server-repository: ${{ needs.plan.outputs.server-repository }}
+      server-commit: ${{ needs.plan.outputs.server-commit }}
+      server-ref: ${{ needs.plan.outputs.server-ref }}
+    secrets: inherit
+
+  loader_image:
+    needs: plan
+    if: needs.plan.outputs.loader-image == 'true'
+    uses: ./.github/workflows/image-ci.yml
+    with:
+      module: loader
+
+  hubble_image:
+    needs: plan
+    if: needs.plan.outputs.hubble-image == 'true'
+    uses: ./.github/workflows/image-ci.yml
+    with:
+      module: hubble
+
+  affected-module-tests:
+    name: affected-module-tests
+    needs: [plan, fixture, current-fixture, client, loader, tools, spark, hubble, go, loader_image, hubble_image, dependency-audit]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v7
+        with:
+          name: ci-plan
+      - name: Report selected advisory tests and images
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          printf '%s' "$RESULTS" > results.json
+          python3 .github/scripts/ci-policy.py gate --plan plan.json --results results.json --output test-results.json
+      - name: Publish current-run test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: ci-test-results
+          path: test-results.json
+          overwrite: true
+          retention-days: 7
+
+  dependency-audit:
+    needs: plan
+    if: needs.plan.outputs.dependency-audit == 'true'
+    uses: ./.github/workflows/dependency-license.yml

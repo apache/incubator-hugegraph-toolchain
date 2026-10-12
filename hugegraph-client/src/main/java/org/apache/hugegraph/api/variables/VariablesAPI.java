@@ -28,11 +28,13 @@ import com.google.common.collect.ImmutableMap;
 
 public class VariablesAPI extends API {
 
-    private static final String PATH = "graphs/%s/%s";
+    private static final String PATH = "graphspaces/%s/graphs/%s/%s";
+    private static String batchPath = "";
 
-    public VariablesAPI(RestClient client, String graph) {
+    public VariablesAPI(RestClient client, String graphSpace, String graph) {
         super(client);
-        this.path(PATH, graph, this.type());
+        this.path(PATH, graphSpace, graph, this.type());
+        batchPath = String.join("/", this.path(), "batch");
     }
 
     @Override

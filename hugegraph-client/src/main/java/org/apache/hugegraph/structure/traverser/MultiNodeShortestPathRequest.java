@@ -61,8 +61,8 @@ public class MultiNodeShortestPathRequest {
 
     public static class Builder {
 
-        private MultiNodeShortestPathRequest request;
-        private VerticesArgs.Builder verticesBuilder;
+        private final MultiNodeShortestPathRequest request;
+        private final VerticesArgs.Builder verticesBuilder;
         private EdgeStep.Builder stepBuilder;
 
         private Builder() {

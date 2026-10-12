@@ -26,7 +26,9 @@ public enum HugePermission {
     DELETE(0x04),
     EXECUTE(0x08),
 
-    ANY(0x7f);
+    SPACE(0x1f),
+    SPACE_MEMBER(0x2f),
+    ADMIN(0x7f);
 
     private final byte code;
 
@@ -44,8 +46,8 @@ public enum HugePermission {
     }
 
     public boolean match(HugePermission other) {
-        if (other == ANY) {
-            return this == ANY;
+        if (other == ADMIN) {
+            return this == ADMIN;
         }
         return (this.code & other.code) != 0;
     }

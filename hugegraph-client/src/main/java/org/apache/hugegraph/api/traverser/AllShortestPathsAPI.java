@@ -18,19 +18,18 @@
 package org.apache.hugegraph.api.traverser;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.hugegraph.api.graph.GraphAPI;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.constant.Direction;
-import org.apache.hugegraph.structure.graph.Path;
+import org.apache.hugegraph.structure.traverser.PathWithMeasure;
 
 public class AllShortestPathsAPI extends TraversersAPI {
 
-    public AllShortestPathsAPI(RestClient client, String graph) {
-        super(client, graph);
+    public AllShortestPathsAPI(RestClient client, String graphSpace, String graph) {
+        super(client, graphSpace, graph);
     }
 
     @Override
@@ -38,9 +37,9 @@ public class AllShortestPathsAPI extends TraversersAPI {
         return "allshortestpaths";
     }
 
-    public List<Path> get(Object sourceId, Object targetId,
-                          Direction direction, String label, int maxDepth,
-                          long degree, long skipDegree, long capacity) {
+    public PathWithMeasure get(Object sourceId, Object targetId,
+                               Direction direction, String label, int maxDepth,
+                               long degree, long skipDegree, long capacity) {
         this.client.checkApiVersion("0.51", "all shortest path");
         String source = GraphAPI.formatVertexId(sourceId, false);
         String target = GraphAPI.formatVertexId(targetId, false);
@@ -60,6 +59,6 @@ public class AllShortestPathsAPI extends TraversersAPI {
         params.put("skip_degree", skipDegree);
         params.put("capacity", capacity);
         RestResult result = this.client.get(this.path(), params);
-        return result.readList("paths", Path.class);
+        return result.readObject(PathWithMeasure.class);
     }
 }

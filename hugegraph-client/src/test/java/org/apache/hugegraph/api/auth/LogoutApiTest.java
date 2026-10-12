@@ -28,6 +28,7 @@ import org.apache.hugegraph.testutil.Assert;
 import org.apache.hugegraph.testutil.Whitebox;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class LogoutApiTest extends AuthApiTest {
@@ -38,9 +39,9 @@ public class LogoutApiTest extends AuthApiTest {
 
     @BeforeClass
     public static void init() {
-        logoutAPI = new LogoutAPI(initClient(), GRAPH);
-        loginAPI = new LoginAPI(initClient(), GRAPH);
-        userAPI = new UserAPI(initClient(), GRAPH);
+        logoutAPI = new LogoutAPI(initClient());
+        loginAPI = new LoginAPI(initClient());
+        userAPI = new UserAPI(initClient(), GRAPHSPACE);
     }
 
     @AfterClass

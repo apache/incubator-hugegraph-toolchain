@@ -43,12 +43,12 @@ public class TraverserManagerTest extends BaseFuncTest {
 
     @After
     public void teardown() throws Exception {
-        clearData();
+        BaseFuncTest.clearData();
     }
 
     @Test
     public void testIterateVerticesByShard() {
-        List<Shard> shards = traverser().vertexShards(1 * 1024 * 1024);
+        List<Shard> shards = traverser().vertexShards(1024 * 1024);
         List<Vertex> vertices = new LinkedList<>();
         for (Shard shard : shards) {
             Iterator<Vertex> iter = traverser().iteratorVertices(shard, 1);
@@ -61,7 +61,7 @@ public class TraverserManagerTest extends BaseFuncTest {
 
     @Test
     public void testIterateEdgesByShard() {
-        List<Shard> shards = traverser().edgeShards(1 * 1024 * 1024);
+        List<Shard> shards = traverser().edgeShards(1024 * 1024);
         List<Edge> edges = new LinkedList<>();
         for (Shard shard : shards) {
             Iterator<Edge> iter = traverser().iteratorEdges(shard, 1);

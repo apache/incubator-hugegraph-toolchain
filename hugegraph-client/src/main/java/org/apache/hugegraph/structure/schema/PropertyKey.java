@@ -124,6 +124,8 @@ public class PropertyKey extends SchemaElement {
 
         Builder writeType(WriteType writeType);
 
+        Builder writeType(String name);
+
         Builder calcSum();
 
         Builder calcMax();
@@ -135,12 +137,19 @@ public class PropertyKey extends SchemaElement {
         Builder userdata(String key, Object val);
 
         Builder ifNotExist();
+
+        Builder newName(String newName);
+
+        PropertyKey update();
+
+        Builder id(long id);
     }
 
     public static class BuilderImpl implements Builder {
 
-        private PropertyKey propertyKey;
-        private SchemaManager manager;
+        private final PropertyKey propertyKey;
+        private final SchemaManager manager;
+        private String oldName;
 
         public BuilderImpl(String name, SchemaManager manager) {
             this.propertyKey = new PropertyKey(name);
@@ -168,6 +177,18 @@ public class PropertyKey extends SchemaElement {
         }
 
         @Override
+        public PropertyKey update() {
+            return this.manager.updatePropertyKey(this.oldName,
+                                                  this.propertyKey);
+        }
+
+        @Override
+        public Builder id(long id) {
+            this.propertyKey.id = id;
+            return this;
+        }
+
+        @Override
         public void remove() {
             this.manager.removePropertyKey(this.propertyKey.name);
         }
@@ -175,6 +196,13 @@ public class PropertyKey extends SchemaElement {
         @Override
         public Builder dataType(DataType dataType) {
             this.propertyKey.dataType = dataType;
+            return this;
+        }
+
+        @Override
+        public Builder newName(String name) {
+            this.oldName = this.propertyKey.name;
+            this.propertyKey.name = name;
             return this;
         }
 
@@ -271,6 +299,12 @@ public class PropertyKey extends SchemaElement {
         @Override
         public Builder writeType(WriteType writeType) {
             this.propertyKey.writeType = writeType;
+            return this;
+        }
+
+        @Override
+        public Builder writeType(String name) {
+            this.propertyKey.writeType = WriteType.valueOf(name);
             return this;
         }
 

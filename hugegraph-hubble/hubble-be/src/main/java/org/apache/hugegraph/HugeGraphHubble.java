@@ -21,23 +21,37 @@ package org.apache.hugegraph;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hugegraph.util.Ex;
 import org.mybatis.spring.annotation.MapperScan;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
+import java.time.ZoneOffset;
+import java.util.TimeZone;
+
 @SpringBootApplication
 @EnableScheduling
 @MapperScan("org.apache.hugegraph.mapper")
 public class HugeGraphHubble extends SpringBootServletInitializer {
 
+    private static final Logger LOG = LoggerFactory.getLogger(HugeGraphHubble.class);
+
     public static void main(String[] args) {
+        LOG.info("user.dir ==> {}", System.getProperty("user.dir"));
         initEnv();
+        TimeZone.setDefault(TimeZone.getTimeZone(ZoneOffset.of("+8")));
         SpringApplication.run(HugeGraphHubble.class, args);
     }
 
     public static void initEnv() {
+        Ex.check(Charset.defaultCharset().equals(StandardCharsets.UTF_8),
+                "Charset must be UTF-8, current:" + Charset.defaultCharset());
         String hubbleHomePath = System.getProperty("hubble.home.path");
         Ex.check(StringUtils.isNotEmpty(hubbleHomePath),
                  "The system property 'hubble.home.path' must be set");
@@ -49,7 +63,7 @@ public class HugeGraphHubble extends SpringBootServletInitializer {
 
     @Override
     protected SpringApplicationBuilder configure(
-                                       SpringApplicationBuilder builder) {
+            SpringApplicationBuilder builder) {
         return builder.sources(this.getClass());
     }
 }

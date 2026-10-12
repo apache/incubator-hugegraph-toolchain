@@ -28,8 +28,8 @@ import (
    "net/url"
    "strings"
 
-   "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api"
-   "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/internal/model"
+   "github.com/apache/hugegraph-toolchain/hugegraph-client-go/api"
+   "github.com/apache/hugegraph-toolchain/hugegraph-client-go/internal/model"
 )
 
 type VertexLabel struct {
@@ -261,7 +261,12 @@ func (r CreateRequest) Do(ctx context.Context, transport api.Transport) (*Create
    }
    reader := strings.NewReader(string(byteBody))
 
-   req, err := api.NewRequest("POST", fmt.Sprintf("/graphs/%s/schema/vertexlabels", transport.GetConfig().Graph), nil, reader)
+   config := transport.GetConfig()
+   path := fmt.Sprintf("/graphs/%s/schema/vertexlabels", config.Graph)
+   if len(config.GraphSpace) > 0 {
+       path = fmt.Sprintf("/graphspaces/%s%s", config.GraphSpace, path)
+   }
+   req, err := api.NewRequest("POST", path, nil, reader)
    if err != nil {
        return nil, err
    }
@@ -295,7 +300,12 @@ func (r DeleteByNameRequest) Do(ctx context.Context, transport api.Transport) (*
    if len(r.name) <= 0 {
        return nil, errors.New("delete by name ,please set name")
    }
-   req, err := api.NewRequest("DELETE", fmt.Sprintf("/graphs/%s/schema/vertexlabels/%s", transport.GetConfig().Graph, r.name), nil, r.Body)
+   config := transport.GetConfig()
+   path := fmt.Sprintf("/graphs/%s/schema/vertexlabels/%s", config.Graph, r.name)
+   if len(config.GraphSpace) > 0 {
+       path = fmt.Sprintf("/graphspaces/%s%s", config.GraphSpace, path)
+   }
+   req, err := api.NewRequest("DELETE", path, nil, r.Body)
    if err != nil {
        return nil, err
    }
@@ -324,7 +334,12 @@ func (r DeleteByNameRequest) Do(ctx context.Context, transport api.Transport) (*
 }
 func (r GetAllRequest) Do(ctx context.Context, transport api.Transport) (*GetAllResponse, error) {
 
-   req, err := api.NewRequest("GET", fmt.Sprintf("/graphs/%s/schema/vertexlabels", transport.GetConfig().Graph), nil, r.Body)
+   config := transport.GetConfig()
+   path := fmt.Sprintf("/graphs/%s/schema/vertexlabels", config.Graph)
+   if len(config.GraphSpace) > 0 {
+       path = fmt.Sprintf("/graphspaces/%s%s", config.GraphSpace, path)
+   }
+   req, err := api.NewRequest("GET", path, nil, r.Body)
    if err != nil {
        return nil, err
    }
@@ -359,7 +374,12 @@ func (r GetByNameRequest) Do(ctx context.Context, transport api.Transport) (*Get
        return nil, errors.New("GetByNameRequest must set name")
    }
 
-   req, err := api.NewRequest("GET", fmt.Sprintf("/graphs/%s/schema/vertexlabels/%s", transport.GetConfig().Graph, r.name), nil, r.Body)
+   config := transport.GetConfig()
+   path := fmt.Sprintf("/graphs/%s/schema/vertexlabels/%s", config.Graph, r.name)
+   if len(config.GraphSpace) > 0 {
+       path = fmt.Sprintf("/graphspaces/%s%s", config.GraphSpace, path)
+   }
+   req, err := api.NewRequest("GET", path, nil, r.Body)
    if err != nil {
        return nil, err
    }
@@ -405,7 +425,12 @@ func (r UpdateUserdataRequest) Do(ctx context.Context, transport api.Transport) 
    }
    reader := strings.NewReader(string(byteBody))
 
-   req, err := api.NewRequest("PUT", fmt.Sprintf("/graphs/%s/schema/vertexlabels/%s", transport.GetConfig().Graph, r.reqData.Name), params, reader)
+   config := transport.GetConfig()
+   path := fmt.Sprintf("/graphs/%s/schema/vertexlabels/%s", config.Graph, r.reqData.Name)
+   if len(config.GraphSpace) > 0 {
+       path = fmt.Sprintf("/graphspaces/%s%s", config.GraphSpace, path)
+   }
+   req, err := api.NewRequest("PUT", path, params, reader)
    if err != nil {
        return nil, err
    }

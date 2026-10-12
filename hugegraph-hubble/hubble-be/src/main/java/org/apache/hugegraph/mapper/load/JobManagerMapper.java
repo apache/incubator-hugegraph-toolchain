@@ -21,6 +21,7 @@ package org.apache.hugegraph.mapper.load;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 import org.springframework.stereotype.Component;
 
 import org.apache.hugegraph.entity.load.JobManager;
@@ -31,9 +32,18 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 @Component
 public interface JobManagerMapper extends BaseMapper<JobManager> {
 
-    @Select("SELECT ISNULL(SUM(f.total_size),0) as total_size, " +
-            "ISNULL(SUM(l.duration),0) as duration " +
+    @Select("SELECT IFNULL(SUM(f.total_size),0) as total_size, " +
+            "IFNULL(SUM(l.last_duration + l.curr_duration),0) as duration " +
             "FROM `load_task` as l LEFT JOIN `file_mapping` as f " +
             "ON l.file_id=f.id WHERE l.job_id = #{job_id}")
     JobManagerItem computeSizeDuration(@Param("job_id") int jobId);
+
+    @Update("UPDATE `job_manager` SET `job_size` = `job_size` + #{size} " +
+            "WHERE `id` = #{id}")
+    int increaseJobSize(@Param("id") int id, @Param("size") long size);
+
+    @Update("UPDATE `job_manager` SET `job_size` = CASE " +
+            "WHEN `job_size` >= #{size} THEN `job_size` - #{size} " +
+            "ELSE 0 END WHERE `id` = #{id}")
+    int decreaseJobSize(@Param("id") int id, @Param("size") long size);
 }

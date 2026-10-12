@@ -19,13 +19,26 @@ package org.apache.hugegraph.driver;
 
 import java.io.Closeable;
 
+import lombok.Getter;
+
 import org.apache.hugegraph.client.RestClient;
+import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.rest.ClientException;
+import org.apache.hugegraph.rest.RestClientConfig;
+import org.apache.hugegraph.structure.auth.TokenPayload;
+import org.apache.hugegraph.structure.auth.User;
+import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.util.VersionUtil;
 import org.apache.hugegraph.version.ClientVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Strings;
+
+/**
+ * Main entry point for HugeGraph server operations.
+ * Use {@link #builder(String, String, String)} to create an instance.
+ */
 public class HugeClient implements Closeable {
 
     private static final Logger LOG = LoggerFactory.getLogger(RestClient.class);
@@ -34,9 +47,22 @@ public class HugeClient implements Closeable {
         ClientVersion.check();
     }
 
-    private final RestClient client;
-    private final boolean borrowedClient;
+    @Getter
+    protected String graphSpaceName;
+    @Getter
+    protected String graphName;
 
+    private final boolean borrowedClient;
+    private final RestClient client;
+    /*
+     * Whether the server api-version handshake has been performed for
+     * this client instance, so that it runs only once instead of on
+     * every assignGraph() call
+     */
+    private volatile boolean apiVersionChecked;
+    private final Object apiVersionLock = new Object();
+    private ServerCompatibility.Profile compatibility =
+            ServerCompatibility.Profile.LEGACY;
     private VersionManager version;
     private GraphsManager graphs;
     private SchemaManager schema;
@@ -47,40 +73,79 @@ public class HugeClient implements Closeable {
     private VariablesManager variable;
     private JobManager job;
     private TaskManager task;
+    private ComputerManager computer;
     private AuthManager auth;
     private MetricsManager metrics;
+    private GraphSpaceManager graphSpace;
+    private ServiceManager serviceManager;
+    private SchemaTemplateManager schemaTemplageManager;
+    private PDManager pdManager;
+    private HStoreManager hStoreManager;
+    private WhiteIpListManager whiteIpListManager;
+    private VermeerManager vermeerManager;
 
     public HugeClient(HugeClientBuilder builder) {
         this.borrowedClient = false;
+        this.graphSpaceName = builder.graphSpace();
+        this.graphName = builder.graph();
+        RestClientConfig config;
         try {
-            this.client = new RestClient(builder.url(),
-                                         builder.username(),
-                                         builder.password(),
-                                         builder.timeout(),
-                                         builder.maxConns(),
-                                         builder.maxConnsPerRoute(),
-                                         builder.trustStoreFile(),
-                                         builder.trustStorePassword());
+            config = RestClientConfig.builder()
+                                     .token(builder.token())
+                                     .user(builder.username())
+                                     .password(builder.password())
+                                     .timeout(builder.timeout())
+                                     .connectTimeout(builder.connectTimeout())
+                                     .readTimeout(builder.readTimeout())
+                                     .maxConns(builder.maxConns())
+                                     .maxConnsPerRoute(builder.maxConnsPerRoute())
+                                     .trustStoreFile(builder.trustStoreFile())
+                                     .trustStorePassword(builder.trustStorePassword())
+                                     .builderCallback(builder.httpBuilderConsumer())
+                                     .build();
+            this.client = new RestClient(builder.url(), config);
         } catch (Exception e) {
             LOG.warn("Failed to create RestClient instance", e);
             throw new ClientException("Failed to connect url '%s'", builder.url());
         }
+
         try {
-            this.initManagers(this.client, builder.graph());
+            this.initManagers(this.client, builder.graphSpace(), builder.graph());
         } catch (Throwable e) {
+            // TODO: catch some exception(like IO/Network related) rather than throw Throwable
             this.client.close();
             throw e;
         }
     }
 
-    public HugeClient(HugeClient client, String graph) {
+    public HugeClient(HugeClient client, String graphSpace, String graph) {
         this.borrowedClient = true;
         this.client = client.client;
-        this.initManagers(this.client, graph);
+        this.graphSpaceName = (graphSpace == null || graphSpace.isEmpty()) ? 
+                              HugeClientBuilder.DEFAULT_GRAPHSPACE : graphSpace;
+        this.graphName = graph;
+        this.initManagers(this.client, this.graphSpaceName, this.graphName);
+    }
+
+    public static HugeClientBuilder builder(String url, String graphSpace, String graph) {
+        return new HugeClientBuilder(url, graphSpace, graph);
     }
 
     public static HugeClientBuilder builder(String url, String graph) {
-        return new HugeClientBuilder(url, graph);
+        return new HugeClientBuilder(url, HugeClientBuilder.DEFAULT_GRAPHSPACE, graph);
+    }
+
+    public static HugeClientBuilder builder(String url, String graphSpace, String graph,
+                                            boolean skipRequiredChecks) {
+        return new HugeClientBuilder(url, graphSpace, graph).graphRequired(!skipRequiredChecks);
+    }
+
+    public HugeClient assignGraph(String graphSpace, String graph) {
+        this.graphSpaceName = (graphSpace == null || graphSpace.isEmpty()) ? 
+                              HugeClientBuilder.DEFAULT_GRAPHSPACE : graphSpace;
+        this.graphName = graph;
+        this.initManagers(this.client, this.graphSpaceName, this.graphName);
+        return this;
     }
 
     @Override
@@ -90,23 +155,60 @@ public class HugeClient implements Closeable {
         }
     }
 
-    private void initManagers(RestClient client, String graph) {
+    public void initManagers(RestClient client, String graphSpace,
+                             String graph) {
         assert client != null;
-        // Check hugegraph-server api version
+        // Check hugegraph-server api version (once per client instance)
         this.version = new VersionManager(client);
-        this.checkServerApiVersion();
+        if (!this.apiVersionChecked) {
+            synchronized (this.apiVersionLock) {
+                if (!this.apiVersionChecked) {
+                    this.checkServerApiVersion();
+                    // Failed handshakes leave the flag false so a later
+                    // assignment can retry.
+                    this.apiVersionChecked = true;
+                }
+            }
+        }
 
-        this.graphs = new GraphsManager(client);
-        this.schema = new SchemaManager(client, graph);
-        this.graph = new GraphManager(client, graph);
-        this.gremlin = new GremlinManager(client, graph, this.graph);
-        this.cypher = new CypherManager(client, graph, this.graph);
-        this.traverser = new TraverserManager(client, this.graph);
-        this.variable = new VariablesManager(client, graph);
-        this.job = new JobManager(client, graph);
-        this.task = new TaskManager(client, graph);
-        this.auth = new AuthManager(client, graph);
+        this.graphs = new GraphsManager(client, graphSpace);
+        this.auth = new AuthManager(client, graphSpace, graph);
         this.metrics = new MetricsManager(client);
+        this.graphSpace = new GraphSpaceManager(client);
+        this.schemaTemplageManager = new SchemaTemplateManager(client, graphSpace);
+        this.serviceManager = new ServiceManager(client, graphSpace);
+        this.pdManager = new PDManager(client);
+        this.hStoreManager = new HStoreManager(client);
+        this.whiteIpListManager = new WhiteIpListManager(client);
+        this.vermeerManager = new VermeerManager(client);
+
+        if (!Strings.isNullOrEmpty(graph)) {
+            this.schema = new SchemaManager(client, graphSpace, graph);
+            this.graph = new GraphManager(client, graphSpace, graph);
+            this.gremlin = new GremlinManager(client, graphSpace,
+                                              graph, this.graph);
+            this.cypher = new CypherManager(client, graphSpace,
+                                            graph, this.graph);
+            this.traverser = new TraverserManager(client, this.graph);
+            this.variable = new VariablesManager(client, graphSpace, graph);
+            this.job = new JobManager(client, graphSpace, graph);
+            this.computer = new ComputerManager(client, graphSpace, graph);
+            this.task = new TaskManager(client, graphSpace, graph);
+        } else {
+            /*
+             * No graph is assigned: reset all graph-scoped managers so
+             * that stale managers from a previous graph cannot be used
+             */
+            this.schema = null;
+            this.graph = null;
+            this.gremlin = null;
+            this.cypher = null;
+            this.traverser = null;
+            this.variable = null;
+            this.job = null;
+            this.computer = null;
+            this.task = null;
+        }
     }
 
     private void checkServerApiVersion() {
@@ -115,6 +217,9 @@ public class HugeClient implements Closeable {
         //       0.81 equals to the {latest_api_version} +10
         VersionUtil.check(apiVersion, "0.38", "0.81", "hugegraph-api in server");
         this.client.apiVersion(apiVersion);
+        this.compatibility = ServerCompatibility.profile(
+                             this.version.getCoreVersion(), apiVersion.get());
+        this.client.setSupportGs(this.compatibility.supportsGraphSpace());
     }
 
     public GraphsManager graphs() {
@@ -149,6 +254,10 @@ public class HugeClient implements Closeable {
         return this.job;
     }
 
+    public ComputerManager computer() {
+        return this.computer;
+    }
+
     public TaskManager task() {
         return this.task;
     }
@@ -157,16 +266,122 @@ public class HugeClient implements Closeable {
         return this.auth;
     }
 
+    public boolean supportsDefaultRole() {
+        return this.compatibility.supportsDefaultRole();
+    }
+
+    public boolean supportsGraphSpace() {
+        return this.compatibility.supportsGraphSpace();
+    }
+
+    public boolean supportsGraphCreate() {
+        return ServerCompatibility.supportsGraphCreate(
+               this.version.getApiVersion());
+    }
+
+    public boolean supportsCypher() {
+        return this.compatibility.supportsCypher();
+    }
+
+    public boolean supportsPersonalProfileUpdate() {
+        return this.compatibility.supportsPersonalProfileUpdate();
+    }
+
+    public boolean requiresBasicGremlinAuth() {
+        return this.compatibility.requiresBasicGremlinAuth();
+    }
+
+    public boolean isServerAuthEnabled() {
+        try {
+            this.graphs.listGraph();
+            return false;
+        } catch (ServerException e) {
+            if (e.status() == 401) {
+                return true;
+            }
+            throw e;
+        }
+    }
+
+    public User findUserByName(String name) {
+        if (this.supportsDefaultRole()) {
+            return this.auth.getUserByName(name);
+        }
+        return this.auth.listUsers().stream()
+                        .filter(user -> name.equals(user.name()))
+                        .findFirst()
+                        .orElse(null);
+    }
+
+    public User findCurrentUser(String expectedUsername) {
+        TokenPayload payload = this.auth.verifyToken();
+        E.checkState(payload != null &&
+                     !Strings.isNullOrEmpty(payload.userId()) &&
+                     !Strings.isNullOrEmpty(payload.username()),
+                     "Invalid current-user identity");
+        E.checkState(payload.username().equals(expectedUsername),
+                     "Authenticated user does not match the expected user");
+
+        User user;
+        try {
+            user = this.auth.getUser(payload.userId());
+        } catch (ServerException e) {
+            if (e.status() != 403 ||
+                this.supportsPersonalProfileUpdate()) {
+                throw e;
+            }
+            user = new User();
+            user.setId(payload.userId());
+            user.name(payload.username());
+        }
+        E.checkState(user != null && expectedUsername.equals(user.name()),
+                     "Current-user record does not match the token identity");
+        return user;
+    }
+
     public MetricsManager metrics() {
         return this.metrics;
     }
 
-    public void setAuthContext(String auth) {
-        this.client.setAuthContext(auth);
+    public GraphSpaceManager graphSpace() {
+        return this.graphSpace;
+    }
+
+    public WhiteIpListManager whiteIpListManager() {
+        return this.whiteIpListManager;
+    }
+
+    public VermeerManager vermeer() {
+        return this.vermeerManager;
+    }
+
+    public SchemaTemplateManager schemaTemplateManager() {
+        return this.schemaTemplageManager;
+    }
+
+    public ServiceManager serviceManager() {
+        return this.serviceManager;
+    }
+
+    public PDManager pdManager() {
+        return pdManager;
+    }
+
+    @SuppressWarnings("checkstyle:MethodName")
+    public HStoreManager hStoreManager() {
+        return hStoreManager;
+    }
+
+    public VersionManager versionManager() {
+        return version;
     }
 
     public String getAuthContext() {
         return this.client.getAuthContext();
+    }
+
+    public void setAuthContext(String auth) {
+        this.client.setAuthContext(auth);
     }
 
     public void resetAuthContext() {

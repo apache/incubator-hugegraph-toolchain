@@ -24,7 +24,12 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
     AuthBackupTest.class,
     AuthRestoreTest.class,
-    CommandTest.class
+    CommandTest.class,
+    BackupRestoreTest.class,
+    BackupRestoreSafetyTest.class,
+    RetryManagerTest.class,
+    RestoreFailureTest.class,
+    HdfsDirectoryTest.class
 })
 public class FuncTestSuite {
 }

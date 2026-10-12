@@ -24,6 +24,18 @@
 
     <fileSets>
         <fileSet>
+            <directory>${settings.localRepository}</directory>
+            <outputDirectory>/</outputDirectory>
+            <includes>
+                <include>candidate-sdk-manifest.json</include>
+            </includes>
+            <filtered>false</filtered>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../hugegraph-dist/release-docs</directory>
+            <outputDirectory>/</outputDirectory>
+        </fileSet>
+        <fileSet>
             <directory>${assembly.static.dir}/bin</directory>
             <outputDirectory>bin</outputDirectory>
             <includes>
@@ -61,6 +73,54 @@
             <unpack>false</unpack>
             <scope>runtime</scope>
             <useProjectArtifact>false</useProjectArtifact>
+            <!-- CDC-only artifacts remain inside the shared shaded Spark/CDC job.
+                 Keep ordinary Loader Kafka clients and shared dependency versions. -->
+            <excludes>
+                <exclude>ch.qos.reload4j:reload4j</exclude>
+                <exclude>com.esri.geometry:esri-geometry-api</exclude>
+                <exclude>com.fasterxml.jackson.datatype:jackson-datatype-jdk8</exclude>
+                <exclude>com.fasterxml.jackson.datatype:jackson-datatype-jsr310</exclude>
+                <exclude>com.fasterxml.jackson.jaxrs:jackson-jaxrs-base</exclude>
+                <exclude>com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider</exclude>
+                <exclude>com.zaxxer:HikariCP</exclude>
+                <exclude>com.zendesk:mysql-binlog-connector-java</exclude>
+                <exclude>io.debezium:debezium-api</exclude>
+                <exclude>io.debezium:debezium-connector-mysql</exclude>
+                <exclude>io.debezium:debezium-core</exclude>
+                <exclude>io.debezium:debezium-ddl-parser</exclude>
+                <exclude>io.debezium:debezium-embedded</exclude>
+                <exclude>jakarta.ws.rs:jakarta.ws.rs-api</exclude>
+                <exclude>javax.activation:activation</exclude>
+                <exclude>javax.ws.rs:javax.ws.rs-api</exclude>
+                <exclude>javax.xml.bind:jaxb-api</exclude>
+                <exclude>net.sourceforge.argparse4j:argparse4j</exclude>
+                <exclude>org.antlr:antlr4-runtime</exclude>
+                <exclude>org.apache.flink:flink-cdc-common</exclude>
+                <exclude>org.apache.flink:flink-cdc-flink2-compat</exclude>
+                <exclude>org.apache.flink:flink-cdc-runtime</exclude>
+                <exclude>org.apache.flink:flink-connector-debezium</exclude>
+                <exclude>org.apache.flink:flink-connector-mysql-cdc</exclude>
+                <exclude>org.apache.flink:flink-shaded-guava</exclude>
+                <exclude>org.apache.kafka:connect-api</exclude>
+                <exclude>org.apache.kafka:connect-file</exclude>
+                <exclude>org.apache.kafka:connect-json</exclude>
+                <exclude>org.apache.kafka:connect-runtime</exclude>
+                <exclude>org.apache.kafka:connect-transforms</exclude>
+                <exclude>org.apache.kafka:kafka-tools</exclude>
+                <exclude>org.apache.maven:maven-artifact</exclude>
+                <exclude>org.bitbucket.b_c:jose4j</exclude>
+                <exclude>org.codehaus.plexus:plexus-utils</exclude>
+                <exclude>org.eclipse.jetty:jetty-continuation</exclude>
+                <exclude>org.eclipse.jetty:jetty-servlets</exclude>
+                <exclude>org.glassfish.hk2.external:aopalliance-repackaged</exclude>
+                <exclude>org.glassfish.hk2.external:jakarta.inject</exclude>
+                <exclude>org.glassfish.hk2:hk2-api</exclude>
+                <exclude>org.glassfish.hk2:hk2-locator</exclude>
+                <exclude>org.glassfish.hk2:hk2-utils</exclude>
+                <exclude>org.glassfish.jersey.containers:jersey-container-servlet</exclude>
+                <exclude>org.glassfish.jersey.inject:jersey-hk2</exclude>
+                <exclude>org.reflections:reflections</exclude>
+            </excludes>
             <includes>
                 <include>*:*:jar:*</include>
             </includes>

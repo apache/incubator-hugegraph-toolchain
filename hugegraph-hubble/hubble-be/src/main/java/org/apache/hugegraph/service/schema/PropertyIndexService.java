@@ -52,17 +52,17 @@ import lombok.extern.log4j.Log4j2;
 @Service
 public class PropertyIndexService extends SchemaService {
 
-    public List<PropertyIndex> list(int connId) {
-        return this.list(Collections.emptyList(), connId);
+    public List<PropertyIndex> list(HugeClient client) {
+        return this.list(Collections.emptyList(), client);
     }
 
-    public List<PropertyIndex> list(Collection<String> names, int connId) {
-        return this.list(names, connId, true);
+    public List<PropertyIndex> list(Collection<String> names,
+                                    HugeClient client) {
+        return this.list(names, client, true);
     }
 
-    public List<PropertyIndex> list(Collection<String> names, int connId,
+    public List<PropertyIndex> list(Collection<String> names, HugeClient client,
                                     boolean emptyAsAll) {
-        HugeClient client = this.client(connId);
         List<IndexLabel> indexLabels;
         if (CollectionUtils.isEmpty(names)) {
             if (emptyAsAll) {
@@ -80,9 +80,8 @@ public class PropertyIndexService extends SchemaService {
         return results;
     }
 
-    public IPage<PropertyIndex> list(int connId, HugeType type,
+    public IPage<PropertyIndex> list(HugeClient client, HugeType type,
                                      int pageNo, int pageSize) {
-        HugeClient client = this.client(connId);
         List<IndexLabel> indexLabels = client.schema().getIndexLabels();
 
         List<PropertyIndex> results = new ArrayList<>();
@@ -121,9 +120,8 @@ public class PropertyIndexService extends SchemaService {
      *               | softwareByPriveAndName | price name
      * --------------+------------------------+---------------------------------
      */
-    public IPage<PropertyIndex> list(int connId, HugeType type, String content,
-                                     int pageNo, int pageSize) {
-        HugeClient client = this.client(connId);
+    public IPage<PropertyIndex> list(HugeClient client, HugeType type,
+                                     String content, int pageNo, int pageSize) {
         List<IndexLabel> indexLabels = client.schema().getIndexLabels();
 
         Map<String, List<PropertyIndex>> matchedResults = new HashMap<>();
@@ -189,8 +187,7 @@ public class PropertyIndexService extends SchemaService {
         return PageUtil.page(all, pageNo, pageSize);
     }
 
-    private PropertyIndex get(String name, int connId) {
-        HugeClient client = this.client(connId);
+    private PropertyIndex get(String name, HugeClient client) {
         try {
             IndexLabel indexLabel = client.schema().getIndexLabel(name);
             return convert(indexLabel);
@@ -218,14 +215,14 @@ public class PropertyIndexService extends SchemaService {
     }
 
     public void checkConflict(List<PropertyIndex> entities,
-                              ConflictDetail detail, int connId,
+                              ConflictDetail detail, HugeClient client,
                               boolean compareEachOther) {
         if (CollectionUtils.isEmpty(entities)) {
             return;
         }
 
         Map<String, PropertyIndex> originEntities = new HashMap<>();
-        for (PropertyIndex entity : this.list(connId)) {
+        for (PropertyIndex entity : this.list(client)) {
             originEntities.put(entity.getName(), entity);
         }
         for (PropertyIndex entity : entities) {
@@ -243,11 +240,10 @@ public class PropertyIndexService extends SchemaService {
         }
     }
 
-    public ConflictStatus checkConflict(PropertyIndex entity, int connId) {
-        HugeClient client = this.client(connId);
+    public ConflictStatus checkConflict(PropertyIndex entity, HugeClient client) {
         String name = entity.getName();
         IndexLabel newIndexLabel = convert(entity, client);
-        IndexLabel oldIndexLabel = convert(this.get(name, connId), client);
+        IndexLabel oldIndexLabel = convert(this.get(name, client), client);
         if (oldIndexLabel == null) {
             return ConflictStatus.PASSED;
         } else if (isEqual(newIndexLabel, oldIndexLabel)) {

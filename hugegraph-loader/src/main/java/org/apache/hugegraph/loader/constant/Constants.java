@@ -31,7 +31,7 @@ public final class Constants {
     public static final String HTTPS_PREFIX = "https://";
     public static final String JSON_SUFFIX = ".json";
     public static final String GROOVY_SCHEMA = "schema";
-    public static final String TRUST_STORE_PATH = "conf/hugegraph.truststore";
+    public static final String TRUST_STORE_FILE = "conf/hugegraph.truststore";
 
     public static final String FIELD_VERSION = "version";
     public static final String V1_STRUCT_VERSION = "1.0";
@@ -62,6 +62,8 @@ public final class Constants {
     public static final String SINGLE_WORKER = "single-worker-%d";
     public static final long BATCH_PRINT_FREQ = 10_000_000L;
     public static final long SINGLE_PRINT_FREQ = 10_000L;
+    public static final String BATCH_WORKER_PREFIX = "batch-worker";
+    public static final String SINGLE_WORKER_PREFIX = "single-worker";
 
     public static final int TIME_RANGE_CAPACITY = 1000;
 

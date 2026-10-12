@@ -24,6 +24,7 @@ import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.constant.T;
 import org.apache.hugegraph.structure.graph.Path;
 import org.apache.hugegraph.structure.graph.Vertex;
+import org.apache.hugegraph.structure.traverser.PathOfVertices;
 import org.apache.hugegraph.testutil.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -95,24 +96,27 @@ public class ShortestPathApiTest extends TraverserApiTest {
 
     @Test
     public void testShortestPath() {
-        Path path = shortestPathAPI.get(1, 6, Direction.BOTH,
-                                        null, 6, -1L, 0L, -1L);
+        PathOfVertices res = shortestPathAPI.get(1, 6, Direction.BOTH,
+                                                 null, 6, -1L, 0L, -1L);
+        Path path = res.getPath();
         Assert.assertEquals(4, path.size());
         Assert.assertEquals(ImmutableList.of(1, 10, 11, 6), path.objects());
     }
 
     @Test
     public void testShortestPathWithLabel() {
-        Path path = shortestPathAPI.get(1, 6, Direction.BOTH,
+        PathOfVertices res = shortestPathAPI.get(1, 6, Direction.BOTH,
                                         "link", 6, -1L, 0L, -1L);
+        Path path = res.getPath();
         Assert.assertEquals(4, path.size());
         Assert.assertEquals(ImmutableList.of(1, 10, 11, 6), path.objects());
     }
 
     @Test
     public void testShortestPathWithDegree() {
-        Path path = shortestPathAPI.get(1, 6, Direction.OUT,
+        PathOfVertices res = shortestPathAPI.get(1, 6, Direction.OUT,
                                         null, 6, 1L, 0L, -1L);
+        Path path = res.getPath();
         /*
          * Following results can be guaranteed in RocksDB backend,
          * but different results exist in table type backend(like Cassandra).
@@ -123,8 +127,9 @@ public class ShortestPathApiTest extends TraverserApiTest {
 
     @Test
     public void testShortestPathWithCapacity() {
-        Path path = shortestPathAPI.get(14, 6, Direction.BOTH,
+        PathOfVertices res = shortestPathAPI.get(14, 6, Direction.BOTH,
                                         null, 6, 5L, 0L, 19L);
+        Path path = res.getPath();
         Assert.assertEquals(5, path.size());
         Assert.assertEquals(ImmutableList.of(14, 7, 8, 9, 6), path.objects());
 
@@ -138,13 +143,15 @@ public class ShortestPathApiTest extends TraverserApiTest {
 
     @Test
     public void testShortestPathWithMaxDepth() {
-        Path path = shortestPathAPI.get(14, 6, Direction.BOTH,
+        PathOfVertices res = shortestPathAPI.get(14, 6, Direction.BOTH,
                                         null, 4, 5L, 0L, 19L);
+        Path path = res.getPath();
         Assert.assertEquals(5, path.size());
         Assert.assertEquals(ImmutableList.of(14, 7, 8, 9, 6), path.objects());
 
-        path = shortestPathAPI.get(14, 6, Direction.BOTH,
+        res = shortestPathAPI.get(14, 6, Direction.BOTH,
                                    null, 3, 5L, 0L, 19L);
+        path = res.getPath();
         Assert.assertEquals(0, path.size());
     }
 
@@ -158,31 +165,36 @@ public class ShortestPathApiTest extends TraverserApiTest {
         List<Object> path3 = ImmutableList.of(1, 10, 11, 6);
 
         // (skipped degree == degree) > max degree
-        Path path = shortestPathAPI.get(1, 6, Direction.OUT,
+        PathOfVertices res = shortestPathAPI.get(1, 6, Direction.OUT,
                                         null, 5, 6L, 6L, -1L);
+        Path path = res.getPath();
         Assert.assertEquals(4, path.size());
         Assert.assertEquals(path3, path.objects());
 
         // (skipped degree == degree) == max degree
-        path = shortestPathAPI.get(1, 6, Direction.OUT,
+        res = shortestPathAPI.get(1, 6, Direction.OUT,
                                    null, 5, 5L, 5L, -1L);
+        path = res.getPath();
         Assert.assertEquals(5, path.size());
         Assert.assertEquals(path2, path.objects());
 
         // min degree < (skipped degree == degree) == middle degree < max degree
-        path = shortestPathAPI.get(1, 6, Direction.OUT,
+        res = shortestPathAPI.get(1, 6, Direction.OUT,
                                    null, 5, 4L, 4L, -1L);
+        path = res.getPath();
         Assert.assertEquals(6, path.size());
         Assert.assertEquals(path1, path.objects());
 
         // (skipped degree == degree) <= min degree
-        path = shortestPathAPI.get(1, 6, Direction.OUT,
+        res = shortestPathAPI.get(1, 6, Direction.OUT,
                                    null, 5, 3L, 3L, -1L);
+        path = res.getPath();
         Assert.assertEquals(0, path.size());
 
         // Skipped degree > max degree, degree <= min degree
-        path = shortestPathAPI.get(1, 6, Direction.OUT,
+        res = shortestPathAPI.get(1, 6, Direction.OUT,
                                    null, 5, 3L, 6L, -1L);
+        path = res.getPath();
         Assert.assertTrue(path.size() == 4 ||
                           path.size() == 5 ||
                           path.size() == 6);
@@ -190,15 +202,17 @@ public class ShortestPathApiTest extends TraverserApiTest {
         Assert.assertTrue(paths.contains(path.objects()));
 
         // Skipped degree > max degree, min degree < degree < max degree
-        path = shortestPathAPI.get(1, 6, Direction.OUT,
+        res = shortestPathAPI.get(1, 6, Direction.OUT,
                                    null, 5, 4L, 6L, -1L);
+        path = res.getPath();
         Assert.assertTrue(path.size() == 4 || path.size() == 5);
         Assert.assertTrue(path2.equals(path.objects()) ||
                           path3.equals(path.objects()));
 
         // Skipped degree > max degree, degree >= max degree
-        path = shortestPathAPI.get(1, 6, Direction.OUT,
+        res = shortestPathAPI.get(1, 6, Direction.OUT,
                                    null, 5, 5L, 6L, -1L);
+        path = res.getPath();
         Assert.assertEquals(4, path.size());
         Assert.assertEquals(path3, path.objects());
     }

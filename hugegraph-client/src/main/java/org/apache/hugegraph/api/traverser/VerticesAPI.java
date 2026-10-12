@@ -34,8 +34,8 @@ import com.google.common.collect.ImmutableMap;
 
 public class VerticesAPI extends TraversersAPI {
 
-    public VerticesAPI(RestClient client, String graph) {
-        super(client, graph);
+    public VerticesAPI(RestClient client, String graphSpace, String graph) {
+        super(client, graphSpace, graph);
     }
 
     @Override

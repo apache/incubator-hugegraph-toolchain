@@ -50,15 +50,21 @@ import com.google.common.collect.ImmutableMap;
 public class BaseClientTest {
 
     protected static final String BASE_URL = "http://127.0.0.1:8080";
+    protected static final String DEFAULT_GRAPHSPACE = "DEFAULT";
+    protected static final String GRAPHSPACE = DEFAULT_GRAPHSPACE;
     protected static final String GRAPH = "hugegraph";
     protected static final String USERNAME = "admin";
     protected static final String PASSWORD = "pa";
+    //protected static final String PASSWORD = "admin";
     protected static final int TIMEOUT = 10;
 
     private static HugeClient client;
 
-    protected static void open() {
-        client = HugeClient.builder(BASE_URL, GRAPH).configUser(USERNAME, PASSWORD).build();
+    protected static HugeClient open() {
+        client = HugeClient.builder(BASE_URL, DEFAULT_GRAPHSPACE, GRAPH)
+                           .configUser(USERNAME, PASSWORD)
+                           .build();
+        return client;
     }
 
     @BeforeClass

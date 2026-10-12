@@ -15,21 +15,39 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 #
+set -euo pipefail
+
 BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-APP_DIR=$(dirname "${BIN_DIR}")
-LIB_DIR=${APP_DIR}/lib
-ASSEMBLY_JAR_NAME=$(find "${LIB_DIR}" -name 'hugegraph-loader*.jar')
+APP_DIR=$(dirname "$BIN_DIR")
+if [[ -z "${FLINK_HOME:-}" || ! -x "$FLINK_HOME/bin/flink" ]]; then
+    echo "FLINK_HOME must point to a Flink installation" >&2
+    exit 1
+fi
+shopt -s nullglob
+ASSEMBLY_JARS=("$APP_DIR"/lib/*hugegraph-loader*-shaded.jar)
+if [[ ${#ASSEMBLY_JARS[@]} -ne 1 ]]; then
+    echo "Expected exactly one shaded HugeGraph Loader jar in $APP_DIR/lib" >&2
+    exit 1
+fi
 
-# get hugegraph_params and engine_params
-source "$BIN_DIR"/get-params.sh
-get_params "$@"
-echo "engine_params: $ENGINE_PARAMS"
-echo "hugegraph_params: $HUGEGRAPH_PARAMS"
+# Without a separator all arguments belong to Loader. To set Flink options:
+# hugegraph-flinkcdc-loader.sh -p 1 -- --file mapping.json --graph hugegraph
+ENGINE_PARAMS=()
+HUGEGRAPH_PARAMS=("$@")
+for arg in "$@"; do
+    if [[ "$arg" == "--" ]]; then
+        HUGEGRAPH_PARAMS=()
+        while [[ "$1" != "--" ]]; do
+            ENGINE_PARAMS+=("$1")
+            shift
+        done
+        shift
+        HUGEGRAPH_PARAMS=("$@")
+        break
+    fi
+done
 
-CMD=${FLINK_HOME}/bin/flink run \
-    "${ENGINE_PARAMS}" \
+# Do not echo arguments: they can contain authentication credentials.
+exec "$FLINK_HOME/bin/flink" run ${ENGINE_PARAMS[@]+"${ENGINE_PARAMS[@]}"} \
     -c org.apache.hugegraph.loader.flink.HugeGraphFlinkCDCLoader \
-    "${ASSEMBLY_JAR_NAME}" "${HUGEGRAPH_PARAMS}"
-
-echo "${CMD}"
-exec "${CMD}"
+    "${ASSEMBLY_JARS[0]}" ${HUGEGRAPH_PARAMS[@]+"${HUGEGRAPH_PARAMS[@]}"}

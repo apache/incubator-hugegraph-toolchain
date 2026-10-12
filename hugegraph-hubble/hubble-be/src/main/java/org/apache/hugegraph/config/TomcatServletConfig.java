@@ -18,21 +18,19 @@
 
 package org.apache.hugegraph.config;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
 import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.options.HubbleOptions;
-import org.apache.tomcat.util.http.LegacyCookieProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.stereotype.Component;
 
-// TODO: remove this class if we don't need it anymore
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 @Component
-public class TomcatServletConfig implements
-                                 WebServerFactoryCustomizer<TomcatServletWebServerFactory> {
+public class TomcatServletConfig
+       implements WebServerFactoryCustomizer<TomcatServletWebServerFactory> {
 
     @Autowired
     private HugeConfig config;
@@ -47,8 +45,5 @@ public class TomcatServletConfig implements
             throw new ExternalException("service.unknown-host", e, host);
         }
         factory.setPort(this.config.get(HubbleOptions.SERVER_PORT));
-        factory.addContextCustomizers(context -> {
-            context.setCookieProcessor(new LegacyCookieProcessor());
-        });
     }
 }

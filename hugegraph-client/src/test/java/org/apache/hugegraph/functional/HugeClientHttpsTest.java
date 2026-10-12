@@ -17,6 +17,8 @@
 
 package org.apache.hugegraph.functional;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Map;
 
 import org.apache.hugegraph.driver.GraphManager;
@@ -25,16 +27,16 @@ import org.apache.hugegraph.driver.SchemaManager;
 import org.apache.hugegraph.structure.constant.T;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.testutil.Assert;
-import org.apache.hugegraph.util.CommonUtil;
 import org.junit.After;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableMap;
 
-public class HugeClientHttpsTest {
+public class HugeClientHttpsTest extends BaseFuncTest {
 
     private static final String BASE_URL = "https://127.0.0.1:8443";
+    private static final String GRAPHSPACE = "DEFAULT";
     private static final String GRAPH = "hugegraph";
     private static final String USERNAME = "admin";
     private static final String PASSWORD = "pa";
@@ -42,25 +44,33 @@ public class HugeClientHttpsTest {
     private static final int MAX_CONNS_PER_ROUTE = 10;
     private static final int MAX_CONNS = 10;
     private static final int IDLE_TIME = 30;
-    private static final String TRUST_STORE_PATH = "src/test/resources/hugegraph.truststore";
+    private static final String TRUST_STORE_PATH = System.getProperty(
+            "hugegraph.test.trust-store-file",
+            System.getenv().getOrDefault("HUGEGRAPH_TEST_TRUST_STORE_FILE", "src/test/resources/hugegraph.truststore"));
     private static final String TRUST_STORE_PASSWORD = "hugegraph";
 
-    private static HugeClient client;
+    private HugeClient client;
 
-    @Before
-    public void init() {
-        CommonUtil.downloadFileByUrl(CommonUtil.PREFIX + "hugegraph.truststore", TRUST_STORE_PATH);
+    @BeforeClass
+    public static void prepareTrustStore() {
+        Assert.assertTrue("Start the shared Server fixture or set hugegraph.test.trust-store-file",
+                          Files.isRegularFile(Paths.get(TRUST_STORE_PATH)));
     }
 
     @After
     public void teardown() throws Exception {
-        Assert.assertNotNull("Client is not opened", client);
-        client.close();
+        try {
+            if (this.client != null) {
+                this.client.close();
+            }
+        } finally {
+            this.client = null;
+        }
     }
 
     @Test
     public void testHttpsClientBuilderWithConnection() {
-        client = HugeClient.builder(BASE_URL, GRAPH)
+        client = HugeClient.builder(BASE_URL, GRAPHSPACE, GRAPH)
                            .configUser(USERNAME, PASSWORD)
                            .configSSL(TRUST_STORE_PATH, TRUST_STORE_PASSWORD)
                            .build();
@@ -70,8 +80,10 @@ public class HugeClientHttpsTest {
 
     @Test
     public void testHttpsClientWithConnectionPoolNoUserParam() {
-        client = HugeClient.builder(BASE_URL, GRAPH)
-                           .configTimeout(TIMEOUT)
+        client = HugeClient.builder(BASE_URL, GRAPHSPACE, GRAPH)
+                           .configUser(USERNAME, PASSWORD)
+                           .configConnectTimeout(3)
+                           .configReadTimeout(10)
                            .configPool(MAX_CONNS, MAX_CONNS_PER_ROUTE)
                            .configSSL(TRUST_STORE_PATH, TRUST_STORE_PASSWORD)
                            .build();
@@ -81,7 +93,7 @@ public class HugeClientHttpsTest {
 
     @Test
     public void testHttpsClientWithConnectionPoolNoTimeOutParam() {
-        client = HugeClient.builder(BASE_URL, GRAPH)
+        client = HugeClient.builder(BASE_URL, GRAPHSPACE, GRAPH)
                            .configUser(USERNAME, PASSWORD)
                            .configPool(MAX_CONNS, MAX_CONNS_PER_ROUTE)
                            .configSSL(TRUST_STORE_PATH, TRUST_STORE_PASSWORD)
@@ -92,7 +104,7 @@ public class HugeClientHttpsTest {
 
     @Test
     public void testHttpsClientNewBuilderWithConnectionNoPoolParam() {
-        client = HugeClient.builder(BASE_URL, GRAPH)
+        client = HugeClient.builder(BASE_URL, GRAPHSPACE, GRAPH)
                            .configUser(USERNAME, PASSWORD)
                            .configTimeout(TIMEOUT)
                            .configSSL(TRUST_STORE_PATH, TRUST_STORE_PASSWORD)
@@ -103,7 +115,7 @@ public class HugeClientHttpsTest {
 
     @Test
     public void testHttpsClientNewBuilderWithConnectionPool() {
-        client = HugeClient.builder(BASE_URL, GRAPH)
+        client = HugeClient.builder(BASE_URL, GRAPHSPACE, GRAPH)
                            .configUser(USERNAME, PASSWORD)
                            .configTimeout(TIMEOUT)
                            .configPool(MAX_CONNS, MAX_CONNS_PER_ROUTE)
@@ -116,7 +128,7 @@ public class HugeClientHttpsTest {
 
     @Test
     public void testHttpsClientNewBuilderZeroPoolParam() {
-        client = HugeClient.builder(BASE_URL, GRAPH)
+        client = HugeClient.builder(BASE_URL, GRAPHSPACE, GRAPH)
                            .configUser(USERNAME, PASSWORD)
                            .configTimeout(TIMEOUT)
                            .configPool(0, 0)
@@ -129,13 +141,14 @@ public class HugeClientHttpsTest {
     @Test
     public void testHttpsClientBuilderWithConnectionPoolNoParam() {
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            HugeClient.builder(BASE_URL, GRAPH)
+            HugeClient.builder(BASE_URL, GRAPHSPACE, GRAPH)
+                      .configUser(USERNAME, PASSWORD)
                       .configUrl(null)
                       .configGraph(null)
                       .configSSL("", "")
                       .build();
         }, e -> {
-            Assert.assertContains("The url parameter can't be null",
+            Assert.assertContains("Expect a string value as the url parameter argument",
                                   e.getMessage());
         });
     }
@@ -143,12 +156,13 @@ public class HugeClientHttpsTest {
     @Test
     public void testHttpsClientBuilderWithConnectionPoolNoGraphParam() {
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            HugeClient.builder(BASE_URL, GRAPH)
+            HugeClient.builder(BASE_URL, GRAPHSPACE, GRAPH)
+                      .configUser(USERNAME, PASSWORD)
                       .configGraph(null)
                       .configSSL("", "")
                       .build();
         }, e -> {
-            Assert.assertContains("The graph parameter can't be null",
+            Assert.assertContains("Expect a string value as the graph name parameter argument",
                                   e.getMessage());
         });
     }
@@ -156,7 +170,8 @@ public class HugeClientHttpsTest {
     @Test
     public void testHttpsClientBuilderWithConnectionPoolZeroIdleTimeParam() {
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            HugeClient.builder(BASE_URL, GRAPH)
+            HugeClient.builder(BASE_URL, GRAPHSPACE, GRAPH)
+                      .configUser(USERNAME, PASSWORD)
                       .configIdleTime(0)
                       .build();
         }, e -> {

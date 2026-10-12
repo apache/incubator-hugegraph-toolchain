@@ -32,7 +32,7 @@ import org.apache.hugegraph.loader.constant.Constants;
 import org.apache.hugegraph.util.Log;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.ververica.cdc.debezium.DebeziumDeserializationSchema;
+import org.apache.flink.cdc.debezium.DebeziumDeserializationSchema;
 
 import io.debezium.data.Envelope;
 
@@ -42,6 +42,10 @@ public class HugeGraphDeserialization implements DebeziumDeserializationSchema<S
 
     @Override
     public void deserialize(SourceRecord sourceRecord, Collector<String> collector) {
+        // Debezium can emit a tombstone after a delete. It has no graph mutation.
+        if (sourceRecord.value() == null) {
+            return;
+        }
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode result = mapper.createObjectNode();
 
@@ -62,20 +66,37 @@ public class HugeGraphDeserialization implements DebeziumDeserializationSchema<S
                 throw new IllegalArgumentException(
                           "The type of `op` should be 'c' 'r' 'u' 'd' only");
         }
+        result.set(Constants.CDC_DATA, row(mapper, data));
+        if (operation == Envelope.Operation.UPDATE) {
+            Struct before = value.getStruct("before");
+            if (before == null) {
+                throw new IllegalArgumentException("CDC UPDATE requires a full before image");
+            }
+            result.set("before", row(mapper, before));
+        }
+        result.put(Constants.CDC_OP, op);
+        LOG.debug("Loaded CDC event: op={}, dataFields={}, beforeFields={}", op,
+                  result.get(Constants.CDC_DATA).size(),
+                  result.has("before") ? result.get("before").size() : 0);
+        collector.collect(result.toString());
+    }
+
+    private static ObjectNode row(ObjectMapper mapper, Struct data) {
         ObjectNode rootNode = mapper.createObjectNode();
         if (data != null) {
             Schema afterSchema = data.schema();
             List<Field> afterFields = afterSchema.fields();
             for (Field field : afterFields) {
                 Object afterValue = data.get(field);
-                rootNode.put(field.name(), afterValue.toString());
+                if (afterValue == null) {
+                    rootNode.putNull(field.name());
+                } else {
+                    rootNode.put(field.name(), afterValue.toString());
+                }
             }
         }
 
-        result.set(Constants.CDC_DATA, rootNode);
-        result.put(Constants.CDC_OP, op);
-        LOG.debug("Loaded data: {}", result);
-        collector.collect(result.toString());
+        return rootNode;
     }
 
     @Override

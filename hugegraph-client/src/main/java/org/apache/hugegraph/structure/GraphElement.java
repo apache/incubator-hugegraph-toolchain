@@ -77,6 +77,7 @@ public abstract class GraphElement extends Element implements GraphAttachable {
         E.checkArgument(ReflectionUtil.isSimpleType(clazz) ||
                         clazz.equals(UUID.class) ||
                         clazz.equals(Date.class) ||
+                        clazz.equals(byte[].class) ||
                         value instanceof List ||
                         value instanceof Set,
                         "Invalid property value type: '%s'", clazz);

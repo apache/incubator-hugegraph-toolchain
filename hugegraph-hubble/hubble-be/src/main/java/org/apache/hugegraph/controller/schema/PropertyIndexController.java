@@ -18,6 +18,12 @@
 
 package org.apache.hugegraph.controller.schema;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import org.apache.hugegraph.common.Constant;
+import org.apache.hugegraph.driver.HugeClient;
+import org.apache.hugegraph.entity.schema.PropertyIndex;
+import org.apache.hugegraph.service.schema.PropertyIndexService;
+import org.apache.hugegraph.structure.constant.HugeType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,21 +32,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import org.apache.hugegraph.common.Constant;
-import org.apache.hugegraph.entity.schema.PropertyIndex;
-import org.apache.hugegraph.service.schema.PropertyIndexService;
-import org.apache.hugegraph.structure.constant.HugeType;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-
 @RestController
-@RequestMapping(Constant.API_VERSION + "graph-connections/{connId}/schema/propertyindexes")
+@RequestMapping(Constant.API_VERSION + "graphspaces/{graphspace}/graphs/" +
+        "{graph}/schema/propertyindexes")
 public class PropertyIndexController extends SchemaController {
 
     @Autowired
     private PropertyIndexService service;
 
     @GetMapping
-    public IPage<PropertyIndex> list(@PathVariable("connId") int connId,
+    public IPage<PropertyIndex> list(@PathVariable("graphspace") String graphSpace,
+                                     @PathVariable("graph") String graph,
                                      @RequestParam(name = "is_vertex_label")
                                      boolean isVertexLabel,
                                      @RequestParam(name = "content",
@@ -56,10 +58,11 @@ public class PropertyIndexController extends SchemaController {
                                      int pageSize) {
         HugeType type = isVertexLabel ? HugeType.VERTEX_LABEL :
                                         HugeType.EDGE_LABEL;
+        HugeClient client = this.authClient(graphSpace, graph);
         if (StringUtils.isEmpty(content)) {
-            return this.service.list(connId, type, pageNo, pageSize);
+            return this.service.list(client, type, pageNo, pageSize);
         } else {
-            return this.service.list(connId, type, content, pageNo, pageSize);
+            return this.service.list(client, type, content, pageNo, pageSize);
         }
     }
 }

@@ -23,7 +23,7 @@ public class NotAllCreatedException extends ServerException {
 
     private static final long serialVersionUID = -8795820552805040556L;
 
-    private Collection<?> ids;
+    private final Collection<?> ids;
 
     public NotAllCreatedException(String message, Collection<?> ids,
                                   Object... args) {

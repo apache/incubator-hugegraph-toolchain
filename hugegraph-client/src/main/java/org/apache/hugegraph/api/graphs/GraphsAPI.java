@@ -17,8 +17,16 @@
 
 package org.apache.hugegraph.api.graphs;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.UncheckedIOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hugegraph.api.API;
@@ -29,6 +37,8 @@ import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.constant.GraphMode;
 import org.apache.hugegraph.structure.constant.GraphReadMode;
 import org.apache.hugegraph.structure.constant.HugeType;
+import org.apache.hugegraph.util.E;
+import org.apache.hugegraph.util.JsonUtil;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -39,10 +49,24 @@ public class GraphsAPI extends API {
     private static final String GRAPH_READ_MODE = "graph_read_mode";
     private static final String CLEAR = "clear";
     private static final String CONFIRM_MESSAGE = "confirm_message";
+    private static final String CLEARED = "cleared";
+    private static final String RELOADED = "reloaded";
+    private static final String UPDATED = "updated";
+    private static final String GRAPHS = "graphs";
+    private static final String MANAGE = "manage";
+    private static final String PATH = "graphspaces/%s/graphs";
 
-    public GraphsAPI(RestClient client) {
+    public GraphsAPI(RestClient client, String graphSpace) {
         super(client);
-        this.path(this.type());
+        this.path(String.format(PATH, graphSpace));
+    }
+
+    private static String joinPath(String path, String graph) {
+        return String.join(DELIMITER, path, graph);
+    }
+
+    private static String joinPath(String path, String graph, String action) {
+        return String.join(DELIMITER, path, graph, action);
     }
 
     @Override
@@ -50,10 +74,22 @@ public class GraphsAPI extends API {
         return HugeType.GRAPHS.string();
     }
 
+    // TODO(@Thespcia): in inner version, clone is split into a single method, and doesn't have
+    // this parameter
     @SuppressWarnings("unchecked")
     public Map<String, String> create(String name, String cloneGraphName, String configText) {
         this.client.checkApiVersion("0.67", "dynamic graph add");
-        RestHeaders headers = new RestHeaders().add(RestHeaders.CONTENT_TYPE, "text/plain");
+        boolean legacy = !this.client.isSupportGs();
+        RestHeaders headers = new RestHeaders().add(RestHeaders.CONTENT_TYPE,
+                                                    legacy ? "text/plain" :
+                                                    RestHeaders.APPLICATION_JSON);
+        if (legacy) {
+            if (configText == null) {
+                configText = "";
+            } else if (configText.trim().startsWith("{")) {
+                configText = legacyGraphConfig(configText);
+            }
+        }
         Map<String, Object> params = null;
         if (StringUtils.isNotEmpty(cloneGraphName)) {
             params = ImmutableMap.of("clone_graph_name", cloneGraphName);
@@ -61,6 +97,46 @@ public class GraphsAPI extends API {
         RestResult result = this.client.post(joinPath(this.path(), name),
                                              configText, headers, params);
         return result.readObject(Map.class);
+    }
+
+    private static String legacyGraphConfig(String configText) {
+        Map<?, ?> config = JsonUtil.fromJson(configText, Map.class);
+        Properties properties = new Properties();
+        config.forEach((key, value) -> {
+            E.checkArgument(value instanceof String || value instanceof Number ||
+                            value instanceof Boolean,
+                            "Legacy graph config option '%s' must be a scalar value", key);
+            properties.setProperty(key.toString(), value.toString());
+        });
+        StringWriter text = new StringWriter();
+        try {
+            properties.store(text, null);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        // Commons PropertiesConfiguration trims literal whitespace and does not
+        // decode the JDK writer's escaped leading space. Unicode escapes also
+        // keep legacy request bytes independent of the client's default charset.
+        String serialized = text.toString();
+        StringBuilder encoded = new StringBuilder(serialized.length());
+        for (int i = 0; i < serialized.length(); i++) {
+            char c = serialized.charAt(i);
+            if (c == '\\' && i + 1 < serialized.length()) {
+                char next = serialized.charAt(++i);
+                if (next == ' ') {
+                    encoded.append("\\u0020");
+                } else {
+                    encoded.append(c).append(next);
+                }
+            } else if (c == ' ') {
+                encoded.append("\\u0020");
+            } else if (c > 0x7E) {
+                encoded.append(String.format("\\u%04x", (int) c));
+            } else {
+                encoded.append(c);
+            }
+        }
+        return encoded.toString();
     }
 
     @SuppressWarnings("unchecked")
@@ -74,15 +150,112 @@ public class GraphsAPI extends API {
         return result.readList(this.type(), String.class);
     }
 
+    public List<Map<String, Object>> listProfile(String prefix) {
+        String profilePath = joinPath(this.path(), "profile");
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("prefix", prefix);
+        RestResult result = this.client.get(profilePath, params);
+        List<Map> results = result.readList(Map.class);
+        List<Map<String, Object>> profiles = new ArrayList<>();
+        for (Object entry : results) {
+            profiles.add(JsonUtil.fromJson(JsonUtil.toJson(entry), Map.class));
+        }
+        return profiles;
+    }
+
+    public Map<String, Object> setDefault(String name) {
+        String defaultPath = joinPath(this.path(), name, "default");
+        RestResult result = this.client.post(defaultPath, Collections.emptyMap());
+        return result.readObject(Map.class);
+    }
+
+    public Map<String, Object> unSetDefault(String name) {
+        String unDefaultPath = joinPath(this.path(), name, "default");
+        RestResult result = this.client.delete(unDefaultPath,
+                                                Collections.emptyMap());
+        return result.readObject(Map.class);
+    }
+
+    public Map<String, Object> getDefault() {
+        String defaultPath = joinPath(this.path(), "default");
+        RestResult result = this.client.get(defaultPath);
+        return result.readObject(Map.class);
+    }
+
+    public void clear(String graph) {
+        this.clear(graph, "I'm sure to delete all data");
+    }
+
+    // TODO: clearSchema is not supported yet, will always be true
+    public void clear(String graph, boolean clearSchema) {
+        this.clear(graph, "I'm sure to delete all data");
+    }
+
     public void clear(String graph, String message) {
         this.client.delete(joinPath(this.path(), graph, CLEAR),
                            ImmutableMap.of(CONFIRM_MESSAGE, message));
+    }
+
+    public Map<String, String> update(String name, String nickname) {
+        Map<String, String> actionMap = new HashMap<>();
+        actionMap.put("name", name);
+        actionMap.put("nickname", nickname);
+        RestResult result = this.client.put(this.path(), name,
+                                            ImmutableMap.of("action", "update",
+                                                            "update", actionMap));
+        Map<String, String> response = result.readObject(Map.class);
+
+        E.checkState(response.size() == 1 && response.containsKey(name),
+                     "Response must be formatted to {\"%s\" : status}, " +
+                     "but got %s", name, response);
+        String status = response.get(name);
+        E.checkState(UPDATED.equals(status),
+                     "Server status must be '%s', but got '%s'", UPDATED, status);
+        return response;
+    }
+
+    // wrapper for inner server
+    public void delete(String graph) {
+        this.drop(graph, "I'm sure to drop the graph");
     }
 
     public void drop(String graph, String message) {
         this.client.checkApiVersion("0.67", "dynamic graph delete");
         this.client.delete(joinPath(this.path(), graph),
                            ImmutableMap.of(CONFIRM_MESSAGE, message));
+    }
+
+    /**
+     * @deprecated Current Server per-graph management accepts only update.
+     *             Use {@link #reload()} for a whole-server graph reload.
+     */
+    @Deprecated
+    public Map<String, String> reload(String name) {
+        RestResult result = this.client.put(this.path(), name,
+                                            ImmutableMap.of("action", "reload"));
+        Map<String, String> response = result.readObject(Map.class);
+
+        E.checkState(response.size() == 1 && response.containsKey(name),
+                     "Response must be formatted to {\"%s\" : status}, " +
+                     "but got %s", name, response);
+        String status = response.get(name);
+        E.checkState(RELOADED.equals(status),
+                     "Graph %s status must be %s, but got '%s'", name, RELOADED, status);
+        return response;
+    }
+
+    public Map<String, String> reload() {
+        RestResult result = this.client.put(this.path(), MANAGE,
+                                            ImmutableMap.of("action", "reload"));
+        Map<String, String> response = result.readObject(Map.class);
+
+        E.checkState(response.size() == 1 && response.containsKey(GRAPHS),
+                     "Response must be formatted to {\"%s\" : status}, " +
+                     "but got %s", GRAPHS, response);
+        String status = response.get(GRAPHS);
+        E.checkState(RELOADED.equals(status),
+                     "Server status must be '%s', but got '%s'", RELOADED, status);
+        return response;
     }
 
     public void mode(String graph, GraphMode mode) {
@@ -131,11 +304,11 @@ public class GraphsAPI extends API {
         }
     }
 
-    private static String joinPath(String path, String graph) {
-        return String.join(DELIMITER, path, graph);
-    }
-
-    private static String joinPath(String path, String graph, String action) {
-        return String.join(DELIMITER, path, graph, action);
+    public String clone(String graph, Map<String, Object> body) {
+        RestResult result = this.client.post(joinPath(this.path(), graph,
+                                                      "clone"), body);
+        Map<String, Object> resultMap = result.readObject(Map.class);
+        String taskId = (String) resultMap.get("task_id");
+        return taskId;
     }
 }

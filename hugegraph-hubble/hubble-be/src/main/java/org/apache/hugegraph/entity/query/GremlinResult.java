@@ -19,7 +19,6 @@
 package org.apache.hugegraph.entity.query;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -42,6 +41,9 @@ public class GremlinResult {
 
     @JsonProperty("graph_view")
     private GraphView graphView;
+
+    @JsonProperty("pathnum")
+    private Integer pathnum;
 
     public enum Type {
 

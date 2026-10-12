@@ -131,6 +131,7 @@ public class RestoreManager extends BackupRestoreBaseManager {
                 } catch (Throwable e) {
                     Printer.print("When restoring vertices in file '%s' " +
                                   "occurs exception '%s'", file, e);
+                    throw e;
                 }
             });
         }
@@ -171,6 +172,7 @@ public class RestoreManager extends BackupRestoreBaseManager {
                 } catch (Throwable e) {
                     Printer.print("When restoring edges in file '%s' " +
                                   "occurs exception '%s'", file, e);
+                    throw e;
                 }
             });
         }

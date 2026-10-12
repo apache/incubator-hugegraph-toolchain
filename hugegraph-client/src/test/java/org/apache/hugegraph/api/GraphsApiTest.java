@@ -37,14 +37,71 @@ import org.junit.Test;
 
 import com.google.common.collect.ImmutableSet;
 
-//@Ignore
 public class GraphsApiTest extends BaseApiTest {
 
     private static final String GRAPH2 = "hugegraph2";
-    private static final String CONFIG2_PATH = "src/test/resources/hugegraph-create.properties";
+    private static final String CONFIG2_PATH = "src/test/resources/hugegraph-create.json";
 
     private static final String GRAPH3 = "hugegraph3";
-    private static final String CONFIG3_PATH = "src/test/resources/hugegraph-clone.properties";
+    private static final String CONFIG3_PATH = "src/test/resources/hugegraph-clone.json";
+
+    protected static void initPropertyKey(HugeClient client) {
+        SchemaManager schema = client.schema();
+        schema.propertyKey("name").asText().ifNotExist().create();
+        schema.propertyKey("age").asInt().ifNotExist().create();
+        schema.propertyKey("city").asText().ifNotExist().create();
+        schema.propertyKey("lang").asText().ifNotExist().create();
+        schema.propertyKey("date").asDate().ifNotExist().create();
+        schema.propertyKey("price").asInt().ifNotExist().create();
+        schema.propertyKey("weight").asDouble().ifNotExist().create();
+    }
+
+    protected static void initVertexLabel(HugeClient client) {
+        SchemaManager schema = client.schema();
+
+        schema.vertexLabel("person")
+              .properties("name", "age", "city")
+              .primaryKeys("name")
+              .nullableKeys("city")
+              .ifNotExist()
+              .create();
+
+        schema.vertexLabel("software")
+              .properties("name", "lang", "price")
+              .primaryKeys("name")
+              .nullableKeys("price")
+              .ifNotExist()
+              .create();
+
+        schema.vertexLabel("book")
+              .useCustomizeStringId()
+              .properties("name", "price")
+              .nullableKeys("price")
+              .ifNotExist()
+              .create();
+    }
+
+    protected static void initEdgeLabel(HugeClient client) {
+        SchemaManager schema = client.schema();
+
+        schema.edgeLabel("knows")
+              .sourceLabel("person")
+              .targetLabel("person")
+              .multiTimes()
+              .properties("date", "city")
+              .sortKeys("date")
+              .nullableKeys("city")
+              .ifNotExist()
+              .create();
+
+        schema.edgeLabel("created")
+              .sourceLabel("person")
+              .targetLabel("software")
+              .properties("date", "city")
+              .nullableKeys("city")
+              .ifNotExist()
+              .create();
+    }
 
     @Override
     @After
@@ -73,13 +130,12 @@ public class GraphsApiTest extends BaseApiTest {
                                       CONFIG2_PATH);
         }
         Map<String, String> result = graphsAPI.create(GRAPH2, null, config);
-        Assert.assertEquals(2, result.size());
         Assert.assertEquals(GRAPH2, result.get("name"));
         Assert.assertEquals("rocksdb", result.get("backend"));
 
         Assert.assertEquals(initialGraphNumber + 1, graphsAPI.list().size());
 
-        HugeClient client = new HugeClient(baseClient(), GRAPH2);
+        HugeClient client = new HugeClient(baseClient(), GRAPHSPACE, GRAPH2);
         // Insert graph schema and data
         initPropertyKey(client);
         initVertexLabel(client);
@@ -145,13 +201,12 @@ public class GraphsApiTest extends BaseApiTest {
         }
         Map<String, String> result = graphsAPI.create(GRAPH3, "hugegraph",
                                                       config);
-        Assert.assertEquals(2, result.size());
         Assert.assertEquals(GRAPH3, result.get("name"));
         Assert.assertEquals("rocksdb", result.get("backend"));
 
         Assert.assertEquals(initialGraphNumber + 1, graphsAPI.list().size());
 
-        HugeClient client = new HugeClient(baseClient(), GRAPH3);
+        HugeClient client = new HugeClient(baseClient(), GRAPHSPACE, GRAPH3);
         // Insert graph schema and data
         initPropertyKey(client);
         initVertexLabel(client);
@@ -210,13 +265,12 @@ public class GraphsApiTest extends BaseApiTest {
         String config = null;
         Map<String, String> result = graphsAPI.create(GRAPH3, "hugegraph",
                                                       config);
-        Assert.assertEquals(2, result.size());
         Assert.assertEquals(GRAPH3, result.get("name"));
         Assert.assertEquals("rocksdb", result.get("backend"));
 
         Assert.assertEquals(initialGraphNumber + 1, graphsAPI.list().size());
 
-        HugeClient client = new HugeClient(baseClient(), GRAPH3);
+        HugeClient client = new HugeClient(baseClient(), GRAPHSPACE, GRAPH3);
         // Insert graph schema and data
         initPropertyKey(client);
         initVertexLabel(client);
@@ -265,63 +319,5 @@ public class GraphsApiTest extends BaseApiTest {
         graphsAPI.drop(GRAPH3, "I'm sure to drop the graph");
 
         Assert.assertEquals(initialGraphNumber, graphsAPI.list().size());
-    }
-
-    protected static void initPropertyKey(HugeClient client) {
-        SchemaManager schema = client.schema();
-        schema.propertyKey("name").asText().ifNotExist().create();
-        schema.propertyKey("age").asInt().ifNotExist().create();
-        schema.propertyKey("city").asText().ifNotExist().create();
-        schema.propertyKey("lang").asText().ifNotExist().create();
-        schema.propertyKey("date").asDate().ifNotExist().create();
-        schema.propertyKey("price").asInt().ifNotExist().create();
-        schema.propertyKey("weight").asDouble().ifNotExist().create();
-    }
-
-    protected static void initVertexLabel(HugeClient client) {
-        SchemaManager schema = client.schema();
-
-        schema.vertexLabel("person")
-              .properties("name", "age", "city")
-              .primaryKeys("name")
-              .nullableKeys("city")
-              .ifNotExist()
-              .create();
-
-        schema.vertexLabel("software")
-              .properties("name", "lang", "price")
-              .primaryKeys("name")
-              .nullableKeys("price")
-              .ifNotExist()
-              .create();
-
-        schema.vertexLabel("book")
-              .useCustomizeStringId()
-              .properties("name", "price")
-              .nullableKeys("price")
-              .ifNotExist()
-              .create();
-    }
-
-    protected static void initEdgeLabel(HugeClient client) {
-        SchemaManager schema = client.schema();
-
-        schema.edgeLabel("knows")
-              .sourceLabel("person")
-              .targetLabel("person")
-              .multiTimes()
-              .properties("date", "city")
-              .sortKeys("date")
-              .nullableKeys("city")
-              .ifNotExist()
-              .create();
-
-        schema.edgeLabel("created")
-              .sourceLabel("person")
-              .targetLabel("software")
-              .properties("date", "city")
-              .nullableKeys("city")
-              .ifNotExist()
-              .create();
     }
 }

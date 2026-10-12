@@ -18,16 +18,19 @@
 #
 # Pull Request Labeler Github Action Configuration: https://github.com/marketplace/actions/labeler
 
-name: Add Scope Label
-
 client:
-  - hugegraph-client*/**/*
-#  - hugegraph-client-go/**/*
+  - changed-files:
+      - any-glob-to-any-file: 'hugegraph-client*/**/*'
+#      - any-glob-to-any-file: 'hugegraph-client-go/**/*'
 hubble:
-  - hugegraph-hubble/**/*
+  - changed-files:
+      - any-glob-to-any-file: 'hugegraph-hubble/**/*'
 loader:
-  - hugegraph-loader/**/*
+  - changed-files:
+      - any-glob-to-any-file: 'hugegraph-loader/**/*'
 tools:
-  - hugegraph-tools/**/*
+  - changed-files:
+      - any-glob-to-any-file: 'hugegraph-tools/**/*'
 spark:
-  - hugegraph-spark-connector/**/*
+  - changed-files:
+      - any-glob-to-any-file: 'hugegraph-spark-connector/**/*'

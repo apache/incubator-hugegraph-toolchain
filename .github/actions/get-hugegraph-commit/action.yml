@@ -1,0 +1,59 @@
+name: 'Get HugeGraph commit id'
+description: 'Fetch a HugeGraph PR or latest release commit SHA and expose it as output and env variable'
+
+inputs:
+  server-pr-number:
+    description: 'HugeGraph Server PR number to use as integration baseline'
+    required: false
+    default: ''
+  repository:
+    description: 'GitHub owner/repository containing the server source'
+    default: 'apache/hugegraph'
+  ref:
+    description: 'Branch, tag or commit; mutually exclusive with server-pr-number'
+    default: ''
+  expected-commit:
+    description: 'Optional full commit SHA; fail if the selected ref has moved'
+    default: ''
+
+outputs:
+  repository:
+    description: 'GitHub repository selected as the server baseline'
+    value: ${{ inputs.repository }}
+  commit_id:
+    description: 'The HugeGraph commit SHA selected as integration baseline'
+    value: ${{ steps.get-commit.outputs.commit_id }}
+  fetch_ref:
+    description: 'Fetchable HugeGraph git ref selected as integration baseline'
+    value: ${{ steps.get-commit.outputs.fetch_ref }}
+
+runs:
+  using: composite
+  steps:
+    - name: Get HugeGraph stable commit id
+      id: get-commit
+      uses: actions/github-script@v9
+      with:
+        script: |
+          const resolve = require(process.env.RESOLVER_PATH);
+          try {
+            const result = await resolve(github, {
+              repository: process.env.SERVER_REPOSITORY,
+              ref: process.env.SERVER_REF,
+              pr: process.env.SERVER_PR,
+              expectedCommit: process.env.SERVER_EXPECTED_COMMIT
+            });
+            core.exportVariable('COMMIT_ID', result.sha);
+            core.exportVariable('COMMIT_REF', result.fetchRef);
+            core.setOutput('commit_id', result.sha);
+            core.setOutput('fetch_ref', result.fetchRef);
+            core.info(`Server baseline: ${process.env.SERVER_REPOSITORY} ${/^[0-9a-f]{40}$/i.test(result.fetchRef) ? result.fetchRef.slice(0, 6) : result.fetchRef} (${result.sha.slice(0, 6)})`);
+          } catch (error) {
+            core.setFailed(`Failed to get HugeGraph commit: ${error.message}`);
+          }
+      env:
+        RESOLVER_PATH: ${{ github.action_path }}/resolve.cjs
+        SERVER_REPOSITORY: ${{ inputs.repository }}
+        SERVER_REF: ${{ inputs.ref }}
+        SERVER_PR: ${{ inputs.server-pr-number }}
+        SERVER_EXPECTED_COMMIT: ${{ inputs.expected-commit }}

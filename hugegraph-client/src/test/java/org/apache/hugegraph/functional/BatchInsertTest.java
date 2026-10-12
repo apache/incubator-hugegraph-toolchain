@@ -47,9 +47,10 @@ public class BatchInsertTest extends BaseFuncTest {
 
     @Test
     public void testBatchInsertInOneLoop() {
+        int vertexCount = BATCH_SIZE;
         List<Vertex> vertices = new ArrayList<>(BATCH_SIZE);
         List<Edge> edges = new ArrayList<>(BATCH_SIZE);
-        for (int i = 1; i <= BATCH_SIZE; i++) {
+        for (int i = 1; i <= vertexCount; i++) {
             Vertex vertex1 = new Vertex("person").property("name", "P-" + i)
                                                  .property("age", i);
             Vertex vertex2 = new Vertex("software").property("name", "S-" + i)
@@ -76,9 +77,10 @@ public class BatchInsertTest extends BaseFuncTest {
 
     @Test
     public void testBatchInsertInOneLoopButAddEdgesBeforeVertices() {
+        int vertexCount = BATCH_SIZE;
         List<Vertex> vertices = new ArrayList<>(BATCH_SIZE);
         List<Edge> edges = new ArrayList<>(BATCH_SIZE);
-        for (int i = 1; i <= BATCH_SIZE; i++) {
+        for (int i = 1; i <= vertexCount; i++) {
             Vertex vertex1 = new Vertex("person").property("name", "P-" + i)
                                                  .property("age", i);
             Vertex vertex2 = new Vertex("software").property("name", "S-" + i)

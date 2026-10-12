@@ -17,6 +17,8 @@
 
 package org.apache.hugegraph.loader.test.functional;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -83,10 +85,11 @@ public class KafkaLoadTest extends LoadTest {
                 "-h", SERVER,
                 "-p", String.valueOf(PORT),
                 "--batch-insert-threads", "2",
-                "--test-mode", "true"
+                "--test-mode", "true",
+                "--parser-threads", "1"
         };
 
-        HugeGraphLoader.main(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         List<Edge> edges = CLIENT.graph().listEdges();
@@ -115,7 +118,7 @@ public class KafkaLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
 
-        HugeGraphLoader.main(args);
+        loadWithAuth(args);
         List<Vertex> vertices = CLIENT.graph().listVertices();
 
         Assert.assertEquals(7, vertices.size());
@@ -137,7 +140,7 @@ public class KafkaLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
 
-        HugeGraphLoader.main(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(2, vertices.size());
@@ -147,7 +150,7 @@ public class KafkaLoadTest extends LoadTest {
 
     @Test
     public void testKafkaFormatNotSupport() {
-        String[] args = new String[]{
+        List<String> argsList = new ArrayList<>(Arrays.asList(
                 "-f", configPath("kafka_format_not_support/struct.json"),
                 "-s", configPath("kafka_format_not_support/schema.groovy"),
                 "-g", GRAPH,
@@ -155,10 +158,14 @@ public class KafkaLoadTest extends LoadTest {
                 "-p", String.valueOf(PORT),
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
-        };
+        ));
+
+        argsList.addAll(Arrays.asList("--username", "admin", "--password", "pa"));
 
         Assert.assertThrows(SerializeException.class, () -> {
-            HugeGraphLoader.main(args);
+            HugeGraphLoader loader = new HugeGraphLoader(argsList.toArray(new String[0]));
+            loader.load();
+            loader.shutdown();
         });
     }
 
@@ -174,7 +181,7 @@ public class KafkaLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
 
-        HugeGraphLoader.main(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(2, vertices.size());
@@ -194,8 +201,7 @@ public class KafkaLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-
-        HugeGraphLoader.main(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(2, vertices.size());

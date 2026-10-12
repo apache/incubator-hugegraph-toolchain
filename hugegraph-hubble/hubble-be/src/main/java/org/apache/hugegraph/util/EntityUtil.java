@@ -18,11 +18,11 @@
 
 package org.apache.hugegraph.util;
 
-import java.lang.reflect.Field;
-
 import org.apache.hugegraph.annotation.MergeProperty;
 import org.apache.hugegraph.common.Mergeable;
 import org.apache.hugegraph.exception.InternalException;
+
+import java.lang.reflect.Field;
 
 public final class EntityUtil {
 
@@ -31,8 +31,8 @@ public final class EntityUtil {
         Class<?> clazz = oldEntity.getClass();
         T entity;
         try {
-            entity = (T) clazz.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+            entity = (T) clazz.getDeclaredConstructor().newInstance();
+        } catch (ReflectiveOperationException e) {
             throw new InternalException("reflect.new-instance.failed", e,
                                         clazz.getName());
         }

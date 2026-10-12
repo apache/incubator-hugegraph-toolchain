@@ -1,0 +1,290 @@
+{
+  "topbar": {
+    "current_graphspace": "Graph Space:",
+    "current_graph": "Graph:",
+    "graph_select_placeholder": "Please select",
+    "status": {
+      "loaded": "Loaded",
+      "loading": "Loading",
+      "error": "Load Failed",
+      "created": "Not Loaded"
+    },
+    "last_load_time": "Last loaded:",
+    "reload_to_vermeer": "Reload to Vermeer",
+    "load_to_vermeer": "Load to Vermeer",
+    "meta_config": "Metadata Config",
+    "meta_config_tooltip": "Click to navigate to the metadata configuration page",
+    "olap_switch": "Query OLAP properties:",
+    "olap_on": "On",
+    "olap_off": "Off",
+    "load_fail": "Failed to load Vermeer task"
+  },
+  "execute_log": {
+    "col": {
+      "time": "Time",
+      "type": "Type",
+      "content": "Content",
+      "status": "Status",
+      "duration": "Duration",
+      "operation": "Actions"
+    },
+    "type": {
+      "GREMLIN": "GREMLIN Query",
+      "GREMLIN_ASYNC": "GREMLIN Task",
+      "ALGORITHM": "Algorithm Task",
+      "CYPHER": "CYPHER Query"
+    },
+    "status": {
+      "SUCCESS": "Success",
+      "ASYNC_TASK_SUCCESS": "Submitted",
+      "ASYNC_TASK_RUNNING": "Submitting",
+      "RUNNING": "Running",
+      "FAILED": "Failed",
+      "ASYNC_TASK_FAILED": "Submit Failed"
+    },
+    "favorite": "Favorite",
+    "load_statement": "Load",
+    "favorite_title": "Favorite Statement",
+    "favorite_placeholder": "Enter favorite name"
+  },
+  "favorite": {
+    "col": {
+      "name": "Name",
+      "content": "Content",
+      "create_time": "Saved At",
+      "operation": "Actions"
+    },
+    "edit_title": "Edit Name",
+    "edit_placeholder": "Enter favorite name",
+    "load_statement": "Load",
+    "delete_confirm": "Confirm delete?",
+    "search_placeholder": "Search favorite name"
+  },
+  "query_bar": {
+    "tab_execute": "Execution Log",
+    "tab_favorite": "Favorites",
+    "gremlin_placeholder": "Please enter a query statement",
+    "execute": "Execute",
+    "async_execute": "Async Execute",
+    "clear": "Clear"
+  },
+  "query_result": {
+    "tab_graph": "Graph",
+    "tab_table": "Table",
+    "tab_json": "JSON",
+    "empty": "No results",
+    "vertex_count": "Vertices: {{count}}",
+    "edge_count": "Edges: {{count}}"
+  },
+  "async_task": {
+    "col": {
+      "id": "Task ID",
+      "type": "Type",
+      "status": "Status",
+      "create_time": "Create Time",
+      "update_time": "Update Time",
+      "operation": "Actions"
+    },
+    "detail": {
+      "title": "Task Detail",
+      "id": "Task ID",
+      "type": "Type",
+      "status": "Status",
+      "create_time": "Create Time",
+      "update_time": "Update Time",
+      "content": "Content",
+      "result": "Result"
+    },
+    "cancel": "Cancel Task",
+    "cancel_confirm": "Confirm cancel this task?"
+  },
+  "graph_component": {
+    "search": {
+      "placeholder": "Search vertex ID or property value",
+      "search_btn": "Search",
+      "vertex_id": "Vertex ID",
+      "property": "Property",
+      "result_count": "Found {{count}} results"
+    },
+    "edit_element": {
+      "title_vertex": "Edit Vertex",
+      "title_edge": "Edit Edge",
+      "id": "ID",
+      "label": "Type",
+      "properties": "Properties",
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete"
+    },
+    "export": {
+      "title": "Export Data",
+      "json": "Export JSON",
+      "csv": "Export CSV",
+      "image": "Export Image"
+    },
+    "menu": {
+      "expand": "Expand",
+      "hide": "Hide",
+      "show_properties": "Show Properties",
+      "hide_properties": "Hide Properties",
+      "fix": "Pin",
+      "unfix": "Unpin"
+    },
+    "status": {
+      "vertex_count": "Vertices: {{count}}",
+      "edge_count": "Edges: {{count}}"
+    },
+    "clear": "Clear Graph",
+    "clear_confirm": "Confirm clear graph?",
+    "fit_center": "Fit Canvas",
+    "fix_node": "Pin Node",
+    "full_screen": "Fullscreen",
+    "zoom_in": "Zoom In",
+    "zoom_out": "Zoom Out",
+    "redo": "Redo",
+    "undo": "Undo",
+    "refresh": "Refresh",
+    "zero_degree": "Show Isolated Nodes",
+    "legend": "Legend",
+    "3d_mode": "3D Mode",
+    "2d_mode": "2D Mode"
+  },
+  "filter": {
+    "title": "Filter",
+    "add": "Add Filter",
+    "vertex_filter": "Vertex Filter",
+    "edge_filter": "Edge Filter",
+    "property": "Property",
+    "operator": "Operator",
+    "value": "Value",
+    "apply": "Apply",
+    "reset": "Reset",
+    "and": "AND",
+    "or": "OR"
+  },
+  "layout": {
+    "title": "Layout Config",
+    "type": "Layout Type",
+    "force": "Force",
+    "circular": "Circular",
+    "radial": "Radial",
+    "dagre": "Dagre",
+    "grid": "Grid",
+    "concentric": "Concentric",
+    "apply": "Apply",
+    "node_size": "Node Size",
+    "link_distance": "Link Distance",
+    "node_strength": "Node Strength",
+    "edge_strength": "Edge Strength",
+    "gravity": "Gravity",
+    "speed": "Speed",
+    "iterations": "Iterations",
+    "radius_ratio": "Radius Ratio",
+    "node_sep": "Node Spacing",
+    "rank_sep": "Rank Spacing",
+    "direction": "Direction",
+    "LR": "Left to Right",
+    "RL": "Right to Left",
+    "TB": "Top to Bottom",
+    "BT": "Bottom to Top",
+    "start_radius": "Start Radius",
+    "end_radius": "End Radius",
+    "sweep": "Sweep",
+    "equal_node_spacing": "Equal Spacing",
+    "min_node_spacing": "Min Spacing",
+    "start_angle": "Start Angle",
+    "clockwise": "Clockwise",
+    "prevent_overlap": "Prevent Overlap",
+    "node_spacing": "Node Spacing",
+    "cols": "Columns",
+    "rows": "Rows"
+  },
+  "style_config": {
+    "title": "Style Config",
+    "color_picker": "Choose color",
+    "close_color_picker": "Close color picker",
+    "vertex_style": "Vertex Style",
+    "edge_style": "Edge Style",
+    "vertex_appearance": "Vertex Appearance",
+    "edge_appearance": "Edge Appearance",
+    "basic_properties": "Basic Properties",
+    "appearance_type": "Vertex/Edge Appearance",
+    "appearance_config": "Appearance Config",
+    "select_placeholder": "Please select",
+    "type": "Type",
+    "shape": "Shape",
+    "shape_circle": "Circle",
+    "shape_diamond": "Diamond",
+    "shape_triangle": "Triangle",
+    "shape_star": "Star",
+    "shape_ellipse": "Ellipse",
+    "border_color": "Border Color",
+    "border_width": "Border Width",
+    "fill_color": "Fill Color",
+    "icon_style": "Icon Style",
+    "icon_color": "Icon Color",
+    "label_size": "Label Size",
+    "label_color": "Label Color",
+    "node_opacity": "Node Opacity",
+    "edge_width": "Edge Width",
+    "edge_color": "Edge Color",
+    "edge_animation": "Edge Animation",
+    "line_solid": "Solid Line",
+    "line_dashed": "Dashed Line",
+    "color": "Color",
+    "size": "Size",
+    "label": "Label",
+    "icon": "Icon",
+    "line_type": "Line Type",
+    "line_width": "Line Width",
+    "arrow": "Arrow",
+    "display_field": "Display Field",
+    "apply": "Apply",
+    "reset": "Reset"
+  },
+  "statistics": {
+    "title": "Graph Statistics",
+    "vertex_count": "Vertices",
+    "edge_count": "Edges",
+    "vertex_types": "Vertex Types",
+    "edge_types": "Edge Types",
+    "loading": "Loading..."
+  },
+  "dynamic_add": {
+    "vertex": {
+      "title": "Add Vertex",
+      "id": "Vertex ID",
+      "type": "Vertex Type",
+      "properties": "Properties",
+      "submit": "Submit",
+      "cancel": "Cancel"
+    },
+    "edge": {
+      "title": "Add Edge",
+      "type": "Edge Type",
+      "source": "Source",
+      "target": "Target",
+      "properties": "Properties",
+      "submit": "Submit",
+      "cancel": "Cancel"
+    }
+  },
+  "navigation_module": {
+    "create_data": {
+      "title": "Create Data",
+      "graph_management": "Graph Management",
+      "meta_management": "Metadata Management",
+      "data_import": "Data Import"
+    },
+    "analysis": {
+      "title": "Business Analysis",
+      "graph_query": "Graph Query",
+      "algorithm": "Graph Algorithm"
+    },
+    "system": {
+      "title": "System Management",
+      "user_management": "User Management",
+      "role_management": "Role Management"
+    }
+  }
+}
