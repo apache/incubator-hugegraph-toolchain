@@ -92,3 +92,10 @@ type VersionResponse struct {
     } ` json: 'versions'`
 }
 ```
+
+##### 3.检查请求结果
+
+Edge label 的 `Properties` 可以是 `nil` 或空切片，用于创建无属性的边类型。
+类型化 API 返回的 `err` 表示请求校验、传输、读取或 JSON 解码错误。
+HTTP 4xx/5xx 仍可能返回 `err == nil`，例如创建顶点时指定不存在的 label 会返回 HTTP 400。
+请先检查 `err`，再检查 `response.StatusCode`，不能只用 `err == nil` 判断操作成功。

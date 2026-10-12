@@ -183,9 +183,6 @@ func (r CreateRequest) Do(ctx context.Context, transport api.Transport) (*Create
     if len(r.reqData.TargetLabel) <= 0 {
         return nil, errors.New("create edgeLabel must set target_label")
     }
-    if len(r.reqData.Properties) <= 0 {
-        return nil, errors.New("create edgeLabel must set properties")
-    }
 
     byteBody, err := json.Marshal(&r.reqData)
     if err != nil {

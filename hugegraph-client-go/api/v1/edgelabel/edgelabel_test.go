@@ -18,13 +18,18 @@
 package edgelabel_test
 
 import (
+    "encoding/json"
     "fmt"
     "github.com/apache/hugegraph-toolchain/hugegraph-client-go"
     "github.com/apache/hugegraph-toolchain/hugegraph-client-go/api/v1/edgelabel"
     "github.com/apache/hugegraph-toolchain/hugegraph-client-go/api/v1/propertykey"
     "github.com/apache/hugegraph-toolchain/hugegraph-client-go/api/v1/vertexlabel"
     "github.com/apache/hugegraph-toolchain/hugegraph-client-go/internal/model"
+    "github.com/apache/hugegraph-toolchain/hugegraph-client-go/hgtransport"
     "math/rand"
+    "net/http"
+    "net/http/httptest"
+    "net/url"
     "testing"
     "time"
 )
@@ -183,5 +188,78 @@ func deletePk(client *hugegraph.CommonClient, name string, t *testing.T) {
     }
     if respDelete.StatusCode > 299 {
         t.Errorf("delete propertyKey failed")
+    }
+}
+
+func TestCreatePropertylessEdgeLabel(t *testing.T) {
+    for _, tc := range []struct {
+        name       string
+        properties []string
+        status     int
+    }{
+        {"nil", nil, http.StatusCreated},
+        {"empty", []string{}, http.StatusCreated},
+        {"http_error", []string{}, http.StatusBadRequest},
+    } {
+        t.Run(tc.name, func(t *testing.T) {
+            server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+                if r.Method != http.MethodPost || r.URL.Path != "/graphs/hugegraph/schema/edgelabels" {
+                    t.Errorf("unexpected request: %s %s", r.Method, r.URL.Path)
+                }
+                var data edgelabel.CreateRequestData
+                if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+                    t.Errorf("decode request: %v", err)
+                }
+                if data.Name != "link" || data.SourceLabel != "node" || data.TargetLabel != "node" ||
+                    len(data.Properties) != 0 || (data.Properties == nil) != (tc.properties == nil) {
+                    t.Errorf("unexpected request data: %+v", data)
+                }
+                w.WriteHeader(tc.status)
+                if tc.status == http.StatusBadRequest {
+                    fmt.Fprint(w, `{"exception":"IllegalArgumentException","message":"invalid label"}`)
+                    return
+                }
+                json.NewEncoder(w).Encode(data)
+            }))
+            defer server.Close()
+            address, err := url.Parse(server.URL)
+            if err != nil {
+                t.Fatal(err)
+            }
+            labels := edgelabel.New(hgtransport.New(hgtransport.Config{URL: address, Graph: "hugegraph"}))
+            response, err := labels.Create(labels.Create.WithReqData(edgelabel.CreateRequestData{
+                Name: "link", SourceLabel: "node", TargetLabel: "node", Properties: tc.properties,
+                Frequency: model.FrequencySingle,
+            }))
+            if err != nil || response == nil {
+                t.Fatalf("create response = %v, error = %v", response, err)
+            }
+            defer response.Body.Close()
+            if response.StatusCode != tc.status || len(response.Data.Properties) != 0 ||
+                (tc.status == http.StatusCreated && response.Data.Name != "link") {
+                t.Fatalf("unexpected response: %+v", response)
+            }
+        })
+    }
+}
+
+func TestCreateEdgeLabelRequiredFields(t *testing.T) {
+    labels := edgelabel.New(nil)
+    for _, field := range []string{"name", "source_label", "target_label"} {
+        t.Run(field, func(t *testing.T) {
+            data := edgelabel.CreateRequestData{Name: "link", SourceLabel: "node", TargetLabel: "node"}
+            switch field {
+            case "name":
+                data.Name = ""
+            case "source_label":
+                data.SourceLabel = ""
+            case "target_label":
+                data.TargetLabel = ""
+            }
+            response, err := labels.Create(labels.Create.WithReqData(data))
+            if response != nil || err == nil || err.Error() != "create edgeLabel must set "+field {
+                t.Fatalf("create response = %v, error = %v", response, err)
+            }
+        })
     }
 }

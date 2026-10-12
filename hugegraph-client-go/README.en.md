@@ -94,3 +94,10 @@ type VersionResponse struct {
     } ` json: 'versions'`
 }
 ```
+
+##### 3. Check request results
+
+Edge label `Properties` may be `nil` or an empty slice to create a propertyless edge type.
+Typed APIs return `err` for request validation, transport, response reading, or JSON decoding errors.
+HTTP 4xx/5xx can still return `err == nil`; for example, creating a vertex with a missing label returns HTTP 400.
+Check `err` first, then `response.StatusCode`; `err == nil` alone does not mean the operation succeeded.
