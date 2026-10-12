@@ -1561,6 +1561,7 @@ public class FileLoadTest extends LoadTest {
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--batch-insert-threads", "2",
+                "--check-vertex", "true",
                 "--test-mode", "true"
         };
         loadWithAuth(args);
@@ -1570,6 +1571,28 @@ public class FileLoadTest extends LoadTest {
 
         Assert.assertEquals(4, vertices.size());
         Assert.assertEquals(2, edges.size());
+
+        Map<Object, Vertex> verticesById = vertices.stream()
+                                                 .collect(Collectors.toMap(Vertex::id, vertex -> vertex));
+        Assert.assertEquals(ImmutableMap.of("person_marko", "person", "person_vadas", "person",
+                                            "software_lop", "software", "software_ripple", "software"),
+                            vertices.stream().collect(Collectors.toMap(Vertex::id, Vertex::label)));
+        Assert.assertEquals(ImmutableMap.of("name", "marko", "age", 29, "city", "Beijing"),
+                            verticesById.get("person_marko").properties());
+        Assert.assertEquals(ImmutableMap.of("name", "vadas", "age", 27, "city", "Hongkong"),
+                            verticesById.get("person_vadas").properties());
+        Assert.assertEquals(ImmutableMap.of("name", "lop", "lang", "java", "price", 328.0),
+                            verticesById.get("software_lop").properties());
+        Assert.assertEquals(ImmutableMap.of("name", "ripple", "lang", "java", "price", 199.0),
+                            verticesById.get("software_ripple").properties());
+        for (Edge edge : edges) {
+            Vertex source = verticesById.get(edge.sourceId());
+            Vertex target = verticesById.get(edge.targetId());
+            Assert.assertNotNull(source);
+            Assert.assertNotNull(target);
+            Assert.assertEquals(source.label(), edge.sourceLabel());
+            Assert.assertEquals(target.label(), edge.targetLabel());
+        }
 
         assertContains(edges, "created", "person_marko", "software_lop",
                        "person", "software", "weight", 0.8);

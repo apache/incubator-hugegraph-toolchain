@@ -9,7 +9,13 @@
         "format": "CSV",
         "charset": "UTF-8"
       },
-      "id": "id"
+      "id": "id",
+      "value_mapping": {
+        "id": {
+          "p1": "person_marko",
+          "p2": "person_vadas"
+        }
+      }
     },
     {
       "label": "software",
@@ -19,7 +25,13 @@
         "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
         "format": "CSV"
       },
-      "id": "id"
+      "id": "id",
+      "value_mapping": {
+        "id": {
+          "s1": "software_lop",
+          "s2": "software_ripple"
+        }
+      }
     }
   ],
   "edges": [
