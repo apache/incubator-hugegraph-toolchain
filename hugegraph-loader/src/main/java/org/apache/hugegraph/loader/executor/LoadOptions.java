@@ -48,7 +48,6 @@ public final class LoadOptions implements Cloneable {
     private static final int CPUS = Runtime.getRuntime().availableProcessors();
     private static final int DEFAULT_MAX_CONNECTIONS = CPUS * 4;
     private static final int DEFAULT_MAX_CONNECTIONS_PER_ROUTE = CPUS * 2;
-    private static final int MINIMUM_REQUIRED_ARGS = 3;
     private static final Set<String> SENSITIVE_PARAMETER_FIELDS =
             ImmutableSet.of("password", "trustStoreToken", "token", "pdToken");
 
@@ -387,9 +386,6 @@ public final class LoadOptions implements Cloneable {
         // Print usage and exit
         if (options.help) {
             LoadUtil.exitWithUsage(commander, Constants.EXIT_CODE_NORM);
-        }
-        if (args.length < MINIMUM_REQUIRED_ARGS) {
-            LoadUtil.exitWithUsage(commander, Constants.EXIT_CODE_ERROR);
         }
         // Check options
         // Check option "-f"

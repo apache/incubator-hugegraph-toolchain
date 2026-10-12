@@ -48,7 +48,7 @@ public class LoadOptionsTest {
                              "--port", "not-an-integer");
             assertParserExit(false, "--unknown-option");
             assertParserExit(false);
-            assertParserExit(false, "--file", mapping.getPath());
+            assertParserExit(false, "--file");
             assertParserExit(true, "--help");
             assertParserExit(true, "-help");
         } finally {
@@ -57,6 +57,64 @@ public class LoadOptionsTest {
     }
 
     private static void assertParserExit(boolean help, String... args) throws Exception {
+        assertParserExit(help, true, args);
+    }
+
+    @Test
+    public void testRequiredMappingOptionUsesDefaults() throws Exception {
+        File mapping = createTempMapping();
+        try {
+            assertParserExit(true, false, "--file", mapping.getPath());
+            LoadOptions options = LoadOptions.parseOptions(new String[]{"--file", mapping.getPath()});
+            Assert.assertEquals(mapping.getPath(), options.file);
+            Assert.assertEquals("hugegraph", options.graph);
+            Assert.assertEquals("http://localhost", options.host);
+        } finally {
+            mapping.delete();
+        }
+    }
+
+    @Test
+    public void testResponseFileOptions() throws Exception {
+        File mapping = createTempMapping();
+        File arguments = File.createTempFile("loader arguments-", ".args", new File("."));
+        try {
+            Files.write(arguments.toPath(), Arrays.asList("--file", mapping.getPath(),
+                                                         "--graph", "response-file-graph",
+                                                         "--parser-threads", "2"),
+                        StandardCharsets.UTF_8);
+            String[] args = new String[]{"@" + arguments.getPath()};
+            assertParserExit(true, false, args);
+            LoadOptions options = LoadOptions.parseOptions(args);
+            Assert.assertEquals(mapping.getPath(), options.file);
+            Assert.assertEquals("response-file-graph", options.graph);
+            Assert.assertEquals(2, options.parseThreads);
+        } finally {
+            arguments.delete();
+            mapping.delete();
+        }
+    }
+
+    @Test
+    public void testInvalidResponseFileOptionsExitNonzero() throws Exception {
+        File mapping = createTempMapping();
+        File arguments = File.createTempFile("loader-invalid-", ".args", new File("."));
+        try {
+            Files.write(arguments.toPath(), Arrays.asList("--graph", "missing-mapping"),
+                        StandardCharsets.UTF_8);
+            assertParserExit(false, "@" + arguments.getPath());
+            Files.write(arguments.toPath(), Arrays.asList("--file", mapping.getPath(),
+                                                         "--port", "not-an-integer"),
+                        StandardCharsets.UTF_8);
+            assertParserExit(false, "@" + arguments.getPath());
+        } finally {
+            arguments.delete();
+            mapping.delete();
+        }
+    }
+
+    private static void assertParserExit(boolean success, boolean expectUsage,
+                                         String... args) throws Exception {
         List<String> command = new ArrayList<>();
         command.add(new File(System.getProperty("java.home"), "bin/java").getPath());
         command.add("-Xmx128m");
@@ -71,8 +129,12 @@ public class LoadOptionsTest {
         try {
             Assert.assertTrue("Parser process timed out", process.waitFor(20, TimeUnit.SECONDS));
             String usage = new String(Files.readAllBytes(output.toPath()), StandardCharsets.UTF_8);
-            Assert.assertTrue(usage, usage.contains("Usage:") && usage.contains("--file"));
-            if (help) {
+            if (expectUsage) {
+                Assert.assertTrue(usage, usage.contains("Usage:") && usage.contains("--file"));
+            } else {
+                Assert.assertFalse(usage, usage.contains("Usage:"));
+            }
+            if (success) {
                 Assert.assertEquals(0, process.exitValue());
             } else {
                 Assert.assertTrue(usage, process.exitValue() != 0);
