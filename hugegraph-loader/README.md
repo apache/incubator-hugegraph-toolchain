@@ -126,6 +126,9 @@ example/file/schema.groovy
 bash bin/hugegraph-loader.sh @loader.args
 ```
 
+Use `--parser-threads` to set read pipelines. The deprecated `--parallel-count` alias also works in argument files
+and emits one warning after successful option validation.
+
 Paths in the argument file resolve from the working directory. Protect files containing credentials with mode `0600`;
 the credentials can then stay out of the process arguments. The mapping directory must be writable for progress output,
 so copy a mapping mounted from a read-only Kubernetes ConfigMap to a writable volume before running Loader.
