@@ -140,9 +140,10 @@ change, a rejected mode request, or a restore run does not clear another run's `
 different current graph mode; successful cleanup is not repeated. Concurrent successful Loader runs on the same
 graph still require external coordination; this startup safeguard does not provide shared ownership of graph mode.
 
-A network failure can leave a mode change applied without a successful response. Loader reports that failure and
-leaves the unconfirmed mode unchanged during cleanup. Inspect the graph mode and confirm there are no active imports
-before explicitly restoring `NONE` mode; an unconfirmed request cannot be rolled back automatically.
+A network failure can leave a mode change applied without a successful response. Loader preserves the original
+failure and logs an error naming the graph and warning that it may still be in `LOADING` mode. Cleanup leaves the
+unconfirmed mode unchanged. Inspect the graph mode and confirm there are no active imports before explicitly
+restoring `NONE` mode; an unconfirmed request cannot be rolled back automatically.
 
 ### 3.2 Load data with docker
 

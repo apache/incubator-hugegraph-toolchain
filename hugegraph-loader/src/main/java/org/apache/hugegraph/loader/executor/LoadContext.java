@@ -208,6 +208,7 @@ public final class LoadContext implements Cloneable {
         this.schemaCache.updateAll();
     }
 
+    @SneakyThrows
     public synchronized void setLoadingMode() {
         String graph = this.client.graph().graph();
         try {
@@ -219,6 +220,11 @@ public final class LoadContext implements Cloneable {
             } else {
                 throw e;
             }
+        } catch (Exception e) {
+            LOG.error("Failed to confirm LOADING mode for graph '{}'; it may still be in LOADING mode. " +
+                      "Confirm no imports are active, inspect the graph mode, and manually reset it to NONE if needed.",
+                      graph);
+            throw e;
         }
     }
 

@@ -54,6 +54,10 @@ import org.apache.hugegraph.loader.source.file.FileSource;
 import org.apache.hugegraph.loader.source.graph.GraphSource;
 import org.apache.hugegraph.structure.constant.GraphMode;
 import org.apache.hugegraph.util.JsonUtil;
+import org.apache.log4j.AppenderSkeleton;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.apache.log4j.spi.LoggingEvent;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -597,6 +601,10 @@ public class LoadContextTest {
 
     @Test
     public void testUnconfirmedModeSetPreservesModeAndStartupFailure() throws Exception {
+        Logger logger = Logger.getLogger(LoadContext.class.getName());
+        CapturingAppender appender = new CapturingAppender();
+        appender.setThreshold(Level.ERROR);
+        logger.addAppender(appender);
         try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
             LoadContext context = this.context(client, client);
             InputStruct file = new InputStruct(null, null);
@@ -613,6 +621,10 @@ public class LoadContextTest {
                 failure = (IOException) expected.getCause();
             }
             Assert.assertNotNull(failure);
+            Assert.assertTrue(appender.contains("graph 'hugegraph'"));
+            Assert.assertTrue(appender.contains("may still be in LOADING mode"));
+            Assert.assertTrue(appender.contains("no imports are active"));
+            Assert.assertTrue(appender.contains("manually reset it to NONE"));
             Assert.assertEquals(GraphMode.LOADING, server.mode);
             int writes = server.modeWrites;
             Assert.assertTrue(writes > 0);
@@ -628,6 +640,32 @@ public class LoadContextTest {
             Assert.assertEquals(GraphMode.LOADING, server.mode);
             Assert.assertEquals(0, server.modeReads);
             Assert.assertEquals(writes, server.modeWrites);
+        } finally {
+            logger.removeAppender(appender);
+        }
+    }
+
+    private static final class CapturingAppender extends AppenderSkeleton {
+
+        private final StringBuilder messages = new StringBuilder();
+
+        @Override
+        protected void append(LoggingEvent event) {
+            this.messages.append(event.getRenderedMessage()).append('\n');
+        }
+
+        private boolean contains(String text) {
+            return this.messages.toString().contains(text);
+        }
+
+        @Override
+        public void close() {
+            // No resources owned by this appender.
+        }
+
+        @Override
+        public boolean requiresLayout() {
+            return false;
         }
     }
 
