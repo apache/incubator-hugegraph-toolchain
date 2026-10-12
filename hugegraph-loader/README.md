@@ -133,6 +133,18 @@ Paths in the argument file resolve from the working directory. Protect files con
 the credentials can then stay out of the process arguments. The mapping directory must be writable for progress output,
 so copy a mapping mounted from a read-only Kubernetes ConfigMap to a writable volume before running Loader.
 
+#### Graph mode during startup and cleanup
+
+Loader resets `LOADING` mode only after that Loader context successfully sets it. A startup failure before the mode
+change, a rejected mode request, or a restore run does not clear another run's `LOADING` mode. Cleanup preserves a
+different current graph mode; successful cleanup is not repeated. Concurrent successful Loader runs on the same
+graph still require external coordination; this startup safeguard does not provide shared ownership of graph mode.
+
+A network failure can leave a mode change applied without a successful response. Loader preserves the original
+failure and logs an error naming the graph and warning that it may still be in `LOADING` mode. Cleanup leaves the
+unconfirmed mode unchanged. Inspect the graph mode and confirm there are no active imports before explicitly
+restoring `NONE` mode; an unconfirmed request cannot be rolled back automatically.
+
 ### 3.2 Load data with docker
 
 > If the `loader` and `server` is in the same docker network (for example, you deploy `loader` and `server` with `docker-compose`), we can set `-h {server_container_name}`. In our example, the container name of `server` is `graph`

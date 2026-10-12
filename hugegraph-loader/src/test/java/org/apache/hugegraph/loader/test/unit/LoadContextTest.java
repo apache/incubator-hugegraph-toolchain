@@ -17,38 +17,53 @@
 
 package org.apache.hugegraph.loader.test.unit;
 
-import java.io.File;
-import java.io.IOException;
 import java.io.BufferedWriter;
-import java.io.StringWriter;
+import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.StringWriter;
+import java.lang.reflect.Field;
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.LinkedHashMap;
-import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.driver.HugeClientBuilder;
+import org.apache.hugegraph.exception.ServerException;
+import org.apache.hugegraph.loader.HugeGraphLoader;
 import org.apache.hugegraph.loader.builder.SchemaCache;
 import org.apache.hugegraph.loader.constant.ElemType;
-import org.apache.hugegraph.loader.exception.LoadException;
 import org.apache.hugegraph.loader.exception.InsertException;
+import org.apache.hugegraph.loader.exception.LoadException;
 import org.apache.hugegraph.loader.exception.ParseException;
 import org.apache.hugegraph.loader.executor.LoadContext;
 import org.apache.hugegraph.loader.executor.LoadOptions;
 import org.apache.hugegraph.loader.failure.FailLogger;
 import org.apache.hugegraph.loader.failure.FailWriter;
 import org.apache.hugegraph.loader.mapping.InputStruct;
+import org.apache.hugegraph.loader.mapping.LoadMapping;
 import org.apache.hugegraph.loader.metrics.LoadSummary;
 import org.apache.hugegraph.loader.progress.LoadProgress;
 import org.apache.hugegraph.loader.source.file.FileSource;
+import org.apache.hugegraph.loader.source.graph.GraphSource;
+import org.apache.hugegraph.structure.constant.GraphMode;
+import org.apache.hugegraph.util.JsonUtil;
+import org.apache.log4j.AppenderSkeleton;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.apache.log4j.spi.LoggingEvent;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+
+import com.sun.net.httpserver.HttpServer;
 
 public class LoadContextTest {
 
@@ -416,6 +431,317 @@ public class LoadContextTest {
         Assert.assertEquals(1, indirect.closeCalls);
         Assert.assertEquals(0L, context.newProgress().vertexLoaded());
         Assert.assertFalse(new File(LoadProgress.format(context.options(), "test")).exists());
+    }
+
+    @Test
+    public void testMixedSourceStartupDoesNotClearAnotherLoadingMode() throws Exception {
+        try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
+            LoadContext context = this.context(client, client);
+            InputStruct graph = new InputStruct(null, null);
+            graph.input(new GraphSource());
+            InputStruct file = new InputStruct(null, null);
+            file.input(new FileSource());
+            HugeGraphLoader loader = loader(context, graph, file);
+            try {
+                loader.load();
+                Assert.fail("Expected mixed Graph and File startup failure");
+            } catch (LoadException expected) {
+                Assert.assertEquals("All inputs must be of Graph Type", expected.getMessage());
+            }
+            try {
+                loader.shutdown();
+                Assert.fail("Expected the original startup failure during close");
+            } catch (LoadException expected) {
+                Assert.assertEquals("All inputs must be of Graph Type", expected.getMessage());
+            }
+            loader.shutdown();
+            Assert.assertTrue(context.closed());
+            Assert.assertEquals(GraphMode.LOADING, server.mode);
+            Assert.assertEquals(0, server.modeReads);
+            Assert.assertEquals(0, server.modeWrites);
+        }
+    }
+
+    @Test
+    public void testFailedLoadingModeSetDoesNotClearAnotherLoadingMode() throws Exception {
+        try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
+            LoadContext context = this.context(client, client);
+            server.failure = "Mode change denied";
+            try {
+                context.setLoadingMode();
+                Assert.fail("Expected mode set failure");
+            } catch (ServerException expected) {
+                Assert.assertEquals("Mode change denied", expected.getMessage());
+            }
+            server.failure = null;
+            context.unsetLoadingMode();
+            Assert.assertEquals(GraphMode.LOADING, server.mode);
+            Assert.assertEquals(0, server.modeReads);
+            Assert.assertEquals(1, server.modeWrites);
+        }
+    }
+
+    @Test
+    public void testUnsupportedLoadingModeDoesNotAcquireCleanup() throws Exception {
+        try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
+            LoadContext context = this.context(client, client);
+            server.failure = "Can not deserialize value of type GraphMode";
+            context.setLoadingMode();
+            server.failure = null;
+            context.unsetLoadingMode();
+            Assert.assertEquals(GraphMode.LOADING, server.mode);
+            Assert.assertEquals(0, server.modeReads);
+            Assert.assertEquals(1, server.modeWrites);
+        }
+    }
+
+    @Test
+    public void testSuccessfulLoadingModeCleanupRunsOnce() throws Exception {
+        try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
+            LoadContext context = this.context(client, client);
+            server.mode = GraphMode.NONE;
+            context.setLoadingMode();
+            Assert.assertEquals(GraphMode.LOADING, server.mode);
+            context.unsetLoadingMode();
+            Assert.assertEquals(GraphMode.NONE, server.mode);
+            // Another Loader starts after this context has finished cleanup.
+            server.mode = GraphMode.LOADING;
+            context.unsetLoadingMode();
+            Assert.assertEquals(GraphMode.LOADING, server.mode);
+            Assert.assertEquals(1, server.modeReads);
+            Assert.assertEquals(2, server.modeWrites);
+        }
+    }
+
+    @Test
+    public void testLoadingCleanupPreservesOtherMode() throws Exception {
+        try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
+            LoadContext context = this.context(client, client);
+            context.setLoadingMode();
+            server.mode = GraphMode.RESTORING;
+            context.unsetLoadingMode();
+            Assert.assertEquals(GraphMode.RESTORING, server.mode);
+            server.mode = GraphMode.LOADING;
+            context.unsetLoadingMode();
+            Assert.assertEquals(GraphMode.LOADING, server.mode);
+            Assert.assertEquals(1, server.modeReads);
+            Assert.assertEquals(1, server.modeWrites);
+        }
+    }
+
+    @Test
+    public void testRestoreModeDoesNotAcquireLoadingCleanup() throws Exception {
+        try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
+            LoadContext context = this.context(client, client);
+            context.setRestoreMode();
+            Assert.assertEquals(GraphMode.RESTORING, server.mode);
+            server.mode = GraphMode.LOADING;
+            context.unsetLoadingMode();
+            Assert.assertEquals(GraphMode.LOADING, server.mode);
+            Assert.assertEquals(0, server.modeReads);
+            Assert.assertEquals(1, server.modeWrites);
+        }
+    }
+
+    @Test
+    public void testClonedContextDoesNotInheritLoadingCleanup() throws Exception {
+        try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
+            LoadContext context = this.context(client, client);
+            context.setLoadingMode();
+            LoadContext cloned = (LoadContext) context.clone();
+            cloned.unsetLoadingMode();
+            Assert.assertEquals(GraphMode.LOADING, server.mode);
+            Assert.assertEquals(0, server.modeReads);
+            Assert.assertEquals(1, server.modeWrites);
+            context.unsetLoadingMode();
+            Assert.assertEquals(GraphMode.NONE, server.mode);
+        }
+    }
+
+    @Test
+    public void testCleanupReadFailureCanBeRetried() throws Exception {
+        this.assertCleanupFailureCanBeRetried(true);
+    }
+
+    @Test
+    public void testCleanupWriteFailureCanBeRetried() throws Exception {
+        this.assertCleanupFailureCanBeRetried(false);
+    }
+
+    private void assertCleanupFailureCanBeRetried(boolean readFailure) throws Exception {
+        try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
+            LoadContext context = this.context(client, client);
+            context.setLoadingMode();
+            if (readFailure) {
+                server.readFailure = "Cleanup read denied";
+            } else {
+                server.failure = "Cleanup write denied";
+            }
+            try {
+                context.unsetLoadingMode();
+                Assert.fail("Expected cleanup failure");
+            } catch (LoadException expected) {
+                Assert.assertTrue(expected.getCause() instanceof ServerException);
+            }
+            Assert.assertEquals(GraphMode.LOADING, server.mode);
+            server.readFailure = null;
+            server.failure = null;
+            context.unsetLoadingMode();
+            Assert.assertEquals(GraphMode.NONE, server.mode);
+            Assert.assertEquals(2, server.modeReads);
+            Assert.assertEquals(readFailure ? 2 : 3, server.modeWrites);
+            // A completed retry must not acquire cleanup of a subsequent import.
+            server.mode = GraphMode.LOADING;
+            context.unsetLoadingMode();
+            Assert.assertEquals(GraphMode.LOADING, server.mode);
+            Assert.assertEquals(2, server.modeReads);
+            Assert.assertEquals(readFailure ? 2 : 3, server.modeWrites);
+        }
+    }
+
+    @Test
+    public void testUnconfirmedModeSetPreservesModeAndStartupFailure() throws Exception {
+        Logger logger = Logger.getLogger(LoadContext.class.getName());
+        CapturingAppender appender = new CapturingAppender();
+        appender.setThreshold(Level.ERROR);
+        logger.addAppender(appender);
+        try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
+            LoadContext context = this.context(client, client);
+            InputStruct file = new InputStruct(null, null);
+            file.input(new FileSource());
+            HugeGraphLoader loader = loader(context, file);
+            server.mode = GraphMode.NONE;
+            server.dropModeResponse = true;
+            IOException failure = null;
+            try {
+                loader.load();
+                Assert.fail("Expected failure after the mode change was applied");
+            } catch (RuntimeException expected) {
+                Assert.assertTrue(expected.getCause() instanceof IOException);
+                failure = (IOException) expected.getCause();
+            }
+            Assert.assertNotNull(failure);
+            Assert.assertTrue(appender.contains("graph 'hugegraph'"));
+            Assert.assertTrue(appender.contains("may still be in LOADING mode"));
+            Assert.assertTrue(appender.contains("no imports are active"));
+            Assert.assertTrue(appender.contains("manually reset it to NONE"));
+            Assert.assertEquals(GraphMode.LOADING, server.mode);
+            int writes = server.modeWrites;
+            Assert.assertTrue(writes > 0);
+            server.dropModeResponse = false;
+            try {
+                loader.shutdown();
+                Assert.fail("Expected the original unconfirmed mode change failure");
+            } catch (LoadException expected) {
+                Assert.assertSame(failure, expected.getCause());
+            }
+            loader.shutdown();
+            Assert.assertTrue(context.closed());
+            Assert.assertEquals(GraphMode.LOADING, server.mode);
+            Assert.assertEquals(0, server.modeReads);
+            Assert.assertEquals(writes, server.modeWrites);
+        } finally {
+            logger.removeAppender(appender);
+        }
+    }
+
+    private static final class CapturingAppender extends AppenderSkeleton {
+
+        private final StringBuilder messages = new StringBuilder();
+
+        @Override
+        protected void append(LoggingEvent event) {
+            this.messages.append(event.getRenderedMessage()).append('\n');
+        }
+
+        private boolean contains(String text) {
+            return this.messages.toString().contains(text);
+        }
+
+        @Override
+        public void close() {
+            // No resources owned by this appender.
+        }
+
+        @Override
+        public boolean requiresLayout() {
+            return false;
+        }
+    }
+
+    private static HugeGraphLoader loader(LoadContext context, InputStruct... inputs) throws Exception {
+        HugeGraphLoader loader = allocate(HugeGraphLoader.class);
+        set(loader, "context", context);
+        set(loader, "options", context.options());
+        set(loader, "mapping", new LoadMapping(Arrays.asList(inputs)));
+        return loader;
+    }
+
+    private static class ModeServer implements AutoCloseable {
+
+        private final HttpServer server;
+        private volatile GraphMode mode = GraphMode.LOADING;
+        private volatile String failure;
+        private volatile String readFailure;
+        private volatile boolean dropModeResponse;
+        private volatile int modeReads;
+        private volatile int modeWrites;
+
+        private ModeServer() throws IOException {
+            this.server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+            this.server.createContext("/", exchange -> {
+                String response;
+                int status = 200;
+                String path = exchange.getRequestURI().getPath();
+                if (path.equals("/versions")) {
+                    response = "{\"versions\":{\"core\":\"1.8.0\",\"api\":\"0.74\"}}";
+                } else if (path.equals("/graphspaces/DEFAULT/graphs/hugegraph/mode")) {
+                    if (exchange.getRequestMethod().equals("PUT")) {
+                        this.modeWrites++;
+                        if (this.failure != null) {
+                            status = 400;
+                            response = JsonUtil.toJson(Collections.singletonMap("message", this.failure));
+                        } else {
+                            String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+                            this.mode = GraphMode.valueOf(JsonUtil.fromJson(body, String.class));
+                            if (this.dropModeResponse) {
+                                exchange.close();
+                                return;
+                            }
+                            response = "{}";
+                        }
+                    } else {
+                        this.modeReads++;
+                        if (this.readFailure != null) {
+                            status = 400;
+                            response = JsonUtil.toJson(Collections.singletonMap("message", this.readFailure));
+                        } else {
+                            response = JsonUtil.toJson(Collections.singletonMap("mode", this.mode.name()));
+                        }
+                    }
+                } else {
+                    status = 404;
+                    response = "{}";
+                }
+                byte[] body = response.getBytes(StandardCharsets.UTF_8);
+                exchange.getResponseHeaders().add("Content-Type", "application/json");
+                exchange.sendResponseHeaders(status, body.length);
+                try (OutputStream output = exchange.getResponseBody()) {
+                    output.write(body);
+                }
+            });
+            this.server.start();
+        }
+
+        private HugeClient client() {
+            return HugeClient.builder("http://127.0.0.1:" + this.server.getAddress().getPort(), "hugegraph")
+                             .configTimeout(1).build();
+        }
+
+        @Override
+        public void close() {
+            this.server.stop(0);
+        }
     }
 
     private static void assertClosedWithoutRetrying(LoadContext context, RecordingClient client,
