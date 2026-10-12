@@ -53,6 +53,8 @@ public final class LoadContext implements Cloneable {
     private final String timestamp;
 
     private volatile boolean closed;
+    // Only a successful LOADING request permits this context to reset it.
+    private boolean loadingModeSet;
     private volatile StopReason stopReason;
     private volatile boolean noError;
     private volatile Throwable failure;
@@ -206,10 +208,11 @@ public final class LoadContext implements Cloneable {
         this.schemaCache.updateAll();
     }
 
-    public void setLoadingMode() {
+    public synchronized void setLoadingMode() {
         String graph = this.client.graph().graph();
         try {
             this.client.graphs().mode(graph, GraphMode.LOADING);
+            this.loadingModeSet = true;
         } catch (ServerException e) {
             if (e.getMessage().contains("Can not deserialize value of type")) {
                 LOG.warn("HugeGraphServer doesn't support loading mode");
@@ -232,13 +235,17 @@ public final class LoadContext implements Cloneable {
         }
     }
 
-    public void unsetLoadingMode() {
+    public synchronized void unsetLoadingMode() {
+        if (!this.loadingModeSet) {
+            return;
+        }
         try {
             String graph = this.client.graph().graph();
             GraphMode mode = this.client.graphs().mode(graph);
             if (mode.loading()) {
                 this.client.graphs().mode(graph, GraphMode.NONE);
             }
+            this.loadingModeSet = false;
         } catch (Exception e) {
             throw new LoadException("Failed to unset mode %s for server",
                                     e, GraphMode.LOADING);
@@ -291,6 +298,8 @@ public final class LoadContext implements Cloneable {
 
     @Override
     public Object clone() throws CloneNotSupportedException {
-        return super.clone();
+        LoadContext context = (LoadContext) super.clone();
+        context.loadingModeSet = false;
+        return context;
     }
 }
