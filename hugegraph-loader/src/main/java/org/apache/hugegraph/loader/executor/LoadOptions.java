@@ -20,7 +20,6 @@ package org.apache.hugegraph.loader.executor;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -34,8 +33,10 @@ import org.apache.hugegraph.loader.filter.util.ShortIdConfig;
 import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.util.Log;
 import com.beust.jcommander.IParameterValidator;
+import com.beust.jcommander.IParameterValidator2;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import com.beust.jcommander.ParameterDescription;
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableSet;
 
@@ -186,10 +187,12 @@ public final class LoadOptions implements Cloneable {
     public int batchSize = 500;
 
     @Parameter(names = {"--parallel-count", "--parser-threads"}, arity = 1,
-               validateWith = {PositiveValidator.class},
+               validateWith = {ParseThreadsValidator.class},
                description = "Parallel read pipelines (default: max(2, CPUS/2); " +
                              "--parallel-count is deprecated)")
     public int parseThreads = Math.max(2, CPUS / 2);
+
+    private boolean deprecatedParallelCount;
 
     @Parameter(names = {"--start-file"}, arity = 1,
             description = "start file index for partial loading")
@@ -421,7 +424,7 @@ public final class LoadOptions implements Cloneable {
             options.maxParseErrors = Constants.NO_LIMIT;
             options.maxInsertErrors = Constants.NO_LIMIT;
         }
-        if (Arrays.asList(args).contains("--parallel-count")) {
+        if (options.deprecatedParallelCount) {
             LOG.warn("Parameter --parallel-count is deprecated, " +
                      "please use --parser-threads instead");
         }
@@ -530,6 +533,16 @@ public final class LoadOptions implements Cloneable {
             if (retry <= 0) {
                 throw new ParameterException(String.format("Parameter '%s' should be positive, " +
                                                            "but got '%s'", name, value));
+            }
+        }
+    }
+
+    public static class ParseThreadsValidator extends PositiveValidator implements IParameterValidator2 {
+
+        @Override
+        public void validate(String name, String value, ParameterDescription parameter) {
+            if ("--parallel-count".equals(name)) {
+                ((LoadOptions) parameter.getObject()).deprecatedParallelCount = true;
             }
         }
     }

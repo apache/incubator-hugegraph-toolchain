@@ -131,6 +131,7 @@ public class LoadOptionsTest {
             String usage = new String(Files.readAllBytes(output.toPath()), StandardCharsets.UTF_8);
             if (expectUsage) {
                 Assert.assertTrue(usage, usage.contains("Usage:") && usage.contains("--file"));
+                Assert.assertFalse(usage, usage.contains("Parameter --parallel-count is deprecated"));
             } else {
                 Assert.assertFalse(usage, usage.contains("Usage:"));
             }
@@ -148,6 +149,7 @@ public class LoadOptionsTest {
     public static class ParserProcess {
 
         public static void main(String[] args) {
+            org.apache.log4j.BasicConfigurator.configure();
             LoadOptions.parseOptions(args);
         }
     }
@@ -233,20 +235,50 @@ public class LoadOptionsTest {
     @Test
     public void testDeprecatedParallelCountParameter() throws Exception {
         File mapping = createTempMapping();
-        String[] args = new String[]{
-                "-f", mapping.getPath(),
-                "-g", "g",
-                "-h", "localhost",
-                "--parallel-count", "4"
-        };
-
-        CapturingAppender appender = attachAppender();
+        File arguments = File.createTempFile("loader-alias-", ".args", new File("."));
         try {
-            LoadOptions options = LoadOptions.parseOptions(args);
-            Assert.assertEquals(4, options.parseThreads);
-            Assert.assertTrue(appender.contains("deprecated"));
+            for (boolean responseFile : new boolean[]{false, true}) {
+                for (String name : new String[]{"--parallel-count", "--parser-threads"}) {
+                    String[] args = new String[]{"--file", mapping.getPath(), name, "4"};
+                    if (responseFile) {
+                        Files.write(arguments.toPath(), Arrays.asList(args), StandardCharsets.UTF_8);
+                        args = new String[]{"@" + arguments.getPath()};
+                    }
+                    CapturingAppender appender = attachAppender();
+                    try {
+                        LoadOptions options = LoadOptions.parseOptions(args);
+                        Assert.assertEquals(4, options.parseThreads);
+                        int warnings = appender.buffer.toString().split("deprecated", -1).length - 1;
+                        Assert.assertEquals("--parallel-count".equals(name) ? 1 : 0, warnings);
+                    } finally {
+                        detachAppender(appender);
+                    }
+                }
+            }
         } finally {
-            detachAppender(appender);
+            arguments.delete();
+            mapping.delete();
+        }
+    }
+
+    @Test
+    public void testDeprecatedParameterDoesNotWarnOnInvalidInputOrHelp() throws Exception {
+        File mapping = createTempMapping();
+        File arguments = File.createTempFile("loader-alias-exit-", ".args", new File("."));
+        try {
+            assertParserExit(false, "--file", mapping.getPath(), "--parallel-count", "0");
+            assertParserExit(false, "--file", mapping.getPath(),
+                             "--parallel-count", "4", "--port", "0");
+            assertParserExit(true, "--help", "--parallel-count", "4");
+            Files.write(arguments.toPath(), Arrays.asList("--file", mapping.getPath(),
+                                                         "--parallel-count", "0"),
+                        StandardCharsets.UTF_8);
+            assertParserExit(false, "@" + arguments.getPath());
+            Files.write(arguments.toPath(), Arrays.asList("--help", "--parallel-count", "4"),
+                        StandardCharsets.UTF_8);
+            assertParserExit(true, "@" + arguments.getPath());
+        } finally {
+            arguments.delete();
             mapping.delete();
         }
     }
