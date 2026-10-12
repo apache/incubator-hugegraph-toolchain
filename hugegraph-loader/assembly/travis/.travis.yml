@@ -38,7 +38,17 @@ branches:
 install: mvn compile -Dmaven.javadoc.skip=true | grep -v "Downloading\|Downloaded"
 
 before_script:
-  - $TRAVIS_DIR/install-hugegraph-from-source.sh $TRAVIS_BRANCH | grep -v "Downloading\|Downloaded"
+  - |
+    export HUGEGRAPH_TEST_TRUST_STORE_PATH_FILE="$(mktemp)"
+    if ! $TRAVIS_DIR/install-hugegraph-from-source.sh $TRAVIS_BRANCH | grep -v "Downloading\|Downloaded" ||
+       ! test -s "$HUGEGRAPH_TEST_TRUST_STORE_PATH_FILE"; then
+      rm "$HUGEGRAPH_TEST_TRUST_STORE_PATH_FILE"
+      unset HUGEGRAPH_TEST_TRUST_STORE_PATH_FILE
+      exit 1
+    fi
+    export HUGEGRAPH_TEST_TRUST_STORE_FILE="$(cat "$HUGEGRAPH_TEST_TRUST_STORE_PATH_FILE")"
+    rm "$HUGEGRAPH_TEST_TRUST_STORE_PATH_FILE"
+    unset HUGEGRAPH_TEST_TRUST_STORE_PATH_FILE
   - |
     if [ "$SOURCE_TYPE" == "hdfs" ]; then
       $TRAVIS_DIR/install-hadoop.sh
