@@ -151,6 +151,33 @@ class LoaderLauncherTest(unittest.TestCase):
         self.assertTrue(arguments[cp + 1].startswith(external + ":"), arguments)
         self.assertEqual("org.apache.hugegraph.loader.HugeGraphLoader", arguments[cp + 2])
 
+    def test_default_max_heap_is_preserved(self):
+        self.install_java(self.tools, 17)
+        result = self.run_launcher()
+        self.assertEqual(0, result.returncode, result.stderr)
+        heaps = [arg for arg in self.read_arguments() if arg.startswith("-Xmx")]
+        self.assertEqual(["-Xmx10g"], heaps)
+
+    def test_caller_max_heap_takes_precedence(self):
+        for major in (11, 17):
+            self.install_java(self.tools, major)
+            for shell in (self.bash, shutil.which("sh")):
+                with self.subTest(major=major, shell=shell):
+                    result = self.run_launcher(extra_env={"JVM_OPTS": "-Xms16m -Xmx128m"},
+                                               shell=shell)
+                    self.assertEqual(0, result.returncode, result.stderr)
+                    arguments = self.read_arguments()
+                    heaps = [arg for arg in arguments if arg.startswith("-Xmx")]
+                    self.assertEqual(["-Xmx10g", "-Xmx128m"], heaps)
+                    self.assertIn("-Xms16m", arguments)
+
+    def test_last_caller_max_heap_remains_effective(self):
+        self.install_java(self.tools, 17)
+        result = self.run_launcher(extra_env={"JVM_OPTS": "-Xmx128m -Xmx256m"})
+        self.assertEqual(0, result.returncode, result.stderr)
+        heaps = [arg for arg in self.read_arguments() if arg.startswith("-Xmx")]
+        self.assertEqual(["-Xmx10g", "-Xmx128m", "-Xmx256m"], heaps)
+
 
 if __name__ == "__main__":
     unittest.main()

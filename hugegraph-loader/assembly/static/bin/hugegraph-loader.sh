@@ -79,8 +79,8 @@ if [ "$JAVA_MAJOR" -ge 17 ] 2>/dev/null; then
     JVM_OPTS="$JVM_OPTS --add-opens=java.base/java.net=ALL-UNNAMED"
 fi
 
-# Xmx needs to be set so that it is big enough to cache all the vertexes in the run
-export JVM_OPTS="$JVM_OPTS -Xmx10g"
+# Default to enough heap to cache vertices, while letting caller options take precedence.
+export JVM_OPTS="-Xmx10g $JVM_OPTS"
 
 # Uncomment to enable debugging
 #JVM_OPTS="$JVM_OPTS -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=1414"
