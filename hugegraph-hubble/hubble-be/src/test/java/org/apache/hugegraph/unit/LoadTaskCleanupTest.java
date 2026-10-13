@@ -2142,6 +2142,97 @@ public class LoadTaskCleanupTest {
     }
 
     @Test
+    public void testPollSavepointRollbackFailureAbortsOuterTransaction() throws Exception {
+        org.springframework.jdbc.datasource.DriverManagerDataSource dataSource =
+                new org.springframework.jdbc.datasource.DriverManagerDataSource(
+                        "jdbc:h2:mem:poll-deadlock-" + java.util.UUID.randomUUID() + ";LOCK_TIMEOUT=3000", "sa", "");
+        org.springframework.jdbc.core.JdbcTemplate jdbc = new org.springframework.jdbc.core.JdbcTemplate(dataSource);
+        org.springframework.jdbc.datasource.DataSourceTransactionManager manager =
+                new org.springframework.jdbc.datasource.DataSourceTransactionManager(dataSource);
+        try (java.sql.Connection keeper = dataSource.getConnection()) {
+            jdbc.execute("CREATE TABLE tasks (id INT PRIMARY KEY, load_status TINYINT, n INT)");
+            jdbc.update("INSERT INTO tasks VALUES (9, ?, 0), (10, ?, 0), (11, ?, 0), (12, ?, 0)",
+                        LoadStatus.RUNNING.getValue(), LoadStatus.RUNNING.getValue(),
+                        LoadStatus.RUNNING.getValue(), LoadStatus.RUNNING.getValue());
+            CountDownLatch otherLocked = new CountDownLatch(1);
+            CountDownLatch pollAtSecond = new CountDownLatch(1);
+            java.util.concurrent.atomic.AtomicReference<Throwable> otherFailure =
+                    new java.util.concurrent.atomic.AtomicReference<>();
+            Thread other = new Thread(() -> {
+                try {
+                    new org.springframework.transaction.support.TransactionTemplate(manager).execute(status -> {
+                        jdbc.update("UPDATE tasks SET n=1 WHERE id=10");
+                        jdbc.update("UPDATE tasks SET n=1 WHERE id=11");
+                        otherLocked.countDown();
+                        try {
+                            Assert.assertTrue(pollAtSecond.await(10, TimeUnit.SECONDS));
+                            Thread.sleep(150);
+                        } catch (InterruptedException failure) {
+                            throw new RuntimeException(failure);
+                        }
+                        jdbc.update("UPDATE tasks SET n=1 WHERE id=9");
+                        return null;
+                    });
+                } catch (Throwable failure) {
+                    otherFailure.set(failure);
+                }
+            }, "poll-deadlock-competitor");
+            Map<Integer, LoadTask> owners = new java.util.concurrent.ConcurrentSkipListMap<>();
+            for (int id : new int[]{9, 10, 12}) {
+                owners.put(id, LoadTask.builder().id(id).finished(true).initialStateReadFailed(true)
+                                       .status(LoadStatus.FAILED).build());
+            }
+            LoadTask first = owners.get(9);
+            LoadTaskMapper mapper = Mockito.mock(LoadTaskMapper.class);
+            Mockito.when(mapper.update(Mockito.nullable(LoadTask.class), Mockito.any())).thenAnswer(invocation -> {
+                com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper<?> query = invocation.getArgument(1);
+                query.getSqlSegment();
+                int id = (Integer) query.getParamNameValuePairs().values().stream()
+                        .filter(value -> value instanceof Integer).findFirst().get();
+                if (id == 10) {
+                    pollAtSecond.countDown();
+                }
+                return jdbc.update("UPDATE tasks SET load_status=? WHERE id=? AND load_status=?",
+                                   LoadStatus.FAILED.getValue(), id, LoadStatus.RUNNING.getValue());
+            });
+            LoadTaskService service = new LoadTaskService();
+            set(service, "mapper", mapper);
+            set(service, "transactionManager", manager);
+            set(service, "runningTaskContainer", owners);
+            org.springframework.aop.framework.ProxyFactory factory =
+                    new org.springframework.aop.framework.ProxyFactory(service);
+            factory.setProxyTargetClass(true);
+            factory.addAdvice(new org.springframework.transaction.interceptor.TransactionInterceptor(
+                    manager, new org.springframework.transaction.annotation.AnnotationTransactionAttributeSource()));
+            Throwable pollFailure = null;
+            other.start();
+            try {
+                Assert.assertTrue(otherLocked.await(5, TimeUnit.SECONDS));
+                try {
+                    ((LoadTaskService) factory.getProxy()).updateLoadTaskProgress();
+                } catch (Throwable failure) {
+                    pollFailure = failure;
+                }
+            } finally {
+                pollAtSecond.countDown();
+                other.join(5000);
+            }
+            Assert.assertFalse(other.isAlive());
+            Assert.assertNull(otherFailure.get());
+            Assert.assertTrue(pollFailure instanceof org.springframework.transaction.TransactionSystemException);
+            Assert.assertTrue(pollFailure.getCause() instanceof java.sql.SQLException);
+            Assert.assertEquals(90063, ((java.sql.SQLException) pollFailure.getCause()).getErrorCode());
+            Assert.assertEquals(LoadStatus.RUNNING.getValue(), jdbc.queryForObject(
+                    "SELECT load_status FROM tasks WHERE id=9", Byte.class));
+            Assert.assertEquals(LoadStatus.RUNNING.getValue(), jdbc.queryForObject(
+                    "SELECT load_status FROM tasks WHERE id=12", Byte.class));
+            Assert.assertSame(first, owners.get(9));
+            Assert.assertEquals(3, owners.size());
+            Mockito.verify(mapper, Mockito.times(2)).update(Mockito.nullable(LoadTask.class), Mockito.any());
+        }
+    }
+
+    @Test
     public void testPollMissingFinalRowDoesNotBlockOtherOwners() throws Exception {
         this.assertPollFailureIsolation(true);
     }
@@ -2151,7 +2242,16 @@ public class LoadTaskCleanupTest {
         this.assertPollFailureIsolation(false);
     }
 
+    @Test
+    public void testPollConstraintFailureContinuesOtherOwners() throws Exception {
+        this.assertPollFailureIsolation(false, true);
+    }
+
     private void assertPollFailureIsolation(boolean missing) throws Exception {
+        this.assertPollFailureIsolation(missing, false);
+    }
+
+    private void assertPollFailureIsolation(boolean missing, boolean constraint) throws Exception {
         try (JobDeleteFixture fixture = new JobDeleteFixture()) {
             LoadTask first = this.task(this.loader());
             first.setId(9);
@@ -2167,11 +2267,15 @@ public class LoadTaskCleanupTest {
             if (missing) {
                 fixture.jdbc.update("DELETE FROM delete_tasks WHERE id=9");
             }
+            if (constraint) {
+                fixture.jdbc.execute("ALTER TABLE delete_tasks ADD CONSTRAINT reject_first_failed CHECK " +
+                                     "(id <> 9 OR load_status <> " + LoadStatus.FAILED.getValue() + ")");
+            }
             Mockito.when(fixture.tasks.updateById(Mockito.any(LoadTask.class))).thenAnswer(invocation -> {
                 LoadTask task = invocation.getArgument(0);
                 int count = fixture.jdbc.update("UPDATE delete_tasks SET load_status=? WHERE id=?",
                                                 task.getStatus().getValue(), task.getId());
-                if (!missing && task == first) {
+                if (!missing && !constraint && task == first) {
                     throw new IllegalStateException("failed after partial SQL");
                 }
                 return count;

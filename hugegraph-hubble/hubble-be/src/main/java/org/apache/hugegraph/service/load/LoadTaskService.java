@@ -67,6 +67,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -727,6 +728,9 @@ public class LoadTaskService {
                     this.updateLoadTaskProgress(task);
                     return null;
                 });
+            } catch (TransactionException failure) {
+                // A failed savepoint/transaction operation cannot safely commit earlier owner writes.
+                throw failure;
             } catch (RuntimeException failure) {
                 log.warn("Failed to persist progress for load task {}; retaining its owner", task.getId(), failure);
             } finally {

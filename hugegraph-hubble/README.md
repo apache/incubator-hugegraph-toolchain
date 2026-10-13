@@ -87,8 +87,10 @@ a missing or advanced row is preserved. A rejected dispatch whose failure cannot
 be committed also retains its closed owner. The poll retries the conditional
 Task-to-FAILED and Job-to-FAILED changes in one transaction, preserving a task row
 that has since advanced or disappeared. Each owner's polling write uses an H2
-savepoint: a write failure rolls back that owner's changes and leaves it for a
-later poll while other owners can finish persistence. Owners are retired only
+savepoint: an ordinary SQL failure whose savepoint rollback succeeds leaves that
+owner for a later poll while other owners can finish persistence. A transaction or
+savepoint operation failure aborts the whole polling transaction and retains its
+owners, including those processed earlier. Owners are retired only
 after the polling transaction commits; a deleted final task row retires its closed
 owner without recreating metadata.
 Finished tasks release their native JVM shutdown hook once their context closes.
