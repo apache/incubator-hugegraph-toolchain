@@ -137,6 +137,68 @@ public class BatchElementRequestTest extends BaseUnitTest {
         });
     }
 
+    @Test
+    public void testVertexIndividualStrategiesAccumulate() {
+        BatchVertexRequest.Builder builder = BatchVertexRequest.createBuilder()
+                                                               .vertices(ImmutableList.of(createVertex()));
+        BatchVertexRequest req = builder.updatingStrategy("set", INTERSECTION).build();
+        Assert.assertEquals(ImmutableMap.of("set", INTERSECTION),
+                            Whitebox.getInternalState(req, "updateStrategies"));
+
+        req = builder.updatingStrategy("price", UpdateStrategy.SUM)
+                     .updatingStrategy("set", UpdateStrategy.UNION)
+                     .build();
+        Assert.assertEquals(ImmutableMap.of("set", UpdateStrategy.UNION,
+                                           "price", UpdateStrategy.SUM),
+                            Whitebox.getInternalState(req, "updateStrategies"));
+    }
+
+    @Test
+    public void testVertexStrategyMapReplacesIndividualStrategies() {
+        Map<String, UpdateStrategy> strategies = ImmutableMap.of("price", UpdateStrategy.SUM);
+        BatchVertexRequest req = BatchVertexRequest.createBuilder()
+                                                   .vertices(ImmutableList.of(createVertex()))
+                                                   .updatingStrategy("set", INTERSECTION)
+                                                   .updatingStrategies(strategies)
+                                                   .updatingStrategy("name", UpdateStrategy.OVERRIDE)
+                                                   .build();
+        Assert.assertEquals(ImmutableMap.of("price", UpdateStrategy.SUM,
+                                           "name", UpdateStrategy.OVERRIDE),
+                            Whitebox.getInternalState(req, "updateStrategies"));
+        Assert.assertEquals(ImmutableMap.of("price", UpdateStrategy.SUM), strategies);
+    }
+
+    @Test
+    public void testEdgeIndividualStrategiesAccumulate() {
+        BatchEdgeRequest.Builder builder = BatchEdgeRequest.createBuilder()
+                                                           .edges(ImmutableList.of(createEdge()));
+        BatchEdgeRequest req = builder.updatingStrategy("set", INTERSECTION).build();
+        Assert.assertEquals(ImmutableMap.of("set", INTERSECTION),
+                            Whitebox.getInternalState(req, "updateStrategies"));
+
+        req = builder.updatingStrategy("price", UpdateStrategy.SUM)
+                     .updatingStrategy("set", UpdateStrategy.UNION)
+                     .build();
+        Assert.assertEquals(ImmutableMap.of("set", UpdateStrategy.UNION,
+                                           "price", UpdateStrategy.SUM),
+                            Whitebox.getInternalState(req, "updateStrategies"));
+    }
+
+    @Test
+    public void testEdgeStrategyMapReplacesIndividualStrategies() {
+        Map<String, UpdateStrategy> strategies = ImmutableMap.of("price", UpdateStrategy.SUM);
+        BatchEdgeRequest req = BatchEdgeRequest.createBuilder()
+                                               .edges(ImmutableList.of(createEdge()))
+                                               .updatingStrategy("set", INTERSECTION)
+                                               .updatingStrategies(strategies)
+                                               .updatingStrategy("name", UpdateStrategy.OVERRIDE)
+                                               .build();
+        Assert.assertEquals(ImmutableMap.of("price", UpdateStrategy.SUM,
+                                           "name", UpdateStrategy.OVERRIDE),
+                            Whitebox.getInternalState(req, "updateStrategies"));
+        Assert.assertEquals(ImmutableMap.of("price", UpdateStrategy.SUM), strategies);
+    }
+
     private static Vertex createVertex() {
         Vertex vertex = new Vertex("object");
         vertex.id("object:1");
