@@ -37,6 +37,11 @@ class PolicyTest(unittest.TestCase):
                 "base": {"sha": "base", "repo": {"full_name": "apache/t"}}}
 
     def setUp(self):
+        # Synthetic events must not inherit the outer workflow dispatch type.
+        event_env = patch.dict(os.environ)
+        event_env.start()
+        self.addCleanup(event_env.stop)
+        os.environ.pop("GITHUB_EVENT_NAME", None)
         # All tests stay local; successful PR gates query only this current-PR fixture.
         api_mock = patch.object(policy, "api", return_value=self.live_pr())
         self.addCleanup(api_mock.stop)
@@ -249,17 +254,22 @@ class PolicyTest(unittest.TestCase):
         self.assertTrue(self.pr_plan(["hugegraph-loader/src/test/resources/example/struct_hdfs.json"])["hdfs"])
 
     def test_manual_and_weekly_are_not_filtered_by_documentation(self):
+        def event_git(*args):
+            if args[0] == "diff":
+                raise subprocess.CalledProcessError(128, ["git", *args])
+            return "head"
         for event_name, preset, full in [("workflow_dispatch", "mainline", False),
                                          ("workflow_dispatch", "full", True), ("schedule", "", True)]:
-            with self.subTest(event=event_name, preset=preset), patch.object(policy, "git", return_value="head"), patch.object(
+            with self.subTest(event=event_name, preset=preset), patch.object(policy, "git", side_effect=event_git), patch.object(
                     policy, "unsafe_documentation", return_value=False), patch.object(policy, "packaged_readme_state", return_value="valid"):
-                plan = policy.create_plan("toolchain", {"before": "base", "inputs": {"test-set": preset}},
+                plan = policy.create_plan("toolchain", {"inputs": {"test-set": preset}},
                                           "apache/t", event_name=event_name)
                 self.assertEqual(set(policy.MODULES["toolchain"]), set(plan["selected"]))
                 self.assertEqual(full, plan["legacy"])
                 self.assertEqual(full, plan["hdfs"])
                 self.assertEqual(full, plan["image_smoke"])
                 self.assertEqual(full, plan["upstream"])
+                self.assertEqual(full, plan["security"])
 
     def coordinator_jobs(self, plan, license_result="success", selection_result="success", cancelled=False):
         workflow = (Path(__file__).resolve().parents[1] / "workflows/ci.yml").read_text()

@@ -442,6 +442,10 @@ def create_plan(project, event, repository, fetch=api, external_inputs=None, eve
             # head/base objects must exist locally; workflow fetches both before planning.
             ancestor = git("merge-base", plan["base"], plan["head"])
             paths = git("diff", "--no-renames", "--name-only", ancestor, plan["head"]).splitlines()
+        elif project == "toolchain" and event_name in {"schedule", "workflow_dispatch"}:
+            # Explicit test sets have no push before-SHA and do not need a diff.
+            plan["base"] = plan["head"]
+            paths = []
         else:
             plan["base"] = event.get("before", "")
             paths = git("diff", "--no-renames", "--name-only", plan["base"], plan["head"]).splitlines()
