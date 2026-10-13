@@ -78,7 +78,7 @@ runs:
           exit 1
         fi
         CANDIDATE_SOURCE_COMMIT="$SERVER_COMMIT" \
-          python3 "$GITHUB_WORKSPACE/.github/scripts/verify_candidate_image_sdk.py" "$candidate_repo" \
+          python3 "$GITHUB_WORKSPACE/hugegraph-client/assembly/travis/verify_candidate_image_sdk.py" "$candidate_repo" \
           --configure-upstream-env "$GITHUB_ENV"
         manifest_artifact_id=$(python3 -c 'import uuid; print(uuid.uuid4().hex)')
         archive_sha=$(sha256sum "${archives[0]}" | cut -d ' ' -f 1)

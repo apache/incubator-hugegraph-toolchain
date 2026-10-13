@@ -25,12 +25,14 @@ from unittest.mock import patch
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 import textwrap
 import unittest
 import uuid
 import xml.etree.ElementTree as ET
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "hugegraph-client/assembly/travis"))
 import verify_candidate_image_sdk as sdk
 
 
@@ -605,7 +607,7 @@ class SDKActionTest(unittest.TestCase):
         upstream = (root / ".github/workflows/upstream-compatibility.yml").read_text()
         self.assertIn("ref: master", upstream)
         self.assertNotIn("validation-mode: release", upstream)
-        release = (root / ".github/actions/setup-hugegraph-server/release.py").read_text()
+        release = (root / "hugegraph-client/assembly/travis/release.py").read_text()
         self.assertIn('VERSION = "1.7.0"', release)
         self.assertIn('apache-hugegraph-incubating-1.7.0.tar.gz', release)
 
@@ -630,8 +632,8 @@ class SDKActionTest(unittest.TestCase):
                              'cp -R "$SDK_FIXTURE/." "$3/"\n'
                              'mkdir -p "$2/hugegraph-server"\n'
                              'printf archive > "$2/hugegraph-server/apache-hugegraph-fixture.tar.gz"\n')
-        verifier = workspace / ".github/scripts/verify_candidate_image_sdk.py"
-        verifier.parent.mkdir(parents=True)
+        verifier = workspace / "hugegraph-client/assembly/travis/verify_candidate_image_sdk.py"
+        verifier.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(sdk.__file__, verifier)
         runner = root / "runner"
         runner.mkdir()

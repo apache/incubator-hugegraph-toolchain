@@ -8,9 +8,11 @@ apache-release.sh export-ignore
 .licenserc.yaml export-ignore
 
 # ignored directory
-.github/workflows/ export-ignore
-.github/outdated/ export-ignore
+.github/ export-ignore
 hugegraph-dist/scripts/ export-ignore
 .serena/ export-ignore
 # only exclude the root
 /assembly/ export-ignore
+
+# Exclude documentation screenshots; keep Hubble frontend assets for builds.
+/hugegraph-hubble/docs/images/ export-ignore

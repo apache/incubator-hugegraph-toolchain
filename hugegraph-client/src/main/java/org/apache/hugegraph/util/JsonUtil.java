@@ -18,6 +18,7 @@
 package org.apache.hugegraph.util;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.hugegraph.rest.SerializeException;
 
@@ -58,6 +59,21 @@ public final class JsonUtil {
         } catch (IllegalArgumentException e) {
             throw new SerializeException("Failed to deserialize json node '%s'",
                                          e, node);
+        }
+    }
+
+    /**
+     * Deserialize a JSON array into a list of the requested element type.
+     * JSON null returns null; a null input string throws IllegalArgumentException.
+     * Invalid JSON or incompatible elements throw SerializeException.
+     */
+    public static <T> List<T> fromJson2List(String json, Class<T> clazz) {
+        try {
+            return MAPPER.readValue(json, MAPPER.getTypeFactory()
+                                               .constructCollectionType(List.class, clazz));
+        } catch (IOException e) {
+            throw new SerializeException("Failed to deserialize json '%s'",
+                                         e, json);
         }
     }
 }

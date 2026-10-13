@@ -29,7 +29,7 @@ RUN apt-get -q update \
 
 COPY hugegraph-client/assembly/travis/install-candidate-sdk.sh \
      hugegraph-client/assembly/travis/checkout-server.sh /pkg/hugegraph-client/assembly/travis/
-COPY .github/scripts/verify_candidate_image_sdk.py /pkg/.github/scripts/
+COPY hugegraph-client/assembly/travis/verify_candidate_image_sdk.py /pkg/hugegraph-client/assembly/travis/
 
 # Direct builds bootstrap the same locked SDK; CI can supply a verified builder.
 RUN mkdir -p /opt/candidate-m2 \
@@ -38,7 +38,7 @@ RUN mkdir -p /opt/candidate-m2 \
          bash /pkg/hugegraph-client/assembly/travis/install-candidate-sdk.sh \
            68855199031d5801edb4fe41b2bacbacffe8fe68 /opt/candidate-source /opt/candidate-m2; \
        fi \
-    && python3 /pkg/.github/scripts/verify_candidate_image_sdk.py /opt/candidate-m2
+    && python3 /pkg/hugegraph-client/assembly/travis/verify_candidate_image_sdk.py /opt/candidate-m2
 
 COPY . /pkg
 
@@ -47,7 +47,7 @@ RUN set -x \
        -Dhugegraph.version=1.8.0 -Dsdk.validation.mode=candidate \
        -pl hugegraph-client,hugegraph-loader -am \
        -Dmaven.javadoc.skip=true -DskipTests -ntp \
-    && python3 /pkg/.github/scripts/verify_candidate_image_sdk.py /opt/candidate-m2
+    && python3 /pkg/hugegraph-client/assembly/travis/verify_candidate_image_sdk.py /opt/candidate-m2
 
 FROM eclipse-temurin:17-jre-jammy
 
