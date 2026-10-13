@@ -46,6 +46,7 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
     AccountMutationAuthorizationTest.class,
+    AsyncConfigLifecycleTest.class,
     AuthContextServiceTest.class,
     AuthModeServiceTest.class,
     AuthSecurityTest.class,

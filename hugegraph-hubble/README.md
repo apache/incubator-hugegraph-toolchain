@@ -250,6 +250,8 @@ Hubble 1.8 requires Java 17 and uses Spring Boot 3 with H2 2.x for metadata. MyS
 
 The startup script includes `--add-opens=java.base/java.net=ALL-UNNAMED` for the embedded Loader's Hive ORC reader. Include this option when using a custom Java launch command. Packaged archives are generated under `target/` and exclude local runtime data.
 
+Spring manages Hubble's async executor and shuts it down when the application context closes.
+
 ## Graph switching
 
 Query execution waits until the graph context matches the current route, including keyboard shortcuts during a graph switch. Standalone Server 1.5 supports core graph, schema and data operations; GraphSpace management and PD mode require a newer server.
