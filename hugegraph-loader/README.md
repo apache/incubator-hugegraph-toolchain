@@ -135,7 +135,7 @@ so copy a mapping mounted from a read-only Kubernetes ConfigMap to a writable vo
 
 #### Graph mode during startup and cleanup
 
-Loader resets `LOADING` mode only after that Loader context successfully sets it. A startup failure before the mode
+On Servers without the loading-owner endpoint, Loader resets `LOADING` mode only after that context sets it. A startup failure before the mode
 change, a rejected mode request, or a restore run does not clear another run's `LOADING` mode. Cleanup preserves a
 different current graph mode; successful cleanup is not repeated. Concurrent successful Loader runs on the same
 graph still require external coordination; this startup safeguard does not provide shared ownership of graph mode.
@@ -186,3 +186,14 @@ Graph-source imports retain their existing RESTORING behavior.
 
 The paired Server change must be merged and released before the new guarantee is
 available: [Server #3331](https://github.com/apache/hugegraph/pull/3331).
+
+On the ownership path, a cleanup failure still closes this Loader's context and
+clients; another `shutdown()` call does not retry the remote release. Retry
+`PUT /graphspaces/{graphspace}/graphs/{graph}/mode/owners` with `action: release`,
+the original `instance`, `epoch`, `token` and the same authenticated principal.
+Keep the original tuple; creating a new handle cannot release the old one.
+
+Owners have no automatic expiry. If the tuple is lost or the Loader is killed
+without cleanup, stop all related imports before reopening the affected graph
+instance or restarting that Server. An enum PUT to `NONE` is rejected while an
+owner remains active.
