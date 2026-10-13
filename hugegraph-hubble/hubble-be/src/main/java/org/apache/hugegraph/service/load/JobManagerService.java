@@ -29,7 +29,6 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.Striped;
 import lombok.extern.log4j.Log4j2;
 
@@ -272,10 +271,14 @@ public class JobManagerService {
         }
     }
 
-    @Transactional(isolation = Isolation.READ_COMMITTED)
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void removeByGraph(String graphSpace, String graph) {
-        this.mapper.deleteByMap(ImmutableMap.of("graphspace", graphSpace,
-                                                "graph", graph));
+        QueryWrapper<JobManager> query = Wrappers.query();
+        query.eq("graphspace", graphSpace).eq("graph", graph);
+        // Clean only the enlisted Jobs; newly created Jobs must not lose their task owners.
+        for (JobManager job : this.mapper.selectList(query)) {
+            this.deleteJob(graphSpace, graph, job.getId());
+        }
     }
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)

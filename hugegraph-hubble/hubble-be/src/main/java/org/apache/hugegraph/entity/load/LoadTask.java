@@ -72,6 +72,10 @@ public class LoadTask implements Runnable {
     @JsonIgnore
     private transient volatile boolean initialStateReadFailed;
 
+    @TableField(exist = false)
+    @JsonIgnore
+    private transient volatile boolean dispatchFailurePending;
+
     @TableId(type = IdType.AUTO)
     @MergeProperty(useNew = false)
     @JsonProperty("id")

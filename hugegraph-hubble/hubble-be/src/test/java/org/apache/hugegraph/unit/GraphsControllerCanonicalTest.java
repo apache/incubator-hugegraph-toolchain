@@ -38,6 +38,10 @@ import org.apache.hugegraph.entity.graphs.GraphCloneEntity;
 import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.options.HubbleOptions;
 import org.apache.hugegraph.service.graphs.GraphsService;
+import org.apache.hugegraph.service.load.JobManagerService;
+import org.apache.hugegraph.service.query.ExecuteHistoryService;
+import org.apache.hugegraph.service.query.GremlinCollectionService;
+import org.apache.hugegraph.service.space.VermeerService;
 import org.apache.hugegraph.testutil.Assert;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -51,6 +55,9 @@ public class GraphsControllerCanonicalTest {
     private MockMvc mvc;
     private HugeClient client;
     private GraphsService graphsService;
+    private JobManagerService jobs;
+    private ExecuteHistoryService history;
+    private GremlinCollectionService collections;
     private RequestPostProcessor withClient;
 
     @Before
@@ -58,6 +65,13 @@ public class GraphsControllerCanonicalTest {
         GraphsController controller = new GraphsController();
         this.graphsService = Mockito.mock(GraphsService.class);
         this.setField(controller, "graphsService", this.graphsService);
+        this.jobs = Mockito.mock(JobManagerService.class);
+        this.history = Mockito.mock(ExecuteHistoryService.class);
+        this.collections = Mockito.mock(GremlinCollectionService.class);
+        this.setField(controller, "jobManagerService", this.jobs);
+        this.setField(controller, "executeHistoryService", this.history);
+        this.setField(controller, "gremlinCollectionService", this.collections);
+        this.setField(controller, "vermeerService", Mockito.mock(VermeerService.class));
         HugeConfig config = Mockito.mock(HugeConfig.class);
         Mockito.when(config.get(HubbleOptions.PD_ENABLED)).thenReturn(false);
         this.setField(controller, "config", config);
@@ -69,6 +83,55 @@ public class GraphsControllerCanonicalTest {
             return request;
         };
         this.mvc = MockMvcBuilders.standaloneSetup(controller).build();
+    }
+
+    @Test
+    public void testGraphDeletionCleansScopedJobsAfterRemoteSuccess() throws Exception {
+        this.mvc.perform(delete("/api/v1.3/graphspaces/DEFAULT/graphs/graph_a")
+                         .with(this.withClient))
+                .andExpect(status().isOk());
+
+        org.mockito.InOrder order = Mockito.inOrder(this.graphsService, this.history, this.collections, this.jobs);
+        order.verify(this.graphsService).delete(this.client, "graph_a", "I'm sure to drop the graph");
+        order.verify(this.history).deleteByGraph("DEFAULT", "graph_a");
+        order.verify(this.collections).deleteByGraph("DEFAULT", "graph_a");
+        order.verify(this.jobs).removeByGraph("DEFAULT", "graph_a");
+    }
+
+    @Test
+    public void testGraphDeletionKeepsLocalStateWhenRemoteDropFails() throws Exception {
+        Mockito.doThrow(new ExternalException("remote drop rejected")).when(this.graphsService)
+               .delete(this.client, "graph_a", "I'm sure to drop the graph");
+        try {
+            this.mvc.perform(delete("/api/v1.3/graphspaces/DEFAULT/graphs/graph_a").with(this.withClient));
+            org.junit.Assert.fail("Expected remote deletion rejection");
+        } catch (ServletException e) {
+            Assert.assertInstanceOf(ExternalException.class, e.getCause());
+        }
+        Mockito.verifyNoInteractions(this.jobs, this.history, this.collections);
+    }
+
+    @Test
+    public void testGraphDeletionKeepsLocalStateWhenAuthenticationFails() throws Exception {
+        GraphsController controller = new GraphsController() {
+            @Override
+            public boolean isVermeerEnabled() {
+                return false;
+            }
+
+            @Override
+            protected HugeClient authClient(String graphspace, String graph) {
+                throw new org.apache.hugegraph.exception.ForbiddenException("graph deletion denied");
+            }
+        };
+        this.setField(controller, "graphsService", this.graphsService);
+        this.setField(controller, "jobManagerService", this.jobs);
+        this.setField(controller, "executeHistoryService", this.history);
+        this.setField(controller, "gremlinCollectionService", this.collections);
+
+        Assert.assertThrows(org.apache.hugegraph.exception.ForbiddenException.class,
+                            () -> controller.delete("DEFAULT", "graph_a", "I'm sure to drop the graph"));
+        Mockito.verifyNoInteractions(this.graphsService, this.jobs, this.history, this.collections);
     }
 
     @Test

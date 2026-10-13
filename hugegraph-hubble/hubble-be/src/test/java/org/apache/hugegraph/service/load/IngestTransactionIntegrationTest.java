@@ -295,6 +295,34 @@ public class IngestTransactionIntegrationTest {
     }
 
     @Test
+    public void testRejectedDispatchRetriesTaskAndJobAfterDatabaseRecovery() throws Exception {
+        this.executor.reject(true);
+        this.jdbc.execute("ALTER TABLE job_manager ADD CONSTRAINT reject_failed_job CHECK (job_status <> " +
+                          JobStatus.FAILED.getValue() + ")");
+        LoadTask task;
+        try {
+            task = this.jobService.createIngestTask(
+                    this.job(), this.mapping(), this.connection(), this.client());
+        } finally {
+            this.jdbc.execute("ALTER TABLE job_manager DROP CONSTRAINT reject_failed_job");
+        }
+        Assert.assertEquals(LoadStatus.RUNNING, this.taskService.get(task.getId()).getStatus());
+        Assert.assertEquals(JobStatus.LOADING, this.jobService.get(task.getJobId()).getJobStatus());
+        java.lang.reflect.Field ownersField = LoadTaskService.class.getDeclaredField("runningTaskContainer");
+        ownersField.setAccessible(true);
+        java.util.Map<?, ?> owners = (java.util.Map<?, ?>) ownersField.get(
+                org.springframework.test.util.AopTestUtils.getUltimateTargetObject(this.taskService));
+        Assert.assertSame(task, owners.get(task.getId()));
+        Assert.assertTrue(task.getLoader().context().closed());
+
+        this.taskService.updateLoadTaskProgress();
+
+        Assert.assertEquals(LoadStatus.FAILED, this.taskService.get(task.getId()).getStatus());
+        Assert.assertEquals(JobStatus.FAILED, this.jobService.get(task.getJobId()).getJobStatus());
+        Assert.assertFalse(owners.containsKey(task.getId()));
+    }
+
+    @Test
     public void testRejectedDispatchCommitsFailedTaskAndJobWithoutThrowing() {
         this.executor.reject(true);
 
@@ -402,6 +430,7 @@ public class IngestTransactionIntegrationTest {
     }
 
     private void cleanup() {
+        this.taskService.clearOwners();
         JdbcTemplate template = this.jdbc == null ?
                                 new JdbcTemplate(this.dataSource) : this.jdbc;
         template.update("DELETE FROM load_task");
@@ -456,6 +485,18 @@ public class IngestTransactionIntegrationTest {
     public static class TestLoadTaskService extends LoadTaskService {
 
         private boolean failTaskInsert;
+
+        @SuppressWarnings("unchecked")
+        public void clearOwners() {
+            java.util.Map<Integer, LoadTask> owners = (java.util.Map<Integer, LoadTask>)
+                    org.springframework.test.util.ReflectionTestUtils.getField(this, "runningTaskContainer");
+            for (LoadTask task : owners.values()) {
+                if (task.getLoader() != null) {
+                    task.getLoader().shutdown();
+                }
+            }
+            owners.clear();
+        }
 
         public void failTaskInsert(boolean fail) {
             this.failTaskInsert = fail;

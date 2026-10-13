@@ -61,6 +61,56 @@ import org.apache.hugegraph.testutil.Assert;
 
 public class IngestControllerTest {
 
+    @Test
+    public void testDeleteTaskUsesScopedJobLifecycleAfterPermissionCheck()
+           throws Exception {
+        TestIngestController controller = new TestIngestController();
+        JobManagerService jobs = Mockito.mock(JobManagerService.class);
+        this.setField(controller, "jobManagerService", jobs);
+        Mockito.when(jobs.get(7)).thenReturn(JobManager.builder().id(7)
+                .graphSpace("space-a").graph("graph-a").build());
+        Mockito.doAnswer(invocation -> {
+            Assert.assertEquals("space-a", controller.writeGraphSpace);
+            return null;
+        }).when(jobs).deleteJob("space-a", "graph-a", 7);
+
+        Assert.assertEquals(Constant.STATUS_OK, controller.deleteTask(7).getStatus());
+
+        Mockito.verify(jobs).deleteJob("space-a", "graph-a", 7);
+        Mockito.verify(jobs, Mockito.never()).remove(Mockito.anyInt());
+    }
+
+    @Test
+    public void testDeleteTaskKeepsMissingAndDeniedResponses() throws Exception {
+        TestIngestController controller = new TestIngestController();
+        JobManagerService jobs = Mockito.mock(JobManagerService.class);
+        this.setField(controller, "jobManagerService", jobs);
+        Assert.assertEquals(Constant.STATUS_NOT_FOUND, controller.deleteTask(7).getStatus());
+        Assert.assertNull(controller.writeGraphSpace);
+
+        Mockito.when(jobs.get(7)).thenReturn(JobManager.builder().id(7)
+                .graphSpace("space-a").graph("graph-a").build());
+        controller.denyWrite = true;
+        Assert.assertThrows(org.apache.hugegraph.exception.ForbiddenException.class,
+                            () -> controller.deleteTask(7));
+        Mockito.verify(jobs, Mockito.never()).deleteJob(Mockito.anyString(), Mockito.anyString(), Mockito.anyInt());
+        Mockito.verify(jobs, Mockito.never()).remove(Mockito.anyInt());
+    }
+
+    @Test
+    public void testDeleteTaskPropagatesLifecycleRefusal() throws Exception {
+        TestIngestController controller = new TestIngestController();
+        JobManagerService jobs = Mockito.mock(JobManagerService.class);
+        this.setField(controller, "jobManagerService", jobs);
+        Mockito.when(jobs.get(7)).thenReturn(JobManager.builder().id(7)
+                .graphSpace("space-a").graph("graph-a").build());
+        RuntimeException refusal = new IllegalStateException("owner is not closed");
+        Mockito.doThrow(refusal).when(jobs).deleteJob("space-a", "graph-a", 7);
+
+        Assert.assertThrows(IllegalStateException.class, () -> controller.deleteTask(7));
+        Mockito.verify(jobs, Mockito.never()).remove(Mockito.anyInt());
+    }
+
     @After
     public void tearDown() {
         RequestContextHolder.resetRequestAttributes();
@@ -579,6 +629,7 @@ public class IngestControllerTest {
 
         private String checkedGraphSpace;
         private String writeGraphSpace;
+        private boolean denyWrite;
 
         @Override
         protected HugeClient authClient(String graphSpace, String graph) {
@@ -594,6 +645,9 @@ public class IngestControllerTest {
         @Override
         protected HugeClient requireGraphSpaceWrite(String graphSpace) {
             this.writeGraphSpace = graphSpace;
+            if (this.denyWrite) {
+                throw new org.apache.hugegraph.exception.ForbiddenException("denied graph write");
+            }
             return Mockito.mock(HugeClient.class);
         }
     }

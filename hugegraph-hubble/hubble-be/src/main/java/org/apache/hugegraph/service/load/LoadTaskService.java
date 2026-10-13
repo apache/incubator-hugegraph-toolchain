@@ -369,6 +369,7 @@ public class LoadTaskService {
             return;
         }
         log.error("Failed to dispatch load task {}, marking task and job as FAILED", task.getId(), cause);
+        task.setDispatchFailurePending(true);
         closeUnscheduled(task, cause);
         try {
             TransactionTemplate transaction = new TransactionTemplate(this.transactionManager);
@@ -377,33 +378,36 @@ public class LoadTaskService {
                 if (this.runningTaskContainer.get(task.getId()) != task) {
                     return null;
                 }
-                int updated = this.mapper.update(null, Wrappers.<LoadTask>update()
-                                                               .eq("id", task.getId())
-                                                               .eq("load_status", LoadStatus.RUNNING.getValue())
-                                                               .set("load_status", LoadStatus.FAILED.getValue()));
-                if (updated == 0) {
-                    return null;
-                }
-                if (updated != 1) {
-                    throw new InternalException("entity.update.failed", task);
-                }
-                if (task.getJobId() != null) {
-                    JobManager job = this.jobManagerMapper.selectById(task.getJobId());
-                    if (job != null) {
-                        job.setJobStatus(JobStatus.FAILED);
-                        job.setUpdateTime(HubbleUtil.nowDate());
-                        if (this.jobManagerMapper.updateById(job) != 1) {
-                            throw new InternalException("entity.update.failed", job);
-                        }
-                    }
-                }
+                this.persistDispatchFailure(task);
                 return null;
             });
+            this.removeClosedOwner(task);
         } catch (RuntimeException failure) {
             // The ingest transaction is committed. Do not report a retryable dispatch failure.
             log.error("Failed to persist dispatch failure for load task {}", task.getId(), failure);
-        } finally {
-            this.removeClosedOwner(task);
+        }
+    }
+
+    private void persistDispatchFailure(LoadTask task) {
+        int updated = this.mapper.update(null, Wrappers.<LoadTask>update()
+                                                       .eq("id", task.getId())
+                                                       .eq("load_status", LoadStatus.RUNNING.getValue())
+                                                       .set("load_status", LoadStatus.FAILED.getValue()));
+        if (updated == 0) {
+            return;
+        }
+        if (updated != 1) {
+            throw new InternalException("entity.update.failed", task);
+        }
+        if (task.getJobId() != null) {
+            JobManager job = this.jobManagerMapper.selectById(task.getJobId());
+            if (job != null) {
+                job.setJobStatus(JobStatus.FAILED);
+                job.setUpdateTime(HubbleUtil.nowDate());
+                if (this.jobManagerMapper.updateById(job) != 1) {
+                    throw new InternalException("entity.update.failed", job);
+                }
+            }
         }
     }
 
@@ -714,42 +718,61 @@ public class LoadTaskService {
     @Scheduled(fixedDelay = 1 * 1000)
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void updateLoadTaskProgress() {
+        TransactionTemplate transaction = new TransactionTemplate(this.transactionManager);
+        transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_NESTED);
         for (LoadTask task : this.runningTaskContainer.values()) {
             task.lock();
             try {
-                if (this.runningTaskContainer.get(task.getId()) != task) {
-                    continue;
-                }
-                HugeGraphLoader owner = task.getLoader();
-                if (task.isFinished() && (owner == null || owner.context().closed())) {
-                    if (task.isInitialStateReadFailed()) {
-                        // Unknown initial metadata must not overwrite a later terminal state
-                        // or recreate a missing row.
-                        int updated = this.mapper.update(null,
-                                Wrappers.<LoadTask>update().eq("id", task.getId())
-                                        .eq("load_status", LoadStatus.RUNNING.getValue())
-                                        .set("load_status", LoadStatus.FAILED.getValue()));
-                        if (updated != 0 && updated != 1) {
-                            throw new InternalException("entity.update.failed", task);
-                        }
-                    } else {
-                        // Retry a final write that failed in the runner or pause/stop.
-                        this.update(task);
-                    }
-                    this.removeOwnerAfterCommit(task);
-                } else if (task.getStatus().inRunning()) {
-                    LoadContext context = task.context();
-                    long readLines = context.newProgress().totalInputRead();
-                    if (readLines == 0L) {
-                        readLines = context.oldProgress().totalInputRead();
-                    }
-                    task.setFileReadLines(readLines);
-                    task.setCurrDuration(context.summary().totalTime());
-                    this.update(task);
-                }
+                transaction.execute(status -> {
+                    this.updateLoadTaskProgress(task);
+                    return null;
+                });
+            } catch (RuntimeException failure) {
+                log.warn("Failed to persist progress for load task {}; retaining its owner", task.getId(), failure);
             } finally {
                 task.unlock();
             }
+        }
+    }
+
+    private void updateLoadTaskProgress(LoadTask task) {
+        if (this.runningTaskContainer.get(task.getId()) != task) {
+            return;
+        }
+        HugeGraphLoader owner = task.getLoader();
+        if (task.isFinished() && (owner == null || owner.context().closed())) {
+            if (task.isDispatchFailurePending()) {
+                this.persistDispatchFailure(task);
+            } else if (task.isInitialStateReadFailed()) {
+                // Unknown initial metadata must not overwrite a later terminal state or recreate a missing row.
+                int updated = this.mapper.update(null,
+                        Wrappers.<LoadTask>update().eq("id", task.getId())
+                                .eq("load_status", LoadStatus.RUNNING.getValue())
+                                .set("load_status", LoadStatus.FAILED.getValue()));
+                if (updated != 0 && updated != 1) {
+                    throw new InternalException("entity.update.failed", task);
+                }
+            } else {
+                try {
+                    // Retry a final write that failed in the runner or pause/stop.
+                    this.update(task);
+                } catch (RuntimeException failure) {
+                    if (this.get(task.getId()) != null) {
+                        throw failure;
+                    }
+                    // A deleted row has no final state to persist; retire only this closed owner.
+                }
+            }
+            this.removeOwnerAfterCommit(task);
+        } else if (task.getStatus().inRunning()) {
+            LoadContext context = task.context();
+            long readLines = context.newProgress().totalInputRead();
+            if (readLines == 0L) {
+                readLines = context.oldProgress().totalInputRead();
+            }
+            task.setFileReadLines(readLines);
+            task.setCurrDuration(context.summary().totalTime());
+            this.update(task);
         }
     }
 

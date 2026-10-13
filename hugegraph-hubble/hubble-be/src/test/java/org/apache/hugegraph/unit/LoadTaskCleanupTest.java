@@ -730,6 +730,7 @@ public class LoadTaskCleanupTest {
         LoadTaskMapper mapper = Mockito.mock(LoadTaskMapper.class);
         Mockito.when(mapper.update(Mockito.any(LoadTask.class), Mockito.any())).thenReturn(1);
         RuntimeException callbackFailure = new RuntimeException("callback database unavailable");
+        enablePollTransactions(service);
         RuntimeException stopFailure = new RuntimeException("stop database unavailable");
         if (stop) {
             Mockito.when(mapper.updateById(task)).thenThrow(callbackFailure).thenThrow(stopFailure).thenReturn(1);
@@ -866,6 +867,7 @@ public class LoadTaskCleanupTest {
         LoadTask fresh = LoadTask.builder().id(9).options(new LoadOptions()).lastDuration(0L)
                                  .status(LoadStatus.FAILED).build();
         LoadTaskService service = new LoadTaskService();
+        enablePollTransactions(service);
         LoadTaskMapper mapper = Mockito.mock(LoadTaskMapper.class);
         Mockito.when(mapper.update(Mockito.any(LoadTask.class), Mockito.any())).thenReturn(1);
         Mockito.when(mapper.selectById(9)).thenReturn(fresh);
@@ -1505,14 +1507,20 @@ public class LoadTaskCleanupTest {
                         }
                     };
             manager.setRollbackOnCommitFailure(true);
+            set(service, "transactionManager", manager);
             org.springframework.transaction.support.TransactionTemplate transaction =
                     new org.springframework.transaction.support.TransactionTemplate(manager);
             try {
                 transaction.execute(status -> {
                     service.updateLoadTaskProgress();
+                    if (!commitFailure) {
+                        status.setRollbackOnly();
+                    }
                     return null;
                 });
-                Assert.fail("transaction must fail");
+                if (commitFailure) {
+                    Assert.fail("commit must fail");
+                }
             } catch (RuntimeException actual) {
                 Assert.assertSame(failure, actual);
             }
@@ -1922,6 +1930,77 @@ public class LoadTaskCleanupTest {
     }
 
     @Test
+    public void testGraphDeletionCommitsTaskCleanupOutsideCallerTransaction() throws Exception {
+        try (JobDeleteFixture fixture = new JobDeleteFixture()) {
+            fixture.enableGraphDeletion();
+            new org.springframework.transaction.support.TransactionTemplate(fixture.manager).execute(status -> {
+                fixture.service.removeByGraph("space", "graph");
+                Assert.assertTrue(TransactionSynchronizationManager.isActualTransactionActive());
+                try (java.sql.Connection other = fixture.dataSource.getConnection();
+                     java.sql.Statement statement = other.createStatement();
+                     java.sql.ResultSet rows = statement.executeQuery("SELECT COUNT(*) FROM delete_tasks")) {
+                    Assert.assertTrue(rows.next());
+                    Assert.assertEquals(0, rows.getInt(1));
+                } catch (java.sql.SQLException failure) {
+                    throw new RuntimeException(failure);
+                }
+                status.setRollbackOnly();
+                return null;
+            });
+            Assert.assertEquals(Integer.valueOf(0), fixture.jdbc.queryForObject(
+                    "SELECT COUNT(*) FROM delete_jobs", Integer.class));
+            Mockito.verify(fixture.jobs, Mockito.never()).deleteByMap(Mockito.anyMap());
+        }
+    }
+
+    @Test
+    public void testGraphDeletionKeepsNewJobsAndOtherGraphScopes() throws Exception {
+        try (JobDeleteFixture fixture = new JobDeleteFixture()) {
+            fixture.enableGraphDeletion();
+            fixture.jdbc.update("INSERT INTO delete_jobs VALUES (8, ?, 'other-space', 'graph'), " +
+                                "(9, ?, 'space', 'other-graph')", 0, 0);
+            Mockito.doAnswer(invocation -> {
+                java.util.List<org.apache.hugegraph.entity.load.JobManager> snapshot =
+                        Collections.singletonList(fixture.jobs.selectById(7));
+                fixture.jdbc.update("INSERT INTO delete_jobs VALUES (11, ?, 'space', 'graph')", 0);
+                fixture.jdbc.update("INSERT INTO delete_tasks VALUES (12, ?, 11)", LoadStatus.RUNNING.getValue());
+                return snapshot;
+            }).when(fixture.jobs).selectList(Mockito.any());
+
+            fixture.service.removeByGraph("space", "graph");
+
+            Assert.assertEquals(java.util.Arrays.asList(8, 9, 11), fixture.jdbc.queryForList(
+                    "SELECT id FROM delete_jobs ORDER BY id", Integer.class));
+            Assert.assertEquals(Collections.singletonList(12), fixture.jdbc.queryForList(
+                    "SELECT id FROM delete_tasks", Integer.class));
+            Assert.assertEquals(LoadStatus.RUNNING.getValue(), fixture.jdbc.queryForObject(
+                    "SELECT load_status FROM delete_tasks WHERE id=12", Byte.class));
+            Mockito.verify(fixture.jobs, Mockito.never()).deleteByMap(Mockito.anyMap());
+        }
+    }
+
+    @Test
+    public void testGraphDeletionFailureRetainsFailedJobAndCommittedStops() throws Exception {
+        try (JobDeleteFixture fixture = new JobDeleteFixture()) {
+            fixture.enableGraphDeletion();
+            fixture.jdbc.update("INSERT INTO delete_jobs VALUES (8, ?, 'space', 'graph')", 0);
+            fixture.jdbc.update("INSERT INTO delete_tasks VALUES (11, ?, 8)", LoadStatus.RUNNING.getValue());
+            RuntimeException refusal = new IllegalStateException("metadata deletion rejected");
+            Mockito.doThrow(refusal).when(fixture.jobs).deleteById(8);
+
+            org.apache.hugegraph.testutil.Assert.assertThrows(IllegalStateException.class,
+                    () -> fixture.service.removeByGraph("space", "graph"));
+
+            Assert.assertEquals(Collections.singletonList(8), fixture.jdbc.queryForList(
+                    "SELECT id FROM delete_jobs", Integer.class));
+            Assert.assertEquals(Collections.singletonList(11), fixture.jdbc.queryForList(
+                    "SELECT id FROM delete_tasks", Integer.class));
+            Assert.assertEquals(LoadStatus.STOPPED.getValue(), fixture.jdbc.queryForObject(
+                    "SELECT load_status FROM delete_tasks WHERE id=11", Byte.class));
+        }
+    }
+
+    @Test
     public void testJobDeletionCommitsStopsBeforeCallerTransactionCompletes() throws Exception {
         for (boolean scoped : new boolean[]{false, true}) {
             try (JobDeleteFixture fixture = new JobDeleteFixture()) {
@@ -2010,6 +2089,112 @@ public class LoadTaskCleanupTest {
     }
 
     @Test
+    public void testDispatchCommitFailureKeepsClosedOwnerForConditionalRecovery() throws Exception {
+        for (LoadStatus advanced : new LoadStatus[]{LoadStatus.RUNNING, LoadStatus.SUCCEED, null}) {
+            try (JobDeleteFixture fixture = new JobDeleteFixture()) {
+                LoadTask task = this.task(this.loader());
+                task.setId(9);
+                task.setJobId(7);
+                LoadTaskExecutor executor = Mockito.mock(LoadTaskExecutor.class);
+                Mockito.doThrow(new java.util.concurrent.RejectedExecutionException("queue full"))
+                       .when(executor).execute(Mockito.any(), Mockito.any());
+                org.springframework.jdbc.datasource.DataSourceTransactionManager rejecting =
+                        new org.springframework.jdbc.datasource.DataSourceTransactionManager(fixture.dataSource) {
+                            @Override
+                            protected void doCommit(
+                                    org.springframework.transaction.support.DefaultTransactionStatus status) {
+                                throw new org.springframework.transaction.TransactionSystemException("commit failed");
+                            }
+                        };
+                rejecting.setRollbackOnCommitFailure(true);
+                set(fixture.load, "taskExecutor", executor);
+                set(fixture.load, "transactionManager", rejecting);
+                set(fixture.load, "jobManagerMapper", fixture.jobs);
+
+                dispatch(fixture.load, task);
+
+                Assert.assertSame(task, fixture.owners.get(9));
+                Assert.assertTrue(task.getLoader().context().closed());
+                Assert.assertEquals(LoadStatus.RUNNING.getValue(), fixture.jdbc.queryForObject(
+                        "SELECT load_status FROM delete_tasks WHERE id=9", Byte.class));
+                if (advanced == null) {
+                    fixture.jdbc.update("DELETE FROM delete_tasks WHERE id=9");
+                } else {
+                    fixture.jdbc.update("UPDATE delete_tasks SET load_status=? WHERE id=9", advanced.getValue());
+                }
+                set(fixture.load, "transactionManager", fixture.manager);
+                new org.springframework.transaction.support.TransactionTemplate(fixture.manager).execute(status -> {
+                    fixture.load.updateLoadTaskProgress();
+                    Assert.assertSame("retire only after recovery commits", task, fixture.owners.get(9));
+                    return null;
+                });
+                Assert.assertFalse(fixture.owners.containsKey(9));
+                Assert.assertEquals(advanced == null ? Collections.emptyList() : Collections.singletonList(
+                        advanced == LoadStatus.RUNNING ? LoadStatus.FAILED.getValue() : advanced.getValue()),
+                        fixture.jdbc.queryForList("SELECT load_status FROM delete_tasks WHERE id=9", Byte.class));
+                Assert.assertEquals(advanced == LoadStatus.RUNNING ?
+                                    org.apache.hugegraph.entity.enums.JobStatus.FAILED.getValue() :
+                                    org.apache.hugegraph.entity.enums.JobStatus.LOADING.getValue(),
+                                    fixture.jdbc.queryForObject("SELECT status FROM delete_jobs WHERE id=7",
+                                                               Byte.class));
+            }
+        }
+    }
+
+    @Test
+    public void testPollMissingFinalRowDoesNotBlockOtherOwners() throws Exception {
+        this.assertPollFailureIsolation(true);
+    }
+
+    @Test
+    public void testPollRollsBackFailedOwnerWriteAndContinuesOtherOwners() throws Exception {
+        this.assertPollFailureIsolation(false);
+    }
+
+    private void assertPollFailureIsolation(boolean missing) throws Exception {
+        try (JobDeleteFixture fixture = new JobDeleteFixture()) {
+            LoadTask first = this.task(this.loader());
+            first.setId(9);
+            first.run();
+            LoadTask second = this.task(this.loader());
+            second.setId(10);
+            second.run();
+            Map<Integer, LoadTask> owners = new java.util.concurrent.ConcurrentSkipListMap<>();
+            owners.put(9, first);
+            owners.put(10, second);
+            set(fixture.load, "runningTaskContainer", owners);
+            set(fixture.load, "transactionManager", fixture.manager);
+            if (missing) {
+                fixture.jdbc.update("DELETE FROM delete_tasks WHERE id=9");
+            }
+            Mockito.when(fixture.tasks.updateById(Mockito.any(LoadTask.class))).thenAnswer(invocation -> {
+                LoadTask task = invocation.getArgument(0);
+                int count = fixture.jdbc.update("UPDATE delete_tasks SET load_status=? WHERE id=?",
+                                                task.getStatus().getValue(), task.getId());
+                if (!missing && task == first) {
+                    throw new IllegalStateException("failed after partial SQL");
+                }
+                return count;
+            });
+
+            new org.springframework.transaction.support.TransactionTemplate(fixture.manager).execute(status -> {
+                fixture.load.updateLoadTaskProgress();
+                Assert.assertSame(second, owners.get(10));
+                return null;
+            });
+
+            Assert.assertFalse(owners.containsKey(10));
+            Assert.assertEquals(missing ? null : first, owners.get(9));
+            Assert.assertEquals(LoadStatus.FAILED.getValue(), fixture.jdbc.queryForObject(
+                    "SELECT load_status FROM delete_tasks WHERE id=10", Byte.class));
+            if (!missing) {
+                Assert.assertEquals(LoadStatus.RUNNING.getValue(), fixture.jdbc.queryForObject(
+                        "SELECT load_status FROM delete_tasks WHERE id=9", Byte.class));
+            }
+        }
+    }
+
+    @Test
     public void testOwnDispatchRejectionConditionallyMarksTaskAndJobFailed() throws Exception {
         this.assertOwnDispatchFailureState(false);
     }
@@ -2054,16 +2239,21 @@ public class LoadTaskCleanupTest {
     }
 
     @Test
-    public void testInitialReadFailureReasonIsRuntimeOnly() throws Exception {
+    public void testRecoveryReasonsAreRuntimeOnly() throws Exception {
         LoadTask task = LoadTask.builder().status(LoadStatus.FAILED).lastDuration(0L).currDuration(0L)
                                 .fileReadLines(0L).fileTotalLines(0L).build();
         task.setInitialStateReadFailed(true);
+        task.setDispatchFailurePending(true);
         com.fasterxml.jackson.databind.ObjectMapper json = new com.fasterxml.jackson.databind.ObjectMapper();
         com.fasterxml.jackson.databind.JsonNode value = json.valueToTree(task);
         Assert.assertFalse(value.has("initialStateReadFailed"));
         Assert.assertFalse(value.has("initial_state_read_failed"));
-        LoadTask restored = json.readValue("{\"initialStateReadFailed\":true}", LoadTask.class);
+        Assert.assertFalse(value.has("dispatchFailurePending"));
+        Assert.assertFalse(value.has("dispatch_failure_pending"));
+        LoadTask restored = json.readValue(
+                "{\"initialStateReadFailed\":true,\"dispatchFailurePending\":true}", LoadTask.class);
         Assert.assertFalse(restored.isInitialStateReadFailed());
+        Assert.assertFalse(restored.isDispatchFailurePending());
         Field field = LoadTask.class.getDeclaredField("initialStateReadFailed");
         Assert.assertFalse(field.getAnnotation(com.baomidou.mybatisplus.annotation.TableField.class).exist());
         com.baomidou.mybatisplus.core.metadata.TableInfo table =
@@ -2073,6 +2263,8 @@ public class LoadTaskCleanupTest {
                         LoadTask.class);
         Assert.assertFalse(table.getFieldList().stream()
                                 .anyMatch(item -> item.getProperty().equals("initialStateReadFailed")));
+        Assert.assertFalse(table.getFieldList().stream()
+                                .anyMatch(item -> item.getProperty().equals("dispatchFailurePending")));
     }
 
     @Test
@@ -2187,7 +2379,15 @@ public class LoadTaskCleanupTest {
             }
             org.springframework.transaction.support.TransactionTemplate transaction =
                     new org.springframework.transaction.support.TransactionTemplate(tx);
-            if (sqlFailure || commitFailure) {
+            if (sqlFailure) {
+                transaction.execute(status -> {
+                    fixture.load.updateLoadTaskProgress();
+                    return null;
+                });
+                Assert.assertSame(task, fixture.owners.get(9));
+                Assert.assertEquals(LoadStatus.RUNNING.getValue(), fixture.jdbc.queryForObject(
+                        "SELECT load_status FROM delete_tasks WHERE id=9", Byte.class));
+            } else if (commitFailure) {
                 try {
                     transaction.execute(status -> {
                         fixture.load.updateLoadTaskProgress();
@@ -2488,6 +2688,7 @@ public class LoadTaskCleanupTest {
                    });
             set(this.load, "mapper", this.tasks);
             set(this.load, "runningTaskContainer", this.owners);
+            set(this.load, "transactionManager", this.manager);
             org.apache.hugegraph.service.load.JobManagerService target =
                     new org.apache.hugegraph.service.load.JobManagerService();
             set(target, "mapper", this.jobs);
@@ -2514,6 +2715,57 @@ public class LoadTaskCleanupTest {
             }
         }
 
+        private void enableGraphDeletion() {
+            this.jdbc.execute("ALTER TABLE delete_jobs ADD graphspace VARCHAR(48) DEFAULT 'space'");
+            this.jdbc.execute("ALTER TABLE delete_jobs ADD graph_name VARCHAR(48) DEFAULT 'graph'");
+            this.jdbc.execute("ALTER TABLE delete_tasks ADD job_id INT DEFAULT 7");
+            Mockito.when(this.jobs.selectList(Mockito.any())).thenAnswer(invocation -> {
+                Assert.assertFalse("the graph cleanup must suspend the caller transaction",
+                                   TransactionSynchronizationManager.isActualTransactionActive());
+                com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<?> query = invocation.getArgument(0);
+                query.getSqlSegment();
+                Assert.assertTrue(query.getSqlSegment().contains("graphspace"));
+                Assert.assertTrue(query.getSqlSegment().contains("graph"));
+                Assert.assertTrue(query.getParamNameValuePairs().containsValue("space"));
+                Assert.assertTrue(query.getParamNameValuePairs().containsValue("graph"));
+                java.util.List<org.apache.hugegraph.entity.load.JobManager> result = new java.util.ArrayList<>();
+                for (Integer id : this.jdbc.queryForList(
+                        "SELECT id FROM delete_jobs WHERE graphspace='space' AND graph_name='graph' ORDER BY id",
+                        Integer.class)) {
+                    result.add(this.jobs.selectById(id));
+                }
+                return result;
+            });
+            Mockito.when(this.jobs.selectById(Mockito.anyInt())).thenAnswer(invocation -> {
+                int id = invocation.getArgument(0);
+                return this.jdbc.queryForList("SELECT id FROM delete_jobs WHERE id=?", Integer.class, id).isEmpty() ?
+                       null : org.apache.hugegraph.entity.load.JobManager.builder().id(id)
+                               .graphSpace("space").graph("graph").build();
+            });
+            Mockito.when(this.jobs.selectOne(Mockito.any())).thenAnswer(invocation -> {
+                com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<?> query = invocation.getArgument(0);
+                query.getSqlSegment();
+                int id = (Integer) query.getParamNameValuePairs().values().stream()
+                        .filter(value -> value instanceof Integer).findFirst().get();
+                return this.jobs.selectById(id);
+            });
+            Mockito.when(this.jobs.deleteById(Mockito.anyInt())).thenAnswer(invocation ->
+                    this.jdbc.update("DELETE FROM delete_jobs WHERE id=?", (Integer) invocation.getArgument(0)));
+            Mockito.when(this.jobs.deleteByMap(Mockito.anyMap())).thenAnswer(invocation ->
+                    this.jdbc.update("DELETE FROM delete_jobs WHERE graphspace='space' AND graph_name='graph'"));
+            Mockito.doAnswer(invocation -> {
+                com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<?> query = invocation.getArgument(0);
+                query.getSqlSegment();
+                int jobId = (Integer) query.getParamNameValuePairs().values().stream().findFirst().get();
+                java.util.List<LoadTask> result = new java.util.ArrayList<>();
+                for (Integer id : this.jdbc.queryForList(
+                        "SELECT id FROM delete_tasks WHERE job_id=? ORDER BY id", Integer.class, jobId)) {
+                    result.add(this.tasks.selectById(id));
+                }
+                return result;
+            }).when(this.tasks).selectList(Mockito.any());
+        }
+
         @Override
         public void close() throws Exception {
             this.keeper.close();
@@ -2536,6 +2788,14 @@ public class LoadTaskCleanupTest {
         Field field = object.getClass().getDeclaredField(name);
         field.setAccessible(true);
         field.set(object, value);
+    }
+
+    private static void enablePollTransactions(LoadTaskService service) throws Exception {
+        org.springframework.jdbc.datasource.DriverManagerDataSource dataSource =
+                new org.springframework.jdbc.datasource.DriverManagerDataSource();
+        dataSource.setUrl("jdbc:h2:mem:poll-" + java.util.UUID.randomUUID());
+        set(service, "transactionManager",
+            new org.springframework.jdbc.datasource.DataSourceTransactionManager(dataSource));
     }
 
     private static void dispatch(LoadTaskService service, LoadTask task) throws Exception {
