@@ -51,8 +51,8 @@ Use matching Server, PD, and Store minor versions in a distributed cluster. **Se
 
 ## Import resource cleanup
 
-Import tasks close their Loader before publishing completion. The built-in example import also closes its Loader;
-tasks that cannot be saved or dispatched, or whose transaction rolls back, close their unused Loader.
+Import tasks close their Loader before publishing completion. The built-in example import also closes its Loader.
+For new tasks, a failed initial save or dispatch, or rollback of the outer creation transaction, closes the unused Loader.
 Shutdown failures are reported as task failures.
 
 ## Local development feedback loop
