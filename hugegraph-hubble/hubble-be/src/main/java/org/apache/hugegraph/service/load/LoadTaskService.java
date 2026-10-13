@@ -23,7 +23,6 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.Striped;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.io.FileUtils;
 import org.apache.hugegraph.common.Constant;
@@ -67,7 +66,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -86,7 +84,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.Lock;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -115,8 +112,6 @@ public class LoadTaskService {
 
 
     private Map<Integer, LoadTask> runningTaskContainer;
-    // Request admission precedes task locks. Workers and progress polling never take this lock.
-    private final Striped<Lock> taskControls = Striped.lazyWeakLock(1024);
 
     public LoadTaskService() {
         this.runningTaskContainer = new ConcurrentHashMap<>();
@@ -192,22 +187,11 @@ public class LoadTaskService {
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void update(LoadTask entity) {
-        this.update(entity, null);
-    }
-
-    private void update(LoadTask entity, LoadStatus previousStatus) {
         LoadOptions runtimeOptions = entity.getOptions();
         entity.setOptions(withoutCredentials(runtimeOptions));
         try {
-            if (previousStatus == null) {
-                if (this.mapper.updateById(entity) != 1) {
-                    throw new InternalException("entity.update.failed");
-                }
-            } else {
-                int updated = this.mapper.update(entity, Wrappers.<LoadTask>update()
-                                                           .eq("id", entity.getId())
-                                                           .eq("load_status", previousStatus.getValue()));
-                Ex.check(updated == 1, "The load task state has changed; retry the request");
+            if (this.mapper.updateById(entity) != 1) {
+                throw new InternalException("entity.update.failed");
             }
         } finally {
             entity.setOptions(runtimeOptions);
@@ -233,33 +217,9 @@ public class LoadTaskService {
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void remove(int id) {
-        Lock control = this.taskControls.get(id);
-        control.lock();
-        try {
-            LoadTask persisted = this.get(id);
-            Ex.check(persisted != null, "load.task.not-exist.id", id);
-            Ex.check(!persisted.getStatus().inRunning(), "load.task.delete.task-in-running", id);
-            LoadTask owner = this.runningTaskContainer.get(id);
-            if (owner != null) {
-                owner.lock();
-            }
-            try {
-                Ex.check(owner == null || (owner.isFinished() &&
-                         (owner.getLoader() == null || owner.context().closed())),
-                         "load.task.delete.task-in-running", id);
-                int deleted = this.mapper.delete(Wrappers.<LoadTask>query().eq("id", id)
-                                                       .eq("load_status", persisted.getStatus().getValue()));
-                Ex.check(deleted == 1, "The load task state has changed; retry the request");
-                if (owner != null) {
-                    this.removeOwnerAfterCommit(owner);
-                }
-            } finally {
-                if (owner != null) {
-                    owner.unlock();
-                }
-            }
-        } finally {
-            control.unlock();
+        this.runningTaskContainer.remove(id);
+        if (this.mapper.deleteById(id) != 1) {
+            throw new InternalException("entity.delete.failed", id);
         }
     }
 
@@ -278,7 +238,6 @@ public class LoadTaskService {
             return task;
         } catch (RuntimeException | Error failure) {
             closeUnscheduled(task, failure);
-            this.removeClosedOwner(task);
             throw failure;
         }
     }
@@ -305,378 +264,176 @@ public class LoadTaskService {
     }
 
     private void executeSafely(LoadTask task) {
-        Lock control = this.taskControls.get(task.getId());
-        control.lock();
         try {
-            this.executeControlled(task);
+            this.execute(task);
+        } catch (RuntimeException e) {
+            closeUnscheduled(task, e);
+            this.markDispatchFailed(task, e);
+        }
+    }
+
+    private static void closeUnscheduled(LoadTask task, Throwable failure) {
+        try {
+            if (task.getLoader() != null) {
+                task.getLoader().shutdown();
+            }
+        } catch (Throwable cleanup) {
+            if (failure != null && failure != cleanup) {
+                failure.addSuppressed(cleanup);
+            }
+            log.error("Failed to close unscheduled load task {}", task.getId(), cleanup);
         } finally {
-            control.unlock();
-        }
-    }
-
-    private void executeControlled(LoadTask task) {
-        LoadTask current = this.runningTaskContainer.get(task.getId());
-        if (current == task) {
-            // The same owner was already scheduled; do not run or close it twice.
-            return;
-        }
-        if (current != null) {
-            this.cancelInitial(task, LoadStatus.FAILED, null);
-            return;
-        }
-        LoadTask persisted;
-        try {
-            persisted = this.get(task.getId());
-        } catch (RuntimeException failure) {
-            log.error("Failed to read metadata for initial load task {}", task.getId(), failure);
-            task.setInitialStateReadFailed(true);
-            this.cancelInitial(task, LoadStatus.FAILED, failure);
-            // Keep even a closed owner until the existing poll can conditionally persist this failure.
-            this.runningTaskContainer.putIfAbsent(task.getId(), task);
-            return;
-        }
-        HugeGraphLoader loader = task.getLoader();
-        if (persisted == null || persisted.getStatus() != LoadStatus.RUNNING || current != null ||
-            task.isFinished() || loader == null || loader.context().closed() || loader.context().stopped()) {
-            LoadStatus status = persisted == null || persisted.getStatus() == LoadStatus.RUNNING ?
-                                LoadStatus.FAILED : persisted.getStatus();
-            this.cancelInitial(task, status, null);
-            return;
-        }
-        if (this.runningTaskContainer.putIfAbsent(task.getId(), task) != null) {
-            this.cancelInitial(task, LoadStatus.FAILED, null);
-            return;
-        }
-        try {
-            this.dispatch(task);
-        } catch (RuntimeException failure) {
-            this.markDispatchFailed(task, failure);
-        }
-    }
-
-    private void cancelInitial(LoadTask task, LoadStatus status, Throwable failure) {
-        // A delayed callback owns only its unused Loader, never a newer task's metadata.
-        closeUnscheduled(task, failure, status);
-        HugeGraphLoader owner = task.getLoader();
-        if (owner != null && !owner.context().closed()) {
-            task.setStatus(LoadStatus.FAILED);
-            this.runningTaskContainer.putIfAbsent(task.getId(), task);
+            task.setFinished(true);
         }
     }
 
     private void markDispatchFailed(LoadTask task, RuntimeException cause) {
-        if (this.runningTaskContainer.get(task.getId()) != task) {
-            this.cancelInitial(task, LoadStatus.FAILED, cause);
-            return;
-        }
-        log.error("Failed to dispatch load task {}, marking task and job as FAILED", task.getId(), cause);
-        task.setDispatchFailurePending(true);
-        closeUnscheduled(task, cause);
+        log.error("Failed to dispatch load task {}, marking task and job " +
+                  "as FAILED", task.getId(), cause);
+        task.setStatus(LoadStatus.FAILED);
+        this.runningTaskContainer.remove(task.getId());
+
         try {
-            TransactionTemplate transaction = new TransactionTemplate(this.transactionManager);
-            transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+            TransactionTemplate transaction =
+                    new TransactionTemplate(this.transactionManager);
+            transaction.setPropagationBehavior(
+                    TransactionDefinition.PROPAGATION_REQUIRES_NEW);
             transaction.execute(status -> {
-                if (this.runningTaskContainer.get(task.getId()) != task) {
+                int updated = this.mapper.update(
+                        null, Wrappers.<LoadTask>update()
+                                      .eq("id", task.getId())
+                                      .set("load_status",
+                                           LoadStatus.FAILED.getValue()));
+                if (updated != 1) {
+                    throw new InternalException("entity.update.failed", task);
+                }
+                if (task.getJobId() == null) {
                     return null;
                 }
-                this.persistDispatchFailure(task);
-                return null;
-            });
-            this.removeClosedOwner(task);
-        } catch (RuntimeException failure) {
-            // The ingest transaction is committed. Do not report a retryable dispatch failure.
-            log.error("Failed to persist dispatch failure for load task {}", task.getId(), failure);
-        }
-    }
-
-    private void persistDispatchFailure(LoadTask task) {
-        int updated = this.mapper.update(null, Wrappers.<LoadTask>update()
-                                                       .eq("id", task.getId())
-                                                       .eq("load_status", LoadStatus.RUNNING.getValue())
-                                                       .set("load_status", LoadStatus.FAILED.getValue()));
-        if (updated == 0) {
-            return;
-        }
-        if (updated != 1) {
-            throw new InternalException("entity.update.failed", task);
-        }
-        if (task.getJobId() != null) {
-            JobManager job = this.jobManagerMapper.selectById(task.getJobId());
-            if (job != null) {
+                JobManager job = this.jobManagerMapper.selectById(
+                        task.getJobId());
+                if (job == null) {
+                    return null;
+                }
                 job.setJobStatus(JobStatus.FAILED);
                 job.setUpdateTime(HubbleUtil.nowDate());
                 if (this.jobManagerMapper.updateById(job) != 1) {
                     throw new InternalException("entity.update.failed", job);
                 }
-            }
+                return null;
+            });
+        } catch (RuntimeException e) {
+            // The ingest transaction is already committed. Never turn a
+            // dispatch failure into a retryable request failure.
+            log.error("Failed to persist dispatch failure for load task {}",
+                      task.getId(), e);
         }
     }
 
-    private static void closeUnscheduled(LoadTask task, Throwable failure) {
-        closeUnscheduled(task, failure, LoadStatus.FAILED);
-    }
-
-    private static void closeUnscheduled(LoadTask task, Throwable failure, LoadStatus status) {
-        task.lock();
-        try {
-            task.setStatus(status);
-            if (task.getLoader() != null) {
-                try {
-                    task.getLoader().shutdown();
-                } catch (Throwable cleanup) {
-                    task.setStatus(LoadStatus.FAILED);
-                    if (failure != null && failure != cleanup) {
-                        failure.addSuppressed(cleanup);
-                    }
-                    log.error("Failed to close unscheduled load task {}", task.getId(), cleanup);
-                }
-            }
-        } finally {
-            // No runner was scheduled to publish completion for this owner.
-            task.setFinished(true);
-            task.unlock();
-        }
-    }
-
-    private void dispatch(LoadTask task) {
-        this.taskExecutor.execute(task, () -> {
-            this.update(task);
-            // Pause/stop retain ownership until their caller has also persisted
-            // its terminal request. A failed callback can be retried there.
-            if (task.getStatus() != LoadStatus.PAUSED && task.getStatus() != LoadStatus.STOPPED) {
-                this.removeClosedOwner(task);
-            }
-        });
-    }
-
-    private void persistStopped(LoadTask task, boolean loading, LoadStatus previousStatus) {
-        task.lock();
-        try {
-            // The runner already persisted its final state before finishing.
-            // Never let an old pause/stop callback overwrite a new owner.
-            if (!loading || this.runningTaskContainer.get(task.getId()) == task) {
-                this.update(task, loading ? null : previousStatus);
-                this.removeClosedOwner(task);
-            }
-        } finally {
-            task.unlock();
-        }
-    }
-
-    private void removeClosedOwner(LoadTask task) {
-        HugeGraphLoader owner = task.getLoader();
-        if (task.getId() != null && (owner == null || owner.context().closed())) {
-            this.removeOwner(task);
-        }
-    }
-
-    private void removeOwner(LoadTask expected) {
-        this.runningTaskContainer.computeIfPresent(expected.getId(),
-                (id, current) -> current == expected ? null : current);
-    }
-
-    private void removeOwnerAfterCommit(LoadTask task) {
-        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-            this.removeOwner(task);
-            return;
-        }
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCompletion(int status) {
-                if (status == TransactionSynchronization.STATUS_COMMITTED) {
-                    removeOwner(task);
-                }
-            }
-        });
-    }
-
-    private void releasePreviousOwner(int taskId) {
-        LoadTask previous = this.runningTaskContainer.get(taskId);
-        if (previous == null) {
-            return;
-        }
-        Ex.check(previous.isFinished(), "The previous load task is still finishing");
-        previous.lock();
-        try {
-            HugeGraphLoader owner = previous.getLoader();
-            Ex.check(owner == null || owner.context().closed(),
-                     "The previous Loader has not closed; finish its cleanup or restart Hubble before retrying");
-            this.removeOwner(previous);
-        } finally {
-            previous.unlock();
-        }
+    private void execute(LoadTask task) {
+        // Executed in other threads
+        this.taskExecutor.execute(task, () -> this.update(task));
+        // Save current load task
+        this.runningTaskContainer.put(task.getId(), task);
     }
 
     public LoadTask pause(int taskId) {
-        Lock control = this.taskControls.get(taskId);
-        control.lock();
-        try {
-            return this.pauseControlled(taskId);
-        } finally {
-            control.unlock();
-        }
-    }
-
-    private LoadTask pauseControlled(int taskId) {
         /*
          * The in-memory container is not repopulated on startup, so a task
          * that was RUNNING before a restart is only visible in the database
          */
         LoadTask task = this.runningTaskContainer.get(taskId);
         boolean loading = task != null;
-        LoadStatus readStatus = null;
         if (!loading) {
             task = this.get(taskId);
-            readStatus = task == null ? null : task.getStatus();
-            // A restart may have published an owner during the database read.
-            LoadTask owner = this.runningTaskContainer.get(taskId);
-            if (owner != null) {
-                task = owner;
-                loading = true;
-            }
         }
         Ex.check(task != null, "load.task.not-exist.id", taskId);
-        task.lock();
-        try {
-            Ex.check(!loading || readStatus == null || task.getStatus() == readStatus,
-                     "The load task state has changed; retry the request");
-            Ex.check(task.getStatus() == LoadStatus.RUNNING,
-                     "Can only pause the RUNNING task");
-            if (loading) {
-                LoadTask owner = this.runningTaskContainer.putIfAbsent(taskId, task);
-                Ex.check(owner == null || owner == task, "The load task has already restarted");
-            }
-            task.setStatus(LoadStatus.PAUSED);
-        } finally {
-            task.unlock();
-        }
+        Ex.check(task.getStatus() == LoadStatus.RUNNING,
+                 "Can only pause the RUNNING task");
+        // Mark status as paused, should set before context.stopLoading()
+        task.setStatus(LoadStatus.PAUSED);
         if (loading) {
             // Let HugeGraphLoader stop
             task.stop();
         }
 
-        this.persistStopped(task, loading, LoadStatus.RUNNING);
+        task.lock();
+        try {
+            this.update(task);
+            this.runningTaskContainer.remove(taskId);
+        } finally {
+            task.unlock();
+        }
         return task;
     }
 
     public LoadTask resume(int taskId, String token) {
-        return this.restart(taskId, token, true);
-    }
-
-    public LoadTask stop(int taskId) {
-        return this.stop(taskId, false);
-    }
-
-    LoadTask stopForDeletion(int taskId) {
-        return this.stop(taskId, true);
-    }
-
-    private LoadTask stop(int taskId, boolean deleting) {
-        Lock control = this.taskControls.get(taskId);
-        control.lock();
-        try {
-            return this.stopControlled(taskId, deleting);
-        } finally {
-            control.unlock();
-        }
-    }
-
-    private LoadTask stopControlled(int taskId, boolean deleting) {
-        LoadTask task = this.runningTaskContainer.get(taskId);
-        boolean loading = task != null;
-        LoadStatus readStatus = null;
-        if (!loading) {
-            task = this.get(taskId);
-            readStatus = task == null ? null : task.getStatus();
-            // A restart may have published an owner during the database read.
-            LoadTask owner = this.runningTaskContainer.get(taskId);
-            if (owner != null) {
-                task = owner;
-                loading = true;
-            }
-        }
-        Ex.check(task != null, "load.task.not-exist.id", taskId);
-        LoadStatus status;
+        LoadTask task = this.get(taskId);
+        Ex.check(task.getStatus() == LoadStatus.PAUSED ||
+                 task.getStatus() == LoadStatus.FAILED,
+                 "Can only resume the PAUSED or FAILED task");
         task.lock();
         try {
-            status = task.getStatus();
-            Ex.check(!loading || readStatus == null || status == readStatus,
-                     "The load task state has changed; retry the request");
-            if (deleting && (status == LoadStatus.SUCCEED || status == LoadStatus.FAILED ||
-                             status == LoadStatus.STOPPED)) {
-                // Completion may race the deletion snapshot. Keep its terminal state and drain any owner below.
-                if (!loading) {
-                    return task;
-                }
-            } else {
-                Ex.check(status == LoadStatus.RUNNING || status == LoadStatus.PAUSED,
-                         "Can only stop the RUNNING or PAUSED task");
-                if (loading) {
-                    LoadTask owner = this.runningTaskContainer.putIfAbsent(taskId, task);
-                    Ex.check(owner == null || owner == task, "The load task has already restarted");
-                }
-                task.setStatus(LoadStatus.STOPPED);
-            }
+            // Set work mode in incrental mode, load from last breakpoint
+            task.getOptions().incrementalMode = true;
+            task.reconnect(token);
+            task.setStatus(LoadStatus.RUNNING);
+            this.update(task);
+            this.taskExecutor.execute(task, () -> this.update(task));
+            this.runningTaskContainer.put(taskId, task);
         } finally {
             task.unlock();
         }
+        return task;
+    }
+
+    public LoadTask stop(int taskId) {
+        LoadTask task = this.runningTaskContainer.get(taskId);
+        boolean loading = task != null;
+        if (!loading) {
+            task = this.get(taskId);
+        }
+        Ex.check(task != null, "load.task.not-exist.id", taskId);
+        LoadStatus status = task.getStatus();
+        Ex.check(status == LoadStatus.RUNNING || status == LoadStatus.PAUSED,
+                 "Can only stop the RUNNING or PAUSED task");
+        // Mark status as stopped
+        task.setStatus(LoadStatus.STOPPED);
         /*
          * Only a task taken from the in-memory container owns a loader, one
          * restored from the database has nothing running to interrupt, so
          * just persist the terminal status for it
          */
-        if (loading) {
+        if (loading && status == LoadStatus.RUNNING) {
             task.stop();
         }
 
-        this.persistStopped(task, loading, status);
+        task.lock();
+        try {
+            this.update(task);
+            this.runningTaskContainer.remove(taskId);
+        } finally {
+            task.unlock();
+        }
         return task;
     }
 
     public LoadTask retry(int taskId, String token) {
-        return this.restart(taskId, token, false);
-    }
-
-    private LoadTask restart(int taskId, String token, boolean incremental) {
-        Lock control = this.taskControls.get(taskId);
-        control.lock();
-        try {
-            return this.restartControlled(taskId, token, incremental);
-        } finally {
-            control.unlock();
-        }
-    }
-
-    private LoadTask restartControlled(int taskId, String token, boolean incremental) {
         LoadTask task = this.get(taskId);
-        Ex.check(task != null, "load.task.not-exist.id", taskId);
-        LoadStatus previousStatus = task.getStatus();
-        Ex.check(previousStatus == LoadStatus.FAILED ||
-                 previousStatus == (incremental ? LoadStatus.PAUSED : LoadStatus.STOPPED),
-                 incremental ? "Can only resume the PAUSED or FAILED task" :
-                               "Can only retry the FAILED or STOPPED task");
-        this.releasePreviousOwner(taskId);
+        Ex.check(task.getStatus() == LoadStatus.FAILED ||
+                 task.getStatus() == LoadStatus.STOPPED,
+                 "Can only retry the FAILED or STOPPED task");
         task.lock();
         try {
-            Ex.check(this.runningTaskContainer.putIfAbsent(taskId, task) == null,
-                     "The previous load task is still finishing");
-            task.getOptions().incrementalMode = incremental;
+            // Set work mode in normal mode, load from begin
+            task.getOptions().incrementalMode = false;
             task.reconnect(token);
             task.setStatus(LoadStatus.RUNNING);
-            if (!incremental) {
-                task.setLastDuration(0L);
-                task.setCurrDuration(0L);
-            }
-            this.update(task, previousStatus);
-            try {
-                this.dispatch(task);
-            } catch (RuntimeException failure) {
-                this.markDispatchFailed(task, failure);
-            }
-        } catch (RuntimeException | Error failure) {
-            closeUnscheduled(task, failure);
-            this.removeClosedOwner(task);
-            throw failure;
+            task.setLastDuration(0L);
+            task.setCurrDuration(0L);
+            this.update(task);
+            this.taskExecutor.execute(task, () -> this.update(task));
+            this.runningTaskContainer.put(taskId, task);
         } finally {
             task.unlock();
         }
@@ -735,64 +492,25 @@ public class LoadTaskService {
     @Scheduled(fixedDelay = 1 * 1000)
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void updateLoadTaskProgress() {
-        TransactionTemplate transaction = new TransactionTemplate(this.transactionManager);
-        transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_NESTED);
         for (LoadTask task : this.runningTaskContainer.values()) {
+            if (!task.getStatus().inRunning()) {
+                continue;
+            }
             task.lock();
             try {
-                transaction.execute(status -> {
-                    this.updateLoadTaskProgress(task);
-                    return null;
-                });
-            } catch (TransactionException failure) {
-                // A failed savepoint/transaction operation cannot safely commit earlier owner writes.
-                throw failure;
-            } catch (RuntimeException failure) {
-                log.warn("Failed to persist progress for load task {}; retaining its owner", task.getId(), failure);
+                if (task.getStatus().inRunning()) {
+                    LoadContext context = task.context();
+                    long readLines = context.newProgress().totalInputRead();
+                    if (readLines == 0L) {
+                        readLines = context.oldProgress().totalInputRead();
+                    }
+                    task.setFileReadLines(readLines);
+                    task.setCurrDuration(context.summary().totalTime());
+                    this.update(task);
+                }
             } finally {
                 task.unlock();
             }
-        }
-    }
-
-    private void updateLoadTaskProgress(LoadTask task) {
-        if (this.runningTaskContainer.get(task.getId()) != task) {
-            return;
-        }
-        HugeGraphLoader owner = task.getLoader();
-        if (task.isFinished() && (owner == null || owner.context().closed())) {
-            if (task.isDispatchFailurePending()) {
-                this.persistDispatchFailure(task);
-            } else if (task.isInitialStateReadFailed()) {
-                // Unknown initial metadata must not overwrite a later terminal state or recreate a missing row.
-                int updated = this.mapper.update(null,
-                        Wrappers.<LoadTask>update().eq("id", task.getId())
-                                .eq("load_status", LoadStatus.RUNNING.getValue())
-                                .set("load_status", LoadStatus.FAILED.getValue()));
-                if (updated != 0 && updated != 1) {
-                    throw new InternalException("entity.update.failed", task);
-                }
-            } else {
-                try {
-                    // Retry a final write that failed in the runner or pause/stop.
-                    this.update(task);
-                } catch (RuntimeException failure) {
-                    if (this.get(task.getId()) != null) {
-                        throw failure;
-                    }
-                    // A deleted row has no final state to persist; retire only this closed owner.
-                }
-            }
-            this.removeOwnerAfterCommit(task);
-        } else if (task.getStatus().inRunning()) {
-            LoadContext context = task.context();
-            long readLines = context.newProgress().totalInputRead();
-            if (readLines == 0L) {
-                readLines = context.oldProgress().totalInputRead();
-            }
-            task.setFileReadLines(readLines);
-            task.setCurrDuration(context.summary().totalTime());
-            this.update(task);
         }
     }
 

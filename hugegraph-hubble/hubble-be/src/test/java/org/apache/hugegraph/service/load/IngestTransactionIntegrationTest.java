@@ -20,7 +20,6 @@ package org.apache.hugegraph.service.load;
 
 import java.util.Collections;
 import java.util.Date;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -35,6 +34,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.mockito.MockedConstruction;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
@@ -46,6 +46,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import org.apache.hugegraph.config.HugeConfig;
 import org.apache.hugegraph.driver.HugeClient;
@@ -59,11 +60,9 @@ import org.apache.hugegraph.entity.load.JobManager;
 import org.apache.hugegraph.entity.load.ListFormat;
 import org.apache.hugegraph.entity.load.LoadParameter;
 import org.apache.hugegraph.entity.load.LoadTask;
-import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.handler.LoadTaskExecutor;
-import org.apache.hugegraph.loader.HugeGraphLoader;
-import org.apache.hugegraph.loader.executor.LoadContext;
 import org.apache.hugegraph.loader.executor.LoadOptions;
+import org.apache.hugegraph.loader.HugeGraphLoader;
 import org.apache.hugegraph.options.HubbleOptions;
 import org.apache.hugegraph.service.schema.EdgeLabelService;
 import org.apache.hugegraph.service.schema.VertexLabelService;
@@ -108,6 +107,8 @@ public class IngestTransactionIntegrationTest {
     private DataSource dataSource;
     @Autowired
     private HugeConfig config;
+    @Autowired
+    private PlatformTransactionManager transactionManager;
     @MockBean
     private VertexLabelService vertexLabelService;
     @MockBean
@@ -121,7 +122,6 @@ public class IngestTransactionIntegrationTest {
         this.cleanup();
         this.executor.reset();
         this.taskService.failTaskInsert(false);
-        this.taskService.afterTaskSnapshot(null);
         Mockito.when(this.config.get(HubbleOptions.UPLOAD_FILE_LOCATION))
                .thenReturn(UPLOAD_ROOT);
     }
@@ -298,34 +298,6 @@ public class IngestTransactionIntegrationTest {
     }
 
     @Test
-    public void testRejectedDispatchRetriesTaskAndJobAfterDatabaseRecovery() throws Exception {
-        this.executor.reject(true);
-        this.jdbc.execute("ALTER TABLE job_manager ADD CONSTRAINT reject_failed_job CHECK (job_status <> " +
-                          JobStatus.FAILED.getValue() + ")");
-        LoadTask task;
-        try {
-            task = this.jobService.createIngestTask(
-                    this.job(), this.mapping(), this.connection(), this.client());
-        } finally {
-            this.jdbc.execute("ALTER TABLE job_manager DROP CONSTRAINT reject_failed_job");
-        }
-        Assert.assertEquals(LoadStatus.RUNNING, this.taskService.get(task.getId()).getStatus());
-        Assert.assertEquals(JobStatus.LOADING, this.jobService.get(task.getJobId()).getJobStatus());
-        java.lang.reflect.Field ownersField = LoadTaskService.class.getDeclaredField("runningTaskContainer");
-        ownersField.setAccessible(true);
-        java.util.Map<?, ?> owners = (java.util.Map<?, ?>) ownersField.get(
-                org.springframework.test.util.AopTestUtils.getUltimateTargetObject(this.taskService));
-        Assert.assertSame(task, owners.get(task.getId()));
-        Assert.assertTrue(task.getLoader().context().closed());
-
-        this.taskService.updateLoadTaskProgress();
-
-        Assert.assertEquals(LoadStatus.FAILED, this.taskService.get(task.getId()).getStatus());
-        Assert.assertEquals(JobStatus.FAILED, this.jobService.get(task.getJobId()).getJobStatus());
-        Assert.assertFalse(owners.containsKey(task.getId()));
-    }
-
-    @Test
     public void testRejectedDispatchCommitsFailedTaskAndJobWithoutThrowing() {
         this.executor.reject(true);
 
@@ -341,100 +313,46 @@ public class IngestTransactionIntegrationTest {
     }
 
     @Test
-    public void testDeleteJobAcceptsSuccessfulTaskAfterSnapshot() {
-        this.deleteJobAfterTaskCompletion(LoadStatus.SUCCEED);
-    }
-
-    @Test
-    public void testDeleteJobAcceptsFailedTaskAfterSnapshot() {
-        this.deleteJobAfterTaskCompletion(LoadStatus.FAILED);
-    }
-
-    @Test
-    public void testStopStillRejectsCompletedTasks() {
-        LoadTask task = this.jobService.createIngestTask(
-                this.job(), this.mapping(), this.connection(), this.client());
-        this.taskService.clearOwners();
-        task.setFinished(true);
-        for (LoadStatus status : new LoadStatus[]{LoadStatus.SUCCEED, LoadStatus.FAILED, LoadStatus.STOPPED}) {
-            task.setStatus(status);
-            this.taskService.update(task);
-            Assert.assertThrows(ExternalException.class,
-                                () -> this.taskService.stop(task.getId()));
-            Assert.assertEquals(status, this.taskService.get(task.getId()).getStatus());
+    public void testUnscheduledLoadersCloseAfterSaveFailureRollbackAndRejection() {
+        for (int outcome = 0; outcome < 3; outcome++) {
+            this.cleanup();
+            this.executor.reset();
+            this.executor.reject(outcome == 2);
+            JobManager job = this.job();
+            this.jobService.save(job);
+            FileMapping mapping = this.mapping();
+            mapping.setJobId(job.getId());
+            mapping.setPath(UPLOAD_ROOT + "/cleanup/people.csv");
+            this.mappingService.save(mapping);
+            TransactionTemplate transaction = new TransactionTemplate(this.transactionManager);
+            if (outcome == 0) {
+                this.jdbc.execute("ALTER TABLE load_task ADD CONSTRAINT reject_task CHECK (id < 0)");
+            }
+            final int result = outcome;
+            try (MockedConstruction<HugeGraphLoader> construction = Mockito.mockConstruction(HugeGraphLoader.class)) {
+                if (outcome == 0) {
+                    Assert.assertThrows(RuntimeException.class, () -> transaction.execute(status ->
+                            this.taskService.startLoader(this.connection(), mapping, this.client())));
+                } else {
+                    transaction.execute(status -> {
+                        this.taskService.startLoader(this.connection(), mapping, this.client());
+                        if (result == 1) {
+                            status.setRollbackOnly();
+                        }
+                        return null;
+                    });
+                }
+                Assert.assertEquals(1, construction.constructed().size());
+                Mockito.verify(construction.constructed().get(0)).shutdown();
+                Assert.assertTrue(this.taskService.createdTask().isFinished());
+                Assert.assertEquals(outcome == 2 ? 1 : 0, this.count("load_task"));
+                Assert.assertEquals(outcome == 2 ? 1 : 0, this.executor.executions());
+            } finally {
+                if (outcome == 0) {
+                    this.jdbc.execute("ALTER TABLE load_task DROP CONSTRAINT reject_task");
+                }
+            }
         }
-    }
-
-    @Test
-    public void testDeleteJobRejectsCompletedOwnerThatHasNotClosed() {
-        LoadTask task = this.jobService.createIngestTask(
-                this.job(), this.mapping(), this.connection(), this.client());
-        this.taskService.afterTaskSnapshot(() -> {
-            task.setStatus(LoadStatus.SUCCEED);
-            task.setFinished(true);
-            this.taskService.update(task);
-        });
-
-        Assert.assertThrows(ExternalException.class,
-                            () -> this.jobService.deleteJob("DEFAULT", "hugegraph", task.getJobId()));
-
-        this.assertTableCounts(1, 1, 1);
-        Assert.assertEquals(LoadStatus.SUCCEED, this.taskService.get(task.getId()).getStatus());
-        Assert.assertFalse(task.context().closed());
-    }
-
-    @Test
-    public void testDeleteJobWaitsForCompletedOwnerToFinish() throws Exception {
-        FileMapping mapping = this.mapping();
-        mapping.setPath(UPLOAD_ROOT + "/snapshot-completion/" + mapping.getName());
-        LoadTask task = this.jobService.createIngestTask(
-                this.job(), mapping, this.connection(), this.client());
-        CountDownLatch stopping = new CountDownLatch(1);
-        LoadContext context = task.context();
-        Mockito.doAnswer(invocation -> {
-            stopping.countDown();
-            return null;
-        }).when(context).stopLoading();
-        this.taskService.afterTaskSnapshot(() -> {
-            task.setStatus(LoadStatus.SUCCEED);
-            this.taskService.update(task);
-            task.getLoader().shutdown();
-        });
-        ExecutorService pool = Executors.newSingleThreadExecutor();
-        try {
-            Future<?> deleting = pool.submit(() ->
-                    this.jobService.deleteJob("DEFAULT", "hugegraph", task.getJobId()));
-            Assert.assertTrue(stopping.await(5L, TimeUnit.SECONDS));
-            Assert.assertFalse(deleting.isDone());
-            this.assertTableCounts(1, 1, 1);
-            Assert.assertEquals(LoadStatus.SUCCEED, this.taskService.get(task.getId()).getStatus());
-
-            task.setFinished(true);
-            deleting.get(5L, TimeUnit.SECONDS);
-
-            this.assertTableCounts(0, 0, 0);
-        } finally {
-            task.setFinished(true);
-            pool.shutdown();
-            Assert.assertTrue(pool.awaitTermination(5L, TimeUnit.SECONDS));
-        }
-    }
-
-    private void deleteJobAfterTaskCompletion(LoadStatus status) {
-        FileMapping mapping = this.mapping();
-        mapping.setPath(UPLOAD_ROOT + "/snapshot-completion/" + mapping.getName());
-        LoadTask task = this.jobService.createIngestTask(
-                this.job(), mapping, this.connection(), this.client());
-        this.taskService.afterTaskSnapshot(() -> {
-            task.setStatus(status);
-            task.setFinished(true);
-            this.taskService.update(task);
-            this.taskService.clearOwners();
-        });
-
-        this.jobService.deleteJob("DEFAULT", "hugegraph", task.getJobId());
-
-        this.assertTableCounts(0, 0, 0);
     }
 
     private JobManager job() {
@@ -530,7 +448,6 @@ public class IngestTransactionIntegrationTest {
     }
 
     private void cleanup() {
-        this.taskService.clearOwners();
         JdbcTemplate template = this.jdbc == null ?
                                 new JdbcTemplate(this.dataSource) : this.jdbc;
         template.update("DELETE FROM load_task");
@@ -585,37 +502,24 @@ public class IngestTransactionIntegrationTest {
     public static class TestLoadTaskService extends LoadTaskService {
 
         private boolean failTaskInsert;
-        private Runnable afterTaskSnapshot;
-
-        public void afterTaskSnapshot(Runnable action) {
-            this.afterTaskSnapshot = action;
-        }
-
-        @Override
-        public List<LoadTask> taskListByJob(int jobId) {
-            List<LoadTask> tasks = super.taskListByJob(jobId);
-            Runnable action = this.afterTaskSnapshot;
-            this.afterTaskSnapshot = null;
-            if (action != null) {
-                action.run();
-            }
-            return tasks;
-        }
-
-        @SuppressWarnings("unchecked")
-        public void clearOwners() {
-            java.util.Map<Integer, LoadTask> owners = (java.util.Map<Integer, LoadTask>)
-                    org.springframework.test.util.ReflectionTestUtils.getField(this, "runningTaskContainer");
-            for (LoadTask task : owners.values()) {
-                if (task.getLoader() != null) {
-                    task.getLoader().shutdown();
-                }
-            }
-            owners.clear();
-        }
+        private LoadTask createdTask;
 
         public void failTaskInsert(boolean fail) {
             this.failTaskInsert = fail;
+        }
+
+        public LoadTask startLoader(GraphConnection connection, FileMapping mapping, HugeClient client) {
+            return super.start(connection, mapping, client);
+        }
+
+        @Override
+        public void save(LoadTask task) {
+            this.createdTask = task;
+            super.save(task);
+        }
+
+        public LoadTask createdTask() {
+            return this.createdTask;
         }
 
         @Override
@@ -624,17 +528,7 @@ public class IngestTransactionIntegrationTest {
             String graph = this.failTaskInsert ? null : connection.getGraph();
             LoadOptions options = new LoadOptions();
             options.token = connection.getToken();
-            HugeGraphLoader loader = Mockito.mock(HugeGraphLoader.class);
-            LoadContext context = Mockito.mock(LoadContext.class);
-            java.util.concurrent.atomic.AtomicBoolean closed = new java.util.concurrent.atomic.AtomicBoolean();
-            Mockito.when(loader.context()).thenReturn(context);
-            Mockito.when(context.closed()).thenAnswer(invocation -> closed.get());
-            Mockito.doAnswer(invocation -> {
-                closed.set(true);
-                return null;
-            }).when(loader).shutdown();
             LoadTask task = LoadTask.builder()
-                                    .loader(loader)
                                     .graphSpace(connection.getGraphSpace())
                                     .graph(graph)
                                     .jobId(mapping.getJobId())

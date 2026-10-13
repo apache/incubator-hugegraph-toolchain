@@ -7,6 +7,10 @@
 
 hugegraph-loader is a customizable command line utility for loading small to medium size graph datasets into the HugeGraph database from multiple data sources with various input formats.
 
+Embedded callers must call `shutdown()` after `load()`, including failed imports. Successful shutdown waits for this Loader's
+workers, closes its clients and unregisters its JVM shutdown hook. Closing a Loader whose `load()` was never called
+leaves the existing import checkpoint unchanged.
+
 ## 1. Features
 
 - Multiple data sources, such as local file(path), HDFS file(path), MySQL
@@ -171,22 +175,3 @@ Server 1.7 compatibility CI uses the pinned official ASF 1.7.0 binary archive. T
 hugegraph-loader is licensed under Apache 2.0 License.
 
 See the [Flink CDC Java 17 validation](docs/flink-cdc-java17.md) for its current limits and launcher syntax.
-
-### Embedded Loader shutdown
-
-Call `HugeGraphLoader.shutdown()` when an embedded load finishes or its dispatch
-fails. Shutdown waits for that Loader's workers, closes its context, and removes
-its own JVM shutdown hook once the context is closed. If workers cannot terminate,
-the context and hook remain available for a later shutdown attempt. A hook already
-running during JVM shutdown still closes its Loader. This does not shut down the
-process-wide executor manager or coordinate graph mode across separate imports.
-
-Closing a Loader before `load()` starts does not write a new checkpoint. An actual
-load attempt and direct `LoadContext.close()` keep their existing progress-save
-behavior. Incremental loading keeps independent copies of the previous loaded
-and loading offsets, including inputs paused before their first read, and adds
-newly loaded counts to the completed counts. It also preserves mapped inputs
-outside the selected file range; removed mappings do not retain source markers
-in the next checkpoint. Non-incremental replay starts fresh.
-An ongoing insert can still block the existing wait before shutdown
-reaches cancellation; this change adds no load deadline.

@@ -32,9 +32,12 @@ public class LoadTaskExecutor {
     public void execute(LoadTask task, Runnable callback) {
         log.info("Executing task: {}", task.getId());
         try {
-            task.run(callback);
+            task.run();
         } catch (Throwable t) {
             log.warn("Executing task: {} error", task.getId(), t);
+        } finally {
+            log.info("Executed task: {}, update status to db", task.getId());
+            callback.run();
         }
     }
 }

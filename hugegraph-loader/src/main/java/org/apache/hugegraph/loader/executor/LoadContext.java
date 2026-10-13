@@ -96,10 +96,6 @@ public final class LoadContext implements Cloneable {
         this.summary = new LoadSummary();
         this.oldProgress = LoadProgress.parse(options);
         this.newProgress = new LoadProgress();
-        if (options.incrementalMode) {
-            this.newProgress.plusVertexLoaded(this.oldProgress.vertexLoaded());
-            this.newProgress.plusEdgeLoaded(this.oldProgress.edgeLoaded());
-        }
         this.loggers = new ConcurrentHashMap<>();
         this.client = schemaCache == null ? HugeClientHolder.create(options) : null;
         if (this.client != null && this.options.direct) {

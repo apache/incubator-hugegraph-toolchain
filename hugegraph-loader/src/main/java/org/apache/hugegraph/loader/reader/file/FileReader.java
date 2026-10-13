@@ -238,14 +238,14 @@ public abstract class FileReader extends AbstractReader {
         InputItemProgress loaded = this.oldProgress.matchLoadedItem(input);
         // The file has been loaded before, and it is not changed
         if (loaded != null) {
-            this.newProgress.addLoadedItem(readable.name(), loaded.copy());
+            this.newProgress.addLoadedItem(readable.name(), loaded);
             return LoadStatus.LOADED;
         }
 
         InputItemProgress loading = this.oldProgress.matchLoadingItem(input);
         if (loading != null) {
             // The file has been loaded half before and it is not changed
-            this.newProgress.addLoadingItem(readable.name(), loading.copy());
+            this.newProgress.addLoadingItem(readable.name(), loading);
             return LoadStatus.LOADED_HALF;
         } else {
             this.newProgress.addLoadingItem(readable.name(), input);

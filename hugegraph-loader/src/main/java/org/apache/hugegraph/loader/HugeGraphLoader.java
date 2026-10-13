@@ -607,15 +607,6 @@ public final class HugeGraphLoader {
 
     private List<InputTaskItem> prepareTaskItems(List<InputStruct> structs,
                                                  boolean scatter) {
-        if (this.context.options().incrementalMode) {
-            // Range filtering must not discard progress of other mapped inputs.
-            for (InputStruct struct : structs) {
-                if (this.context.newProgress().get(struct.id()) == null &&
-                    this.context.oldProgress().get(struct.id()) != null) {
-                    this.context.newProgress().addStruct(struct, this.context.oldProgress().get(struct.id()));
-                }
-            }
-        }
         ArrayList<InputTaskItem> tasks = new ArrayList<>();
         ArrayList<InputReader> readers = new ArrayList<>();
         int curFile = 0;
@@ -912,58 +903,51 @@ public final class HugeGraphLoader {
      * TODO: How to distinguish load task finished normally or abnormally
      */
     private synchronized void stopThenShutdown() {
-        Throwable failure = null;
         try {
-            if (this.context.closed()) {
-                return;
-            }
-            LOG.info("Stop loading then shutdown HugeGraphLoader");
-            boolean tasksStopped = this.manager == null;
-            boolean interrupted = Thread.currentThread().isInterrupted();
-            try {
-                this.context.stopLoading();
-                if (this.manager != null) {
-                    // Wait all insert tasks stopped before exit
-                    try {
-                        this.manager.waitFinished();
-                    } finally {
-                        this.manager.shutdown();
-                        tasksStopped = true;
-                    }
-                }
-            } finally {
-                interrupted |= Thread.currentThread().isInterrupted();
-                try {
-                    // Keep dependencies alive if cancellation could not terminate the workers.
-                    if (tasksStopped) {
-                        try {
-                            this.context.unsetLoadingMode();
-                        } finally {
-                            this.context.close(this.loadStarted);
-                        }
-                    }
-                } finally {
-                    if (interrupted) {
-                        Thread.currentThread().interrupt();
-                    }
-                }
-            }
-        } catch (RuntimeException | Error e) {
-            failure = e;
-            throw e;
+            this.drainThenClose();
         } finally {
             if (this.context.closed() && this.shutdownHook != null) {
                 try {
                     Runtime.getRuntime().removeShutdownHook(this.shutdownHook);
                 } catch (IllegalStateException ignored) {
-                    // JVM shutdown already started; this hook can still finish closing.
-                } catch (RuntimeException | Error e) {
-                    if (failure == null) {
-                        throw e;
+                    // JVM shutdown already started; this hook can finish closing.
+                }
+            }
+        }
+    }
+
+    private void drainThenClose() {
+        if (this.context.closed()) {
+            return;
+        }
+        LOG.info("Stop loading then shutdown HugeGraphLoader");
+        boolean tasksStopped = this.manager == null;
+        boolean interrupted = Thread.currentThread().isInterrupted();
+        try {
+            this.context.stopLoading();
+            if (this.manager != null) {
+                // Wait all insert tasks stopped before exit
+                try {
+                    this.manager.waitFinished();
+                } finally {
+                    this.manager.shutdown();
+                    tasksStopped = true;
+                }
+            }
+        } finally {
+            interrupted |= Thread.currentThread().isInterrupted();
+            try {
+                // Keep dependencies alive if cancellation could not terminate the workers.
+                if (tasksStopped) {
+                    try {
+                        this.context.unsetLoadingMode();
+                    } finally {
+                        this.context.close(this.loadStarted);
                     }
-                    if (failure != e) {
-                        failure.addSuppressed(e);
-                    }
+                }
+            } finally {
+                if (interrupted) {
+                    Thread.currentThread().interrupt();
                 }
             }
         }
@@ -971,8 +955,7 @@ public final class HugeGraphLoader {
 
     private void cleanupEmptyProgress() {
         Map<String, InputProgress> inputProgressMap = this.context.newProgress().inputProgress();
-        inputProgressMap.entrySet().removeIf(entry -> entry.getValue().loadedItems().isEmpty() &&
-                                                     entry.getValue().loadingItems().isEmpty());
+        inputProgressMap.entrySet().removeIf(entry -> entry.getValue().loadedItems().isEmpty());
     }
 
     private static class SplitInputStructs {
