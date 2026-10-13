@@ -649,6 +649,79 @@ public class LoadContextTest {
     }
 
     @Test
+    public void testShutdownPreservesOwnerTupleAfterLostAcquireAndReleaseReplies() throws Exception {
+        try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
+            server.enableOwnership();
+            server.dropOwnerReply = true;
+            LoadContext context = this.context(client, client);
+            InputStruct input = new InputStruct(null, null);
+            input.input(new FileSource());
+            HugeGraphLoader loader = loader(context, input);
+            RuntimeException loading = (RuntimeException) Assert.assertThrows(RuntimeException.class, loader::load);
+            Map<String, Object> acquired = new HashMap<>(server.lastOwner);
+            String tuple = acquired.get("instance") + "/" + acquired.get("epoch") + "/" + acquired.get("token");
+            LoadException shutdown = (LoadException) Assert.assertThrows(LoadException.class, loader::shutdown);
+            Assert.assertTrue(shutdown.getMessage().contains("Failed to release LOADING owner " + tuple));
+            Assert.assertEquals(1, shutdown.getSuppressed().length);
+            Assert.assertSame(loading.getCause(), shutdown.getSuppressed()[0].getCause());
+            Assert.assertTrue(shutdown.getCause() instanceof IOException);
+            Assert.assertEquals("release", server.lastOwner.remove("action"));
+            acquired.remove("action");
+            Assert.assertEquals(acquired, server.lastOwner);
+            Assert.assertTrue(context.closed());
+            int writes = server.ownerWrites;
+            loader.shutdown();
+            Assert.assertEquals(writes, server.ownerWrites);
+            Assert.assertEquals(0, server.modeWrites);
+        }
+    }
+
+    @Test
+    public void testShutdownPreservesReleaseFailureWhenLoggerCloseFails() throws Exception {
+        try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
+            server.enableOwnership();
+            LoadContext context = this.context(client, client);
+            context.setLoadingMode();
+            String tuple = server.lastOwner.get("instance") + "/" + server.lastOwner.get("epoch") + "/" +
+                           server.lastOwner.get("token");
+            FileSource source = new FileSource();
+            source.header(new String[]{"name"});
+            InputStruct input = new InputStruct(null, null);
+            input.input(source);
+            input.id("broken");
+            FailLogger logger = allocate(FailLogger.class);
+            set(logger, "struct", input);
+            set(logger, "file", this.folder.newFile("broken.error"));
+            this.folder.newFolder("broken.header");
+            set(context, "loggers", Map.of("broken", logger));
+            server.dropOwnerReply = true;
+            LoadException shutdown = (LoadException) Assert.assertThrows(LoadException.class,
+                    loader(context, input)::shutdown);
+            Assert.assertTrue(shutdown.getMessage().contains("Failed to release LOADING owner " + tuple));
+            Assert.assertEquals(1, shutdown.getSuppressed().length);
+            Assert.assertTrue(shutdown.getSuppressed()[0].getMessage().contains("Failed to write header"));
+            Assert.assertTrue(context.closed());
+        }
+    }
+
+    @Test
+    public void testShutdownReportsCloseFailureAfterSuccessfulRelease() throws Exception {
+        try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
+            server.enableOwnership();
+            LoadContext context = this.context(client, client);
+            context.setLoadingMode();
+            RuntimeException loading = new IllegalStateException("original loading failure");
+            context.failLoading(loading);
+            HugeGraphLoader loader = loader(context);
+            Assert.assertSame(loading, Assert.assertThrows(RuntimeException.class, loader::shutdown));
+            Assert.assertEquals(0, loading.getSuppressed().length);
+            Assert.assertTrue(context.closed());
+            loader.shutdown();
+            Assert.assertEquals(2, server.ownerWrites);
+        }
+    }
+
+    @Test
     public void testCapabilityFailuresDoNotFallBackToLegacyMode() throws Exception {
         try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
             for (int status : new int[]{403, 404, 500}) {

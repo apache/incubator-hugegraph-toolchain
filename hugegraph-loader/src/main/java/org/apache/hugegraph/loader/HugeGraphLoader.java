@@ -925,10 +925,23 @@ public final class HugeGraphLoader {
             try {
                 // Keep dependencies alive if cancellation could not terminate the workers.
                 if (tasksStopped) {
+                    Throwable releaseFailure = null;
                     try {
                         this.context.unsetLoadingMode();
+                    } catch (Throwable failure) {
+                        releaseFailure = failure;
+                        throw failure;
                     } finally {
-                        this.context.close();
+                        try {
+                            this.context.close();
+                        } catch (Throwable closeFailure) {
+                            if (releaseFailure == null) {
+                                throw closeFailure;
+                            }
+                            if (closeFailure != releaseFailure) {
+                                releaseFailure.addSuppressed(closeFailure);
+                            }
+                        }
                     }
                 }
             } finally {
