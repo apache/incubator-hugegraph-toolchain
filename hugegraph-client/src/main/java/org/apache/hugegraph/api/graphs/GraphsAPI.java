@@ -34,6 +34,7 @@ import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.exception.InvalidResponseException;
 import org.apache.hugegraph.rest.RestHeaders;
 import org.apache.hugegraph.rest.RestResult;
+import org.apache.hugegraph.structure.LoadingModeOwner;
 import org.apache.hugegraph.structure.constant.GraphMode;
 import org.apache.hugegraph.structure.constant.GraphReadMode;
 import org.apache.hugegraph.structure.constant.HugeType;
@@ -277,6 +278,25 @@ public class GraphsAPI extends API {
         } catch (IllegalArgumentException e) {
             throw new InvalidResponseException("Invalid GraphMode value '%s'", value);
         }
+    }
+
+    public LoadingModeOwner newLoadingOwner(String graph) {
+        RestResult result = this.client.get(joinPath(this.path(), graph, MODE + "/owners"));
+        return new LoadingModeOwner(result.readObject(Map.class));
+    }
+
+    public void acquireLoadingOwner(String graph, LoadingModeOwner owner) {
+        this.updateLoadingOwner(graph, owner, true);
+    }
+
+    public void releaseLoadingOwner(String graph, LoadingModeOwner owner) {
+        this.updateLoadingOwner(graph, owner, false);
+    }
+
+    private void updateLoadingOwner(String graph, LoadingModeOwner owner, boolean acquire) {
+        RestResult result = this.client.put(joinPath(this.path(), graph, MODE + "/owners"), null,
+                                            owner.request(acquire ? "acquire" : "release"));
+        owner.verify(result.readObject(Map.class), acquire);
     }
 
     public void readMode(String graph, GraphReadMode readMode) {

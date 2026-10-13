@@ -37,6 +37,7 @@ import org.apache.hugegraph.loader.failure.FailLogger;
 import org.apache.hugegraph.loader.filter.ElementParseGroup;
 import org.apache.hugegraph.loader.mapping.InputStruct;
 import org.apache.hugegraph.loader.metrics.LoadSummary;
+import org.apache.hugegraph.structure.LoadingModeOwner;
 import org.apache.hugegraph.structure.constant.GraphMode;
 import org.apache.hugegraph.util.Log;
 
@@ -53,8 +54,9 @@ public final class LoadContext implements Cloneable {
     private final String timestamp;
 
     private volatile boolean closed;
-    // Only a successful LOADING request permits this context to reset it.
-    private boolean loadingModeSet;
+    // Save the tuple before acquire so cleanup can cancel an unknown outcome.
+    private LoadingModeOwner loadingOwner;
+    private boolean loadingOwnerReleased;
     private volatile StopReason stopReason;
     private volatile boolean noError;
     private volatile Throwable failure;
@@ -215,19 +217,17 @@ public final class LoadContext implements Cloneable {
     @SneakyThrows
     public synchronized void setLoadingMode() {
         String graph = this.client.graph().graph();
+        if (this.loadingOwnerReleased) {
+            throw new LoadException("Loading owner has already been released; create a new context");
+        }
+        if (this.loadingOwner == null) {
+            this.loadingOwner = this.client.graphs().newLoadingOwner(graph);
+        }
         try {
-            this.client.graphs().mode(graph, GraphMode.LOADING);
-            this.loadingModeSet = true;
-        } catch (ServerException e) {
-            if (e.getMessage().contains("Can not deserialize value of type")) {
-                LOG.warn("HugeGraphServer doesn't support loading mode");
-            } else {
-                throw e;
-            }
+            this.client.graphs().acquireLoadingOwner(graph, this.loadingOwner);
         } catch (Exception e) {
-            LOG.error("Failed to confirm LOADING mode for graph '{}'; it may still be in LOADING mode. " +
-                      "Confirm no imports are active, inspect the graph mode, and manually reset it to NONE if needed.",
-                      graph);
+            LOG.error("Failed to confirm LOADING ownership for graph '{}' with handle '{}'; " +
+                      "cleanup must cancel this same handle after all workers stop", graph, this.loadingOwner);
             throw e;
         }
     }
@@ -246,19 +246,16 @@ public final class LoadContext implements Cloneable {
     }
 
     public synchronized void unsetLoadingMode() {
-        if (!this.loadingModeSet) {
+        if (this.loadingOwner == null || this.loadingOwnerReleased) {
             return;
         }
         try {
             String graph = this.client.graph().graph();
-            GraphMode mode = this.client.graphs().mode(graph);
-            if (mode.loading()) {
-                this.client.graphs().mode(graph, GraphMode.NONE);
-            }
-            this.loadingModeSet = false;
+            this.client.graphs().releaseLoadingOwner(graph, this.loadingOwner);
+            this.loadingOwnerReleased = true;
         } catch (Exception e) {
-            throw new LoadException("Failed to unset mode %s for server",
-                                    e, GraphMode.LOADING);
+            throw new LoadException("Failed to release LOADING owner %s for server; " +
+                                    "retry the same handle on the same graph instance", e, this.loadingOwner);
         }
     }
 
@@ -313,7 +310,8 @@ public final class LoadContext implements Cloneable {
     @Override
     public Object clone() throws CloneNotSupportedException {
         LoadContext context = (LoadContext) super.clone();
-        context.loadingModeSet = false;
+        context.loadingOwner = null;
+        context.loadingOwnerReleased = false;
         return context;
     }
 }

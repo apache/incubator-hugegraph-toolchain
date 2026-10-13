@@ -135,15 +135,15 @@ so copy a mapping mounted from a read-only Kubernetes ConfigMap to a writable vo
 
 #### Graph mode during startup and cleanup
 
-Loader resets `LOADING` mode only after that Loader context successfully sets it. A startup failure before the mode
-change, a rejected mode request, or a restore run does not clear another run's `LOADING` mode. Cleanup preserves a
-different current graph mode; successful cleanup is not repeated. Concurrent successful Loader runs on the same
-graph still require external coordination; this startup safeguard does not provide shared ownership of graph mode.
+Normal imports acquire a unique loading handle before writing import data. Startup failure and cleanup release
+only that context's handle after its workers stop, preserving `LOADING` while another owner is active. Restore
+runs do not acquire a loading handle. See
+[Concurrent imports and LOADING ownership](#concurrent-imports-and-loading-ownership) for the required Server
+protocol and same-instance boundary.
 
-A network failure can leave a mode change applied without a successful response. Loader preserves the original
-failure and logs an error naming the graph and warning that it may still be in `LOADING` mode. Cleanup leaves the
-unconfirmed mode unchanged. Inspect the graph mode and confirm there are no active imports before explicitly
-restoring `NONE` mode; an unconfirmed request cannot be rolled back automatically.
+A network failure can leave acquisition applied without a successful response. Loader preserves the original
+failure and logs the graph and handle. Cleanup cancels that same handle after workers stop; failed release reports
+the handle for recovery on the same graph instance with the same authenticated identity.
 
 ### 3.2 Load data with docker
 
@@ -179,7 +179,8 @@ fails. Shutdown waits for that Loader's workers, closes its context, and removes
 its own JVM shutdown hook once the context is closed. If workers cannot terminate,
 the context and hook remain available for a later shutdown attempt. A hook already
 running during JVM shutdown still closes its Loader. This does not shut down the
-process-wide executor manager or coordinate graph mode across separate imports.
+process-wide executor manager. Concurrent imports on the same graph instance use the loading ownership protocol
+described below.
 
 Closing a Loader before `load()` starts does not write a new checkpoint. An actual
 load attempt and direct `LoadContext.close()` keep their existing progress-save
@@ -190,3 +191,35 @@ outside the selected file range; removed mappings do not retain source markers
 in the next checkpoint. Non-incremental replay starts fresh.
 An ongoing insert can still block the existing wait before shutdown
 reaches cancellation; this change adds no load deadline.
+
+
+### Concurrent imports and LOADING ownership
+
+Normal imports acquire a unique loading handle on the target Server/graph
+instance. Two Loader processes may import concurrently: finishing one keeps
+LOADING while the other remains active; the last process to drain its workers
+and release its handle restores NONE. LOADING's property-validation and Raft
+cache behavior are preserved. Graph-source/restore imports still use their
+separate RESTORING mode.
+
+Upgrade both Server and Client/Loader to versions supporting
+`/mode/owners` protocol 1. Server 1.7 recognizes LOADING but has no ownership
+endpoint; this new normal import path fails before writing import data. It does
+not silently fall back to the unsafe enum mode PUT or to NONE. Legacy enum mode
+changes are rejected while new owners are active. A manually enabled LOADING,
+RESTORING or MERGING graph must first be returned to NONE when no imports are active.
+
+Use one directly addressed, stable Server for the whole import. A load balancer
+URL, node failover, graph reload or Server restart during import is unsupported;
+control replies identify the instance but ordinary data requests have no owner
+fencing. The Client keeps one instance/epoch/token tuple for all retries. On
+unknown acquire outcome, cleanup cancels that same handle only after workers
+have stopped. Failed release reports the handle for same-instance recovery.
+Released handles cannot be reused for another import.
+
+kill -9 has no cleanup opportunity and can leave local LOADING ownership. There
+is no lease or automatic expiry. Confirm the importer and in-flight writes have
+stopped before retrying release with its recorded tuple and authenticated
+identity. If the tuple was lost, stop all imports before reopening/restarting
+the graph. These guarantees do not extend to cross-Server coordination or Kafka
+offset/checkpoint recovery.
