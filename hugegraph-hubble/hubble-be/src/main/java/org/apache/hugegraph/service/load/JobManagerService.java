@@ -295,7 +295,7 @@ public class JobManagerService {
             for (LoadTask loadTask : loadTasks) {
                 if (loadTask.getStatus().inRunning() ||
                     loadTask.getStatus() == LoadStatus.PAUSED) {
-                    this.taskService.stop(loadTask.getId());
+                    this.taskService.stopForDeletion(loadTask.getId());
                 }
             }
 

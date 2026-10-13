@@ -564,16 +564,24 @@ public class LoadTaskService {
     }
 
     public LoadTask stop(int taskId) {
+        return this.stop(taskId, false);
+    }
+
+    LoadTask stopForDeletion(int taskId) {
+        return this.stop(taskId, true);
+    }
+
+    private LoadTask stop(int taskId, boolean deleting) {
         Lock control = this.taskControls.get(taskId);
         control.lock();
         try {
-            return this.stopControlled(taskId);
+            return this.stopControlled(taskId, deleting);
         } finally {
             control.unlock();
         }
     }
 
-    private LoadTask stopControlled(int taskId) {
+    private LoadTask stopControlled(int taskId, boolean deleting) {
         LoadTask task = this.runningTaskContainer.get(taskId);
         boolean loading = task != null;
         LoadStatus readStatus = null;
@@ -594,13 +602,21 @@ public class LoadTaskService {
             status = task.getStatus();
             Ex.check(!loading || readStatus == null || status == readStatus,
                      "The load task state has changed; retry the request");
-            Ex.check(status == LoadStatus.RUNNING || status == LoadStatus.PAUSED,
-                     "Can only stop the RUNNING or PAUSED task");
-            if (loading) {
-                LoadTask owner = this.runningTaskContainer.putIfAbsent(taskId, task);
-                Ex.check(owner == null || owner == task, "The load task has already restarted");
+            if (deleting && (status == LoadStatus.SUCCEED || status == LoadStatus.FAILED ||
+                             status == LoadStatus.STOPPED)) {
+                // Completion may race the deletion snapshot. Keep its terminal state and drain any owner below.
+                if (!loading) {
+                    return task;
+                }
+            } else {
+                Ex.check(status == LoadStatus.RUNNING || status == LoadStatus.PAUSED,
+                         "Can only stop the RUNNING or PAUSED task");
+                if (loading) {
+                    LoadTask owner = this.runningTaskContainer.putIfAbsent(taskId, task);
+                    Ex.check(owner == null || owner == task, "The load task has already restarted");
+                }
+                task.setStatus(LoadStatus.STOPPED);
             }
-            task.setStatus(LoadStatus.STOPPED);
         } finally {
             task.unlock();
         }

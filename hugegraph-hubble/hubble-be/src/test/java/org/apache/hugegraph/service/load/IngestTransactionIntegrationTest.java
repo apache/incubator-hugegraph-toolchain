@@ -20,6 +20,7 @@ package org.apache.hugegraph.service.load;
 
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -58,6 +59,7 @@ import org.apache.hugegraph.entity.load.JobManager;
 import org.apache.hugegraph.entity.load.ListFormat;
 import org.apache.hugegraph.entity.load.LoadParameter;
 import org.apache.hugegraph.entity.load.LoadTask;
+import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.handler.LoadTaskExecutor;
 import org.apache.hugegraph.loader.HugeGraphLoader;
 import org.apache.hugegraph.loader.executor.LoadContext;
@@ -119,6 +121,7 @@ public class IngestTransactionIntegrationTest {
         this.cleanup();
         this.executor.reset();
         this.taskService.failTaskInsert(false);
+        this.taskService.afterTaskSnapshot(null);
         Mockito.when(this.config.get(HubbleOptions.UPLOAD_FILE_LOCATION))
                .thenReturn(UPLOAD_ROOT);
     }
@@ -337,6 +340,103 @@ public class IngestTransactionIntegrationTest {
                             this.jobService.get(task.getJobId()).getJobStatus());
     }
 
+    @Test
+    public void testDeleteJobAcceptsSuccessfulTaskAfterSnapshot() {
+        this.deleteJobAfterTaskCompletion(LoadStatus.SUCCEED);
+    }
+
+    @Test
+    public void testDeleteJobAcceptsFailedTaskAfterSnapshot() {
+        this.deleteJobAfterTaskCompletion(LoadStatus.FAILED);
+    }
+
+    @Test
+    public void testStopStillRejectsCompletedTasks() {
+        LoadTask task = this.jobService.createIngestTask(
+                this.job(), this.mapping(), this.connection(), this.client());
+        this.taskService.clearOwners();
+        task.setFinished(true);
+        for (LoadStatus status : new LoadStatus[]{LoadStatus.SUCCEED, LoadStatus.FAILED, LoadStatus.STOPPED}) {
+            task.setStatus(status);
+            this.taskService.update(task);
+            Assert.assertThrows(ExternalException.class,
+                                () -> this.taskService.stop(task.getId()));
+            Assert.assertEquals(status, this.taskService.get(task.getId()).getStatus());
+        }
+    }
+
+    @Test
+    public void testDeleteJobRejectsCompletedOwnerThatHasNotClosed() {
+        LoadTask task = this.jobService.createIngestTask(
+                this.job(), this.mapping(), this.connection(), this.client());
+        this.taskService.afterTaskSnapshot(() -> {
+            task.setStatus(LoadStatus.SUCCEED);
+            task.setFinished(true);
+            this.taskService.update(task);
+        });
+
+        Assert.assertThrows(ExternalException.class,
+                            () -> this.jobService.deleteJob("DEFAULT", "hugegraph", task.getJobId()));
+
+        this.assertTableCounts(1, 1, 1);
+        Assert.assertEquals(LoadStatus.SUCCEED, this.taskService.get(task.getId()).getStatus());
+        Assert.assertFalse(task.context().closed());
+    }
+
+    @Test
+    public void testDeleteJobWaitsForCompletedOwnerToFinish() throws Exception {
+        FileMapping mapping = this.mapping();
+        mapping.setPath(UPLOAD_ROOT + "/snapshot-completion/" + mapping.getName());
+        LoadTask task = this.jobService.createIngestTask(
+                this.job(), mapping, this.connection(), this.client());
+        CountDownLatch stopping = new CountDownLatch(1);
+        LoadContext context = task.context();
+        Mockito.doAnswer(invocation -> {
+            stopping.countDown();
+            return null;
+        }).when(context).stopLoading();
+        this.taskService.afterTaskSnapshot(() -> {
+            task.setStatus(LoadStatus.SUCCEED);
+            this.taskService.update(task);
+            task.getLoader().shutdown();
+        });
+        ExecutorService pool = Executors.newSingleThreadExecutor();
+        try {
+            Future<?> deleting = pool.submit(() ->
+                    this.jobService.deleteJob("DEFAULT", "hugegraph", task.getJobId()));
+            Assert.assertTrue(stopping.await(5L, TimeUnit.SECONDS));
+            Assert.assertFalse(deleting.isDone());
+            this.assertTableCounts(1, 1, 1);
+            Assert.assertEquals(LoadStatus.SUCCEED, this.taskService.get(task.getId()).getStatus());
+
+            task.setFinished(true);
+            deleting.get(5L, TimeUnit.SECONDS);
+
+            this.assertTableCounts(0, 0, 0);
+        } finally {
+            task.setFinished(true);
+            pool.shutdown();
+            Assert.assertTrue(pool.awaitTermination(5L, TimeUnit.SECONDS));
+        }
+    }
+
+    private void deleteJobAfterTaskCompletion(LoadStatus status) {
+        FileMapping mapping = this.mapping();
+        mapping.setPath(UPLOAD_ROOT + "/snapshot-completion/" + mapping.getName());
+        LoadTask task = this.jobService.createIngestTask(
+                this.job(), mapping, this.connection(), this.client());
+        this.taskService.afterTaskSnapshot(() -> {
+            task.setStatus(status);
+            task.setFinished(true);
+            this.taskService.update(task);
+            this.taskService.clearOwners();
+        });
+
+        this.jobService.deleteJob("DEFAULT", "hugegraph", task.getJobId());
+
+        this.assertTableCounts(0, 0, 0);
+    }
+
     private JobManager job() {
         Date now = new Date();
         return JobManager.builder()
@@ -485,6 +585,22 @@ public class IngestTransactionIntegrationTest {
     public static class TestLoadTaskService extends LoadTaskService {
 
         private boolean failTaskInsert;
+        private Runnable afterTaskSnapshot;
+
+        public void afterTaskSnapshot(Runnable action) {
+            this.afterTaskSnapshot = action;
+        }
+
+        @Override
+        public List<LoadTask> taskListByJob(int jobId) {
+            List<LoadTask> tasks = super.taskListByJob(jobId);
+            Runnable action = this.afterTaskSnapshot;
+            this.afterTaskSnapshot = null;
+            if (action != null) {
+                action.run();
+            }
+            return tasks;
+        }
 
         @SuppressWarnings("unchecked")
         public void clearOwners() {

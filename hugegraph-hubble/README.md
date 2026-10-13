@@ -70,7 +70,9 @@ closed resources under admission. The Job task create/start endpoints and Job
 management deletion share Job admission, so deletion enumerates tasks started before it and later
 starts recheck that the Job still exists. Job deletion commits physical stops before
 atomically deleting task and job metadata; a metadata rollback leaves those
-tasks stopped. The Ingest task deletion route uses this same scoped Job deletion.
+tasks stopped. Tasks that finish after enumeration keep their terminal state;
+any remaining owner must finish and close before metadata can be removed. The Ingest
+task deletion route uses this same scoped Job deletion.
 Graph deletion keeps its remote-first order: if the Server refuses the drop, local
 Job/task metadata and owners are preserved. After a successful drop, Hubble
 enumerates that graph's existing Jobs and applies the same deletion to each one,
