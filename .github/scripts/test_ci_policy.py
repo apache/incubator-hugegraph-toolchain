@@ -208,18 +208,25 @@ class PolicyTest(unittest.TestCase):
         workflow = (Path(__file__).resolve().parents[2] / ".github/workflows/ci.yml").read_text()
         script = textwrap.dedent(workflow.split("          python3 - <<'PYINPUTS'\n", 1)[1].split(
             "          PYINPUTS", 1)[0])
-        for selected in (["go"], ["spark"], ["hubble"], policy.MODULES["toolchain"], []):
+        for selected in (["go"], ["spark"], ["loader"], ["hubble"], policy.MODULES["toolchain"], []):
             with self.subTest(selected=selected), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 (root / "scope.json").write_text(json.dumps({"selected": selected}))
                 env = dict(os.environ, NEEDS_SERVER=str(bool(selected)).lower(),
                            NEEDS_CURRENT_SERVER=str(bool(set(selected) & {"go", "hubble"})).lower(),
+                           NEEDS_LOADING_SERVER=str("loader" in selected).lower(),
+                           LOADING_COMMIT="loading", LOADING_REF="loading",
                            SERVER_REPOSITORY="apache/hugegraph", SERVER_COMMIT="released", SERVER_REF="1.7.0",
                            CURRENT_REPOSITORY="apache/hugegraph", CURRENT_COMMIT="locked", CURRENT_REF="locked")
                 subprocess.run([os.sys.executable, "-c", script], cwd=root, env=env, check=True)
                 inputs = json.loads((root / "inputs.json").read_text())
-                self.assertEqual(any(module != "go" for module in selected), "candidateSDK" in inputs)
+                self.assertEqual(any(module not in ("go", "loader") for module in selected),
+                                 "candidateSDK" in inputs)
                 self.assertEqual(bool(set(selected) & {"go", "hubble"}), "currentServer" in inputs)
+                self.assertEqual("loader" in selected, "loaderServer" in inputs)
+                if "loaderServer" in inputs:
+                    self.assertEqual({"repository": "apache/hugegraph", "commit": "loading",
+                                      "ref": "loading", "jdk": "17", "protocol": 1}, inputs["loaderServer"])
                 if "currentServer" in inputs:
                     self.assertEqual("locked", inputs["currentServer"]["commit"])
                     self.assertEqual("17", inputs["currentServer"]["jdk"])
