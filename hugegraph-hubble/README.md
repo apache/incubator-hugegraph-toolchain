@@ -13,25 +13,25 @@ graph data load, schema management, graph relationship analysis, and graphical d
 
 Start from one workspace for graph discovery, import, query, account management, and cluster operations.
 
-![Hubble graph data workbench](docs/images/showcase/home-workbench.jpg)
+![Hubble graph data workbench](https://raw.githubusercontent.com/apache/hugegraph-toolchain/master/hugegraph-hubble/docs/images/showcase/home-workbench.jpg)
 
 ### GQL Traversal
 
 Run Gremlin queries and inspect their graph, table, or JSON results without leaving the workbench.
 
-![Hubble GQL traversal and graph visualization](docs/images/showcase/gql-traversal.jpg)
+![Hubble GQL traversal and graph visualization](https://raw.githubusercontent.com/apache/hugegraph-toolchain/master/hugegraph-hubble/docs/images/showcase/gql-traversal.jpg)
 
 ### Schema Templates
 
 Prepare reusable schemas before configuring data sources and import tasks.
 
-![Hubble schema template management](docs/images/showcase/schema-templates.jpg)
+![Hubble schema template management](https://raw.githubusercontent.com/apache/hugegraph-toolchain/master/hugegraph-hubble/docs/images/showcase/schema-templates.jpg)
 
 ### Asynchronous Tasks
 
 Track asynchronous queries and algorithms, then expand compact results inline.
 
-![Hubble asynchronous task results](docs/images/showcase/async-tasks.jpg)
+![Hubble asynchronous task results](https://raw.githubusercontent.com/apache/hugegraph-toolchain/master/hugegraph-hubble/docs/images/showcase/async-tasks.jpg)
 
 ## Authentication, connections, and compatibility
 

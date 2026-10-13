@@ -11,6 +11,7 @@ on:
       - hugegraph-dist/**
       - .github/actions/**
       - .github/scripts/**
+      - tools/verify_candidate_image_sdk.py
       - .github/workflows/java17-images-ci.yml
       - pom.xml
   push:
@@ -23,6 +24,7 @@ on:
       - hugegraph-dist/**
       - .github/actions/**
       - .github/scripts/**
+      - tools/verify_candidate_image_sdk.py
       - .github/workflows/java17-images-ci.yml
       - pom.xml
 

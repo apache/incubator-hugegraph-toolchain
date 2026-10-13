@@ -58,4 +58,4 @@ FIXTURE_JAVA=${FIXTURE_JAVA:-17}
 if [[ -n "${SERVER_MAVEN_REPO:-}" ]]; then
     export MAVEN_ARGS="${MAVEN_ARGS:-} -Dmaven.repo.local=$SERVER_MAVEN_REPO"
 fi
-source "$REPO_ROOT/.github/actions/setup-hugegraph-server/fixture.sh"
+source "$REPO_ROOT/hugegraph-client/assembly/travis/fixture.sh"

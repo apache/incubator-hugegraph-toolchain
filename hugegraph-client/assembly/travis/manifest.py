@@ -29,9 +29,9 @@ if sys.argv[1] == "inputs":
     repo = pathlib.Path(__file__).resolve().parents[3]
     patterns = (
         '.github/actions/setup-hugegraph-server/action.yml',
-        '.github/actions/setup-hugegraph-server/fixture.sh',
-        '.github/actions/setup-hugegraph-server/manifest.py',
-        '.github/actions/setup-hugegraph-server/release.py',
+        'hugegraph-client/assembly/travis/fixture.sh',
+        'hugegraph-client/assembly/travis/manifest.py',
+        'hugegraph-client/assembly/travis/release.py',
         '.github/actions/setup-java-env/action.yml', '.github/configs/settings.xml',
         'hugegraph-client/assembly/travis/checkout-server.sh',
         'hugegraph-client/assembly/travis/install-candidate-sdk.sh',

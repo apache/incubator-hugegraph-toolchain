@@ -18,7 +18,7 @@
 set -euo pipefail
 
 SERVER_CONFIG_DIR=$(cd "$(dirname "$0")" && pwd)
-source "$(cd "$SERVER_CONFIG_DIR/../../../../.." && pwd)/.github/actions/setup-hugegraph-server/service-wait.sh"
+source "$(cd "$SERVER_CONFIG_DIR/../../../../.." && pwd)/hugegraph-client/assembly/travis/service-wait.sh"
 SERVER_PARENT_DIR="hugegraph-server2"
 
 mkdir "${SERVER_PARENT_DIR}"

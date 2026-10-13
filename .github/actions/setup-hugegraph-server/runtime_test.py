@@ -28,6 +28,7 @@ import unittest
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
+HELPERS = ROOT / "hugegraph-client/assembly/travis"
 SHA = 'b12425c2032bf0d21a97b8221f42a18055c2982f'
 
 class RuntimeTests(unittest.TestCase):
@@ -39,8 +40,8 @@ class RuntimeTests(unittest.TestCase):
         self.action = self.dir / 'action'
         self.action.mkdir()
         for name in ('fixture.sh', 'manifest.py', 'release.py', 'service-wait.sh'):
-            shutil.copyfile(HERE / name, self.action / name)
-        spec = importlib.util.spec_from_file_location('fixture_release', HERE / 'release.py')
+            shutil.copyfile(HELPERS / name, self.action / name)
+        spec = importlib.util.spec_from_file_location('fixture_release', HELPERS / 'release.py')
         self.release = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(self.release)
         checksum = hashlib.sha512(b'archive').hexdigest()
@@ -145,7 +146,7 @@ class RuntimeTests(unittest.TestCase):
                 self.assertIn('Fixture JDK mismatch', result.stderr)
 
     def test_legacy_bash_service_deadline_and_success(self):
-        helper = str(HERE/'service-wait.sh')
+        helper = str(HELPERS/'service-wait.sh')
         self.command('curl', 'exit 1\n')
         result = subprocess.run(
             ['bash','-c',f'source "{helper}"; fixture_wait http://localhost:1'],
@@ -211,7 +212,7 @@ esac
         self.addCleanup(server.server_close)
         self.addCleanup(server.shutdown)
         Thread(target=server.serve_forever, daemon=True).start()
-        helper = str(HERE/'service-wait.sh')
+        helper = str(HELPERS/'service-wait.sh')
         result = subprocess.run(['bash','-c',f'source "{helper}"; fixture_wait http://127.0.0.1:{server.server_port}'],
                                 env=self.env, capture_output=True, timeout=5)
         self.assertEqual(result.returncode, 0, result.stderr)
