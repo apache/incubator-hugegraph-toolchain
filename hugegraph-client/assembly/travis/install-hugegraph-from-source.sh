@@ -25,8 +25,8 @@ fi
 if [[ "${FIXTURE_MODE:-standalone}" == start ]]; then
     FIXTURE_COMMIT=$1
     ROOT_DIR=$(cd "$(dirname "$0")/../../.." && pwd)
-    source "$ROOT_DIR/.github/actions/setup-hugegraph-server/fixture.sh"
-    ARCHIVE=$(python3 "$ROOT_DIR/.github/actions/setup-hugegraph-server/manifest.py" name)
+    source "$ROOT_DIR/hugegraph-client/assembly/travis/fixture.sh"
+    ARCHIVE=$(python3 "$ROOT_DIR/hugegraph-client/assembly/travis/manifest.py" name)
     exec bash "$ROOT_DIR/hugegraph-client/assembly/travis/start-hugegraph-servers.sh" "$ARCHIVE"
 fi
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)

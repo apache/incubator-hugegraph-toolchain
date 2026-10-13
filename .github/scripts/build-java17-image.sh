@@ -41,7 +41,7 @@ trap report_failure ERR
 mkdir -p "$work/builder/repository/org/apache"
 phase="verify candidate SDK"
 phase_log="$evidence/sdk-verification.log"
-python3 "$root/.github/scripts/verify_candidate_image_sdk.py" "$repository" \
+python3 "$root/hugegraph-client/assembly/travis/verify_candidate_image_sdk.py" "$repository" \
     > "$evidence/sdk-verification.log" 2>&1
 phase="prepare candidate provenance"
 phase_log="$evidence/prepare.log"

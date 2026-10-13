@@ -160,7 +160,7 @@
                                     rm -f ${top.level.dir}/dist.sh
                                 </echo>
                                 <exec executable="python3" failonerror="true">
-                                    <arg value="${repo.root.dir}/.github/scripts/verify_candidate_image_sdk.py"/>
+                                    <arg value="${repo.root.dir}/hugegraph-client/assembly/travis/verify_candidate_image_sdk.py"/>
                                     <arg value="${settings.localRepository}"/>
                                     <arg value="--mode"/>
                                     <arg value="${sdk.validation.mode}"/>

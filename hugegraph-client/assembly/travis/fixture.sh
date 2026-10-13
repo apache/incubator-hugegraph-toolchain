@@ -69,7 +69,7 @@ fixture_build() {
         # Reuse the verified SDK build's same-source distribution and isolated repository.
         candidate_repo=$(mktemp -d "${TMPDIR:-/tmp}/hg-fixture-sdk-m2.XXXXXX")
         SERVER_REPOSITORY=$FIXTURE_REPOSITORY SERVER_FETCH_REF=$FIXTURE_REF \
-            bash "${FIXTURE_HELPER%/*}/../../../hugegraph-client/assembly/travis/install-candidate-sdk.sh" \
+            bash "${FIXTURE_HELPER%/*}/install-candidate-sdk.sh" \
                 "$FIXTURE_COMMIT" "$source_dir" "$candidate_repo"
         archive=$(find "$source_dir/hugegraph-server" -maxdepth 1 -name 'apache-hugegraph-*.tar.gz' -print)
         [[ -n "$archive" && -f "$archive" ]]

@@ -14,7 +14,7 @@ on:
       - 'hugegraph-client/assembly/travis/install-candidate-sdk.sh'
       - 'hugegraph-client/assembly/travis/checkout-server.sh'
       - 'hugegraph-client/assembly/travis/start-hugegraph-servers.sh'
-      - '.github/scripts/verify_candidate_image_sdk.py'
+      - 'hugegraph-client/assembly/travis/verify_candidate_image_sdk.py'
 
 permissions:
   contents: read
