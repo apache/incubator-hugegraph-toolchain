@@ -1,45 +1,19 @@
 name: "CodeQL"
 
 on:
+  workflow_call:
+    inputs:
+      languages:
+        type: string
+        default: '["java", "javascript", "python"]'
   workflow_dispatch:
-  pull_request:
-  push:
-    branches: [master, 'release-*']
-  schedule:
-    - cron: '42 20 * * 6'
 
 permissions:
   contents: read
   pull-requests: read
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}-${{ github.run_attempt == 1 && 'head' || format('rerun-{0}', github.run_id) }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
 jobs:
-  plan:
-    runs-on: ubuntu-latest
-    outputs:
-      security: ${{ steps.select.outputs.security }}
-      languages: ${{ steps.select.outputs.security_languages }}
-      dependency-audit: ${{ steps.select.outputs.dependency_audit }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Select scan inputs without preparing fixtures
-        id: select
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: >-
-          python3 .github/scripts/ci-policy.py plan --project toolchain
-          --event-path "$GITHUB_EVENT_PATH" --repository "$GITHUB_REPOSITORY"
-          --output scan-plan.json
-
   analyze:
-    needs: plan
-    if: needs.plan.outputs.security == 'true'
     env:
       # Preserve the master scan identity when invoked by a reusable-workflow caller.
       CODEQL_ACTION_ANALYSIS_KEY: .github/workflows/codeql-analysis.yml:analyze
@@ -52,8 +26,9 @@ jobs:
 
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
-        language: ${{ fromJSON(needs.plan.outputs.languages) }}
+        language: ${{ fromJSON(inputs.languages || '["java", "javascript", "python"]') }}
         # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby' ]
 
     steps:
@@ -61,6 +36,7 @@ jobs:
       uses: actions/checkout@v7
 
     - name: Setup Java and Maven
+      if: matrix.language == 'java'
       uses: ./.github/actions/setup-java-env
       with:
         distribution: zulu
@@ -72,6 +48,7 @@ jobs:
       uses: ./.github/actions/setup-candidate-sdk
 
     - name: Use Node.js 16
+      if: matrix.language == 'javascript'
       uses: actions/setup-node@v6
       with:
         node-version: '16'
@@ -113,13 +90,3 @@ jobs:
       uses: github/codeql-action/analyze@v4
       with:
         category: .github/workflows/codeql-analysis.yml:analyze/language:${{ matrix.language }}
-
-  dependency-review:
-    needs: plan
-    if: github.event_name == 'pull_request' && needs.plan.outputs.dependency-audit == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: 'Checkout Repository'
-        uses: actions/checkout@v7
-      - name: 'Dependency Review'
-        uses: actions/dependency-review-action@v5.0.0

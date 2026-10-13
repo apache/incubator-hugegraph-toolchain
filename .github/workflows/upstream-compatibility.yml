@@ -1,27 +1,11 @@
 name: Upstream compatibility
 
 on:
-  schedule:
-    - cron: '17 3 * * *'
+  workflow_call:
   workflow_dispatch:
-  pull_request:
-    paths:
-      - '.github/workflows/upstream-compatibility.yml'
-      - '.github/actions/get-hugegraph-commit/**'
-      - '.github/actions/setup-candidate-sdk/**'
-      - '.github/actions/setup-java-env/**'
-      - '.github/configs/settings.xml'
-      - 'hugegraph-client/assembly/travis/install-candidate-sdk.sh'
-      - 'hugegraph-client/assembly/travis/checkout-server.sh'
-      - 'hugegraph-client/assembly/travis/start-hugegraph-servers.sh'
-      - 'hugegraph-client/assembly/travis/verify_candidate_image_sdk.py'
 
 permissions:
   contents: read
-
-concurrency:
-  group: upstream-compatibility-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
 
 jobs:
   upstream-master:

@@ -22,6 +22,9 @@ name: Toolchain image startup
 on:
   workflow_call:
     inputs:
+      data-smoke:
+        type: boolean
+        default: true
       module:
         required: true
         type: string
@@ -33,12 +36,48 @@ jobs:
   image:
     name: build-and-start
     runs-on: ubuntu-latest
-    timeout-minutes: 50
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Build and start this checkout's image
+        if: ${{ !inputs.data-smoke }}
         env:
           MODULE: ${{ inputs.module }}
         run: python3 .github/scripts/check-toolchain-image.py "$MODULE"
+      - name: Setup Java environment
+        if: inputs.data-smoke
+        uses: ./.github/actions/setup-java-env
+        with:
+          java-version: '17'
+          distribution: temurin
+      - name: Install locked same-source SDK
+        if: inputs.data-smoke
+        id: server
+        uses: ./.github/actions/setup-candidate-sdk
+      - name: Build the same-source image
+        if: inputs.data-smoke
+        env:
+          IMAGE_MODULE: ${{ inputs.module }}
+          IMAGE_EVIDENCE: ${{ runner.temp }}/image-evidence
+          SDK_REPOSITORY: ${{ steps.server.outputs.maven-repo }}
+          SERVER_ARCHIVE: ${{ steps.server.outputs.archive }}
+          SERVER_ARCHIVE_SHA: ${{ steps.server.outputs.archive-sha256 }}
+          SERVER_COMMIT: ${{ steps.server.outputs.commit_id }}
+        run: |
+          bash .github/scripts/build-java17-image.sh \
+            "$IMAGE_MODULE" "$SERVER_COMMIT" "$SDK_REPOSITORY" "$SERVER_ARCHIVE" "$SERVER_ARCHIVE_SHA" "$IMAGE_EVIDENCE"
+      - name: Verify startup, provenance and data behavior
+        if: inputs.data-smoke
+        run: python3 .github/scripts/java17_image.py smoke "$RUNNER_TEMP/image-evidence"
+      - name: Retain image evidence
+        if: ${{ always() && inputs.data-smoke }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: image-${{ inputs.module }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/image-evidence/*.json
+            ${{ runner.temp }}/image-evidence/*.log
+          if-no-files-found: warn
+          retention-days: 14

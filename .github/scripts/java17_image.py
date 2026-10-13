@@ -36,6 +36,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "hugegraph-client/assembly/travis"))
 from verify_candidate_image_sdk import source_commit, validate_sdk
+IMAGE_SPEC = importlib.util.spec_from_file_location("image_startup", ROOT / ".github/scripts/check-toolchain-image.py")
+IMAGE_STARTUP = importlib.util.module_from_spec(IMAGE_SPEC)
+IMAGE_SPEC.loader.exec_module(IMAGE_STARTUP)
 HELPER = ROOT / "hugegraph-hubble/hubble-dist/assembly/travis/run_live_hubble_smoke.py"
 SPEC = importlib.util.spec_from_file_location("hubble_smoke", HELPER)
 HTTP = importlib.util.module_from_spec(SPEC)
@@ -227,20 +230,24 @@ def smoke(evidence):
                 options += ["-v", volume + ":/hubble/data"]
             start = ["docker", "run", "-d", "--name", name, *options, image]
             report["container_ids"].append(run(start))
+            IMAGE_STARTUP.verify_image(name, report["image_id"])
             version = run(["docker", "exec", name, "java", "-version"], evidence / "java-version.log")
             require_java17(version)
             sums = run(["docker", "exec", name, "sh", "-c", f"sha256sum /{module}/lib/*.jar"])
             actual = {Path(line.split(maxsplit=1)[1]).name: line.split()[0] for line in sums.splitlines()}
             report["verified_candidate_jars"] = verify_jars(module, manifest["candidate_jars"], actual)
             if module == "loader":
+                IMAGE_STARTUP.check_loader(name)
                 report["example_readback"] = check_loader(name, evidence)
             else:
                 saved_path, report["checks"] = check_hubble_before_restart()
+                IMAGE_STARTUP.check_hubble_ui(HUBBLE)
                 run(["docker", "exec", name, "test", "-s", "/hubble/data/hubble-v2.mv.db"])
                 run(["docker", "stop", "--time", "30", name])
                 run(["docker", "logs", name], evidence / "hubble-first.log")
                 run(["docker", "rm", name])
                 report["container_ids"].append(run(start))
+                IMAGE_STARTUP.verify_image(name, report["image_id"])
                 HTTP.wait_for_health(HUBBLE, 90)
                 favorite = api("GET", saved_path)
                 if favorite.get("content") != "g.E().count()" or favorite.get("name") != "image_persistence":
