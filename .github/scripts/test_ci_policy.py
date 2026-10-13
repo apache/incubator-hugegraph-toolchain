@@ -41,7 +41,8 @@ class PolicyTest(unittest.TestCase):
         event_env = patch.dict(os.environ)
         event_env.start()
         self.addCleanup(event_env.stop)
-        os.environ.pop("GITHUB_EVENT_NAME", None)
+        for name in ("GITHUB_EVENT_NAME", "GITHUB_STEP_SUMMARY", "GITHUB_OUTPUT"):
+            os.environ.pop(name, None)
         # All tests stay local; successful PR gates query only this current-PR fixture.
         api_mock = patch.object(policy, "api", return_value=self.live_pr())
         self.addCleanup(api_mock.stop)
