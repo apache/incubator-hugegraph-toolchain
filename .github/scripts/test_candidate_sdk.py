@@ -32,7 +32,7 @@ import unittest
 import uuid
 import xml.etree.ElementTree as ET
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "hugegraph-client/assembly/travis"))
 import verify_candidate_image_sdk as sdk
 
 
@@ -632,8 +632,8 @@ class SDKActionTest(unittest.TestCase):
                              'cp -R "$SDK_FIXTURE/." "$3/"\n'
                              'mkdir -p "$2/hugegraph-server"\n'
                              'printf archive > "$2/hugegraph-server/apache-hugegraph-fixture.tar.gz"\n')
-        verifier = workspace / "tools/verify_candidate_image_sdk.py"
-        verifier.parent.mkdir(parents=True)
+        verifier = workspace / "hugegraph-client/assembly/travis/verify_candidate_image_sdk.py"
+        verifier.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(sdk.__file__, verifier)
         runner = root / "runner"
         runner.mkdir()

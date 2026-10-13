@@ -18,13 +18,13 @@ Hubble's primary authentication and connection design targets HugeGraph `1.8/mas
 
 Hubble brings graph exploration, schema preparation, asynchronous analysis, and distributed cluster operations into one workspace.
 
-![HugeGraph Hubble workbench](https://raw.githubusercontent.com/apache/hugegraph-toolchain/master/hugegraph-hubble/docs/images/showcase/home-workbench.jpg)
+![HugeGraph Hubble workbench](./hugegraph-hubble/docs/images/showcase/home-workbench.jpg)
 
 ### Distributed Operations
 
 The cluster overview keeps service topology, node health, source status, and capacity facts in one operational view.
 
-![HugeGraph Hubble cluster overview](https://raw.githubusercontent.com/apache/hugegraph-toolchain/master/hugegraph-hubble/docs/images/showcase/operations-overview.jpg)
+![HugeGraph Hubble cluster overview](./hugegraph-hubble/docs/images/showcase/operations-overview.jpg)
 
 **Quick Navigation**: [Architecture](#architecture-overview) | [Quick Start](#quick-start) | [Modules](#module-overview) | [Build](#build--development) | [Docker](#docker) | [Related Projects](#related-projects)
 
