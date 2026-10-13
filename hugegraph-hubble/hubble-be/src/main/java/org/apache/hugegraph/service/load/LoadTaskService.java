@@ -269,6 +269,16 @@ public class LoadTaskService {
         } catch (RuntimeException e) {
             closeUnscheduled(task, e);
             this.markDispatchFailed(task, e);
+        } catch (Error failure) {
+            closeUnscheduled(task, failure);
+            try {
+                this.markDispatchFailed(task, failure);
+            } catch (Error persistenceFailure) {
+                if (persistenceFailure != failure) {
+                    failure.addSuppressed(persistenceFailure);
+                }
+            }
+            throw failure;
         }
     }
 
@@ -287,7 +297,7 @@ public class LoadTaskService {
         }
     }
 
-    private void markDispatchFailed(LoadTask task, RuntimeException cause) {
+    private void markDispatchFailed(LoadTask task, Throwable cause) {
         log.error("Failed to dispatch load task {}, marking task and job " +
                   "as FAILED", task.getId(), cause);
         task.setStatus(LoadStatus.FAILED);
@@ -328,6 +338,16 @@ public class LoadTaskService {
             log.error("Failed to persist dispatch failure for load task {}",
                       task.getId(), e);
         }
+    }
+
+    private void updateAndExecute(LoadTask task) {
+        try {
+            this.update(task);
+        } catch (RuntimeException | Error failure) {
+            closeUnscheduled(task, failure);
+            throw failure;
+        }
+        this.executeSafely(task);
     }
 
     private void execute(LoadTask task) {
@@ -378,9 +398,7 @@ public class LoadTaskService {
             task.getOptions().incrementalMode = true;
             task.reconnect(token);
             task.setStatus(LoadStatus.RUNNING);
-            this.update(task);
-            this.taskExecutor.execute(task, () -> this.update(task));
-            this.runningTaskContainer.put(taskId, task);
+            this.updateAndExecute(task);
         } finally {
             task.unlock();
         }
@@ -431,9 +449,7 @@ public class LoadTaskService {
             task.setStatus(LoadStatus.RUNNING);
             task.setLastDuration(0L);
             task.setCurrDuration(0L);
-            this.update(task);
-            this.taskExecutor.execute(task, () -> this.update(task));
-            this.runningTaskContainer.put(taskId, task);
+            this.updateAndExecute(task);
         } finally {
             task.unlock();
         }

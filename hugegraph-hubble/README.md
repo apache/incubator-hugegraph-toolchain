@@ -52,8 +52,11 @@ Use matching Server, PD, and Store minor versions in a distributed cluster. **Se
 ## Import resource cleanup
 
 Import tasks close their Loader before publishing completion. The built-in example import also closes its Loader.
-For new tasks, a failed initial save or dispatch, or rollback of the outer creation transaction, closes the unused Loader.
-Shutdown failures are reported as task failures.
+A failed save/update or dispatch closes the unused Loader, including resumed and retried tasks.
+Rollback of the outer creation transaction also closes the new Loader.
+Dispatch rejection marks the task and its job as failed. An independent shutdown failure marks the task as failed;
+check the logs and graph loading mode before retrying. A shutdown that only rethrows the existing load failure preserves
+a user-requested paused or stopped status.
 
 ## Local development feedback loop
 

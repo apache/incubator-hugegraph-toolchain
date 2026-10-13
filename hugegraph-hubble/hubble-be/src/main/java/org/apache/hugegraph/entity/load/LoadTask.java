@@ -28,6 +28,7 @@ import org.apache.hugegraph.entity.GraphConnection;
 import org.apache.hugegraph.entity.enums.LoadStatus;
 import org.apache.hugegraph.exception.InternalException;
 import org.apache.hugegraph.loader.HugeGraphLoader;
+import org.apache.hugegraph.loader.exception.LoadException;
 import org.apache.hugegraph.loader.executor.LoadContext;
 import org.apache.hugegraph.loader.executor.LoadOptions;
 import org.apache.hugegraph.util.Ex;
@@ -185,14 +186,37 @@ public class LoadTask implements Runnable {
         } catch (Throwable e) {
             failure = e;
         } finally {
+            Throwable recordedFailure = failure;
+            if (failure != null) {
+                // Only read the recorded error: shutdown can wrap a checked
+                // failure differently from load(), or rethrow it unchanged.
+                try {
+                    this.context().throwIfFailed();
+                } catch (Throwable recorded) {
+                    recordedFailure = recorded;
+                    if (recorded != failure) {
+                        // Retain an asynchronously recorded error even when it
+                        // differs from the error propagated by load().
+                        log.error("Recorded load failure for task {}", this.id, recorded);
+                    }
+                }
+            }
+            Throwable recordedCause = recordedFailure == null ? null : recordedFailure.getCause();
+            int suppressed = recordedFailure == null ? 0 : recordedFailure.getSuppressed().length;
+            int causeSuppressed = recordedCause == null ? 0 : recordedCause.getSuppressed().length;
             try {
                 this.loader.shutdown();
             } catch (Throwable e) {
                 noError = false;
-                cleanupFailed = true;
+                cleanupFailed = !sameLoadFailure(recordedFailure, e) ||
+                                recordedFailure.getSuppressed().length != suppressed ||
+                                (recordedCause != null && recordedCause.getSuppressed().length != causeSuppressed);
+                if (cleanupFailed) {
+                    log.error("Failed to close load task {}; check graph loading mode before retrying", this.id, e);
+                }
                 if (failure == null) {
                     failure = e;
-                } else if (failure != e) {
+                } else if (cleanupFailed && failure != e && !referencesFailure(e, failure)) {
                     failure.addSuppressed(e);
                 }
             }
@@ -223,6 +247,31 @@ public class LoadTask implements Runnable {
             this.finished = true;
             this.lock.unlock();
         }
+    }
+
+    private static boolean sameLoadFailure(Throwable recorded, Throwable cleanup) {
+        if (recorded == null) {
+            return false;
+        }
+        if (recorded == cleanup) {
+            return true;
+        }
+        // LoadContext.throwIfFailed() wraps only non-runtime failures this way.
+        return recorded.getClass() == LoadException.class && cleanup.getClass() == LoadException.class &&
+               recorded.getCause() != null && !(recorded.getCause() instanceof RuntimeException) &&
+               recorded.getCause() == cleanup.getCause() && cleanup.getSuppressed().length == 0;
+    }
+
+    private static boolean referencesFailure(Throwable cleanup, Throwable failure) {
+        if (cleanup.getCause() == failure) {
+            return true;
+        }
+        for (Throwable suppressed : cleanup.getSuppressed()) {
+            if (suppressed == failure) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void lock() {
