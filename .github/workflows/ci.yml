@@ -92,17 +92,17 @@ jobs:
           expected-commit: 68855199031d5801edb4fe41b2bacbacffe8fe68
       - name: Resolve locked Loader ownership Server
         id: loading-baseline
-        if: steps.scope.outputs.loader == 'true'
+        if: steps.scope.outputs.loader == 'true' || steps.scope.outputs.hubble == 'true'
         uses: ./.github/actions/get-hugegraph-commit
         with:
           repository: apache/hugegraph
-          ref: a1b5ad570162cf0f20ddd646a8350d786209b443
-          expected-commit: a1b5ad570162cf0f20ddd646a8350d786209b443
+          ref: 257a6a7ac2867daf4567f0d1a050123a8ff651cb
+          expected-commit: 257a6a7ac2867daf4567f0d1a050123a8ff651cb
       - name: Record external test inputs
         env:
           NEEDS_SERVER: ${{ steps.scope.outputs.needsFixture }}
-          NEEDS_CURRENT_SERVER: ${{ steps.scope.outputs.hubble == 'true' || steps.scope.outputs.go == 'true' }}
-          NEEDS_LOADING_SERVER: ${{ steps.scope.outputs.loader == 'true' }}
+          NEEDS_CURRENT_SERVER: ${{ steps.scope.outputs.go == 'true' }}
+          NEEDS_LOADING_SERVER: ${{ steps.scope.outputs.loader == 'true' || steps.scope.outputs.hubble == 'true' }}
           LOADING_COMMIT: ${{ steps.loading-baseline.outputs.commit_id }}
           LOADING_REF: ${{ steps.loading-baseline.outputs.fetch_ref }}
           SERVER_REPOSITORY: ${{ steps.baseline.outputs.repository }}
@@ -124,7 +124,7 @@ jobs:
               inputs['server'] = {'repository': os.environ['SERVER_REPOSITORY'],
                                   'commit': os.environ['SERVER_COMMIT'],
                                   'ref': os.environ['SERVER_REF'], 'jdk': '11'}
-          if os.environ['NEEDS_SERVER'] == 'true' and any(module not in ('go', 'loader') for module in selected):
+          if os.environ['NEEDS_SERVER'] == 'true' and any(module not in ('go', 'loader', 'hubble') for module in selected):
               inputs['candidateSDK'] = {'repository': os.environ['CURRENT_REPOSITORY'],
                                         'commit': os.environ['CURRENT_COMMIT'],
                                         'ref': os.environ['CURRENT_REF'], 'jdk': '17'}
@@ -135,7 +135,8 @@ jobs:
           if os.environ['NEEDS_LOADING_SERVER'] == 'true':
               inputs['loaderServer'] = {'repository': 'apache/hugegraph',
                                         'commit': os.environ['LOADING_COMMIT'],
-                                        'ref': os.environ['LOADING_REF'], 'jdk': '17', 'protocol': 1}
+                                        'ref': os.environ['LOADING_REF'], 'jdk': '17', 'protocol': 1,
+                                        'consumers': [module for module in selected if module in ('loader', 'hubble')]}
           with open('inputs.json', 'w') as stream:
               json.dump(inputs, stream, sort_keys=True)
           PYINPUTS
@@ -188,7 +189,7 @@ jobs:
 
   current-fixture:
     needs: plan
-    if: needs.plan.outputs.hubble == 'true' || needs.plan.outputs.go == 'true'
+    if: needs.plan.outputs.go == 'true'
     runs-on: ubuntu-latest
     outputs:
       artifact: ${{ steps.identity.outputs.artifact }}
@@ -211,6 +212,33 @@ jobs:
           repository: ${{ needs.plan.outputs.current-repository }}
           commit-id: ${{ needs.plan.outputs.current-commit }}
           fetch-ref: ${{ needs.plan.outputs.current-ref }}
+          java-version: '17'
+
+  loading-fixture:
+    needs: plan
+    if: needs.plan.outputs.hubble == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      artifact: ${{ steps.identity.outputs.artifact }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Name immutable ownership Server artifact
+        id: identity
+        run: echo "artifact=loading-fixture-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+      - uses: ./.github/actions/setup-java-env
+        with:
+          java-version: '17'
+          distribution: temurin
+      - name: Build reusable ownership Server package
+        uses: ./.github/actions/setup-hugegraph-server
+        with:
+          mode: build
+          artifact-name: ${{ steps.identity.outputs.artifact }}
+          repository: apache/hugegraph
+          commit-id: ${{ needs.plan.outputs.loading-commit }}
+          fetch-ref: ${{ needs.plan.outputs.loading-ref }}
           java-version: '17'
 
   client:
@@ -272,14 +300,14 @@ jobs:
       contents: read
       actions: read
       id-token: write
-    needs: [plan, fixture, current-fixture]
+    needs: [plan, fixture, loading-fixture]
     if: ${{ needs.plan.outputs.hubble == 'true' }}
     uses: ./.github/workflows/hubble-ci.yml
     with:
-      current-artifact-name: ${{ needs.current-fixture.outputs.artifact }}
-      current-commit: ${{ needs.plan.outputs.current-commit }}
-      current-repository: ${{ needs.plan.outputs.current-repository }}
-      current-ref: ${{ needs.plan.outputs.current-ref }}
+      current-artifact-name: ${{ needs.loading-fixture.outputs.artifact }}
+      current-commit: ${{ needs.plan.outputs.loading-commit }}
+      current-repository: apache/hugegraph
+      current-ref: ${{ needs.plan.outputs.loading-ref }}
       artifact-name: ${{ needs.fixture.outputs.artifact }}
       server-repository: ${{ needs.plan.outputs.server-repository }}
       server-commit: ${{ needs.plan.outputs.server-commit }}
@@ -317,7 +345,7 @@ jobs:
 
   affected-module-tests:
     name: affected-module-tests
-    needs: [plan, fixture, current-fixture, client, loader, tools, spark, hubble, go, loader_image, hubble_image, dependency-audit]
+    needs: [plan, fixture, current-fixture, loading-fixture, client, loader, tools, spark, hubble, go, loader_image, hubble_image, dependency-audit]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     steps:

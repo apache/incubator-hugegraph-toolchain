@@ -469,9 +469,12 @@ def gate(plan, results, fetch=None):
         if set(plan["expected"]).intersection(MODULES["toolchain"]):
             if results.get("fixture", {}).get("result") != "success":
                 raise ValueError("selected tests lack successful fixture")
-        if (set(plan["expected"]).intersection({"hubble", "go"}) and
+        if ("go" in plan["expected"] and
                 results.get("current-fixture", {}).get("result") != "success"):
             raise ValueError("selected tests lack successful current Server fixture")
+        if ("hubble" in plan["expected"] and
+                results.get("loading-fixture", {}).get("result") != "success"):
+            raise ValueError("selected Hubble tests lack successful ownership Server fixture")
     require_current_pr(plan, fetch or api)
     return result_report(plan, results)
 

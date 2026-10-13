@@ -141,6 +141,11 @@ runs do not acquire a loading handle. See
 [Concurrent imports and LOADING ownership](#concurrent-imports-and-loading-ownership) for the required Server
 protocol and same-instance boundary.
 
+`--restore` and all-Graph inputs also confirm protocol support before clearing, creating schema or writing data.
+They retain the existing RESTORING enum mode and restore NONE after workers stop only when their RESTORING PUT
+succeeded. A failed PUT takes no cleanup responsibility. RESTORING retains its existing concurrency semantics;
+the loading-owner protocol coordinates LOADING imports.
+
 A network failure can leave acquisition applied without a successful response. Loader preserves the original
 failure and logs the graph and handle. Cleanup cancels that same handle after workers stop; failed release reports
 the handle for recovery on the same graph instance with the same authenticated identity.

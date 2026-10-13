@@ -45,11 +45,21 @@ public class LegacyServerCompatibilityTest {
 
     @Test
     public void testMissingOwnershipRefusesImportBeforeMutation() throws Exception {
+        this.assertRefusalBeforeMutation(false);
+    }
+
+    @Test
+    public void testRestoreRefusesImportBeforeMutation() throws Exception {
+        this.assertRefusalBeforeMutation(true);
+    }
+
+    private void assertRefusalBeforeMutation(boolean restore) throws Exception {
         String url = System.getProperty("hugegraph.loader.test-server-url", "http://127.0.0.1:8080");
         String graph = "legacy_owner_" + UUID.randomUUID().toString().replace("-", "");
         try (HugeClient control = HugeClient.builder(url, "hugegraph").configUser("admin", "pa").build()) {
             control.graphs().createGraph(graph, JsonUtil.toJson(ImmutableMap.of(
-                    "store", graph, "backend", "memory", "serializer", "text")));
+                    "store", graph, "backend", "memory", "serializer", "text",
+                    "gremlin.graph", "org.apache.hugegraph.auth.HugeFactoryAuthProxy")));
             try (HugeClient client = HugeClient.builder(url, graph).configUser("admin", "pa").build()) {
                 client.schema().propertyKey("name").asText().create();
                 client.schema().vertexLabel("sentinel").properties("name").primaryKeys("name").create();
@@ -75,14 +85,20 @@ public class LegacyServerCompatibilityTest {
                         "-f", mapping.toString(), "-s", schema.toString(), "-g", graph,
                         "-h", endpoint.getHost(), "-p", String.valueOf(endpoint.getPort()),
                         "--username", "admin", "--password", "pa", "--clear-all-data", "true",
-                        "--test-mode", "true"
+                        "--test-mode", "true", "--restore", String.valueOf(restore)
                 });
                 try {
                     ServerException failure = (ServerException) Assert.assertThrows(ServerException.class,
                             loader::load);
                     Assert.assertEquals(404, failure.status());
-                } finally {
+                    Assert.assertSame(failure, Assert.assertThrows(ServerException.class, loader::shutdown));
+                    Assert.assertTrue(loader.context().closed());
                     loader.shutdown();
+                    Assert.assertTrue(loader.context().closed());
+                } finally {
+                    if (!loader.context().closed()) {
+                        loader.shutdown();
+                    }
                 }
 
                 Assert.assertEquals(GraphMode.NONE, client.graphs().mode(graph));

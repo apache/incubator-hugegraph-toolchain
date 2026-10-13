@@ -31,7 +31,6 @@ import org.slf4j.Logger;
 import lombok.SneakyThrows;
 
 import org.apache.hugegraph.driver.HugeClient;
-import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.loader.builder.SchemaCache;
 import org.apache.hugegraph.loader.failure.FailLogger;
 import org.apache.hugegraph.loader.filter.ElementParseGroup;
@@ -57,6 +56,8 @@ public final class LoadContext implements Cloneable {
     // Save the tuple before acquire so cleanup can cancel an unknown outcome.
     private LoadingModeOwner loadingOwner;
     private boolean loadingOwnerReleased;
+    // RESTORING retains its existing enum cleanup, without a LOADING owner token.
+    private boolean restoreModeSet;
     private volatile StopReason stopReason;
     private volatile boolean noError;
     private volatile Throwable failure;
@@ -232,20 +233,19 @@ public final class LoadContext implements Cloneable {
         }
     }
 
-    public void setRestoreMode() {
+    public synchronized void setRestoreMode() {
         String graph = this.client.graph().graph();
-        try {
-            this.client.graphs().mode(graph, GraphMode.RESTORING);
-        } catch (ServerException e) {
-            if (e.getMessage().contains("Can not deserialize value of type")) {
-                LOG.warn("HugeGraphServer doesn't support loading mode");
-            } else {
-                throw e;
-            }
-        }
+        this.client.graphs().newLoadingOwner(graph);
+        this.client.graphs().mode(graph, GraphMode.RESTORING);
+        this.restoreModeSet = true;
     }
 
     public synchronized void unsetLoadingMode() {
+        if (this.restoreModeSet) {
+            this.client.graphs().mode(this.client.graph().graph(), GraphMode.NONE);
+            this.restoreModeSet = false;
+            return;
+        }
         if (this.loadingOwner == null || this.loadingOwnerReleased) {
             return;
         }
@@ -312,6 +312,7 @@ public final class LoadContext implements Cloneable {
         LoadContext context = (LoadContext) super.clone();
         context.loadingOwner = null;
         context.loadingOwnerReleased = false;
+        context.restoreModeSet = false;
         return context;
     }
 }

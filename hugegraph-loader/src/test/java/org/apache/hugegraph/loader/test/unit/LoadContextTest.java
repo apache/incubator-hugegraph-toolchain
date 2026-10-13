@@ -521,15 +521,94 @@ public class LoadContextTest {
     }
 
     @Test
-    public void testRestoreModeDoesNotAcquireLoadingCleanup() throws Exception {
+    public void testRestoreModeCleanupRestoresNoneOnce() throws Exception {
         try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
             LoadContext context = this.context(client, client);
             context.setRestoreMode();
             Assert.assertEquals(GraphMode.RESTORING, server.mode);
             context.unsetLoadingMode();
+            Assert.assertEquals(GraphMode.NONE, server.mode);
+            Assert.assertEquals(0, server.ownerWrites);
+            Assert.assertEquals(2, server.modeWrites);
+            context.unsetLoadingMode();
+            Assert.assertEquals(2, server.modeWrites);
+        }
+    }
+
+    @Test
+    public void testUnsupportedRestoreCapabilityDoesNotChangeManualMode() throws Exception {
+        try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
+            LoadContext context = this.context(client, client);
+            server.ownershipSupported = false;
+            server.mode = GraphMode.RESTORING;
+            Assert.assertThrows(ServerException.class, context::setRestoreMode);
+            context.unsetLoadingMode();
             Assert.assertEquals(GraphMode.RESTORING, server.mode);
+            Assert.assertEquals(1, server.ownershipReads);
+            Assert.assertEquals(0, server.ownerWrites);
+            Assert.assertEquals(0, server.modeWrites);
+        }
+    }
+
+    @Test
+    public void testFailedRestorePutDoesNotTakeCleanupResponsibility() throws Exception {
+        try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
+            LoadContext context = this.context(client, client);
+            server.mode = GraphMode.RESTORING;
+            server.failure = "Restore change denied";
+            Assert.assertThrows(ServerException.class, context::setRestoreMode);
+            server.failure = null;
+            context.unsetLoadingMode();
+            Assert.assertEquals(GraphMode.RESTORING, server.mode);
+            Assert.assertEquals(1, server.ownershipReads);
             Assert.assertEquals(0, server.ownerWrites);
             Assert.assertEquals(1, server.modeWrites);
+        }
+    }
+
+    @Test
+    public void testCloneDoesNotCleanOriginalRestoringMode() throws Exception {
+        try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
+            LoadContext context = this.context(client, client);
+            context.setRestoreMode();
+            LoadContext clone = (LoadContext) context.clone();
+            clone.unsetLoadingMode();
+            Assert.assertEquals(GraphMode.RESTORING, server.mode);
+            Assert.assertEquals(1, server.modeWrites);
+            context.unsetLoadingMode();
+            Assert.assertEquals(GraphMode.NONE, server.mode);
+            Assert.assertEquals(2, server.modeWrites);
+            Assert.assertEquals(0, server.ownerWrites);
+        }
+    }
+
+    @Test
+    public void testRestoreFlagRefusesUnsupportedServerBeforeClear() throws Exception {
+        this.assertUnsupportedRestoreStartup(true);
+    }
+
+    @Test
+    public void testAllGraphInputsRefuseUnsupportedServerBeforeClear() throws Exception {
+        this.assertUnsupportedRestoreStartup(false);
+    }
+
+    private void assertUnsupportedRestoreStartup(boolean restore) throws Exception {
+        try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
+            LoadContext context = this.context(client, client);
+            context.options().restore = restore;
+            context.options().clearAllData = true;
+            server.ownershipSupported = false;
+            InputStruct input = new InputStruct(null, null);
+            input.input(restore ? new FileSource() : new GraphSource());
+            HugeGraphLoader loader = loader(context, input);
+            Throwable failure = Assert.assertThrows(ServerException.class, loader::load);
+            Assert.assertSame(failure, Assert.assertThrows(ServerException.class, loader::shutdown));
+            Assert.assertTrue(context.closed());
+            loader.shutdown();
+            Assert.assertEquals(GraphMode.NONE, server.mode);
+            Assert.assertEquals(1, server.ownershipReads);
+            Assert.assertEquals(0, server.ownerWrites);
+            Assert.assertEquals(0, server.modeWrites);
         }
     }
 
@@ -870,6 +949,7 @@ public class LoadContextTest {
         private volatile boolean dropModeResponse;
         private volatile int modeReads;
         private volatile int modeWrites;
+        private volatile int ownershipReads;
 
         private ModeServer() throws IOException {
             this.server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
@@ -880,6 +960,9 @@ public class LoadContextTest {
                 if (path.equals("/versions")) {
                     response = "{\"versions\":{\"core\":\"1.8.0\",\"api\":\"0.74\"}}";
                 } else if (path.equals("/graphspaces/DEFAULT/graphs/hugegraph/mode/owners")) {
+                    if (exchange.getRequestMethod().equals("GET")) {
+                        this.ownershipReads++;
+                    }
                     if (!this.ownershipSupported) {
                         status = 404;
                         response = "{}";

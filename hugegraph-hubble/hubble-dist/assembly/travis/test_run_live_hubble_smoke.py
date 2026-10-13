@@ -21,6 +21,7 @@ import io
 import tarfile
 import tempfile
 import unittest
+import urllib.error
 from pathlib import Path
 from unittest import mock
 
@@ -29,6 +30,77 @@ SCRIPT = Path(__file__).with_name("run_live_hubble_smoke.py")
 SPEC = importlib.util.spec_from_file_location("run_live_hubble_smoke", SCRIPT)
 SMOKE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(SMOKE)
+
+
+class LoadingCompatibilityTest(unittest.TestCase):
+
+    def test_missing_capability_requires_exact_http_404(self):
+        with mock.patch.object(SMOKE, "server_json", side_effect=urllib.error.HTTPError(
+                "http://fixture/mode/owners", 404, "Not Found", {}, None)):
+            SMOKE.require_missing_loading_capability("http://fixture", "DEFAULT", "graph")
+        for error in (urllib.error.HTTPError("http://fixture", 401, "Unauthorized", {}, None),
+                      urllib.error.URLError("connection refused")):
+            with self.subTest(error=type(error).__name__), mock.patch.object(
+                    SMOKE, "server_json", side_effect=error), self.assertRaises(Exception):
+                SMOKE.require_missing_loading_capability("http://fixture", "DEFAULT", "graph")
+        with mock.patch.object(SMOKE, "server_json", return_value={"protocol": 1}), self.assertRaises(RuntimeError):
+            SMOKE.require_missing_loading_capability("http://fixture", "DEFAULT", "graph")
+
+    def test_success_cannot_satisfy_expected_refusal(self):
+        with mock.patch.object(SMOKE, "request", side_effect=[
+                {"status": 200, "data": [{"id": 7, "status": "PENDING"}]},
+                {"status": 200, "data": {"id": 7, "status": "SUCCEED"}}]), self.assertRaises(RuntimeError):
+            SMOKE.wait_for_load_task("http://hubble", "DEFAULT", "graph", 1, 2, "FAILED")
+
+    def test_refusal_log_binds_task_and_ownership_call(self):
+        with tempfile.TemporaryDirectory() as directory:
+            log = Path(directory) / "app.log"
+            log.write_text("Run task 7 failed\nHTTP 404 Not Found\nat GraphsAPI.newLoadingOwner\n")
+            SMOKE.require_loading_refusal_log(log, 7)
+            with mock.patch.object(SMOKE.time, "monotonic", side_effect=[0, 0, 6]), \
+                    mock.patch.object(SMOKE.time, "sleep"), self.assertRaises(RuntimeError):
+                SMOKE.require_loading_refusal_log(log, 8)
+
+    def run_flow(self, snapshots):
+        schema = {"pk_id": "id", "pk_name": "name", "pk_rank": "rank",
+                  "vl_person": "person", "el_knows": "knows"}
+
+        def response(method, url, path, body=None):
+            if method == "POST" and path.endswith("/vertices"):
+                return {"id": body["id"]}
+            if "shortestpath" in path:
+                return {"path": ["p_alice", "p_bob", "p_carol"]}
+            return {}
+
+        with mock.patch.object(SMOKE, "create_schema", return_value=([], schema)), \
+                mock.patch.object(SMOKE, "upload_csv", return_value=(1, 2)), \
+                mock.patch.object(SMOKE, "configure_mapping"), \
+                mock.patch.object(SMOKE, "wait_for_load_task", return_value=(
+                    7, {"status": "FAILED"}, {"job_status": "FAILED"})), \
+                mock.patch.object(SMOKE, "require_missing_loading_capability"), \
+                mock.patch.object(SMOKE, "require_loading_refusal_log"), \
+                mock.patch.object(SMOKE, "loading_snapshot", side_effect=snapshots), \
+                mock.patch.object(SMOKE, "server_json", side_effect=response), \
+                mock.patch.object(SMOKE, "run_server_label_count", side_effect=[3, 2]), \
+                mock.patch.object(SMOKE, "seed_traversal_fixture") as seed:
+            try:
+                return SMOKE.run_live_function_flow("http://hubble", "http://server", "DEFAULT", "graph",
+                                                    "p", True, Path("app.log"))
+            except RuntimeError:
+                seed.assert_not_called()
+                raise
+
+    def test_refusal_preserves_graph_and_labels_direct_setup_separately(self):
+        checks = self.run_flow([{"mode": "NONE", "sentinel": "kept"}] * 2)
+        names = {check["name"] for check in checks}
+        self.assertIn("hubble-loader-refusal-preserves-graph", names)
+        self.assertIn("server-traversal-fixture", names)
+        self.assertNotIn("hubble-loader-task", names)
+        self.assertNotIn("server-loader-rest-count", names)
+
+    def test_refusal_with_mutated_graph_fails_before_direct_setup(self):
+        with self.assertRaisesRegex(RuntimeError, "changed sentinel"):
+            self.run_flow([{"mode": "NONE", "sentinel": "kept"}, {"mode": "LOADING"}])
 
 
 class ArchiveExtractionTest(unittest.TestCase):
