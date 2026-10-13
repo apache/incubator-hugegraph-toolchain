@@ -50,10 +50,20 @@ public final class InputProgress {
     }
 
     public InputProgress(InputStruct struct) {
+        this(struct, null);
+    }
+
+    public InputProgress(InputStruct struct, InputProgress previous) {
         this.type = struct.input().type();
         this.loadedItems = Collections.synchronizedMap(
                 InsertionOrderUtil.newMap());
         this.loadingItems = new ConcurrentHashMap<>();
+        if (previous != null && previous.type == this.type) {
+            synchronized (previous) {
+                previous.loadedItems.forEach((name, item) -> this.loadedItems.put(name, item.copy()));
+                previous.loadingItems.forEach((name, item) -> this.loadingItems.put(name, item.copy()));
+            }
+        }
     }
 
     public synchronized Map<String, InputItemProgress> loadedItems() {

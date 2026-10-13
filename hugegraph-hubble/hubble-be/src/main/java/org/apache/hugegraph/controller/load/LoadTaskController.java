@@ -50,6 +50,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.locks.Lock;
 
 @Log4j2
 @RestController
@@ -114,19 +115,25 @@ public class LoadTaskController extends BaseController {
                            @PathVariable("jobId") int jobId,
                            @RequestBody LoadTask entity) {
         this.requireGraphSpaceWrite(graphSpace);
-        JobManager jobEntity = this.jobService.get(graphSpace, graph, jobId);
-        Ex.check(jobEntity != null, "job-manager.not-exist.id", jobId);
-        Ex.check(jobEntity.getJobStatus() == JobStatus.SETTING,
-                 "load.task.create.no-permission");
-        synchronized (this.service) {
-            Ex.check(this.service.count() < LIMIT,
-                     "load.task.reached-limit", LIMIT);
-            entity.setGraphSpace(graphSpace);
-            entity.setGraph(graph);
-            entity.setJobId(jobId);
-            this.service.save(entity);
+        Lock control = this.jobService.jobControl(jobId);
+        control.lock();
+        try {
+            JobManager jobEntity = this.jobService.get(graphSpace, graph, jobId);
+            Ex.check(jobEntity != null, "job-manager.not-exist.id", jobId);
+            Ex.check(jobEntity.getJobStatus() == JobStatus.SETTING,
+                     "load.task.create.no-permission");
+            synchronized (this.service) {
+                Ex.check(this.service.count() < LIMIT,
+                         "load.task.reached-limit", LIMIT);
+                entity.setGraphSpace(graphSpace);
+                entity.setGraph(graph);
+                entity.setJobId(jobId);
+                this.service.save(entity);
+            }
+            return entity;
+        } finally {
+            control.unlock();
         }
-        return entity;
     }
 
     @DeleteMapping("{id}")
@@ -171,35 +178,41 @@ public class LoadTaskController extends BaseController {
             connection.setPort(host.getPort());
         }
 
-        JobManager jobEntity = this.jobService.get(graphSpace, graph, jobId);
-        Ex.check(jobEntity != null, "job-manager.not-exist.id", jobId);
-        Ex.check(jobEntity.getJobStatus() == JobStatus.SETTING,
-                 "load.task.start.no-permission");
-        boolean existError = false;
+        Lock control = this.jobService.jobControl(jobId);
+        control.lock();
         try {
-            List<LoadTask> tasks = new ArrayList<>();
-            HugeClient client = this.authClient(graphSpace, graph);
-            for (Integer fileId : fileIds) {
-                FileMapping fileMapping = this.fmService.get(graphSpace, graph,
-                                                              jobId, fileId);
-                if (fileMapping == null) {
-                    throw new ExternalException("file-mapping.not-exist.id",
-                                                fileId);
+            JobManager jobEntity = this.jobService.get(graphSpace, graph, jobId);
+            Ex.check(jobEntity != null, "job-manager.not-exist.id", jobId);
+            Ex.check(jobEntity.getJobStatus() == JobStatus.SETTING,
+                     "load.task.start.no-permission");
+            boolean existError = false;
+            try {
+                List<LoadTask> tasks = new ArrayList<>();
+                HugeClient client = this.authClient(graphSpace, graph);
+                for (Integer fileId : fileIds) {
+                    FileMapping fileMapping = this.fmService.get(graphSpace, graph,
+                                                                  jobId, fileId);
+                    if (fileMapping == null) {
+                        throw new ExternalException("file-mapping.not-exist.id",
+                                                    fileId);
+                    }
+                    tasks.add(this.service.start(connection, fileMapping, client));
                 }
-                tasks.add(this.service.start(connection, fileMapping, client));
+                return tasks;
+            } catch (Exception e) {
+                existError = true;
+                throw e;
+            } finally {
+                if (existError) {
+                    jobEntity.setJobStatus(JobStatus.FAILED);
+                } else {
+                    jobEntity.setJobStatus(JobStatus.LOADING);
+                }
+                jobEntity.setUpdateTime(HubbleUtil.nowDate());
+                this.jobService.update(jobEntity);
             }
-            return tasks;
-        } catch (Exception e) {
-            existError = true;
-            throw e;
         } finally {
-            if (existError) {
-                jobEntity.setJobStatus(JobStatus.FAILED);
-            } else {
-                jobEntity.setJobStatus(JobStatus.LOADING);
-            }
-            jobEntity.setUpdateTime(HubbleUtil.nowDate());
-            this.jobService.update(jobEntity);
+            control.unlock();
         }
     }
 

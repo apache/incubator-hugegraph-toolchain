@@ -34,7 +34,8 @@ public abstract class AbstractReader implements InputReader {
         // Update loading vertex/edge mapping
         this.newProgress = context.newProgress().get(struct.id());
         if (this.newProgress == null) {
-            this.newProgress = context.newProgress().addStruct(struct);
+            this.newProgress = context.newProgress().addStruct(
+                    struct, context.options().incrementalMode ? this.oldProgress : null);
         }
     }
 }

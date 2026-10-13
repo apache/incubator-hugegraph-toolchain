@@ -96,6 +96,10 @@ public final class LoadContext implements Cloneable {
         this.summary = new LoadSummary();
         this.oldProgress = LoadProgress.parse(options);
         this.newProgress = new LoadProgress();
+        if (options.incrementalMode) {
+            this.newProgress.plusVertexLoaded(this.oldProgress.vertexLoaded());
+            this.newProgress.plusEdgeLoaded(this.oldProgress.edgeLoaded());
+        }
         this.loggers = new ConcurrentHashMap<>();
         this.client = schemaCache == null ? HugeClientHolder.create(options) : null;
         if (this.client != null && this.options.direct) {
@@ -259,6 +263,10 @@ public final class LoadContext implements Cloneable {
     }
 
     public void close() {
+        this.close(true);
+    }
+
+    public void close(boolean saveProgress) {
         if (this.closed) {
             return;
         }
@@ -284,7 +292,7 @@ public final class LoadContext implements Cloneable {
             this.throwIfFailed();
             this.newProgress.plusVertexLoaded(this.summary.vertexLoaded());
             this.newProgress.plusEdgeLoaded(this.summary.edgeLoaded());
-            if (this.client != null) {
+            if (this.client != null && saveProgress) {
                 try {
                     this.newProgress.write(this);
                 } catch (IOException e) {

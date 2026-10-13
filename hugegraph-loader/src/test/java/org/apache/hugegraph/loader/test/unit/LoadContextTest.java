@@ -25,10 +25,12 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -666,6 +668,210 @@ public class LoadContextTest {
         @Override
         public boolean requiresLayout() {
             return false;
+        }
+    }
+
+    @Test
+    public void testIncrementalReaderInitializationCopiesCheckpointWithoutAliases() throws Exception {
+        this.assertReaderCheckpointInitialization(true);
+    }
+
+    @Test
+    public void testReplayReaderInitializationDoesNotInheritCheckpoint() throws Exception {
+        this.assertReaderCheckpointInitialization(false);
+    }
+
+    @Test
+    public void testIncrementalRangeFilteringPreservesOnlyCurrentMappingCheckpoints() throws Exception {
+        this.assertReaderCheckpointInitialization(true, true);
+    }
+
+    private void assertReaderCheckpointInitialization(boolean incremental) throws Exception {
+        this.assertReaderCheckpointInitialization(incremental, false);
+    }
+
+    private void assertReaderCheckpointInitialization(boolean incremental, boolean filtered) throws Exception {
+        try (ModeServer server = new ModeServer()) {
+            File firstFile = this.folder.newFile("copied-loaded.csv");
+            File secondFile = this.folder.newFile("copied-loading.csv");
+            java.nio.file.Files.writeString(firstFile.toPath(), "a0\na1\n");
+            java.nio.file.Files.writeString(secondFile.toPath(), "b0\nb1\n");
+            LoadOptions options = new LoadOptions();
+            options.host = "127.0.0.1";
+            options.port = server.server.getAddress().getPort();
+            options.file = this.folder.newFile(incremental ? "copy-inc.json" : "copy-replay.json").getAbsolutePath();
+            LoadProgress checkpoint = new LoadProgress();
+            InputStruct[] structs = new InputStruct[2];
+            File[] files = {firstFile, secondFile};
+            for (int i = 0; i < files.length; i++) {
+                FileSource source = new FileSource();
+                source.path(files[i].getAbsolutePath());
+                source.header(new String[]{"id"});
+                source.hasHeader(false);
+                InputStruct struct = new InputStruct(null, null);
+                struct.id(Integer.toString(i));
+                struct.input(source);
+                structs[i] = struct;
+                org.apache.hugegraph.loader.progress.FileItemProgress item =
+                        new org.apache.hugegraph.loader.progress.FileItemProgress(
+                                files[i].getName(), files[i].lastModified(),
+                                String.valueOf(org.apache.commons.io.FileUtils.checksumCRC32(files[i])),
+                                i == 0 ? 2L : 1L);
+                org.apache.hugegraph.loader.progress.InputProgress progress = checkpoint.addStruct(struct);
+                if (i == 0) {
+                    progress.addLoadedItem(files[i].getName(), item);
+                } else {
+                    progress.addLoadingItem(files[i].getName(), item);
+                }
+            }
+            if (filtered) {
+                InputStruct removed = new InputStruct(null, null);
+                removed.id("removed");
+                removed.input(structs[0].input());
+                checkpoint.addStruct(removed).addLoadedItem(firstFile.getName(),
+                        new org.apache.hugegraph.loader.progress.FileItemProgress(
+                                firstFile.getName(), firstFile.lastModified(), "removed", 1L));
+                options.startFile = 1;
+                options.endFile = 2;
+            }
+            checkpoint.plusVertexLoaded(5L);
+            checkpoint.plusEdgeLoaded(2L);
+            java.nio.file.Path saved = java.nio.file.Paths.get(LoadProgress.format(options, "20000101-000000"));
+            java.nio.file.Files.createDirectories(saved.getParent());
+            java.nio.file.Files.writeString(saved, JsonUtil.toJson(checkpoint));
+            options.incrementalMode = incremental;
+            LoadContext context = new LoadContext(options);
+            try {
+                if (filtered) {
+                    HugeGraphLoader loader = loader(context, structs);
+                    Method prepare = HugeGraphLoader.class.getDeclaredMethod(
+                            "prepareTaskItems", List.class, boolean.class);
+                    prepare.setAccessible(true);
+                    @SuppressWarnings("unchecked")
+                    List<HugeGraphLoader.InputTaskItem> tasks =
+                            (List<HugeGraphLoader.InputTaskItem>) prepare.invoke(loader, Arrays.asList(structs), false);
+                    Assert.assertEquals(1, tasks.size());
+                    for (HugeGraphLoader.InputTaskItem item : tasks) {
+                        item.reader.close();
+                    }
+                    Assert.assertNull(context.newProgress().get("removed"));
+                } else {
+                    for (InputStruct struct : structs) {
+                        org.apache.hugegraph.loader.reader.file.LocalFileReader scanner =
+                                new org.apache.hugegraph.loader.reader.file.LocalFileReader(
+                                        (FileSource) struct.input());
+                        try (org.apache.hugegraph.loader.reader.InputReader reader = scanner.split().get(0)) {
+                            reader.init(context, struct);
+                        }
+                    }
+                }
+                if (incremental) {
+                    org.apache.hugegraph.loader.progress.InputItemProgress oldLoaded =
+                            context.oldProgress().get("0").loadedItem(firstFile.getName());
+                    org.apache.hugegraph.loader.progress.InputItemProgress newLoaded =
+                            context.newProgress().get("0").loadedItem(firstFile.getName());
+                    org.apache.hugegraph.loader.progress.InputItemProgress oldLoading =
+                            context.oldProgress().get("1").loadingItem(secondFile.getName());
+                    org.apache.hugegraph.loader.progress.InputItemProgress newLoading =
+                            context.newProgress().get("1").loadingItem(secondFile.getName());
+                    Assert.assertNotSame(oldLoaded, newLoaded);
+                    Assert.assertNotSame(oldLoading, newLoading);
+                    Assert.assertTrue(newLoaded instanceof org.apache.hugegraph.loader.progress.FileItemProgress);
+                    Assert.assertEquals(oldLoaded, newLoaded);
+                    newLoading.offset(2L);
+                    newLoading.confirmOffset();
+                    Assert.assertEquals(1L, oldLoading.offset());
+                    newLoading.offset(1L);
+                    newLoading.confirmOffset();
+                    HugeGraphLoader loader = loader(context, structs);
+                    Method cleanup = HugeGraphLoader.class.getDeclaredMethod("cleanupEmptyProgress");
+                    cleanup.setAccessible(true);
+                    cleanup.invoke(loader);
+                    Assert.assertEquals(2, context.newProgress().inputProgress().size());
+                    Assert.assertEquals(3L, context.newProgress().totalInputRead());
+                    context.stopLoading();
+                    context.close();
+                    LoadProgress next = LoadProgress.parse(options);
+                    Assert.assertEquals(3L, next.totalInputRead());
+                    Assert.assertEquals(5L, next.vertexLoaded());
+                    Assert.assertEquals(2L, next.edgeLoaded());
+                    Assert.assertNull(next.get("removed"));
+                } else {
+                    Assert.assertEquals(0L, context.newProgress().totalInputRead());
+                    Assert.assertEquals(0L, context.newProgress().vertexLoaded());
+                    Assert.assertEquals(0L, context.newProgress().edgeLoaded());
+                    Assert.assertTrue(context.newProgress().get("0").loadedItems().isEmpty());
+                    Assert.assertTrue(context.newProgress().get("1").loadingItems().isEmpty());
+                }
+            } finally {
+                context.close(false);
+            }
+        }
+    }
+
+    @Test
+    public void testDirectContextCloseStillSavesEmptyProgress() throws Exception {
+        try (ModeServer server = new ModeServer()) {
+            LoadOptions options = new LoadOptions();
+            options.host = "127.0.0.1";
+            options.port = server.server.getAddress().getPort();
+            options.file = this.folder.newFile("direct-empty.json").getAbsolutePath();
+            LoadContext context = new LoadContext(options);
+            context.close();
+            Assert.assertTrue(context.closed());
+            Assert.assertTrue(new File(LoadProgress.format(options, context.timestamp())).exists());
+            Assert.assertTrue(context.newProgress().inputProgress().isEmpty());
+        }
+    }
+
+    @Test
+    public void testShutdownUnregistersOwnNativeHook() throws Exception {
+        try (ModeServer server = new ModeServer()) {
+            LoadOptions options = new LoadOptions();
+            options.host = "127.0.0.1";
+            options.port = server.server.getAddress().getPort();
+            options.file = this.folder.newFile("hook-success.json").getAbsolutePath();
+            HugeGraphLoader loader = new HugeGraphLoader(options, new LoadMapping(Collections.emptyList()));
+            Field field = HugeGraphLoader.class.getDeclaredField("shutdownHook");
+            field.setAccessible(true);
+            Thread hook = (Thread) field.get(loader);
+            try {
+                loader.shutdown();
+                Assert.assertTrue(loader.context().closed());
+                Assert.assertFalse(Runtime.getRuntime().removeShutdownHook(hook));
+                loader.shutdown();
+            } finally {
+                Runtime.getRuntime().removeShutdownHook(hook);
+            }
+        }
+    }
+
+    @Test
+    public void testLoadFailureStillUnregistersClosedLoaderHook() throws Exception {
+        try (ModeServer server = new ModeServer()) {
+            LoadOptions options = new LoadOptions();
+            options.host = "127.0.0.1";
+            options.port = server.server.getAddress().getPort();
+            options.file = this.folder.newFile("hook-failure.json").getAbsolutePath();
+            HugeGraphLoader loader = new HugeGraphLoader(options, new LoadMapping(Collections.emptyList()));
+            Field field = HugeGraphLoader.class.getDeclaredField("shutdownHook");
+            field.setAccessible(true);
+            Thread hook = (Thread) field.get(loader);
+            IllegalStateException failure = new IllegalStateException("original loading failure");
+            loader.context().failLoading(failure);
+            try {
+                try {
+                    loader.shutdown();
+                    Assert.fail("shutdown must retain the loading failure");
+                } catch (IllegalStateException actual) {
+                    Assert.assertSame(failure, actual);
+                }
+                Assert.assertTrue(loader.context().closed());
+                Assert.assertFalse(Runtime.getRuntime().removeShutdownHook(hook));
+                loader.shutdown();
+            } finally {
+                Runtime.getRuntime().removeShutdownHook(hook);
+            }
         }
     }
 

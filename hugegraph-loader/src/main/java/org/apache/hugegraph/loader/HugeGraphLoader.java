@@ -90,6 +90,8 @@ public final class HugeGraphLoader {
     private final LoadMapping mapping;
     private final TaskManager manager;
     private final LoadOptions options;
+    private final Thread shutdownHook;
+    private volatile boolean loadStarted;
 
     public static class InputTaskItem {
 
@@ -148,14 +150,11 @@ public final class HugeGraphLoader {
         this.options = options;
         this.mapping = mapping;
         this.manager = new TaskManager(this.context);
-        this.addShutdownHook();
-    }
-
-    private void addShutdownHook() {
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+        this.shutdownHook = new Thread(() -> {
             LOG.info("Shutdown hook was triggered");
             this.stopThenShutdown();
-        }));
+        });
+        Runtime.getRuntime().addShutdownHook(this.shutdownHook);
     }
 
     public LoadContext context() {
@@ -203,6 +202,7 @@ public final class HugeGraphLoader {
     }
 
     public boolean load() {
+        this.loadStarted = true;
         this.options.dumpParams();
 
         try {
@@ -607,6 +607,15 @@ public final class HugeGraphLoader {
 
     private List<InputTaskItem> prepareTaskItems(List<InputStruct> structs,
                                                  boolean scatter) {
+        if (this.context.options().incrementalMode) {
+            // Range filtering must not discard progress of other mapped inputs.
+            for (InputStruct struct : structs) {
+                if (this.context.newProgress().get(struct.id()) == null &&
+                    this.context.oldProgress().get(struct.id()) != null) {
+                    this.context.newProgress().addStruct(struct, this.context.oldProgress().get(struct.id()));
+                }
+            }
+        }
         ArrayList<InputTaskItem> tasks = new ArrayList<>();
         ArrayList<InputReader> readers = new ArrayList<>();
         int curFile = 0;
@@ -903,37 +912,58 @@ public final class HugeGraphLoader {
      * TODO: How to distinguish load task finished normally or abnormally
      */
     private synchronized void stopThenShutdown() {
-        if (this.context.closed()) {
-            return;
-        }
-        LOG.info("Stop loading then shutdown HugeGraphLoader");
-        boolean tasksStopped = this.manager == null;
-        boolean interrupted = Thread.currentThread().isInterrupted();
+        Throwable failure = null;
         try {
-            this.context.stopLoading();
-            if (this.manager != null) {
-                // Wait all insert tasks stopped before exit
-                try {
-                    this.manager.waitFinished();
-                } finally {
-                    this.manager.shutdown();
-                    tasksStopped = true;
-                }
+            if (this.context.closed()) {
+                return;
             }
-        } finally {
-            interrupted |= Thread.currentThread().isInterrupted();
+            LOG.info("Stop loading then shutdown HugeGraphLoader");
+            boolean tasksStopped = this.manager == null;
+            boolean interrupted = Thread.currentThread().isInterrupted();
             try {
-                // Keep dependencies alive if cancellation could not terminate the workers.
-                if (tasksStopped) {
+                this.context.stopLoading();
+                if (this.manager != null) {
+                    // Wait all insert tasks stopped before exit
                     try {
-                        this.context.unsetLoadingMode();
+                        this.manager.waitFinished();
                     } finally {
-                        this.context.close();
+                        this.manager.shutdown();
+                        tasksStopped = true;
                     }
                 }
             } finally {
-                if (interrupted) {
-                    Thread.currentThread().interrupt();
+                interrupted |= Thread.currentThread().isInterrupted();
+                try {
+                    // Keep dependencies alive if cancellation could not terminate the workers.
+                    if (tasksStopped) {
+                        try {
+                            this.context.unsetLoadingMode();
+                        } finally {
+                            this.context.close(this.loadStarted);
+                        }
+                    }
+                } finally {
+                    if (interrupted) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
+        } catch (RuntimeException | Error e) {
+            failure = e;
+            throw e;
+        } finally {
+            if (this.context.closed() && this.shutdownHook != null) {
+                try {
+                    Runtime.getRuntime().removeShutdownHook(this.shutdownHook);
+                } catch (IllegalStateException ignored) {
+                    // JVM shutdown already started; this hook can still finish closing.
+                } catch (RuntimeException | Error e) {
+                    if (failure == null) {
+                        throw e;
+                    }
+                    if (failure != e) {
+                        failure.addSuppressed(e);
+                    }
                 }
             }
         }
@@ -941,7 +971,8 @@ public final class HugeGraphLoader {
 
     private void cleanupEmptyProgress() {
         Map<String, InputProgress> inputProgressMap = this.context.newProgress().inputProgress();
-        inputProgressMap.entrySet().removeIf(entry -> entry.getValue().loadedItems().isEmpty());
+        inputProgressMap.entrySet().removeIf(entry -> entry.getValue().loadedItems().isEmpty() &&
+                                                     entry.getValue().loadingItems().isEmpty());
     }
 
     private static class SplitInputStructs {

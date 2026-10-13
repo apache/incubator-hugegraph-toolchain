@@ -84,7 +84,13 @@ public class LoadTaskServiceTest {
         LoadTaskExecutor executor = Mockito.mock(LoadTaskExecutor.class);
         this.setField(service, "taskExecutor", executor);
         this.setField(service, "runningTaskContainer", new ConcurrentHashMap<>());
-        LoadTask task = LoadTask.builder().id(9).build();
+        org.apache.hugegraph.loader.HugeGraphLoader loader =
+                Mockito.mock(org.apache.hugegraph.loader.HugeGraphLoader.class);
+        Mockito.when(loader.context()).thenReturn(Mockito.mock(org.apache.hugegraph.loader.executor.LoadContext.class));
+        LoadTask task = LoadTask.builder().id(9).status(LoadStatus.RUNNING).loader(loader).build();
+        LoadTaskMapper mapper = Mockito.mock(LoadTaskMapper.class);
+        Mockito.when(mapper.selectById(9)).thenReturn(task);
+        this.setField(service, "mapper", mapper);
         Method method = LoadTaskService.class.getDeclaredMethod(
                 "executeAfterCommit", LoadTask.class);
         method.setAccessible(true);
@@ -114,7 +120,8 @@ public class LoadTaskServiceTest {
         LoadTask task = Mockito.mock(LoadTask.class);
         LoadOptions options = new LoadOptions();
         Mockito.when(mapper.selectById(9)).thenReturn(task);
-        Mockito.when(mapper.updateById(task)).thenReturn(1);
+        Mockito.when(task.getId()).thenReturn(9);
+        Mockito.when(mapper.update(Mockito.eq(task), Mockito.any())).thenReturn(1);
         Mockito.when(task.getStatus()).thenReturn(LoadStatus.PAUSED);
         Mockito.when(task.getOptions()).thenReturn(options);
         this.setField(service, "mapper", mapper);
@@ -137,7 +144,8 @@ public class LoadTaskServiceTest {
         LoadTaskExecutor executor = Mockito.mock(LoadTaskExecutor.class);
         LoadTask task = Mockito.mock(LoadTask.class);
         Mockito.when(mapper.selectById(9)).thenReturn(task);
-        Mockito.when(mapper.updateById(task)).thenReturn(1);
+        Mockito.when(task.getId()).thenReturn(9);
+        Mockito.when(mapper.update(Mockito.eq(task), Mockito.any())).thenReturn(1);
         Mockito.when(task.getStatus()).thenReturn(LoadStatus.PAUSED);
         Mockito.when(task.getOptions()).thenReturn(new LoadOptions());
         Mockito.doThrow(new IllegalArgumentException("missing token"))
@@ -152,6 +160,7 @@ public class LoadTaskServiceTest {
         });
 
         Mockito.verify(mapper, Mockito.never()).updateById(task);
+        Mockito.verify(mapper, Mockito.never()).update(Mockito.eq(task), Mockito.any());
         Mockito.verify(executor, Mockito.never())
                .execute(Mockito.any(), Mockito.any());
     }
@@ -164,7 +173,8 @@ public class LoadTaskServiceTest {
         LoadTaskExecutor executor = Mockito.mock(LoadTaskExecutor.class);
         LoadTask task = Mockito.mock(LoadTask.class);
         Mockito.when(mapper.selectById(9)).thenReturn(task);
-        Mockito.when(mapper.updateById(task)).thenReturn(1);
+        Mockito.when(task.getId()).thenReturn(9);
+        Mockito.when(mapper.update(Mockito.eq(task), Mockito.any())).thenReturn(1);
         Mockito.when(task.getStatus()).thenReturn(LoadStatus.STOPPED);
         Mockito.when(task.getOptions()).thenReturn(new LoadOptions());
         this.setField(service, "mapper", mapper);

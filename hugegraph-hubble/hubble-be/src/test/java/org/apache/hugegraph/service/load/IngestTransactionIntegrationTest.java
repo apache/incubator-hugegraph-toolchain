@@ -59,6 +59,8 @@ import org.apache.hugegraph.entity.load.ListFormat;
 import org.apache.hugegraph.entity.load.LoadParameter;
 import org.apache.hugegraph.entity.load.LoadTask;
 import org.apache.hugegraph.handler.LoadTaskExecutor;
+import org.apache.hugegraph.loader.HugeGraphLoader;
+import org.apache.hugegraph.loader.executor.LoadContext;
 import org.apache.hugegraph.loader.executor.LoadOptions;
 import org.apache.hugegraph.options.HubbleOptions;
 import org.apache.hugegraph.service.schema.EdgeLabelService;
@@ -465,7 +467,17 @@ public class IngestTransactionIntegrationTest {
             String graph = this.failTaskInsert ? null : connection.getGraph();
             LoadOptions options = new LoadOptions();
             options.token = connection.getToken();
+            HugeGraphLoader loader = Mockito.mock(HugeGraphLoader.class);
+            LoadContext context = Mockito.mock(LoadContext.class);
+            java.util.concurrent.atomic.AtomicBoolean closed = new java.util.concurrent.atomic.AtomicBoolean();
+            Mockito.when(loader.context()).thenReturn(context);
+            Mockito.when(context.closed()).thenAnswer(invocation -> closed.get());
+            Mockito.doAnswer(invocation -> {
+                closed.set(true);
+                return null;
+            }).when(loader).shutdown();
             LoadTask task = LoadTask.builder()
+                                    .loader(loader)
                                     .graphSpace(connection.getGraphSpace())
                                     .graph(graph)
                                     .jobId(mapping.getJobId())
