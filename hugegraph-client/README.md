@@ -15,6 +15,16 @@ hugegraph-client is a Java-written client of [HugeGraph](https://github.com/apac
 - RESTful Traversals, shortest path, k-out, k-neighbor, paths and crosspoints etc.
 - Variables, CRUD of variables
 
+## JSON lists
+
+`JsonUtil.fromJson2List(json, Element.class)` deserializes a JSON array into a
+`List<Element>` using the client's shared Jackson mapper. For example,
+`JsonUtil.fromJson2List("[1, 2]", Integer.class)` returns a list of integers.
+An empty array returns an empty list, JSON `null` returns Java `null`, and null
+array elements are preserved. A null input string throws `IllegalArgumentException`;
+malformed JSON, non-array input, or incompatible element values throw
+`SerializeException` with the original Jackson exception as the cause.
+
 ## Doc
 
 The [client homepage](https://hugegraph.apache.org/docs/quickstart/hugegraph-client/) contains more information about it.

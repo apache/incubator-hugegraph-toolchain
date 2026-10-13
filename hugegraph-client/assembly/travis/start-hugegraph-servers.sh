@@ -16,7 +16,7 @@
 # under the License.
 #
 set -euo pipefail
-source "$(cd "$(dirname "$0")/../../.." && pwd)/.github/actions/setup-hugegraph-server/service-wait.sh"
+source "$(cd "$(dirname "$0")/../../.." && pwd)/hugegraph-client/assembly/travis/service-wait.sh"
 
 if [[ $# -ne 1 || ! -f "$1" ]]; then
     echo "Usage: start-hugegraph-servers.sh <server archive>" >&2

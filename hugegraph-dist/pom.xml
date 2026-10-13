@@ -74,7 +74,7 @@
                                     </fileset>
                                 </copy>
                                 <exec executable="python3" failonerror="true">
-                                    <arg value="${project.basedir}/../.github/scripts/verify_candidate_image_sdk.py"/>
+                                    <arg value="${project.basedir}/../hugegraph-client/assembly/travis/verify_candidate_image_sdk.py"/>
                                     <arg value="${settings.localRepository}"/>
                                     <arg value="--mode"/>
                                     <arg value="${sdk.validation.mode}"/>
@@ -86,7 +86,7 @@
                                     <arg value="loader"/>
                                 </exec>
                                 <exec executable="python3" failonerror="true">
-                                    <arg value="${project.basedir}/../.github/scripts/verify_candidate_image_sdk.py"/>
+                                    <arg value="${project.basedir}/../hugegraph-client/assembly/travis/verify_candidate_image_sdk.py"/>
                                     <arg value="${settings.localRepository}"/>
                                     <arg value="--mode"/>
                                     <arg value="${sdk.validation.mode}"/>
@@ -98,7 +98,7 @@
                                     <arg value="tools"/>
                                 </exec>
                                 <exec executable="python3" failonerror="true">
-                                    <arg value="${project.basedir}/../.github/scripts/verify_candidate_image_sdk.py"/>
+                                    <arg value="${project.basedir}/../hugegraph-client/assembly/travis/verify_candidate_image_sdk.py"/>
                                     <arg value="${settings.localRepository}"/>
                                     <arg value="--mode"/>
                                     <arg value="${sdk.validation.mode}"/>

@@ -23,12 +23,14 @@ import io
 import json
 import os
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
 from pathlib import Path
 
 import java17_image as images
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "hugegraph-client/assembly/travis"))
 import verify_candidate_image_sdk as sdk
 
 

@@ -31,10 +31,11 @@ import tempfile
 import time
 import uuid
 
-from verify_candidate_image_sdk import source_commit, validate_sdk
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "hugegraph-client/assembly/travis"))
+from verify_candidate_image_sdk import source_commit, validate_sdk
 HELPER = ROOT / "hugegraph-hubble/hubble-dist/assembly/travis/run_live_hubble_smoke.py"
 SPEC = importlib.util.spec_from_file_location("hubble_smoke", HELPER)
 HTTP = importlib.util.module_from_spec(SPEC)

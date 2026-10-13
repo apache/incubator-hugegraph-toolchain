@@ -27,7 +27,7 @@ mkdir "$candidate_dir/m2"
 export SERVER_REPOSITORY=apache/hugegraph
 server_commit=$(python3 - <<'PY_COMMIT'
 import runpy
-print(runpy.run_path(".github/scripts/verify_candidate_image_sdk.py")["COMMIT"])
+print(runpy.run_path("hugegraph-client/assembly/travis/verify_candidate_image_sdk.py")["COMMIT"])
 PY_COMMIT
 )
 
