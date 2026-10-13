@@ -14,3 +14,7 @@ hugegraph-dist/scripts/ export-ignore
 .serena/ export-ignore
 # only exclude the root
 /assembly/ export-ignore
+
+# Exclude documentation screenshots; keep Hubble frontend assets for builds.
+/.github/images/ export-ignore
+/hugegraph-hubble/docs/images/ export-ignore
