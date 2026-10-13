@@ -96,8 +96,8 @@ jobs:
         uses: ./.github/actions/get-hugegraph-commit
         with:
           repository: apache/hugegraph
-          ref: 257a6a7ac2867daf4567f0d1a050123a8ff651cb
-          expected-commit: 257a6a7ac2867daf4567f0d1a050123a8ff651cb
+          ref: 75e1aeb20cab2be7ba22d56dc7c4b227139f3460
+          expected-commit: 75e1aeb20cab2be7ba22d56dc7c4b227139f3460
       - name: Record external test inputs
         env:
           NEEDS_SERVER: ${{ steps.scope.outputs.needsFixture }}
