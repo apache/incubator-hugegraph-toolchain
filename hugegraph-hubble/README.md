@@ -70,10 +70,29 @@ closed resources under admission. The Job task create/start endpoints and Job
 management deletion share Job admission, so deletion enumerates tasks started before it and later
 starts recheck that the Job still exists. Job deletion commits physical stops before
 atomically deleting task and job metadata; a metadata rollback leaves those
-tasks stopped. If delayed initial publication cannot read task metadata, it closes
+tasks stopped. The Ingest task deletion route uses this same scoped Job deletion.
+Graph deletion keeps its remote-first order: if the Server refuses the drop, local
+Job/task metadata and owners are preserved. After a successful drop, Hubble
+enumerates that graph's existing Jobs and applies the same deletion to each one,
+waiting for its Loaders to close before deleting its metadata. A cleanup failure
+leaves that Job and its task rows recoverable; earlier Jobs have already committed
+their cleanup, and the remote graph drop cannot be rolled back. This enumeration
+does not prevent new Jobs from being created, so Jobs outside the snapshot are
+preserved. It provides no graph-wide admission barrier.
+
+If delayed initial publication cannot read task metadata, it closes
 its unused Loader and retains that closed owner for the existing progress poll.
 The poll marks only a still-RUNNING row as failed and retires the owner after commit;
-a missing or advanced row is preserved.
+a missing or advanced row is preserved. A rejected dispatch whose failure cannot
+be committed also retains its closed owner. The poll retries the conditional
+Task-to-FAILED and Job-to-FAILED changes in one transaction, preserving a task row
+that has since advanced or disappeared. Each owner's polling write uses an H2
+savepoint: an ordinary SQL failure whose savepoint rollback succeeds leaves that
+owner for a later poll while other owners can finish persistence. A transaction or
+savepoint operation failure aborts the whole polling transaction and retains its
+owners, including those processed earlier. Owners are retired only
+after the polling transaction commits; a deleted final task row retires its closed
+owner without recreating metadata.
 Finished tasks release their native JVM shutdown hook once their context closes.
 If shutdown cannot terminate the task's workers, Hubble retains the failed owner
 and rejects retry/resume until its context is actually closed; restart Hubble to
@@ -91,7 +110,13 @@ Server instances.
 
 The Loader [startup mode ownership guard](https://github.com/apache/hugegraph-toolchain/pull/812)
 is a prerequisite: without it, cleanup after startup fails can reset another
-importer's `LOADING` mode.
+importer's `LOADING` mode. Multi-file jobs start a Loader for each file, so shared
+graph-mode ownership also requires the matching Server, Client and Loader ownership
+protocol 1 support. The paired [Server change](https://github.com/apache/hugegraph/pull/3331)
+and [website documentation](https://github.com/apache/hugegraph-doc/pull/525) describe
+that protocol; the Client and Loader must use it too. The startup guard alone does
+not keep `LOADING` until every sibling Loader finishes. This lifecycle cleanup does
+not implement that protocol, and multi-file validation requires their combined build.
 
 ## Local development feedback loop
 
