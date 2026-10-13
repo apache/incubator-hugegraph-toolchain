@@ -68,7 +68,7 @@ public final class LoadingModeOwner {
 
     @Override
     public String toString() {
-        return this.instance + "/" + this.epoch + "/" + this.token;
+        return this.instance + "/" + this.epoch;
     }
 
     private static boolean validUUID(String value) {

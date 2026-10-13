@@ -59,6 +59,20 @@ public class LoadingModeOwnerTest {
     }
 
     @Test
+    public void testInvalidReceiptDoesNotExposeOwnerToken() {
+        LoadingModeOwner owner = new LoadingModeOwner(capability());
+        String token = (String) owner.request("acquire").get("token");
+        Assert.assertFalse(owner.toString().contains(token));
+        for (Object invalid : new Object[]{null, UUID.randomUUID().toString()}) {
+            Map<String, Object> receipt = receipt(owner, "active", "LOADING");
+            receipt.put("token", invalid);
+            InvalidResponseException error = (InvalidResponseException) Assert.assertThrows(
+                    InvalidResponseException.class, () -> owner.verify(receipt, true));
+            Assert.assertFalse(error.getMessage().contains(token));
+        }
+    }
+
+    @Test
     public void testReleasedCannotConfirmAcquireAndReleaseAllowsAnotherActiveOwner() {
         LoadingModeOwner owner = new LoadingModeOwner(capability());
         Map<String, Object> released = receipt(owner, "released", "LOADING");

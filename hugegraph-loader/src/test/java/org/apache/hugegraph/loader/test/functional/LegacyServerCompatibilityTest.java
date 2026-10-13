@@ -35,7 +35,7 @@ import org.junit.rules.TemporaryFolder;
 
 import com.google.common.collect.ImmutableMap;
 
-/** Run explicitly against the official Server 1.7 fixture. */
+/** Run by loader-ci against its official Server 1.7 fixture. */
 public class LegacyServerCompatibilityTest {
 
     @Rule

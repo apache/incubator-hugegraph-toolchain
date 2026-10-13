@@ -221,6 +221,8 @@ public final class LoadContext implements Cloneable {
         if (this.loadingOwner == null) {
             try {
                 this.loadingOwner = this.client.graphs().newLoadingOwner(graph);
+                LOG.info("Preparing LOADING owner {} for graph '{}'; after an unclean exit, stop related imports " +
+                         "and use the Server loading-owner recovery procedure", this.loadingOwner, graph);
             } catch (ServerException e) {
                 if (e.status() != 404 || !"HTTP 404 Not Found".equals(e.getMessage()) ||
                     !("jakarta.ws.rs.NotFoundException".equals(e.exception()) ||

@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.hugegraph.driver.HugeClient;
@@ -55,6 +56,7 @@ import org.apache.hugegraph.loader.metrics.LoadSummary;
 import org.apache.hugegraph.loader.progress.LoadProgress;
 import org.apache.hugegraph.loader.source.file.FileSource;
 import org.apache.hugegraph.loader.source.graph.GraphSource;
+import org.apache.hugegraph.structure.LoadingModeOwner;
 import org.apache.hugegraph.structure.constant.GraphMode;
 import org.apache.hugegraph.util.JsonUtil;
 import org.apache.log4j.AppenderSkeleton;
@@ -649,7 +651,7 @@ public class LoadContextTest {
     }
 
     @Test
-    public void testShutdownPreservesOwnerTupleAfterLostAcquireAndReleaseReplies() throws Exception {
+    public void testShutdownPreservesOwnerRequestWithoutLeakingToken() throws Exception {
         try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
             server.enableOwnership();
             server.dropOwnerReply = true;
@@ -659,9 +661,10 @@ public class LoadContextTest {
             HugeGraphLoader loader = loader(context, input);
             RuntimeException loading = (RuntimeException) Assert.assertThrows(RuntimeException.class, loader::load);
             Map<String, Object> acquired = new HashMap<>(server.lastOwner);
-            String tuple = acquired.get("instance") + "/" + acquired.get("epoch") + "/" + acquired.get("token");
+            String identity = acquired.get("instance") + "/" + acquired.get("epoch");
             LoadException shutdown = (LoadException) Assert.assertThrows(LoadException.class, loader::shutdown);
-            Assert.assertTrue(shutdown.getMessage().contains("Failed to release LOADING owner " + tuple));
+            Assert.assertTrue(shutdown.getMessage().contains("Failed to release LOADING owner " + identity));
+            Assert.assertFalse(shutdown.getMessage().contains((String) acquired.get("token")));
             Assert.assertEquals(1, shutdown.getSuppressed().length);
             Assert.assertSame(loading.getCause(), shutdown.getSuppressed()[0].getCause());
             Assert.assertTrue(shutdown.getCause() instanceof IOException);
@@ -682,8 +685,7 @@ public class LoadContextTest {
             server.enableOwnership();
             LoadContext context = this.context(client, client);
             context.setLoadingMode();
-            String tuple = server.lastOwner.get("instance") + "/" + server.lastOwner.get("epoch") + "/" +
-                           server.lastOwner.get("token");
+            String identity = server.lastOwner.get("instance") + "/" + server.lastOwner.get("epoch");
             FileSource source = new FileSource();
             source.header(new String[]{"name"});
             InputStruct input = new InputStruct(null, null);
@@ -697,7 +699,7 @@ public class LoadContextTest {
             server.dropOwnerReply = true;
             LoadException shutdown = (LoadException) Assert.assertThrows(LoadException.class,
                     loader(context, input)::shutdown);
-            Assert.assertTrue(shutdown.getMessage().contains("Failed to release LOADING owner " + tuple));
+            Assert.assertTrue(shutdown.getMessage().contains("Failed to release LOADING owner " + identity));
             Assert.assertEquals(1, shutdown.getSuppressed().length);
             Assert.assertTrue(shutdown.getSuppressed()[0].getMessage().contains("Failed to write header"));
             Assert.assertTrue(context.closed());
@@ -741,6 +743,68 @@ public class LoadContextTest {
             invalid.unsetLoadingMode();
             Assert.assertEquals(0, server.modeWrites);
             Assert.assertEquals(0, server.ownerWrites);
+        }
+    }
+
+    @Test
+    public void testCapabilityRevisionKeepsOrdinaryOwnerRequestsCompatible() throws Exception {
+        try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
+            server.enableOwnership();
+            Map<String, Object> capability = JsonUtil.fromJson(server.ownerCapability, Map.class);
+            capability.put("revision", 7L);
+            server.ownerCapability = JsonUtil.toJson(capability);
+            LoadingModeOwner owner = client.graphs().newLoadingOwner("hugegraph");
+            client.graphs().acquireLoadingOwner("hugegraph", owner);
+            Assert.assertEquals(Set.of("action", "instance", "epoch", "token"), server.lastOwner.keySet());
+            Assert.assertEquals(capability.get("instance"), server.lastOwner.get("instance"));
+            Assert.assertEquals(capability.get("epoch"), server.lastOwner.get("epoch"));
+            Map<String, Object> acquired = new HashMap<>(server.lastOwner);
+            client.graphs().releaseLoadingOwner("hugegraph", owner);
+            acquired.put("action", "release");
+            Assert.assertEquals(acquired, server.lastOwner);
+        }
+    }
+
+    @Test
+    public void testManualRestoringModeRejectionDoesNotFallBack() throws Exception {
+        try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
+            server.enableOwnership();
+            server.mode = GraphMode.RESTORING;
+            server.ownerWriteStatus = 400;
+            server.ownerFailure = "Cannot acquire loading ownership of manually set graph mode RESTORING";
+            LoadContext context = this.context(client, client);
+            ServerException failure = (ServerException) Assert.assertThrows(ServerException.class,
+                    context::setLoadingMode);
+            Assert.assertEquals(server.ownerFailure, failure.getMessage());
+            Assert.assertEquals(GraphMode.RESTORING, server.mode);
+            Assert.assertEquals(0, server.modeWrites);
+            server.ownerWriteStatus = 200;
+            server.ownerFailure = null;
+            context.unsetLoadingMode();
+            Assert.assertEquals("release", server.lastOwner.get("action"));
+            Assert.assertEquals(0, server.modeWrites);
+        }
+    }
+
+    @Test
+    public void testOwnerRecoveryLogDoesNotExposeToken() throws Exception {
+        Logger logger = Logger.getLogger(LoadContext.class.getName());
+        CapturingAppender appender = new CapturingAppender();
+        Level original = logger.getLevel();
+        logger.setLevel(Level.INFO);
+        logger.addAppender(appender);
+        try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
+            server.enableOwnership();
+            LoadContext context = this.context(client, client);
+            context.setLoadingMode();
+            String identity = server.lastOwner.get("instance") + "/" + server.lastOwner.get("epoch");
+            Assert.assertTrue(appender.contains("Preparing LOADING owner " + identity));
+            Assert.assertTrue(appender.contains("Server loading-owner recovery procedure"));
+            Assert.assertFalse(appender.contains((String) server.lastOwner.get("token")));
+            context.unsetLoadingMode();
+        } finally {
+            logger.removeAppender(appender);
+            logger.setLevel(original);
         }
     }
 
@@ -835,6 +899,7 @@ public class LoadContextTest {
         private boolean dropOwnerReply;
         private boolean dropCapabilityReply;
         private int ownerWriteStatus = 200;
+        private String ownerFailure;
         private int ownerWrites;
         private Map<String, Object> lastOwner;
 
@@ -867,7 +932,8 @@ public class LoadContextTest {
                         receipt.put("protocol", 1);
                         receipt.put("state", acquire ? "active" : "released");
                         receipt.put("mode", "LOADING");
-                        response = JsonUtil.toJson(receipt);
+                        response = this.ownerFailure == null ? JsonUtil.toJson(receipt) :
+                                   JsonUtil.toJson(Collections.singletonMap("message", this.ownerFailure));
                     }
                     if (this.dropCapabilityReply || this.dropOwnerReply &&
                         exchange.getRequestMethod().equals("PUT")) {

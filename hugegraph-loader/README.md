@@ -187,13 +187,51 @@ Graph-source imports retain their existing RESTORING behavior.
 The paired Server change must be merged and released before the new guarantee is
 available: [Server #3331](https://github.com/apache/hugegraph/pull/3331).
 
-On the ownership path, a cleanup failure still closes this Loader's context and
-clients; another `shutdown()` call does not retry the remote release. Retry
-`PUT /graphspaces/{graphspace}/graphs/{graph}/mode/owners` with `action: release`,
-the original `instance`, `epoch`, `token` and the same authenticated principal.
-Keep the original tuple; creating a new handle cannot release the old one.
+On protocol-1 Servers, an ordinary import requires `NONE` or `LOADING` held by
+active owners. Restore and Graph-source imports leave `RESTORING` after shutdown,
+as before. A subsequent ordinary import is rejected until that mode is manually
+recovered; an enum-set `LOADING` or `MERGING` mode has the same prerequisite.
 
-Owners have no automatic expiry. If the tuple is lost or the Loader is killed
-without cleanup, stop all related imports before reopening the affected graph
-instance or restarting that Server. An enum PUT to `NONE` is rejected while an
-owner remains active.
+Before acquiring ownership, Loader logs `Preparing LOADING owner` with the
+non-secret `instance/epoch` identity and recovery guidance. Owner tokens are not
+logged. Owners have no automatic expiry, and cleanup failure still closes the
+Loader context and clients; another `shutdown()` does not retry the release.
+After an unclean exit or release failure, use the paired Server's administrator
+recovery procedure below instead of looking for a token in Loader logs.
+
+1. Stop all related imports and ordinary graph writes, and drain their in-flight
+   requests. The Server recovery endpoint cannot perform this external drain.
+2. As an administrator with `ADMIN` or `ROOT` permission, GET
+   `/graphspaces/{graphspace}/graphs/{graph}/mode/owners` on the affected live
+   Server instance. Read its current `instance`, `epoch` and non-secret `revision`
+   immediately before recovery; do not reuse values from another instance or an
+   earlier attempt.
+3. PUT the following body to that same endpoint, replacing the placeholders with
+   the values just read. This recovery action does not require an owner token.
+
+   ```json
+   {
+     "action": "recover",
+     "instance": "<current instance UUID>",
+     "epoch": 0,
+     "revision": 0,
+     "confirm": "I'm sure all imports have stopped"
+   }
+   ```
+
+   Replace both example `0` values with the GET response's current `epoch` and
+   `revision`. Recovery requires both values to match; any owner or mode change
+   after GET makes this request stale.
+   Success returns `state: recovered`, `mode: NONE` and the incremented epoch,
+   clears existing owners, and prevents old-epoch acquire/release requests from
+   taking effect. A stale recovery request returns HTTP 409 so it cannot clear a
+   newer owner, including one acquired within the same epoch. Ordinary graph-status
+   write permission is insufficient (HTTP 403).
+4. If the response is lost or the result is otherwise unknown, inspect the graph
+   mode and capability. Do not blindly obtain a new epoch and repeat recovery,
+   which could clear owners created after the first attempt.
+
+This procedure also clears a manually set `RESTORING` or `MERGING` mode once all
+related work has stopped and drained. It depends on the paired Server change
+linked above; older Servers retain their legacy enum-mode recovery behavior.
+An enum PUT to `NONE` remains rejected while protocol-1 owners are active.
