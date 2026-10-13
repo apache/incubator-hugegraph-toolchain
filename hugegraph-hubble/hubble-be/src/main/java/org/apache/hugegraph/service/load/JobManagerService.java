@@ -23,13 +23,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.locks.Lock;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.google.common.util.concurrent.Striped;
+import com.google.common.collect.ImmutableMap;
 import lombok.extern.log4j.Log4j2;
 
 import org.apache.hugegraph.driver.HugeClient;
@@ -47,14 +46,10 @@ import org.apache.hugegraph.util.HubbleUtil;
 import org.apache.hugegraph.util.PageUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Isolation;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import org.springframework.transaction.support.TransactionTemplate;
 
 @Log4j2
 @Service
@@ -66,14 +61,6 @@ public class JobManagerService {
     private LoadTaskService taskService;
     @Autowired
     private FileMappingService fileMappingService;
-    @Autowired
-    private PlatformTransactionManager transactionManager;
-
-    private final Striped<Lock> jobControls = Striped.lazyWeakLock(1024);
-
-    public Lock jobControl(int id) {
-        return this.jobControls.get(id);
-    }
 
     public int count() {
         return Math.toIntExact(this.mapper.selectCount(null));
@@ -271,52 +258,34 @@ public class JobManagerService {
         }
     }
 
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public void removeByGraph(String graphSpace, String graph) {
-        QueryWrapper<JobManager> query = Wrappers.query();
-        query.eq("graphspace", graphSpace).eq("graph", graph);
-        // Clean only the enlisted Jobs; newly created Jobs must not lose their task owners.
-        for (JobManager job : this.mapper.selectList(query)) {
-            this.deleteJob(graphSpace, graph, job.getId());
-        }
+        this.mapper.deleteByMap(ImmutableMap.of("graphspace", graphSpace,
+                                                "graph", graph));
     }
 
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public void deleteJob(int id) {
-        Lock control = this.jobControl(id);
-        control.lock();
-        try {
-            JobManager job = this.get(id);
-            if (job == null) {
-                throw new ExternalException("job.manager.not-exist.id", id);
-            }
-
-            List<LoadTask> loadTasks = this.taskService.taskListByJob(id);
-            for (LoadTask loadTask : loadTasks) {
-                if (loadTask.getStatus().inRunning() ||
-                    loadTask.getStatus() == LoadStatus.PAUSED) {
-                    this.taskService.stop(loadTask.getId());
-                }
-            }
-
-            // Physical stops cannot be rolled back. Commit them before the metadata transaction.
-            TransactionTemplate transaction = new TransactionTemplate(this.transactionManager);
-            transaction.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
-            transaction.execute(status -> {
-                for (LoadTask loadTask : loadTasks) {
-                    this.taskService.remove(loadTask.getId());
-                }
-                List<FileMapping> mappings = this.fileMappingService.listByJob(id);
-                this.remove(id);
-                this.deleteDiskFilesAfterCommit(mappings);
-                return null;
-            });
-        } finally {
-            control.unlock();
+        JobManager job = this.get(id);
+        if (job == null) {
+            throw new ExternalException("job.manager.not-exist.id", id);
         }
+
+        List<LoadTask> loadTasks = this.taskService.taskListByJob(id);
+        for (LoadTask loadTask : loadTasks) {
+            if (loadTask.getStatus().inRunning() ||
+                loadTask.getStatus() == LoadStatus.PAUSED) {
+                this.taskService.stop(loadTask.getId());
+            }
+            this.taskService.remove(loadTask.getId());
+        }
+
+        List<FileMapping> mappings = this.fileMappingService.listByJob(id);
+        this.remove(id);
+        this.deleteDiskFilesAfterCommit(mappings);
     }
 
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public void deleteJob(String graphSpace, String graph, int id) {
         JobManager job = this.get(graphSpace, graph, id);
         if (job == null) {

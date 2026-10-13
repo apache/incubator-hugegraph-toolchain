@@ -86,7 +86,6 @@ import org.junit.runners.Suite;
     GroovySchemaCompatibilityTest.class,
     JobManagerServiceTest.class,
     K8sTokenEndpointSecurityTest.class,
-    LoadTaskCleanupTest.class,
     LoadTaskServiceTest.class,
     LoaderScopeControllerTest.class,
     LoginAttemptGuardTest.class,

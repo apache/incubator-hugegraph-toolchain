@@ -61,18 +61,12 @@ cleanup() {
 }
 trap cleanup EXIT
 
-loader_expectation=()
-if [[ "${HG_SERVER_BASELINE:-candidate}" == release-1.7 ]]; then
-    loader_expectation+=(--expect-loader-refusal)
-fi
-
 "${python_bin}" "${script_dir}/run_live_hubble_smoke.py" "${tarball}" \
     --server-url "${server_url}" \
     --hubble-url "${hubble_url}" \
     --graph "${graph_name}" \
     --graphspace "${graphspace}" \
     --loader-flow \
-    "${loader_expectation[@]}" \
     --analysis-boundary \
     --work-dir "${runtime_work}" \
     --keep-work-dir \

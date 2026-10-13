@@ -15,12 +15,6 @@ on:
       server-ref:
         type: string
         required: true
-      loading-server-commit:
-        type: string
-        required: true
-      loading-server-ref:
-        type: string
-        required: true
 
 jobs:
   loader-ci:
@@ -74,9 +68,6 @@ jobs:
       - name: Install locked candidate SDK
         id: candidate-sdk
         uses: ./.github/actions/setup-candidate-sdk
-        with:
-          ref: ${{ inputs.loading-server-ref }}
-          expected-commit: ${{ inputs.loading-server-commit }}
 
       - name: Compile
         run: |
@@ -102,7 +93,6 @@ jobs:
           PYCODE
 
       - name: Prepare HDFS from the pinned Hadoop image
-        if: matrix.SERVER_BASELINE == 'candidate'
         timeout-minutes: 18
         run: bash "$TRAVIS_DIR/start-hdfs-ci.sh"
 
@@ -125,24 +115,17 @@ jobs:
           CANDIDATE_ARCHIVE: ${{ steps.candidate-sdk.outputs.archive }}
         run: bash hugegraph-client/assembly/travis/start-hugegraph-servers.sh "$CANDIDATE_ARCHIVE"
 
-      - name: Run unit tests
-        run: mvn test -pl hugegraph-loader -P unit -ntp
-
-      - name: Verify unsupported released Server refuses import
-        if: matrix.SERVER_BASELINE == 'release-1.7'
-        run: mvn test -pl hugegraph-loader -P file -Dtest=LegacyServerCompatibilityTest -ntp
-
-      - name: Run protocol-1 import profiles
-        if: matrix.SERVER_BASELINE == 'candidate'
+      - name: Run test
         run: |
           cd hugegraph-loader && ls
+          mvn test -P unit -ntp
           mvn test -P file
           mvn test -P hdfs
           mvn test -P jdbc
           mvn test -P kafka
 
       - name: Collect HDFS logs and remove containers
-        if: ${{ always() && matrix.SERVER_BASELINE == 'candidate' }}
+        if: ${{ always() }}
         run: |
           for service in namenode datanode; do
             name="${HDFS_CONTAINER_PREFIX:-hugegraph-ci-hdfs}-$service"

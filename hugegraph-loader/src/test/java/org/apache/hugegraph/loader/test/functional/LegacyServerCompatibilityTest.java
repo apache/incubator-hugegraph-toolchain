@@ -27,8 +27,6 @@ import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.loader.HugeGraphLoader;
 import org.apache.hugegraph.structure.constant.GraphMode;
-import org.apache.hugegraph.structure.constant.T;
-import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.testutil.Assert;
 import org.apache.hugegraph.util.JsonUtil;
 import org.junit.Rule;
@@ -37,81 +35,57 @@ import org.junit.rules.TemporaryFolder;
 
 import com.google.common.collect.ImmutableMap;
 
-/** Runs explicitly against the official Server 1.7 fixture, outside the import profiles. */
+/** Run explicitly against the official Server 1.7 fixture. */
 public class LegacyServerCompatibilityTest {
 
     @Rule
     public TemporaryFolder temporary = new TemporaryFolder();
 
     @Test
-    public void testMissingOwnershipRefusesImportBeforeMutation() throws Exception {
-        this.assertRefusalBeforeMutation(false);
+    public void testOrdinaryImportKeepsLegacyBehavior() throws Exception {
+        this.assertImport(false);
     }
 
     @Test
-    public void testRestoreRefusesImportBeforeMutation() throws Exception {
-        this.assertRefusalBeforeMutation(true);
+    public void testRestoreKeepsLegacyBehavior() throws Exception {
+        this.assertImport(true);
     }
 
-    private void assertRefusalBeforeMutation(boolean restore) throws Exception {
-        String url = System.getProperty("hugegraph.loader.test-server-url", "http://127.0.0.1:8080");
+    private void assertImport(boolean restore) throws Exception {
+        URI endpoint = URI.create(System.getProperty("hugegraph.loader.test-server-url", "http://127.0.0.1:8080"));
         String graph = "legacy_owner_" + UUID.randomUUID().toString().replace("-", "");
-        try (HugeClient control = HugeClient.builder(url, "hugegraph").configUser("admin", "pa").build()) {
+        try (HugeClient control = HugeClient.builder(endpoint.toString(), "hugegraph")
+                                           .configUser("admin", "pa").build()) {
             control.graphs().createGraph(graph, JsonUtil.toJson(ImmutableMap.of(
                     "store", graph, "backend", "memory", "serializer", "text",
                     "gremlin.graph", "org.apache.hugegraph.auth.HugeFactoryAuthProxy")));
-            try (HugeClient client = HugeClient.builder(url, graph).configUser("admin", "pa").build()) {
+            try (HugeClient client = HugeClient.builder(endpoint.toString(), graph).configUser("admin", "pa").build()) {
                 client.schema().propertyKey("name").asText().create();
-                client.schema().vertexLabel("sentinel").properties("name").primaryKeys("name").create();
-                Vertex sentinel = client.graph().addVertex(T.LABEL, "sentinel", "name", "kept");
-                Assert.assertEquals(GraphMode.NONE, client.graphs().mode(graph));
-
-                ServerException capability = (ServerException) Assert.assertThrows(ServerException.class,
+                client.schema().vertexLabel("person").properties("name").primaryKeys("name").create();
+                ServerException missing = (ServerException) Assert.assertThrows(ServerException.class,
                         () -> client.graphs().newLoadingOwner(graph));
-                Assert.assertEquals(404, capability.status());
-
+                Assert.assertEquals(404, missing.status());
                 Path input = this.temporary.newFile("input.csv").toPath();
                 Files.write(input, "name\nincoming\n".getBytes(StandardCharsets.UTF_8));
                 Path mapping = this.temporary.newFile("struct.json").toPath();
-                String struct = JsonUtil.toJson(ImmutableMap.of("vertices", new Object[]{ImmutableMap.of(
-                        "label", "sentinel", "input", ImmutableMap.of(
-                                "type", "file", "path", input.toString(), "format", "CSV"))}));
-                Files.write(mapping, struct.getBytes(StandardCharsets.UTF_8));
-                Path schema = this.temporary.newFile("schema.groovy").toPath();
-                Files.write(schema, "schema.propertyKey('blocked_import_key').asText().create();"
-                                    .getBytes(StandardCharsets.UTF_8));
-                URI endpoint = URI.create(url);
+                Files.write(mapping, JsonUtil.toJson(ImmutableMap.of("vertices", new Object[]{ImmutableMap.of(
+                        "label", "person", "input", ImmutableMap.of("type", "file", "path", input.toString(),
+                                                                  "format", "CSV"))}))
+                                           .getBytes(StandardCharsets.UTF_8));
                 HugeGraphLoader loader = new HugeGraphLoader(new String[]{
-                        "-f", mapping.toString(), "-s", schema.toString(), "-g", graph,
-                        "-h", endpoint.getHost(), "-p", String.valueOf(endpoint.getPort()),
-                        "--username", "admin", "--password", "pa", "--clear-all-data", "true",
+                        "-f", mapping.toString(), "-g", graph, "-h", endpoint.getHost(),
+                        "-p", String.valueOf(endpoint.getPort()), "--username", "admin", "--password", "pa",
                         "--test-mode", "true", "--restore", String.valueOf(restore)
                 });
                 try {
-                    ServerException failure = (ServerException) Assert.assertThrows(ServerException.class,
-                            loader::load);
-                    Assert.assertEquals(404, failure.status());
-                    Assert.assertSame(failure, Assert.assertThrows(ServerException.class, loader::shutdown));
-                    Assert.assertTrue(loader.context().closed());
-                    loader.shutdown();
-                    Assert.assertTrue(loader.context().closed());
+                    Assert.assertTrue(loader.load());
                 } finally {
-                    if (!loader.context().closed()) {
-                        loader.shutdown();
-                    }
+                    loader.shutdown();
                 }
-
-                Assert.assertEquals(GraphMode.NONE, client.graphs().mode(graph));
-                Assert.assertEquals(1, client.schema().getPropertyKeys().size());
-                Assert.assertEquals("name", client.schema().getPropertyKeys().get(0).name());
-                Assert.assertEquals(1, client.schema().getVertexLabels().size());
-                Assert.assertEquals("sentinel", client.schema().getVertexLabels().get(0).name());
-                Assert.assertTrue(client.schema().getEdgeLabels().isEmpty());
-                Assert.assertTrue(client.schema().getIndexLabels().isEmpty());
+                Assert.assertTrue(loader.context().closed());
                 Assert.assertEquals(1, client.graph().listVertices().size());
-                Assert.assertEquals(sentinel.id(), client.graph().getVertex(sentinel.id()).id());
-                Assert.assertEquals("kept", client.graph().getVertex(sentinel.id()).properties().get("name"));
-                Assert.assertTrue(client.graph().listEdges().isEmpty());
+                Assert.assertEquals("incoming", client.graph().listVertices().get(0).properties().get("name"));
+                Assert.assertEquals(restore ? GraphMode.RESTORING : GraphMode.NONE, client.graphs().mode(graph));
             } finally {
                 control.graphs().dropGraph(graph, "I'm sure to drop the graph");
             }

@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import lombok.SneakyThrows;
 
 import org.apache.hugegraph.driver.HugeClient;
+import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.loader.builder.SchemaCache;
 import org.apache.hugegraph.loader.failure.FailLogger;
 import org.apache.hugegraph.loader.filter.ElementParseGroup;
@@ -53,11 +54,11 @@ public final class LoadContext implements Cloneable {
     private final String timestamp;
 
     private volatile boolean closed;
-    // Save the tuple before acquire so cleanup can cancel an unknown outcome.
+    // Only a successful LOADING request permits this context to reset it.
+    private boolean loadingModeSet;
+    // Retain the tuple before acquire, including an unknown acquire outcome.
     private LoadingModeOwner loadingOwner;
     private boolean loadingOwnerReleased;
-    // RESTORING retains its existing enum cleanup, without a LOADING owner token.
-    private boolean restoreModeSet;
     private volatile StopReason stopReason;
     private volatile boolean noError;
     private volatile Throwable failure;
@@ -99,10 +100,6 @@ public final class LoadContext implements Cloneable {
         this.summary = new LoadSummary();
         this.oldProgress = LoadProgress.parse(options);
         this.newProgress = new LoadProgress();
-        if (options.incrementalMode) {
-            this.newProgress.plusVertexLoaded(this.oldProgress.vertexLoaded());
-            this.newProgress.plusEdgeLoaded(this.oldProgress.edgeLoaded());
-        }
         this.loggers = new ConcurrentHashMap<>();
         this.client = schemaCache == null ? HugeClientHolder.create(options) : null;
         if (this.client != null && this.options.direct) {
@@ -222,48 +219,83 @@ public final class LoadContext implements Cloneable {
             throw new LoadException("Loading owner has already been released; create a new context");
         }
         if (this.loadingOwner == null) {
-            this.loadingOwner = this.client.graphs().newLoadingOwner(graph);
+            try {
+                this.loadingOwner = this.client.graphs().newLoadingOwner(graph);
+            } catch (ServerException e) {
+                if (e.status() != 404 || !"HTTP 404 Not Found".equals(e.getMessage()) ||
+                    !("jakarta.ws.rs.NotFoundException".equals(e.exception()) ||
+                      "javax.ws.rs.NotFoundException".equals(e.exception()) ||
+                      "class jakarta.ws.rs.NotFoundException".equals(e.exception()) ||
+                      "class javax.ws.rs.NotFoundException".equals(e.exception()))) {
+                    throw e;
+                }
+                LOG.warn("Server has no loading-owner endpoint; use legacy mode without concurrent-import protection");
+            }
+        }
+        if (this.loadingOwner != null) {
+            this.client.graphs().acquireLoadingOwner(graph, this.loadingOwner);
+            return;
         }
         try {
-            this.client.graphs().acquireLoadingOwner(graph, this.loadingOwner);
+            this.client.graphs().mode(graph, GraphMode.LOADING);
+            this.loadingModeSet = true;
+        } catch (ServerException e) {
+            if (e.getMessage().contains("Can not deserialize value of type")) {
+                LOG.warn("HugeGraphServer doesn't support loading mode");
+            } else {
+                throw e;
+            }
         } catch (Exception e) {
-            LOG.error("Failed to confirm LOADING ownership for graph '{}' with handle '{}'; " +
-                      "cleanup must cancel this same handle after all workers stop", graph, this.loadingOwner);
+            LOG.error("Failed to confirm LOADING mode for graph '{}'; it may still be in LOADING mode. " +
+                      "Confirm no imports are active, inspect the graph mode, and manually reset it to NONE if needed.",
+                      graph);
             throw e;
         }
     }
 
-    public synchronized void setRestoreMode() {
+    public void setRestoreMode() {
         String graph = this.client.graph().graph();
-        this.client.graphs().newLoadingOwner(graph);
-        this.client.graphs().mode(graph, GraphMode.RESTORING);
-        this.restoreModeSet = true;
+        try {
+            this.client.graphs().mode(graph, GraphMode.RESTORING);
+        } catch (ServerException e) {
+            if (e.getMessage().contains("Can not deserialize value of type")) {
+                LOG.warn("HugeGraphServer doesn't support loading mode");
+            } else {
+                throw e;
+            }
+        }
     }
 
     public synchronized void unsetLoadingMode() {
-        if (this.restoreModeSet) {
-            this.client.graphs().mode(this.client.graph().graph(), GraphMode.NONE);
-            this.restoreModeSet = false;
+        if (this.loadingOwner != null) {
+            if (!this.loadingOwnerReleased) {
+                try {
+                    this.client.graphs().releaseLoadingOwner(this.client.graph().graph(), this.loadingOwner);
+                    this.loadingOwnerReleased = true;
+                } catch (Exception e) {
+                    throw new LoadException("Failed to release LOADING owner %s; retry the same handle", e,
+                                            this.loadingOwner);
+                }
+            }
             return;
         }
-        if (this.loadingOwner == null || this.loadingOwnerReleased) {
+        if (!this.loadingModeSet) {
             return;
         }
         try {
             String graph = this.client.graph().graph();
-            this.client.graphs().releaseLoadingOwner(graph, this.loadingOwner);
-            this.loadingOwnerReleased = true;
+            GraphMode mode = this.client.graphs().mode(graph);
+            if (mode.loading()) {
+                this.client.graphs().mode(graph, GraphMode.NONE);
+            }
+            this.loadingModeSet = false;
         } catch (Exception e) {
-            throw new LoadException("Failed to release LOADING owner %s for server; " +
-                                    "retry the same handle on the same graph instance", e, this.loadingOwner);
+            throw new LoadException("Failed to unset mode %s for server",
+                                    e, GraphMode.LOADING);
         }
     }
 
     public void close() {
-        this.close(true);
-    }
-
-    public void close(boolean saveProgress) {
         if (this.closed) {
             return;
         }
@@ -289,7 +321,7 @@ public final class LoadContext implements Cloneable {
             this.throwIfFailed();
             this.newProgress.plusVertexLoaded(this.summary.vertexLoaded());
             this.newProgress.plusEdgeLoaded(this.summary.edgeLoaded());
-            if (this.client != null && saveProgress) {
+            if (this.client != null) {
                 try {
                     this.newProgress.write(this);
                 } catch (IOException e) {
@@ -310,9 +342,9 @@ public final class LoadContext implements Cloneable {
     @Override
     public Object clone() throws CloneNotSupportedException {
         LoadContext context = (LoadContext) super.clone();
+        context.loadingModeSet = false;
         context.loadingOwner = null;
         context.loadingOwnerReleased = false;
-        context.restoreModeSet = false;
         return context;
     }
 }

@@ -101,12 +101,8 @@ public final class LoadProgress {
     }
 
     public InputProgress addStruct(InputStruct struct) {
-        return this.addStruct(struct, null);
-    }
-
-    public InputProgress addStruct(InputStruct struct, InputProgress previous) {
         E.checkNotNull(struct, "mapping mapping");
-        this.inputProgress.put(struct.id(), new InputProgress(struct, previous));
+        this.inputProgress.put(struct.id(), new InputProgress(struct));
         return this.inputProgress.get(struct.id());
     }
 

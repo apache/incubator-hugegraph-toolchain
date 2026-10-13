@@ -541,8 +541,7 @@ def configure_mapping(hubble_url, graph_space, graph_name, job_id, file_id,
     }), "configure load parameters")
 
 
-def wait_for_load_task(hubble_url, graph_space, graph_name, job_id, file_id,
-                       expected_status="SUCCEED"):
+def wait_for_load_task(hubble_url, graph_space, graph_name, job_id, file_id):
     base = (f"{hubble_url}/api/v1.3/graphspaces/{graph_space}/graphs/"
             f"{graph_name}/job-manager/{job_id}/load-tasks")
     tasks = unwrap(request("POST", f"{base}/start?file_mapping_ids={file_id}",
@@ -560,8 +559,8 @@ def wait_for_load_task(hubble_url, graph_space, graph_name, job_id, file_id,
         if status in ("SUCCEED", "FAILED", "STOPPED", "PAUSED"):
             break
         time.sleep(1)
-    if last_task.get("status") != expected_status:
-        raise RuntimeError(f"Load task did not reach {expected_status}: {last_task}")
+    if last_task.get("status") != "SUCCEED":
+        raise RuntimeError(f"Load task did not succeed: {last_task}")
     job = unwrap(request(
         "GET",
         f"{hubble_url}/api/v1.3/graphspaces/{graph_space}/graphs/"
@@ -646,72 +645,12 @@ def edge_pairs_contain(actual_edges, expected_edges):
     return True
 
 
-def loading_snapshot(server_url, graph_name, schema):
-    base = f"/graphs/{graph_name}"
-    snapshot = {"mode": server_json("GET", server_url, f"{base}/mode")}
-    for resource, label in (("vertices", schema["vl_person"]), ("edges", schema["el_knows"])):
-        snapshot[resource] = server_json("GET", server_url,
-                                         f"{base}/graph/{resource}?label={label}&limit=100")
-    for key, resource in (("pk_id", "propertykeys"), ("pk_name", "propertykeys"),
-                          ("pk_rank", "propertykeys"), ("vl_person", "vertexlabels"),
-                          ("el_knows", "edgelabels")):
-        snapshot[key] = server_json("GET", server_url, f"{base}/schema/{resource}/{schema[key]}")
-    return snapshot
-
-
-def require_missing_loading_capability(server_url, graph_space, graph_name):
-    try:
-        server_json("GET", server_url,
-                     f"/graphspaces/{graph_space}/graphs/{graph_name}/mode/owners")
-    except urllib.error.HTTPError as error:
-        if error.code != 404:
-            raise RuntimeError(f"Expected missing ownership endpoint, received HTTP {error.code}") from error
-    else:
-        raise RuntimeError("Expected unsupported Server to return HTTP 404 for loading ownership")
-
-
-def require_loading_refusal_log(log_path, task_id):
-    if log_path is None:
-        raise RuntimeError("Refusal verification requires the running Hubble application log")
-    marker = f"Run task {task_id} failed"
-    deadline = time.monotonic() + 5
-    while time.monotonic() < deadline:
-        contents = log_path.read_text(encoding="utf-8", errors="replace") if log_path.is_file() else ""
-        start = contents.rfind(marker)
-        trace = contents[start:start + 16000] if start >= 0 else ""
-        if ("GraphsAPI.newLoadingOwner" in trace and
-                ("404" in trace or "NotFoundException" in trace)):
-            return
-        time.sleep(.1)
-    raise RuntimeError("Failed task log does not bind the failure to missing loading ownership")
-
-
-def seed_traversal_fixture(server_url, graph_name, prefix, schema):
-    base = f"/graphs/{graph_name}/graph"
-    for name, rank in (("alice", 1), ("bob", 2), ("carol", 3)):
-        server_json("POST", server_url, f"{base}/vertices", {
-            "id": f"{prefix}_{name}", "label": schema["vl_person"],
-            "properties": {schema["pk_name"]: name.title(), schema["pk_rank"]: rank}})
-    for source, target in (("alice", "bob"), ("bob", "carol")):
-        server_json("POST", server_url, f"{base}/edges", {
-            "label": schema["el_knows"], "outV": f"{prefix}_{source}",
-            "inV": f"{prefix}_{target}", "outVLabel": schema["vl_person"],
-            "inVLabel": schema["vl_person"], "properties": {}})
-
-
 def run_live_function_flow(hubble_url, server_url, graph_space, graph_name,
-                           prefix, expect_loader_refusal=False, app_log=None):
+                           prefix):
     checks = []
     schema_checks, schema = create_schema(hubble_url, server_url, graph_space,
                                           graph_name, prefix)
     checks.extend(schema_checks)
-    before = None
-    if expect_loader_refusal:
-        require_missing_loading_capability(server_url, graph_space, graph_name)
-        sentinel = server_json("POST", server_url, f"/graphs/{graph_name}/graph/vertices", {
-            "id": f"{prefix}_sentinel", "label": schema["vl_person"],
-            "properties": {schema["pk_name"]: "Sentinel", schema["pk_rank"]: 0}})
-        before = loading_snapshot(server_url, graph_name, schema)
     job_id, file_id = upload_csv(hubble_url, graph_space, graph_name, prefix,
                                  schema)
     checks.append({"name": "hubble-upload-csv", "status": "passed",
@@ -721,23 +660,10 @@ def run_live_function_flow(hubble_url, server_url, graph_space, graph_name,
     checks.append({"name": "hubble-file-mapping", "status": "passed",
                    "file_mapping_id": file_id})
     task_id, task, job = wait_for_load_task(hubble_url, graph_space,
-                                            graph_name, job_id, file_id,
-                                            "FAILED" if expect_loader_refusal else "SUCCEED")
-    checks.append({"name": "hubble-loader-refusal" if expect_loader_refusal else "hubble-loader-task",
-                   "status": "passed",
+                                            graph_name, job_id, file_id)
+    checks.append({"name": "hubble-loader-task", "status": "passed",
                    "task_id": task_id, "task_status": task.get("status"),
                    "job_status": job.get("job_status")})
-    if expect_loader_refusal:
-        require_loading_refusal_log(app_log, task_id)
-        if loading_snapshot(server_url, graph_name, schema) != before:
-            raise RuntimeError("Unsupported Loader changed sentinel data, schema or mode")
-        checks.append({"name": "hubble-loader-refusal-preserves-graph", "status": "passed",
-                       "capability_http_status": 404, "sentinel_id": sentinel["id"]})
-        server_json("DELETE", server_url,
-                     f"/graphs/{graph_name}/graph/vertices/{urllib.parse.quote(json.dumps(sentinel['id']))}")
-        seed_traversal_fixture(server_url, graph_name, prefix, schema)
-        checks.append({"name": "server-traversal-fixture", "status": "passed",
-                       "source": "direct REST setup after verified import refusal"})
 
     d_vertices = run_server_label_count(server_url, graph_name, "vertices",
                                         schema["vl_person"])
@@ -749,7 +675,7 @@ def run_live_function_flow(hubble_url, server_url, graph_space, graph_name,
         raise RuntimeError("Loader imported unexpected graph size: "
                            f"{(d_vertices, d_edges)} != "
                            f"{(expected_vertices, expected_edges)}")
-    checks.append({"name": "server-traversal-rest-count" if expect_loader_refusal else "server-loader-rest-count",
+    checks.append({"name": "server-loader-rest-count",
                    "status": "passed", "vertices": d_vertices,
                    "edges": d_edges, "expected_vertices": expected_vertices,
                    "expected_edges": expected_edges})
@@ -827,7 +753,6 @@ def main():
     parser.add_argument("--leave-running", action="store_true")
     parser.add_argument("--bind-host")
     parser.add_argument("--loader-flow", action="store_true")
-    parser.add_argument("--expect-loader-refusal", action="store_true")
     parser.add_argument("--analysis-boundary", action="store_true")
     parser.add_argument("--graphspace", default=os.environ.get("HUGEGRAPH_GRAPHSPACE",
                                                               "DEFAULT"))
@@ -839,8 +764,6 @@ def main():
     parser.add_argument("--password", default=os.environ.get("HUBBLE_PASSWORD",
                                                             "pa"))
     args = parser.parse_args()
-    if args.expect_loader_refusal and not args.loader_flow:
-        parser.error("--expect-loader-refusal requires --loader-flow")
 
     if not args.skip_start:
         try:
@@ -922,9 +845,7 @@ def main():
                                                            server_url,
                                                            args.graphspace,
                                                            args.graph,
-                                                           prefix,
-                                                           args.expect_loader_refusal,
-                                                           app_log))
+                                                           prefix))
         if args.analysis_boundary:
             report["checks"].extend(run_analysis_boundary_checks(hubble_url,
                                                                  args.graphspace,

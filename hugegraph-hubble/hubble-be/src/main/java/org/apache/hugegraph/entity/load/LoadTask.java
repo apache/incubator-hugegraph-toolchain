@@ -68,14 +68,6 @@ public class LoadTask implements Runnable {
     @JsonIgnore
     private transient volatile boolean finished;
 
-    @TableField(exist = false)
-    @JsonIgnore
-    private transient volatile boolean initialStateReadFailed;
-
-    @TableField(exist = false)
-    @JsonIgnore
-    private transient volatile boolean dispatchFailurePending;
-
     @TableId(type = IdType.AUTO)
     @MergeProperty(useNew = false)
     @JsonProperty("id")
@@ -182,57 +174,21 @@ public class LoadTask implements Runnable {
 
     @Override
     public void run() {
-        this.run(() -> { });
-    }
-
-    public void run(Runnable callback) {
-        try {
-            this.runLoader();
-        } finally {
-            this.lock.lock();
-            try {
-                callback.run();
-            } finally {
-                // Stop/retry must not race a callback from the previous run.
-                this.finished = true;
-                this.lock.unlock();
-            }
-        }
-    }
-
-    private void runLoader() {
         Ex.check(this.options != null, "The load options shouldn't be null");
         log.info("LoadTask is start running : {}", this.id);
 
-        boolean noError = false;
-        boolean cleanupFailed = false;
-        Throwable failure = null;
+        boolean noError;
         try {
             noError = this.loader.load();
         } catch (Throwable e) {
-            failure = e;
-        } finally {
-            // Only the running thread closes this loader, after load has stopped.
-            try {
-                this.loader.shutdown();
-            } catch (Throwable e) {
-                noError = false;
-                cleanupFailed = true;
-                if (failure == null) {
-                    failure = e;
-                } else if (failure != e) {
-                    failure.addSuppressed(e);
-                }
-            }
-        }
-        if (failure != null) {
-            log.error("Run task {} failed", this.id, failure);
+            noError = false;
+            log.error("Run task {} failed", this.id, e);
         }
         this.lock.lock();
         try {
             // Pay attention to whether the user stops actively or
             // the program stops by itself
-            if (cleanupFailed || this.status.inRunning()) {
+            if (this.status.inRunning()) {
                 if (noError) {
                     this.status = LoadStatus.SUCCEED;
                 } else {
@@ -248,6 +204,7 @@ public class LoadTask implements Runnable {
             this.lastDuration += this.context().summary().totalTime();
             this.currDuration = 0L;
         } finally {
+            this.finished = true;
             this.lock.unlock();
         }
     }
@@ -261,10 +218,7 @@ public class LoadTask implements Runnable {
     }
 
     public void stop() {
-        HugeGraphLoader owner = this.loader;
-        if (owner != null) {
-            owner.context().stopLoading();
-        }
+        this.context().stopLoading();
         while (!this.finished) {
             try {
                 Thread.sleep(1000);
@@ -272,9 +226,7 @@ public class LoadTask implements Runnable {
                 // pass
             }
         }
-        if (owner == null || owner.context().closed()) {
-            this.loader = null;
-        }
+        this.loader = null;
         log.info("LoadTask {} stopped", this.id);
     }
 

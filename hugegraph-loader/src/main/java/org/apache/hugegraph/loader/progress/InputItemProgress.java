@@ -20,7 +20,7 @@ package org.apache.hugegraph.loader.progress;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public abstract class InputItemProgress implements Cloneable {
+public abstract class InputItemProgress {
 
     /**
      * NOTE: this offset refers to the parsed part in input instead of loaded.
@@ -49,13 +49,5 @@ public abstract class InputItemProgress implements Cloneable {
 
     public void confirmOffset() {
         this.confirmOffset = this.offset;
-    }
-
-    public InputItemProgress copy() {
-        try {
-            return (InputItemProgress) super.clone();
-        } catch (CloneNotSupportedException e) {
-            throw new AssertionError("Input progress must be cloneable", e);
-        }
     }
 }

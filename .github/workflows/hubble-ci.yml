@@ -75,10 +75,6 @@ jobs:
       - name: Install locked candidate SDK
         id: candidate-sdk
         uses: ./.github/actions/setup-candidate-sdk
-        with:
-          repository: ${{ inputs.current-repository }}
-          ref: ${{ inputs.current-ref }}
-          expected-commit: ${{ inputs.current-commit }}
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v6

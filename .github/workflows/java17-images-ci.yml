@@ -63,8 +63,7 @@ jobs:
         uses: ./.github/actions/setup-candidate-sdk
         with:
           repository: apache/hugegraph
-          ref: ${{ matrix.module == 'loader' && '75e1aeb20cab2be7ba22d56dc7c4b227139f3460' || '68855199031d5801edb4fe41b2bacbacffe8fe68' }}
-          expected-commit: ${{ matrix.module == 'loader' && '75e1aeb20cab2be7ba22d56dc7c4b227139f3460' || '68855199031d5801edb4fe41b2bacbacffe8fe68' }}
+          expected-commit: 68855199031d5801edb4fe41b2bacbacffe8fe68
       - name: Build same-source dependencies and the real image
         env:
           IMAGE_EVIDENCE: ${{ runner.temp }}/java17-image-${{ matrix.module }}-evidence

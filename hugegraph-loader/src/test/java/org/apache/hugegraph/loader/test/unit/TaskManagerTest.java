@@ -593,9 +593,6 @@ public class TaskManagerTest {
         setField(loader, "context", context);
         setField(loader, "manager", manager);
         setField(loader, "options", options);
-        Thread hook = new Thread(loader::shutdown);
-        setField(loader, "shutdownHook", hook);
-        Runtime.getRuntime().addShutdownHook(hook);
         ExecutorService caller = Executors.newSingleThreadExecutor();
         try {
             manager.submitBatch(struct, mapping, Arrays.asList(new Record("in-flight", new Edge("knows"))));
@@ -623,11 +620,6 @@ public class TaskManagerTest {
             }
             Assert.assertTrue(shutdown.get(5, TimeUnit.SECONDS));
             Assert.assertEquals(!timeout, context.closed());
-            Assert.assertEquals(timeout, Runtime.getRuntime().removeShutdownHook(hook));
-            if (timeout) {
-                // An unfinished owner keeps its native hook and can close on retry.
-                Runtime.getRuntime().addShutdownHook(hook);
-            }
             Assert.assertFalse(client.closedWhileRunning);
             Assert.assertFalse(context.noError());
             if (!timeout) {
@@ -642,14 +634,7 @@ public class TaskManagerTest {
                 Assert.assertEquals(1L, client.closed.getCount());
             }
             Assert.assertFalse(new File(LoadProgress.format(options, "test")).exists());
-            if (timeout) {
-                graph.release.countDown();
-                Assert.assertThrows(LoadException.class, loader::shutdown);
-                Assert.assertTrue(context.closed());
-                Assert.assertFalse(Runtime.getRuntime().removeShutdownHook(hook));
-            }
         } finally {
-            Runtime.getRuntime().removeShutdownHook(hook);
             graph.release.countDown();
             caller.shutdownNow();
             caller.awaitTermination(5, TimeUnit.SECONDS);

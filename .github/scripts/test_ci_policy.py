@@ -208,27 +208,18 @@ class PolicyTest(unittest.TestCase):
         workflow = (Path(__file__).resolve().parents[2] / ".github/workflows/ci.yml").read_text()
         script = textwrap.dedent(workflow.split("          python3 - <<'PYINPUTS'\n", 1)[1].split(
             "          PYINPUTS", 1)[0])
-        for selected in (["go"], ["spark"], ["loader"], ["hubble"], policy.MODULES["toolchain"], []):
+        for selected in (["go"], ["spark"], ["hubble"], policy.MODULES["toolchain"], []):
             with self.subTest(selected=selected), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 (root / "scope.json").write_text(json.dumps({"selected": selected}))
                 env = dict(os.environ, NEEDS_SERVER=str(bool(selected)).lower(),
-                           NEEDS_CURRENT_SERVER=str("go" in selected).lower(),
-                           NEEDS_LOADING_SERVER=str(bool(set(selected) & {"loader", "hubble"})).lower(),
-                           LOADING_COMMIT="loading", LOADING_REF="loading",
+                           NEEDS_CURRENT_SERVER=str(bool(set(selected) & {"go", "hubble"})).lower(),
                            SERVER_REPOSITORY="apache/hugegraph", SERVER_COMMIT="released", SERVER_REF="1.7.0",
                            CURRENT_REPOSITORY="apache/hugegraph", CURRENT_COMMIT="locked", CURRENT_REF="locked")
                 subprocess.run([os.sys.executable, "-c", script], cwd=root, env=env, check=True)
                 inputs = json.loads((root / "inputs.json").read_text())
-                self.assertEqual(any(module not in ("go", "loader", "hubble") for module in selected),
-                                 "candidateSDK" in inputs)
-                self.assertEqual("go" in selected, "currentServer" in inputs)
-                self.assertEqual(bool(set(selected) & {"loader", "hubble"}), "loaderServer" in inputs)
-                if "loaderServer" in inputs:
-                    self.assertEqual({"repository": "apache/hugegraph", "commit": "loading",
-                                      "ref": "loading", "jdk": "17", "protocol": 1,
-                                      "consumers": [module for module in selected
-                                                    if module in ("loader", "hubble")]}, inputs["loaderServer"])
+                self.assertEqual(any(module != "go" for module in selected), "candidateSDK" in inputs)
+                self.assertEqual(bool(set(selected) & {"go", "hubble"}), "currentServer" in inputs)
                 if "currentServer" in inputs:
                     self.assertEqual("locked", inputs["currentServer"]["commit"])
                     self.assertEqual("17", inputs["currentServer"]["jdk"])
@@ -328,16 +319,15 @@ class PolicyTest(unittest.TestCase):
     def test_hubble_and_go_gates_require_current_and_released_fixtures(self):
         for suite in ("hubble", "go"):
             plan = dict(self.plan(), expected=[suite])
-            current = "loading-fixture" if suite == "hubble" else "current-fixture"
-            for producer in ("fixture", current):
+            for producer in ("fixture", "current-fixture"):
                 for state in (None, "failure", "cancelled", "skipped"):
                     results = {"plan": {"result": "success"}, suite: {"result": "success"},
-                               "fixture": {"result": "success"}, current: {"result": "success"}}
+                               "fixture": {"result": "success"}, "current-fixture": {"result": "success"}}
                     results[producer] = {"result": state}
                     with self.subTest(suite=suite, producer=producer, state=state), self.assertRaises(ValueError):
                         policy.gate(plan, results)
             results = {"plan": {"result": "success"}, suite: {"result": "success"},
-                       "fixture": {"result": "success"}, current: {"result": "success"}}
+                       "fixture": {"result": "success"}, "current-fixture": {"result": "success"}}
             self.assertEqual([suite], policy.gate(plan, results)["executed"])
 
     def test_real_git_doc_modes_and_packaged_readme_contract(self):
@@ -406,7 +396,7 @@ class PolicyTest(unittest.TestCase):
                          tuple(plan[key] for key in ["pr", "source", "branch", "base", "head"]))
         results = {suite: {"result": "success"} for suite in plan["expected"]}
         results.update(plan={"result": "success"}, fixture={"result": "success"},
-                       **{"current-fixture": {"result": "success"}, "loading-fixture": {"result": "success"}})
+                       **{"current-fixture": {"result": "success"}})
         with self.assertRaises(subprocess.CalledProcessError):
             policy.gate(plan, results, fail)
         self.assertEqual(plan["expected"], policy.gate(plan, results)["executed"])
@@ -445,7 +435,7 @@ class PolicyTest(unittest.TestCase):
                 plan = policy.create_plan("toolchain", event, "apache/t", lambda _: live)
                 results = {suite: {"result": "success"} for suite in plan["expected"]}
                 results.update(plan={"result": "success"}, fixture={"result": "success"},
-                               **{"current-fixture": {"result": "success"}, "loading-fixture": {"result": "success"}})
+                               **{"current-fixture": {"result": "success"}})
                 self.assertEqual(plan["expected"], policy.gate(plan, results, lambda _: live)["executed"])
                 for section, field, value in [("head", "sha", advanced_head),
                                               ("head", "ref", "other-branch"),
@@ -520,7 +510,7 @@ class PolicyTest(unittest.TestCase):
                 self.assertEqual(["hubble", "loader"], plan["selected"])
                 results = {suite: {"result": "success"} for suite in plan["expected"]}
                 results.update(plan={"result": "success"}, fixture={"result": "success"},
-                               **{"current-fixture": {"result": "success"}, "loading-fixture": {"result": "success"}})
+                               **{"current-fixture": {"result": "success"}})
                 report = policy.gate(plan, results, fetch)
                 self.assertEqual(canonical, report["base"])
                 self.assertEqual("target", report["baseBranch"])
@@ -616,7 +606,7 @@ class PolicyTest(unittest.TestCase):
                 self.assertEqual(["hubble", "loader"], plan["selected"])
                 results = {suite: {"result": "success"} for suite in plan["expected"]}
                 results.update(plan={"result": "success"}, fixture={"result": "success"},
-                               **{"current-fixture": {"result": "success"}, "loading-fixture": {"result": "success"}})
+                               **{"current-fixture": {"result": "success"}})
                 report = policy.gate(plan, results, fetch)
                 self.assertEqual(canonical, report["base"])
                 self.assertEqual("candidate", report["baseBranch"])
