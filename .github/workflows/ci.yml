@@ -23,7 +23,16 @@ on:
   pull_request:
   push:
     branches: [master, 'release-*']
+  schedule:
+    - cron: '0 6 * * 1'
+      timezone: 'Asia/Singapore'
   workflow_dispatch:
+    inputs:
+      test-set:
+        description: Test set
+        type: choice
+        options: [mainline, full]
+        default: mainline
 
 permissions:
   contents: read
@@ -36,45 +45,59 @@ concurrency:
 
 jobs:
   plan:
+    name: check-license-header
+    if: github.event_name != 'schedule' || github.repository == 'apache/hugegraph-toolchain'
     runs-on: ubuntu-latest
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
     outputs:
+      selection-result: ${{ steps.scope.outcome }}
+      mainline-smoke: ${{ steps.scope.outputs.mainline_smoke }}
+      server-baselines: ${{ steps.scope.outputs.server_baselines }}
+      image-smoke: ${{ steps.scope.outputs.image_smoke }}
+      hdfs: ${{ steps.scope.outputs.hdfs }}
+      spark-loader: ${{ steps.scope.outputs.spark_loader }}
+      flink-cdc: ${{ steps.scope.outputs.flink_cdc }}
+      launcher: ${{ steps.scope.outputs.launcher }}
+      upstream: ${{ steps.scope.outputs.upstream }}
+      security: ${{ steps.scope.outputs.security }}
+      languages: ${{ steps.scope.outputs.security_languages }}
+      needs-current: ${{ steps.scope.outputs.needsCurrent }}
       server-repository: ${{ steps.baseline.outputs.repository }}
       server-commit: ${{ steps.baseline.outputs.commit_id }}
       server-ref: ${{ steps.baseline.outputs.fetch_ref }}
       current-commit: ${{ steps.current-baseline.outputs.commit_id }}
       current-repository: ${{ steps.current-baseline.outputs.repository }}
       current-ref: ${{ steps.current-baseline.outputs.fetch_ref }}
-      client: ${{ steps.select.outputs.client }}
-      loader: ${{ steps.select.outputs.loader }}
-      tools: ${{ steps.select.outputs.tools }}
-      spark: ${{ steps.select.outputs.spark }}
-      hubble: ${{ steps.select.outputs.hubble }}
-      go: ${{ steps.select.outputs.go }}
-      needsFixture: ${{ steps.select.outputs.needsFixture }}
-      loader-image: ${{ steps.select.outputs.loader_image }}
-      hubble-image: ${{ steps.select.outputs.hubble_image }}
-      dependency-audit: ${{ steps.select.outputs.dependency_audit }}
+      client: ${{ steps.scope.outputs.client }}
+      loader: ${{ steps.scope.outputs.loader }}
+      tools: ${{ steps.scope.outputs.tools }}
+      spark: ${{ steps.scope.outputs.spark }}
+      hubble: ${{ steps.scope.outputs.hubble }}
+      go: ${{ steps.scope.outputs.go }}
+      needsFixture: ${{ steps.scope.outputs.needsFixture }}
+      loader-image: ${{ steps.scope.outputs.loader_image }}
+      hubble-image: ${{ steps.scope.outputs.hubble_image }}
+      dependency-audit: ${{ steps.scope.outputs.dependency_audit }}
     steps:
       - uses: actions/checkout@v7
+        id: checkout
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Test CI policy and retry guards
-        run: |
-          python3 -m unittest discover -s .github/scripts -p 'test_*.py'
-          python3 .github/actions/setup-hugegraph-server/runtime_test.py
-          node --test .github/actions/get-hugegraph-commit/resolve.test.cjs hugegraph-client/assembly/travis/checkout-server.test.cjs hugegraph-client/assembly/travis/install-server.test.cjs
       - name: Determine external test input scope
         id: scope
+        if: ${{ !cancelled() && steps.checkout.outcome == 'success' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: >-
           python3 .github/scripts/ci-policy.py plan --project toolchain
+          --event-name "$GITHUB_EVENT_NAME"
           --event-path "$GITHUB_EVENT_PATH" --repository "$GITHUB_REPOSITORY"
-          --output scope.json
+          --output "$RUNNER_TEMP/ci-scope.json"
       - name: Resolve historical Server 1.7 baseline
         id: baseline
-        if: steps.scope.outputs.needsFixture == 'true'
+        if: ${{ !cancelled() && steps.scope.outcome == 'success' && steps.scope.outputs.needsFixture == 'true' }}
         uses: ./.github/actions/get-hugegraph-commit
         with:
           repository: apache/hugegraph
@@ -82,13 +105,15 @@ jobs:
           expected-commit: b12425c2032bf0d21a97b8221f42a18055c2982f
       - name: Resolve locked Java17 candidate baseline
         id: current-baseline
-        if: steps.scope.outputs.needsFixture == 'true'
+        if: ${{ !cancelled() && steps.scope.outcome == 'success' && steps.scope.outputs.needsCurrent == 'true' }}
         uses: ./.github/actions/get-hugegraph-commit
         with:
           repository: apache/hugegraph
           ref: 68855199031d5801edb4fe41b2bacbacffe8fe68
           expected-commit: 68855199031d5801edb4fe41b2bacbacffe8fe68
       - name: Record external test inputs
+        if: ${{ !cancelled() && steps.scope.outcome == 'success' }}
+        id: select
         env:
           NEEDS_SERVER: ${{ steps.scope.outputs.needsFixture }}
           NEEDS_CURRENT_SERVER: ${{ steps.scope.outputs.hubble == 'true' || steps.scope.outputs.go == 'true' }}
@@ -102,16 +127,18 @@ jobs:
           python3 - <<'PYINPUTS'
           import json, os
           inputs = {}
-          if os.environ['NEEDS_SERVER'] == 'true':
-              with open('scope.json') as stream:
-                  selected = json.load(stream)['selected']
+          with open(os.path.join(os.environ['RUNNER_TEMP'], 'ci-scope.json')) as stream:
+              plan = json.load(stream)
+          selected = plan['selected']
+          if selected:
               inputs['toolchainJDK'] = {module: ['17']
                                         for module in selected if module != 'go'}
               inputs['config'] = 'candidate-release-java17-ci-v4'
+          if os.environ['NEEDS_SERVER'] == 'true':
               inputs['server'] = {'repository': os.environ['SERVER_REPOSITORY'],
                                   'commit': os.environ['SERVER_COMMIT'],
                                   'ref': os.environ['SERVER_REF'], 'jdk': '11'}
-          if os.environ['NEEDS_SERVER'] == 'true' and any(module != 'go' for module in selected):
+          if selected and any(module != 'go' for module in selected):
               inputs['candidateSDK'] = {'repository': os.environ['CURRENT_REPOSITORY'],
                                         'commit': os.environ['CURRENT_COMMIT'],
                                         'ref': os.environ['CURRENT_REF'], 'jdk': '17'}
@@ -119,27 +146,53 @@ jobs:
               inputs['currentServer'] = {'repository': os.environ['CURRENT_REPOSITORY'],
                                          'commit': os.environ['CURRENT_COMMIT'],
                                          'ref': os.environ['CURRENT_REF'], 'jdk': '17'}
-          with open('inputs.json', 'w') as stream:
-              json.dump(inputs, stream, sort_keys=True)
+          plan['externalInputs'] = inputs
+          with open(os.path.join(os.environ['RUNNER_TEMP'], 'ci-plan.json'), 'w') as stream:
+              json.dump(plan, stream, sort_keys=True)
           PYINPUTS
-      - name: Select affected modules and images
-        id: select
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: >-
-          python3 .github/scripts/ci-policy.py plan --project toolchain
-          --event-path "$GITHUB_EVENT_PATH" --repository "$GITHUB_REPOSITORY"
-          --inputs-json inputs.json --output plan.json
       - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() && steps.select.outcome == 'success' }}
         with:
           name: ci-plan
-          path: plan.json
+          path: ${{ runner.temp }}/ci-plan.json
           overwrite: true
           retention-days: 7
+      - name: Test CI policy and runtime fixtures
+        if: ${{ !cancelled() && steps.checkout.outcome == 'success' }}
+        run: |
+          python3 -m unittest discover -s .github/scripts -p 'test_*.py'
+          python3 .github/actions/setup-hugegraph-server/runtime_test.py
+          node --test .github/actions/get-hugegraph-commit/resolve.test.cjs hugegraph-client/assembly/travis/checkout-server.test.cjs hugegraph-client/assembly/travis/install-server.test.cjs
+      - name: Setup Java and Maven
+        id: java
+        if: ${{ !cancelled() && steps.checkout.outcome == 'success' }}
+        uses: ./.github/actions/setup-java-env
+        with:
+          java-version: '17'
+          distribution: temurin
+      - name: Test isolated candidate parent metadata
+        if: ${{ !cancelled() && steps.scope.outcome == 'success' && steps.java.outcome == 'success' && steps.scope.outputs.candidate_metadata == 'true' }}
+        env:
+          CANDIDATE_SDK_MAVEN_TEST: mvn
+        run: python3 -m unittest discover -s .github/scripts -p 'test_candidate_sdk.py'
+      - name: Check License Header
+        if: ${{ !cancelled() && steps.checkout.outcome == 'success' }}
+        uses: apache/skywalking-eyes@29bd646002b63bb4c0ed1648d1654c35fb8ff027
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          log: info
+          config: .licenserc.yaml
+      - name: License check (RAT)
+        if: ${{ !cancelled() && steps.checkout.outcome == 'success' && steps.java.outcome == 'success' }}
+        run: |
+          mvn apache-rat:check -ntp
+          find . -name rat.txt -print0 | xargs -0 -I file cat file > "$RUNNER_TEMP/merged-rat.txt"
+          cat "$RUNNER_TEMP/merged-rat.txt"
 
   fixture:
     needs: plan
-    if: needs.plan.outputs.needsFixture == 'true'
+    if: ${{ !cancelled() && needs.plan.outputs.selection-result == 'success' && needs.plan.outputs.needsFixture == 'true' }}
     runs-on: ubuntu-latest
     outputs:
       artifact: ${{ steps.identity.outputs.artifact }}
@@ -154,11 +207,6 @@ jobs:
         with:
           java-version: '11'
           distribution: temurin
-      - name: Test isolated candidate parent metadata
-        if: needs.plan.outputs.client == 'true' || needs.plan.outputs.loader == 'true' || needs.plan.outputs.tools == 'true' || needs.plan.outputs.spark == 'true' || needs.plan.outputs.hubble == 'true'
-        env:
-          CANDIDATE_SDK_MAVEN_TEST: mvn
-        run: python3 -m unittest discover -s .github/scripts -p 'test_candidate_sdk.py'
       - name: Build reusable Server package
         uses: ./.github/actions/setup-hugegraph-server
         with:
@@ -171,7 +219,7 @@ jobs:
 
   current-fixture:
     needs: plan
-    if: needs.plan.outputs.hubble == 'true' || needs.plan.outputs.go == 'true'
+    if: ${{ !cancelled() && needs.plan.outputs.selection-result == 'success' && (needs.plan.outputs.hubble == 'true' || needs.plan.outputs.go == 'true') }}
     runs-on: ubuntu-latest
     outputs:
       artifact: ${{ steps.identity.outputs.artifact }}
@@ -202,9 +250,10 @@ jobs:
       actions: read
       id-token: write
     needs: [plan, fixture]
-    if: ${{ needs.plan.outputs.client == 'true' }}
+    if: ${{ !cancelled() && needs.plan.outputs.selection-result == 'success' && needs.plan.outputs.client == 'true' && (needs.plan.outputs.needsFixture != 'true' || needs.fixture.result == 'success') }}
     uses: ./.github/workflows/client-ci.yml
     with:
+      server-baselines: ${{ needs.plan.outputs.server-baselines }}
       artifact-name: ${{ needs.fixture.outputs.artifact }}
       server-repository: ${{ needs.plan.outputs.server-repository }}
       server-commit: ${{ needs.plan.outputs.server-commit }}
@@ -217,9 +266,11 @@ jobs:
       actions: read
       id-token: write
     needs: [plan, fixture]
-    if: ${{ needs.plan.outputs.loader == 'true' }}
+    if: ${{ !cancelled() && needs.plan.outputs.selection-result == 'success' && needs.plan.outputs.loader == 'true' && (needs.plan.outputs.needsFixture != 'true' || needs.fixture.result == 'success') }}
     uses: ./.github/workflows/loader-ci.yml
     with:
+      hdfs: ${{ needs.plan.outputs.hdfs == 'true' }}
+      server-baselines: ${{ needs.plan.outputs.server-baselines }}
       artifact-name: ${{ needs.fixture.outputs.artifact }}
       server-repository: ${{ needs.plan.outputs.server-repository }}
       server-commit: ${{ needs.plan.outputs.server-commit }}
@@ -228,9 +279,10 @@ jobs:
 
   tools:
     needs: [plan, fixture]
-    if: ${{ needs.plan.outputs.tools == 'true' }}
+    if: ${{ !cancelled() && needs.plan.outputs.selection-result == 'success' && needs.plan.outputs.tools == 'true' && (needs.plan.outputs.needsFixture != 'true' || needs.fixture.result == 'success') }}
     uses: ./.github/workflows/tools-ci.yml
     with:
+      server-baselines: ${{ needs.plan.outputs.server-baselines }}
       artifact-name: ${{ needs.fixture.outputs.artifact }}
       server-repository: ${{ needs.plan.outputs.server-repository }}
       server-commit: ${{ needs.plan.outputs.server-commit }}
@@ -239,9 +291,10 @@ jobs:
 
   spark:
     needs: [plan, fixture]
-    if: ${{ needs.plan.outputs.spark == 'true' }}
+    if: ${{ !cancelled() && needs.plan.outputs.selection-result == 'success' && needs.plan.outputs.spark == 'true' && (needs.plan.outputs.needsFixture != 'true' || needs.fixture.result == 'success') }}
     uses: ./.github/workflows/spark-connector-ci.yml
     with:
+      server-baselines: ${{ needs.plan.outputs.server-baselines }}
       artifact-name: ${{ needs.fixture.outputs.artifact }}
       server-repository: ${{ needs.plan.outputs.server-repository }}
       server-commit: ${{ needs.plan.outputs.server-commit }}
@@ -254,9 +307,10 @@ jobs:
       actions: read
       id-token: write
     needs: [plan, fixture, current-fixture]
-    if: ${{ needs.plan.outputs.hubble == 'true' }}
+    if: ${{ !cancelled() && needs.plan.outputs.selection-result == 'success' && needs.plan.outputs.hubble == 'true' && (needs.plan.outputs.needsFixture != 'true' || needs.fixture.result == 'success') && needs.current-fixture.result == 'success' }}
     uses: ./.github/workflows/hubble-ci.yml
     with:
+      server-baselines: ${{ needs.plan.outputs.server-baselines }}
       current-artifact-name: ${{ needs.current-fixture.outputs.artifact }}
       current-commit: ${{ needs.plan.outputs.current-commit }}
       current-repository: ${{ needs.plan.outputs.current-repository }}
@@ -269,9 +323,10 @@ jobs:
 
   go:
     needs: [plan, fixture, current-fixture]
-    if: ${{ needs.plan.outputs.go == 'true' }}
+    if: ${{ !cancelled() && needs.plan.outputs.selection-result == 'success' && needs.plan.outputs.go == 'true' && (needs.plan.outputs.needsFixture != 'true' || needs.fixture.result == 'success') && needs.current-fixture.result == 'success' }}
     uses: ./.github/workflows/client-go-ci.yml
     with:
+      server-baselines: ${{ needs.plan.outputs.server-baselines }}
       current-artifact-name: ${{ needs.current-fixture.outputs.artifact }}
       current-commit: ${{ needs.plan.outputs.current-commit }}
       current-repository: ${{ needs.plan.outputs.current-repository }}
@@ -284,47 +339,62 @@ jobs:
 
   loader_image:
     needs: plan
-    if: needs.plan.outputs.loader-image == 'true'
+    if: ${{ !cancelled() && needs.plan.outputs.selection-result == 'success' && needs.plan.outputs.loader-image == 'true' }}
     uses: ./.github/workflows/image-ci.yml
     with:
+      data-smoke: ${{ needs.plan.outputs.image-smoke == 'true' }}
       module: loader
 
   hubble_image:
     needs: plan
-    if: needs.plan.outputs.hubble-image == 'true'
+    if: ${{ !cancelled() && needs.plan.outputs.selection-result == 'success' && needs.plan.outputs.hubble-image == 'true' }}
     uses: ./.github/workflows/image-ci.yml
     with:
+      data-smoke: ${{ needs.plan.outputs.image-smoke == 'true' }}
       module: hubble
-
-  affected-module-tests:
-    name: affected-module-tests
-    needs: [plan, fixture, current-fixture, client, loader, tools, spark, hubble, go, loader_image, hubble_image, dependency-audit]
-    if: ${{ !cancelled() }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-      - uses: actions/download-artifact@v7
-        with:
-          name: ci-plan
-      - name: Report selected advisory tests and images
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RESULTS: ${{ toJSON(needs) }}
-        run: |
-          printf '%s' "$RESULTS" > results.json
-          python3 .github/scripts/ci-policy.py gate --plan plan.json --results results.json --output test-results.json
-      - name: Publish current-run test results
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v7
-        with:
-          name: ci-test-results
-          path: test-results.json
-          overwrite: true
-          retention-days: 7
 
   dependency-audit:
     needs: plan
-    if: needs.plan.outputs.dependency-audit == 'true'
+    if: ${{ !cancelled() && needs.plan.outputs.selection-result == 'success' && needs.plan.outputs.dependency-audit == 'true' }}
     uses: ./.github/workflows/dependency-license.yml
+
+  spark-loader:
+    needs: plan
+    if: ${{ !cancelled() && needs.plan.outputs.selection-result == 'success' && needs.plan.outputs.spark-loader == 'true' }}
+    uses: ./.github/workflows/spark-loader-ci.yml
+    with:
+      server-baselines: ${{ needs.plan.outputs.server-baselines }}
+
+  flink-cdc:
+    needs: plan
+    if: ${{ !cancelled() && needs.plan.outputs.selection-result == 'success' && needs.plan.outputs.flink-cdc == 'true' }}
+    uses: ./.github/workflows/flink-cdc-ci.yml
+
+  launcher:
+    needs: plan
+    if: ${{ !cancelled() && needs.plan.outputs.selection-result == 'success' && needs.plan.outputs.launcher == 'true' }}
+    uses: ./.github/workflows/hubble-launcher-ci.yml
+
+  codeql:
+    needs: plan
+    if: ${{ !cancelled() && needs.plan.outputs.selection-result == 'success' && needs.plan.outputs.security == 'true' }}
+    uses: ./.github/workflows/codeql-analysis.yml
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+      pull-requests: read
+    with:
+      languages: ${{ needs.plan.outputs.languages }}
+
+  upstream:
+    needs: plan
+    if: ${{ !cancelled() && needs.plan.outputs.selection-result == 'success' && needs.plan.outputs.upstream == 'true' }}
+    uses: ./.github/workflows/upstream-compatibility.yml
+
+  smoke:
+    needs: plan
+    if: ${{ !cancelled() && needs.plan.outputs.selection-result == 'success' && needs.plan.outputs.mainline-smoke == 'true' }}
+    uses: ./.github/workflows/upstream-compatibility.yml
+    with:
+      smoke: true

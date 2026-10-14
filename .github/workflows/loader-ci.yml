@@ -3,6 +3,12 @@ name: "loader-ci"
 on:
   workflow_call:
     inputs:
+      hdfs:
+        type: boolean
+        default: false
+      server-baselines:
+        type: string
+        default: '["candidate"]'
       server-repository:
         type: string
         default: apache/hugegraph
@@ -27,9 +33,10 @@ jobs:
       DB_DATABASE: load_test
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         JAVA_VERSION: ['17']
-        SERVER_BASELINE: ['candidate', 'release-1.7']
+        SERVER_BASELINE: ${{ fromJSON(inputs.server-baselines) }}
     services:
       mysql:
         image: mysql:8.0
@@ -93,6 +100,7 @@ jobs:
           PYCODE
 
       - name: Prepare HDFS from the pinned Hadoop image
+        if: inputs.hdfs
         timeout-minutes: 18
         run: bash "$TRAVIS_DIR/start-hdfs-ci.sh"
 
@@ -116,16 +124,20 @@ jobs:
         run: bash hugegraph-client/assembly/travis/start-hugegraph-servers.sh "$CANDIDATE_ARCHIVE"
 
       - name: Run test
+        env:
+          RUN_HDFS: ${{ inputs.hdfs }}
         run: |
           cd hugegraph-loader && ls
           mvn test -P unit -ntp
           mvn test -P file
-          mvn test -P hdfs
+          if [[ "${RUN_HDFS}" == true ]]; then
+            mvn test -P hdfs
+          fi
           mvn test -P jdbc
           mvn test -P kafka
 
       - name: Collect HDFS logs and remove containers
-        if: ${{ always() }}
+        if: ${{ always() && inputs.hdfs }}
         run: |
           for service in namenode datanode; do
             name="${HDFS_CONTAINER_PREFIX:-hugegraph-ci-hdfs}-$service"

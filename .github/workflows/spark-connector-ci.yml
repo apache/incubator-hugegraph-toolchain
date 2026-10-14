@@ -3,6 +3,9 @@ name: "spark-connector-ci"
 on:
   workflow_call:
     inputs:
+      server-baselines:
+        type: string
+        default: '["candidate"]'
       server-repository:
         type: string
         default: apache/hugegraph
@@ -23,9 +26,10 @@ jobs:
       TRAVIS_DIR: hugegraph-spark-connector/assembly/travis
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         JAVA_VERSION: ['17']
-        SERVER_BASELINE: ['candidate', 'release-1.7']
+        SERVER_BASELINE: ${{ fromJSON(inputs.server-baselines) }}
 
     steps:
       - name: Fetch Code

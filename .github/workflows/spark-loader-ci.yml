@@ -1,32 +1,14 @@
 name: "spark-loader-ci"
 
 on:
-  workflow_dispatch:
-  push:
-    branches:
-      - master
-      - 'release-*'
-    paths:
-      - hugegraph-loader/**
-      - hugegraph-client/**
-      - .github/actions/**
-      - .github/workflows/spark-loader-ci.yml
-      - pom.xml
-  pull_request:
-    paths:
-      - hugegraph-loader/**
-      - hugegraph-client/**
-      - .github/actions/**
-      - .github/workflows/spark-loader-ci.yml
-      - pom.xml
+  workflow_call:
+    inputs:
+      server-baselines:
+        type: string
+        default: '["candidate"]'
 
 permissions:
   contents: read
-
-# Keep the newest PR run; preserve independent push, release and manual runs.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   spark-loader-api:
@@ -34,8 +16,9 @@ jobs:
     timeout-minutes: 60
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
-        SERVER_BASELINE: [ 'candidate', 'release-1.7' ]
+        SERVER_BASELINE: ${{ fromJSON(inputs.server-baselines) }}
     env:
       MAVEN_OPTS: '-Xmx1g -XX:ActiveProcessorCount=2'
       HUGEGRAPH_TEST_URL: http://127.0.0.1:8080

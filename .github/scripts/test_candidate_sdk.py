@@ -599,9 +599,12 @@ class SDKActionTest(unittest.TestCase):
         action = (root / ".github/actions/setup-candidate-sdk/action.yml").read_text()
         defaults = re.findall(r"default: '([0-9a-f]{40})'", action)
         self.assertEqual([sdk.COMMIT, sdk.COMMIT], defaults)
-        for name in (".github/workflows/ci.yml", ".github/workflows/java17-images-ci.yml",
+        for name in (".github/workflows/ci.yml",
                      "hugegraph-loader/Dockerfile", "hugegraph-hubble/Dockerfile"):
             self.assertIn(sdk.COMMIT, (root / name).read_text())
+        image = (root / ".github/workflows/image-ci.yml").read_text()
+        self.assertIn("uses: ./.github/actions/setup-candidate-sdk", image)
+        self.assertNotIn("expected-commit:", image)
         for name in ("hugegraph-loader/Dockerfile", "hugegraph-hubble/Dockerfile"):
             self.assertIn("-Dhugegraph.version=1.8.0 -Dsdk.validation.mode=candidate", (root / name).read_text())
         upstream = (root / ".github/workflows/upstream-compatibility.yml").read_text()
