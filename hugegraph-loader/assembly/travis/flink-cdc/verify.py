@@ -258,8 +258,9 @@ class Acceptance:
             shutil.copyfile(jar, destination)
         with jar.open("rb") as stream:
             self.report["job_sha256"] = hashlib.file_digest(stream, "sha256").hexdigest()
-        shutil.copyfile(Path(__file__).parents[2] / "static/bin/hugegraph-flinkcdc-loader.sh",
-                        job / "bin/hugegraph-flinkcdc-loader.sh")
+        for script in ("hugegraph-flinkcdc-loader.sh", "get-params.sh"):
+            shutil.copyfile(Path(__file__).parents[2] / "static/bin" / script,
+                            job / "bin" / script)
         mapping = {"version": "2.0", "structs": [{"id": "mysql", "input": {
             "type": "jdbc", "vendor": "mysql", "url": "jdbc:mysql://127.0.0.1:13306",
             "database": "flink_fixture", "table": "person", "username": "root", "password": "",
