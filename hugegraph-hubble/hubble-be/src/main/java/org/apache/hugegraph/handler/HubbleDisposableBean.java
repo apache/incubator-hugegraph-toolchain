@@ -22,10 +22,12 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.hugegraph.service.load.LoadTaskService;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
 @Log4j2
 @Component
+@DependsOn("getAsyncExecutor")
 public class HubbleDisposableBean implements DisposableBean {
 
     @Autowired

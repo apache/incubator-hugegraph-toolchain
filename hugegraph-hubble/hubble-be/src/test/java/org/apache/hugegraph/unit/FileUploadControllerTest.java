@@ -30,7 +30,9 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.mock.web.MockMultipartFile;
@@ -49,6 +51,9 @@ import org.apache.hugegraph.service.load.JobManagerService;
 import org.apache.hugegraph.testutil.Assert;
 
 public class FileUploadControllerTest {
+
+    @Rule
+    public TemporaryFolder folder = new TemporaryFolder();
 
     @Test
     public void testCheckFileValidAcceptsUppercaseTrimmedFormat()
@@ -118,6 +123,11 @@ public class FileUploadControllerTest {
            throws Exception {
         FileUploadController controller = this.controller("csv");
         FileMappingService service = Mockito.mock(FileMappingService.class);
+        Path uploadRoot = this.folder.newFolder("quota-upload").toPath();
+        Path uploadPath = uploadRoot.resolve("data.csv");
+        FileMappingService pathValidator = this.fileMappingService(uploadRoot);
+        Mockito.when(service.requirePathUnderUploadRoot(Mockito.anyString()))
+               .thenAnswer(call -> pathValidator.requirePathUnderUploadRoot(call.getArgument(0)));
         JobManagerService jobService = Mockito.mock(JobManagerService.class);
         JobManager job = JobManager.builder().id(1).jobSize(20L).build();
         Mockito.when(jobService.get("DEFAULT", "hugegraph", 1))
@@ -131,7 +141,7 @@ public class FileUploadControllerTest {
         FileMapping mapping = this.reserveUploadQuota(controller, "DEFAULT",
                                                       "hugegraph", 1,
                                                       "data.csv",
-                                                      "upload/data.csv", 10L);
+                                                      uploadPath.toString(), 10L);
 
         ArgumentCaptor<FileMapping> captor = ArgumentCaptor.forClass(
                                              FileMapping.class);
@@ -140,7 +150,8 @@ public class FileUploadControllerTest {
         Assert.assertEquals("DEFAULT", mapping.getGraphSpace());
         Assert.assertEquals("hugegraph", mapping.getGraph());
         Assert.assertEquals("data.csv", mapping.getName());
-        Assert.assertEquals("upload/data.csv", mapping.getPath());
+        Assert.assertEquals(uploadPath.toString(), mapping.getPath());
+        Assert.assertTrue(Files.isDirectory(uploadPath));
         Assert.assertEquals(10L, mapping.getTotalSize());
         Assert.assertEquals(FileMappingStatus.UPLOADING,
                             mapping.getFileStatus());
@@ -177,6 +188,11 @@ public class FileUploadControllerTest {
            throws Exception {
         FileUploadController controller = this.controller("csv");
         FileMappingService service = Mockito.mock(FileMappingService.class);
+        Path uploadRoot = this.folder.newFolder("quota-upload").toPath();
+        Path uploadPath = uploadRoot.resolve("data.csv");
+        FileMappingService pathValidator = this.fileMappingService(uploadRoot);
+        Mockito.when(service.requirePathUnderUploadRoot(Mockito.anyString()))
+               .thenAnswer(call -> pathValidator.requirePathUnderUploadRoot(call.getArgument(0)));
         JobManagerService jobService = Mockito.mock(JobManagerService.class);
         JobManager job = JobManager.builder().id(1).jobSize(20L).build();
         FileMapping existing = new FileMapping("DEFAULT", "hugegraph",
@@ -199,10 +215,11 @@ public class FileUploadControllerTest {
         FileMapping mapping = this.reserveUploadQuota(controller, "DEFAULT",
                                                       "hugegraph", 1,
                                                       "data.csv",
-                                                      "upload/data.csv", 10L);
+                                                      uploadPath.toString(), 10L);
 
         Assert.assertEquals(existing, mapping);
-        Assert.assertEquals("upload/data.csv", mapping.getPath());
+        Assert.assertEquals(uploadPath.toString(), mapping.getPath());
+        Assert.assertTrue(Files.isDirectory(uploadPath));
         Assert.assertEquals(10L, mapping.getTotalSize());
         Assert.assertEquals(FileMappingStatus.UPLOADING,
                             mapping.getFileStatus());
@@ -414,7 +431,7 @@ public class FileUploadControllerTest {
                                                                     String.class,
                                                                     int.class,
                                                                     JobManager.class,
-                                                                    org.springframework.web.multipart.MultipartFile.class,
+                                                            org.springframework.web.multipart.MultipartFile.class,
                                                                     String.class);
         method.setAccessible(true);
         try {

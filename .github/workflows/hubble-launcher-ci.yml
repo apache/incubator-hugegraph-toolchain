@@ -20,34 +20,16 @@
 name: Hubble launcher tests
 
 on:
-  push:
-    branches:
-      - master
-      - 'release-*'
-    paths:
-      - hugegraph-hubble/hubble-dist/assembly/static/bin/start-hubble.sh
-      - hugegraph-hubble/hubble-dist/assembly/static/bin/stop-hubble.sh
-      - hugegraph-hubble/hubble-dist/assembly/travis/test_hubble_launchers.py
-      - .github/workflows/hubble-launcher-ci.yml
-  pull_request:
-    paths:
-      - hugegraph-hubble/hubble-dist/assembly/static/bin/start-hubble.sh
-      - hugegraph-hubble/hubble-dist/assembly/static/bin/stop-hubble.sh
-      - hugegraph-hubble/hubble-dist/assembly/travis/test_hubble_launchers.py
-      - .github/workflows/hubble-launcher-ci.yml
+  workflow_call:
 
 permissions:
   contents: read
-
-# Keep the newest PR run; preserve independent push, release and manual runs.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   launcher-tests:
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}

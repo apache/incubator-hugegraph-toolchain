@@ -49,6 +49,61 @@ The compatibility boundary is deliberately small:
 
 Use matching Server, PD, and Store minor versions in a distributed cluster. **Server/PD 1.8 or later is strongly recommended for the best Hubble experience.** Support for 1.5 and 1.7 is intentionally limited to minimum usability and does not imply feature parity with the current release. Version checks stay in the client adapter/resolver rather than being scattered through controllers or pages. See [`AGENTS.md`](AGENTS.md) for verification rules.
 
+## Import resource cleanup
+
+Import tasks close their Loader before publishing completion. The built-in example import also closes its Loader.
+A failed save/update or dispatch closes the unused Loader, including resumed and retried tasks.
+Rollback of the outer creation transaction also closes the new Loader.
+Dispatch rejection marks the task and its job as failed. An independent shutdown failure marks the task as failed;
+check the logs and graph loading mode before retrying. A shutdown that only rethrows the existing load failure preserves
+a user-requested paused or stopped status.
+Hubble closes its Loaders without saving parsed file offsets as checkpoints. Pause/resume and FAILED-task resume
+therefore reread the source from its existing checkpoint (or the beginning), including rows that were parsed but never
+inserted. Already inserted rows may be replayed, as before this cleanup change. The standalone Loader retains its
+existing checkpoint behavior. Checkpoints written by older builds are not invalidated automatically. If their progress
+may be unsafe, stop a paused task and use Retry to reread the entire source instead of resuming that checkpoint.
+Deleting a job signals all accepted tasks to stop before waiting for their native cleanup and final status callbacks.
+Single-task, job and source-file deletion wait for those callbacks before starting the short metadata transaction.
+An internal caller that already owns a database transaction is refused before changing data if callbacks remain pending;
+finish that transaction and retry. Completed tasks can still be deleted within the caller's existing transaction.
+A final callback committed before deletion remains committed if that deletion later rolls back. A task can complete cleanup after the
+task-list snapshot. Existing task IDs stay reserved
+against retry/resume until the deletion transaction commits or rolls back. An independent cleanup failure preserves
+the task metadata and runtime Loader, including when unused-Loader shutdown fails. Single-task deletion uses the same
+stop and cleanup checks. Runtime handles remain until deletion commits. After rollback, an already stopped task stays
+in memory while its persisted status may still be RUNNING or PAUSED. Ordinary stop can persist STOPPED using that
+completed-cleanup certificate without closing the Loader again; another deletion can also reuse it.
+Task creation and job deletion are serialized within the same Hubble process. A new task checks that its parent job
+and graph still exist before constructing a Loader or inserting metadata; deletion includes tasks admitted before its
+snapshot. Runtime ownership is published before asynchronous execution can begin. Multi-file requests keep their
+existing per-file behavior; these guards do not coordinate separate Hubble processes.
+The task-page deletion route uses the same job cleanup. Upload requests and source-file detach share the job
+reservation, so deletion includes an admitted upload and a detached source cannot start from a stale mapping.
+Different files of the same job can upload concurrently. Chunks for the same job and filename are serialized so a merge
+only sees completed chunks. This limits concurrency within a single file, while retaining parallel I/O across files.
+Tokens are opaque and bound to the job and filename. Committed job deletion invalidates even unused tokens;
+committed mapping deletion invalidates its pending upload tokens. Rollback keeps them available. Background
+cleanup also invalidates the affected upload before deleting its files, without cancelling same-name files in another job.
+Clear-all takes the job admission gate before reading its mapping list, so it includes uploads already in progress.
+For partial uploads, different names that the configured filesystem resolves to the same directory are rejected
+before writing data. Native filesystem identity is used; distinct case-sensitive filenames remain allowed.
+Token issuance waits for same-file failed-upload cleanup before returning a replacement token.
+Token issuance does not create upload directories; a failed mapping reservation removes only its new empty directory.
+Mappings needed by running, paused, failed or stopped tasks remain attached. Cleanup failures before a task INSERT
+or after transaction rollback keep their runtime handle and prevent parent-job deletion even if no task row remains.
+Retry/resume refuse to replace unfinished or cleanup-failed runtimes. After native cleanup, they wait for the previous
+status callback; its failure is surfaced without starting a replacement Loader. Stop and drain all imports, have an administrator
+inspect and recover the graph mode, then restart Hubble before retrying.
+
+Database failures during progress polling or after rejected dispatch require operator recovery; this change does not
+add automatic per-task persistence repair. A failed final write can leave a task RUNNING or its job LOADING in metadata.
+Hubble keeps failed callback/cleanup evidence and refuses replacement/deletion when cleanup cannot be confirmed.
+Recover the metadata database first, stop Hubble and other imports, and have an administrator verify that no Loader
+still uses the graph before repairing an orphaned graph mode through the Server graph-mode API. Restart Hubble with
+the same metadata database and source files. If a persisted task is still RUNNING with no active runner, use the existing
+Pause action, then Resume (or Retry for a terminal task) with current authentication. These actions recheck persisted
+state; they do not repair a database that is still unavailable. Do not manually delete metadata rows to bypass cleanup.
+
 ## Local development feedback loop
 
 Run the frontend with third-party source-map noise disabled:
@@ -250,7 +305,7 @@ Hubble 1.8 requires Java 17 and uses Spring Boot 3 with H2 2.x for metadata. MyS
 
 The startup script includes `--add-opens=java.base/java.net=ALL-UNNAMED` for the embedded Loader's Hive ORC reader. Include this option when using a custom Java launch command. Packaged archives are generated under `target/` and exclude local runtime data.
 
-Spring manages Hubble's async executor and shuts it down when the application context closes.
+Spring manages Hubble's async executor. On context close, Hubble stops accepting loads, pauses running and queued tasks, and waits for native Loader cleanup and final status updates. The shared executor also drains scheduled metadata jobs before database connections close. Native cleanup failures mark the task FAILED, retain its recovery handle, and block restarting that runtime; final status persistence failures remain visible during shutdown.
 
 ## Graph switching
 

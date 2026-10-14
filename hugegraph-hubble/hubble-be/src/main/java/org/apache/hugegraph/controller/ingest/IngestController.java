@@ -378,7 +378,7 @@ public class IngestController extends BaseController {
                            .message("Task not found: " + id).build();
         }
         this.requireJobWrite(job);
-        jobManagerService.remove(id);
+        jobManagerService.deleteJob(id);
         return Response.builder().status(Constant.STATUS_OK).build();
     }
 

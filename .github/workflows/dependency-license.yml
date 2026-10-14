@@ -55,3 +55,12 @@ jobs:
       - name: check third dependencies
         run: |
           bash "$SCRIPT_DEPENDENCY/check_dependencies.sh"
+
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout Repository'
+        uses: actions/checkout@v7
+      - name: 'Dependency Review'
+        uses: actions/dependency-review-action@v5.0.0

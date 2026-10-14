@@ -21,6 +21,16 @@ package org.apache.hugegraph.unit;
 import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.Arrays;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.hugegraph.exception.ExternalException;
+
+import org.apache.hugegraph.loader.HugeGraphLoader;
+import org.apache.hugegraph.loader.executor.LoadContext;
+import org.apache.hugegraph.loader.executor.LoadOptions;
+import org.apache.hugegraph.mapper.load.LoadTaskMapper;
 
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -176,8 +186,199 @@ public class JobManagerServiceTest {
         Mockito.verify(taskService).start(connection, mapping, client);
     }
 
-    private JobManagerService service() {
-        return new JobManagerService();
+    @Test
+    public void testDeleteJobAllowsSucceededTaskAfterRunningSnapshot() throws Exception {
+        this.deleteCompletedTask(LoadStatus.SUCCEED);
+    }
+
+    @Test
+    public void testDeleteJobAllowsFailedLoadAfterRunningSnapshot() throws Exception {
+        this.deleteCompletedTask(LoadStatus.FAILED);
+    }
+
+    @Test
+    public void testDeleteJobAllowsStoppedTaskAfterRunningSnapshot() throws Exception {
+        this.deleteCompletedTask(LoadStatus.STOPPED);
+    }
+
+    private void deleteCompletedTask(LoadStatus terminal) throws Exception {
+        DeleteFixture fixture = this.deleteFixture(terminal, null);
+
+        fixture.jobs.deleteJob(7);
+
+        Assert.assertEquals(terminal, fixture.task.getStatus());
+        Assert.assertTrue(fixture.task.isFinished());
+        Mockito.verify(fixture.loader).shutdown();
+        Mockito.verify(fixture.tasks).deleteById(9);
+        Mockito.verify(fixture.mapper).deleteById(7);
+        Assert.assertTrue(fixture.running.isEmpty());
+    }
+
+    @Test(timeout = 10000)
+    public void testDeleteJobPreservesTaskWhenCleanupFailsDuringStopWait() throws Exception {
+        DeleteFixture fixture = this.deleteFixture(LoadStatus.FAILED,
+                                                    new IllegalStateException("release failed"));
+        CountDownLatch entered = new CountDownLatch(1);
+        CountDownLatch stopped = new CountDownLatch(1);
+        Mockito.when(fixture.loader.load()).thenAnswer(invocation -> {
+            entered.countDown();
+            Assert.assertTrue(stopped.await(5, TimeUnit.SECONDS));
+            return false;
+        });
+        Mockito.doAnswer(invocation -> {
+            stopped.countDown();
+            return null;
+        }).when(fixture.context).stopLoading();
+        LoadTask snapshot = LoadTask.builder().id(9).status(LoadStatus.RUNNING).build();
+        Mockito.doReturn(Collections.singletonList(snapshot)).when(fixture.service).taskListByJob(7);
+        Mockito.when(fixture.tasks.updateById(Mockito.any(LoadTask.class))).thenReturn(1);
+        Thread runner = new Thread(fixture.task, "delete-job-cleanup-race-test");
+        runner.start();
+        try {
+            Assert.assertTrue(entered.await(5, TimeUnit.SECONDS));
+
+            Assert.assertThrows(RuntimeException.class, () -> fixture.jobs.deleteJob(7));
+
+            Mockito.verify(fixture.tasks, Mockito.never()).deleteById(Mockito.anyInt());
+            Mockito.verify(fixture.mapper, Mockito.never()).deleteById(Mockito.anyInt());
+            Assert.assertSame(fixture.task, fixture.running.get(9));
+            Assert.assertEquals(LoadStatus.FAILED, fixture.task.getStatus());
+        } finally {
+            stopped.countDown();
+            runner.join(5000);
+            Assert.assertFalse(runner.isAlive());
+        }
+    }
+
+    @Test
+    public void testDeleteJobPreservesTaskWhenCleanupFailedAfterSnapshot() throws Exception {
+        DeleteFixture fixture = this.deleteFixture(LoadStatus.FAILED,
+                                                    new IllegalStateException("release failed"));
+
+        Assert.assertThrows(RuntimeException.class, () -> fixture.jobs.deleteJob(7));
+
+        Mockito.verify(fixture.tasks, Mockito.never()).deleteById(Mockito.anyInt());
+        Mockito.verify(fixture.mapper, Mockito.never()).deleteById(Mockito.anyInt());
+        Mockito.verify(fixture.mappings, Mockito.never()).listByJob(Mockito.anyInt());
+        Assert.assertEquals(LoadStatus.FAILED, fixture.task.getStatus());
+        Assert.assertSame(fixture.task, fixture.running.get(9));
+    }
+
+    @Test
+    public void testDeleteJobDoesNotAssumeDatabaseTerminalCleanupSucceeded() throws Exception {
+        DeleteFixture fixture = this.deleteFixture(LoadStatus.FAILED, null);
+        fixture.running.clear();
+        LoadTask snapshot = LoadTask.builder().id(9).status(LoadStatus.RUNNING).build();
+        Mockito.doReturn(Collections.singletonList(snapshot)).when(fixture.service).taskListByJob(7);
+        Mockito.when(fixture.tasks.selectById(9))
+               .thenReturn(LoadTask.builder().id(9).status(LoadStatus.FAILED).build());
+
+        Assert.assertThrows(ExternalException.class, () -> fixture.jobs.deleteJob(7));
+
+        Mockito.verify(fixture.tasks, Mockito.never()).deleteById(Mockito.anyInt());
+        Mockito.verify(fixture.mapper, Mockito.never()).deleteById(Mockito.anyInt());
+    }
+
+    @Test
+    public void testOrdinaryStopStillRejectsCompletedTasks() throws Exception {
+        for (LoadStatus terminal : new LoadStatus[]{LoadStatus.SUCCEED, LoadStatus.FAILED, LoadStatus.STOPPED}) {
+            DeleteFixture fixture = this.deleteFixture(terminal, null);
+            fixture.task.run();
+
+            Assert.assertThrows(ExternalException.class, () -> fixture.service.stop(9));
+
+            Assert.assertEquals(terminal, fixture.task.getStatus());
+            Mockito.verify(fixture.tasks, Mockito.never()).updateById(Mockito.any(LoadTask.class));
+        }
+    }
+
+    @Test
+    public void testDeleteJobDoesNotRemoveMetadataWhenStopPersistenceFails() throws Exception {
+        DeleteFixture fixture = this.deleteFixture(LoadStatus.PAUSED, null);
+        fixture.running.clear();
+        LoadTask paused = LoadTask.builder().id(9).status(LoadStatus.PAUSED).build();
+        Mockito.doReturn(Collections.singletonList(paused)).when(fixture.service).taskListByJob(7);
+        Mockito.when(fixture.tasks.selectById(9)).thenReturn(paused);
+        IllegalStateException failure = new IllegalStateException("persist stop failed");
+        Mockito.when(fixture.tasks.updateById(Mockito.any(LoadTask.class))).thenThrow(failure);
+
+        Assert.assertSame(failure, Assert.assertThrows(IllegalStateException.class,
+                                                      () -> fixture.jobs.deleteJob(7)));
+
+        Mockito.verify(fixture.tasks, Mockito.never()).deleteById(Mockito.anyInt());
+        Mockito.verify(fixture.mapper, Mockito.never()).deleteById(Mockito.anyInt());
+        Mockito.verify(fixture.mappings, Mockito.never()).listByJob(Mockito.anyInt());
+    }
+
+    private DeleteFixture deleteFixture(LoadStatus terminal, RuntimeException cleanup) throws Exception {
+        DeleteFixture fixture = new DeleteFixture();
+        fixture.jobs = this.service();
+        fixture.service = Mockito.spy(new LoadTaskService());
+        org.springframework.transaction.PlatformTransactionManager transactions =
+                Mockito.mock(org.springframework.transaction.PlatformTransactionManager.class);
+        Mockito.when(transactions.getTransaction(Mockito.any()))
+               .thenReturn(new org.springframework.transaction.support.SimpleTransactionStatus());
+        this.setField(fixture.service, "transactionManager", transactions);
+        fixture.mapper = Mockito.mock(JobManagerMapper.class);
+        fixture.tasks = Mockito.mock(LoadTaskMapper.class);
+        fixture.mappings = Mockito.mock(FileMappingService.class);
+        fixture.loader = Mockito.mock(HugeGraphLoader.class);
+        fixture.context = Mockito.mock(LoadContext.class, Mockito.RETURNS_DEEP_STUBS);
+        Mockito.when(fixture.loader.context()).thenReturn(fixture.context);
+        fixture.task = LoadTask.builder().id(9).jobId(7).loader(fixture.loader)
+                               .options(new LoadOptions()).status(LoadStatus.RUNNING).lastDuration(0L).build();
+        Mockito.when(fixture.loader.load()).thenAnswer(invocation -> {
+            if (terminal == LoadStatus.STOPPED) {
+                fixture.task.setStatus(LoadStatus.STOPPED);
+            }
+            return terminal == LoadStatus.SUCCEED;
+        });
+        if (cleanup != null) {
+            Mockito.doThrow(cleanup).when(fixture.loader).shutdown();
+        }
+        fixture.running = new ConcurrentHashMap<>();
+        fixture.running.put(9, fixture.task);
+        this.setField(fixture.service, "runningTaskContainer", fixture.running);
+        this.setField(fixture.service, "mapper", fixture.tasks);
+        this.setField(fixture.jobs, "mapper", fixture.mapper);
+        this.setField(fixture.jobs, "taskService", fixture.service);
+        this.setField(fixture.jobs, "fileMappingService", fixture.mappings);
+        Mockito.when(fixture.mapper.selectById(7)).thenReturn(JobManager.builder().id(7).build());
+        Mockito.when(fixture.mapper.deleteById(7)).thenReturn(1);
+        Mockito.when(fixture.tasks.deleteById(9)).thenReturn(1);
+        Mockito.when(fixture.mappings.listByJob(7)).thenReturn(Collections.emptyList());
+        LoadTask snapshot = LoadTask.builder().id(9).status(LoadStatus.RUNNING).build();
+        Mockito.when(fixture.tasks.selectById(9)).thenAnswer(invocation ->
+                LoadTask.builder().id(9).status(fixture.task.getStatus()).build());
+        Mockito.doAnswer(invocation -> {
+            // The real runner finishes cleanup after the database snapshot,
+            // before deleteJob reaches the real stop implementation.
+            fixture.task.run();
+            return Collections.singletonList(snapshot);
+        }).when(fixture.service).taskListByJob(7);
+        return fixture;
+    }
+
+    private static class DeleteFixture {
+        private JobManagerService jobs;
+        private LoadTaskService service;
+        private JobManagerMapper mapper;
+        private LoadTaskMapper tasks;
+        private FileMappingService mappings;
+        private HugeGraphLoader loader;
+        private LoadContext context;
+        private LoadTask task;
+        private ConcurrentHashMap<Integer, LoadTask> running;
+    }
+
+    private JobManagerService service() throws Exception {
+        JobManagerService service = new JobManagerService();
+        org.springframework.transaction.PlatformTransactionManager transactions =
+                Mockito.mock(org.springframework.transaction.PlatformTransactionManager.class);
+        Mockito.when(transactions.getTransaction(Mockito.any()))
+               .thenReturn(new org.springframework.transaction.support.SimpleTransactionStatus());
+        this.setField(service, "transactionManager", transactions);
+        return service;
     }
 
     private void setField(Object object, String name, Object value)

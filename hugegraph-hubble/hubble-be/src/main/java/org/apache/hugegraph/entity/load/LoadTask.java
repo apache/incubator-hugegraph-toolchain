@@ -28,6 +28,7 @@ import org.apache.hugegraph.entity.GraphConnection;
 import org.apache.hugegraph.entity.enums.LoadStatus;
 import org.apache.hugegraph.exception.InternalException;
 import org.apache.hugegraph.loader.HugeGraphLoader;
+import org.apache.hugegraph.loader.exception.LoadException;
 import org.apache.hugegraph.loader.executor.LoadContext;
 import org.apache.hugegraph.loader.executor.LoadOptions;
 import org.apache.hugegraph.util.Ex;
@@ -67,6 +68,14 @@ public class LoadTask implements Runnable {
     @TableField(exist = false)
     @JsonIgnore
     private transient volatile boolean finished;
+
+    @TableField(exist = false)
+    @JsonIgnore
+    private transient volatile Throwable cleanupFailure;
+
+    @TableField(exist = false)
+    @JsonIgnore
+    private transient volatile boolean cleanupFailed;
 
     @TableId(type = IdType.AUTO)
     @MergeProperty(useNew = false)
@@ -169,7 +178,7 @@ public class LoadTask implements Runnable {
         this.currDuration = 0L;
         this.createTime = HubbleUtil.nowDate();
 
-        this.loader = new HugeGraphLoader(this.options);
+        this.loader = new HugeGraphLoader(this.options, false);
     }
 
     @Override
@@ -177,18 +186,61 @@ public class LoadTask implements Runnable {
         Ex.check(this.options != null, "The load options shouldn't be null");
         log.info("LoadTask is start running : {}", this.id);
 
-        boolean noError;
+        this.cleanupFailure = null;
+        boolean noError = false;
+        this.cleanupFailed = false;
+        Throwable failure = null;
         try {
-            noError = this.loader.load();
+            // A queued task can be paused before its worker starts.
+            noError = this.context().stopped() ? this.context().noError() : this.loader.load();
         } catch (Throwable e) {
-            noError = false;
-            log.error("Run task {} failed", this.id, e);
+            failure = e;
+        } finally {
+            Throwable recordedFailure = failure;
+            if (failure != null) {
+                // Only read the recorded error: shutdown can wrap a checked
+                // failure differently from load(), or rethrow it unchanged.
+                try {
+                    this.context().throwIfFailed();
+                } catch (Throwable recorded) {
+                    recordedFailure = recorded;
+                    if (recorded != failure) {
+                        // Retain an asynchronously recorded error even when it
+                        // differs from the error propagated by load().
+                        log.error("Recorded load failure for task {}", this.id, recorded);
+                    }
+                }
+            }
+            Throwable recordedCause = recordedFailure == null ? null : recordedFailure.getCause();
+            int suppressed = recordedFailure == null ? 0 : recordedFailure.getSuppressed().length;
+            int causeSuppressed = recordedCause == null ? 0 : recordedCause.getSuppressed().length;
+            try {
+                this.loader.shutdown();
+            } catch (Throwable e) {
+                noError = false;
+                this.cleanupFailed = !sameLoadFailure(recordedFailure, e) ||
+                                     recordedFailure.getSuppressed().length != suppressed ||
+                                     (recordedCause != null &&
+                                      recordedCause.getSuppressed().length != causeSuppressed);
+                if (this.cleanupFailed) {
+                    this.cleanupFailure = e;
+                    log.error("Failed to close load task {}; check graph loading mode before retrying", this.id, e);
+                }
+                if (failure == null) {
+                    failure = e;
+                } else if (this.cleanupFailed && failure != e && !referencesFailure(e, failure)) {
+                    failure.addSuppressed(e);
+                }
+            }
+        }
+        if (failure != null) {
+            log.error("Run task {} failed", this.id, failure);
         }
         this.lock.lock();
         try {
             // Pay attention to whether the user stops actively or
             // the program stops by itself
-            if (this.status.inRunning()) {
+            if (this.cleanupFailed || this.status.inRunning()) {
                 if (noError) {
                     this.status = LoadStatus.SUCCEED;
                 } else {
@@ -209,6 +261,31 @@ public class LoadTask implements Runnable {
         }
     }
 
+    private static boolean sameLoadFailure(Throwable recorded, Throwable cleanup) {
+        if (recorded == null) {
+            return false;
+        }
+        if (recorded == cleanup) {
+            return true;
+        }
+        // LoadContext.throwIfFailed() wraps only non-runtime failures this way.
+        return recorded.getClass() == LoadException.class && cleanup.getClass() == LoadException.class &&
+               recorded.getCause() != null && !(recorded.getCause() instanceof RuntimeException) &&
+               recorded.getCause() == cleanup.getCause() && cleanup.getSuppressed().length == 0;
+    }
+
+    private static boolean referencesFailure(Throwable cleanup, Throwable failure) {
+        if (cleanup.getCause() == failure) {
+            return true;
+        }
+        for (Throwable suppressed : cleanup.getSuppressed()) {
+            if (suppressed == failure) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void lock() {
         this.lock.lock();
     }
@@ -226,7 +303,9 @@ public class LoadTask implements Runnable {
                 // pass
             }
         }
-        this.loader = null;
+        if (this.context().closed() && !this.cleanupFailed) {
+            this.loader = null;
+        }
         log.info("LoadTask {} stopped", this.id);
     }
 
@@ -240,7 +319,7 @@ public class LoadTask implements Runnable {
             runtimeOptions.token = token;
             runtimeOptions.pdToken = null;
             runtimeOptions.trustStoreToken = null;
-            this.loader = new HugeGraphLoader(runtimeOptions);
+            this.loader = new HugeGraphLoader(runtimeOptions, false);
             this.finished = false;
         } catch (CloneNotSupportedException e) {
             throw new InternalException("Failed to prepare load task options",

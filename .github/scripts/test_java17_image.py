@@ -203,6 +203,49 @@ class ImageEvidenceTest(unittest.TestCase):
             self.assertNotIn("Command", output)
             self.assertLess(len(output.encode("utf-8")), 8192)
 
+    def test_full_smoke_rejects_invalid_public_entrypoint_and_container_identity(self):
+        # All data/provenance stages otherwise succeed: losing a migrated check
+        # would incorrectly accept these images after workflow consolidation.
+        cases = [("loader", "verify_image", RuntimeError("wrong container image")),
+                 ("loader", "check_loader", PermissionError("public script is not executable")),
+                 ("hubble", "check_hubble_ui", RuntimeError("HTML fallback for missing bundle")),
+                 ("loader", None, None), ("hubble", None, None)]
+        for module, failing_check, failure in cases:
+            with self.subTest(module=module, check=failing_check), tempfile.TemporaryDirectory() as directory:
+                evidence = Path(directory)
+                manifest = {"module": module, "image": "fixture-image", "server_commit": "server",
+                            "toolchain_commit": "toolchain", "candidate_jars": {}}
+                (evidence / "manifest.json").write_text(json.dumps(manifest))
+                started = []
+                def run(args, *unused, **kwargs):
+                    if args[:3] == ["docker", "image", "inspect"]:
+                        return "server toolchain" if "Labels" in " ".join(args) else "sha256:built"
+                    if args[:2] == ["docker", "run"]:
+                        started.append("container-" + str(len(started)))
+                        return started[-1]
+                    if "-version" in args:
+                        return 'openjdk version "17.0.20"'
+                    return ""
+                with contextlib.ExitStack() as stack:
+                    stack.enter_context(patch.object(images, "run", side_effect=run))
+                    stack.enter_context(patch.object(images.socket, "socket"))
+                    stack.enter_context(patch.object(images, "start_server", return_value=evidence))
+                    stack.enter_context(patch.object(images, "verify_jars", return_value={}))
+                    stack.enter_context(patch.object(images, "check_loader", return_value={}))
+                    stack.enter_context(patch.object(images, "check_hubble_before_restart", return_value=("favorite", {})))
+                    stack.enter_context(patch.object(images.HTTP, "wait_for_health"))
+                    stack.enter_context(patch.object(images, "api", return_value={"content": "g.E().count()",
+                                                                                 "name": "image_persistence"}))
+                    for check in ("verify_image", "check_loader", "check_hubble_ui"):
+                        stack.enter_context(patch.object(images.IMAGE_STARTUP, check,
+                                                        side_effect=failure if check == failing_check else None))
+                    stack.enter_context(contextlib.redirect_stderr(io.StringIO()))
+                    self.assertEqual(failing_check is None, images.smoke(evidence))
+                report = json.loads((evidence / "report.json").read_text())
+                self.assertEqual("failed" if failing_check else "passed", report["status"])
+                if failing_check:
+                    self.assertEqual("smoke: " + type(failure).__name__, report["error"])
+
     def test_prepare_failure_reports_existing_log_and_preserves_exit_code(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

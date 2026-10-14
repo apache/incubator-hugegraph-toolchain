@@ -76,6 +76,9 @@ public class BatchEdgeRequest {
 
         public Builder updatingStrategy(String property,
                                         UpdateStrategy strategy) {
+            if (this.req.updateStrategies == null) {
+                this.req.updateStrategies = new HashMap<>();
+            }
             this.req.updateStrategies.put(property, strategy);
             return this;
         }

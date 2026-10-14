@@ -259,6 +259,10 @@ public final class LoadContext implements Cloneable {
     }
 
     public void close() {
+        this.close(true);
+    }
+
+    public void close(boolean saveProgress) {
         if (this.closed) {
             return;
         }
@@ -284,7 +288,7 @@ public final class LoadContext implements Cloneable {
             this.throwIfFailed();
             this.newProgress.plusVertexLoaded(this.summary.vertexLoaded());
             this.newProgress.plusEdgeLoaded(this.summary.edgeLoaded());
-            if (this.client != null) {
+            if (this.client != null && saveProgress) {
                 try {
                     this.newProgress.write(this);
                 } catch (IOException e) {
