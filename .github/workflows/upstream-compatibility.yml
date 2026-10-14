@@ -1,30 +1,24 @@
 name: Upstream compatibility
 
 on:
-  schedule:
-    - cron: '17 3 * * *'
+  workflow_call:
+    inputs:
+      smoke:
+        type: boolean
+        default: false
   workflow_dispatch:
-  pull_request:
-    paths:
-      - '.github/workflows/upstream-compatibility.yml'
-      - '.github/actions/get-hugegraph-commit/**'
-      - '.github/actions/setup-candidate-sdk/**'
-      - '.github/actions/setup-java-env/**'
-      - '.github/configs/settings.xml'
-      - 'hugegraph-client/assembly/travis/install-candidate-sdk.sh'
-      - 'hugegraph-client/assembly/travis/checkout-server.sh'
-      - 'hugegraph-client/assembly/travis/start-hugegraph-servers.sh'
-      - 'hugegraph-client/assembly/travis/verify_candidate_image_sdk.py'
+    inputs:
+      smoke:
+        description: Check the locked baseline with mainline smoke
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
-concurrency:
-  group: upstream-compatibility-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
-
 jobs:
   upstream-master:
+    name: ${{ inputs.smoke && 'mainline-smoke' || 'upstream-master' }}
     if: github.event_name != 'schedule' || github.repository == 'apache/hugegraph-toolchain'
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -39,6 +33,7 @@ jobs:
           distribution: temurin
 
       - name: Resolve latest ASF master once
+        if: ${{ !inputs.smoke }}
         id: upstream
         uses: ./.github/actions/get-hugegraph-commit
         with:
@@ -46,12 +41,18 @@ jobs:
           ref: master
 
       - name: Install SDK from the resolved commit
+        if: ${{ !inputs.smoke }}
         id: sdk
         uses: ./.github/actions/setup-candidate-sdk
         with:
           repository: apache/hugegraph
           ref: ${{ steps.upstream.outputs.commit_id }}
           expected-commit: ${{ steps.upstream.outputs.commit_id }}
+
+      - name: Install locked current SDK
+        if: inputs.smoke
+        id: locked-sdk
+        uses: ./.github/actions/setup-candidate-sdk
 
       - name: Compile core consumers
         run: |
@@ -60,29 +61,67 @@ jobs:
 
       - name: Start the same-source Server fixture
         env:
-          CANDIDATE_ARCHIVE: ${{ steps.sdk.outputs.archive }}
+          CANDIDATE_ARCHIVE: ${{ steps.sdk.outputs.archive || steps.locked-sdk.outputs.archive }}
         run: bash hugegraph-client/assembly/travis/start-hugegraph-servers.sh "$CANDIDATE_ARCHIVE"
 
       - name: Client unit and HTTP compatibility tests
+        if: ${{ !inputs.smoke }}
         working-directory: hugegraph-client
         run: |
           mvn test -Dtest=UnitTestSuite -ntp
           mvn test -Dtest=ApiTestSuite -ntp
           mvn test -Dtest=FuncTestSuite -ntp
 
+      - name: Client schema and graph read/write smoke
+        if: inputs.smoke
+        working-directory: hugegraph-client
+        run: mvn test -Dtest=UnitTestSuite,GraphManagerTest -ntp
+
       - name: Loader and Hubble backend unit tests
         run: |
           mvn test -P unit -pl hugegraph-loader -ntp
           mvn test -P unit-test -pl hugegraph-hubble/hubble-be -ntp
 
+      - name: Loader local-file read/write smoke
+        if: inputs.smoke
+        run: mvn test -P file -Dtest=FileLoadTest#testCustomizedSchema -pl hugegraph-loader -ntp
+
       - name: Tools functional compatibility tests
+        if: ${{ !inputs.smoke }}
         run: mvn test -Dtest=FuncTestSuite -Dtools.test.disposable=true -pl hugegraph-tools -ntp
+
+      - name: Tools public CLI smoke
+        if: inputs.smoke
+        run: mvn test -Dtest=CommandTest -pl hugegraph-tools -ntp
+
+      - name: Prepare Go
+        if: inputs.smoke
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.x'
+          cache-dependency-path: hugegraph-client-go/go.sum
+
+      - name: Go version and schema smoke
+        if: inputs.smoke
+        working-directory: hugegraph-client-go
+        run: go test ./... -count=1 -timeout 30s -run '^(TestVersionRequest_Do|TestSchemaRequest_Do)$'
+
+      - name: Stop this job's Server fixtures
+        if: always()
+        run: |
+          for stop in "$RUNNER_TEMP"/hugegraph-servers.*/*/bin/stop-hugegraph.sh; do
+            if [[ -f "$stop" ]]; then
+              bash "$stop"
+            fi
+          done
 
       - name: Retain test reports
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: upstream-compatibility-reports-${{ github.run_attempt }}
-          path: '**/target/surefire-reports/**'
+          path: |
+            **/target/surefire-reports/**
+            ${{ runner.temp }}/hugegraph-servers.*/**/logs/*.log
           if-no-files-found: warn
           retention-days: 7

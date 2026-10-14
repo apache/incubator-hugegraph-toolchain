@@ -44,9 +44,90 @@ WORKFLOWS = {
     "toolchain": {"client-ci.yml": ["client"], "client-go-ci.yml": ["go"],
                   "loader-ci.yml": ["loader"], "tools-ci.yml": ["tools"],
                   "spark-connector-ci.yml": ["spark"], "hubble-ci.yml": ["hubble"],
-                  "codeql-analysis.yml": [], "dependency-license.yml": [], "license-checker.yml": []},
+                  "codeql-analysis.yml": [], "dependency-license.yml": [], "license-checker.yml": [],
+                  "ci.yml": MODULES["toolchain"], "spark-loader-ci.yml": ["loader"],
+                  "flink-cdc-ci.yml": ["loader"], "hubble-launcher-ci.yml": [],
+                  "upstream-compatibility.yml": [], "image-ci.yml": [], "java17-images-ci.yml": [], "labeler.yml": []},
 }
 IMAGES = {"loader_image", "hubble_image"}
+ENTRY_WORKFLOW = ".github/workflows/ci.yml"
+
+# Optional compatibility checks follow direct inputs, rather than consumer fan-out.
+LOADER = "hugegraph-loader/"
+LOADER_JAVA = LOADER + "src/main/java/org/apache/hugegraph/loader/"
+SERVER_BOOTSTRAP = (".github/actions/get-hugegraph-commit/", ".github/actions/setup-candidate-sdk/",
+                    ".github/actions/setup-hugegraph-server/", ".github/actions/setup-java-env/",
+                    "hugegraph-client/assembly/travis/")
+SHARED_BUILD_INPUTS = {"pom.xml", "hugegraph-client/pom.xml", "hugegraph-loader/pom.xml",
+                       ".github/configs/settings.xml"}
+MAINTENANCE_INPUTS = {".asf.yaml", ".editorconfig", ".licenserc.yaml", ".github/PULL_REQUEST_TEMPLATE.md",
+                      ".github/dependabot.yml", ".github/labeler.yml"}
+CONTRACT_TESTS = {".github/actions/setup-hugegraph-server/runtime_test.py",
+                  ".github/actions/get-hugegraph-commit/resolve.test.cjs",
+                  "hugegraph-client/assembly/travis/checkout-server.test.cjs",
+                  "hugegraph-client/assembly/travis/install-server.test.cjs"}
+LAUNCHER_INPUTS = ("hugegraph-hubble/hubble-dist/assembly/static/bin/start-hubble.sh",
+                   "hugegraph-hubble/hubble-dist/assembly/static/bin/stop-hubble.sh",
+                   "hugegraph-hubble/hubble-dist/assembly/travis/test_hubble_launchers.py",
+                   ".github/workflows/hubble-launcher-ci.yml")
+
+
+def entry_only(path):
+    return (path in MAINTENANCE_INPUTS or path in CONTRACT_TESTS
+            or path.startswith(".github/scripts/test_") and path.endswith(".py"))
+
+
+def optional_checks(paths):
+    checks = {name: False for name in ("legacy", "hdfs", "spark_loader", "flink_cdc", "launcher", "upstream")}
+    if ENTRY_WORKFLOW in paths:
+        return {name: True for name in checks}
+    for path in paths:
+        if documentation(path) or entry_only(path):
+            continue
+        name = Path(path).name.lower()
+        shared = (path in SHARED_BUILD_INPUTS or path.startswith((".mvn/",) + SERVER_BOOTSTRAP)
+                  or path.startswith(LOADER + "assembly/descriptor/")
+                  or path == LOADER + "assembly/static/bin/hugegraph-loader.sh")
+        module_workflow = (path.startswith(".github/workflows/")
+                           and bool(WORKFLOWS["toolchain"].get(Path(path).name)))
+        checks["legacy"] |= (shared or module_workflow or "legacy" in name or "compatibility" in name
+                             or path == "hugegraph-client/src/main/java/org/apache/hugegraph/client/RestClient.java"
+                             or path == "hugegraph-client/src/main/java/org/apache/hugegraph/util/JsonUtil.java")
+        checks["hdfs"] |= (shared or path == ".github/workflows/loader-ci.yml"
+                           or path.startswith(LOADER) and "hdfs" in path.lower()
+                           or path.startswith((LOADER_JAVA + "reader/file/", LOADER_JAVA + "reader/line/",
+                                               LOADER_JAVA + "source/file/"))
+                           or str(Path(path).parent) in {LOADER_JAVA + "reader", LOADER_JAVA + "source"})
+        client_runtime = path.startswith("hugegraph-client/src/main/")
+        loader_runtime = path.startswith(LOADER + "src/main/")
+        checks["spark_loader"] |= (shared or client_runtime or loader_runtime
+                                   or path.startswith(LOADER) and "/spark/" in path
+                                   or path in {LOADER + "assembly/static/bin/hugegraph-spark-loader.sh",
+                                               LOADER + "assembly/static/bin/get-params.sh"}
+                                   or path == LOADER + "src/test/python/run_spark_artifact.py"
+                                   or path == ".github/workflows/spark-loader-ci.yml")
+        checks["flink_cdc"] |= (shared or client_runtime or loader_runtime
+                                or path.startswith(LOADER) and ("/flink/" in path or "/flink-cdc/" in path)
+                                or path == LOADER + "assembly/static/bin/hugegraph-flinkcdc-loader.sh"
+                                or path == LOADER + "src/test/scripts/flink-launcher.test.cjs"
+                                or path == ".github/workflows/flink-cdc-ci.yml")
+        checks["launcher"] |= path in LAUNCHER_INPUTS
+        checks["upstream"] |= (path == ".github/workflows/upstream-compatibility.yml"
+                               or path.startswith((".mvn/",) + SERVER_BOOTSTRAP)
+                               or path == ".github/configs/settings.xml")
+    return checks
+
+
+def security_input(path):
+    if documentation(path) or entry_only(path):
+        return False
+    p = Path(path)
+    return (dependency_input(path) or path == ENTRY_WORKFLOW or path.startswith(".github/workflows/codeql")
+            or bool({"auth", "authentication", "authorization", "security", "permission", "permissions", "ssl"}
+                    .intersection(part.lower() for part in p.parts))
+            or p.stem.lower().startswith(("auth", "login", "security", "ssl", "tls", "permission", "credential", "token"))
+            or any(token in p.stem.lower() for token in ("ssl", "tls", "truststore"))
+            or p.name in {"HugeClient.java", "RestClient.java", "HubbleOptions.java"})
 
 
 DEPENDENTS = {
@@ -72,14 +153,13 @@ def documentation(path, mode="100644"):
     if mode != "100644":
         return False
     p = Path(path)
-    prose_names = {"README.md", "README_CN.md", "README_ZH.md", "AGENTS.md"}
-    module_roots = {prefix.rstrip("/") for mapping in PREFIXES.values() for prefix in mapping}
-    module_roots.update("hugegraph-server/" + module for module in [
-        "hugegraph-api", "hugegraph-core", "hugegraph-dist", "hugegraph-example",
-        "hugegraph-hbase", "hugegraph-hstore", "hugegraph-rocksdb", "hugegraph-test"])
-    if p.name in prose_names and (str(p.parent) == "." or str(p.parent) in module_roots):
+    if {"src", "resources", "fixtures", "templates", "assembly", "static", "bin", "conf", "configs"}.intersection(p.parts[:-1]):
+        return False
+    if p.suffix.lower() in {".md", ".rst"}:
         return True
-    return path.startswith("docs/") and p.suffix.lower() in {".md", ".rst", ".txt", ".png", ".jpg", ".jpeg", ".svg"}
+    if len(p.parts) == 1 and (p.suffix.lower() == ".txt" or p.name in {"LICENSE", "NOTICE"}):
+        return True
+    return "docs" in p.parts[:-1] and p.suffix.lower() in {".md", ".rst", ".txt", ".png", ".jpg", ".jpeg", ".svg"}
 
 
 def unsafe_documentation(ref, paths):
@@ -94,16 +174,11 @@ def unsafe_documentation(ref, paths):
     return False
 
 
-def packaged_image_document(path):
-    p = Path(path)
-    return (str(p.parent) in {"hugegraph-loader", "hugegraph-hubble"}
-            and p.name.startswith("README"))
-
-
 def image_only_path(path):
     return path in {".dockerignore", "hugegraph-loader/Dockerfile", "hugegraph-hubble/Dockerfile",
                     ".github/workflows/image-ci.yml", ".github/scripts/check-toolchain-image.py",
-                    ".github/scripts/test_toolchain_image.py"}
+                    ".github/scripts/test_toolchain_image.py", ".github/scripts/java17_image.py",
+                    ".github/scripts/build-java17-image.sh", ".github/workflows/java17-images-ci.yml"}
 
 
 def select_images(paths):
@@ -111,7 +186,13 @@ def select_images(paths):
     selected = set()
     for path in paths:
         p = Path(path)
-        if path == "hugegraph-loader/Dockerfile":
+        if documentation(path) or entry_only(path):
+            continue
+        if path in {ENTRY_WORKFLOW, ".github/workflows/image-ci.yml", ".github/workflows/java17-images-ci.yml",
+                    ".github/scripts/check-toolchain-image.py", ".github/scripts/java17_image.py",
+                    ".github/scripts/build-java17-image.sh"}:
+            selected.update(IMAGES)
+        elif path == "hugegraph-loader/Dockerfile":
             selected.add("loader_image")
         elif path == "hugegraph-hubble/Dockerfile":
             selected.add("hubble_image")
@@ -123,12 +204,11 @@ def select_images(paths):
         elif path.startswith("hugegraph-loader/") and (
                 p.name == "pom.xml" or path.startswith(("hugegraph-loader/assembly/descriptor/",
                                                        "hugegraph-loader/assembly/static/"))
-                or packaged_image_document(path) or p.name.startswith(("LICENSE", "NOTICE"))):
+                or p.name.startswith(("LICENSE", "NOTICE"))):
             # Hubble's Dockerfile first builds and installs Client and Loader.
             selected.update(IMAGES)
         elif path.startswith("hugegraph-hubble/") and (
                 p.name == "pom.xml" or "/assembly/descriptor/" in path or "/assembly/static/" in path
-                or packaged_image_document(path)
                 or path == "hugegraph-hubble/hubble-dist/assembly/travis/check-hubble-dist.sh"
                 or path.startswith(("hugegraph-hubble/.mvn/", "hugegraph-hubble/hubble-fe/scripts/"))
                 or (path.startswith("hugegraph-hubble/hubble-be/src/main/resources/")
@@ -180,7 +260,7 @@ def scan_languages(paths):
             languages.add("java")
         elif path.startswith(".github/workflows/") and p.name in WORKFLOWS["toolchain"]:
             modules = WORKFLOWS["toolchain"][p.name]
-            if p.name == "codeql-analysis.yml":
+            if path == ENTRY_WORKFLOW or p.name == "codeql-analysis.yml":
                 languages.update(all_languages)
             elif "hubble" in modules:
                 languages.update({"java", "javascript"})
@@ -194,7 +274,7 @@ def scan_languages(paths):
 def select(project, paths):
     selected = set()
     for path in paths:
-        if project == "toolchain" and image_only_path(path):
+        if project == "toolchain" and (image_only_path(path) or entry_only(path)):
             continue
         if documentation(path):
             continue
@@ -344,11 +424,12 @@ def record_stack_merge(plan, event_pr, parents, fetch):
         raise StaleInputError("native PR stack identity could not be verified") from error
 
 
-def create_plan(project, event, repository, fetch=api, external_inputs=None):
+def create_plan(project, event, repository, fetch=api, external_inputs=None, event_name=None):
     plan = {"schema": 1, "project": project, "repository": repository, "pr": 0,
             "source": repository, "branch": "", "base": "", "head": git("rev-parse", "HEAD"),
             "reason": "affected inputs from the cumulative PR diff",
             "externalInputs": external_inputs or {}, "testedMergeSHA": git("rev-parse", "HEAD")}
+    event_name = event_name or os.environ.get("GITHUB_EVENT_NAME", "pull_request" if "pull_request" in event else "push")
     selected_images = set()
     conservative_scan = False
     try:
@@ -373,6 +454,10 @@ def create_plan(project, event, repository, fetch=api, external_inputs=None):
             # head/base objects must exist locally; workflow fetches both before planning.
             ancestor = git("merge-base", plan["base"], plan["head"])
             paths = git("diff", "--no-renames", "--name-only", ancestor, plan["head"]).splitlines()
+        elif project == "toolchain" and event_name in {"schedule", "workflow_dispatch"}:
+            # Explicit test sets have no push before-SHA and do not need a diff.
+            plan["base"] = plan["head"]
+            paths = []
         else:
             plan["base"] = event.get("before", "")
             paths = git("diff", "--no-renames", "--name-only", plan["base"], plan["head"]).splitlines()
@@ -389,17 +474,47 @@ def create_plan(project, event, repository, fetch=api, external_inputs=None):
         selected_images = set(IMAGES) if project == "toolchain" else set()
         plan["reason"] = "selection unavailable: full validation coverage"
         conservative_scan = True
-    if not selected and not selected_images:
+    paths = locals().get("paths", [])
+    checks = optional_checks(paths) if project == "toolchain" else {}
+    full = event_name == "schedule"
+    if project == "toolchain" and event_name == "workflow_dispatch":
+        preset = event.get("inputs", {}).get("test-set", "mainline")
+        if preset not in {"mainline", "full"}:
+            raise ValueError("unknown test-set: " + str(preset))
+        full = preset == "full"
+    if project == "toolchain" and event_name in {"schedule", "workflow_dispatch"}:
+        selected = set(MODULES[project])
+        selected_images = set(IMAGES)
+        plan["reason"] = "weekly full validation" if event_name == "schedule" else "manual " + preset
+    if full:
+        checks = {name: True for name in checks}
+    master_push = project == "toolchain" and event_name == "push" and event.get("ref") == "refs/heads/master"
+    plan["mainline_smoke"] = (master_push and bool(selected or selected_images)
+                              or project == "toolchain" and event_name == "pull_request" and ENTRY_WORKFLOW in paths)
+    if master_push:
+        selected = set()
+        selected_images = set()
+        checks = {name: False for name in checks}
+        plan["reason"] = "current checkout mainline smoke after master merge"
+    plan.update(checks)
+    plan["server_baselines"] = ["candidate", "release-1.7"] if checks.get("legacy") else ["candidate"]
+    if not selected and not selected_images and not plan["mainline_smoke"]:
         plan["reason"] = "cumulative PR diff contains only plain prose documentation; modules unaffected"
     plan["selected"] = sorted(selected)
     for module in MODULES[project]:
         plan[module] = module in selected
     plan["expected"] = sorted(suites(project, selected) + list(selected_images))
+    if plan["mainline_smoke"]:
+        plan["expected"].append("mainline-smoke")
     plan["selectedImages"] = sorted(selected_images)
+    plan["image_smoke"] = bool(selected_images) and (full or event_name not in {"push", "workflow_dispatch"})
     for image in IMAGES:
         plan[image] = image in selected_images
     plan["pd_store"] = any(plan.get(m, False) for m in ["pd", "store", "hstore", "struct"])
-    plan["needsFixture"] = project == "toolchain" and any(plan.get(m, False) for m in MODULES[project])
+    plan["needsFixture"] = project == "toolchain" and bool(selected) and checks["legacy"]
+    plan["needsCurrent"] = project == "toolchain" and bool(selected)
+    plan["candidate_metadata"] = (project == "toolchain" and bool(set(selected) - {"go"})
+                                   or ".github/scripts/test_candidate_sdk.py" in paths)
     plan["fixture"] = plan["needsFixture"]
     plan["compatibility"] = project == "server" and bool(selected.intersection({"server", "commons", "struct", "pd", "store", "hstore", "cluster"}))
     paths = locals().get("paths", [])
@@ -409,11 +524,15 @@ def create_plan(project, event, repository, fetch=api, external_inputs=None):
                                                   + list(select_images([path]) if project == "toolchain" else []))]
         for suite in plan["expected"]
     }
-    plan["dependency_audit"] = (not paths or any(dependency_input(path) for path in paths))
+    plan["dependency_audit"] = not master_push and (not paths or any(dependency_input(path) for path in paths)
+                                                   or project == "toolchain" and ENTRY_WORKFLOW in paths)
     if project == "toolchain" and plan["dependency_audit"]:
         plan["expected"].append("dependency-audit")
         plan["selectionReasons"]["dependency-audit"] = [path for path in paths if dependency_input(path)]
-    languages = scan_languages([] if conservative_scan else paths)
+    scan_inputs = [path for path in paths if security_input(path)]
+    languages = scan_languages([]) if full or conservative_scan else scan_languages(scan_inputs) if scan_inputs else set()
+    if master_push:
+        languages = set()
     plan["security"] = bool(languages)
     plan["security_languages"] = json.dumps(sorted(languages))
     write_summary(plan)
@@ -428,7 +547,7 @@ def dependency_input(path):
 
 def write_summary(plan, results=None):
     summary = "## Module validation (advisory)\n\n"
-    summary += "Required: **check-license-header** only. Module, image and scan results do not block merging.\n\n"
+    summary += "CI is advisory; human review remains required. Native jobs report their actual results.\n\n"
     summary += plan.get("reason", "affected inputs") + "\n\n"
     summary += "| Check | Required | Selection reason | Result |\n| --- | --- | --- | --- |\n"
     for suite in sorted(set(MODULES[plan["project"]]) | IMAGES | {"dependency-audit"}):
@@ -439,6 +558,11 @@ def write_summary(plan, results=None):
         state = results.get(suite, {}).get("result", "missing") if results is not None and selected else (
             "scheduled" if selected else "not selected")
         summary += f"| {suite} | No | {reason} | {state} |\n"
+    if plan["project"] == "toolchain":
+        summary += "\nServer baselines: " + ", ".join(plan.get("server_baselines", [])) + "\n"
+        summary += "\n| Optional check | Selected |\n| --- | --- |\n"
+        for check in ("mainline_smoke", "hdfs", "spark_loader", "flink_cdc", "launcher", "upstream", "security", "image_smoke"):
+            summary += f"| {check} | {'yes' if plan.get(check) else 'no'} |\n"
     summary += f"\nTested head: `{plan['head']}`; base: `{plan['base']}`; checkout: `{plan['testedMergeSHA']}`.\n"
     if os.environ.get("GITHUB_STEP_SUMMARY"):
         with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as stream:
@@ -466,7 +590,7 @@ def gate(plan, results, fetch=None):
         if results.get(suite, {}).get("result") != "success":
             raise ValueError("selected suite did not succeed: " + suite)
     if plan["project"] == "toolchain":
-        if set(plan["expected"]).intersection(MODULES["toolchain"]):
+        if plan.get("legacy", True) and set(plan["expected"]).intersection(MODULES["toolchain"]):
             if results.get("fixture", {}).get("result") != "success":
                 raise ValueError("selected tests lack successful fixture")
         if (set(plan["expected"]).intersection({"hubble", "go"}) and
@@ -485,6 +609,7 @@ def main():
     p.add_argument("--repository", required=True)
     p.add_argument("--output", required=True)
     p.add_argument("--inputs-json")
+    p.add_argument("--event-name")
     p = sub.add_parser("gate")
     p.add_argument("--plan", required=True)
     p.add_argument("--results", required=True)
@@ -493,12 +618,13 @@ def main():
     if args.command == "plan":
         external = json.loads(Path(args.inputs_json).read_text()) if args.inputs_json else None
         value = create_plan(args.project, json.loads(Path(args.event_path).read_text()), args.repository,
-                            external_inputs=external)
+                            external_inputs=external, event_name=args.event_name)
         if os.environ.get("GITHUB_OUTPUT"):
             with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
                 for key, item in value.items():
                     if isinstance(item, bool):
                         output.write(f"{key}={str(item).lower()}\n")
+                output.write("server_baselines=" + json.dumps(value["server_baselines"]) + "\n")
                 output.write(f"security_languages={value['security_languages']}\nplan_file={args.output}\n")
     else:
         plan = json.loads(Path(args.plan).read_text())

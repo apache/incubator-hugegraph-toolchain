@@ -18,6 +18,7 @@
 import importlib.util
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import tempfile
@@ -36,6 +37,12 @@ class PolicyTest(unittest.TestCase):
                 "base": {"sha": "base", "repo": {"full_name": "apache/t"}}}
 
     def setUp(self):
+        # Synthetic events must not inherit the outer workflow dispatch type.
+        event_env = patch.dict(os.environ)
+        event_env.start()
+        self.addCleanup(event_env.stop)
+        for name in ("GITHUB_EVENT_NAME", "GITHUB_STEP_SUMMARY", "GITHUB_OUTPUT"):
+            os.environ.pop(name, None)
         # All tests stay local; successful PR gates query only this current-PR fixture.
         api_mock = patch.object(policy, "api", return_value=self.live_pr())
         self.addCleanup(api_mock.stop)
@@ -49,14 +56,14 @@ class PolicyTest(unittest.TestCase):
             (["hugegraph-loader/Dockerfile"], set()),
             (["hugegraph-hubble/README.md"], set()),
             ([".github/workflows/image-ci.yml"], set()),
-            (["hugegraph-client/src/A.java"], {"java"}),
+            (["hugegraph-client/src/A.java"], set()),
             (["hugegraph-loader/assembly/static/bin/hugegraph-loader.sh"], {"java"}),
-            (["hugegraph-hubble/hubble-fe/src/App.tsx"], {"javascript"}),
+            (["hugegraph-hubble/hubble-fe/src/App.tsx"], set()),
             (["hugegraph-hubble/hubble-dist/assembly/static/conf/application.properties"], {"java", "javascript"}),
-            ([".github/scripts/helper.py"], {"python"}),
+            ([".github/scripts/helper.py"], set()),
             (["pom.xml"], {"java", "javascript", "python"}),
             ([".mvn/maven.config"], {"java", "javascript", "python"}),
-            (["unknown-input"], {"java", "javascript", "python"}),
+            (["unknown-input"], set()),
         ]
         for paths, expected in cases:
             with self.subTest(paths=paths):
@@ -82,7 +89,7 @@ class PolicyTest(unittest.TestCase):
                     policy.gate(self.plan(), {"plan": {"result": "success"},
                                               "client": {"result": "cancelled"}})
             text = summary.read_text()
-            self.assertIn("check-license-header", text)
+            self.assertIn("CI is advisory", text)
             self.assertIn("| client | No |", text)
             self.assertIn("cancelled", text)
 
@@ -110,13 +117,13 @@ class PolicyTest(unittest.TestCase):
                      "hugegraph-dist/release-docs/licenses/dependency.txt",
                      "hugegraph-loader/pom.xml", "hugegraph-loader/assembly/descriptor/assembly.xml",
                      "hugegraph-loader/assembly/static/bin/hugegraph-loader.sh",
-                     "hugegraph-loader/README_CN.md", ".github/scripts/new-input.py"]:
+                     ".github/scripts/new-input.py"]:
             self.assertEqual(policy.IMAGES, policy.select_images([path]), path)
         for path in ["hugegraph-hubble/pom.xml", "hugegraph-hubble/hubble-be/pom.xml",
                      "hugegraph-hubble/hubble-dist/assembly/static/conf/hugegraph-hubble.properties",
                      "hugegraph-hubble/hubble-dist/assembly/descriptor/assembly.xml",
                      "hugegraph-hubble/hubble-dist/assembly/travis/check-hubble-dist.sh",
-                     "hugegraph-hubble/hubble-fe/yarn.lock", "hugegraph-hubble/README.md",
+                     "hugegraph-hubble/hubble-fe/yarn.lock",
                      "hugegraph-hubble/hubble-be/src/main/resources/application.properties"]:
             self.assertEqual({"hubble_image"}, policy.select_images([path]), path)
 
@@ -195,13 +202,258 @@ class PolicyTest(unittest.TestCase):
                 policy, "packaged_readme_state", return_value="valid"):
             return policy.create_plan("toolchain", event, "apache/t", fetch)
 
+    def test_optional_checks_follow_direct_inputs_not_consumer_fanout(self):
+        ordinary = self.pr_plan(["hugegraph-client/src/A.java"])
+        self.assertEqual(["candidate"], ordinary["server_baselines"])
+        for flag in ("legacy", "hdfs", "spark_loader", "flink_cdc", "security"):
+            self.assertFalse(ordinary[flag], flag)
+        cases = [("hugegraph-loader/src/main/java/org/apache/hugegraph/loader/source/hdfs/HDFSSource.java", "hdfs"),
+                 ("hugegraph-loader/src/main/java/org/apache/hugegraph/loader/spark/HugeGraphSparkLoader.java", "spark_loader"),
+                 ("hugegraph-loader/src/main/java/org/apache/hugegraph/loader/flink/HugeGraphSink.java", "flink_cdc"),
+                 ("hugegraph-loader/src/test/python/run_spark_artifact.py", "spark_loader"),
+                 ("hugegraph-loader/src/test/scripts/flink-launcher.test.cjs", "flink_cdc")]
+        for path, flag in cases:
+            with self.subTest(path=path):
+                plan = self.pr_plan([path])
+                self.assertTrue(plan[flag])
+                self.assertFalse(plan["legacy"])
+                for other in {"hdfs", "spark_loader", "flink_cdc"} - {flag}:
+                    expected = "/src/main/" in path and other in {"spark_loader", "flink_cdc"}
+                    self.assertEqual(expected, plan[other])
+        client = self.pr_plan(["hugegraph-client/src/main/java/org/apache/hugegraph/structure/graph/Vertex.java"])
+        self.assertTrue(client["spark_loader"])
+        self.assertTrue(client["flink_cdc"])
+        self.assertFalse(client["legacy"])
+        self.assertFalse(client["hdfs"])
+        shared = self.pr_plan(["hugegraph-loader/pom.xml"])
+        self.assertTrue(all(shared[flag] for flag in ("legacy", "hdfs", "spark_loader", "flink_cdc")))
+        self.assertEqual(["candidate", "release-1.7"], shared["server_baselines"])
+        self.assertTrue(shared["needsFixture"])
+        for path in [".github/configs/settings.xml", ".mvn/maven.config"]:
+            inputs = self.pr_plan([path])
+            self.assertTrue(inputs["upstream"])
+            self.assertTrue(all(inputs[flag] for flag in ("legacy", "hdfs", "spark_loader", "flink_cdc")))
+        auth = self.pr_plan(["hugegraph-client/src/main/java/org/apache/hugegraph/api/auth/UserAPI.java"])
+        self.assertEqual({"java"}, set(json.loads(auth["security_languages"])))
+
+    def test_loader_runtime_selects_engine_consumers_and_shared_file_hdfs(self):
+        root = Path(__file__).resolve().parents[2]
+        prefix = "hugegraph-loader/src/main/java/org/apache/hugegraph/loader/"
+        for relative, hdfs in [("builder/ElementBuilder.java", False),
+                               ("mapping/InputStruct.java", False),
+                               ("executor/LoadOptions.java", False),
+                               ("reader/file/FileReader.java", True),
+                               ("reader/line/Line.java", True),
+                               ("reader/line/LineFetcher.java", True),
+                               ("source/file/FileSource.java", True),
+                               ("reader/AbstractReader.java", True),
+                               ("reader/InputReader.java", True),
+                               ("source/AbstractSource.java", True),
+                               ("source/InputSource.java", True)]:
+            path = prefix + relative
+            with self.subTest(path=path):
+                self.assertTrue((root / path).is_file())
+                plan = self.pr_plan([path])
+                self.assertTrue(plan["spark_loader"])
+                self.assertTrue(plan["flink_cdc"])
+                self.assertEqual(hdfs, plan["hdfs"])
+                self.assertFalse(plan["legacy"])
+                self.assertFalse(plan["security"])
+                self.assertEqual([], plan["selectedImages"])
+        for path in ["hugegraph-loader/docs/reader/file/README.md",
+                     "hugegraph-tools/src/main/java/org/apache/hugegraph/util/BackupUtil.java"]:
+            plan = self.pr_plan([path])
+            self.assertFalse(any(plan[flag] for flag in ("hdfs", "spark_loader", "flink_cdc")))
+
+    def test_entry_workflow_selects_all_its_callers(self):
+        plan = self.pr_plan([".github/workflows/ci.yml"])
+        self.assertEqual(set(policy.MODULES["toolchain"]), set(plan["selected"]))
+        self.assertEqual(policy.IMAGES, set(plan["selectedImages"]))
+        for flag in ("legacy", "hdfs", "spark_loader", "flink_cdc", "launcher", "upstream",
+                     "security", "dependency_audit", "mainline_smoke", "image_smoke"):
+            self.assertTrue(plan[flag], flag)
+        self.assertEqual({"java", "javascript", "python"}, set(json.loads(plan["security_languages"])))
+        self.assertIn("mainline-smoke", plan["expected"])
+        callers = {"plan", "fixture", "current-fixture", "client", "loader", "tools", "spark", "hubble", "go",
+                   "loader_image", "hubble_image", "dependency-audit", "spark-loader", "flink-cdc", "launcher",
+                   "codeql", "upstream", "smoke"}
+        self.assertEqual(callers, self.coordinator_jobs(plan))
+        self.assertEqual(callers, self.coordinator_jobs(plan, license_result="failure"))
+
+    def test_real_protocol_transport_selects_legacy_baseline(self):
+        root = Path(__file__).resolve().parents[2]
+        transport = "hugegraph-client/src/main/java/org/apache/hugegraph/client/RestClient.java"
+        self.assertTrue((root / transport).is_file())
+        plan = self.pr_plan([transport])
+        self.assertTrue(plan["legacy"])
+        self.assertTrue(plan["needsFixture"])
+        self.assertEqual(["candidate", "release-1.7"], plan["server_baselines"])
+        ordinary = "hugegraph-client/src/main/java/org/apache/hugegraph/structure/graph/Vertex.java"
+        self.assertTrue((root / ordinary).is_file())
+        self.assertFalse(self.pr_plan([ordinary])["legacy"])
+        self.assertEqual(["candidate"], self.pr_plan([ordinary])["server_baselines"])
+
+    def test_engine_launchers_select_only_their_actual_runtime_lane(self):
+        root = Path(__file__).resolve().parents[2]
+        cases = [("hugegraph-spark-loader.sh", "spark_loader"), ("get-params.sh", "spark_loader"),
+                 ("hugegraph-flinkcdc-loader.sh", "flink_cdc")]
+        for name, flag in cases:
+            path = "hugegraph-loader/assembly/static/bin/" + name
+            with self.subTest(path=path):
+                self.assertTrue((root / path).is_file())
+                plan = self.pr_plan([path])
+                self.assertTrue(plan[flag])
+                self.assertFalse(plan["legacy"])
+                for other in {"hdfs", "spark_loader", "flink_cdc"} - {flag}:
+                    self.assertFalse(plan[other])
+        for name in ["mapping-convert.sh", "utf8-bom-to-utf8.sh"]:
+            path = "hugegraph-loader/assembly/static/bin/" + name
+            with self.subTest(unrelated_launcher=path):
+                self.assertTrue((root / path).is_file())
+                plan = self.pr_plan([path])
+                self.assertFalse(any(plan[flag] for flag in ("legacy", "spark_loader", "flink_cdc")))
+        for path in ["hugegraph-loader/docs/spark-java17.md", "hugegraph-loader/docs/flink-cdc-java17.md"]:
+            with self.subTest(document=path):
+                self.assertTrue((root / path).is_file())
+                plan = self.pr_plan([path])
+                self.assertEqual([], plan["expected"])
+                self.assertFalse(any(plan[flag] for flag in ("legacy", "spark_loader", "flink_cdc")))
+
+    def test_tls_service_and_truststore_options_select_java_security_scan(self):
+        root = "hugegraph-hubble/hubble-be/src/main/java/org/apache/hugegraph/"
+        for path in [root + "service/SettingSSLService.java", root + "options/HubbleOptions.java"]:
+            with self.subTest(path=path):
+                plan = self.pr_plan([path])
+                self.assertTrue(plan["security"])
+                self.assertEqual(["java"], json.loads(plan["security_languages"]))
+
+    def test_nested_prose_and_entry_fixtures_have_no_runtime_suites(self):
+        for path in ["hugegraph-client/docs/api.md", "hugegraph-loader/nested/README.md",
+                     "hugegraph-hubble/README.md", ".asf.yaml", ".github/scripts/test_candidate_sdk.py"]:
+            with self.subTest(path=path):
+                plan = self.pr_plan([path])
+                self.assertEqual([], plan["expected"])
+                self.assertFalse(plan["needsCurrent"])
+                self.assertFalse(any(plan[flag] for flag in ("legacy", "hdfs", "spark_loader", "flink_cdc", "security")))
+        self.assertTrue(self.pr_plan(["hugegraph-client/src/test/resources/README.md"])["client"])
+        self.assertTrue(self.pr_plan(["hugegraph-loader/src/test/resources/example/struct_hdfs.json"])["hdfs"])
+
+    def test_manual_and_weekly_are_not_filtered_by_documentation(self):
+        def event_git(*args):
+            if args[0] == "diff":
+                raise subprocess.CalledProcessError(128, ["git", *args])
+            return "head"
+        for event_name, preset, full in [("workflow_dispatch", "mainline", False),
+                                         ("workflow_dispatch", "full", True), ("schedule", "", True)]:
+            with self.subTest(event=event_name, preset=preset), patch.object(policy, "git", side_effect=event_git), patch.object(
+                    policy, "unsafe_documentation", return_value=False), patch.object(policy, "packaged_readme_state", return_value="valid"):
+                plan = policy.create_plan("toolchain", {"inputs": {"test-set": preset}},
+                                          "apache/t", event_name=event_name)
+                self.assertEqual(set(policy.MODULES["toolchain"]), set(plan["selected"]))
+                self.assertEqual(full, plan["legacy"])
+                self.assertEqual(full, plan["hdfs"])
+                self.assertEqual(full, plan["image_smoke"])
+                self.assertEqual(full, plan["upstream"])
+                self.assertEqual(full, plan["security"])
+
+    def coordinator_jobs(self, plan, license_result="success", selection_result="success", cancelled=False):
+        workflow = (Path(__file__).resolve().parents[1] / "workflows/ci.yml").read_text()
+        sections = re.split(r"(?m)^  ([a-zA-Z0-9_-]+):\n", workflow.split("jobs:\n", 1)[1])
+        outputs = {key.replace("_", "-"): str(value).lower() if isinstance(value, bool) else value
+                   for key, value in plan.items()}
+        outputs["needsFixture"] = str(plan["needsFixture"]).lower()
+        outputs["selection-result"] = selection_result
+        chosen = {"plan"} if not cancelled else set()
+        for name, body in zip(sections[1::2], sections[2::2]):
+            if name == "plan":
+                continue
+            condition = re.search(r"(?m)^    if: \$\{\{ (.*) \}\}$", body)
+            self.assertIsNotNone(condition, name)
+            expr = condition.group(1)
+            if license_result != "success" and not any(f + "(" in expr for f in ["cancelled", "always", "failure"]):
+                continue
+            expr = expr.replace("!cancelled()", str(not cancelled))
+            expr = re.sub(r"needs.plan.outputs.([\w-]+)", lambda m: repr(outputs.get(m[1], "false")), expr)
+            expr = expr.replace("needs.fixture.result", repr("success" if plan["needsFixture"] else "skipped"))
+            expr = expr.replace("needs.current-fixture.result", repr("success"))
+            expr = expr.replace("&&", "and").replace("||", "or")
+            if eval(expr, {"__builtins__": {}}):
+                chosen.add(name)
+        return chosen
+
+    def push_plan(self, paths, ref="refs/heads/master"):
+        def event_git(*args):
+            return "\n".join(paths) if args[0] == "diff" else "head"
+        with patch.object(policy, "git", side_effect=event_git), patch.object(
+                policy, "unsafe_documentation", return_value=False), patch.object(
+                policy, "packaged_readme_state", return_value="valid"):
+            return policy.create_plan("toolchain", {"before": "base", "ref": ref},
+                                      "apache/t", event_name="push")
+
+    def test_master_runtime_push_uses_only_one_smoke_caller(self):
+        for path in ["hugegraph-client/src/main/java/A.java", "hugegraph-loader/pom.xml",
+                     "hugegraph-hubble/Dockerfile", "shared-unknown-input",
+                     "hugegraph-client/src/main/java/org/apache/hugegraph/client/RestClient.java",
+                     "hugegraph-loader/assembly/static/bin/hugegraph-spark-loader.sh",
+                     "hugegraph-loader/assembly/static/bin/get-params.sh",
+                     "hugegraph-loader/assembly/static/bin/hugegraph-flinkcdc-loader.sh",
+                     ".github/workflows/ci.yml"]:
+            with self.subTest(path=path):
+                plan = self.push_plan([path])
+                self.assertEqual(["mainline-smoke"], plan["expected"])
+                self.assertEqual({"plan", "smoke"}, self.coordinator_jobs(plan))
+                self.assertEqual({"plan", "smoke"}, self.coordinator_jobs(plan, license_result="failure"))
+                self.assertEqual(set(), self.coordinator_jobs(plan, cancelled=True))
+                self.assertFalse(plan["needsCurrent"])
+                self.assertFalse(plan["needsFixture"])
+                self.assertFalse(any(plan[flag] for flag in
+                                     ("legacy", "hdfs", "spark_loader", "flink_cdc", "security",
+                                      "dependency_audit", "upstream")))
+
+    def test_master_docs_and_retired_label_inputs_run_only_entry(self):
+        for path in ["hugegraph-loader/docs/README.md", ".github/workflows/labeler.yml", ".github/labeler.yml"]:
+            with self.subTest(path=path):
+                plan = self.push_plan([path])
+                self.assertEqual({"plan"}, self.coordinator_jobs(plan))
+                self.assertFalse(plan["mainline_smoke"])
+        workflows = Path(__file__).resolve().parents[1] / "workflows"
+        self.assertFalse((workflows / "labeler.yml").exists())
+
+    def test_release_push_keeps_affected_validation(self):
+        for path in ["hugegraph-loader/pom.xml", ".github/workflows/ci.yml"]:
+            with self.subTest(path=path):
+                plan = self.push_plan([path], "refs/heads/release-1.8")
+                self.assertFalse(plan["mainline_smoke"])
+                self.assertTrue(plan["loader"])
+                self.assertTrue(plan["legacy"])
+                self.assertTrue(plan["dependency_audit"])
+                self.assertNotIn("smoke", self.coordinator_jobs(plan))
+
+    def test_reusable_workflows_leave_cancellation_to_entry(self):
+        workflows = Path(__file__).resolve().parents[1] / "workflows"
+        for name in ["codeql-analysis", "hubble-launcher-ci", "spark-loader-ci", "flink-cdc-ci", "upstream-compatibility"]:
+            with self.subTest(workflow=name):
+                self.assertNotIn("\nconcurrency:", (workflows / (name + ".yml")).read_text())
+        self.assertIn("cancel-in-progress:", (workflows / "ci.yml").read_text())
+
+    def test_selected_callers_ignore_license_failure_and_cancel_cleanly(self):
+        docs = self.pr_plan(["hugegraph-hubble/nested/README.md"])
+        self.assertEqual({"plan"}, self.coordinator_jobs(docs))
+        plan = self.pr_plan(["hugegraph-client/src/A.java"])
+        expected = {"plan", "current-fixture", "client", "loader", "tools", "spark", "hubble"}
+        self.assertEqual(expected, self.coordinator_jobs(plan))
+        self.assertEqual(expected, self.coordinator_jobs(plan, license_result="failure"))
+        self.assertEqual({"plan"}, self.coordinator_jobs(plan, selection_result="failure"))
+        self.assertEqual(set(), self.coordinator_jobs(plan, cancelled=True))
+
     def test_go_and_spark_only_plans_keep_runtime_fixtures(self):
         for module, path in [("go", "hugegraph-client-go/client.go"),
                              ("spark", "hugegraph-spark-connector/src/test/Test.scala")]:
             with self.subTest(module=module):
                 plan = self.pr_plan([path])
                 self.assertEqual([module], plan["selected"])
-                self.assertTrue(plan["needsFixture"])
+                self.assertFalse(plan["needsFixture"])
+                self.assertTrue(plan["needsCurrent"])
                 self.assertTrue(plan[module])
 
     def test_external_inputs_record_current_go_runtime_without_java_sdk(self):
@@ -211,13 +463,13 @@ class PolicyTest(unittest.TestCase):
         for selected in (["go"], ["spark"], ["hubble"], policy.MODULES["toolchain"], []):
             with self.subTest(selected=selected), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
-                (root / "scope.json").write_text(json.dumps({"selected": selected}))
-                env = dict(os.environ, NEEDS_SERVER=str(bool(selected)).lower(),
+                (root / "ci-scope.json").write_text(json.dumps({"selected": selected}))
+                env = dict(os.environ, RUNNER_TEMP=str(root), NEEDS_SERVER=str(bool(selected)).lower(),
                            NEEDS_CURRENT_SERVER=str(bool(set(selected) & {"go", "hubble"})).lower(),
                            SERVER_REPOSITORY="apache/hugegraph", SERVER_COMMIT="released", SERVER_REF="1.7.0",
                            CURRENT_REPOSITORY="apache/hugegraph", CURRENT_COMMIT="locked", CURRENT_REF="locked")
                 subprocess.run([os.sys.executable, "-c", script], cwd=root, env=env, check=True)
-                inputs = json.loads((root / "inputs.json").read_text())
+                inputs = json.loads((root / "ci-plan.json").read_text())["externalInputs"]
                 self.assertEqual(any(module != "go" for module in selected), "candidateSDK" in inputs)
                 self.assertEqual(bool(set(selected) & {"go", "hubble"}), "currentServer" in inputs)
                 if "currentServer" in inputs:
@@ -233,9 +485,10 @@ class PolicyTest(unittest.TestCase):
             with self.subTest(document=document):
                 plan = self.pr_plan(["hugegraph-client/src/A.java", document])
                 self.assertEqual({"client", "loader", "tools", "spark", "hubble"}, set(plan["selected"]))
-                self.assertTrue(plan["needsFixture"])
+                self.assertFalse(plan["needsFixture"])
+                self.assertTrue(plan["needsCurrent"])
                 self.assertTrue(all(plan[module] for module in plan["selected"]))
-                self.assertEqual(document.startswith("hugegraph-hubble/"), plan["hubble_image"])
+                self.assertFalse(plan["hubble_image"])
 
     def test_pure_documentation_pr_has_no_modules_or_fixtures(self):
         plan = self.pr_plan(["README.md", "docs/ci.md"])
@@ -243,9 +496,9 @@ class PolicyTest(unittest.TestCase):
         self.assertFalse(plan["needsFixture"])
         policy.gate(plan, {"plan": {"result": "success"}})
 
-    def test_packaged_readme_selects_image_on_plain_documentation_pr(self):
+    def test_packaged_readme_is_plain_documentation_when_valid(self):
         plan = self.pr_plan(["hugegraph-hubble/README.md"])
-        self.assertEqual(["hubble_image"], plan["expected"])
+        self.assertEqual([], plan["expected"])
         self.assertFalse(plan["needsFixture"])
 
     def test_image_only_plan_and_gate_require_no_server_fixture(self):
@@ -381,7 +634,7 @@ class PolicyTest(unittest.TestCase):
             self.assertIn("client=true\n", output.read_text())
             plan = json.loads((root / "plan.json").read_text())
             self.assertEqual(set(policy.MODULES["toolchain"]), set(plan["selected"]))
-            self.assertEqual({"hubble_image"}, set(plan["selectedImages"]))
+            self.assertEqual(set(), set(plan["selectedImages"]))
 
     def test_api_failure_runs_full_required_without_losing_pr_identity(self):
         event = {"pull_request": dict(self.live_pr(), number=7)}
