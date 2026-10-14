@@ -50,9 +50,11 @@ WORKFLOWS = {
                   "upstream-compatibility.yml": [], "image-ci.yml": [], "java17-images-ci.yml": [], "labeler.yml": []},
 }
 IMAGES = {"loader_image", "hubble_image"}
+ENTRY_WORKFLOW = ".github/workflows/ci.yml"
 
 # Optional compatibility checks follow direct inputs, rather than consumer fan-out.
 LOADER = "hugegraph-loader/"
+LOADER_JAVA = LOADER + "src/main/java/org/apache/hugegraph/loader/"
 SERVER_BOOTSTRAP = (".github/actions/get-hugegraph-commit/", ".github/actions/setup-candidate-sdk/",
                     ".github/actions/setup-hugegraph-server/", ".github/actions/setup-java-env/",
                     "hugegraph-client/assembly/travis/")
@@ -77,6 +79,8 @@ def entry_only(path):
 
 def optional_checks(paths):
     checks = {name: False for name in ("legacy", "hdfs", "spark_loader", "flink_cdc", "launcher", "upstream")}
+    if ENTRY_WORKFLOW in paths:
+        return {name: True for name in checks}
     for path in paths:
         if documentation(path) or entry_only(path):
             continue
@@ -90,14 +94,19 @@ def optional_checks(paths):
                              or path == "hugegraph-client/src/main/java/org/apache/hugegraph/client/RestClient.java"
                              or path == "hugegraph-client/src/main/java/org/apache/hugegraph/util/JsonUtil.java")
         checks["hdfs"] |= (shared or path == ".github/workflows/loader-ci.yml"
-                           or path.startswith(LOADER) and "hdfs" in path.lower())
+                           or path.startswith(LOADER) and "hdfs" in path.lower()
+                           or path.startswith((LOADER_JAVA + "reader/file/", LOADER_JAVA + "reader/line/",
+                                               LOADER_JAVA + "source/file/"))
+                           or str(Path(path).parent) in {LOADER_JAVA + "reader", LOADER_JAVA + "source"})
         client_runtime = path.startswith("hugegraph-client/src/main/")
-        checks["spark_loader"] |= (shared or client_runtime or path.startswith(LOADER) and "/spark/" in path
+        loader_runtime = path.startswith(LOADER + "src/main/")
+        checks["spark_loader"] |= (shared or client_runtime or loader_runtime
+                                   or path.startswith(LOADER) and "/spark/" in path
                                    or path in {LOADER + "assembly/static/bin/hugegraph-spark-loader.sh",
                                                LOADER + "assembly/static/bin/get-params.sh"}
                                    or path == LOADER + "src/test/python/run_spark_artifact.py"
                                    or path == ".github/workflows/spark-loader-ci.yml")
-        checks["flink_cdc"] |= (shared or client_runtime
+        checks["flink_cdc"] |= (shared or client_runtime or loader_runtime
                                 or path.startswith(LOADER) and ("/flink/" in path or "/flink-cdc/" in path)
                                 or path == LOADER + "assembly/static/bin/hugegraph-flinkcdc-loader.sh"
                                 or path == LOADER + "src/test/scripts/flink-launcher.test.cjs"
@@ -113,7 +122,7 @@ def security_input(path):
     if documentation(path) or entry_only(path):
         return False
     p = Path(path)
-    return (dependency_input(path) or path.startswith(".github/workflows/codeql")
+    return (dependency_input(path) or path == ENTRY_WORKFLOW or path.startswith(".github/workflows/codeql")
             or bool({"auth", "authentication", "authorization", "security", "permission", "permissions", "ssl"}
                     .intersection(part.lower() for part in p.parts))
             or p.stem.lower().startswith(("auth", "login", "security", "ssl", "tls", "permission", "credential", "token"))
@@ -179,7 +188,7 @@ def select_images(paths):
         p = Path(path)
         if documentation(path) or entry_only(path):
             continue
-        if path in {".github/workflows/image-ci.yml", ".github/workflows/java17-images-ci.yml",
+        if path in {ENTRY_WORKFLOW, ".github/workflows/image-ci.yml", ".github/workflows/java17-images-ci.yml",
                     ".github/scripts/check-toolchain-image.py", ".github/scripts/java17_image.py",
                     ".github/scripts/build-java17-image.sh"}:
             selected.update(IMAGES)
@@ -251,7 +260,7 @@ def scan_languages(paths):
             languages.add("java")
         elif path.startswith(".github/workflows/") and p.name in WORKFLOWS["toolchain"]:
             modules = WORKFLOWS["toolchain"][p.name]
-            if p.name == "codeql-analysis.yml":
+            if path == ENTRY_WORKFLOW or p.name == "codeql-analysis.yml":
                 languages.update(all_languages)
             elif "hubble" in modules:
                 languages.update({"java", "javascript"})
@@ -480,7 +489,8 @@ def create_plan(project, event, repository, fetch=api, external_inputs=None, eve
     if full:
         checks = {name: True for name in checks}
     master_push = project == "toolchain" and event_name == "push" and event.get("ref") == "refs/heads/master"
-    plan["mainline_smoke"] = master_push and bool(selected or selected_images)
+    plan["mainline_smoke"] = (master_push and bool(selected or selected_images)
+                              or project == "toolchain" and event_name == "pull_request" and ENTRY_WORKFLOW in paths)
     if master_push:
         selected = set()
         selected_images = set()
@@ -514,7 +524,8 @@ def create_plan(project, event, repository, fetch=api, external_inputs=None, eve
                                                   + list(select_images([path]) if project == "toolchain" else []))]
         for suite in plan["expected"]
     }
-    plan["dependency_audit"] = not master_push and (not paths or any(dependency_input(path) for path in paths))
+    plan["dependency_audit"] = not master_push and (not paths or any(dependency_input(path) for path in paths)
+                                                   or project == "toolchain" and ENTRY_WORKFLOW in paths)
     if project == "toolchain" and plan["dependency_audit"]:
         plan["expected"].append("dependency-audit")
         plan["selectionReasons"]["dependency-audit"] = [path for path in paths if dependency_input(path)]

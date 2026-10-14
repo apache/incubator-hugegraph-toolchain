@@ -11,10 +11,10 @@ Pure prose documentation and nested READMEs outside runtime/fixture directories 
 | Normal PR or release push | Affected modules and consumers against the locked current Server only |
 | Master push with runtime inputs | One mainline smoke runner after the entry; no repeated module/platform matrices |
 | Client change | Client, Loader, Tools, Spark Connector and Hubble |
-| Loader change | Loader and Hubble |
+| Loader change | Loader and Hubble; production inputs also select Spark Loader and Flink CDC |
 | Legacy/protocol compatibility, shared SDK/bootstrap/build inputs | Both current and official Server 1.7 baselines |
-| HDFS inputs or shared build/bootstrap inputs | HDFS inside the selected Loader job |
-| Spark Loader / Flink CDC inputs, Client production code or shared build/bootstrap inputs | Corresponding specialty |
+| HDFS inputs, shared file/line reader/source contracts or shared build/bootstrap inputs | HDFS inside the selected Loader job |
+| Spark Loader / Flink CDC inputs, Client/Loader production code or shared build/bootstrap inputs | Corresponding specialty |
 | Image packaging inputs | One image job; relevant PRs and full runs include data checks |
 | Authentication/permission/security, dependency or CodeQL configuration inputs | Configured CodeQL languages; ordinary application edits do not start scans |
 | Monday 06:00 Asia/Singapore | Full retained validation through this same entry |
@@ -22,7 +22,13 @@ Pure prose documentation and nested READMEs outside runtime/fixture directories 
 
 Manual and weekly validation are independent of documentation filtering. The default manual mainline uses the current baseline; `full` includes legacy, HDFS, Spark/Flink, image data checks, launcher platforms, scanning and the floating upstream check. The legacy fixture is allocated only when legacy validation is selected. Current runtime fixtures are shared by Hubble and Go; other Java consumers keep their existing job-local same-source SDK preparation.
 
-Module, launcher, Spark Loader and CodeQL matrices run one entry at a time. Including reusable workflows, the maximum possible job concurrency is 15; this limits simultaneous work, while scoping removes unnecessary allocations. There is no report-only runner or independent CodeQL planner. Native job checks provide actual results; the entry summary and `ci-plan` explain selection. GitHub native reruns remain available, and automatic retry workflows are removed.
+Loader production inputs also select the Spark Loader and Flink CDC consumers. Shared file/line
+reader and source contracts select HDFS because its implementations consume those classes; other
+Loader changes do not enable HDFS or the legacy baseline by default. Changes to the entry
+`ci.yml` exercise all its callers, including images, scanning and smoke, on PRs. Master
+pushes retain the single smoke runner policy.
+
+Module, launcher, Spark Loader and CodeQL matrices run one entry at a time. Including reusable workflows, the maximum possible job concurrency is 16 when entry changes also exercise smoke; this limits simultaneous work, while scoping removes unnecessary allocations. There is no report-only runner or independent CodeQL planner. Native job checks provide actual results; the entry summary and `ci-plan` explain selection. GitHub native reruns remain available, and automatic retry workflows are removed.
 
 The floating upstream compatibility workflow remains manually callable and runs in the weekly full entry. It checks the current Toolchain checkout against one resolved ASF master commit, separately from the locked default baseline. Master pushes with affected runtime inputs call its smoke mode against the locked current baseline. It compiles the current Java consumers, runs Client unit and real schema/graph read/write checks, Loader unit and local-file read/write checks, Hubble backend unit checks, Tools CLI checks, and Go version/schema requests on one runner. Its Server fixtures are stopped afterward. Pure documentation master pushes still run only the entry. PR/full compatibility suites keep their original scope; no prior-run result is reused.
 
