@@ -31,8 +31,12 @@ import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
 
+import org.apache.hugegraph.driver.GraphsManager;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.driver.HugeClientBuilder;
 import org.apache.hugegraph.exception.ServerException;
@@ -64,6 +68,8 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import com.sun.net.httpserver.HttpServer;
+
+import okhttp3.OkHttpClient;
 
 public class LoadContextTest {
 
@@ -733,6 +739,258 @@ public class LoadContextTest {
                 }
             }
         }
+    }
+
+    @Test
+    public void testLoaderResetFailurePreservesIndependentAndLoadingFailures() throws Exception {
+        this.assertLoaderShutdownFailure(true);
+    }
+
+    @Test
+    public void testLoaderSuccessfulResetPreservesLoadingFailureIdentity() throws Exception {
+        this.assertLoaderShutdownFailure(false);
+    }
+
+    private void assertLoaderShutdownFailure(boolean rejectReset) throws Exception {
+        try (ModeServer server = new ModeServer()) {
+            server.mode = GraphMode.NONE;
+            LoadOptions options = new LoadOptions();
+            options.host = "127.0.0.1";
+            options.port = server.server.getAddress().getPort();
+            options.file = this.folder.newFile("reset-" + rejectReset + ".json").getAbsolutePath();
+            HugeGraphLoader loader = new HugeGraphLoader(options, new LoadMapping(Collections.emptyList()));
+            Thread hook = (Thread) field(loader, "shutdownHook");
+            LoadContext context = loader.context();
+            Object manager = field(loader, "manager");
+            ExecutorService batch = (ExecutorService) field(manager, "batchService");
+            ExecutorService single = (ExecutorService) field(manager, "singleService");
+            try {
+                // Start both actual native pools; shutdown must drain and terminate them.
+                batch.submit(() -> { }).get();
+                single.submit(() -> { }).get();
+                context.setLoadingMode();
+                OkHttpClient transport = (OkHttpClient) field(field(context.client(), "client"), "client");
+                RuntimeException original = new IllegalStateException("recorded loading failure");
+                context.failLoading(original);
+                if (rejectReset) {
+                    server.failure = "Independent reset denied";
+                }
+                RuntimeException actual = null;
+                try {
+                    loader.shutdown();
+                    Assert.fail("Shutdown must report the recorded failure");
+                } catch (RuntimeException failure) {
+                    actual = failure;
+                }
+                if (rejectReset) {
+                    Assert.assertTrue("Reset failure must remain primary", actual instanceof LoadException);
+                    Assert.assertNotSame(original, actual);
+                    Assert.assertTrue(actual.getCause() instanceof ServerException);
+                    Assert.assertEquals("Independent reset denied", actual.getCause().getMessage());
+                    Assert.assertEquals(1, actual.getSuppressed().length);
+                    Assert.assertSame(original, actual.getSuppressed()[0]);
+                    Assert.assertEquals(GraphMode.LOADING, server.mode);
+                    Assert.assertEquals(Boolean.TRUE, field(context, "loadingModeSet"));
+                } else {
+                    Assert.assertSame(original, actual);
+                    Assert.assertEquals(0, actual.getSuppressed().length);
+                    Assert.assertEquals(GraphMode.NONE, server.mode);
+                    Assert.assertEquals(Boolean.FALSE, field(context, "loadingModeSet"));
+                }
+                assertAcyclic(actual, Collections.newSetFromMap(new IdentityHashMap<>()));
+                Assert.assertTrue(context.closed());
+                Assert.assertTrue(batch.isTerminated());
+                Assert.assertTrue(single.isTerminated());
+                Assert.assertTrue(transport.dispatcher().executorService().isShutdown());
+                Assert.assertEquals(0, transport.connectionPool().connectionCount());
+                Assert.assertFalse(Runtime.getRuntime().removeShutdownHook(hook));
+                Assert.assertEquals(1, server.modeReads);
+                Assert.assertEquals(2, server.modeWrites);
+                loader.shutdown();
+                Assert.assertEquals(1, server.modeReads);
+                Assert.assertEquals(2, server.modeWrites);
+            } finally {
+                server.failure = null;
+                try {
+                    loader.shutdown();
+                } catch (RuntimeException ignored) {
+                    // Retain the original assertion while closing the actual native resources.
+                }
+                Runtime.getRuntime().removeShutdownHook(hook);
+            }
+        }
+    }
+
+    @Test
+    public void testLoaderPromotesFatalCloseOverOrdinaryResetFailure() throws Exception {
+        this.assertFatalLoaderShutdown(false, false, false);
+    }
+
+    @Test
+    public void testLoaderPreservesFatalResetAndRecordedLoadingFailure() throws Exception {
+        this.assertFatalLoaderShutdown(true, false, false);
+    }
+
+    @Test
+    public void testLoaderDoesNotSuppressFatalFailureOnItself() throws Exception {
+        this.assertFatalLoaderShutdown(true, true, false);
+    }
+
+    @Test
+    public void testLoaderDoesNotCreateFatalResetCauseCycle() throws Exception {
+        this.assertFatalLoaderShutdown(true, false, true);
+    }
+
+    private void assertFatalLoaderShutdown(boolean fatalReset, boolean sameError,
+                                          boolean causeCycle) throws Exception {
+        try (ModeServer server = new ModeServer()) {
+            server.mode = GraphMode.NONE;
+            LoadOptions options = new LoadOptions();
+            options.host = "127.0.0.1";
+            options.port = server.server.getAddress().getPort();
+            options.file = this.folder.newFile().getAbsolutePath();
+            HugeGraphLoader loader = new HugeGraphLoader(options, new LoadMapping(Collections.emptyList()));
+            LoadContext context = loader.context();
+            Thread hook = (Thread) field(loader, "shutdownHook");
+            // Use real SDK clients; only the fatal accessor / post-close boundary is controlled.
+            BoundaryClient primary = new BoundaryClient(server);
+            HugeClient secondary = server.client();
+            context.client().close();
+            set(context, "client", primary);
+            set(context, "indirectClient", secondary);
+            OkHttpClient transport = (OkHttpClient) field(field(primary, "client"), "client");
+            OkHttpClient secondaryTransport = (OkHttpClient) field(field(secondary, "client"), "client");
+            Object manager = field(loader, "manager");
+            ExecutorService batch = (ExecutorService) field(manager, "batchService");
+            ExecutorService single = (ExecutorService) field(manager, "singleService");
+            Error fatal = new AssertionError("fatal SDK cleanup boundary");
+            RuntimeException original = causeCycle ? new IllegalStateException("loading failed", fatal) :
+                                                   new IllegalStateException("recorded loading failure");
+            try {
+                batch.submit(() -> { }).get();
+                single.submit(() -> { }).get();
+                context.setLoadingMode();
+                if (fatalReset) {
+                    primary.resetFailure = fatal;
+                    if (!sameError) {
+                        context.failLoading(original);
+                    }
+                } else {
+                    server.failure = "Independent reset denied";
+                }
+                primary.closeFailure = !fatalReset || sameError ? fatal : null;
+                Throwable actual = null;
+                try {
+                    loader.shutdown();
+                } catch (RuntimeException | Error failure) {
+                    actual = failure;
+                }
+                Assert.assertSame("First fatal Error must escape with its identity", fatal, actual);
+                if (causeCycle || sameError) {
+                    Assert.assertEquals(0, fatal.getSuppressed().length);
+                } else {
+                    Assert.assertEquals(1, fatal.getSuppressed().length);
+                    if (fatalReset) {
+                        Assert.assertSame(original, fatal.getSuppressed()[0]);
+                    } else {
+                        Assert.assertTrue(fatal.getSuppressed()[0] instanceof LoadException);
+                        Assert.assertEquals("Independent reset denied",
+                                            fatal.getSuppressed()[0].getCause().getMessage());
+                    }
+                }
+                if (fatalReset && !sameError) {
+                    try {
+                        context.throwIfFailed();
+                        Assert.fail("Context must retain the original recorded failure");
+                    } catch (RuntimeException failure) {
+                        Assert.assertSame(original, failure);
+                    }
+                }
+                assertAcyclic(fatal, Collections.newSetFromMap(new IdentityHashMap<>()));
+                Assert.assertTrue(context.closed());
+                Assert.assertTrue(batch.isTerminated());
+                Assert.assertTrue(single.isTerminated());
+                Assert.assertTrue(transport.dispatcher().executorService().isShutdown());
+                Assert.assertEquals(0, transport.connectionPool().connectionCount());
+                Assert.assertTrue(secondaryTransport.dispatcher().executorService().isShutdown());
+                Assert.assertEquals(0, secondaryTransport.connectionPool().connectionCount());
+                Assert.assertEquals(1, primary.closeCalls);
+                Assert.assertEquals(GraphMode.LOADING, server.mode);
+                Assert.assertEquals(Boolean.TRUE, field(context, "loadingModeSet"));
+                Assert.assertFalse(Runtime.getRuntime().removeShutdownHook(hook));
+                int reads = server.modeReads;
+                int writes = server.modeWrites;
+                loader.shutdown();
+                Assert.assertEquals(reads, server.modeReads);
+                Assert.assertEquals(writes, server.modeWrites);
+                Assert.assertEquals(1, primary.closeCalls);
+            } finally {
+                server.failure = null;
+                primary.resetFailure = null;
+                primary.closeFailure = null;
+                try {
+                    loader.shutdown();
+                } catch (RuntimeException | Error ignored) {
+                    // Preserve assertions while tearing down the real native resources.
+                }
+                primary.close();
+                secondary.close();
+                Runtime.getRuntime().removeShutdownHook(hook);
+            }
+        }
+    }
+
+    private static class BoundaryClient extends HugeClient {
+
+        private Error resetFailure;
+        private Error closeFailure;
+        private int closeCalls;
+
+        private BoundaryClient(ModeServer server) {
+            super(HugeClient.builder("http://127.0.0.1:" + server.server.getAddress().getPort(), "hugegraph"));
+        }
+
+        @Override
+        public GraphsManager graphs() {
+            if (this.resetFailure != null) {
+                throw this.resetFailure;
+            }
+            return super.graphs();
+        }
+
+        @Override
+        public void close() {
+            this.closeCalls++;
+            super.close();
+            if (this.closeFailure != null) {
+                throw this.closeFailure;
+            }
+        }
+    }
+
+    private static void assertAcyclic(Throwable failure, Set<Throwable> path) {
+        if (failure == null) {
+            return;
+        }
+        Assert.assertTrue("Failure graph must not contain cycles", path.add(failure));
+        assertAcyclic(failure.getCause(), path);
+        for (Throwable suppressed : failure.getSuppressed()) {
+            assertAcyclic(suppressed, path);
+        }
+        path.remove(failure);
+    }
+
+    private static Object field(Object target, String name) throws Exception {
+        for (Class<?> type = target.getClass(); type != null; type = type.getSuperclass()) {
+            try {
+                Field field = type.getDeclaredField(name);
+                field.setAccessible(true);
+                return field.get(target);
+            } catch (NoSuchFieldException ignored) {
+                // SDK transport fields are declared in its existing superclass.
+            }
+        }
+        throw new NoSuchFieldException(name);
     }
 
     private static class ModeServer implements AutoCloseable {
