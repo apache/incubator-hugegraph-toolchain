@@ -32,22 +32,30 @@ fi
 
 # Without a separator all arguments belong to Loader. To set Flink options:
 # hugegraph-flinkcdc-loader.sh -p 1 -- --file mapping.json --graph hugegraph
-ENGINE_PARAMS=()
-HUGEGRAPH_PARAMS=("$@")
+FLINK_ARGS=()
+LOADER_ARGS=("$@")
 for arg in "$@"; do
     if [[ "$arg" == "--" ]]; then
-        HUGEGRAPH_PARAMS=()
+        LOADER_ARGS=()
         while [[ "$1" != "--" ]]; do
-            ENGINE_PARAMS+=("$1")
+            FLINK_ARGS+=("$1")
             shift
         done
         shift
-        HUGEGRAPH_PARAMS=("$@")
+        LOADER_ARGS=("$@")
         break
     fi
 done
 
+# Validate Loader options without rewriting their original argument boundaries.
+(
+    # The shared parser permits empty engine arrays on Bash 3.
+    set +u
+    source "$BIN_DIR/get-params.sh"
+    get_params "${LOADER_ARGS[@]}"
+)
+
 # Do not echo arguments: they can contain authentication credentials.
-exec "$FLINK_HOME/bin/flink" run ${ENGINE_PARAMS[@]+"${ENGINE_PARAMS[@]}"} \
+exec "$FLINK_HOME/bin/flink" run ${FLINK_ARGS[@]+"${FLINK_ARGS[@]}"} \
     -c org.apache.hugegraph.loader.flink.HugeGraphFlinkCDCLoader \
-    "${ASSEMBLY_JARS[0]}" ${HUGEGRAPH_PARAMS[@]+"${HUGEGRAPH_PARAMS[@]}"}
+    "${ASSEMBLY_JARS[0]}" ${LOADER_ARGS[@]+"${LOADER_ARGS[@]}"}
