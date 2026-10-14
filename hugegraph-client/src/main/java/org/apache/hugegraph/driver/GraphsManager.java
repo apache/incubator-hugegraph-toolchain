@@ -26,6 +26,7 @@ import java.util.Map;
 import org.apache.commons.io.FileUtils;
 import org.apache.hugegraph.api.graphs.GraphsAPI;
 import org.apache.hugegraph.rest.ClientException;
+import org.apache.hugegraph.structure.LoadingModeOwner;
 import org.apache.hugegraph.structure.constant.GraphMode;
 import org.apache.hugegraph.structure.constant.GraphReadMode;
 import org.apache.hugegraph.client.RestClient;
@@ -122,6 +123,18 @@ public class GraphsManager {
 
     public GraphMode mode(String graph) {
         return this.graphsAPI.mode(graph);
+    }
+
+    public LoadingModeOwner newLoadingOwner(String graph) {
+        return this.graphsAPI.newLoadingOwner(graph);
+    }
+
+    public void acquireLoadingOwner(String graph, LoadingModeOwner owner) {
+        this.graphsAPI.acquireLoadingOwner(graph, owner);
+    }
+
+    public void releaseLoadingOwner(String graph, LoadingModeOwner owner) {
+        this.graphsAPI.releaseLoadingOwner(graph, owner);
     }
 
     public void readMode(String graph, GraphReadMode readMode) {
