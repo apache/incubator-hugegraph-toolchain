@@ -540,7 +540,7 @@ def create_plan(project, event, repository, fetch=api, external_inputs=None, eve
 
 
 def dependency_input(path):
-    return bool(re.search(r"(^|/)(pom\.xml|package\.json|yarn\.lock|package-lock\.json)$|"
+    return bool(re.search(r"(^|/)(pom\.xml|package\.json|yarn\.lock|package-lock\.json|go\.mod|go\.sum)$|"
                           r"(^|/)(assembly|licenses)/|(^|/)(LICENSE|NOTICE)$|dependency/|"
                           r"^\.mvn/|^\.github/(configs/|workflows/(license-checker|dependency-license)\.yml)", path))
 

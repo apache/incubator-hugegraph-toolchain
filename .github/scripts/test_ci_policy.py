@@ -81,6 +81,17 @@ class PolicyTest(unittest.TestCase):
             self.assertTrue(policy.dependency_input(path))
         self.assertFalse(self.pr_plan(["docs/ci.md"])["dependency_audit"])
 
+    def test_go_manifests_select_dependency_review(self):
+        for path in ["hugegraph-client-go/go.mod", "hugegraph-client-go/go.sum"]:
+            with self.subTest(path=path):
+                plan = self.pr_plan([path])
+                self.assertTrue(plan["dependency_audit"])
+                self.assertIn("dependency-audit", plan["expected"])
+                self.assertEqual([path], plan["selectionReasons"]["dependency-audit"])
+                self.assertEqual(["go"], plan["selected"])
+                self.assertFalse(plan["security"])
+        self.assertFalse(self.pr_plan(["hugegraph-client-go/client.go"])["dependency_audit"])
+
     def test_failure_summary_is_written_before_advisory_failure(self):
         with tempfile.TemporaryDirectory() as directory:
             summary = Path(directory) / "summary.md"

@@ -18,7 +18,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { spawnSync } = require('node:child_process');
-const { mkdtempSync, mkdirSync, copyFileSync, writeFileSync, readFileSync, realpathSync, rmSync } = require('node:fs');
+const { mkdtempSync, mkdirSync, copyFileSync, writeFileSync, readFileSync, realpathSync, rmSync, existsSync } = require('node:fs');
 const { tmpdir } = require('node:os');
 const { join, resolve } = require('node:path');
 
@@ -30,6 +30,7 @@ test('CDC launcher keeps argument boundaries and does not expose arguments', t =
   mkdirSync(join(root, 'flink/bin'), { recursive: true });
   const script = join(root, 'loader/bin/hugegraph-flinkcdc-loader.sh');
   copyFileSync(resolve(__dirname, '../../../assembly/static/bin/hugegraph-flinkcdc-loader.sh'), script);
+  copyFileSync(resolve(__dirname, '../../../assembly/static/bin/get-params.sh'), join(root, 'loader/bin/get-params.sh'));
   const argsFile = join(root, 'args');
   writeFileSync(join(root, 'flink/bin/flink'), '#!/bin/bash\nprintf "%s\\0" "$@" > "$PROBE_ARGS"\n' +
     'exit "${PROBE_EXIT_CODE:-0}"\n', { mode: 0o755 });
@@ -52,9 +53,14 @@ test('CDC launcher keeps argument boundaries and does not expose arguments', t =
   assert.deepEqual(readFileSync(argsFile, 'utf8').split('\0').slice(0, -1),
     ['run', '-c', 'org.apache.hugegraph.loader.flink.HugeGraphFlinkCDCLoader', jar,
       '--file', 'mapping.json', '--graph', 'fixture']);
-  const rejected = run(['--file'], { PROBE_EXIT_CODE: '2' });
-  assert.equal(rejected.status, 2, rejected.stderr);
-  assert.equal(rejected.stdout, '');
+  for (const option of ['--password', '--file']) {
+    rmSync(argsFile, { force: true });
+    const rejected = run([option]);
+    assert.equal(rejected.status, 2, `${option}: ${rejected.stderr}`);
+    assert.match(rejected.stderr, new RegExp(`Missing value for ${option}`));
+    assert.equal(rejected.stdout, '');
+    assert.equal(existsSync(argsFile), false, 'Flink must not run for a missing Loader option value');
+  }
   assert.notEqual(run([], { FLINK_HOME: '' }).status, 0);
   writeFileSync(join(root, 'loader/lib/apache-hugegraph-loader-extra-shaded.jar'), 'fixture');
   assert.notEqual(run([]).status, 0);
