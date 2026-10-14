@@ -275,8 +275,8 @@ public final class LoadContext implements Cloneable {
                     this.client.graphs().releaseLoadingOwner(this.client.graph().graph(), this.loadingOwner);
                     this.loadingOwnerReleased = true;
                 } catch (Exception e) {
-                    throw new LoadException("Failed to release LOADING owner %s; retry the same handle", e,
-                                            this.loadingOwner);
+                    throw new LoadException("Failed to release LOADING owner %s; stop and drain related imports " +
+                                            "before administrator recovery on the Server", e, this.loadingOwner);
                 }
             }
             return;
