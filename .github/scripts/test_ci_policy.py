@@ -219,7 +219,7 @@ class PolicyTest(unittest.TestCase):
                 self.assertFalse(plan["legacy"])
                 for other in {"hdfs", "spark_loader", "flink_cdc"} - {flag}:
                     self.assertFalse(plan[other])
-        client = self.pr_plan(["hugegraph-client/src/main/java/org/apache/hugegraph/structure/Vertex.java"])
+        client = self.pr_plan(["hugegraph-client/src/main/java/org/apache/hugegraph/structure/graph/Vertex.java"])
         self.assertTrue(client["spark_loader"])
         self.assertTrue(client["flink_cdc"])
         self.assertFalse(client["legacy"])
@@ -234,6 +234,45 @@ class PolicyTest(unittest.TestCase):
             self.assertTrue(all(inputs[flag] for flag in ("legacy", "hdfs", "spark_loader", "flink_cdc")))
         auth = self.pr_plan(["hugegraph-client/src/main/java/org/apache/hugegraph/api/auth/UserAPI.java"])
         self.assertEqual({"java"}, set(json.loads(auth["security_languages"])))
+
+    def test_real_protocol_transport_selects_legacy_baseline(self):
+        root = Path(__file__).resolve().parents[2]
+        transport = "hugegraph-client/src/main/java/org/apache/hugegraph/client/RestClient.java"
+        self.assertTrue((root / transport).is_file())
+        plan = self.pr_plan([transport])
+        self.assertTrue(plan["legacy"])
+        self.assertTrue(plan["needsFixture"])
+        self.assertEqual(["candidate", "release-1.7"], plan["server_baselines"])
+        ordinary = "hugegraph-client/src/main/java/org/apache/hugegraph/structure/graph/Vertex.java"
+        self.assertTrue((root / ordinary).is_file())
+        self.assertFalse(self.pr_plan([ordinary])["legacy"])
+        self.assertEqual(["candidate"], self.pr_plan([ordinary])["server_baselines"])
+
+    def test_engine_launchers_select_only_their_actual_runtime_lane(self):
+        root = Path(__file__).resolve().parents[2]
+        cases = [("hugegraph-spark-loader.sh", "spark_loader"), ("get-params.sh", "spark_loader"),
+                 ("hugegraph-flinkcdc-loader.sh", "flink_cdc")]
+        for name, flag in cases:
+            path = "hugegraph-loader/assembly/static/bin/" + name
+            with self.subTest(path=path):
+                self.assertTrue((root / path).is_file())
+                plan = self.pr_plan([path])
+                self.assertTrue(plan[flag])
+                self.assertFalse(plan["legacy"])
+                for other in {"hdfs", "spark_loader", "flink_cdc"} - {flag}:
+                    self.assertFalse(plan[other])
+        for name in ["mapping-convert.sh", "utf8-bom-to-utf8.sh"]:
+            path = "hugegraph-loader/assembly/static/bin/" + name
+            with self.subTest(unrelated_launcher=path):
+                self.assertTrue((root / path).is_file())
+                plan = self.pr_plan([path])
+                self.assertFalse(any(plan[flag] for flag in ("legacy", "spark_loader", "flink_cdc")))
+        for path in ["hugegraph-loader/docs/spark-java17.md", "hugegraph-loader/docs/flink-cdc-java17.md"]:
+            with self.subTest(document=path):
+                self.assertTrue((root / path).is_file())
+                plan = self.pr_plan([path])
+                self.assertEqual([], plan["expected"])
+                self.assertFalse(any(plan[flag] for flag in ("legacy", "spark_loader", "flink_cdc")))
 
     def test_tls_service_and_truststore_options_select_java_security_scan(self):
         root = "hugegraph-hubble/hubble-be/src/main/java/org/apache/hugegraph/"
@@ -308,7 +347,11 @@ class PolicyTest(unittest.TestCase):
 
     def test_master_runtime_push_uses_only_one_smoke_caller(self):
         for path in ["hugegraph-client/src/main/java/A.java", "hugegraph-loader/pom.xml",
-                     "hugegraph-hubble/Dockerfile", "shared-unknown-input"]:
+                     "hugegraph-hubble/Dockerfile", "shared-unknown-input",
+                     "hugegraph-client/src/main/java/org/apache/hugegraph/client/RestClient.java",
+                     "hugegraph-loader/assembly/static/bin/hugegraph-spark-loader.sh",
+                     "hugegraph-loader/assembly/static/bin/get-params.sh",
+                     "hugegraph-loader/assembly/static/bin/hugegraph-flinkcdc-loader.sh"]:
             with self.subTest(path=path):
                 plan = self.push_plan([path])
                 self.assertEqual(["mainline-smoke"], plan["expected"])
@@ -318,7 +361,8 @@ class PolicyTest(unittest.TestCase):
                 self.assertFalse(plan["needsCurrent"])
                 self.assertFalse(plan["needsFixture"])
                 self.assertFalse(any(plan[flag] for flag in
-                                     ("legacy", "hdfs", "security", "dependency_audit", "upstream")))
+                                     ("legacy", "hdfs", "spark_loader", "flink_cdc", "security",
+                                      "dependency_audit", "upstream")))
 
     def test_master_docs_and_retired_label_inputs_run_only_entry(self):
         for path in ["hugegraph-loader/docs/README.md", ".github/workflows/labeler.yml", ".github/labeler.yml"]:

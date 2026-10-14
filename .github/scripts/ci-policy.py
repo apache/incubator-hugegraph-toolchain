@@ -87,16 +87,19 @@ def optional_checks(paths):
         module_workflow = (path.startswith(".github/workflows/")
                            and bool(WORKFLOWS["toolchain"].get(Path(path).name)))
         checks["legacy"] |= (shared or module_workflow or "legacy" in name or "compatibility" in name
-                             or path.startswith("hugegraph-client/src/main/java/org/apache/hugegraph/rest/")
+                             or path == "hugegraph-client/src/main/java/org/apache/hugegraph/client/RestClient.java"
                              or path == "hugegraph-client/src/main/java/org/apache/hugegraph/util/JsonUtil.java")
         checks["hdfs"] |= (shared or path == ".github/workflows/loader-ci.yml"
                            or path.startswith(LOADER) and "hdfs" in path.lower())
         client_runtime = path.startswith("hugegraph-client/src/main/")
         checks["spark_loader"] |= (shared or client_runtime or path.startswith(LOADER) and "/spark/" in path
+                                   or path in {LOADER + "assembly/static/bin/hugegraph-spark-loader.sh",
+                                               LOADER + "assembly/static/bin/get-params.sh"}
                                    or path == LOADER + "src/test/python/run_spark_artifact.py"
                                    or path == ".github/workflows/spark-loader-ci.yml")
         checks["flink_cdc"] |= (shared or client_runtime
                                 or path.startswith(LOADER) and ("/flink/" in path or "/flink-cdc/" in path)
+                                or path == LOADER + "assembly/static/bin/hugegraph-flinkcdc-loader.sh"
                                 or path == LOADER + "src/test/scripts/flink-launcher.test.cjs"
                                 or path == ".github/workflows/flink-cdc-ci.yml")
         checks["launcher"] |= path in LAUNCHER_INPUTS
