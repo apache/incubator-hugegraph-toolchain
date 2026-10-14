@@ -97,12 +97,14 @@ inspect and recover the graph mode, then restart Hubble before retrying.
 
 Database failures during progress polling or after rejected dispatch require operator recovery; this change does not
 add automatic per-task persistence repair. A failed final write can leave a task RUNNING or its job LOADING in metadata.
-Hubble keeps failed callback/cleanup evidence and refuses replacement/deletion when cleanup cannot be confirmed.
-Recover the metadata database first, stop Hubble and other imports, and have an administrator verify that no Loader
-still uses the graph before repairing an orphaned graph mode through the Server graph-mode API. Restart Hubble with
-the same metadata database and source files. If a persisted task is still RUNNING with no active runner, use the existing
-Pause action, then Resume (or Retry for a terminal task) with current authentication. These actions recheck persisted
-state; they do not repair a database that is still unavailable. Do not manually delete metadata rows to bypass cleanup.
+While a runtime remains in this Hubble process, unresolved callback/cleanup evidence blocks unsafe replacement or deletion.
+After an abnormal process exit, the old runtime is gone: a leftover RUNNING task can be deleted directly. This removes
+Hubble metadata only; it does not restore Server graph mode or release any leftover Server loading owner.
+Server recovery is a separate operation. Restore the metadata database; before starting new imports, stop related imports
+and have an administrator inspect and recover the Server graph mode/owner. If keeping the task for another attempt,
+restart Hubble with the same metadata and source files, use the existing Pause action for a persisted RUNNING row,
+then Resume (or Stop followed by Retry when old checkpoints are unsafe) with current authentication. These actions
+do not repair a database that is still unavailable.
 
 ## Local development feedback loop
 
