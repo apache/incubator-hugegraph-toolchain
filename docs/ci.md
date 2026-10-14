@@ -67,7 +67,7 @@ Selection uses the cumulative PR diff, so appending documentation to a source PR
 
 CodeQL keeps its existing analysis identity, configured languages and upload permissions. Its source/SDK build only runs for Java scans; dependency review belongs to the selected dependency audit. Current and legacy runtime checks compile Toolchain on Java 17 while the official Server 1.7 service uses its own Java 11 JVM.
 
-The dependency inventory audit includes root `.mvn/**`, POMs, dependency manifests, assembly/license inputs and staged Maven settings. It runs from the repository root with the same root Maven configuration, separately from the entry license checks.
+The dependency inventory audit includes root `.mvn/**`, POMs, dependency manifests (including Go `go.mod` and `go.sum`), assembly/license inputs and staged Maven settings. It runs from the repository root with the same root Maven configuration, separately from the entry license checks. On pull requests, the selected audit also runs dependency review.
 
 For rollout, confirm live branch protection has reconciled to an empty context list; required approving review count and stale-review dismissal remain configured. Until reconciliation, the real entry `check-license-header` still satisfies the previous rule. A new PR head cancels older first attempts; native reruns use separate groups and cannot cancel the current head.
 
