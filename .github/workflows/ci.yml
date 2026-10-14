@@ -52,6 +52,7 @@ jobs:
       PYTHONDONTWRITEBYTECODE: '1'
     outputs:
       selection-result: ${{ steps.scope.outcome }}
+      mainline-smoke: ${{ steps.scope.outputs.mainline_smoke }}
       server-baselines: ${{ steps.scope.outputs.server_baselines }}
       image-smoke: ${{ steps.scope.outputs.image_smoke }}
       hdfs: ${{ steps.scope.outputs.hdfs }}
@@ -390,3 +391,10 @@ jobs:
     needs: plan
     if: ${{ !cancelled() && needs.plan.outputs.selection-result == 'success' && needs.plan.outputs.upstream == 'true' }}
     uses: ./.github/workflows/upstream-compatibility.yml
+
+  smoke:
+    needs: plan
+    if: ${{ !cancelled() && needs.plan.outputs.selection-result == 'success' && needs.plan.outputs.mainline-smoke == 'true' }}
+    uses: ./.github/workflows/upstream-compatibility.yml
+    with:
+      smoke: true

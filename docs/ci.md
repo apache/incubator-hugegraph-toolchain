@@ -4,11 +4,12 @@ CI results are advisory and human review remains required. `.asf.yaml` requests 
 
 `Module validation` is the single PR/push entry. Its entry job classifies the cumulative diff, records immutable Server inputs, runs policy/runtime fixtures, and checks license headers and RAT. License or policy-test failure does not implicitly skip already selected suites: callers use the classifier's actual outcome and cancellation state. Failed fixture producers retain their own failed checks; their consumers require the real fixture result.
 
-Pure prose documentation and nested READMEs outside runtime/fixture directories run only this entry. Valid packaged README text no longer selects image builds. Source, type definitions, runtime config, executable scripts and test fixture text remain code inputs. The existing separate labeler is metadata automation, not a validation job.
+Pure prose documentation and nested READMEs outside runtime/fixture directories run only this entry. Valid packaged README text no longer selects image builds. Source, type definitions, runtime config, executable scripts and test fixture text remain code inputs. Automatic PR labeling is removed; maintainers apply labels manually.
 
 | Event / input | Validation |
 | --- | --- |
-| Normal PR or push | Affected modules and consumers against the locked current Server only |
+| Normal PR or release push | Affected modules and consumers against the locked current Server only |
+| Master push with runtime inputs | One mainline smoke runner after the entry; no repeated module/platform matrices |
 | Client change | Client, Loader, Tools, Spark Connector and Hubble |
 | Loader change | Loader and Hubble |
 | Legacy/protocol compatibility, shared SDK/bootstrap/build inputs | Both current and official Server 1.7 baselines |
@@ -23,7 +24,7 @@ Manual and weekly validation are independent of documentation filtering. The def
 
 Module, launcher, Spark Loader and CodeQL matrices run one entry at a time. Including reusable workflows, the maximum possible job concurrency is 15; this limits simultaneous work, while scoping removes unnecessary allocations. There is no report-only runner or independent CodeQL planner. Native job checks provide actual results; the entry summary and `ci-plan` explain selection. GitHub native reruns remain available, and automatic retry workflows are removed.
 
-The floating upstream compatibility workflow remains manually callable and runs in the weekly full entry. It checks the current Toolchain checkout against one resolved ASF master commit, separately from the locked default baseline. Master pushes continue affected-module validation; they do not silently claim successful PR results from another run.
+The floating upstream compatibility workflow remains manually callable and runs in the weekly full entry. It checks the current Toolchain checkout against one resolved ASF master commit, separately from the locked default baseline. Master pushes with affected runtime inputs call its smoke mode against the locked current baseline. It compiles the current Java consumers, runs Client unit and real schema/graph read/write checks, Loader unit and local-file read/write checks, Hubble backend unit checks, Tools CLI checks, and Go version/schema requests on one runner. Its Server fixtures are stopped afterward. Pure documentation master pushes still run only the entry. PR/full compatibility suites keep their original scope; no prior-run result is reused.
 
 Image selection is independent of the Client → Loader → Hubble module-test dependency closure:
 
@@ -73,6 +74,6 @@ python3 -m unittest discover -s .github/scripts -p 'test_*.py'
 actionlint
 ```
 
-Upstream compatibility runs in weekly full validation and on demand against the latest ASF master, resolved once to an immutable commit for each run. It reuses the SDK build, core compilation, Client HTTP tests, Loader and Hubble backend unit tests, and Tools functional tests; Hadoop, Spark/Flink engine matrices and frontend browser tests remain in module CI. This independent check does not change the locked Module validation baseline.
+Upstream compatibility runs in weekly full validation and on demand against the latest ASF master, resolved once to an immutable commit for each run. It reuses the SDK build, core compilation, Client HTTP tests, Loader and Hubble backend unit tests, and Tools functional tests; Hadoop, Spark/Flink engine matrices and frontend browser tests remain in module CI. Its default full mode does not change the locked Module validation baseline; the native manual workflow also offers the same locked-baseline smoke mode used after merge.
 
 The floating upstream check selects `hugegraph.version` from the verified SDK manifest for every consumer build and test. The same version is passed to SDK packaging verification through `CANDIDATE_SDK_VERSION`; provenance, local-install and artifact-hash checks remain enforced. This lets Server master advance its Maven version without accidentally testing a released SDK. Fixed-baseline jobs retain their default SDK version.

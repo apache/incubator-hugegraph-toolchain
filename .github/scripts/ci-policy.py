@@ -47,7 +47,7 @@ WORKFLOWS = {
                   "codeql-analysis.yml": [], "dependency-license.yml": [], "license-checker.yml": [],
                   "ci.yml": MODULES["toolchain"], "spark-loader-ci.yml": ["loader"],
                   "flink-cdc-ci.yml": ["loader"], "hubble-launcher-ci.yml": [],
-                  "upstream-compatibility.yml": [], "image-ci.yml": [], "java17-images-ci.yml": []},
+                  "upstream-compatibility.yml": [], "image-ci.yml": [], "java17-images-ci.yml": [], "labeler.yml": []},
 }
 IMAGES = {"loader_image", "hubble_image"}
 
@@ -59,7 +59,7 @@ SERVER_BOOTSTRAP = (".github/actions/get-hugegraph-commit/", ".github/actions/se
 SHARED_BUILD_INPUTS = {"pom.xml", "hugegraph-client/pom.xml", "hugegraph-loader/pom.xml",
                        ".github/configs/settings.xml"}
 MAINTENANCE_INPUTS = {".asf.yaml", ".editorconfig", ".licenserc.yaml", ".github/PULL_REQUEST_TEMPLATE.md",
-                      ".github/dependabot.yml"}
+                      ".github/dependabot.yml", ".github/labeler.yml"}
 CONTRACT_TESTS = {".github/actions/setup-hugegraph-server/runtime_test.py",
                   ".github/actions/get-hugegraph-commit/resolve.test.cjs",
                   "hugegraph-client/assembly/travis/checkout-server.test.cjs",
@@ -476,14 +476,23 @@ def create_plan(project, event, repository, fetch=api, external_inputs=None, eve
         plan["reason"] = "weekly full validation" if event_name == "schedule" else "manual " + preset
     if full:
         checks = {name: True for name in checks}
+    master_push = project == "toolchain" and event_name == "push" and event.get("ref") == "refs/heads/master"
+    plan["mainline_smoke"] = master_push and bool(selected or selected_images)
+    if master_push:
+        selected = set()
+        selected_images = set()
+        checks = {name: False for name in checks}
+        plan["reason"] = "current checkout mainline smoke after master merge"
     plan.update(checks)
     plan["server_baselines"] = ["candidate", "release-1.7"] if checks.get("legacy") else ["candidate"]
-    if not selected and not selected_images:
+    if not selected and not selected_images and not plan["mainline_smoke"]:
         plan["reason"] = "cumulative PR diff contains only plain prose documentation; modules unaffected"
     plan["selected"] = sorted(selected)
     for module in MODULES[project]:
         plan[module] = module in selected
     plan["expected"] = sorted(suites(project, selected) + list(selected_images))
+    if plan["mainline_smoke"]:
+        plan["expected"].append("mainline-smoke")
     plan["selectedImages"] = sorted(selected_images)
     plan["image_smoke"] = bool(selected_images) and (full or event_name not in {"push", "workflow_dispatch"})
     for image in IMAGES:
@@ -502,12 +511,14 @@ def create_plan(project, event, repository, fetch=api, external_inputs=None, eve
                                                   + list(select_images([path]) if project == "toolchain" else []))]
         for suite in plan["expected"]
     }
-    plan["dependency_audit"] = (not paths or any(dependency_input(path) for path in paths))
+    plan["dependency_audit"] = not master_push and (not paths or any(dependency_input(path) for path in paths))
     if project == "toolchain" and plan["dependency_audit"]:
         plan["expected"].append("dependency-audit")
         plan["selectionReasons"]["dependency-audit"] = [path for path in paths if dependency_input(path)]
     scan_inputs = [path for path in paths if security_input(path)]
     languages = scan_languages([]) if full or conservative_scan else scan_languages(scan_inputs) if scan_inputs else set()
+    if master_push:
+        languages = set()
     plan["security"] = bool(languages)
     plan["security_languages"] = json.dumps(sorted(languages))
     write_summary(plan)
@@ -536,7 +547,7 @@ def write_summary(plan, results=None):
     if plan["project"] == "toolchain":
         summary += "\nServer baselines: " + ", ".join(plan.get("server_baselines", [])) + "\n"
         summary += "\n| Optional check | Selected |\n| --- | --- |\n"
-        for check in ("hdfs", "spark_loader", "flink_cdc", "launcher", "upstream", "security", "image_smoke"):
+        for check in ("mainline_smoke", "hdfs", "spark_loader", "flink_cdc", "launcher", "upstream", "security", "image_smoke"):
             summary += f"| {check} | {'yes' if plan.get(check) else 'no'} |\n"
     summary += f"\nTested head: `{plan['head']}`; base: `{plan['base']}`; checkout: `{plan['testedMergeSHA']}`.\n"
     if os.environ.get("GITHUB_STEP_SUMMARY"):

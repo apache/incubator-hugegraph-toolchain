@@ -297,6 +297,46 @@ class PolicyTest(unittest.TestCase):
                 chosen.add(name)
         return chosen
 
+    def push_plan(self, paths, ref="refs/heads/master"):
+        def event_git(*args):
+            return "\n".join(paths) if args[0] == "diff" else "head"
+        with patch.object(policy, "git", side_effect=event_git), patch.object(
+                policy, "unsafe_documentation", return_value=False), patch.object(
+                policy, "packaged_readme_state", return_value="valid"):
+            return policy.create_plan("toolchain", {"before": "base", "ref": ref},
+                                      "apache/t", event_name="push")
+
+    def test_master_runtime_push_uses_only_one_smoke_caller(self):
+        for path in ["hugegraph-client/src/main/java/A.java", "hugegraph-loader/pom.xml",
+                     "hugegraph-hubble/Dockerfile", "shared-unknown-input"]:
+            with self.subTest(path=path):
+                plan = self.push_plan([path])
+                self.assertEqual(["mainline-smoke"], plan["expected"])
+                self.assertEqual({"plan", "smoke"}, self.coordinator_jobs(plan))
+                self.assertEqual({"plan", "smoke"}, self.coordinator_jobs(plan, license_result="failure"))
+                self.assertEqual(set(), self.coordinator_jobs(plan, cancelled=True))
+                self.assertFalse(plan["needsCurrent"])
+                self.assertFalse(plan["needsFixture"])
+                self.assertFalse(any(plan[flag] for flag in
+                                     ("legacy", "hdfs", "security", "dependency_audit", "upstream")))
+
+    def test_master_docs_and_retired_label_inputs_run_only_entry(self):
+        for path in ["hugegraph-loader/docs/README.md", ".github/workflows/labeler.yml", ".github/labeler.yml"]:
+            with self.subTest(path=path):
+                plan = self.push_plan([path])
+                self.assertEqual({"plan"}, self.coordinator_jobs(plan))
+                self.assertFalse(plan["mainline_smoke"])
+        workflows = Path(__file__).resolve().parents[1] / "workflows"
+        self.assertFalse((workflows / "labeler.yml").exists())
+
+    def test_release_push_keeps_affected_validation(self):
+        plan = self.push_plan(["hugegraph-loader/pom.xml"], "refs/heads/release-1.8")
+        self.assertFalse(plan["mainline_smoke"])
+        self.assertTrue(plan["loader"])
+        self.assertTrue(plan["legacy"])
+        self.assertTrue(plan["dependency_audit"])
+        self.assertNotIn("smoke", self.coordinator_jobs(plan))
+
     def test_reusable_workflows_leave_cancellation_to_entry(self):
         workflows = Path(__file__).resolve().parents[1] / "workflows"
         for name in ["codeql-analysis", "hubble-launcher-ci", "spark-loader-ci", "flink-cdc-ci", "upstream-compatibility"]:
