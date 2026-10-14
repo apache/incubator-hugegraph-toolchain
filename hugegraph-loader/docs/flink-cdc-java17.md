@@ -27,6 +27,7 @@ bin/hugegraph-flinkcdc-loader.sh --file mapping.json --graph hugegraph
 ```
 
 Place Flink options before `--` and Loader options after it. Paths with spaces remain individual arguments; the launcher does not print argument values.
+Missing values for recognized Loader options, such as `--password` or `--file`, are rejected before invoking Flink.
 
 ```bash
 bin/hugegraph-flinkcdc-loader.sh -p 1 -- \
