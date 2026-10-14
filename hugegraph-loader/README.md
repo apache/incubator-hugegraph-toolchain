@@ -135,6 +135,8 @@ so copy a mapping mounted from a read-only Kubernetes ConfigMap to a writable vo
 
 #### Graph mode during startup and cleanup
 
+For protocol-1 Servers, see [Concurrent imports and graph mode](#concurrent-imports-and-graph-mode).
+
 On Servers without the loading-owner endpoint, Loader resets `LOADING` mode only after that context sets it. A startup failure before the mode
 change, a rejected mode request, or a restore run does not clear another run's `LOADING` mode. Cleanup preserves a
 different current graph mode; successful cleanup is not repeated. Concurrent successful Loader runs on the same
@@ -145,34 +147,7 @@ failure and logs an error naming the graph and warning that it may still be in `
 unconfirmed mode unchanged. Inspect the graph mode and confirm there are no active imports before explicitly
 restoring `NONE` mode; an unconfirmed request cannot be rolled back automatically.
 
-### 3.2 Load data with docker
-
-> If the `loader` and `server` is in the same docker network (for example, you deploy `loader` and `server` with `docker-compose`), we can set `-h {server_container_name}`. In our example, the container name of `server` is `graph`
->
-> If `loader` is deployed alone, the `-h` should be set to the ip of the host of `server`. Other parameter description is [here](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/#341-parameter-description)
-
-Visit [doc](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/#45-use-docker-to-load-data) for more details.
- 
-```bash
-docker exec -it loader bin/hugegraph-loader.sh -g hugegraph -f example/file/struct.json -s example/file/schema.groovy -h graph -p 8080
-```
-
-
-## 4. Doc
-
-For Spark execution, see [Spark Loader on Java 17](docs/spark-java17.md) for the tested engine version, launcher usage, and the separate HBase bulkload boundary.
-
-The [loader homepage](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/) contains more information about it. 
-
-Server 1.7 compatibility CI uses the pinned official ASF 1.7.0 binary archive. The fixture cache verifies the release version, official source URL, official SHA-512 and cached archive SHA-256 before startup. A failed download does not fall back to rebuilding the release tag. Unpublished candidate SDKs and their Server fixture continue to use the locked ASF source build.
-
-## 5. License
-
-hugegraph-loader is licensed under Apache 2.0 License.
-
-See the [Flink CDC Java 17 validation](docs/flink-cdc-java17.md) for its current limits and launcher syntax.
-
-### Concurrent imports and graph mode
+#### Concurrent imports and graph mode
 
 On a Server with loading-owner protocol 1, each ordinary import acquires its own
 handle on the same live graph instance. After its workers stop, cleanup releases
@@ -198,6 +173,14 @@ logged. Owners have no automatic expiry, and cleanup failure still closes the
 Loader context and clients; another `shutdown()` does not retry the release.
 After an unclean exit or release failure, use the paired Server's administrator
 recovery procedure below instead of looking for a token in Loader logs.
+
+Hubble's existing task lifecycle can finish, stop or reconnect without calling
+`Loader.shutdown()`. This SDK change alone can therefore leave active owners and
+block mode changes, including restore. Hubble integration requires the paired
+[task cleanup fix #814](https://github.com/apache/hugegraph-toolchain/pull/814) and
+[application shutdown fix #818](https://github.com/apache/hugegraph-toolchain/pull/818);
+deploy those fixes together. If owners are already stranded, use the recovery
+steps below.
 
 1. Stop all related imports and ordinary graph writes, and drain their in-flight
    requests. The Server recovery endpoint cannot perform this external drain.
@@ -235,3 +218,30 @@ This procedure also clears a manually set `RESTORING` or `MERGING` mode once all
 related work has stopped and drained. It depends on the paired Server change
 linked above; older Servers retain their legacy enum-mode recovery behavior.
 An enum PUT to `NONE` remains rejected while protocol-1 owners are active.
+
+### 3.2 Load data with docker
+
+> If the `loader` and `server` is in the same docker network (for example, you deploy `loader` and `server` with `docker-compose`), we can set `-h {server_container_name}`. In our example, the container name of `server` is `graph`
+>
+> If `loader` is deployed alone, the `-h` should be set to the ip of the host of `server`. Other parameter description is [here](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/#341-parameter-description)
+
+Visit [doc](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/#45-use-docker-to-load-data) for more details.
+
+```bash
+docker exec -it loader bin/hugegraph-loader.sh -g hugegraph -f example/file/struct.json -s example/file/schema.groovy -h graph -p 8080
+```
+
+
+## 4. Doc
+
+For Spark execution, see [Spark Loader on Java 17](docs/spark-java17.md) for the tested engine version, launcher usage, and the separate HBase bulkload boundary.
+
+The [loader homepage](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/) contains more information about it.
+
+Server 1.7 compatibility CI uses the pinned official ASF 1.7.0 binary archive. The fixture cache verifies the release version, official source URL, official SHA-512 and cached archive SHA-256 before startup. A failed download does not fall back to rebuilding the release tag. Unpublished candidate SDKs and their Server fixture continue to use the locked ASF source build.
+
+See the [Flink CDC Java 17 validation](docs/flink-cdc-java17.md) for its current limits and launcher syntax.
+
+## 5. License
+
+hugegraph-loader is licensed under Apache 2.0 License.
