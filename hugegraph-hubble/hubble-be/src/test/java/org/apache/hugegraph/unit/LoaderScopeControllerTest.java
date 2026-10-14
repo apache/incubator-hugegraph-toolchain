@@ -15,6 +15,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.hugegraph.unit;
 
 import java.util.Collections;
@@ -82,6 +83,8 @@ public class LoaderScopeControllerTest {
         JobManagerService jobService = Mockito.mock(JobManagerService.class);
         LoadTaskService taskService = Mockito.mock(LoadTaskService.class);
         FileMapping mapping = FileMapping.builder().id(11).build();
+        Mockito.when(jobService.get("space-a", "graph-a", 7))
+               .thenReturn(JobManager.builder().id(7).graphSpace("space-a").graph("graph-a").build());
         Mockito.when(service.listByJob("space-a", "graph-a", 7))
                .thenReturn(Collections.singletonList(mapping));
         Mockito.when(taskService.taskListByJob(7))
@@ -93,6 +96,7 @@ public class LoaderScopeControllerTest {
 
         controller.clear("space-a", "graph-a", 7);
 
+        Mockito.verify(jobService).get("space-a", "graph-a", 7);
         Mockito.verify(jobService).deleteMappings(
                 7, Collections.singletonList(mapping));
         Mockito.verify(service, Mockito.never()).deleteDiskFile(mapping);

@@ -127,16 +127,20 @@ public class FileMappingController extends BaseController {
                       @PathVariable("graph") String graph,
                       @PathVariable("jobId") int jobId) {
         this.requireGraphSpaceWrite(graphSpace);
-        List<FileMapping> mappings = this.service.listByJob(graphSpace, graph,
-                                                            jobId);
-        Set<Integer> fileIds = new HashSet<>();
-        for (FileMapping mapping : mappings) {
-            fileIds.add(mapping.getId());
-        }
-        // Check them all upfront, don't delete part of the mappings then fail
-        this.checkNoRunningTask(jobId, fileIds);
+        try (var reservation = this.jobService.reserveJob(jobId)) {
+            Ex.check(this.jobService.get(graphSpace, graph, jobId) != null,
+                     "job-manager.not-exist.id", jobId);
+            List<FileMapping> mappings = this.service.listByJob(graphSpace, graph,
+                                                                jobId);
+            Set<Integer> fileIds = new HashSet<>();
+            for (FileMapping mapping : mappings) {
+                fileIds.add(mapping.getId());
+            }
+            // Check them all upfront, don't delete part of the mappings then fail
+            this.checkNoRunningTask(jobId, fileIds);
 
-        this.jobService.deleteMappings(jobId, mappings);
+            this.jobService.deleteMappings(jobId, mappings);
+        }
     }
 
     @PostMapping("{id}/file-setting")

@@ -69,6 +69,14 @@ public class LoadTask implements Runnable {
     @JsonIgnore
     private transient volatile boolean finished;
 
+    @TableField(exist = false)
+    @JsonIgnore
+    private transient volatile Throwable cleanupFailure;
+
+    @TableField(exist = false)
+    @JsonIgnore
+    private transient volatile boolean cleanupFailed;
+
     @TableId(type = IdType.AUTO)
     @MergeProperty(useNew = false)
     @JsonProperty("id")
@@ -170,7 +178,7 @@ public class LoadTask implements Runnable {
         this.currDuration = 0L;
         this.createTime = HubbleUtil.nowDate();
 
-        this.loader = new HugeGraphLoader(this.options);
+        this.loader = new HugeGraphLoader(this.options, false);
     }
 
     @Override
@@ -178,11 +186,13 @@ public class LoadTask implements Runnable {
         Ex.check(this.options != null, "The load options shouldn't be null");
         log.info("LoadTask is start running : {}", this.id);
 
+        this.cleanupFailure = null;
         boolean noError = false;
-        boolean cleanupFailed = false;
+        this.cleanupFailed = false;
         Throwable failure = null;
         try {
-            noError = this.loader.load();
+            // A queued task can be paused before its worker starts.
+            noError = this.context().stopped() ? this.context().noError() : this.loader.load();
         } catch (Throwable e) {
             failure = e;
         } finally {
@@ -208,15 +218,17 @@ public class LoadTask implements Runnable {
                 this.loader.shutdown();
             } catch (Throwable e) {
                 noError = false;
-                cleanupFailed = !sameLoadFailure(recordedFailure, e) ||
-                                recordedFailure.getSuppressed().length != suppressed ||
-                                (recordedCause != null && recordedCause.getSuppressed().length != causeSuppressed);
-                if (cleanupFailed) {
+                this.cleanupFailed = !sameLoadFailure(recordedFailure, e) ||
+                                     recordedFailure.getSuppressed().length != suppressed ||
+                                     (recordedCause != null &&
+                                      recordedCause.getSuppressed().length != causeSuppressed);
+                if (this.cleanupFailed) {
+                    this.cleanupFailure = e;
                     log.error("Failed to close load task {}; check graph loading mode before retrying", this.id, e);
                 }
                 if (failure == null) {
                     failure = e;
-                } else if (cleanupFailed && failure != e && !referencesFailure(e, failure)) {
+                } else if (this.cleanupFailed && failure != e && !referencesFailure(e, failure)) {
                     failure.addSuppressed(e);
                 }
             }
@@ -228,7 +240,7 @@ public class LoadTask implements Runnable {
         try {
             // Pay attention to whether the user stops actively or
             // the program stops by itself
-            if (cleanupFailed || this.status.inRunning()) {
+            if (this.cleanupFailed || this.status.inRunning()) {
                 if (noError) {
                     this.status = LoadStatus.SUCCEED;
                 } else {
@@ -291,7 +303,7 @@ public class LoadTask implements Runnable {
                 // pass
             }
         }
-        if (this.context().closed()) {
+        if (this.context().closed() && !this.cleanupFailed) {
             this.loader = null;
         }
         log.info("LoadTask {} stopped", this.id);
@@ -307,7 +319,7 @@ public class LoadTask implements Runnable {
             runtimeOptions.token = token;
             runtimeOptions.pdToken = null;
             runtimeOptions.trustStoreToken = null;
-            this.loader = new HugeGraphLoader(runtimeOptions);
+            this.loader = new HugeGraphLoader(runtimeOptions, false);
             this.finished = false;
         } catch (CloneNotSupportedException e) {
             throw new InternalException("Failed to prepare load task options",

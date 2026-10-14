@@ -707,6 +707,50 @@ public class LoadContextTest {
     }
 
     @Test
+    public void testEmbeddedShutdownHookDoesNotReplaceExistingCheckpoint() throws Exception {
+        try (ModeServer server = new ModeServer()) {
+            LoadOptions options = new LoadOptions();
+            options.host = "127.0.0.1";
+            options.port = server.server.getAddress().getPort();
+            options.file = this.folder.newFile("embedded.json").getAbsolutePath();
+            options.incrementalMode = true;
+            File checkpoint = new File(LoadProgress.format(options, "2000-01-01"));
+            Files.createDirectories(checkpoint.toPath().getParent());
+            String saved = "{\"vertex_progress\":7,\"edge_progress\":0,\"input_progress\":{}}";
+            Files.writeString(checkpoint.toPath(), saved);
+            HugeGraphLoader loader = new HugeGraphLoader(options, new LoadMapping(Collections.emptyList()), false);
+            Assert.assertEquals(7L, loader.context().oldProgress().vertexLoaded());
+            set(loader, "loadStarted", true);
+            loader.context().newProgress().plusVertexLoaded(99);
+
+            ((Thread) field(loader, "shutdownHook")).run();
+
+            Assert.assertTrue(loader.context().closed());
+            Assert.assertEquals(saved, Files.readString(checkpoint.toPath()));
+            Assert.assertFalse(new File(LoadProgress.format(options, loader.context().timestamp())).exists());
+        }
+    }
+
+    @Test
+    public void testDefaultLoaderShutdownStillWritesProgress() throws Exception {
+        try (ModeServer server = new ModeServer()) {
+            LoadOptions options = new LoadOptions();
+            options.host = "127.0.0.1";
+            options.port = server.server.getAddress().getPort();
+            options.file = this.folder.newFile("standalone.json").getAbsolutePath();
+            HugeGraphLoader loader = new HugeGraphLoader(options, new LoadMapping(Collections.emptyList()));
+            set(loader, "loadStarted", true);
+            loader.context().newProgress().plusVertexLoaded(7);
+
+            loader.shutdown();
+
+            File checkpoint = new File(LoadProgress.format(options, loader.context().timestamp()));
+            Assert.assertTrue(loader.context().closed());
+            Assert.assertEquals(7L, LoadProgress.read(checkpoint).vertexLoaded());
+        }
+    }
+
+    @Test
     public void testClosedLoaderUnregistersOwnHook() throws Exception {
         for (boolean failed : new boolean[]{false, true}) {
             try (ModeServer server = new ModeServer()) {

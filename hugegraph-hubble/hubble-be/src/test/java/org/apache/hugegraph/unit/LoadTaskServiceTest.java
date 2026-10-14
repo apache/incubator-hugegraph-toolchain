@@ -51,6 +51,7 @@ import org.apache.hugegraph.loader.source.file.FileSource;
 import org.apache.hugegraph.service.load.LoadTaskService;
 import org.apache.hugegraph.mapper.load.LoadTaskMapper;
 import org.apache.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.NativeCleanupTestSupport;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.MockedConstruction;
@@ -166,7 +167,7 @@ public class LoadTaskServiceTest {
                                                   new Exception("load failed"),
                                                   new AssertionError("load failed"),
                                                   new UndeclaredThrowableException(
-                                                          new RuntimeException(new IllegalStateException("wrapped")))}) {
+                                                  new RuntimeException(new IllegalStateException("wrapped")))}) {
             HugeGraphLoader loader = Mockito.mock(HugeGraphLoader.class);
             LoadContext context = Mockito.mock(LoadContext.class, Mockito.RETURNS_DEEP_STUBS);
             Mockito.when(loader.context()).thenReturn(context);
@@ -227,7 +228,8 @@ public class LoadTaskServiceTest {
         Mockito.when(mapper.update(Mockito.isNull(), Mockito.any())).thenReturn(1);
         this.setField(service, "mapper", mapper);
         this.setField(service, "taskExecutor", executor);
-        this.setField(service, "runningTaskContainer", new ConcurrentHashMap<>());
+        ConcurrentHashMap<Integer, LoadTask> running = new ConcurrentHashMap<>();
+        this.setField(service, "runningTaskContainer", running);
         PlatformTransactionManager transactions = Mockito.mock(PlatformTransactionManager.class);
         Mockito.when(transactions.getTransaction(Mockito.any())).thenReturn(new SimpleTransactionStatus());
         this.setField(service, "transactionManager", transactions);
@@ -250,6 +252,12 @@ public class LoadTaskServiceTest {
             Assert.assertTrue(task.isFinished());
             Assert.assertEquals(LoadStatus.FAILED, task.getStatus());
             Assert.assertSame(cleanup, failure.getSuppressed()[0]);
+            Assert.assertTrue(task.isCleanupFailed());
+            Assert.assertSame(task, running.get(9));
+            Assert.assertThrows(RuntimeException.class, () -> service.retry(9, "current-token"));
+            Assert.assertThrows(RuntimeException.class, () -> service.resume(9, "current-token"));
+            Assert.assertSame(failure, Assert.assertThrows(Error.class, () -> service.remove(9)));
+            Mockito.verify(mapper, Mockito.never()).deleteById(Mockito.anyInt());
         } finally {
             TransactionSynchronizationManager.clearSynchronization();
         }
@@ -307,7 +315,12 @@ public class LoadTaskServiceTest {
             }
             Mockito.verify(loader).shutdown();
             Assert.assertTrue(task.isFinished());
-            Assert.assertTrue(running.isEmpty());
+            Assert.assertTrue(task.isCleanupFailed());
+            Assert.assertSame(task, running.get(9));
+            Assert.assertEquals(LoadStatus.FAILED, task.getStatus());
+            Assert.assertThrows(RuntimeException.class, () -> service.retry(9, "current-token"));
+            Assert.assertThrows(RuntimeException.class, () -> service.resume(9, "current-token"));
+            Mockito.verify(task).reconnect("current-token");
             Mockito.verify(executor, Mockito.never()).execute(Mockito.any(), Mockito.any());
         }
     }
@@ -326,8 +339,8 @@ public class LoadTaskServiceTest {
             Mockito.doNothing().when(task).reconnect("current-token");
             Mockito.when(mapper.selectById(9)).thenReturn(task);
             Mockito.when(mapper.updateById(task)).thenReturn(1);
-            Mockito.doThrow(new RejectedExecutionException("queue full"))
-                   .when(executor).execute(Mockito.eq(task), Mockito.any());
+            RejectedExecutionException rejected = new RejectedExecutionException("queue full");
+            Mockito.doThrow(rejected).when(executor).execute(Mockito.eq(task), Mockito.any());
             ConcurrentHashMap<Integer, LoadTask> running = new ConcurrentHashMap<>();
             this.setField(service, "mapper", mapper);
             this.setField(service, "taskExecutor", executor);
@@ -338,10 +351,14 @@ public class LoadTaskServiceTest {
             Mockito.when(mapper.update(Mockito.isNull(), Mockito.any())).thenReturn(1);
             this.setField(service, "transactionManager", transactions);
 
-            LoadTask result = resume ? service.resume(9, "current-token") :
-                                       service.retry(9, "current-token");
-
-            Assert.assertSame(task, result);
+            Throwable actual = Assert.assertThrows(RejectedExecutionException.class, () -> {
+                if (resume) {
+                    service.resume(9, "current-token");
+                } else {
+                    service.retry(9, "current-token");
+                }
+            });
+            Assert.assertSame(rejected, actual);
             Mockito.verify(loader).shutdown();
             Assert.assertTrue(task.isFinished());
             Assert.assertEquals(LoadStatus.FAILED, task.getStatus());
@@ -497,6 +514,100 @@ public class LoadTaskServiceTest {
         Assert.assertSame(task, retried);
         Mockito.verify(task).reconnect("current-session-token");
         Mockito.verify(executor).execute(Mockito.eq(task), Mockito.any());
+    }
+
+    @Test
+    public void testRetryAndResumeRejectUnfinishedOrCleanupFailedRuntime() throws Exception {
+        for (boolean resume : new boolean[]{false, true}) {
+            for (boolean cleanupFailed : new boolean[]{false, true}) {
+                LoadTaskService service = new LoadTaskService();
+                LoadTaskMapper mapper = Mockito.mock(LoadTaskMapper.class);
+                LoadTaskExecutor executor = Mockito.mock(LoadTaskExecutor.class);
+                LoadTask persisted = Mockito.mock(LoadTask.class);
+                Mockito.when(persisted.getStatus()).thenReturn(LoadStatus.FAILED);
+                Mockito.when(persisted.getOptions()).thenReturn(new LoadOptions());
+                Mockito.when(mapper.selectById(9)).thenReturn(persisted);
+                Mockito.when(mapper.updateById(persisted)).thenReturn(1);
+                LoadTask retained = LoadTask.builder().id(9).status(LoadStatus.FAILED)
+                                            .finished(cleanupFailed).cleanupFailed(cleanupFailed).build();
+                ConcurrentHashMap<Integer, LoadTask> running = new ConcurrentHashMap<>();
+                running.put(9, retained);
+                this.setField(service, "mapper", mapper);
+                this.setField(service, "taskExecutor", executor);
+                this.setField(service, "runningTaskContainer", running);
+
+                Assert.assertThrows(RuntimeException.class, () -> {
+                    if (resume) {
+                        service.resume(9, "current-session-token");
+                    } else {
+                        service.retry(9, "current-session-token");
+                    }
+                });
+
+                Assert.assertSame(retained, running.get(9));
+                Mockito.verify(persisted, Mockito.never()).reconnect(Mockito.anyString());
+                Mockito.verify(mapper, Mockito.never()).updateById(Mockito.any(LoadTask.class));
+                Mockito.verify(executor, Mockito.never()).execute(Mockito.any(), Mockito.any());
+            }
+        }
+    }
+
+    @Test
+    public void testNativeResetFailureAndPurePauseStopCloseResources() throws Exception {
+        for (LoadStatus status : new LoadStatus[]{LoadStatus.PAUSED, LoadStatus.STOPPED}) {
+            for (boolean rejectReset : new boolean[]{false, true}) {
+                LoadTask task = LoadTask.builder().id(9).status(LoadStatus.RUNNING).lastDuration(0L).build();
+                try (NativeCleanupTestSupport nativeCleanup = new NativeCleanupTestSupport(
+                        task, this.folder.newFile("native-" + status + rejectReset + ".json").toPath(),
+                        rejectReset, status)) {
+                    task.run();
+
+                    Assert.assertEquals(rejectReset ? LoadStatus.FAILED : status, task.getStatus());
+                    Assert.assertEquals(rejectReset, task.isCleanupFailed());
+                    if (rejectReset) {
+                        Assert.assertNotSame(nativeCleanup.original, nativeCleanup.shutdownFailure.get());
+                    } else {
+                        Assert.assertSame(nativeCleanup.original, nativeCleanup.shutdownFailure.get());
+                    }
+                    Assert.assertEquals(rejectReset ? "LOADING" : "NONE", nativeCleanup.mode());
+                    nativeCleanup.assertResourcesClosed();
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testPauseAndStopKeepCleanupFailedRuntimeAndLoader() throws Exception {
+        for (boolean pause : new boolean[]{false, true}) {
+            LoadTaskService service = new LoadTaskService();
+            LoadTaskMapper mapper = Mockito.mock(LoadTaskMapper.class);
+            HugeGraphLoader loader = Mockito.mock(HugeGraphLoader.class);
+            LoadContext context = Mockito.mock(LoadContext.class);
+            Mockito.when(loader.context()).thenReturn(context);
+            Mockito.when(context.closed()).thenReturn(true);
+            LoadTask task = LoadTask.builder().id(9).status(LoadStatus.RUNNING).loader(loader).build();
+            Mockito.doAnswer(invocation -> {
+                task.setStatus(LoadStatus.FAILED);
+                task.setCleanupFailed(true);
+                task.setFinished(true);
+                return null;
+            }).when(context).stopLoading();
+            Mockito.when(mapper.updateById(task)).thenReturn(1);
+            ConcurrentHashMap<Integer, LoadTask> running = new ConcurrentHashMap<>();
+            running.put(9, task);
+            this.setField(service, "mapper", mapper);
+            this.setField(service, "runningTaskContainer", running);
+
+            if (pause) {
+                service.pause(9);
+            } else {
+                service.stop(9);
+            }
+
+            Assert.assertSame(task, running.get(9));
+            Assert.assertSame(loader, task.getLoader());
+            Assert.assertTrue(task.isCleanupFailed());
+        }
     }
 
     @Test

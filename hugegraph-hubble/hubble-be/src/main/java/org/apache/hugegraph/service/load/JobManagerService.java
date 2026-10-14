@@ -42,12 +42,16 @@ import org.apache.hugegraph.entity.load.LoadTask;
 import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.exception.InternalException;
 import org.apache.hugegraph.mapper.load.JobManagerMapper;
+import org.apache.hugegraph.util.Ex;
 import org.apache.hugegraph.util.HubbleUtil;
 import org.apache.hugegraph.util.PageUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
@@ -61,6 +65,8 @@ public class JobManagerService {
     private LoadTaskService taskService;
     @Autowired
     private FileMappingService fileMappingService;
+    @Autowired
+    private PlatformTransactionManager transactionManager;
 
     public int count() {
         return Math.toIntExact(this.mapper.selectCount(null));
@@ -228,27 +234,58 @@ public class JobManagerService {
         }
     }
 
-    @Transactional(isolation = Isolation.READ_COMMITTED)
     public void deleteMappings(int jobId, List<FileMapping> mappings) {
-        if (mappings.isEmpty()) {
-            return;
-        }
-        long releasedSize = 0L;
-        for (FileMapping mapping : mappings) {
-            if (mapping.getJobId() == null || mapping.getJobId() != jobId) {
-                throw new InternalException("File mapping does not belong to " +
-                                            "job %s", jobId);
+        try (LoadTaskService.TaskReservation reservation = this.reserveJob(jobId)) {
+            if (mappings.isEmpty()) {
+                return;
             }
-            if (mapping.getFileStatus() == FileMappingStatus.COMPLETED) {
-                releasedSize = Math.addExact(releasedSize,
-                                             mapping.getTotalSize());
+            Ex.check(this.get(jobId) != null, "job-manager.not-exist.id", jobId);
+            List<LoadTask> tasks = this.taskService.taskListByJob(jobId);
+            List<FileMapping> currentMappings = new ArrayList<>();
+            long releasedSize = 0L;
+            for (FileMapping mapping : mappings) {
+                if (mapping.getJobId() == null || mapping.getJobId() != jobId) {
+                    throw new InternalException("File mapping does not belong to " +
+                                                "job %s", jobId);
+                }
+                FileMapping current = this.fileMappingService.get(mapping.getId());
+                if (current == null || current.getJobId() == null || current.getJobId() != jobId) {
+                    throw new InternalException("File mapping does not belong to job %s", jobId);
+                }
+                for (LoadTask task : tasks) {
+                    LoadStatus status = task.getStatus();
+                    boolean needsSource = status == LoadStatus.RUNNING || status == LoadStatus.PAUSED ||
+                                          status == LoadStatus.FAILED || status == LoadStatus.STOPPED;
+                    Ex.check(!needsSource || !java.util.Objects.equals(task.getFileId(), current.getId()),
+                             "load.file-mapping.delete.task-in-running", current.getId());
+                    if (java.util.Objects.equals(task.getFileId(), current.getId())) {
+                        this.taskService.checkCallbackWaitAllowed(task.getId());
+                    }
+                }
+                if (current.getFileStatus() == FileMappingStatus.COMPLETED) {
+                    releasedSize = Math.addExact(releasedSize,
+                                                 current.getTotalSize());
+                }
+                currentMappings.add(current);
             }
-            this.fileMappingService.detachFromJob(mapping.getId(), jobId);
+            for (LoadTask task : tasks) {
+                if (currentMappings.stream().anyMatch(mapping ->
+                        java.util.Objects.equals(task.getFileId(), mapping.getId()))) {
+                    this.taskService.awaitCallbacksForDelete(task.getId());
+                }
+            }
+            long size = releasedSize;
+            this.inDeleteTransaction(() -> {
+                for (FileMapping current : currentMappings) {
+                    this.fileMappingService.detachFromJob(current.getId(), jobId);
+                }
+                if (this.mapper.decreaseJobSize(jobId, size) != 1) {
+                    throw new InternalException("entity.update.failed", jobId);
+                }
+                this.deleteDiskFilesAfterCommit(jobId, currentMappings, false);
+            });
+
         }
-        if (this.mapper.decreaseJobSize(jobId, releasedSize) != 1) {
-            throw new InternalException("entity.update.failed", jobId);
-        }
-        this.deleteDiskFilesAfterCommit(mappings);
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
@@ -264,28 +301,69 @@ public class JobManagerService {
                                                 "graph", graph));
     }
 
-    @Transactional(isolation = Isolation.READ_COMMITTED)
-    public void deleteJob(int id) {
-        JobManager job = this.get(id);
-        if (job == null) {
-            throw new ExternalException("job.manager.not-exist.id", id);
-        }
-
-        List<LoadTask> loadTasks = this.taskService.taskListByJob(id);
-        for (LoadTask loadTask : loadTasks) {
-            if (loadTask.getStatus().inRunning() ||
-                loadTask.getStatus() == LoadStatus.PAUSED) {
-                this.taskService.stop(loadTask.getId());
-            }
-            this.taskService.remove(loadTask.getId());
-        }
-
-        List<FileMapping> mappings = this.fileMappingService.listByJob(id);
-        this.remove(id);
-        this.deleteDiskFilesAfterCommit(mappings);
+    public LoadTaskService.TaskReservation reserveJob(int id) {
+        return this.taskService.reserveJob(id);
     }
 
-    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public LoadTaskService.TaskReservation reserveUpload(int id) {
+        return this.taskService.reserveUpload(id);
+    }
+
+    public void deleteJob(int id) {
+        try (LoadTaskService.TaskReservation jobReservation = this.taskService.reserveJob(id)) {
+            JobManager job = this.get(id);
+            if (job == null) {
+                throw new ExternalException("job.manager.not-exist.id", id);
+            }
+
+            this.taskService.ensureJobCleanupComplete(id);
+            List<LoadTask> loadTasks = this.taskService.taskListByJob(id);
+            try (LoadTaskService.TaskReservation reservation = this.taskService.reserveTasks(
+                    loadTasks.stream().map(LoadTask::getId).toList())) {
+                // The job gate keeps these IDs stable. Re-read after all task
+                // reservations, using selectById rather than the cached list query.
+                List<LoadTask> currentTasks = loadTasks.stream()
+                                                      .map(task -> this.taskService.get(task.getId()))
+                                                      .toList();
+                for (LoadTask task : loadTasks) {
+                    this.taskService.checkCallbackWaitAllowed(task.getId());
+                }
+                // Publish every stop intent before waiting for a queued owner.
+                this.taskService.requestJobStopForDelete(id);
+                for (LoadTask task : loadTasks) {
+                    this.taskService.awaitCallbacksForDelete(task.getId());
+                }
+                this.inDeleteTransaction(() -> {
+                    for (int index = 0; index < loadTasks.size(); index++) {
+                        LoadTask loadTask = loadTasks.get(index);
+                        LoadTask current = currentTasks.get(index);
+                        if (current == null) {
+                            continue;
+                        }
+                        // An initially live row still needs its native certificate;
+                        // a refreshed terminal status alone cannot provide one.
+                        if (loadTask.getStatus().inRunning() || loadTask.getStatus() == LoadStatus.PAUSED ||
+                            current.getStatus().inRunning() || current.getStatus() == LoadStatus.PAUSED) {
+                            this.taskService.stopForDelete(loadTask.getId());
+                        }
+                        this.taskService.ensureRuntimeCleanupComplete(loadTask.getId());
+                        this.taskService.remove(loadTask.getId());
+                    }
+
+                    List<FileMapping> mappings = this.fileMappingService.listByJob(id);
+                    this.remove(id);
+                    this.deleteDiskFilesAfterCommit(id, mappings, true);
+                });
+            }
+        }
+    }
+
+    private void inDeleteTransaction(Runnable action) {
+        TransactionTemplate transaction = new TransactionTemplate(this.transactionManager);
+        transaction.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
+        transaction.executeWithoutResult(status -> action.run());
+    }
+
     public void deleteJob(String graphSpace, String graph, int id) {
         JobManager job = this.get(graphSpace, graph, id);
         if (job == null) {
@@ -294,14 +372,10 @@ public class JobManagerService {
         this.deleteJob(id);
     }
 
-    private void deleteDiskFilesAfterCommit(List<FileMapping> mappings) {
-        if (mappings.isEmpty()) {
-            return;
-        }
-
+    private void deleteDiskFilesAfterCommit(int jobId, List<FileMapping> mappings, boolean wholeJob) {
         List<FileMapping> copiedMappings = new ArrayList<>(mappings);
         if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-            this.deleteDiskFiles(copiedMappings);
+            this.deleteDiskFiles(jobId, copiedMappings, wholeJob);
             return;
         }
 
@@ -309,12 +383,19 @@ public class JobManagerService {
                 new TransactionSynchronization() {
                     @Override
                     public void afterCommit() {
-                        deleteDiskFiles(copiedMappings);
+                        deleteDiskFiles(jobId, copiedMappings, wholeJob);
                     }
                 });
     }
 
-    private void deleteDiskFiles(List<FileMapping> mappings) {
+    private void deleteDiskFiles(int jobId, List<FileMapping> mappings, boolean wholeJob) {
+        if (wholeJob) {
+            this.fileMappingService.removeJobUploadingTokens(jobId);
+        } else {
+            for (FileMapping mapping : mappings) {
+                this.fileMappingService.removeUploadingTokens(jobId, mapping.getName());
+            }
+        }
         this.fileMappingService.cleanupMappings(mappings);
     }
 }

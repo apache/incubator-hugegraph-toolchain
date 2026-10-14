@@ -94,6 +94,7 @@ public final class HugeGraphLoader {
     private final LoadOptions options;
     private final Thread shutdownHook;
     private volatile boolean loadStarted;
+    private final boolean saveProgress;
 
     public static class InputTaskItem {
 
@@ -141,13 +142,23 @@ public final class HugeGraphLoader {
     }
 
     public HugeGraphLoader(LoadOptions options) {
-        this(options, LoadMapping.of(options.file));
+        this(options, true);
+    }
+
+    /** Embedded callers may close resources without persisting parsed offsets. */
+    public HugeGraphLoader(LoadOptions options, boolean saveProgress) {
+        this(options, LoadMapping.of(options.file), saveProgress);
         // Set concurrency
         GlobalExecutorManager.setBatchThreadCount(options.batchInsertThreads);
         GlobalExecutorManager.setSingleThreadCount(options.singleInsertThreads);
     }
 
     public HugeGraphLoader(LoadOptions options, LoadMapping mapping) {
+        this(options, mapping, true);
+    }
+
+    public HugeGraphLoader(LoadOptions options, LoadMapping mapping, boolean saveProgress) {
+        this.saveProgress = saveProgress;
         this.context = new LoadContext(options);
         this.options = options;
         this.mapping = mapping;
@@ -945,7 +956,7 @@ public final class HugeGraphLoader {
                         this.context.unsetLoadingMode();
                     } catch (Throwable resetFailure) {
                         try {
-                            this.context.close(this.loadStarted);
+                            this.context.close(this.loadStarted && this.saveProgress);
                         } catch (Throwable closeFailure) {
                             if (closeFailure instanceof Error && !(resetFailure instanceof Error)) {
                                 suppressCleanupFailure(closeFailure, resetFailure);
@@ -955,7 +966,7 @@ public final class HugeGraphLoader {
                         }
                         throw resetFailure;
                     }
-                    this.context.close(this.loadStarted);
+                    this.context.close(this.loadStarted && this.saveProgress);
                 }
             } finally {
                 if (interrupted) {
