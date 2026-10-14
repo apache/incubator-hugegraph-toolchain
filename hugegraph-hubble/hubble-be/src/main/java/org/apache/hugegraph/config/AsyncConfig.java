@@ -19,8 +19,11 @@
 package org.apache.hugegraph.config;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.scheduling.annotation.AsyncConfigurer;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -29,13 +32,41 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 @EnableAsync
 public class AsyncConfig implements AsyncConfigurer {
 
+    @Bean
+    @DependsOn("dataSource")
     @Override
     public Executor getAsyncExecutor() {
-        ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
+        ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor() {
+            @Override
+            public void destroy() {
+                try {
+                    super.destroy();
+                } finally {
+                    // A native shutdown may throw after initiating shutdown.
+                    // Drain in that case too; never await a pool still accepting.
+                    if (this.getThreadPoolExecutor().isShutdown()) {
+                        boolean interrupted = false;
+                        try {
+                            while (!this.getThreadPoolExecutor().isTerminated()) {
+                                try {
+                                    this.getThreadPoolExecutor().awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+                                } catch (InterruptedException e) {
+                                    interrupted = true;
+                                }
+                            }
+                        } finally {
+                            if (interrupted) {
+                                Thread.currentThread().interrupt();
+                            }
+                        }
+                    }
+                }
+            }
+        };
         taskExecutor.setCorePoolSize(8);
         taskExecutor.setMaxPoolSize(16);
         taskExecutor.setQueueCapacity(1024);
-        taskExecutor.initialize();
+        taskExecutor.setWaitForTasksToCompleteOnShutdown(true);
         return taskExecutor;
     }
 }
