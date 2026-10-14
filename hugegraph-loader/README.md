@@ -224,7 +224,12 @@ steps below.
 This procedure also clears a manually set `RESTORING` or `MERGING` mode once all
 related work has stopped and drained. It depends on the paired Server change
 linked above; older Servers retain their legacy enum-mode recovery behavior.
-An enum PUT to `NONE` remains rejected while protocol-1 owners are active.
+While protocol-1 owners are active, the Server rejects every enum graph-mode PUT
+for that graph, including `NONE`, `LOADING` and `RESTORING`. This also affects the
+Spark connector and older Loaders that use enum mode setters. Avoid running those
+clients or restore imports concurrently with owned imports. Stop and drain the
+owned imports, release or recover their ownership as described above, then retry
+using the client's existing workflow.
 
 ### 3.2 Load data with docker
 
