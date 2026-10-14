@@ -1263,6 +1263,9 @@ public class JobAdmissionIntegrationTest {
             if (active != null) {
                 active.countDown();
                 await(stop);
+                if (stopRequests != null) {
+                    await(stopRequests);
+                }
             }
             return true;
         }).when(loader).load();
