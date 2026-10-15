@@ -309,6 +309,10 @@ The startup script includes `--add-opens=java.base/java.net=ALL-UNNAMED` for the
 
 Spring manages Hubble's async executor. On context close, Hubble stops accepting loads, pauses running and queued tasks, and waits for native Loader cleanup and final status updates. The shared executor also drains scheduled metadata jobs before database connections close. Native cleanup failures mark the task FAILED, retain its recovery handle, and block restarting that runtime; final status persistence failures remain visible during shutdown.
 
+Shutdown has no internal timeout: if an import or metadata job never exits, Hubble keeps waiting and the database stays
+open. Configure the service manager or container stop timeout for your deployment. A forced process exit skips remaining
+cleanup and final status writes; inspect task metadata and Server loading mode before restarting imports.
+
 ## Graph switching
 
 Query execution waits until the graph context matches the current route, including keyboard shortcuts during a graph switch. Standalone Server 1.5 supports core graph, schema and data operations; GraphSpace management and PD mode require a newer server.
