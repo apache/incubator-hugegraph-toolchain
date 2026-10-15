@@ -109,6 +109,7 @@ def optional_checks(paths):
         checks["flink_cdc"] |= (shared or client_runtime or loader_runtime
                                 or path.startswith(LOADER) and ("/flink/" in path or "/flink-cdc/" in path)
                                 or path == LOADER + "assembly/static/bin/hugegraph-flinkcdc-loader.sh"
+                                or path == LOADER + "assembly/static/bin/get-params.sh"
                                 or path == LOADER + "src/test/scripts/flink-launcher.test.cjs"
                                 or path == ".github/workflows/flink-cdc-ci.yml")
         checks["launcher"] |= path in LAUNCHER_INPUTS
