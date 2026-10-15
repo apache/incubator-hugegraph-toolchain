@@ -396,7 +396,12 @@ public class FileUploadController extends BaseController {
         this.checkFileSizeLimit(reservedFileSize, currentJob.getJobSize(),
                                 reservedUploadingSize);
 
-        boolean createdDirectory = this.reservePhysicalUploadDirectory(jobId, fileName, filePath);
+        Path directory = this.service.requirePathUnderUploadRoot(filePath).toPath();
+        // Later chunks reuse the directory already reserved by this UPLOADING mapping.
+        boolean needsReservation = mapping == null || !filePath.equals(mapping.getPath()) ||
+                                   !Files.isDirectory(directory);
+        boolean createdDirectory = needsReservation &&
+                                   this.reservePhysicalUploadDirectory(jobId, fileName, filePath);
         try {
             if (mapping == null) {
                 mapping = new FileMapping(graphSpace, graph, fileName, filePath);
