@@ -1148,6 +1148,7 @@ public class AsyncLoadShutdownTest {
         CountDownLatch pauseRequests = new CountDownLatch(terminal ||
                 admission == Admission.ROLLBACK_CLEANUP_HELD ? 8 : 9);
         CountDownLatch cleanupUnlocked = new CountDownLatch(1);
+        CountDownLatch rollbackPaused = new CountDownLatch(1);
         CountDownLatch releaseCleanup = new CountDownLatch(1);
         CountDownLatch admissionEntered = new CountDownLatch(1);
         CountDownLatch releaseAdmission = new CountDownLatch(1);
@@ -1296,6 +1297,11 @@ public class AsyncLoadShutdownTest {
                 if (taskId == 9 && admission == Admission.ROLLBACK_CLEANUP_HELD) {
                     Mockito.doAnswer(invocation -> {
                         invocation.callRealMethod();
+                        rollbackPaused.countDown();
+                        return null;
+                    }).when(task).setStatus(LoadStatus.PAUSED);
+                    Mockito.doAnswer(invocation -> {
+                        invocation.callRealMethod();
                         if (task.getLoader() == null && !cleanup.get()) {
                             cleanupUnlocked.countDown();
                             assertTrue(releaseCleanup.await(20, TimeUnit.SECONDS));
@@ -1420,6 +1426,10 @@ public class AsyncLoadShutdownTest {
                 if (admission.transactional() && admission != Admission.ROLLBACK_CLEANUP_HELD) {
                     assertTrue("Pending transactional run must receive stop before commit/rollback",
                                stopRequests.get(8).await(10, TimeUnit.SECONDS));
+                }
+                if (admission == Admission.ROLLBACK_CLEANUP_HELD) {
+                    // Hook entry precedes the snapshot; keep the rollback ticket until it is paused.
+                    assertTrue(rollbackPaused.await(10, TimeUnit.SECONDS));
                 }
                 releaseAdmission.countDown();
                 releaseCleanup.countDown();
