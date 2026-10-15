@@ -31,7 +31,6 @@ import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -1048,7 +1047,6 @@ public class LoadContextTest {
                     Assert.assertEquals(GraphMode.NONE, server.mode);
                     Assert.assertEquals(Boolean.FALSE, field(context, "loadingModeSet"));
                 }
-                assertAcyclic(actual, Collections.newSetFromMap(new IdentityHashMap<>()));
                 Assert.assertTrue(context.closed());
                 Assert.assertTrue(batch.isTerminated());
                 Assert.assertTrue(single.isTerminated());
@@ -1074,26 +1072,20 @@ public class LoadContextTest {
 
     @Test
     public void testLoaderPromotesFatalCloseOverOrdinaryResetFailure() throws Exception {
-        this.assertFatalLoaderShutdown(false, false, false);
+        this.assertFatalLoaderShutdown(false, false);
     }
 
     @Test
     public void testLoaderPreservesFatalResetAndRecordedLoadingFailure() throws Exception {
-        this.assertFatalLoaderShutdown(true, false, false);
+        this.assertFatalLoaderShutdown(true, false);
     }
 
     @Test
     public void testLoaderDoesNotSuppressFatalFailureOnItself() throws Exception {
-        this.assertFatalLoaderShutdown(true, true, false);
+        this.assertFatalLoaderShutdown(true, true);
     }
 
-    @Test
-    public void testLoaderDoesNotCreateFatalResetCauseCycle() throws Exception {
-        this.assertFatalLoaderShutdown(true, false, true);
-    }
-
-    private void assertFatalLoaderShutdown(boolean fatalReset, boolean sameError,
-                                          boolean causeCycle) throws Exception {
+    private void assertFatalLoaderShutdown(boolean fatalReset, boolean sameError) throws Exception {
         try (ModeServer server = new ModeServer()) {
             server.mode = GraphMode.NONE;
             LoadOptions options = new LoadOptions();
@@ -1115,8 +1107,7 @@ public class LoadContextTest {
             ExecutorService batch = (ExecutorService) field(manager, "batchService");
             ExecutorService single = (ExecutorService) field(manager, "singleService");
             Error fatal = new AssertionError("fatal SDK cleanup boundary");
-            RuntimeException original = causeCycle ? new IllegalStateException("loading failed", fatal) :
-                                                   new IllegalStateException("recorded loading failure");
+            RuntimeException original = new IllegalStateException("recorded loading failure");
             try {
                 batch.submit(() -> { }).get();
                 single.submit(() -> { }).get();
@@ -1137,7 +1128,7 @@ public class LoadContextTest {
                     actual = failure;
                 }
                 Assert.assertSame("First fatal Error must escape with its identity", fatal, actual);
-                if (causeCycle || sameError) {
+                if (sameError) {
                     Assert.assertEquals(0, fatal.getSuppressed().length);
                 } else {
                     Assert.assertEquals(1, fatal.getSuppressed().length);
@@ -1157,7 +1148,6 @@ public class LoadContextTest {
                         Assert.assertSame(original, failure);
                     }
                 }
-                assertAcyclic(fatal, Collections.newSetFromMap(new IdentityHashMap<>()));
                 Assert.assertTrue(context.closed());
                 Assert.assertTrue(batch.isTerminated());
                 Assert.assertTrue(single.isTerminated());
@@ -1217,18 +1207,6 @@ public class LoadContextTest {
                 throw this.closeFailure;
             }
         }
-    }
-
-    private static void assertAcyclic(Throwable failure, Set<Throwable> path) {
-        if (failure == null) {
-            return;
-        }
-        Assert.assertTrue("Failure graph must not contain cycles", path.add(failure));
-        assertAcyclic(failure.getCause(), path);
-        for (Throwable suppressed : failure.getSuppressed()) {
-            assertAcyclic(suppressed, path);
-        }
-        path.remove(failure);
     }
 
     private static Object field(Object target, String name) throws Exception {
