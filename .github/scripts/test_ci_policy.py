@@ -306,16 +306,18 @@ class PolicyTest(unittest.TestCase):
 
     def test_engine_launchers_select_only_their_actual_runtime_lane(self):
         root = Path(__file__).resolve().parents[2]
-        cases = [("hugegraph-spark-loader.sh", "spark_loader"), ("get-params.sh", "spark_loader"),
-                 ("hugegraph-flinkcdc-loader.sh", "flink_cdc")]
-        for name, flag in cases:
+        cases = [("hugegraph-spark-loader.sh", {"spark_loader"}),
+                 ("get-params.sh", {"spark_loader", "flink_cdc"}),
+                 ("hugegraph-flinkcdc-loader.sh", {"flink_cdc"})]
+        for name, flags in cases:
             path = "hugegraph-loader/assembly/static/bin/" + name
             with self.subTest(path=path):
                 self.assertTrue((root / path).is_file())
                 plan = self.pr_plan([path])
-                self.assertTrue(plan[flag])
+                for flag in flags:
+                    self.assertTrue(plan[flag])
                 self.assertFalse(plan["legacy"])
-                for other in {"hdfs", "spark_loader", "flink_cdc"} - {flag}:
+                for other in {"hdfs", "spark_loader", "flink_cdc"} - flags:
                     self.assertFalse(plan[other])
         for name in ["mapping-convert.sh", "utf8-bom-to-utf8.sh"]:
             path = "hugegraph-loader/assembly/static/bin/" + name
