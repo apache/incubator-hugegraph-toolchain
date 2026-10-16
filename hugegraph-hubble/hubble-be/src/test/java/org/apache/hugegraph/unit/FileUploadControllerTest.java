@@ -30,7 +30,9 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.mock.web.MockMultipartFile;
@@ -49,6 +51,9 @@ import org.apache.hugegraph.service.load.JobManagerService;
 import org.apache.hugegraph.testutil.Assert;
 
 public class FileUploadControllerTest {
+
+    @Rule
+    public TemporaryFolder folder = new TemporaryFolder();
 
     @Test
     public void testCheckFileValidAcceptsUppercaseTrimmedFormat()
@@ -118,6 +123,11 @@ public class FileUploadControllerTest {
            throws Exception {
         FileUploadController controller = this.controller("csv");
         FileMappingService service = Mockito.mock(FileMappingService.class);
+        Path uploadRoot = this.folder.newFolder("quota-upload").toPath();
+        Path uploadPath = uploadRoot.resolve("data.csv");
+        FileMappingService pathValidator = this.fileMappingService(uploadRoot);
+        Mockito.when(service.requirePathUnderUploadRoot(Mockito.anyString()))
+               .thenAnswer(call -> pathValidator.requirePathUnderUploadRoot(call.getArgument(0)));
         JobManagerService jobService = Mockito.mock(JobManagerService.class);
         JobManager job = JobManager.builder().id(1).jobSize(20L).build();
         Mockito.when(jobService.get("DEFAULT", "hugegraph", 1))
@@ -131,7 +141,7 @@ public class FileUploadControllerTest {
         FileMapping mapping = this.reserveUploadQuota(controller, "DEFAULT",
                                                       "hugegraph", 1,
                                                       "data.csv",
-                                                      "upload/data.csv", 10L);
+                                                      uploadPath.toString(), 10L);
 
         ArgumentCaptor<FileMapping> captor = ArgumentCaptor.forClass(
                                              FileMapping.class);
@@ -140,10 +150,19 @@ public class FileUploadControllerTest {
         Assert.assertEquals("DEFAULT", mapping.getGraphSpace());
         Assert.assertEquals("hugegraph", mapping.getGraph());
         Assert.assertEquals("data.csv", mapping.getName());
-        Assert.assertEquals("upload/data.csv", mapping.getPath());
+        Assert.assertEquals(uploadPath.toString(), mapping.getPath());
+        Assert.assertTrue(Files.isDirectory(uploadPath));
         Assert.assertEquals(10L, mapping.getTotalSize());
         Assert.assertEquals(FileMappingStatus.UPLOADING,
                             mapping.getFileStatus());
+
+        Path failedPath = uploadRoot.resolve("failed.csv");
+        Mockito.doThrow(new InternalException("database failure")).when(service).save(Mockito.any());
+        Assert.assertThrows(InternalException.class, () ->
+                this.reserveUploadQuota(controller, "DEFAULT", "hugegraph", 1,
+                                        "failed.csv", failedPath.toString(), 10L));
+        Assert.assertFalse(Files.exists(failedPath));
+        Assert.assertTrue(Files.isDirectory(uploadPath));
     }
 
     @Test
@@ -177,6 +196,11 @@ public class FileUploadControllerTest {
            throws Exception {
         FileUploadController controller = this.controller("csv");
         FileMappingService service = Mockito.mock(FileMappingService.class);
+        Path uploadRoot = this.folder.newFolder("quota-upload").toPath();
+        Path uploadPath = uploadRoot.resolve("data.csv");
+        FileMappingService pathValidator = this.fileMappingService(uploadRoot);
+        Mockito.when(service.requirePathUnderUploadRoot(Mockito.anyString()))
+               .thenAnswer(call -> pathValidator.requirePathUnderUploadRoot(call.getArgument(0)));
         JobManagerService jobService = Mockito.mock(JobManagerService.class);
         JobManager job = JobManager.builder().id(1).jobSize(20L).build();
         FileMapping existing = new FileMapping("DEFAULT", "hugegraph",
@@ -199,15 +223,108 @@ public class FileUploadControllerTest {
         FileMapping mapping = this.reserveUploadQuota(controller, "DEFAULT",
                                                       "hugegraph", 1,
                                                       "data.csv",
-                                                      "upload/data.csv", 10L);
+                                                      uploadPath.toString(), 10L);
 
         Assert.assertEquals(existing, mapping);
-        Assert.assertEquals("upload/data.csv", mapping.getPath());
+        Assert.assertEquals(uploadPath.toString(), mapping.getPath());
+        Assert.assertTrue(Files.isDirectory(uploadPath));
         Assert.assertEquals(10L, mapping.getTotalSize());
         Assert.assertEquals(FileMappingStatus.UPLOADING,
                             mapping.getFileStatus());
         Mockito.verify(service).update(existing);
         Mockito.verify(service, Mockito.never()).save(Mockito.any());
+    }
+
+    @Test
+    public void testChunkReservationsReuseDirectoryAndStillEnforceQuota()
+           throws Exception {
+        FileUploadController controller = this.controller("csv");
+        Path uploadRoot = this.folder.newFolder("chunk-upload").toPath();
+        Path uploadPath = uploadRoot.resolve("data.csv");
+        FileMappingService service = Mockito.spy(this.fileMappingService(uploadRoot));
+        JobManagerService jobService = Mockito.mock(JobManagerService.class);
+        JobManager job = JobManager.builder().id(1).jobSize(20L).build();
+        Mockito.when(jobService.get("DEFAULT", "hugegraph", 1)).thenReturn(job);
+        List<FileMapping> mappings = new ArrayList<>();
+        Path otherPath = Files.createDirectory(uploadRoot.resolve("other.csv"));
+        FileMapping other = new FileMapping("DEFAULT", "hugegraph", "other.csv", otherPath.toString());
+        other.setId(3);
+        other.setFileStatus(FileMappingStatus.UPLOADING);
+        other.setTotalSize(5L);
+        mappings.add(other);
+        Mockito.doReturn(mappings).when(service).listByJob(1);
+        Mockito.doAnswer(call -> mappings.size() == 1 ? null : mappings.get(1))
+               .when(service).get("DEFAULT", "hugegraph", 1, "data.csv");
+        Mockito.doAnswer(call -> {
+            FileMapping mapping = call.getArgument(0);
+            mapping.setId(2);
+            mappings.add(mapping);
+            return null;
+        }).when(service).save(Mockito.any());
+        Mockito.doNothing().when(service).update(Mockito.any());
+        this.setField(controller, "service", service);
+        this.setField(controller, "jobService", jobService);
+
+        for (int i = 0; i < 3; i++) {
+            this.reserveUploadQuota(controller, "DEFAULT", "hugegraph", 1,
+                                    "data.csv", uploadPath.toString(), 10L);
+            MockMultipartFile chunk = new MockMultipartFile(
+                    "file", "data.csv", "text/csv", ("part" + i).getBytes());
+            service.uploadFile(chunk, "data.csv", i, uploadPath.toString());
+        }
+        // One quota scan per chunk and one physical alias scan for the first chunk.
+        Mockito.verify(service, Mockito.times(4)).listByJob(1);
+        Mockito.verify(service, Mockito.times(6))
+               .requirePathUnderUploadRoot(Mockito.anyString());
+        Mockito.verify(service).requirePathUnderUploadRoot(otherPath.toString());
+        Path outsidePath = uploadRoot.getParent().resolve("outside.csv");
+        Assert.assertThrows(InternalException.class, () ->
+                this.reserveUploadQuota(controller, "DEFAULT", "hugegraph", 1,
+                                        "data.csv", outsidePath.toString(), 10L));
+        Assert.assertTrue(service.tryMergePartFiles(uploadPath.toString(), 3));
+        Assert.assertEquals("part0part1part2", Files.readString(uploadPath));
+
+        // Increasing the declared size and a concurrently increased job size are still checked.
+        Assert.assertThrows(ExternalException.class, () ->
+                this.reserveUploadQuota(controller, "DEFAULT", "hugegraph", 1,
+                                        "data.csv", uploadPath.toString(), 1025L));
+        job.setJobSize(2040L);
+        Assert.assertThrows(ExternalException.class, () ->
+                this.reserveUploadQuota(controller, "DEFAULT", "hugegraph", 1,
+                                        "data.csv", uploadPath.toString(), 10L));
+        Assert.assertEquals(10L, mappings.get(1).getTotalSize());
+    }
+
+    @Test
+    public void testFirstReservationRejectsNativeAliases() throws Exception {
+        Path uploadRoot = this.folder.newFolder("alias-upload").toPath();
+        for (String[] names : new String[][]{{"data.csv", "DATA.csv"},
+                                             {"caf\u00e9.csv", "cafe\u0301.csv"}}) {
+            Path original = Files.createDirectory(uploadRoot.resolve(names[0]));
+            Path alias = uploadRoot.resolve(names[1]);
+            // Exercise case/Unicode aliases where the native filesystem actually aliases them.
+            if (!Files.exists(alias)) {
+                Files.createSymbolicLink(alias, original);
+            }
+            Assert.assertTrue(Files.isSameFile(original, alias));
+            FileUploadController controller = this.controller("csv");
+            FileMappingService service = Mockito.spy(this.fileMappingService(uploadRoot));
+            FileMapping existing = new FileMapping("DEFAULT", "hugegraph", names[0], original.toString());
+            existing.setFileStatus(FileMappingStatus.UPLOADING);
+            Mockito.doReturn(null).when(service).get("DEFAULT", "hugegraph", 1, names[1]);
+            Mockito.doReturn(Collections.singletonList(existing)).when(service).listByJob(1);
+            JobManagerService jobService = Mockito.mock(JobManagerService.class);
+            Mockito.when(jobService.get("DEFAULT", "hugegraph", 1))
+                   .thenReturn(JobManager.builder().id(1).jobSize(0L).build());
+            this.setField(controller, "service", service);
+            this.setField(controller, "jobService", jobService);
+
+            Assert.assertThrows(ExternalException.class, () ->
+                    this.reserveUploadQuota(controller, "DEFAULT", "hugegraph", 1,
+                                            names[1], alias.toString(), 10L));
+            Mockito.verify(service, Mockito.never()).save(Mockito.any());
+            Assert.assertTrue(Files.isDirectory(original));
+        }
     }
 
     @Test
@@ -414,7 +531,7 @@ public class FileUploadControllerTest {
                                                                     String.class,
                                                                     int.class,
                                                                     JobManager.class,
-                                                                    org.springframework.web.multipart.MultipartFile.class,
+                                                            org.springframework.web.multipart.MultipartFile.class,
                                                                     String.class);
         method.setAccessible(true);
         try {

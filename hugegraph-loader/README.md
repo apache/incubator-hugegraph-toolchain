@@ -7,6 +7,10 @@
 
 hugegraph-loader is a customizable command line utility for loading small to medium size graph datasets into the HugeGraph database from multiple data sources with various input formats.
 
+Embedded callers must call `shutdown()` after `load()`, including failed imports. Successful shutdown waits for this Loader's
+workers, closes its clients and unregisters its JVM shutdown hook. Closing a Loader whose `load()` was never called
+leaves the existing import checkpoint unchanged.
+
 ## 1. Features
 
 - Multiple data sources, such as local file(path), HDFS file(path), MySQL

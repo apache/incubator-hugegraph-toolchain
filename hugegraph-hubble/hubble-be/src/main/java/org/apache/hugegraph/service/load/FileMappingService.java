@@ -36,7 +36,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -96,6 +95,8 @@ public class FileMappingService {
     private FileMappingMapper mapper;
     @Autowired
     private JobManagerMapper jobManagerMapper;
+    @Autowired
+    private LoadTaskService taskService;
 
     private final Map<String, ReadWriteLock> uploadingTokenLocks;
 
@@ -190,16 +191,15 @@ public class FileMappingService {
         }
     }
 
-    public String generateFileToken(String fileName) {
-        /*
-         * Append a short random suffix so that tokens cannot be guessed
-         * from the file name and upload time alone. Note that
-         * checkFileNameMatchToken() only checks the md5 prefix, so the
-         * token still passes that check.
-         */
-        return this.fileTokenPrefix(fileName) +
+    public String generateFileToken(int jobId, String fileName) {
+        // Tokens are opaque to clients and bound to this job and filename.
+        return this.fileTokenPrefix(jobId, fileName) +
                HubbleUtil.nowTime().getEpochSecond() + "-" +
                randomTokenSuffix();
+    }
+
+    public boolean matchesFileToken(int jobId, String fileName, String token) {
+        return token != null && token.startsWith(this.fileTokenPrefix(jobId, fileName));
     }
 
     private static String randomTokenSuffix() {
@@ -529,6 +529,9 @@ public class FileMappingService {
     }
 
     private void tryCleanupMapping(FileMapping mapping) {
+        if (mapping.getJobId() != null) {
+            this.removeUploadingTokens(mapping.getJobId(), mapping.getName());
+        }
         try {
             this.deleteDiskFile(mapping);
             this.removeCleanupRecord(mapping.getId());
@@ -585,6 +588,26 @@ public class FileMappingService {
     }
 
     private void tryDeleteUnfinishedMapping(FileMapping mapping) {
+        if (mapping.getJobId() == null) {
+            this.tryCleanupMapping(mapping);
+            return;
+        }
+        try (LoadTaskService.TaskReservation reservation = this.taskService.reserveJob(mapping.getJobId())) {
+            FileMapping current = this.get(mapping.getId());
+            if (current == null || (current.getFileStatus() != FileMappingStatus.UPLOADING &&
+                                    current.getFileStatus() != FileMappingStatus.FAILURE)) {
+                return;
+            }
+            long threshold = this.config.get(HubbleOptions.UPLOAD_FILE_MAX_TIME_CONSUMING) * 1000;
+            if (HubbleUtil.nowDate().getTime() - current.getUpdateTime().getTime() <= threshold) {
+                return;
+            }
+            this.removeUploadingTokens(mapping.getJobId(), mapping.getName());
+            this.deleteUnfinishedMapping(current);
+        }
+    }
+
+    private void deleteUnfinishedMapping(FileMapping mapping) {
         String filePath = mapping.getPath();
         try {
             File file = this.requirePathUnderUploadRoot(filePath);
@@ -601,22 +624,19 @@ public class FileMappingService {
             return;
         }
         this.remove(mapping.getId());
-        this.removeUploadingTokens(mapping.getName());
     }
 
-    private void removeUploadingTokens(String fileName) {
-        String tokenPrefix = this.fileTokenPrefix(fileName);
-        Iterator<Map.Entry<String, ReadWriteLock>> iter;
-        iter = this.uploadingTokenLocks.entrySet().iterator();
-        while (iter.hasNext()) {
-            Map.Entry<String, ReadWriteLock> entry = iter.next();
-            if (entry.getKey().startsWith(tokenPrefix)) {
-                iter.remove();
-            }
-        }
+    public void removeUploadingTokens(int jobId, String fileName) {
+        String prefix = this.fileTokenPrefix(jobId, fileName);
+        this.uploadingTokenLocks.keySet().removeIf(token -> token.startsWith(prefix));
     }
 
-    private String fileTokenPrefix(String fileName) {
-        return HubbleUtil.md5(fileName) + "-";
+    public void removeJobUploadingTokens(int jobId) {
+        String prefix = jobId + "-";
+        this.uploadingTokenLocks.keySet().removeIf(token -> token.startsWith(prefix));
+    }
+
+    private String fileTokenPrefix(int jobId, String fileName) {
+        return jobId + "-" + HubbleUtil.md5(fileName) + "-";
     }
 }

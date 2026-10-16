@@ -20,9 +20,11 @@ package org.apache.hugegraph.loader;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -90,6 +92,9 @@ public final class HugeGraphLoader {
     private final LoadMapping mapping;
     private final TaskManager manager;
     private final LoadOptions options;
+    private final Thread shutdownHook;
+    private volatile boolean loadStarted;
+    private final boolean saveProgress;
 
     public static class InputTaskItem {
 
@@ -137,25 +142,32 @@ public final class HugeGraphLoader {
     }
 
     public HugeGraphLoader(LoadOptions options) {
-        this(options, LoadMapping.of(options.file));
+        this(options, true);
+    }
+
+    /** Embedded callers may close resources without persisting parsed offsets. */
+    public HugeGraphLoader(LoadOptions options, boolean saveProgress) {
+        this(options, LoadMapping.of(options.file), saveProgress);
         // Set concurrency
         GlobalExecutorManager.setBatchThreadCount(options.batchInsertThreads);
         GlobalExecutorManager.setSingleThreadCount(options.singleInsertThreads);
     }
 
     public HugeGraphLoader(LoadOptions options, LoadMapping mapping) {
+        this(options, mapping, true);
+    }
+
+    public HugeGraphLoader(LoadOptions options, LoadMapping mapping, boolean saveProgress) {
+        this.saveProgress = saveProgress;
         this.context = new LoadContext(options);
         this.options = options;
         this.mapping = mapping;
         this.manager = new TaskManager(this.context);
-        this.addShutdownHook();
-    }
-
-    private void addShutdownHook() {
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+        this.shutdownHook = new Thread(() -> {
             LOG.info("Shutdown hook was triggered");
             this.stopThenShutdown();
-        }));
+        });
+        Runtime.getRuntime().addShutdownHook(this.shutdownHook);
     }
 
     public LoadContext context() {
@@ -203,6 +215,7 @@ public final class HugeGraphLoader {
     }
 
     public boolean load() {
+        this.loadStarted = true;
         this.options.dumpParams();
 
         try {
@@ -903,6 +916,20 @@ public final class HugeGraphLoader {
      * TODO: How to distinguish load task finished normally or abnormally
      */
     private synchronized void stopThenShutdown() {
+        try {
+            this.drainThenClose();
+        } finally {
+            if (this.context.closed() && this.shutdownHook != null) {
+                try {
+                    Runtime.getRuntime().removeShutdownHook(this.shutdownHook);
+                } catch (IllegalStateException ignored) {
+                    // JVM shutdown already started; this hook can finish closing.
+                }
+            }
+        }
+    }
+
+    private void drainThenClose() {
         if (this.context.closed()) {
             return;
         }
@@ -927,9 +954,19 @@ public final class HugeGraphLoader {
                 if (tasksStopped) {
                     try {
                         this.context.unsetLoadingMode();
-                    } finally {
-                        this.context.close();
+                    } catch (Throwable resetFailure) {
+                        try {
+                            this.context.close(this.loadStarted && this.saveProgress);
+                        } catch (Throwable closeFailure) {
+                            if (closeFailure instanceof Error && !(resetFailure instanceof Error)) {
+                                suppressCleanupFailure(closeFailure, resetFailure);
+                                throw (Error) closeFailure;
+                            }
+                            suppressCleanupFailure(resetFailure, closeFailure);
+                        }
+                        throw resetFailure;
                     }
+                    this.context.close(this.loadStarted && this.saveProgress);
                 }
             } finally {
                 if (interrupted) {
@@ -937,6 +974,28 @@ public final class HugeGraphLoader {
                 }
             }
         }
+    }
+
+    private static void suppressCleanupFailure(Throwable primary, Throwable secondary) {
+        Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        if (!containsFailure(secondary, primary, seen)) {
+            primary.addSuppressed(secondary);
+        }
+    }
+
+    private static boolean containsFailure(Throwable failure, Throwable target, Set<Throwable> seen) {
+        if (failure == null || !seen.add(failure)) {
+            return false;
+        }
+        if (failure == target || containsFailure(failure.getCause(), target, seen)) {
+            return true;
+        }
+        for (Throwable suppressed : failure.getSuppressed()) {
+            if (containsFailure(suppressed, target, seen)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void cleanupEmptyProgress() {
