@@ -143,7 +143,12 @@ const ExecuteLog = props => {
 
     const loadStatements = useCallback(
         (text, rowData, index) => {
-            onLoadContent(rowData.content);
+            if (typeof rowData.text === 'string') {
+                onLoadContent(rowData.content, rowData.text);
+            }
+            else {
+                onLoadContent(rowData.content);
+            }
             const headerTabNode = document.getElementById('queryBar');
             window.scrollTo(0, headerTabNode.offsetTop);
         },

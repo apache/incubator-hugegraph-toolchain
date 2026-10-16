@@ -176,3 +176,28 @@ test('reports clipboard failures from the history statement', async () => {
         expect(message.error).toHaveBeenCalledWith('Copy failed');
     });
 });
+
+test.each(['Original question', undefined])('loads a history statement and optional question (%s)', text => {
+    const queryBar = document.createElement('div');
+    queryBar.id = 'queryBar';
+    document.body.appendChild(queryBar);
+    const scroll = jest.spyOn(window, 'scrollTo').mockImplementation(() => {});
+    const onLoadContent = jest.fn();
+    render(
+        <ExecuteLog
+            executeLogsDataRecords={[{
+                id: 1, content: 'g.V()', text, status: 'SUCCESS', type: 'GREMLIN',
+            }]}
+            executeLogsDataTotal={1}
+            pageExecute={1}
+            pageSize={10}
+            onExecutePageChange={jest.fn()}
+            onAddCollection={jest.fn()}
+            onLoadContent={onLoadContent}
+        />
+    );
+    fireEvent.click(screen.getByRole('button', {name: 'Load'}));
+    expect(onLoadContent).toHaveBeenCalledWith(...(text === undefined ? ['g.V()'] : ['g.V()', text]));
+    scroll.mockRestore();
+    queryBar.remove();
+});

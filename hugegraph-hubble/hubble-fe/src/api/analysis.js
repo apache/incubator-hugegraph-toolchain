@@ -73,11 +73,18 @@ const getExecutionLogs = (graphspace, graph, params) => {
     return request.get(`/graphspaces/${graphspace}/graphs/${graph}/execute-histories`, {params});
 };
 
-const getExecutionQuery = (graphspace, graph, params) => {
+const getExecutionQuery = (graphspace, graph, params, config = {}) => {
     return request.post(
         `/graphspaces/${graphspace}/graphs/${graph}/gremlin-query`,
         params,
-        {suppressBusinessErrorToast: true}
+        {...config, suppressBusinessErrorToast: true}
+    );
+};
+
+const generateText2Gql = (graphspace, graph, params, config = {}) => {
+    return request.post(
+        `/graphspaces/${graphspace}/graphs/${graph}/text2gql`, params,
+        {...config, timeout: 65000, suppressBusinessErrorToast: true}
     );
 };
 
@@ -226,6 +233,7 @@ export {
     switchOlapMode,
     getExecutionLogs,
     getExecutionQuery,
+    generateText2Gql,
     getGraphData,
     putExecutionQuery,
     getExecutionTask,

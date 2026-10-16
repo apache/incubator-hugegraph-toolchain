@@ -25,6 +25,7 @@ import {useTranslation} from 'react-i18next';
 import {useParams} from 'react-router-dom';
 import GraphAnalysisContext from '../../Context';
 import QueryBar from '../QueryBar/Home';
+import useText2Gql from './useText2Gql';
 import QueryResult from '../QueryResult/Home';
 import LogsDetail from '../LogsDetail/Home';
 import {GREMLIN_EXECUTES_MODE, ANALYSIS_TYPE, GRAPH_STATUS, PANEL_TYPE,
@@ -125,7 +126,7 @@ const AnalysisHome = () => {
 
     const getExecutionLogsList = useCallback(
         async () => {
-            if (analysisMode === TEXT2GQL || !graphSpace || !graph) {
+            if (!graphSpace || !graph) {
                 executionLogsRequest.current = null;
                 setExecutionLogsLoading(false);
                 setExecutionLogsError(false);
@@ -134,7 +135,8 @@ const AnalysisHome = () => {
             }
             const request = Symbol('execution-logs');
             executionLogsRequest.current = request;
-            const params = {'page_size': pageSize, 'page_no': pageExecute, 'type': EXECUTION_LOGS_TYPE[analysisMode]};
+            const params = {page_size: pageSize, page_no: pageExecute,
+                type: EXECUTION_LOGS_TYPE[analysisMode === TEXT2GQL ? GREMLIN : analysisMode]};
             setExecutionLogsLoading(true);
             setExecutionLogsError(false);
             setExecutionLogsData({});
@@ -167,7 +169,7 @@ const AnalysisHome = () => {
 
     const getFavoriteQueriesList = useCallback(
         async () => {
-            if (analysisMode === TEXT2GQL || !graphSpace || !graph) {
+            if (!graphSpace || !graph) {
                 favoriteQueriesRequest.current = null;
                 setFavoriteQueriesLoading(false);
                 setFavoriteQueriesError(false);
@@ -181,7 +183,7 @@ const AnalysisHome = () => {
                 page_no: pageFavorite,
                 content: search,
                 time_order: sortMode,
-                type: FAVORITE_TYPE[analysisMode],
+                type: FAVORITE_TYPE[analysisMode === TEXT2GQL ? GREMLIN : analysisMode],
             };
             setFavoriteQueriesLoading(true);
             setFavoriteQueriesError(false);
@@ -363,8 +365,10 @@ const AnalysisHome = () => {
     );
 
     const onExecuteQuery = useCallback(
-        async tabKey => {
+        async (tabKey, generated) => {
             const request = Symbol('query');
+            const isCurrent = () => queryRequest.current === request
+                && (!generated || generated.isCurrent());
             queryRequest.current = request;
             setQueryMode(true);
             setQueryStatus(LOADING);
@@ -375,17 +379,19 @@ const AnalysisHome = () => {
             }
             try {
                 let response;
-                if (tabKey === GREMLIN) {
-                    response = await api.analysis.getExecutionQuery(
-                        graphSpace, graph, codeEditorContent
-                    );
+                if (tabKey === GREMLIN || tabKey === TEXT2GQL) {
+                    response = generated
+                        ? await api.analysis.getExecutionQuery(graphSpace, graph,
+                            {content: generated.content, text: generated.text, read_only: true},
+                            {signal: generated.signal})
+                        : await api.analysis.getExecutionQuery(graphSpace, graph, codeEditorContent);
                 }
                 else {
                     response = await api.analysis.getCypherExecutionQuery(
                         graphSpace, graph, {cypher: codeEditorContent}
                     );
                 }
-                if (queryRequest.current !== request) {
+                if (!isCurrent()) {
                     return;
                 }
                 const {status, data, message} = response || {};
@@ -404,7 +410,7 @@ const AnalysisHome = () => {
                 resetGraphInfo();
             }
             catch (error) {
-                if (queryRequest.current !== request) {
+                if (!isCurrent()) {
                     return;
                 }
                 setQueryResult();
@@ -419,6 +425,24 @@ const AnalysisHome = () => {
         [graph, graphSpace, codeEditorContent, onExeLogsRefresh, onFavoriteRefresh,
             queryResult, resetGraphInfo, t]
     );
+
+    const executeGenerated = useCallback((content, text, options) => {
+        if (!options.isCurrent()) {
+            return;
+        }
+        setCodeEditorContent(content);
+        return onExecuteQuery(TEXT2GQL, {content, text, ...options});
+    }, [onExecuteQuery]);
+
+    const text2gql = useText2Gql({
+        scope: {graphSpace, graph, routeGraphSpace, routeGraph},
+        active: analysisMode === TEXT2GQL,
+        ready: isGraphReady,
+        execute: executeGenerated,
+        clearResult: initQueryResult,
+        clearEditor: setCodeEditorContent,
+        t,
+    });
 
     const onExecuteTask = useCallback(
         async tabKey => {
@@ -471,6 +495,10 @@ const AnalysisHome = () => {
 
     const onExecute = useCallback(
         tabKey => {
+            if (tabKey === TEXT2GQL) {
+                text2gql.rerun(codeEditorContent);
+                return;
+            }
             if (!isGraphReady || (tabKey !== GREMLIN && tabKey !== CYPHER)) {
                 return;
             }
@@ -492,7 +520,7 @@ const AnalysisHome = () => {
                 }
             });
         },
-        [executeMode, isGraphReady, onExecuteQuery, onExecuteTask]
+        [codeEditorContent, executeMode, isGraphReady, onExecuteQuery, onExecuteTask, text2gql]
     );
 
     useEffect(
@@ -565,9 +593,10 @@ const AnalysisHome = () => {
         setSortMode(sort.order === 'ascend' ? 'asc' : 'desc');
     }, []);
 
-    const handleClickLoadContent = useCallback(content => {
+    const handleClickLoadContent = useCallback((content, text) => {
         resetCodeEditorContent(content);
-    }, [resetCodeEditorContent]);
+        text2gql.loadSource(text);
+    }, [resetCodeEditorContent, text2gql]);
 
     const onGraphRenderModeChange = useCallback(
         value => {
@@ -590,8 +619,9 @@ const AnalysisHome = () => {
                 isExecuting={queryStatus === LOADING}
                 isGraphReady={isGraphReady}
                 cypherEnabled={cypherEnabled}
+                text2gql={text2gql}
             />
-            {analysisMode !== TEXT2GQL && <QueryResult
+            <QueryResult
                 queryResult={queryResult}
                 asyncTaskResult={asyncTaskResult}
                 isQueryMode={isQueryMode}
@@ -605,13 +635,13 @@ const AnalysisHome = () => {
                 graphNums={graphNums}
                 graphRenderMode={graphRenderMode}
                 onGraphRenderModeChange={onGraphRenderModeChange}
-            />}
-            {analysisMode !== TEXT2GQL && <LogsDetail
+            />
+            <LogsDetail
                 executionLogsData={executionLogsData}
                 favoriteQueriesData={favoriteQueriesData}
                 pageExecute={pageExecute}
                 onClickLoadContent={handleClickLoadContent}
-                analysisMode={analysisMode}
+                analysisMode={analysisMode === TEXT2GQL ? GREMLIN : analysisMode}
                 executionLogsLoading={executionLogsLoading}
                 favoriteQueriesLoading={favoriteQueriesLoading}
                 executionLogsError={executionLogsError}
@@ -625,7 +655,7 @@ const AnalysisHome = () => {
                 onRefresh={onFavoriteRefresh}
                 onChangeSearchValue={onChangeFavorSearch}
                 onSortChange={onSortChange}
-            />}
+            />
         </>
     );
 };

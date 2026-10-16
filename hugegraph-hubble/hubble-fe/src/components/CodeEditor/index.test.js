@@ -39,7 +39,7 @@ jest.mock('codemirror', () => {
 
         static editable = {of: () => ({})};
         static contentAttributes = {of: () => ({})};
-        static updateListener = {of: () => ({})};
+        static updateListener = {of: listener => ({updateListener: listener})};
         static theme() {
             return {};
         }
@@ -55,6 +55,12 @@ jest.mock('codemirror', () => {
             this.dom.className = 'cm-editor';
             this.content = global.document.createElement('div');
             this.content.className = 'cm-content';
+            this.content.textContent = doc;
+            this.updateListeners = extensions.flat().filter(extension => extension.updateListener)
+                .map(extension => extension.updateListener);
+            this.content.addEventListener('focus', () => this.updateListeners.forEach(listener => {
+                listener({docChanged: false, state: this.state});
+            }));
             this.content.tabIndex = 0;
             this.dom.appendChild(this.content);
             parent.appendChild(this.dom);
@@ -72,6 +78,8 @@ jest.mock('codemirror', () => {
                 length: doc.length,
                 toString: () => doc,
             };
+            this.content.textContent = doc;
+            this.updateListeners.forEach(listener => listener({docChanged: true, state: this.state}));
         }
 
         destroy() {
@@ -116,4 +124,24 @@ it('keeps focus when controlled callbacks change after input', () => {
     fireEvent.keyDown(content, {key: 'Enter', ctrlKey: true});
     expect(firstExecution).not.toHaveBeenCalled();
     expect(nextExecution).toHaveBeenCalledTimes(1);
+});
+
+
+it('preserves the generated controlled value through pending read-only transitions', () => {
+    const onChange = jest.fn();
+    const {container, rerender} = render(<CodeEditor value='' onChange={onChange} />);
+    const gremlin = 'g.V().hasLabel("person").limit(3)';
+    rerender(<CodeEditor value={gremlin} readOnly onChange={onChange} />);
+    expect(container.querySelector('.cm-content')).toHaveTextContent(gremlin);
+    rerender(<CodeEditor value={gremlin} readOnly={false} onChange={onChange} />);
+    expect(container.querySelector('.cm-content')).toHaveTextContent(gremlin);
+    fireEvent.focus(container.querySelector('.cm-content'));
+    expect(onChange).not.toHaveBeenCalled();
+});
+
+it('does not turn focus and layout updates into document changes', () => {
+    const onChange = jest.fn();
+    const {container} = render(<CodeEditor value='g.V()' onChange={onChange} />);
+    fireEvent.focus(container.querySelector('.cm-content'));
+    expect(onChange).not.toHaveBeenCalled();
 });

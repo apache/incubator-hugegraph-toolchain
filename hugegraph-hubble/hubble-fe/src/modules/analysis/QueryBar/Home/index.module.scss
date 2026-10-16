@@ -98,24 +98,145 @@
     pointer-events: none;
 }
 
-.text2gqlBadge {
-    margin-left: 6px;
-    padding: 0 5px;
-    color: #7b879c;
-    font-size: 10px;
-    line-height: 16px;
-    background: rgb(123 135 156 / 8%);
-    border-color: rgb(123 135 156 / 18%);
-}
-
-.text2gqlPlaceholder {
+.text2gqlPanel {
     display: grid;
-    gap: 16px;
+    gap: 12px;
     padding: 16px;
 
-    p {
+    h3, h4, p {
         margin: 0;
+    }
+
+    h3 {
+        color: #1f2937;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    h4 {
+        color: #262626;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .fieldHint {
+        color: #667085;
+        font-size: 12px;
+        line-height: 1.6;
+    }
+}
+
+.text2gqlHeader {
+    display: grid;
+    gap: 4px;
+
+    p {
         color: #595959;
+        font-size: 13px;
+    }
+}
+
+.sectionHeading {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.modelConfig {
+    display: grid;
+    grid-template-columns: minmax(120px, 0.65fr) minmax(0, 1.6fr) repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    align-items: start;
+
+    :global(.ant-select), :global(.ant-input-affix-wrapper), :global(.ant-input) {
+        width: 100%;
+        min-width: 0;
+    }
+}
+
+.modelField {
+    display: grid;
+    min-width: 0;
+    gap: 4px;
+
+    label {
+        color: #434343;
+        font-size: 13px;
+    }
+}
+
+.modelSettings {
+    > summary {
+        color: #262626;
+        font-size: 13px;
+        cursor: pointer;
+    }
+
+    &[open] > summary {
+        margin-bottom: 10px;
+    }
+}
+
+.selectedModel {
+    color: #667085;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+
+.requiredLegend {
+    float: right;
+    color: #667085;
+    font-size: 12px;
+}
+
+.questionFooter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    align-items: center;
+    justify-content: space-between;
+
+    > p {
+        flex: 1 1 280px;
+    }
+}
+
+.requiredField {
+    color: #cf1322;
+}
+
+.questionSection {
+    display: grid;
+    gap: 8px;
+
+    > label {
+        color: #262626;
+        font-weight: 600;
+    }
+}
+
+.generatedSection {
+    min-width: 0;
+    padding-top: 12px;
+    border-top: 1px solid #f0f0f0;
+}
+
+@media (max-width: 1200px) {
+    .modelConfig {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 700px) {
+    .text2gqlPanel {
+        padding: 16px;
+    }
+
+    .modelConfig {
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 

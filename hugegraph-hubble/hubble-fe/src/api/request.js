@@ -180,6 +180,9 @@ instance.interceptors.response.use(
         return response;
     },
     error => {
+        if (axios.isCancel?.(error) || error.code === 'ERR_CANCELED') {
+            return Promise.reject(error);
+        }
         sanitizeResponseError(error.response);
         if (typeof error.message === 'string') {
             error.message = sanitizePublicError(error.message);

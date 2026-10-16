@@ -44,6 +44,7 @@ const loadResponseHandlers = modulePath => {
 
     jest.doMock('axios', () => ({
         create: jest.fn(() => instance),
+        isCancel: error => Boolean(error?.__CANCEL__),
     }));
     jest.doMock('antd', () => ({
         message: {
@@ -126,6 +127,15 @@ describe.each(['./request'])('%s error semantics', modulePath => {
         await expect(reject(error)).rejects.toBe(error);
         expect(messageError).toHaveBeenCalledWith('request.failed');
     });
+
+    it.each([{code: 'ERR_CANCELED'}, {__CANCEL__: true}])(
+        'keeps intentional cancellation rejected without an error toast (%j)', async error => {
+            const {reject, messageError, clearLogin} = loadResponseHandlers(modulePath);
+            await expect(reject(error)).rejects.toBe(error);
+            expect(messageError).not.toHaveBeenCalled();
+            expect(clearLogin).not.toHaveBeenCalled();
+        }
+    );
 
     it('keeps fallback and detailed copy from repeating the failure prefix',
         () => {

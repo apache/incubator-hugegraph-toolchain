@@ -134,8 +134,13 @@ const LogsDetail = props => {
     );
 
     const onLoadHandler = useCallback(
-        content => {
-            onClickLoadContent(content);
+        (content, text) => {
+            if (typeof text === 'string') {
+                onClickLoadContent(content, text);
+            }
+            else {
+                onClickLoadContent(content);
+            }
         },
         [onClickLoadContent]
     );

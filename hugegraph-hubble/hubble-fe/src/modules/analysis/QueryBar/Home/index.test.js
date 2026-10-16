@@ -24,6 +24,10 @@ jest.mock('../../../../components/CodeEditor', () => props => (
         className='cm-editor'
         data-testid={`editor-${props.lang}`}
         data-placeholder={props.placeholder}
+        data-read-only={String(Boolean(props.readOnly))}
+        data-aria-label={props.ariaLabel}
+        data-value={props.value}
+        onInput={event => props.onChange(event.target.textContent)}
         data-meta-enter-newline={props.metaEnterNewline ? 'true' : 'false'}
         data-execution-shortcut={props.onExecutionShortcut ? 'true' : 'false'}
         onKeyDown={event => {
@@ -98,33 +102,22 @@ it('ignores execution shortcuts until the graph context is ready', () => {
     expect(onExecute).toHaveBeenCalledWith('Gremlin');
 });
 
-it('shows a same-level Text2GQL preview with no executable control', () => {
-    const onTabsChange = jest.fn();
-    const {rerender} = render(
-        <QueryBar
-            activeTab='Gremlin'
-            onTabsChange={onTabsChange}
-            codeEditorContent=''
-            setCodeEditorContent={jest.fn()}
-        />
-    );
-
-    fireEvent.click(screen.getByRole('tab', {name: /Natural language/}));
-    expect(onTabsChange).toHaveBeenCalledWith('Text2GQL');
-
-    rerender(
-        <QueryBar
-            activeTab='Text2GQL'
-            onTabsChange={onTabsChange}
-            codeEditorContent=''
-            setCodeEditorContent={jest.fn()}
-        />
-    );
-    expect(screen.getByRole('textbox', {
-        name: 'Natural-language graph query',
-    })).toBeDisabled();
-    expect(screen.getByText('Nothing is sent or executed.')).toBeInTheDocument();
-    expect(screen.queryByRole('button', {name: /run|execute/i})).not.toBeInTheDocument();
+it('enables Text2GQL input and generates with the current model settings', () => {
+    const text2gql = {
+        config: {provider: 'ollama', baseUrl: 'http://localhost:11434/v1', model: 'local', apiKey: ''},
+        question: 'Find people', updateConfig: jest.fn(), setQuestion: jest.fn(),
+        generate: jest.fn(), cancel: jest.fn(), pending: false,
+    };
+    render(<QueryBar
+        activeTab='Text2GQL'
+        codeEditorContent=''
+        text2gql={text2gql}
+        onTabsChange={jest.fn()}
+        setCodeEditorContent={jest.fn()}
+    />);
+    expect(screen.getByRole('textbox', {name: 'analysis.query.question_label'})).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', {name: 'analysis.query.generate_query'}));
+    expect(text2gql.generate).toHaveBeenCalledTimes(1);
 });
 
 it('hides Cypher when capability is absent', () => {
@@ -279,4 +272,122 @@ it('executes with Ctrl+Enter and Command+Enter inside the editor', () => {
     expect(onExecute).toHaveBeenCalledWith('Gremlin');
     fireEvent.keyDown(editor, {key: 'Enter', ctrlKey: true});
     expect(onExecute).toHaveBeenCalledTimes(2);
+});
+
+
+it('keeps generated Gremlin read-only while generation or execution is pending', () => {
+    const text2gql = {
+        config: {provider: 'ollama', baseUrl: 'http://localhost:11434/v1', model: 'local', apiKey: ''},
+        question: 'Find people', pending: true, updateConfig: jest.fn(), setQuestion: jest.fn(),
+        generate: jest.fn(), cancel: jest.fn(),
+    };
+    render(
+        <QueryBar
+            activeTab='Text2GQL'
+            codeEditorContent='g.V()'
+            text2gql={text2gql}
+            onTabsChange={jest.fn()}
+            setCodeEditorContent={jest.fn()}
+        />
+    );
+    expect(screen.getByTestId('editor-gremlin')).toHaveAttribute('data-read-only', 'true');
+});
+
+
+it('keeps the Text2GQL editor available when a user clears the Gremlin to rewrite it', () => {
+    const text2gql = {
+        config: {provider: 'ollama', baseUrl: 'http://localhost:11434/v1', model: 'local', apiKey: ''},
+        question: '', pending: false, updateConfig: jest.fn(), setQuestion: jest.fn(), generate: jest.fn(),
+    };
+    const ControlledQueryBar = () => {
+        const [content, setContent] = useState('g.V()');
+        return (
+            <QueryBar
+                activeTab='Text2GQL'
+                codeEditorContent={content}
+                text2gql={text2gql}
+                onTabsChange={jest.fn()}
+                setCodeEditorContent={setContent}
+            />
+        );
+    };
+    render(<ControlledQueryBar />);
+    fireEvent.input(screen.getByTestId('editor-gremlin'), {target: {textContent: ''}});
+    expect(screen.getByTestId('editor-gremlin')).toHaveAttribute('data-value', '');
+    fireEvent.input(screen.getByTestId('editor-gremlin'), {target: {textContent: 'g.V().count()'}});
+    expect(screen.getByTestId('editor-gremlin')).toHaveAttribute('data-value', 'g.V().count()');
+});
+
+
+it('keeps model field labels visible and ties Gremlin actions to the editor section', () => {
+    const text2gql = {
+        config: {provider: 'openai', baseUrl: 'https://api.openai.com/v1', model: 'test', apiKey: 'private'},
+        question: 'Find people', pending: false, updateConfig: jest.fn(), setQuestion: jest.fn(), generate: jest.fn(),
+    };
+    render(
+        <QueryBar
+            activeTab='Text2GQL'
+            codeEditorContent='g.V()'
+            text2gql={text2gql}
+            onTabsChange={jest.fn()}
+            setCodeEditorContent={jest.fn()}
+        />
+    );
+    expect(screen.getByLabelText(/Base URL/)).toHaveAttribute('aria-required', 'true');
+    expect(screen.getByLabelText('API Key')).toHaveAttribute('aria-required', 'true');
+    const generated = screen.getByRole('region', {name: 'analysis.query.generated_gremlin'});
+    expect(generated).toContainElement(screen.getByRole('button', {name: 'analysis.query.run_edited_gremlin'}));
+    expect(screen.getByTestId('editor-gremlin')).toHaveAttribute(
+        'data-aria-label', 'analysis.query.generated_gremlin'
+    );
+});
+
+it.each([false, true])('distinguishes model generation and graph execution loading (%s)', isExecuting => {
+    const text2gql = {
+        config: {provider: 'ollama', baseUrl: 'http://localhost:11434/v1', model: 'local', apiKey: ''},
+        question: 'Find people', pending: true, updateConfig: jest.fn(), setQuestion: jest.fn(),
+        generate: jest.fn(), cancel: jest.fn(),
+    };
+    render(
+        <QueryBar
+            activeTab='Text2GQL'
+            codeEditorContent='g.V()'
+            isExecuting={isExecuting}
+            text2gql={text2gql}
+            onTabsChange={jest.fn()}
+            setCodeEditorContent={jest.fn()}
+        />
+    );
+    const active = screen.getByRole('button', {
+        name: new RegExp(isExecuting ? 'analysis.query.querying' : 'analysis.query.generating'),
+    });
+    expect(active).toHaveClass('ant-btn-loading');
+    expect(screen.getByRole('textbox', {name: 'analysis.query.question_label'})).toBeDisabled();
+    expect(screen.getAllByRole('button', {name: 'analysis.query.cancel_generation'})).toHaveLength(1);
+});
+
+it('shows cancellation as neutral information and uses distinct IDs for both Gremlin editors', () => {
+    const text2gql = {
+        config: {provider: 'ollama', baseUrl: 'http://localhost:11434/v1', model: 'local', apiKey: ''},
+        question: '', pending: false, error: 'Cancelled', errorType: 'info',
+        updateConfig: jest.fn(), setQuestion: jest.fn(), generate: jest.fn(),
+    };
+    const ControlledQueryBar = () => {
+        const [activeTab, setActiveTab] = useState('Gremlin');
+        return (
+            <QueryBar
+                activeTab={activeTab}
+                codeEditorContent='g.V()'
+                text2gql={text2gql}
+                onTabsChange={setActiveTab}
+                setCodeEditorContent={jest.fn()}
+            />
+        );
+    };
+    const {container} = render(<ControlledQueryBar />);
+    fireEvent.click(screen.getByRole('tab', {name: /Natural language/}));
+    expect(screen.getByRole('alert')).toHaveClass('ant-alert-info');
+    const editorIds = [...container.querySelectorAll('[id^="query-editor-"]')].map(node => node.id);
+    expect(editorIds).toHaveLength(2);
+    expect(new Set(editorIds).size).toBe(2);
 });

@@ -76,3 +76,18 @@ test('lets the async query page own business error feedback', () => {
         {suppressBusinessErrorToast: true}
     );
 });
+
+
+test('forwards cancellation and generation timeout without changing execution request bodies', () => {
+    const controller = new AbortController();
+    const config = {signal: controller.signal};
+    const modelRequest = {question: 'Find people', model: 'test', api_key: 'private', base_url: 'http://test/v1'};
+    analysis.generateText2Gql('DEFAULT', 'g', modelRequest, config);
+    analysis.getExecutionQuery('DEFAULT', 'g', {content: 'g.V()', text: 'Find people'}, config);
+    expect(request.post).toHaveBeenNthCalledWith(1,
+        '/graphspaces/DEFAULT/graphs/g/text2gql', modelRequest,
+        {...config, timeout: 65000, suppressBusinessErrorToast: true});
+    expect(request.post).toHaveBeenNthCalledWith(2,
+        '/graphspaces/DEFAULT/graphs/g/gremlin-query', {content: 'g.V()', text: 'Find people'},
+        {...config, suppressBusinessErrorToast: true});
+});

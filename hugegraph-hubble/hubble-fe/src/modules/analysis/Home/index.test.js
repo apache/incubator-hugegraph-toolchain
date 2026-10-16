@@ -23,6 +23,7 @@ import * as api from '../../../api';
 
 jest.mock('../../../api', () => ({
     analysis: {
+        generateText2Gql: jest.fn(),
         getExecutionLogs: jest.fn(),
         fetchFavoriteQueries: jest.fn(),
         getGraphData: jest.fn(),
@@ -44,6 +45,17 @@ jest.mock('../QueryBar/Home', () => props => (
         <button onClick={() => props.onTabsChange('Cypher')}>Cypher</button>
         <button onClick={() => props.setCodeEditorContent('g.E().limit(3)')}>Edit query</button>
         <button onClick={() => props.onExecute(props.activeTab)}>Run current</button>
+        <button
+            onClick={() => {
+                props.text2gql.updateConfig('provider', 'ollama');
+                props.text2gql.updateConfig('model', 'local-model');
+                props.text2gql.setQuestion('Find people');
+            }}
+        >
+            Set model and question
+        </button>
+        <button onClick={props.text2gql.generate}>Generate</button>
+        <button onClick={() => props.text2gql.setQuestion('New question')}>Edit question</button>
     </div>
 ));
 jest.mock('../QueryResult/Home', () => ({
@@ -224,25 +236,22 @@ afterEach(() => {
 
 afterAll(() => consoleError.mockRestore());
 
-it('makes no backend request when switching to the Text2GQL placeholder', async () => {
+it('shows query results and Gremlin history for Text2GQL without executing an empty query', async () => {
     render(
         <GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
             <AnalysisHome />
         </GraphAnalysisContext.Provider>
     );
     await waitForInitialData();
-    Object.values(api.analysis).forEach(mock => mock.mockClear());
-    Object.values(api.manage).forEach(mock => mock.mockClear());
-
+    api.analysis.getExecutionQuery.mockClear();
     fireEvent.click(screen.getByRole('button', {name: 'Natural language'}));
-    await act(async () => Promise.resolve());
     fireEvent.click(screen.getByRole('button', {name: 'Run current'}));
     await act(async () => Promise.resolve());
-
-    Object.values(api.analysis).forEach(mock => expect(mock).not.toHaveBeenCalled());
-    Object.values(api.manage).forEach(mock => expect(mock).not.toHaveBeenCalled());
-    expect(screen.queryByText('query result')).not.toBeInTheDocument();
-    expect(screen.queryByText('query history')).not.toBeInTheDocument();
+    expect(api.analysis.getExecutionQuery).not.toHaveBeenCalled();
+    expect(screen.getByText(/query result/)).toBeInTheDocument();
+    expect(api.analysis.getExecutionLogs).toHaveBeenLastCalledWith(
+        'DEFAULT', 'hugegraph', {page_size: 10, page_no: 1, type: '0'}
+    );
 });
 
 it('turns a rejected synchronous query into a recoverable failed result', async () => {
@@ -537,4 +546,49 @@ it('does not let an older same-graph refresh overwrite current counts', async ()
     await waitFor(() => expect(pending).toHaveLength(3));
     unmount();
     await act(async () => pending[2]({status: 200, data: {vertexcount: 40, edgecount: 41}}));
+});
+
+
+it('executes generated Gremlin directly and preserves its source when editing and rerunning', async () => {
+    api.analysis.generateText2Gql.mockResolvedValue({status: 200, data: {gremlin: 'g.V().limit(2)'}});
+    api.analysis.getExecutionQuery.mockResolvedValue({status: 200, data: {}});
+    render(
+        <GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
+            <AnalysisHome />
+        </GraphAnalysisContext.Provider>
+    );
+    await waitForInitialData();
+    fireEvent.click(screen.getByRole('button', {name: 'Natural language'}));
+    fireEvent.click(screen.getByRole('button', {name: 'Set model and question'}));
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Generate'})));
+    expect(api.analysis.getExecutionQuery).toHaveBeenCalledWith(
+        'DEFAULT', 'hugegraph', {content: 'g.V().limit(2)', text: 'Find people', read_only: true},
+        expect.objectContaining({signal: expect.any(Object)})
+    );
+    expect(screen.getByTestId('query-content')).toHaveTextContent('g.V().limit(2)');
+    fireEvent.click(screen.getByRole('button', {name: 'Edit question'}));
+    fireEvent.click(screen.getByRole('button', {name: 'Edit query'}));
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
+    expect(api.analysis.getExecutionQuery).toHaveBeenLastCalledWith(
+        'DEFAULT', 'hugegraph', {content: 'g.E().limit(3)', text: 'Find people', read_only: true},
+        expect.objectContaining({signal: expect.any(Object)})
+    );
+});
+
+
+it('keeps the Text2GQL read-only marker when manually running a query with no source question', async () => {
+    api.analysis.getExecutionQuery.mockResolvedValue({status: 200, data: {}});
+    render(
+        <GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
+            <AnalysisHome />
+        </GraphAnalysisContext.Provider>
+    );
+    await waitForInitialData();
+    fireEvent.click(screen.getByRole('button', {name: 'Natural language'}));
+    fireEvent.click(screen.getByRole('button', {name: 'Edit query'}));
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
+    expect(api.analysis.getExecutionQuery).toHaveBeenLastCalledWith(
+        'DEFAULT', 'hugegraph', {content: 'g.E().limit(3)', text: '', read_only: true},
+        expect.objectContaining({signal: expect.any(Object)})
+    );
 });

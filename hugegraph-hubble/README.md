@@ -21,6 +21,50 @@ Run Gremlin queries and inspect their graph, table, or JSON results without leav
 
 ![Hubble GQL traversal and graph visualization](docs/images/showcase/gql-traversal.jpg)
 
+### Natural-language graph queries (Text2GQL)
+
+Open **Graph Query → GQL Traversal → Text2GQL**, select a model service, and enter its Base URL,
+model name and API Key. Ask a question about the selected graph. Hubble reads its
+schema using your current graph permissions, generates a Gremlin traversal, then
+automatically executes it through the existing query API. You can edit the generated
+Gremlin and run it again; graph, table and JSON results use the same views as ordinary queries.
+
+![Hubble Text2GQL with editable Gremlin and graph results](docs/images/showcase/text2gql.png)
+
+The screenshot uses a local mock model endpoint and a real HugeGraph test graph.
+
+| Preset | OpenAI-compatible Base URL | API Key |
+|---|---|---|
+| Ollama | `http://localhost:11434/v1` | Optional for a local unauthenticated service |
+| DeepSeek | `https://api.deepseek.com/v1` | Required |
+| GLM | `https://open.bigmodel.cn/api/paas/v4` | Required |
+| OpenAI | `https://api.openai.com/v1` | Required |
+
+The URL and model name are editable. Use a model actually available on that service;
+Ollama must already have the selected model installed. Local URLs refer to the
+**Hubble backend host**, including when Hubble runs in a container. Public model
+services require HTTPS; HTTP is supported for local/private-network models.
+
+API Keys are kept only in page memory and must be entered again after reloading the
+page. The provider, Base URL and model name are stored in browser `sessionStorage`,
+scoped to the signed-in account. Model configuration is not saved in Hubble's database.
+The question and schema metadata are sent to the selected model service. Execution
+history stores the question and executed Gremlin, as it does for other graph queries.
+
+Text2GQL accepts a single read-only traversal starting with `g.V()` or `g.E()`,
+with literal arguments, supported traversal steps, predicates and nested `__` traversals.
+It rejects graph mutations, arbitrary Groovy code and lambdas before automatic execution.
+Use the Gremlin console for general scripts. The model generation timeout is 60 seconds;
+cancelling the browser operation prevents further automatic execution, but does not
+guarantee a query already submitted to Server has stopped.
+
+The backend adds only the direct dependency `langchain4j-open-ai:1.22.0`, using
+its JDK HTTP transport. It does not add a Python service, Spring starter, AI Services,
+Agent or RAG modules. Local token estimation is unused, so `jtokkit` is excluded.
+The SDK's required transitive reactive-streaming module is retained, including for
+synchronous calls. Protocol tests run real HTTP requests against a local fixture
+with the project's existing Jackson version; vendor credentials are not needed.
+
 ### Schema Templates
 
 Prepare reusable schemas before configuring data sources and import tasks.

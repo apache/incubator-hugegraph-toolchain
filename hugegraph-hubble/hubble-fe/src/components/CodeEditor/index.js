@@ -39,7 +39,8 @@ const CodeEditor = ({
     const {t} = useTranslation();
     const editor = useRef();
     const cm = useRef();
-    const initialValue = useRef(value || '');
+    const currentValue = useRef(value ?? '');
+    currentValue.current = value ?? '';
     const onChangeRef = useRef(onChange);
     const executionShortcutRef = useRef(onExecutionShortcut);
     onChangeRef.current = onChange;
@@ -71,7 +72,7 @@ const CodeEditor = ({
         ]);
 
         cm.current = new EditorView({
-            doc: initialValue.current,
+            doc: currentValue.current,
             extensions: [
                 !readOnly
                     ? EditorView.domEventHandlers({
@@ -112,7 +113,7 @@ const CodeEditor = ({
                     'aria-label': ariaLabel,
                 }) : [],
                 EditorView.updateListener.of(e => {
-                    if (onChangeRef.current) {
+                    if (e.docChanged && onChangeRef.current) {
                         onChangeRef.current(e.state.doc.toString());
                     }
                 }),
