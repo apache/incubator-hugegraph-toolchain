@@ -307,6 +307,11 @@ Hubble 1.8 requires Java 17 and uses Spring Boot 3 with H2 2.x for metadata. MyS
 
 The startup script includes `--add-opens=java.base/java.net=ALL-UNNAMED` for the embedded Loader's Hive ORC reader. Include this option when using a custom Java launch command. Packaged archives are generated under `target/` and exclude local runtime data.
 
+Spring manages Hubble's async executor. On context close, Hubble stops accepting loads, pauses running and queued tasks, and waits for native Loader cleanup and final status updates. The shared executor also drains scheduled metadata jobs before database connections close. Native cleanup failures mark the task FAILED, retain its recovery handle, and block restarting that runtime; final status persistence failures remain visible during shutdown.
+
+Shutdown has no internal timeout: if an import or metadata job never exits, Hubble keeps waiting and the database stays
+open. Configure the service manager or container stop timeout for your deployment. A forced process exit skips remaining
+cleanup and final status writes; inspect task metadata and Server loading mode before restarting imports.
 
 ## Graph switching
 
