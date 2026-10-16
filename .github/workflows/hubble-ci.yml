@@ -174,7 +174,9 @@ jobs:
           travis-dir: ${{ env.TRAVIS_DIR }}
 
       - name: Test Gremlin fixture configuration
-        run: python3 "$TRAVIS_DIR/test_configure_gremlin_fixture.py"
+        run: |
+          python3 "$TRAVIS_DIR/test_configure_gremlin_fixture.py"
+          python3 "$TRAVIS_DIR/test_run_live_hubble_smoke.py"
 
       - name: Archive and distribution audit tests
         run: |

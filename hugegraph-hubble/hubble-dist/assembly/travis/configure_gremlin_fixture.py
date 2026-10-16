@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-"""Keep fixture endpoints/plugins and use the selected server's native serializers."""
+"""Keep fixture endpoints/auth and use the selected Server's native query configuration."""
 
 import argparse
 import json
@@ -24,16 +24,17 @@ import re
 import zipfile
 
 
-def serializer_block(text):
-    match = re.search(r"(?m)^serializers:[\s\S]*?(?=^[A-Za-z][\w-]*:|\Z)", text)
+def config_block(text, name):
+    match = re.search(rf"(?m)^{re.escape(name)}:[\s\S]*?(?=^[A-Za-z][\w-]*:|\Z)", text)
     if match is None:
-        raise ValueError("Gremlin configuration has no serializers block")
+        raise ValueError(f"Gremlin configuration has no {name} block")
     return match.group(0)
 
 
 def configure(server, fixture):
     source = server / "conf/gremlin-server.yaml"
-    block = serializer_block(source.read_text())
+    native = source.read_text()
+    block = config_block(native, "serializers")
     declared = set(re.findall(r"(?:className|builder)\s*:\s*([\w.$]+)", block))
     for registries in re.findall(r"ioRegistries\s*:\s*\[([^]]*)\]", block):
         declared.update(re.findall(r"[\w.$]+", registries))
@@ -47,9 +48,12 @@ def configure(server, fixture):
     missing = sorted(name for name in declared if name.replace(".", "/") + ".class" not in available)
     if missing:
         raise ValueError("Server configuration refers to unavailable classes: " + ", ".join(missing))
-    configured = fixture.read_text().replace(serializer_block(fixture.read_text()), block, 1)
+    configured = fixture.read_text()
+    for name in ("channelizer", "scriptEngines", "serializers"):
+        configured = configured.replace(config_block(configured, name), config_block(native, name), 1)
     return configured, {"server": str(server), "native_config": str(source),
                         "fixture": str(fixture), "jar_count": len(jars),
+                        "native_sections": ["channelizer", "scriptEngines", "serializers"],
                         "verified_classes": sorted(declared)}
 
 
