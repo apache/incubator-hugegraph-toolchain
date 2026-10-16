@@ -33,13 +33,16 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 
 import org.apache.hugegraph.driver.GraphsManager;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.driver.HugeClientBuilder;
 import org.apache.hugegraph.exception.ServerException;
+import org.apache.hugegraph.exception.InvalidResponseException;
 import org.apache.hugegraph.loader.HugeGraphLoader;
 import org.apache.hugegraph.loader.builder.SchemaCache;
 import org.apache.hugegraph.loader.constant.ElemType;
@@ -56,13 +59,14 @@ import org.apache.hugegraph.loader.metrics.LoadSummary;
 import org.apache.hugegraph.loader.progress.LoadProgress;
 import org.apache.hugegraph.loader.source.file.FileSource;
 import org.apache.hugegraph.loader.source.graph.GraphSource;
+import org.apache.hugegraph.structure.LoadingModeOwner;
 import org.apache.hugegraph.structure.constant.GraphMode;
 import org.apache.hugegraph.util.JsonUtil;
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.LoggingEvent;
-import org.junit.Assert;
+import org.apache.hugegraph.testutil.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -651,6 +655,209 @@ public class LoadContextTest {
         }
     }
 
+    @Test
+    public void testShutdownPreservesOwnerRequestWithoutLeakingToken() throws Exception {
+        try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
+            server.enableOwnership();
+            server.dropOwnerReply = true;
+            LoadContext context = this.context(client, client);
+            InputStruct input = new InputStruct(null, null);
+            input.input(new FileSource());
+            HugeGraphLoader loader = loader(context, input);
+            RuntimeException loading = (RuntimeException) Assert.assertThrows(RuntimeException.class, loader::load);
+            Map<String, Object> acquired = new HashMap<>(server.lastOwner);
+            String identity = acquired.get("instance") + "/" + acquired.get("epoch");
+            LoadException shutdown = (LoadException) Assert.assertThrows(LoadException.class, loader::shutdown);
+            Assert.assertTrue(shutdown.getMessage().contains("Failed to release LOADING owner " + identity));
+            Assert.assertFalse(shutdown.getMessage().contains((String) acquired.get("token")));
+            Assert.assertEquals(1, shutdown.getSuppressed().length);
+            Assert.assertSame(loading.getCause(), shutdown.getSuppressed()[0].getCause());
+            Assert.assertTrue(shutdown.getCause() instanceof IOException);
+            Assert.assertEquals("release", server.lastOwner.remove("action"));
+            acquired.remove("action");
+            Assert.assertEquals(acquired, server.lastOwner);
+            Assert.assertTrue(context.closed());
+            int writes = server.ownerWrites;
+            loader.shutdown();
+            Assert.assertEquals(writes, server.ownerWrites);
+            Assert.assertEquals(0, server.modeWrites);
+        }
+    }
+
+    @Test
+    public void testShutdownPreservesReleaseFailureWhenLoggerCloseFails() throws Exception {
+        try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
+            server.enableOwnership();
+            LoadContext context = this.context(client, client);
+            context.setLoadingMode();
+            String identity = server.lastOwner.get("instance") + "/" + server.lastOwner.get("epoch");
+            FileSource source = new FileSource();
+            source.header(new String[]{"name"});
+            InputStruct input = new InputStruct(null, null);
+            input.input(source);
+            input.id("broken");
+            FailLogger logger = allocate(FailLogger.class);
+            set(logger, "struct", input);
+            set(logger, "file", this.folder.newFile("broken.error"));
+            this.folder.newFolder("broken.header");
+            set(context, "loggers", Map.of("broken", logger));
+            server.dropOwnerReply = true;
+            LoadException shutdown = (LoadException) Assert.assertThrows(LoadException.class,
+                    loader(context, input)::shutdown);
+            Assert.assertTrue(shutdown.getMessage().contains("Failed to release LOADING owner " + identity));
+            Assert.assertEquals(1, shutdown.getSuppressed().length);
+            Assert.assertTrue(shutdown.getSuppressed()[0].getMessage().contains("Failed to write header"));
+            Assert.assertTrue(context.closed());
+        }
+    }
+
+    @Test
+    public void testShutdownReportsCloseFailureAfterSuccessfulRelease() throws Exception {
+        try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
+            server.enableOwnership();
+            LoadContext context = this.context(client, client);
+            context.setLoadingMode();
+            RuntimeException loading = new IllegalStateException("original loading failure");
+            context.failLoading(loading);
+            HugeGraphLoader loader = loader(context);
+            Assert.assertSame(loading, Assert.assertThrows(RuntimeException.class, loader::shutdown));
+            Assert.assertEquals(0, loading.getSuppressed().length);
+            Assert.assertTrue(context.closed());
+            loader.shutdown();
+            Assert.assertEquals(2, server.ownerWrites);
+        }
+    }
+
+    @Test
+    public void testCapabilityFailuresDoNotFallBackToLegacyMode() throws Exception {
+        try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
+            for (int status : new int[]{403, 404, 500}) {
+                server.ownerStatus = status;
+                server.ownerCapability = "{\"exception\":\"class jakarta.ws.rs.NotFoundException\"," +
+                                         "\"message\":\"Graph does not exist\"}";
+                LoadContext context = this.context(client, client);
+                Assert.assertThrows(ServerException.class, context::setLoadingMode);
+                context.unsetLoadingMode();
+            }
+            server.ownerStatus = 200;
+            server.ownerCapability = "{}";
+            LoadContext invalid = this.context(client, client);
+            Assert.assertThrows(InvalidResponseException.class, invalid::setLoadingMode);
+            server.dropCapabilityReply = true;
+            Assert.assertThrows(IOException.class, invalid::setLoadingMode);
+            invalid.unsetLoadingMode();
+            Assert.assertEquals(0, server.modeWrites);
+            Assert.assertEquals(0, server.ownerWrites);
+        }
+    }
+
+    @Test
+    public void testCapabilityRevisionKeepsOrdinaryOwnerRequestsCompatible() throws Exception {
+        try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
+            server.enableOwnership();
+            Map<String, Object> capability = JsonUtil.fromJson(server.ownerCapability, Map.class);
+            capability.put("revision", 7L);
+            server.ownerCapability = JsonUtil.toJson(capability);
+            LoadingModeOwner owner = client.graphs().newLoadingOwner("hugegraph");
+            client.graphs().acquireLoadingOwner("hugegraph", owner);
+            Assert.assertEquals(Set.of("action", "instance", "epoch", "token"), server.lastOwner.keySet());
+            Assert.assertEquals(capability.get("instance"), server.lastOwner.get("instance"));
+            Assert.assertEquals(capability.get("epoch"), server.lastOwner.get("epoch"));
+            Map<String, Object> acquired = new HashMap<>(server.lastOwner);
+            client.graphs().releaseLoadingOwner("hugegraph", owner);
+            acquired.put("action", "release");
+            Assert.assertEquals(acquired, server.lastOwner);
+        }
+    }
+
+    @Test
+    public void testManualRestoringModeRejectionDoesNotFallBack() throws Exception {
+        try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
+            server.enableOwnership();
+            server.mode = GraphMode.RESTORING;
+            server.ownerWriteStatus = 400;
+            server.ownerFailure = "Cannot acquire loading ownership of manually set graph mode RESTORING";
+            LoadContext context = this.context(client, client);
+            ServerException failure = (ServerException) Assert.assertThrows(ServerException.class,
+                    context::setLoadingMode);
+            Assert.assertEquals(server.ownerFailure, failure.getMessage());
+            Assert.assertEquals(GraphMode.RESTORING, server.mode);
+            Assert.assertEquals(0, server.modeWrites);
+            server.ownerWriteStatus = 200;
+            server.ownerFailure = null;
+            context.unsetLoadingMode();
+            Assert.assertEquals("release", server.lastOwner.get("action"));
+            Assert.assertEquals(0, server.modeWrites);
+        }
+    }
+
+    @Test
+    public void testOwnerRecoveryLogDoesNotExposeToken() throws Exception {
+        Logger logger = Logger.getLogger(LoadContext.class.getName());
+        CapturingAppender appender = new CapturingAppender();
+        Level original = logger.getLevel();
+        logger.setLevel(Level.INFO);
+        logger.addAppender(appender);
+        try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
+            server.enableOwnership();
+            LoadContext context = this.context(client, client);
+            context.setLoadingMode();
+            String identity = server.lastOwner.get("instance") + "/" + server.lastOwner.get("epoch");
+            Assert.assertTrue(appender.contains("Preparing LOADING owner " + identity));
+            Assert.assertTrue(appender.contains("Server loading-owner recovery procedure"));
+            Assert.assertFalse(appender.contains((String) server.lastOwner.get("token")));
+            context.unsetLoadingMode();
+        } finally {
+            logger.removeAppender(appender);
+            logger.setLevel(original);
+        }
+    }
+
+    @Test
+    public void testOwnerCleanupRetriesSameTupleAndNeverUsesEnumCleanup() throws Exception {
+        try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
+            server.enableOwnership();
+            LoadContext context = this.context(client, client);
+            context.setLoadingMode();
+            Map<String, Object> acquired = new HashMap<>(server.lastOwner);
+            ((LoadContext) context.clone()).unsetLoadingMode();
+            server.dropOwnerReply = true;
+            Assert.assertThrows(LoadException.class, context::unsetLoadingMode);
+            server.dropOwnerReply = false;
+            context.unsetLoadingMode();
+            Assert.assertEquals("release", server.lastOwner.remove("action"));
+            acquired.remove("action");
+            Assert.assertEquals(acquired, server.lastOwner);
+            int writes = server.ownerWrites;
+            context.unsetLoadingMode();
+            Assert.assertEquals(writes, server.ownerWrites);
+            Assert.assertThrows(LoadException.class, context::setLoadingMode);
+            Assert.assertEquals(GraphMode.LOADING, server.mode);
+            Assert.assertEquals(0, server.modeWrites);
+        }
+    }
+
+    @Test
+    public void testLostOrDeniedAcquireKeepsTupleForCleanupWithoutFallback() throws Exception {
+        try (ModeServer server = new ModeServer(); HugeClient client = server.client()) {
+            server.enableOwnership();
+            for (boolean lostReply : new boolean[]{false, true}) {
+                LoadContext context = this.context(client, client);
+                server.dropOwnerReply = lostReply;
+                server.ownerWriteStatus = lostReply ? 200 : 403;
+                Assert.assertThrows(lostReply ? IOException.class : ServerException.class, context::setLoadingMode);
+                Map<String, Object> acquired = new HashMap<>(server.lastOwner);
+                server.dropOwnerReply = false;
+                server.ownerWriteStatus = 200;
+                context.unsetLoadingMode();
+                Assert.assertEquals("release", server.lastOwner.remove("action"));
+                acquired.remove("action");
+                Assert.assertEquals(acquired, server.lastOwner);
+            }
+            Assert.assertEquals(0, server.modeWrites);
+        }
+    }
+
     private static final class CapturingAppender extends AppenderSkeleton {
 
         private final StringBuilder messages = new StringBuilder();
@@ -1046,6 +1253,20 @@ public class LoadContextTest {
         private volatile boolean dropModeResponse;
         private volatile int modeReads;
         private volatile int modeWrites;
+        private String ownerCapability;
+        private int ownerStatus = 404;
+        private boolean dropOwnerReply;
+        private boolean dropCapabilityReply;
+        private int ownerWriteStatus = 200;
+        private String ownerFailure;
+        private int ownerWrites;
+        private Map<String, Object> lastOwner;
+
+        private void enableOwnership() {
+            this.ownerCapability = JsonUtil.toJson(Map.of("protocol", 1, "epoch", 0,
+                                                        "instance", UUID.randomUUID().toString()));
+            this.ownerStatus = 200;
+        }
 
         private ModeServer() throws IOException {
             this.server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
@@ -1055,6 +1276,29 @@ public class LoadContextTest {
                 String path = exchange.getRequestURI().getPath();
                 if (path.equals("/versions")) {
                     response = "{\"versions\":{\"core\":\"1.8.0\",\"api\":\"0.74\"}}";
+                } else if (path.equals("/graphspaces/DEFAULT/graphs/hugegraph/mode/owners")) {
+                    status = this.ownerStatus;
+                    response = this.ownerCapability == null ?
+                               "{\"exception\":\"class jakarta.ws.rs.NotFoundException\"," +
+                               "\"message\":\"HTTP 404 Not Found\"}" : this.ownerCapability;
+                    if (exchange.getRequestMethod().equals("PUT")) {
+                        status = this.ownerWriteStatus;
+                        this.ownerWrites++;
+                        String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+                        this.lastOwner = JsonUtil.fromJson(body, Map.class);
+                        Map<String, Object> receipt = new HashMap<>(this.lastOwner);
+                        boolean acquire = "acquire".equals(receipt.remove("action"));
+                        receipt.put("protocol", 1);
+                        receipt.put("state", acquire ? "active" : "released");
+                        receipt.put("mode", "LOADING");
+                        response = this.ownerFailure == null ? JsonUtil.toJson(receipt) :
+                                   JsonUtil.toJson(Collections.singletonMap("message", this.ownerFailure));
+                    }
+                    if (this.dropCapabilityReply || this.dropOwnerReply &&
+                        exchange.getRequestMethod().equals("PUT")) {
+                        exchange.close();
+                        return;
+                    }
                 } else if (path.equals("/graphspaces/DEFAULT/graphs/hugegraph/mode")) {
                     if (exchange.getRequestMethod().equals("PUT")) {
                         this.modeWrites++;
@@ -1118,7 +1362,7 @@ public class LoadContextTest {
         // Match the existing TaskManagerTest allocation seam: no network clients.
         LoadContext context = allocate(LoadContext.class);
         LoadOptions options = new LoadOptions();
-        options.file = this.folder.newFile("mapping.json").getAbsolutePath();
+        options.file = this.folder.newFile("mapping-" + UUID.randomUUID() + ".json").getAbsolutePath();
         set(context, "timestamp", "test");
         set(context, "options", options);
         LoadSummary summary = new LoadSummary();

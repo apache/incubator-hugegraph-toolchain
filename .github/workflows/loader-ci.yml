@@ -123,6 +123,12 @@ jobs:
           CANDIDATE_ARCHIVE: ${{ steps.candidate-sdk.outputs.archive }}
         run: bash hugegraph-client/assembly/travis/start-hugegraph-servers.sh "$CANDIDATE_ARCHIVE"
 
+      - name: Test released Server loading-mode compatibility
+        if: matrix.SERVER_BASELINE == 'release-1.7'
+        run: |
+          cd hugegraph-loader
+          mvn test -Dtest=LegacyServerCompatibilityTest -Dhugegraph.loader.test-server-url=http://127.0.0.1:8080 -ntp
+
       - name: Run test
         env:
           RUN_HDFS: ${{ inputs.hdfs }}

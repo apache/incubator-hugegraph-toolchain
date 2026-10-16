@@ -139,7 +139,9 @@ so copy a mapping mounted from a read-only Kubernetes ConfigMap to a writable vo
 
 #### Graph mode during startup and cleanup
 
-Loader resets `LOADING` mode only after that Loader context successfully sets it. A startup failure before the mode
+For protocol-1 Servers, see [Concurrent imports and graph mode](#concurrent-imports-and-graph-mode).
+
+On Servers without the loading-owner endpoint, Loader resets `LOADING` mode only after that context sets it. A startup failure before the mode
 change, a rejected mode request, or a restore run does not clear another run's `LOADING` mode. Cleanup preserves a
 different current graph mode; successful cleanup is not repeated. Concurrent successful Loader runs on the same
 graph still require external coordination; this startup safeguard does not provide shared ownership of graph mode.
@@ -149,14 +151,94 @@ failure and logs an error naming the graph and warning that it may still be in `
 unconfirmed mode unchanged. Inspect the graph mode and confirm there are no active imports before explicitly
 restoring `NONE` mode; an unconfirmed request cannot be rolled back automatically.
 
+#### Concurrent imports and graph mode
+
+On a Server with loading-owner protocol 1, each ordinary import acquires its own
+handle on the same live graph instance. After its workers stop, cleanup releases
+only that handle; the graph stays in `LOADING` until the last import releases.
+The protocol does not coordinate different Server processes or survive restart.
+Keep the client graph binding unchanged for the lifetime of a Loader context.
+To import into another graph, create a new Loader context instead of rebinding
+the shared client during an import.
+
+Servers without the ownership endpoint keep the existing LOADING and cleanup
+behavior, with no concurrent-import guarantee. Permission errors, network failures
+and invalid ownership responses do not fall back to legacy mode. Restore and
+Graph-source imports retain their existing RESTORING behavior.
+
+The paired Server change must be merged and released before the new guarantee is
+available: [Server #3331](https://github.com/apache/hugegraph/pull/3331).
+
+On protocol-1 Servers, an ordinary import requires `NONE` or `LOADING` held by
+active owners. Restore and Graph-source imports leave `RESTORING` after shutdown,
+as before. A subsequent ordinary import is rejected until that mode is manually
+recovered; an enum-set `LOADING` or `MERGING` mode has the same prerequisite.
+
+Before acquiring ownership, Loader logs `Preparing LOADING owner` with the
+non-secret `instance/epoch` identity and recovery guidance. Owner tokens are not
+logged. Owners have no automatic expiry, and cleanup failure still closes the
+Loader context and clients; another `shutdown()` does not retry the release.
+After an unclean exit or release failure, use the paired Server's administrator
+recovery procedure below instead of looking for a token in Loader logs.
+
+Hubble's existing task lifecycle can finish, stop or reconnect without calling
+`Loader.shutdown()`. This SDK change alone can therefore leave active owners and
+block mode changes, including restore. Hubble integration requires the paired
+[task cleanup fix #814](https://github.com/apache/hugegraph-toolchain/pull/814) and
+[application shutdown fix #818](https://github.com/apache/hugegraph-toolchain/pull/818);
+deploy those fixes together. If owners are already stranded, use the recovery
+steps below.
+
+1. Stop all related imports and ordinary graph writes, and drain their in-flight
+   requests. The Server recovery endpoint cannot perform this external drain.
+2. As an administrator with `ADMIN` or `ROOT` permission, GET
+   `/graphspaces/{graphspace}/graphs/{graph}/mode/owners` on the affected live
+   Server instance. Read its current `instance`, `epoch` and non-secret `revision`
+   immediately before recovery; do not reuse values from another instance or an
+   earlier attempt.
+3. PUT the following body to that same endpoint, replacing the placeholders with
+   the values just read. This recovery action does not require an owner token.
+
+   ```json
+   {
+     "action": "recover",
+     "instance": "<current instance UUID>",
+     "epoch": 0,
+     "revision": 0,
+     "confirm": "I'm sure all imports have stopped"
+   }
+   ```
+
+   Replace both example `0` values with the GET response's current `epoch` and
+   `revision`. Recovery requires both values to match; any owner or mode change
+   after GET makes this request stale.
+   Success returns `state: recovered`, `mode: NONE` and the incremented epoch,
+   clears existing owners, and prevents old-epoch acquire/release requests from
+   taking effect. A stale recovery request returns HTTP 409 so it cannot clear a
+   newer owner, including one acquired within the same epoch. Ordinary graph-status
+   write permission is insufficient (HTTP 403).
+4. If the response is lost or the result is otherwise unknown, inspect the graph
+   mode and capability. Do not blindly obtain a new epoch and repeat recovery,
+   which could clear owners created after the first attempt.
+
+This procedure also clears a manually set `RESTORING` or `MERGING` mode once all
+related work has stopped and drained. It depends on the paired Server change
+linked above; older Servers retain their legacy enum-mode recovery behavior.
+While protocol-1 owners are active, the Server rejects every enum graph-mode PUT
+for that graph, including `NONE`, `LOADING` and `RESTORING`. This also affects the
+Spark connector and older Loaders that use enum mode setters. Avoid running those
+clients or restore imports concurrently with owned imports. Stop and drain the
+owned imports, release or recover their ownership as described above, then retry
+using the client's existing workflow.
+
 ### 3.2 Load data with docker
 
 > If the `loader` and `server` is in the same docker network (for example, you deploy `loader` and `server` with `docker-compose`), we can set `-h {server_container_name}`. In our example, the container name of `server` is `graph`
 >
-> If `loader` is deployed alone, the `-h` should be set to the ip of the host of `server`. Other parameter description is [here](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/#341-parameter-description)
+> If `loader` is deployed alone, the `-h` should be set to the ip of the host of `server`. See the [parameter description](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/#341-parameter-description)
 
 Visit [doc](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/#45-use-docker-to-load-data) for more details.
- 
+
 ```bash
 docker exec -it loader bin/hugegraph-loader.sh -g hugegraph -f example/file/struct.json -s example/file/schema.groovy -h graph -p 8080
 ```
@@ -166,12 +248,12 @@ docker exec -it loader bin/hugegraph-loader.sh -g hugegraph -f example/file/stru
 
 For Spark execution, see [Spark Loader on Java 17](docs/spark-java17.md) for the tested engine version, launcher usage, and the separate HBase bulkload boundary.
 
-The [loader homepage](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/) contains more information about it. 
+The [loader homepage](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/) contains more information about it.
 
 Server 1.7 compatibility CI uses the pinned official ASF 1.7.0 binary archive. The fixture cache verifies the release version, official source URL, official SHA-512 and cached archive SHA-256 before startup. A failed download does not fall back to rebuilding the release tag. Unpublished candidate SDKs and their Server fixture continue to use the locked ASF source build.
+
+See the [Flink CDC Java 17 validation](docs/flink-cdc-java17.md) for its current limits and launcher syntax.
 
 ## 5. License
 
 hugegraph-loader is licensed under Apache 2.0 License.
-
-See the [Flink CDC Java 17 validation](docs/flink-cdc-java17.md) for its current limits and launcher syntax.

@@ -59,6 +59,12 @@ public final class NativeCleanupTestSupport implements AutoCloseable {
             int status = 200;
             if (exchange.getRequestURI().getPath().equals("/versions")) {
                 response = Map.of("versions", Map.of("core", "1.8.0", "api", "0.74"));
+            } else if (exchange.getRequestURI().getPath().endsWith("/mode/owners") &&
+                       exchange.getRequestMethod().equals("GET")) {
+                // This fixture verifies the legacy enum reset failure path.
+                status = 404;
+                response = Map.of("exception", "jakarta.ws.rs.NotFoundException",
+                                  "message", "HTTP 404 Not Found");
             } else if (exchange.getRequestURI().getPath().endsWith("/mode")) {
                 if (exchange.getRequestMethod().equals("GET")) {
                     response = Map.of("mode", this.mode);

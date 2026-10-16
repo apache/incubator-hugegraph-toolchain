@@ -37,6 +37,7 @@ import org.apache.hugegraph.loader.failure.FailLogger;
 import org.apache.hugegraph.loader.filter.ElementParseGroup;
 import org.apache.hugegraph.loader.mapping.InputStruct;
 import org.apache.hugegraph.loader.metrics.LoadSummary;
+import org.apache.hugegraph.structure.LoadingModeOwner;
 import org.apache.hugegraph.structure.constant.GraphMode;
 import org.apache.hugegraph.util.Log;
 
@@ -55,6 +56,9 @@ public final class LoadContext implements Cloneable {
     private volatile boolean closed;
     // Only a successful LOADING request permits this context to reset it.
     private boolean loadingModeSet;
+    // Retain the tuple before acquire, including an unknown acquire outcome.
+    private LoadingModeOwner loadingOwner;
+    private boolean loadingOwnerReleased;
     private volatile StopReason stopReason;
     private volatile boolean noError;
     private volatile Throwable failure;
@@ -211,6 +215,29 @@ public final class LoadContext implements Cloneable {
     @SneakyThrows
     public synchronized void setLoadingMode() {
         String graph = this.client.graph().graph();
+        if (this.loadingOwnerReleased) {
+            throw new LoadException("Loading owner has already been released; create a new context");
+        }
+        if (this.loadingOwner == null) {
+            try {
+                this.loadingOwner = this.client.graphs().newLoadingOwner(graph);
+                LOG.info("Preparing LOADING owner {} for graph '{}'; after an unclean exit, stop related imports " +
+                         "and use the Server loading-owner recovery procedure", this.loadingOwner, graph);
+            } catch (ServerException e) {
+                if (e.status() != 404 || !"HTTP 404 Not Found".equals(e.getMessage()) ||
+                    !("jakarta.ws.rs.NotFoundException".equals(e.exception()) ||
+                      "javax.ws.rs.NotFoundException".equals(e.exception()) ||
+                      "class jakarta.ws.rs.NotFoundException".equals(e.exception()) ||
+                      "class javax.ws.rs.NotFoundException".equals(e.exception()))) {
+                    throw e;
+                }
+                LOG.warn("Server has no loading-owner endpoint; use legacy mode without concurrent-import protection");
+            }
+        }
+        if (this.loadingOwner != null) {
+            this.client.graphs().acquireLoadingOwner(graph, this.loadingOwner);
+            return;
+        }
         try {
             this.client.graphs().mode(graph, GraphMode.LOADING);
             this.loadingModeSet = true;
@@ -242,6 +269,18 @@ public final class LoadContext implements Cloneable {
     }
 
     public synchronized void unsetLoadingMode() {
+        if (this.loadingOwner != null) {
+            if (!this.loadingOwnerReleased) {
+                try {
+                    this.client.graphs().releaseLoadingOwner(this.client.graph().graph(), this.loadingOwner);
+                    this.loadingOwnerReleased = true;
+                } catch (Exception e) {
+                    throw new LoadException("Failed to release LOADING owner %s; stop and drain related imports " +
+                                            "before administrator recovery on the Server", e, this.loadingOwner);
+                }
+            }
+            return;
+        }
         if (!this.loadingModeSet) {
             return;
         }
@@ -310,6 +349,8 @@ public final class LoadContext implements Cloneable {
     public Object clone() throws CloneNotSupportedException {
         LoadContext context = (LoadContext) super.clone();
         context.loadingModeSet = false;
+        context.loadingOwner = null;
+        context.loadingOwnerReleased = false;
         return context;
     }
 }

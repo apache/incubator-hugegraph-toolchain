@@ -185,6 +185,11 @@ public class LoadTaskCheckpointTest {
                 String path = exchange.getRequestURI().getPath();
                 if (path.equals("/versions")) {
                     response = Map.of("versions", Map.of("core", "1.8.0", "api", "0.74"));
+                } else if (path.endsWith("/mode/owners") && exchange.getRequestMethod().equals("GET")) {
+                    // Keep this checkpoint fixture on the legacy enum-mode path.
+                    status = 404;
+                    response = Map.of("exception", "jakarta.ws.rs.NotFoundException",
+                                      "message", "HTTP 404 Not Found");
                 } else if (path.endsWith("/mode")) {
                     if (exchange.getRequestMethod().equals("PUT")) {
                         this.mode = JsonUtil.fromJson(new String(exchange.getRequestBody().readAllBytes(),
