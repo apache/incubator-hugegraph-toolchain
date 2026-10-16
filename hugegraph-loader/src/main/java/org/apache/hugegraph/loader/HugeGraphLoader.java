@@ -20,9 +20,11 @@ package org.apache.hugegraph.loader;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -975,9 +977,25 @@ public final class HugeGraphLoader {
     }
 
     private static void suppressCleanupFailure(Throwable primary, Throwable secondary) {
-        if (primary != secondary) {
+        Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        if (!containsFailure(secondary, primary, seen)) {
             primary.addSuppressed(secondary);
         }
+    }
+
+    private static boolean containsFailure(Throwable failure, Throwable target, Set<Throwable> seen) {
+        if (failure == null || !seen.add(failure)) {
+            return false;
+        }
+        if (failure == target || containsFailure(failure.getCause(), target, seen)) {
+            return true;
+        }
+        for (Throwable suppressed : failure.getSuppressed()) {
+            if (containsFailure(suppressed, target, seen)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void cleanupEmptyProgress() {
