@@ -231,7 +231,8 @@ class QuerySemanticsTest(unittest.TestCase):
 
     def run_checks(self, request=None):
         with mock.patch.object(SMOKE, "request", side_effect=request or self.request):
-            return SMOKE.run_hubble_query_checks("http://hubble", "DEFAULT", "graph", self.schema, "smoke")
+            return SMOKE.run_hubble_query_checks("http://hubble", "http://server", "DEFAULT", "graph",
+                                                 self.schema, "smoke")
 
     def test_query_routes_validate_all_views_and_history(self):
         checks = self.run_checks()
@@ -242,8 +243,12 @@ class QuerySemanticsTest(unittest.TestCase):
 
     def test_disabled_server_skips_only_cypher(self):
         self.cypher_enabled = False
-        checks = self.run_checks()
+        versions = {"versions": {"core": "1.7.0"}}
+        with mock.patch.object(SMOKE, "server_json", return_value=versions) as server_json:
+            checks = self.run_checks()
+        server_json.assert_called_once_with("GET", "http://server", "/versions")
         self.assertEqual(["passed", "passed", "skipped"], [c["status"] for c in checks])
+        self.assertEqual(versions, checks[-1]["server_versions"])
         self.assertEqual([], self.queries)
 
     def test_enabled_cypher_failure_is_not_skipped(self):
@@ -307,7 +312,8 @@ class QuerySemanticsTest(unittest.TestCase):
                 mock.patch.object(SMOKE, "server_json", return_value=shortest_path), \
                 mock.patch.object(SMOKE, "run_hubble_query_checks", return_value=[]) as query_checks:
             SMOKE.run_live_function_flow("http://hubble", "http://server", "DEFAULT", "graph", "smoke")
-        query_checks.assert_called_once_with("http://hubble", "DEFAULT", "graph", self.schema, "smoke")
+        query_checks.assert_called_once_with("http://hubble", "http://server", "DEFAULT", "graph",
+                                             self.schema, "smoke")
 
 
 if __name__ == "__main__":

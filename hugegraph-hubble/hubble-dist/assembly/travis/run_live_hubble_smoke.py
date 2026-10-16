@@ -635,7 +635,7 @@ def check_cypher_graph_views(result, schema, prefix, kind):
             raise RuntimeError(f"Cypher edge endpoints/labels mismatch in {view} view: {elements}")
 
 
-def run_hubble_query_checks(hubble_url, graph_space, graph_name, schema, prefix):
+def run_hubble_query_checks(hubble_url, server_url, graph_space, graph_name, schema, prefix):
     checks = []
     for resource, label, expected in (("vertices", schema["vl_person"], 3),
                                       ("edges", schema["el_knows"], 2)):
@@ -652,6 +652,7 @@ def run_hubble_query_checks(hubble_url, graph_space, graph_name, schema, prefix)
         raise RuntimeError(f"Hubble Server capabilities are unverified: {capabilities}")
     if capabilities.get("cypher_enabled") is False:
         checks.append({"name": "hubble-cypher-semantics", "status": "skipped",
+                       "server_versions": server_json("GET", server_url, "/versions"),
                        "reason": "Selected Server reports cypher_enabled=false"})
         return checks
     if capabilities.get("cypher_enabled") is not True:
@@ -768,7 +769,7 @@ def run_live_function_flow(hubble_url, server_url, graph_space, graph_name,
                    "edges": d_edges, "expected_vertices": expected_vertices,
                    "expected_edges": expected_edges})
 
-    checks.extend(run_hubble_query_checks(hubble_url, graph_space, graph_name, schema, prefix))
+    checks.extend(run_hubble_query_checks(hubble_url, server_url, graph_space, graph_name, schema, prefix))
 
     direct_shortest = server_json(
         "GET", server_url,
