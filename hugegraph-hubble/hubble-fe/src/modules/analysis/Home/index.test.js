@@ -57,6 +57,9 @@ jest.mock('../QueryBar/Home', () => props => (
         <button onClick={() => props.setCodeEditorContent('MATCH (n) RETURN n LIMIT 4')}>Edit Cypher</button>
         <button onClick={() => props.setCodeEditorContent('g.E().limit(3)')}>Edit query</button>
         <button onClick={() => props.onExecute(props.activeTab)}>Run current</button>
+        <button onClick={() => props.onExecuteModeChange('task')}>Use async</button>
+        <button onClick={() => props.setCodeEditorContent(props.codeEditorContent)}>Echo current query</button>
+        <button onClick={props.text2gql.cancel}>Cancel generation</button>
         <button onClick={props.onClear}>Clear query</button>
         <button onClick={() => props.text2gql.changeSource('shared')}>Use shared model</button>
         <button onClick={() => props.text2gql.changeSource('custom')}>Use custom model</button>
@@ -69,12 +72,20 @@ jest.mock('../QueryBar/Home', () => props => (
         >
             Set model and question
         </button>
-        <button disabled={props.text2gql.sharedConfig.loading} onClick={props.text2gql.generate}>Generate</button>
+        <button
+            disabled={props.text2gql.sharedConfig.loading}
+            onClick={() => props.text2gql.generate({asyncTask: props.executeMode === 'task'})}
+        >
+            Generate
+        </button>
         <button onClick={() => props.text2gql.setQuestion('New question')}>Edit question</button>
     </div>
 ));
 jest.mock('../QueryResult/Home', () => ({
     queryResult,
+    queryProgress,
+    asyncTaskResult,
+    isQueryMode,
     queryStatus,
     queryMessage,
     graphRenderMode,
@@ -87,6 +98,9 @@ jest.mock('../QueryResult/Home', () => ({
         query result {queryStatus} {queryMessage}
         <output data-testid='query-result'>{JSON.stringify(queryResult)}</output>
         <span data-testid='query-status'>{queryStatus}</span>
+        <output data-testid='result-mode'>{isQueryMode ? 'query' : 'task'}</output>
+        <output data-testid='query-progress'>{queryProgress?.phase || ''}</output>
+        <output data-testid='async-task'>{!isQueryMode ? asyncTaskResult ?? '' : ''}</output>
         <span>render mode {graphRenderMode}</span>
         <span>metadata ready {String(Boolean(metaData))}</span>
         <span>properties ready {String(Boolean(propertyKeysRecords))}</span>
@@ -120,6 +134,7 @@ jest.mock('../LogsDetail/Home', () => props => (
         <span>favorite total {props.favoriteQueriesData.total ?? 'pending'}</span>
         <button onClick={() => props.onFavoritePageChange(2, 10)}>Go favorite page 2</button>
         <button onClick={() => props.onExecutePageChange(2, 10)}>Go execution page 2</button>
+        <button onClick={() => props.onExecutePageChange(1, 10)}>Go execution page 1</button>
         <span>{props.executionLogsData.records?.[0]?.content}</span>
         <span>{props.favoriteQueriesData.records?.[0]?.content}</span>
         {props.executionLogsError && (
@@ -293,7 +308,7 @@ it('keeps AI generation available alongside the manual query and Gremlin history
     expect(api.analysis.executeText2Gql).not.toHaveBeenCalled();
     expect(screen.getByText(/query result/)).toBeInTheDocument();
     expect(api.analysis.getExecutionLogs).toHaveBeenLastCalledWith(
-        'DEFAULT', 'hugegraph', {page_size: 10, page_no: 1, type: '0'}
+        'DEFAULT', 'hugegraph', {page_size: 10, page_no: 1, type: '6'}
     );
 });
 
@@ -443,12 +458,12 @@ it('does not let late history from the previous graph replace current rows', asy
         status: 200,
         data: {records: [{id: 2, content: 'current-b'}], total: 1},
     }));
-    expect(await screen.findByText('current-b')).toBeInTheDocument();
+    expect(await screen.findByTestId('query-content')).toHaveTextContent('current-b');
     await act(async () => resolveA({
         status: 200,
         data: {records: [{id: 1, content: 'stale-a'}], total: 1},
     }));
-    expect(screen.getByText('current-b')).toBeInTheDocument();
+    expect(screen.getByTestId('query-content')).toHaveTextContent('current-b');
     expect(screen.queryByText('stale-a')).not.toBeInTheDocument();
 });
 
@@ -651,6 +666,7 @@ it('preserves both text and execution provenance when switching between manual G
     fireEvent.click(screen.getByRole('button', {name: 'Set model and question'}));
     fireEvent.click(screen.getByRole('button', {name: 'Edit query'}));
     fireEvent.click(screen.getByRole('button', {name: 'Generate Cypher'}));
+    fireEvent.click(screen.getByRole('button', {name: 'Set model and question'}));
     expect(screen.getByTestId('query-content')).toHaveTextContent('MATCH (n) RETURN n LIMIT 10');
     expect(screen.getByTestId('editor-source')).toHaveTextContent('manual');
     await waitFor(() => expect(screen.getByRole('button', {name: 'Generate'})).toBeEnabled());
@@ -811,6 +827,7 @@ it.each(['gremlin', 'cypher'])(
         fireEvent.click(screen.getByRole('button', {name: 'Set model and question'}));
         if (language === 'cypher') {
             fireEvent.click(screen.getByRole('button', {name: 'Generate Cypher'}));
+            fireEvent.click(screen.getByRole('button', {name: 'Set model and question'}));
         }
         await waitFor(() => expect(screen.getByRole('button', {name: 'Generate'})).toBeEnabled());
         await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Generate'})));
@@ -1014,7 +1031,7 @@ it.each(['rows', 'errors', 'late resolve', 'late reject'])(
             bob.execution.resolve(records('bob-current-history'));
             bob.favorite.resolve(records('bob-current-favorite'));
         });
-        expect(screen.getByText('bob-current-history')).toBeInTheDocument();
+        expect(screen.getByTestId('query-content')).toHaveTextContent('bob-current-history');
         expect(screen.getByText('bob-current-favorite')).toBeInTheDocument();
         expect(screen.getByText('execution loading false')).toBeInTheDocument();
         expect(screen.getByText('favorite loading false')).toBeInTheDocument();
@@ -1097,4 +1114,382 @@ it('does not include LLM generation in database execution timing or accept stale
     finally {
         now.mockRestore();
     }
+});
+
+
+const historyResponse = records => ({status: 200, data: {records, total: records.length}});
+const pendingResponse = () => {
+    let resolve;
+    const promise = new Promise(done => {
+        resolve = done;
+    });
+    return {promise, resolve};
+};
+const homeFor = (graph = 'hugegraph', graphSpace = 'DEFAULT') => (
+    <GraphAnalysisContext.Provider value={{graphSpace, graph}}>
+        <AnalysisHome />
+    </GraphAnalysisContext.Provider>
+);
+
+it('restores the latest execution statement and its own question without executing or generating', async () => {
+    const metadata = pendingResponse();
+    api.analysis.getText2GqlConfig.mockReturnValueOnce(metadata.promise);
+    api.analysis.getExecutionLogs.mockResolvedValue(historyResponse([
+        {content: 'g.V().limit(7)', text: 'Latest question'},
+        {content: 'g.E()', text: 'Older unrelated question'},
+    ]));
+    render(homeFor());
+    await waitFor(() => expect(screen.getByTestId('query-content')).toHaveTextContent('g.V().limit(7)'));
+    expect(screen.getByTestId('source-question')).toHaveTextContent('Latest question');
+    expect(screen.getByTestId('editor-source')).toHaveTextContent('ai');
+    expect(api.analysis.streamText2Gql).not.toHaveBeenCalled();
+    expect(api.analysis.executeText2Gql).not.toHaveBeenCalled();
+    expect(api.analysis.getExecutionQuery).not.toHaveBeenCalled();
+    expect(api.analysis.getCypherExecutionQuery).not.toHaveBeenCalled();
+    await act(async () => metadata.resolve({status: 200, data: {available: true, model: 'shared'}}));
+    expect(screen.getByTestId('source-question')).toHaveTextContent('Latest question');
+    expect(screen.getByTestId('editor-source')).toHaveTextContent('ai');
+    api.analysis.executeText2Gql.mockResolvedValue({status: 200, data: {}});
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
+    expect(api.analysis.executeText2Gql).toHaveBeenCalledWith('DEFAULT', 'hugegraph', 'gremlin',
+        {content: 'g.V().limit(7)', text: 'Latest question', read_only: true}, expect.any(Object));
+});
+
+it('restores a manual latest statement with an empty question, ignoring older natural-language records', async () => {
+    api.analysis.getExecutionLogs.mockResolvedValue(historyResponse([
+        {content: 'g.E().limit(8)'},
+        {content: 'g.V()', text: 'Must not be borrowed'},
+    ]));
+    render(homeFor());
+    await waitFor(() => expect(screen.getByTestId('query-content')).toHaveTextContent('g.E().limit(8)'));
+    expect(screen.getByTestId('source-question')).toBeEmptyDOMElement();
+    expect(screen.getByTestId('editor-source')).toHaveTextContent('manual');
+    expect(api.analysis.streamText2Gql).not.toHaveBeenCalled();
+});
+
+it('restores each language once and preserves its edited question and statement after switching back', async () => {
+    api.analysis.getExecutionLogs.mockImplementation((space, graph, params) => Promise.resolve(historyResponse([
+        params.type === EXECUTION_LOGS_TYPE.Cypher
+            ? {content: 'MATCH (n) RETURN n LIMIT 8', text: 'Cypher history question'}
+            : {content: 'g.V().limit(8)', text: 'Gremlin history question'},
+    ])));
+    render(homeFor());
+    await waitFor(() => expect(screen.getByTestId('source-question')).toHaveTextContent('Gremlin history question'));
+    fireEvent.click(screen.getByRole('button', {name: 'Edit question'}));
+    fireEvent.click(screen.getByRole('button', {name: 'Edit query'}));
+    fireEvent.click(screen.getByRole('button', {name: 'Cypher'}));
+    await waitFor(() => expect(screen.getByTestId('source-question')).toHaveTextContent('Cypher history question'));
+    expect(screen.getByTestId('query-content')).toHaveTextContent('MATCH (n) RETURN n LIMIT 8');
+    fireEvent.click(screen.getByRole('button', {name: 'Edit Cypher'}));
+    fireEvent.click(screen.getByRole('button', {name: 'Generate Gremlin'}));
+    await waitFor(() => expect(screen.getByText('execution loading false')).toBeInTheDocument());
+    expect(screen.getByTestId('query-content')).toHaveTextContent('g.E().limit(3)');
+    expect(screen.getByTestId('source-question')).toHaveTextContent('New question');
+    fireEvent.click(screen.getByRole('button', {name: 'Cypher'}));
+    await waitFor(() => expect(screen.getByText('execution loading false')).toBeInTheDocument());
+    expect(screen.getByTestId('query-content')).toHaveTextContent('MATCH (n) RETURN n LIMIT 4');
+    expect(screen.getByTestId('source-question')).toHaveTextContent('Cypher history question');
+    expect(api.analysis.streamText2Gql).not.toHaveBeenCalled();
+});
+
+it('isolates automatic history restoration by graph space, graph and account', async () => {
+    api.analysis.getExecutionLogs.mockImplementation((space, graph) => {
+        const user = JSON.parse(sessionStorage.getItem('user_')).user_name;
+        return Promise.resolve(historyResponse([{content: `${user}/${space}/${graph}`, text: `${user} ${graph}`}]));
+    });
+    const view = render(homeFor('one'));
+    await waitFor(() => expect(screen.getByTestId('query-content')).toHaveTextContent('alice/DEFAULT/one'));
+    view.rerender(homeFor('two'));
+    await waitFor(() => expect(screen.getByTestId('query-content')).toHaveTextContent('alice/DEFAULT/two'));
+    expect(screen.getByTestId('source-question')).toHaveTextContent('alice two');
+    view.rerender(homeFor('two', 'another-space'));
+    await waitFor(() => expect(screen.getByTestId('query-content')).toHaveTextContent('alice/another-space/two'));
+    await act(async () => setUser({user_name: 'bob'}));
+    await waitFor(() => expect(screen.getByTestId('query-content')).toHaveTextContent('bob/another-space/two'));
+    expect(screen.getByTestId('source-question')).toHaveTextContent('bob two');
+});
+
+it.each(['statement', 'question', 'clear', 'run', 'favorite'])(
+    'does not overwrite an editor changed by %s while initial history is pending', async interaction => {
+        const history = pendingResponse();
+        api.analysis.getExecutionLogs.mockReturnValue(history.promise);
+        api.analysis.fetchFavoriteQueries.mockResolvedValue(historyResponse([{content: 'g.V().limit(99)'}]));
+        api.analysis.getExecutionQuery.mockResolvedValue({status: 200, data: {}});
+        render(homeFor());
+        await waitFor(() => expect(screen.getByRole('button', {name: 'Load favorite statement'})).toBeEnabled());
+        const actions = {statement: 'Edit query', question: 'Edit question', clear: 'Clear query',
+            run: 'Run current', favorite: 'Load favorite statement'};
+        await act(async () => fireEvent.click(screen.getByRole('button', {name: actions[interaction]})));
+        const statement = screen.getByTestId('query-content').textContent;
+        const question = screen.getByTestId('source-question').textContent;
+        await act(async () => history.resolve(historyResponse([{content: 'late statement', text: 'late question'}])));
+        expect(screen.getByTestId('query-content').textContent).toBe(statement);
+        expect(screen.getByTestId('source-question').textContent).toBe(question);
+        expect(api.analysis.streamText2Gql).not.toHaveBeenCalled();
+        expect(api.analysis.getExecutionQuery).toHaveBeenCalledTimes(interaction === 'run' ? 1 : 0);
+    }
+);
+
+it('never restores records again during pagination or result refreshes', async () => {
+    let revision = 0;
+    api.analysis.getExecutionLogs.mockImplementation((space, graph, params) => Promise.resolve(historyResponse([
+        {content: `history page ${params.page_no} revision ${revision++}`, text: 'Historical question'},
+    ])));
+    api.analysis.executeText2Gql.mockResolvedValue({status: 200, data: {}});
+    render(homeFor());
+    await waitFor(() => expect(screen.getByTestId('query-content')).toHaveTextContent('history page 1 revision 0'));
+    fireEvent.click(screen.getByRole('button', {name: 'Go execution page 2'}));
+    await waitFor(() => expect(screen.getByText('execution loading false')).toBeInTheDocument());
+    expect(screen.getByTestId('query-content')).toHaveTextContent('history page 1 revision 0');
+    fireEvent.click(screen.getByRole('button', {name: 'Go execution page 1'}));
+    await waitFor(() => expect(screen.getByText('execution loading false')).toBeInTheDocument());
+    expect(screen.getByTestId('query-content')).toHaveTextContent('history page 1 revision 0');
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
+    expect(screen.getByTestId('query-content')).toHaveTextContent('history page 1 revision 0');
+    expect(screen.getByTestId('source-question')).toHaveTextContent('Historical question');
+});
+
+it.each([false, true])('keeps a failed history fallback until retry or user editing (%s)', async edited => {
+    localStorage.setItem('hubble.query.alice.DEFAULT.hugegraph.Gremlin', 'g.V().limit(77)');
+    api.analysis.getExecutionLogs.mockRejectedValueOnce(new Error('offline'))
+        .mockResolvedValueOnce(historyResponse([{content: 'retry record', text: 'retry question'}]));
+    render(homeFor());
+    await screen.findByRole('button', {name: 'Retry records'});
+    expect(screen.getByTestId('query-content')).toHaveTextContent('g.V().limit(77)');
+    if (edited) {
+        fireEvent.click(screen.getByRole('button', {name: 'Edit query'}));
+    }
+    fireEvent.click(screen.getByRole('button', {name: 'Retry records'}));
+    await waitFor(() => expect(screen.getByText('execution loading false')).toBeInTheDocument());
+    expect(screen.getByTestId('query-content')).toHaveTextContent(edited ? 'g.E().limit(3)' : 'retry record');
+    expect(screen.getByTestId('source-question').textContent).toBe(edited ? '' : 'retry question');
+});
+
+
+it('restores an untouched language after switching away and back before its initial history returns', async () => {
+    const requests = [];
+    api.analysis.getExecutionLogs.mockImplementation((space, graph, params) => {
+        const response = pendingResponse();
+        requests.push({...response, type: params.type});
+        return response.promise;
+    });
+    render(homeFor());
+    await act(async () => Promise.resolve());
+    await waitFor(() => expect(requests).toHaveLength(1));
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Cypher'})));
+    await waitFor(() => expect(requests).toHaveLength(2));
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Generate Gremlin'})));
+    await waitFor(() => expect(requests).toHaveLength(3));
+    await act(async () => {
+        requests[0].resolve(historyResponse([{content: 'obsolete Gremlin', text: 'obsolete question'}]));
+        requests[1].resolve(historyResponse([{content: 'obsolete Cypher', text: 'another question'}]));
+    });
+    expect(screen.getByTestId('query-content')).toHaveTextContent('g.V().limit(10)');
+    expect(screen.getByTestId('source-question')).toBeEmptyDOMElement();
+    await act(async () => requests[2].resolve(historyResponse([
+        {content: 'g.V().limit(42)', text: 'Current Gremlin question'},
+    ])));
+    expect(screen.getByTestId('query-content')).toHaveTextContent('g.V().limit(42)');
+    expect(screen.getByTestId('source-question')).toHaveTextContent('Current Gremlin question');
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Cypher'})));
+    await waitFor(() => expect(requests).toHaveLength(4));
+    await act(async () => requests[3].resolve(historyResponse([
+        {content: 'MATCH (n) RETURN n LIMIT 42', text: 'Current Cypher question'},
+    ])));
+    expect(screen.getByTestId('query-content')).toHaveTextContent('MATCH (n) RETURN n LIMIT 42');
+    expect(screen.getByTestId('source-question')).toHaveTextContent('Current Cypher question');
+});
+
+
+it.each([
+    ['gremlin', 'ai'], ['cypher', 'ai'], ['gremlin', 'manual'], ['cypher', 'manual'],
+])('submits %s %s statements asynchronously while preserving execution provenance', async (language, source) => {
+    api.analysis.getExecutionLogs.mockImplementation((space, graph, params) => Promise.resolve(historyResponse([
+        {content: params.type === EXECUTION_LOGS_TYPE.Cypher ? 'MATCH (n) RETURN n' : 'g.V()',
+            text: source === 'ai' ? `Original ${params.type} question` : undefined},
+    ])));
+    const submit = language === 'gremlin' ? api.analysis.getExecutionTask : api.analysis.getCypherTask;
+    submit.mockResolvedValue({status: 200, data: {task_id: 42}});
+    render(homeFor());
+    await waitFor(() => expect(screen.getByText('execution loading false')).toBeInTheDocument());
+    if (language === 'cypher') {
+        await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Cypher'})));
+    }
+    const historyType = EXECUTION_LOGS_TYPE[language === 'gremlin' ? 'Gremlin' : 'Cypher'];
+    const original = source === 'ai' ? `Original ${historyType}`
+        + ' question' : '';
+    await waitFor(() => expect(screen.getByTestId('source-question').textContent).toBe(original));
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Use async'})));
+    fireEvent.click(screen.getByRole('button', {name: 'Edit question'}));
+    fireEvent.click(screen.getByRole('button', {name: language === 'gremlin' ? 'Edit query' : 'Edit Cypher'}));
+    const content = screen.getByTestId('query-content').textContent;
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
+    if (source === 'ai') {
+        expect(submit).toHaveBeenCalledWith('DEFAULT', 'hugegraph',
+            {content, text: original, read_only: true}, {signal: expect.any(Object)});
+    }
+    else {
+        expect(submit).toHaveBeenCalledWith('DEFAULT', 'hugegraph', {content});
+    }
+    expect(screen.getByTestId('editor-source')).toHaveTextContent(source);
+    expect(screen.getByTestId('async-task')).toHaveTextContent('42');
+    expect(screen.getByTestId('result-mode')).toHaveTextContent('task');
+    expect(screen.getByTestId('query-status')).toHaveTextContent('success');
+    expect(screen.getByTestId('execution-duration')).toBeEmptyDOMElement();
+    expect(screen.getByTestId('query-content').textContent).toBe(content);
+    expect(screen.getByTestId('source-question')).toHaveTextContent('New question');
+    expect(api.analysis.streamText2Gql).not.toHaveBeenCalled();
+    expect(api.analysis.executeText2Gql).not.toHaveBeenCalled();
+});
+
+it.each(['rejected request', 'business failure'])(
+    'does not generate or repair an AI asynchronous task after %s', async mode => {
+        api.analysis.getExecutionLogs.mockResolvedValue(historyResponse([
+            {content: 'g.V()', text: 'Original question'},
+        ]));
+        if (mode === 'rejected request') {
+            api.analysis.getExecutionTask.mockRejectedValue(new Error('Read-only submission rejected'));
+        }
+        else {
+            api.analysis.getExecutionTask.mockResolvedValue({status: 460, message: 'Read-only submission rejected'});
+        }
+        render(homeFor());
+        await waitFor(() => expect(screen.getByTestId('editor-source')).toHaveTextContent('ai'));
+        await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Use async'})));
+        await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
+        expect(screen.getByTestId('query-status')).toHaveTextContent('failed');
+        expect(screen.getByTestId('editor-source')).toHaveTextContent('ai');
+        expect(screen.getByTestId('execution-duration')).toBeEmptyDOMElement();
+        expect(api.analysis.getExecutionTask).toHaveBeenCalledTimes(1);
+        expect(api.analysis.streamText2Gql).not.toHaveBeenCalled();
+    }
+);
+
+it.each(['cancel', 'graph', 'language', 'account'])(
+    'ignores an AI task response and its history refresh after %s', async change => {
+        const task = pendingResponse();
+        api.analysis.getExecutionLogs.mockResolvedValue(historyResponse([{content: 'g.V()', text: 'Task question'}]));
+        api.analysis.getExecutionTask.mockReturnValue(task.promise);
+        const view = render(homeFor());
+        await waitFor(() => expect(screen.getByTestId('editor-source')).toHaveTextContent('ai'));
+        await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Use async'})));
+        fireEvent.click(screen.getByRole('button', {name: 'Run current'}));
+        const signal = api.analysis.getExecutionTask.mock.calls[0][3].signal;
+        expect(screen.getByTestId('result-mode')).toHaveTextContent('task');
+        expect(screen.getByTestId('query-status')).toHaveTextContent('loading');
+        expect(screen.getByTestId('query-progress')).toBeEmptyDOMElement();
+        if (change === 'graph') {
+            view.rerender(homeFor('another-graph'));
+        }
+        else if (change === 'account') {
+            await act(async () => setUser({user_name: 'bob'}));
+        }
+        else {
+            await act(async () => fireEvent.click(screen.getByRole('button', {
+                name: change === 'language' ? 'Cypher' : 'Cancel generation',
+            })));
+        }
+        await act(async () => Promise.resolve());
+        expect(signal.aborted).toBe(true);
+        const historyCalls = api.analysis.getExecutionLogs.mock.calls.length;
+        await act(async () => task.resolve({status: 200, data: {task_id: 42}}));
+        expect(screen.getByTestId('async-task')).toBeEmptyDOMElement();
+        expect(screen.getByTestId('query-status')).toHaveTextContent('standby');
+        expect(api.analysis.getExecutionLogs).toHaveBeenCalledTimes(historyCalls);
+        expect(api.analysis.streamText2Gql).not.toHaveBeenCalled();
+    }
+);
+
+it.each([false, true])('generates and executes using the chosen asynchronous mode (%s)', async asyncTask => {
+    api.analysis.streamText2Gql.mockResolvedValue({status: 200,
+        data: {valid: true, language: 'gremlin', query: 'g.V()'}});
+    api.analysis.executeText2Gql.mockResolvedValue({status: 200, data: {}});
+    api.analysis.getExecutionTask.mockResolvedValue({status: 200, data: {task_id: 42}});
+    render(homeFor());
+    await waitForInitialData();
+    fireEvent.click(screen.getByRole('button', {name: 'Set model and question'}));
+    if (asyncTask) {
+        fireEvent.click(screen.getByRole('button', {name: 'Use async'}));
+    }
+    await waitFor(() => expect(screen.getByRole('button', {name: 'Generate'})).toBeEnabled());
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Generate'})));
+    if (asyncTask) {
+        expect(api.analysis.getExecutionTask).toHaveBeenCalledWith('DEFAULT', 'hugegraph',
+            {content: 'g.V()', text: 'Find people', read_only: true}, {signal: expect.any(Object)});
+        expect(api.analysis.executeText2Gql).not.toHaveBeenCalled();
+        expect(screen.getByTestId('async-task')).toHaveTextContent('42');
+        expect(screen.getByTestId('execution-duration')).toBeEmptyDOMElement();
+    }
+    else {
+        expect(api.analysis.executeText2Gql).toHaveBeenCalledTimes(1);
+        expect(api.analysis.getExecutionTask).not.toHaveBeenCalled();
+    }
+    expect(api.analysis.getCypherTask).not.toHaveBeenCalled();
+    expect(screen.getByTestId('result-mode')).toHaveTextContent(asyncTask ? 'task' : 'query');
+});
+
+it('does not treat a controlled editor echo as editing before latest history loads', async () => {
+    const history = pendingResponse();
+    api.analysis.getExecutionLogs.mockReturnValue(history.promise);
+    render(homeFor());
+    await act(async () => Promise.resolve());
+    fireEvent.click(screen.getByRole('button', {name: 'Echo current query'}));
+    await act(async () => history.resolve(historyResponse([{content: 'g.V().limit(19)', text: 'Saved question'}])));
+    expect(screen.getByTestId('query-content')).toHaveTextContent('g.V().limit(19)');
+    expect(screen.getByTestId('source-question')).toHaveTextContent('Saved question');
+});
+
+
+it('shows model generation progress after a previous task while hiding it during submission', async () => {
+    const generation = pendingResponse();
+    const submission = pendingResponse();
+    api.analysis.getExecutionLogs.mockResolvedValue(historyResponse([{content: 'g.V()', text: 'Task question'}]));
+    api.analysis.getExecutionTask.mockResolvedValueOnce({status: 200, data: {task_id: 42}})
+        .mockReturnValueOnce(submission.promise);
+    api.analysis.streamText2Gql.mockReturnValue(generation.promise);
+    render(homeFor());
+    await waitFor(() => expect(screen.getByTestId('editor-source')).toHaveTextContent('ai'));
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Use async'})));
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
+    expect(screen.getByTestId('async-task')).toHaveTextContent('42');
+    fireEvent.click(screen.getByRole('button', {name: 'Set model and question'}));
+    fireEvent.click(screen.getByRole('button', {name: 'Generate'}));
+    expect(screen.getByTestId('query-progress')).toHaveTextContent('waiting');
+    expect(screen.getByTestId('result-mode')).toHaveTextContent('query');
+    await act(async () => generation.resolve({status: 200,
+        data: {valid: true, language: 'gremlin', query: 'g.V().limit(2)'}}));
+    expect(screen.getByTestId('query-progress')).toBeEmptyDOMElement();
+    expect(screen.getByTestId('result-mode')).toHaveTextContent('task');
+    await act(async () => submission.resolve({status: 200, data: {task_id: 43}}));
+    expect(screen.getByTestId('async-task')).toHaveTextContent('43');
+});
+
+
+it.each([
+    ['gremlin', '6', 'GREMLIN_ASYNC'],
+    ['cypher', '7', 'CYPHER_ASYNC'],
+])('restores the latest %s asynchronous record from combined execution history', async (language, type, asyncType) => {
+    const content = language === 'gremlin' ? 'g.V().limit(99)' : 'MATCH (n) RETURN n LIMIT 99';
+    api.analysis.getExecutionLogs.mockImplementation((space, graph, params) => Promise.resolve(params.type === type
+        ? historyResponse([
+            {id: 2, content, text: 'Latest asynchronous question', type: asyncType, status: 'ASYNC_TASK_SUCCESS'},
+            {id: 1, content: 'Older synchronous statement', text: 'Older synchronous question', status: 'SUCCESS'},
+        ]) : okList));
+    render(homeFor());
+    if (language === 'cypher') {
+        await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Cypher'})));
+    }
+    await waitFor(() => expect(screen.getByTestId('query-content')).toHaveTextContent(content));
+    expect(api.analysis.getExecutionLogs).toHaveBeenLastCalledWith('DEFAULT', 'hugegraph',
+        {page_size: 10, page_no: 1, type});
+    expect(screen.getByTestId('source-question')).toHaveTextContent('Latest asynchronous question');
+    expect(screen.getByTestId('editor-source')).toHaveTextContent('ai');
+    expect(screen.getByTestId('query-language')).toHaveTextContent(language);
+    expect(screen.getByTestId('query-status')).toHaveTextContent('standby');
+    expect(api.analysis.streamText2Gql).not.toHaveBeenCalled();
+    expect(api.analysis.executeText2Gql).not.toHaveBeenCalled();
+    expect(api.analysis.getExecutionQuery).not.toHaveBeenCalled();
+    expect(api.analysis.getCypherExecutionQuery).not.toHaveBeenCalled();
+    expect(api.analysis.getExecutionTask).not.toHaveBeenCalled();
+    expect(api.analysis.getCypherTask).not.toHaveBeenCalled();
 });

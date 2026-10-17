@@ -15,80 +15,18 @@
  * under the License.
  */
 
-import {fireEvent, render} from '@testing-library/react';
+import {act, fireEvent, render} from '@testing-library/react';
+import {EditorView} from 'codemirror';
+import {Transaction} from '@codemirror/state';
+import {undo} from '@codemirror/commands';
 import CodeEditor from './index';
 
-jest.mock('@codemirror/autocomplete', () => ({
-    autocompletion: () => ({}),
-    closeBrackets: () => ({}),
-}));
-jest.mock('@codemirror/language', () => ({
-    HighlightStyle: {define: () => ({})},
-    syntaxHighlighting: () => ({}),
-}));
-jest.mock('@codemirror/view', () => ({
-    placeholder: () => ({}),
-}));
-jest.mock('@lezer/highlight', () => ({tags: {}}));
-jest.mock('./syntax', () => ({default: {hint: [], language: {}}}));
-jest.mock('codemirror', () => {
-    class MockEditorView {
-        static domEventHandlers(handlers) {
-            return {handlers};
-        }
+// CRA's Jest resolver ignores these packages' CommonJS export conditions.
+jest.mock('@marijn/find-cluster-break', () => jest.requireActual('@marijn/find-cluster-break/dist/index.cjs'));
+jest.mock('@codemirror/legacy-modes/mode/groovy', () => (
+    jest.requireActual('@codemirror/legacy-modes/mode/groovy.cjs')
+));
 
-        static editable = {of: () => ({})};
-        static contentAttributes = {of: () => ({})};
-        static updateListener = {of: listener => ({updateListener: listener})};
-        static theme() {
-            return {};
-        }
-
-        constructor({doc, extensions, parent}) {
-            this.state = {
-                doc: {
-                    length: doc.length,
-                    toString: () => doc,
-                },
-            };
-            this.dom = global.document.createElement('div');
-            this.dom.className = 'cm-editor';
-            this.content = global.document.createElement('div');
-            this.content.className = 'cm-content';
-            this.content.textContent = doc;
-            this.updateListeners = extensions.flat().filter(extension => extension.updateListener)
-                .map(extension => extension.updateListener);
-            this.content.addEventListener('focus', () => this.updateListeners.forEach(listener => {
-                listener({docChanged: false, state: this.state});
-            }));
-            this.content.tabIndex = 0;
-            this.dom.appendChild(this.content);
-            parent.appendChild(this.dom);
-            extensions.flat().filter(extension => extension.handlers)
-                .forEach(extension => {
-                    this.content.addEventListener('keydown', event => {
-                        extension.handlers.keydown(event, this);
-                    });
-                });
-        }
-
-        dispatch({changes}) {
-            const doc = changes.insert;
-            this.state.doc = {
-                length: doc.length,
-                toString: () => doc,
-            };
-            this.content.textContent = doc;
-            this.updateListeners.forEach(listener => listener({docChanged: true, state: this.state}));
-        }
-
-        destroy() {
-            this.dom.remove();
-        }
-    }
-
-    return {basicSetup: {}, EditorView: MockEditorView};
-});
 jest.mock('react-i18next', () => {
     const translate = key => key;
     return {useTranslation: () => ({t: translate})};
@@ -120,6 +58,8 @@ it('keeps focus when controlled callbacks change after input', () => {
 
     expect(container.querySelector('.cm-editor')).toBe(originalEditor);
     expect(document.activeElement).toBe(content);
+    expect(firstChange).not.toHaveBeenCalled();
+    expect(nextChange).not.toHaveBeenCalled();
 
     fireEvent.keyDown(content, {key: 'Enter', ctrlKey: true});
     expect(firstExecution).not.toHaveBeenCalled();
@@ -145,3 +85,33 @@ it('does not turn focus and layout updates into document changes', () => {
     fireEvent.focus(container.querySelector('.cm-content'));
     expect(onChange).not.toHaveBeenCalled();
 });
+
+it('synchronizes external history and generated values without echoing them as user edits', () => {
+    const onChange = jest.fn();
+    const {container, rerender} = render(<CodeEditor value='g.V()' onChange={onChange} />);
+    const view = EditorView.findFromDOM(container.querySelector('.cm-editor'));
+    rerender(<CodeEditor value='g.E()' onChange={onChange} />);
+    expect(view.state.doc.toString()).toBe('g.E()');
+    rerender(<CodeEditor value='' onChange={onChange} />);
+    expect(view.state.doc.toString()).toBe('');
+    expect(onChange).not.toHaveBeenCalled();
+    expect(undo(view)).toBe(false);
+});
+
+it.each(['input.type', 'input.paste'])(
+    'emits real CodeMirror %s edits and undo after an external value sync', userEvent => {
+        const onChange = jest.fn();
+        const {container, rerender} = render(<CodeEditor value='' onChange={onChange} />);
+        rerender(<CodeEditor value='g.V()' onChange={onChange} />);
+        const view = EditorView.findFromDOM(container.querySelector('.cm-editor'));
+        act(() => view.dispatch({
+            changes: {from: 5, insert: '.limit(3)'},
+            annotations: Transaction.userEvent.of(userEvent),
+        }));
+        expect(onChange).toHaveBeenNthCalledWith(1, 'g.V().limit(3)');
+        act(() => {
+            expect(undo(view)).toBe(true);
+        });
+        expect(onChange).toHaveBeenNthCalledWith(2, 'g.V()');
+    }
+);

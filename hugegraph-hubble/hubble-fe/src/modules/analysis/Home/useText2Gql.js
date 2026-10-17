@@ -208,14 +208,15 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
             return;
         }
         invalidate();
-        languageDrafts.current[language] = sourceQuestion;
-        setSourceQuestion(languageDrafts.current[value] || '');
+        languageDrafts.current[language] = {question, sourceQuestion};
+        setQuestion(languageDrafts.current[value]?.question || '');
+        setSourceQuestion(languageDrafts.current[value]?.sourceQuestion || '');
         clearResult();
         setError('');
         setErrorStage('');
         onLanguageChange?.(value);
     }, [clearResult, cypherEnabled, invalidate, language,
-        onLanguageChange, sourceQuestion]);
+        onLanguageChange, question, sourceQuestion]);
 
     const updateConfig = useCallback((field, value) => {
         invalidate();
@@ -241,7 +242,7 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
         });
     }, [clearResult, identity, invalidate]);
 
-    const run = useCallback(async (content, text) => {
+    const run = useCallback(async (content, text, {asyncTask = false} = {}) => {
         if (!supportsQueryLanguage(language, cypherEnabled) || !ready || !active || requestRef.current
             || (content !== undefined && !content.trim())) {
             return;
@@ -374,11 +375,12 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
                     }
                 }
                 stage = 'execution';
-                enterPhase('execution');
+                enterPhase(asyncTask ? 'submission' : 'execution');
                 let result;
                 try {
                     result = await execute(query, text, {
                         signal: request.controller.signal, isCurrent, language, sanitizeError,
+                        asyncTask,
                     });
                 }
                 catch (failure) {
@@ -390,7 +392,7 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
                 if (result?.ok !== false) {
                     return;
                 }
-                if (!automatic || repaired || !canRepairQuery(result)) {
+                if (!automatic || asyncTask || repaired || !canRepairQuery(result)) {
                     throw new Error(result.message);
                 }
                 repaired = true;
@@ -431,8 +433,8 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
             && Date.now() - phaseStartedAt.current >= 15000,
         error, errorType, errorStage,
         source, changeSource, sharedConfig, language, changeLanguage,
-        generate: () => run(undefined, question.trim()),
-        rerun: content => run(content, sourceQuestion),
+        generate: options => run(undefined, question.trim(), options),
+        rerun: (content, options) => run(content, sourceQuestion, options),
         cancel,
         loadSource: text => {
             invalidate();

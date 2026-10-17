@@ -49,6 +49,8 @@
       "optional_key": "API Key（Ollama 可留空）",
       "required_key": "API Key（必填）",
       "generate_query": "生成并查询",
+      "generate_task": "生成并提交",
+      "temporary_api_type": "临时 API 类别",
       "cancel_generation": "取消",
       "text2gql_failed": "生成查询失败，请检查模型配置后重试",
       "text2gql_cancelled": "已取消等待和后续自动执行。已提交的查询可能仍在服务端运行",
@@ -68,7 +70,7 @@
       "connection_openai": "OpenAI 兼容接口",
       "connection_ollama": "Ollama（本地）",
       "model_source": "配置来源",
-      "source_shared": "部署默认模型",
+      "source_shared": "使用后台模型",
       "source_custom": "临时配置",
       "shared_loading": "正在检查部署默认模型…",
       "shared_ready": "已配置部署默认模型",
@@ -488,6 +490,7 @@
       "search_placeholder": "搜索收藏名称或语句",
       "column": {
         "time": "时间",
+        "text": "自然语言",
         "type": "类型",
         "content": "GQL 语句",
         "status": "状态",
@@ -505,6 +508,7 @@
       "type": {
         "GREMLIN": "Gremlin",
         "GREMLIN_ASYNC": "GREMLIN 任务",
+        "CYPHER_ASYNC": "CYPHER 任务",
         "ALGORITHM": "算法任务",
         "CYPHER": "CYPHER 查询"
       },

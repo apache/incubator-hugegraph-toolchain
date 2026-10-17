@@ -18,6 +18,7 @@
 
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {Alert, Button, Checkbox, Input, Select, Spin, Switch, Tooltip} from 'antd';
+import {EditOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
 import {useAuthContext} from '../../auth/AuthContext';
 import * as api from '../../api';
@@ -288,7 +289,27 @@ const Text2GqlSettingsForm = () => {
     return (
         <main className={c.page}>
             <header>
-                <h2>{t('analysis.model_settings.title')}</h2>
+                <div className={c.titleRow}>
+                    <h2>{t('analysis.model_settings.title')}</h2>
+                    {settings && (
+                        <Tooltip
+                            title={!settings.prompts || !settings.defaultPrompts
+                                ? t('analysis.prompt.unavailable') : undefined}
+                        >
+                            <span className={c.promptAction}>
+                                <Button
+                                    type='text'
+                                    size='small'
+                                    icon={<EditOutlined aria-hidden='true' />}
+                                    disabled={busy || !settings.prompts || !settings.defaultPrompts}
+                                    onClick={openPromptEditor}
+                                >
+                                    {t('analysis.prompt.title')}
+                                </Button>
+                            </span>
+                        </Tooltip>
+                    )}
+                </div>
                 <p>{t('analysis.model_settings.description')}</p>
             </header>
             {feedback && <Alert showIcon type={feedback.type} message={feedback.message} />}
@@ -390,24 +411,6 @@ const Text2GqlSettingsForm = () => {
                                     : 'analysis.model_settings.key_required')}
                             </p>
                         )}
-                    </div>
-                    <div className={c.field}>
-                        <div>
-                            <Tooltip
-                                title={!settings.prompts || !settings.defaultPrompts
-                                    ? t('analysis.prompt.unavailable') : undefined}
-                            >
-                                <span>
-                                    <Button
-                                        disabled={busy || !settings.prompts || !settings.defaultPrompts}
-                                        onClick={openPromptEditor}
-                                    >
-                                        {t('analysis.prompt.title')}
-                                    </Button>
-                                </span>
-                            </Tooltip>
-                        </div>
-                        <p>{t('analysis.prompt.shared_hint')}</p>
                     </div>
                     {promptEditorOpen && <PromptEditor
                         values={settings.prompts}

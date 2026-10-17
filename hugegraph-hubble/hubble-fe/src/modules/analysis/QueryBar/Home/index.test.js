@@ -80,6 +80,7 @@ it('keeps both panels visible, with static Text2GQL identity and each action emb
     expect(screen.queryByRole('tab')).not.toBeInTheDocument();
     expect(screen.getAllByTestId('query-code-editor')).toHaveLength(1);
     expect(screen.getByRole('textbox', {name: 'analysis.query.question_label'})).toBeEnabled();
+    expect(screen.getByRole('combobox', {name: 'analysis.query.temporary_api_type'})).toBeInTheDocument();
     expect(screen.getByText('Text2GQL')).not.toHaveAttribute('role', 'button');
     expect(screen.queryByRole('button', {name: /Text2GQL|analysis.query.ai_assistance/})).not.toBeInTheDocument();
     expect(screen.queryByRole('button', {
@@ -250,6 +251,7 @@ it.each(['ctrlKey', 'metaKey'])('runs only the focused query panel with %s + Ent
     userEvent.click(question);
     fireEvent.keyDown(document.activeElement, {key: 'Enter', [modifier]: true});
     expect(props.text2gql.generate).toHaveBeenCalledTimes(1);
+    expect(props.text2gql.generate).toHaveBeenCalledWith({asyncTask: false});
     expect(props.onExecute).not.toHaveBeenCalled();
     expect(screen.getByRole('button', {name: 'analysis.query.generate_query'}))
         .toHaveAttribute('title', 'analysis.query.shortcut_hint');
@@ -258,6 +260,18 @@ it.each(['ctrlKey', 'metaKey'])('runs only the focused query panel with %s + Ent
     fireEvent.keyDown(document.activeElement, {key: 'Enter', [modifier]: true});
     expect(props.onExecute).toHaveBeenCalledWith('Gremlin');
     expect(props.text2gql.generate).toHaveBeenCalledTimes(1);
+});
+
+it('generates and submits in task mode through the same button and focused question shortcut', () => {
+    const {props} = showBar({executeMode: 'task'});
+    const generate = screen.getByRole('button', {name: 'analysis.query.generate_task'});
+    userEvent.click(generate);
+    expect(props.text2gql.generate).toHaveBeenNthCalledWith(1, {asyncTask: true});
+    const question = screen.getByRole('textbox', {name: 'analysis.query.question_label'});
+    userEvent.click(question);
+    fireEvent.keyDown(document.activeElement, {key: 'Enter', metaKey: true});
+    expect(props.text2gql.generate).toHaveBeenNthCalledWith(2, {asyncTask: true});
+    expect(props.onExecute).not.toHaveBeenCalled();
 });
 
 it('keeps normal question editing, IME composition and modified shortcuts from generating', () => {
@@ -322,17 +336,38 @@ it.each(['manual', 'ai'])('blocks duplicate %s execution and only locks an AI-ge
     }
 });
 
-it('preserves manual async mode and hides it together with favorites for AI statements', () => {
+it('keeps task submission busy without implying it can cancel a queued task or is still generating', () => {
+    const text2gql = {...model(), pending: true, phase: 'submission'};
+    const {rerender, props} = showBar({editorSource: 'ai', executeMode: 'task', text2gql});
+    const generate = screen.getByRole('button', {name: 'analysis.query.generate_task'});
+    expect(generate).toBeDisabled();
+    expect(generate).not.toHaveClass('ant-btn-loading');
+    expect(screen.getByRole('button', {name: 'analysis.query.execute_task'})).toBeDisabled();
+    expect(screen.queryByRole('button', {name: 'analysis.query.cancel_generation'})).not.toBeInTheDocument();
+    expect(screen.queryByText('analysis.query.generating')).not.toBeInTheDocument();
+
+    rerender(<QueryBar {...props} executeMode='query' text2gql={{...text2gql, phase: 'execution'}} />);
+    expect(screen.getByRole('button', {name: 'analysis.query.generate_query'})).not.toHaveClass('ant-btn-loading');
+    userEvent.click(screen.getByRole('button', {name: 'analysis.query.cancel_generation'}));
+    expect(text2gql.cancel).toHaveBeenCalledTimes(1);
+    rerender(<QueryBar {...props} text2gql={{...text2gql, phase: 'streaming'}} />);
+    expect(screen.getByRole('button', {name: /analysis.query.generating/})).toHaveClass('ant-btn-loading');
+    expect(screen.getByRole('button', {name: 'analysis.query.cancel_generation'})).toBeEnabled();
+});
+
+it('preserves async execution for manual and AI statements while keeping AI favorites hidden', () => {
     const {rerender, props} = showBar({executeMode: 'task'});
     expect(screen.getByRole('button', {name: 'analysis.query.execute_task'})).toBeEnabled();
     userEvent.click(screen.getByRole('button', {name: 'analysis.query.switch_immediate_query'}));
     expect(props.onExecuteModeChange).toHaveBeenCalledWith('query');
     rerender(<QueryBar {...props} editorSource='ai' />);
     expect(screen.getByText('analysis.query.read_only_hint')).toBeInTheDocument();
+    expect(screen.getByRole('button', {name: 'analysis.query.execute_task'})).toBeEnabled();
+    expect(screen.getByRole('button', {name: 'analysis.query.switch_immediate_query'})).toBeEnabled();
+    rerender(<QueryBar {...props} editorSource='ai' executeMode='query' />);
     expect(screen.getByRole('button', {name: 'analysis.query.execute_query'})).toBeEnabled();
-    expect(screen.queryByRole('button', {name: 'analysis.query.execute_task'})).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', {name: 'analysis.query.switch_async_task'})).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', {name: 'analysis.query.switch_immediate_query'})).not.toBeInTheDocument();
+    userEvent.click(screen.getByRole('button', {name: 'analysis.query.switch_async_task'}));
+    expect(props.onExecuteModeChange).toHaveBeenLastCalledWith('task');
     expect(screen.queryByRole('button', {name: 'analysis.query.favorite'})).not.toBeInTheDocument();
 });
 
@@ -348,12 +383,15 @@ it('opens custom settings by default and lets users collapse them, revealing mis
     const {rerender, props} = showBar({text2gql});
     const settings = screen.getByText('analysis.query.model_settings').closest('details');
     expect(settings).toHaveAttribute('open');
+    expect(screen.getByRole('status')).toBeEmptyDOMElement();
+    expect(screen.queryByText('analysis.query.complete_model_config')).not.toBeInTheDocument();
     userEvent.click(screen.getByRole('button', {name: 'analysis.query.model_settings'}));
     expect(settings).not.toHaveAttribute('open');
     fireEvent.keyDown(screen.getByRole('textbox', {name: 'analysis.query.question_label'}), {
         key: 'Enter', ctrlKey: true,
     });
     expect(settings).toHaveAttribute('open');
+    expect(screen.getByRole('alert')).toHaveTextContent('analysis.query.complete_model_config');
     expect(screen.getByLabelText('analysis.query.model_name')).toHaveFocus();
     expect(text2gql.generate).not.toHaveBeenCalled();
     rerender(<QueryBar {...props} text2gql={{...text2gql, config: {...text2gql.config, model: 'local'}}} />);

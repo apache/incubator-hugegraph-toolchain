@@ -28,6 +28,9 @@ workspace. The question and editable query share one view. Hubble reads the sche
 using your current graph permissions, generates a read-only query, and automatically
 executes it. **Gremlin** is selected by default; click the language button to switch
 to **Cypher**. Each language keeps its draft when you switch.
+When opening a graph, the inputs load its latest synchronous or asynchronous record for that language,
+including the original natural-language question when present. Loading records never
+automatically runs a query and does not overwrite edits already in progress.
 
 You can also write a query directly in the editor. Generated queries remain subject
 to the read-only checks after editing. Manual queries retain favorites and asynchronous
@@ -35,11 +38,14 @@ execution. Drag the divider below the inputs to adjust both input heights togeth
 the action buttons stay inside the bottom-right corner of each input. Graph, table
 and JSON results use the same result area. A second divider redistributes space
 between results and the compact execution/favorites panel without clearing data
-or resetting the graph view. Ctrl/Command + Enter generates and runs a query when
+or resetting the graph view. Inputs and history start at 160px high, leaving more room
+for graph results. Ctrl/Command + Enter generates and runs a query when
 the natural-language input is focused, or executes the statement when its editor
-is focused. In asynchronous mode, the statement action submits a background task.
+is focused. In asynchronous mode, both generation and statement execution submit
+background tasks. Generated queries retain their read-only checks in either mode.
 The input footers show model generation time and query request time separately.
 Model time comes from the server, includes repair calls, and excludes schema preparation.
+Execution records show the original natural-language question alongside each statement.
 
 ![Hubble Text2GQL with editable Gremlin and graph results](docs/images/showcase/text2gql.png)
 

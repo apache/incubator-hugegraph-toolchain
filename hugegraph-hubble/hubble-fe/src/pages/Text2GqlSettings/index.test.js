@@ -361,7 +361,13 @@ test('applies shared Prompt drafts to the form and persists them only with Save'
     api.config.updateText2GqlSettings.mockResolvedValue(response({prompts: {...templates, gremlin: 'few-shot'},
         default_prompts: builtIn}));
     await load();
-    fireEvent.click(screen.getByRole('button', {name: 'analysis.prompt.title'}));
+    const promptButton = screen.getByRole('button', {name: 'analysis.prompt.title'});
+    const heading = screen.getByRole('heading', {name: 'analysis.model_settings.title'});
+    expect(heading.parentElement).toContainElement(promptButton);
+    expect(promptButton.closest('header')).toBeInTheDocument();
+    expect(promptButton).toHaveClass('ant-btn-text', 'ant-btn-sm');
+    expect(screen.queryByText('analysis.prompt.shared_hint')).not.toBeInTheDocument();
+    fireEvent.click(promptButton);
     fireEvent.change(screen.getByRole('textbox', {name: /^analysis.prompt.template/}), {target: {value: 'few-shot'}});
     fireEvent.click(screen.getByRole('button', {name: 'analysis.prompt.apply'}));
     expect(api.config.updateText2GqlSettings).not.toHaveBeenCalled();

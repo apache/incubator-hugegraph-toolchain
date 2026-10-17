@@ -24,7 +24,7 @@ import c from './index.module.scss';
 
 const MIN_RESULT_HEIGHT = 240;
 const MIN_HISTORY_HEIGHT = 150;
-const DEFAULT_HISTORY_HEIGHT = 210;
+const DEFAULT_HISTORY_HEIGHT = 160;
 const HANDLE_HEIGHT = 14;
 const clampResultHeight = (height, total) => Math.max(
     MIN_RESULT_HEIGHT, Math.min(height, total - MIN_HISTORY_HEIGHT - HANDLE_HEIGHT)

@@ -388,7 +388,7 @@ test.each(['loading', 'failure', 'invalid'])(
 );
 
 
-test('switching language cancels old generation while preserving question provenance and config', async () => {
+test('switching language cancels generation and preserves each language question, provenance and config', async () => {
     const delayed = deferred();
     api.analysis.streamText2Gql.mockReturnValueOnce(delayed.promise);
     const {result} = renderHook(() => {
@@ -402,17 +402,20 @@ test('switching language cancels old generation while preserving question proven
         pending = result.current.generate();
     });
     const signal = api.analysis.streamText2Gql.mock.calls[0][3].signal;
+    act(() => result.current.setQuestion('Edited Gremlin question'));
     act(() => result.current.changeLanguage('cypher'));
     expect(signal.aborted).toBe(true);
     expect(result.current.language).toBe('cypher');
-    expect(result.current.question).toBe('Original question');
+    expect(result.current.question).toBe('');
     expect(result.current.config.apiKey).toBe('private-key');
     await act(async () => {
         delayed.resolve({status: 200, data: {valid: true, query: 'g.V()', language: 'gremlin'}});
         await pending;
     });
     expect(props.execute).not.toHaveBeenCalled();
+    act(() => result.current.setQuestion('Cypher question'));
     act(() => result.current.changeLanguage('gremlin'));
+    expect(result.current.question).toBe('Edited Gremlin question');
     await act(async () => result.current.rerun('g.V().limit(4)'));
     expect(props.execute).toHaveBeenLastCalledWith('g.V().limit(4)', 'Original question',
         expect.objectContaining({language: 'gremlin'}));
@@ -1202,3 +1205,66 @@ test.each([undefined, null, -1, NaN, Infinity, '150'])(
         expect(result.current.generationDurationMs).toBeNull();
     }
 );
+
+
+test.each(['gremlin', 'cypher'])(
+    'reruns %s asynchronously with original provenance and no model repair', async language => {
+        props.language = language;
+        const submission = deferred();
+        props.execute.mockReturnValue(submission.promise);
+        const {result} = renderHook(() => useText2Gql(props));
+        await configure(result);
+        act(() => result.current.loadSource('Original task question'));
+        act(() => result.current.setQuestion('New ungenerated question'));
+        let pending;
+        act(() => {
+            pending = result.current.rerun('edited statement', {asyncTask: true});
+        });
+        expect(result.current.phase).toBe('submission');
+        await act(async () => {
+            submission.resolve({ok: false, status: 460, message: 'Task syntax rejected'});
+            await pending;
+        });
+        expect(props.execute).toHaveBeenCalledWith('edited statement', 'Original task question',
+            expect.objectContaining({language, asyncTask: true, signal: expect.any(Object),
+                isCurrent: expect.any(Function), sanitizeError: expect.any(Function)}));
+        expect(api.analysis.streamText2Gql).not.toHaveBeenCalled();
+        expect(result.current.errorStage).toBe('execution');
+        expect(result.current.pending).toBe(false);
+    }
+);
+
+
+test('repairs generated validation failures before async submission without repairing submit failures', async () => {
+    const submission = deferred();
+    api.analysis.streamText2Gql.mockResolvedValueOnce(generated('invalid draft', false))
+        .mockResolvedValueOnce(generated('g.V()'));
+    props.execute.mockReturnValue(submission.promise);
+    const {result} = renderHook(() => useText2Gql(props));
+    await configure(result);
+    let pending;
+    await act(async () => {
+        pending = result.current.generate({asyncTask: true});
+    });
+    expect(result.current.phase).toBe('submission');
+    expect(api.analysis.streamText2Gql).toHaveBeenCalledTimes(2);
+    expect(props.execute).toHaveBeenCalledWith('g.V()', 'Find people', expect.objectContaining({asyncTask: true}));
+    await act(async () => {
+        submission.resolve(syntaxFailure);
+        await pending;
+    });
+    expect(api.analysis.streamText2Gql).toHaveBeenCalledTimes(2);
+    expect(props.execute).toHaveBeenCalledTimes(1);
+    expect(result.current.errorStage).toBe('execution');
+});
+
+test('does not spend an unused model repair budget on asynchronous submission failures', async () => {
+    api.analysis.streamText2Gql.mockResolvedValue(generated('g.V()'));
+    props.execute.mockResolvedValue(syntaxFailure);
+    const {result} = renderHook(() => useText2Gql(props));
+    await configure(result);
+    await act(async () => result.current.generate({asyncTask: true}));
+    expect(api.analysis.streamText2Gql).toHaveBeenCalledTimes(1);
+    expect(props.execute).toHaveBeenCalledTimes(1);
+    expect(result.current.errorStage).toBe('execution');
+});

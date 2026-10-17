@@ -57,7 +57,7 @@ it('redistributes the same space without remounting either pane', () => {
     fireEvent.change(history, {target: {value: 'search'}});
     const divider = screen.getByRole('separator');
     const before = Number(divider.getAttribute('aria-valuenow'));
-    expect(before).toBe(336);
+    expect(before).toBe(386);
     fireEvent.keyDown(divider, {key: 'ArrowDown'});
     const after = Number(divider.getAttribute('aria-valuenow'));
     expect(after).toBeGreaterThan(before);

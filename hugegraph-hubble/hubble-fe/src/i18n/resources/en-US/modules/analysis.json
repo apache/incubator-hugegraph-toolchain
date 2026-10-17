@@ -49,6 +49,8 @@
       "optional_key": "API Key (optional for Ollama)",
       "required_key": "API Key (required)",
       "generate_query": "Generate and run",
+      "generate_task": "Generate and submit",
+      "temporary_api_type": "Temporary API type",
       "cancel_generation": "Cancel",
       "text2gql_failed": "Could not generate a query. Check the model settings and try again",
       "text2gql_cancelled": "Cancelled waiting and automatic execution. A query already submitted may still be running on the server",
@@ -68,7 +70,7 @@
       "connection_openai": "OpenAI compatible",
       "connection_ollama": "Ollama (local)",
       "model_source": "Configuration source",
-      "source_shared": "Deployment default model",
+      "source_shared": "Use backend model",
       "source_custom": "Temporary configuration",
       "shared_loading": "Checking the deployment model…",
       "shared_ready": "Deployment default model configured",
@@ -488,6 +490,7 @@
       "search_placeholder": "Search favorite names or statements",
       "column": {
         "time": "Time",
+        "text": "Natural language",
         "type": "Type",
         "content": "GQL Statement",
         "status": "Status",
@@ -505,6 +508,7 @@
       "type": {
         "GREMLIN": "Gremlin",
         "GREMLIN_ASYNC": "GREMLIN Task",
+        "CYPHER_ASYNC": "CYPHER Task",
         "ALGORITHM": "Algorithm Task",
         "CYPHER": "CYPHER Query"
       },

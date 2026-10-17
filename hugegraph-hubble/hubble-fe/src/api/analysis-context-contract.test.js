@@ -77,6 +77,17 @@ test('lets the async query page own business error feedback', () => {
     );
 });
 
+test.each([
+    ['getExecutionTask', 'gremlin-query'],
+    ['getCypherTask', 'cypher'],
+])('forwards %s cancellation options separately from the read-only task body', (method, endpoint) => {
+    const config = {signal: new AbortController().signal, timeout: 30000};
+    const body = {content: 'query', text: 'Find people', read_only: true};
+    analysis[method]('DEFAULT', 'g', body, config);
+    expect(request.post).toHaveBeenCalledWith(`/graphspaces/DEFAULT/graphs/g/${endpoint}/async-task`, body,
+        {...config, suppressBusinessErrorToast: true});
+});
+
 
 test('forwards cancellation and generation timeout without changing execution request bodies', () => {
     const controller = new AbortController();

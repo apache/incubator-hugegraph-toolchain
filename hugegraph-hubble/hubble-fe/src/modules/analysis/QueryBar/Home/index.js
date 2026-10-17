@@ -22,6 +22,7 @@ import {Alert, Button, Input, Select, Tooltip} from 'antd';
 import {SettingOutlined, SwapOutlined} from '@ant-design/icons';
 import {DEFAULT_QUERY_LANGUAGE, MODEL_PROVIDERS, QUERY_LANGUAGES,
     supportsQueryLanguage} from '../../../../utils/text2gql';
+import {GREMLIN_EXECUTES_MODE} from '../../../../utils/constants';
 import CodeEditor from '../../../../components/CodeEditor';
 import ModelHistoryInput from '../../../../components/ModelHistoryInput';
 import ResizeHandle from '../../../../components/ResizeHandle';
@@ -42,8 +43,11 @@ const QueryBar = props => {
     const [configPrompt, setConfigPrompt] = useState(false);
     const modelSettingsRef = useRef(null);
     const busy = Boolean(text2gql?.pending || isExecuting);
+    const generating = Boolean(text2gql?.pending
+        && text2gql.phase !== 'execution' && text2gql.phase !== 'submission');
     const isEmptyQuery = !codeEditorContent.trim();
     const aiSource = editorSource === 'ai';
+    const asyncTask = props.executeMode === GREMLIN_EXECUTES_MODE.TASK;
     const dialect = QUERY_LANGUAGES[language];
     const generationSeconds = durationInSeconds(text2gql?.generationDurationMs);
     const executionSeconds = durationInSeconds(executionDurationMs);
@@ -113,8 +117,8 @@ const QueryBar = props => {
             return;
         }
         setConfigPrompt(false);
-        text2gql.generate();
-    }, [canGenerate, missingCustomConfig, text2gql]);
+        text2gql.generate({asyncTask});
+    }, [asyncTask, canGenerate, missingCustomConfig, text2gql]);
     const onQuestionKeyDown = useCallback(event => {
         if (event.key !== 'Enter' || (!event.metaKey && !event.ctrlKey)
             || event.altKey || event.shiftKey || event.repeat
@@ -142,7 +146,7 @@ const QueryBar = props => {
     const minimumHeight = 140;
     const viewportMaximum = () => Math.max(minimumHeight, Math.floor(window.innerHeight * 0.6));
     const [maximumHeight, setMaximumHeight] = useState(viewportMaximum);
-    const [inputHeight, setInputHeight] = useState(() => Math.min(192, viewportMaximum()));
+    const [inputHeight, setInputHeight] = useState(() => Math.min(160, viewportMaximum()));
     useEffect(() => {
         const updateBounds = () => {
             const maximum = Math.max(140, Math.floor(window.innerHeight * 0.6));
@@ -153,7 +157,7 @@ const QueryBar = props => {
         return () => window.removeEventListener('resize', updateBounds);
     }, []);
     const commonActionProps = {...props, isEmptyQuery, isExecuting: busy || !languageEnabled,
-        favoriteCardVisible, setFavoriteCardVisible, allowAsync: !aiSource, allowFavorite: !aiSource, onClear};
+        favoriteCardVisible, setFavoriteCardVisible, allowAsync: true, allowFavorite: !aiSource, onClear};
 
     return (
         <div
@@ -198,14 +202,14 @@ const QueryBar = props => {
                     )}
                     <div className={c.modelConfig}>
                         <div className={c.modelField}>
-                            <label htmlFor='text2gql-provider'>{t('analysis.query.connection_type')}</label>
+                            <label htmlFor='text2gql-provider'>{t('analysis.query.temporary_api_type')}</label>
                             <Tooltip
                                 title={text2gql.config.provider === 'openai'
                                     ? t('analysis.query.connection_openai_hint') : undefined}
                             >
                                 <Select
                                     id='text2gql-provider'
-                                    aria-label={t('analysis.query.connection_type')}
+                                    aria-label={t('analysis.query.temporary_api_type')}
                                     value={text2gql.config.provider}
                                     onChange={onProviderChange}
                                     options={Object.keys(MODEL_PROVIDERS).map(value => ({
@@ -307,7 +311,7 @@ const QueryBar = props => {
                                     {sharedConfig.loading ? t('analysis.query.shared_loading')
                                         : source === 'shared' ? sharedConfig.model || t('analysis.query.shared_ready')
                                             : !customAvailable ? t('analysis.query.custom_unavailable')
-                                                : text2gql.config.model || t('analysis.query.complete_model_config')}
+                                                : text2gql.config.model}
                                 </span>
                                 {source === 'custom' && customAvailable && !sharedConfig.loading && (
                                     <Button
@@ -348,14 +352,14 @@ const QueryBar = props => {
                             <Button
                                 className={c.generateButton}
                                 type='primary'
-                                loading={text2gql?.pending && text2gql.phase !== 'execution'}
+                                loading={generating}
                                 disabled={!canGenerate}
                                 onClick={onGenerate}
                                 title={t('analysis.query.shortcut_hint')}
                             >
-                                {t(text2gql?.pending && text2gql.phase !== 'execution'
+                                {t(generating
                                     ? text2gql.repairing ? 'analysis.query.repairing' : 'analysis.query.generating'
-                                    : 'analysis.query.generate_query')}
+                                    : asyncTask ? 'analysis.query.generate_task' : 'analysis.query.generate_query')}
                             </Button>
                         </div>
                     </div>
@@ -393,7 +397,7 @@ const QueryBar = props => {
                             </div>
                             <div className={c.executeActions}>
                                 <PrimaryActions {...commonActionProps} />
-                                {text2gql?.pending && (
+                                {text2gql?.pending && text2gql.phase !== 'submission' && (
                                     <Button size='small' onClick={text2gql.cancel}>
                                         {t('analysis.query.cancel_generation')}
                                     </Button>
