@@ -290,6 +290,7 @@ const GraphContextSwitcher = () => {
             className={`${style.context} ${!pdEnabled ? style.fixedGraphspace : ''}`}
             role="group"
             aria-label={t('workbench.context.name')}
+            aria-description={selectedGraphspaceLabel}
         >
             <Space size={8}>
                 <Select
