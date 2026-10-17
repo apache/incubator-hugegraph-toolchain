@@ -410,6 +410,7 @@ it('offers only OpenAI-compatible and local Ollama connection types', () => {
             setCodeEditorContent={jest.fn()}
         />
     );
+    fireEvent.click(screen.getByText('analysis.query.model_settings'));
     expect(screen.getByText('Connection type')).toBeInTheDocument();
     expect(screen.getByText('analysis.query.connection_openai_hint')).toBeInTheDocument();
     fireEvent.mouseDown(document.getElementById('text2gql-provider'));
@@ -462,7 +463,8 @@ it('hides custom credentials and disables generation when neither model source i
     expect(screen.queryByLabelText(/Base URL/)).not.toBeInTheDocument();
     expect(screen.queryByLabelText('API Key')).not.toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent('analysis.query.custom_unavailable');
-    expect(screen.getByRole('combobox').closest('.ant-select')).toHaveClass('ant-select-disabled');
+    expect(screen.getByRole('combobox', {name: 'analysis.query.model_source'}).closest('.ant-select'))
+        .toHaveClass('ant-select-disabled');
     const generate = screen.getByRole('button', {name: 'analysis.query.generate_query'});
     expect(generate).toBeDisabled();
     fireEvent.click(generate);
@@ -487,11 +489,13 @@ it('defaults generation to Gremlin and offers a working Cypher editor through th
         />
     );
     const {rerender} = render(panel(undefined));
-    expect(screen.getByRole('radio', {name: 'Gremlin'})).toBeChecked();
-    fireEvent.click(screen.getByRole('radio', {name: 'Cypher'}));
+    const languageSelect = screen.getByRole('combobox', {name: 'analysis.query.generation_language'});
+    expect(languageSelect.closest('.ant-select')).toHaveTextContent('Gremlin');
+    fireEvent.mouseDown(languageSelect);
+    fireEvent.click(screen.getByText('Cypher', {selector: '.ant-select-item-option-content'}));
     expect(text2gql.changeLanguage).toHaveBeenCalledWith('cypher');
     rerender(panel('cypher'));
-    expect(screen.getByRole('radio', {name: 'Cypher'})).toBeChecked();
+    expect(languageSelect.closest('.ant-select')).toHaveTextContent('Cypher');
     expect(screen.getByRole('region', {name: 'analysis.query.generated_cypher'}))
         .toContainElement(screen.getByTestId('editor-cypher'));
     expect(screen.getByTestId('editor-cypher')).toHaveAttribute('data-aria-label', 'analysis.query.generated_cypher');
@@ -517,12 +521,106 @@ it('disables Cypher natural-language generation with a clear server capability e
         />
     );
     const {rerender} = render(panel(false));
-    expect(screen.getByRole('radio', {name: 'Gremlin'})).toBeEnabled();
-    expect(screen.getByRole('radio', {name: 'Cypher'})).toBeDisabled();
+    const languageSelect = screen.getByRole('combobox', {name: 'analysis.query.generation_language'});
+    fireEvent.mouseDown(languageSelect);
+    expect(screen.getByRole('option', {name: 'Gremlin'})).not.toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('option', {name: 'Cypher'})).toHaveAttribute('aria-disabled', 'true');
     expect(screen.getByText('analysis.query.cypher_unavailable')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('radio', {name: 'Cypher'}));
+    fireEvent.click(screen.getByRole('option', {name: 'Cypher'}));
     expect(text2gql.changeLanguage).not.toHaveBeenCalled();
     rerender(panel(true));
-    expect(screen.getByRole('radio', {name: 'Cypher'})).toBeEnabled();
+    expect(screen.getByRole('option', {name: 'Cypher'})).not.toHaveAttribute('aria-disabled', 'true');
     expect(screen.queryByText('analysis.query.cypher_unavailable')).not.toBeInTheDocument();
+});
+
+
+it('keeps model settings collapsed until missing configuration needs attention, without sending a request', () => {
+    const text2gql = {
+        config: {provider: 'openai', baseUrl: 'https://api.openai.com/v1', model: '', apiKey: ''},
+        question: 'Find people', pending: false, updateConfig: jest.fn(), setQuestion: jest.fn(), generate: jest.fn(),
+    };
+    const panel = config => (
+        <QueryBar
+            activeTab='Text2GQL'
+            codeEditorContent=''
+            text2gql={{...text2gql, config}}
+            onTabsChange={jest.fn()}
+            setCodeEditorContent={jest.fn()}
+        />
+    );
+    const {rerender} = render(panel(text2gql.config));
+    const settings = screen.getByText('analysis.query.model_settings').closest('details');
+    expect(settings).not.toHaveAttribute('open');
+    const generate = screen.getByRole('button', {name: 'analysis.query.generate_query'});
+    expect(generate).toBeEnabled();
+    fireEvent.click(generate);
+    expect(settings).toHaveAttribute('open');
+    expect(screen.getByRole('alert')).toHaveTextContent('analysis.query.complete_model_config');
+    expect(screen.getByLabelText('analysis.query.model_name')).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByLabelText('analysis.query.model_name')).toHaveFocus();
+    expect(text2gql.generate).not.toHaveBeenCalled();
+    rerender(panel({...text2gql.config, model: 'test-model', apiKey: 'page-secret'}));
+    fireEvent.click(generate);
+    expect(text2gql.generate).toHaveBeenCalledTimes(1);
+    expect(settings).not.toHaveAttribute('open');
+});
+
+it.each(['generation', 'execution', 'cancelled'])(
+    'keeps failures collapsed and offers model inspection only for generation errors (%s)', errorStage => {
+        const text2gql = {
+            config: {provider: 'ollama', baseUrl: 'http://localhost:11434/v1', model: 'local', apiKey: ''},
+            question: 'Find people', pending: false, updateConfig: jest.fn(), setQuestion: jest.fn(),
+            generate: jest.fn(),
+        };
+        const panel = error => (
+            <QueryBar
+                activeTab='Text2GQL'
+                codeEditorContent=''
+                text2gql={{...text2gql, error, errorStage, errorType: errorStage === 'cancelled' ? 'info' : 'error'}}
+                onTabsChange={jest.fn()}
+                setCodeEditorContent={jest.fn()}
+            />
+        );
+        const {rerender} = render(panel(''));
+        const settings = screen.getByText('analysis.query.model_settings').closest('details');
+        expect(settings).not.toHaveAttribute('open');
+        rerender(panel(errorStage === 'cancelled' ? 'Cancelled' : 'Request failed'));
+        expect(settings).not.toHaveAttribute('open');
+        expect(screen.getByLabelText(/Base URL/)).not.toHaveFocus();
+        const inspect = screen.queryByRole('button', {name: 'analysis.query.inspect_model_settings'});
+        if (errorStage === 'generation') {
+            expect(inspect).toBeInTheDocument();
+            fireEvent.click(inspect);
+            expect(settings).toHaveAttribute('open');
+            expect(screen.getByLabelText(/Base URL/)).toHaveFocus();
+        }
+        else {
+            expect(inspect).not.toBeInTheDocument();
+        }
+    }
+);
+
+it('switches generation language through the keyboard-accessible dropdown', () => {
+    const text2gql = {
+        config: {provider: 'ollama', baseUrl: 'http://localhost:11434/v1', model: 'local', apiKey: ''},
+        question: '', pending: false, updateConfig: jest.fn(), setQuestion: jest.fn(), generate: jest.fn(),
+        changeLanguage: jest.fn(),
+    };
+    render(
+        <QueryBar
+            activeTab='Text2GQL'
+            cypherEnabled
+            codeEditorContent=''
+            text2gql={text2gql}
+            onTabsChange={jest.fn()}
+            setCodeEditorContent={jest.fn()}
+        />
+    );
+    const language = screen.getByRole('combobox', {name: 'analysis.query.generation_language'});
+    fireEvent.keyDown(language, {key: 'ArrowDown', keyCode: 40});
+    fireEvent.keyDown(language, {key: 'ArrowDown', keyCode: 40});
+    fireEvent.keyDown(language, {key: 'Enter', keyCode: 13});
+    expect(text2gql.changeLanguage).toHaveBeenCalledWith('cypher');
+    const source = screen.getByRole('combobox', {name: 'analysis.query.model_source'});
+    expect(language.closest('.queryToolbar')).toContainElement(source);
 });

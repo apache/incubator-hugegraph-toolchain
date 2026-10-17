@@ -31,6 +31,7 @@
     --workbench-space-3: 12px;
     --workbench-space-4: 16px;
     --workbench-header-height: 64px;
+    --workbench-shell-layer: 100;
     --workbench-table-empty-min-height: clamp(144px, 24vh, 240px);
     --workbench-radius: 6px;
     --workbench-radius-lg: 10px;
@@ -141,12 +142,13 @@
 
 @media (max-width: 900px) {
     .workbench-navigation {
+        z-index: var(--workbench-shell-layer);
         width: 0;
         border-right: 0;
 
         .ant-layout-sider {
             position: fixed;
-            z-index: 1000;
+            z-index: 1;
             top: var(--workbench-header-height);
             bottom: 0;
             left: 0;
@@ -162,7 +164,7 @@
 
     .workbench-mobile-navigation-toggle {
         position: fixed;
-        z-index: 1100;
+        z-index: 2;
         top: 14px;
         left: 12px;
         display: inline-flex;

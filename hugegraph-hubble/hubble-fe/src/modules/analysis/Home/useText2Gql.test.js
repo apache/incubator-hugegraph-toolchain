@@ -150,6 +150,7 @@ test('model edits invalidate a pending generation and redact echoed keys from ge
     api.analysis.generateText2Gql.mockRejectedValue(new Error('invalid private-key'));
     await act(async () => result.current.generate());
     expect(result.current.error).not.toContain('private-key');
+    expect(result.current.errorStage).toBe('generation');
 });
 
 test('loading a historical question binds edited reruns to it and loading a favorite clears it', async () => {
@@ -451,4 +452,23 @@ test('keeps a valid Gremlin request current when only Cypher capability changes'
     expect(props.execute).toHaveBeenCalledWith('g.V()', 'Find people',
         expect.objectContaining({language: 'gremlin'}));
     expect(result.current.pending).toBe(false);
+});
+
+
+test.each(['generate', 'rerun'])('classifies %s execution failures separately from model failures', async action => {
+    api.analysis.generateText2Gql.mockResolvedValue({status: 200, data: {query: 'g.V()', language: 'gremlin'}});
+    props.execute.mockRejectedValue(new Error('Read-only query rejected'));
+    const {result} = renderHook(() => useText2Gql(props));
+    await configure(result);
+    await act(async () => {
+        if (action === 'generate') {
+            await result.current.generate();
+        }
+        else {
+            await result.current.rerun('g.V()');
+        }
+    });
+    expect(result.current.errorStage).toBe('execution');
+    act(() => result.current.cancel());
+    expect(result.current.errorStage).toBe('');
 });

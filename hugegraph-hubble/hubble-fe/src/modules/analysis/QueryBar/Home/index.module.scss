@@ -101,7 +101,7 @@
 .text2gqlPanel {
     display: grid;
     gap: 12px;
-    padding: 16px;
+    padding: 12px 16px;
 
     h3, h4, p {
         margin: 0;
@@ -126,30 +126,12 @@
     }
 }
 
-.text2gqlHeader {
-    display: grid;
-    gap: 4px;
-
-    p {
-        color: #595959;
-        font-size: 13px;
-    }
-}
-
-.sectionHeading {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 16px;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 8px;
-}
-
 .modelConfig {
     display: grid;
     grid-template-columns: minmax(120px, 0.65fr) minmax(0, 1.6fr) repeat(2, minmax(0, 1fr));
     gap: 12px;
     align-items: start;
+    margin-top: 10px;
 
     :global(.ant-select), :global(.ant-input-affix-wrapper), :global(.ant-input) {
         width: 100%;
@@ -175,8 +157,8 @@
         cursor: pointer;
     }
 
-    &[open] > summary {
-        margin-bottom: 10px;
+    > :global(.ant-alert) {
+        margin-top: 10px;
     }
 }
 
@@ -184,12 +166,6 @@
     color: #667085;
     font-size: 12px;
     overflow-wrap: anywhere;
-}
-
-.requiredLegend {
-    float: right;
-    color: #667085;
-    font-size: 12px;
 }
 
 .questionFooter {
@@ -200,28 +176,95 @@
     justify-content: space-between;
 
     > p {
-        flex: 1 1 280px;
+        flex: 1 1 160px;
     }
 }
 
-.requiredField {
-    color: #cf1322;
+.queryToolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+
+    .languageSelect {
+        width: 112px;
+    }
+
+    .sourceSelect {
+        width: clamp(160px, 30vw, 210px);
+    }
+
+    .modelStatus {
+        flex: 1 1 240px;
+        min-width: 0;
+        color: #667085;
+        font-size: 12px;
+        line-height: 1.5;
+    }
 }
 
-.questionSection {
+.queryWorkspace {
     display: grid;
+    grid-template-columns: minmax(0, 0.45fr) minmax(0, 0.55fr);
+    gap: 16px;
+    align-items: stretch;
+}
+
+.questionSection,
+.generatedSection {
+    display: grid;
+    grid-template-rows: auto minmax(112px, 1fr) auto;
+    min-width: 0;
     gap: 8px;
 
-    > label {
+    > label, h4 {
         color: #262626;
+        font-size: 14px;
         font-weight: 600;
+    }
+
+    > textarea {
+        height: 100%;
+        min-height: 112px;
+        resize: vertical;
     }
 }
 
 .generatedSection {
-    min-width: 0;
-    padding-top: 12px;
-    border-top: 1px solid #f0f0f0;
+    padding-left: 16px;
+    border-left: 1px solid #f0f0f0;
+
+    .editorRegion {
+        overflow: hidden;
+        border: 1px solid #d9d9d9;
+        border-radius: 6px;
+    }
+
+    .editorShell :global(.cm-content) {
+        padding-right: 100px;
+    }
+
+    :global(.cm-scroller) {
+        max-height: 240px;
+        overflow: auto;
+    }
+
+    .editorShortcutHints {
+        display: none;
+    }
+}
+
+@media (max-width: 1000px) {
+    .queryWorkspace {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .generatedSection {
+        padding-top: 12px;
+        padding-left: 0;
+        border-top: 1px solid #f0f0f0;
+        border-left: 0;
+    }
 }
 
 @media (max-width: 1200px) {
@@ -262,35 +305,5 @@
     .editorShortcutHints {
         visibility: hidden;
         opacity: 0;
-    }
-}
-
-.sourceRow {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 16px;
-    align-items: flex-end;
-
-    > .modelField {
-        flex: 0 1 230px;
-        min-width: 180px;
-    }
-
-    > p {
-        flex: 1 1 240px;
-        padding-bottom: 4px;
-    }
-}
-
-.languageRow {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px 12px;
-
-    > span {
-        color: #434343;
-        font-size: 13px;
-        font-weight: 500;
     }
 }

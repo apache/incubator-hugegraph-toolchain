@@ -54,6 +54,7 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
     const [pending, setPending] = useState(false);
     const [error, setError] = useState('');
     const [errorType, setErrorType] = useState('error');
+    const [errorStage, setErrorStage] = useState('');
     const requestRef = useRef(null);
     const languageDrafts = useRef({});
     const connectionScope = JSON.stringify([identity, identityVersion, scope.graphSpace, scope.graph,
@@ -83,6 +84,7 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
         clearEditor('');
         clearResult();
         setError('');
+        setErrorStage('');
         onLanguageChange?.(DEFAULT_QUERY_LANGUAGE);
     }, [clearEditor, clearResult, cypherEnabled, invalidate, language, onLanguageChange]);
 
@@ -102,6 +104,7 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
             setQuestion('');
             setSourceQuestion('');
             setError('');
+            setErrorStage('');
             clearResult();
         };
         window.addEventListener(USER_CHANGE_EVENT, onIdentityChange);
@@ -114,6 +117,7 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
         setQuestion('');
         setSourceQuestion('');
         setError('');
+        setErrorStage('');
         return () => {
             requestRef.current?.controller.abort();
             requestRef.current = null;
@@ -173,6 +177,7 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
         languageDrafts.current = {};
         setSourceQuestion('');
         setError('');
+        setErrorStage('');
         clearResult();
         clearEditor('');
     }, [clearEditor, clearResult, invalidate, sharedConfig.available, sharedConfig.customAvailable]);
@@ -188,6 +193,7 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
         clearEditor(draft?.content || '');
         clearResult();
         setError('');
+        setErrorStage('');
         onLanguageChange?.(value);
     }, [clearEditor, clearResult, cypherEnabled, editorContent, invalidate, language,
         onLanguageChange, sourceQuestion]);
@@ -196,6 +202,7 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
         invalidate();
         clearResult();
         setError('');
+        setErrorStage('');
         setConfig(previous => {
             const next = {...previous, [field]: value};
             if (field === 'provider') {
@@ -229,7 +236,9 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
         const isCurrent = () => requestRef.current === request && scopeRef.current === request.scope;
         setPending(true);
         setError('');
+        setErrorStage('');
         setErrorType('error');
+        let stage = content === undefined ? 'generation' : 'execution';
         try {
             let query = content;
             if (content === undefined) {
@@ -253,6 +262,7 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
             if (!isCurrent()) {
                 return;
             }
+            stage = 'execution';
             await execute(query, text, {signal: request.controller.signal, isCurrent, language});
         }
         catch (failure) {
@@ -261,6 +271,7 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
                 const message = failure?.response?.data?.message || failure?.message;
                 const safeMessage = config.apiKey && typeof message === 'string'
                     ? message.split(config.apiKey).join('[redacted]') : message;
+                setErrorStage(stage);
                 setError(sanitizePublicError(safeMessage, t('analysis.query.text2gql_failed')));
             }
         }
@@ -276,12 +287,13 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
     const cancel = useCallback(() => {
         invalidate();
         clearResult();
+        setErrorStage('');
         setErrorType('info');
         setError(t('analysis.query.text2gql_cancelled'));
     }, [clearResult, invalidate, t]);
 
     return {
-        config, updateConfig, question, setQuestion, pending, error, errorType,
+        config, updateConfig, question, setQuestion, pending, error, errorType, errorStage,
         source, changeSource, sharedConfig, language, changeLanguage,
         generate: () => run(undefined, question.trim()),
         rerun: content => run(content, sourceQuestion),
@@ -290,6 +302,7 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
             invalidate();
             clearResult();
             setError('');
+            setErrorStage('');
             const source = typeof text === 'string' ? text : '';
             setSourceQuestion(source);
             setQuestion(source);

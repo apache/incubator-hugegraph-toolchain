@@ -127,12 +127,11 @@ aggregate functions. It rejects mutations, procedure calls, subqueries, comments
 and multiple statements; variable-length paths require an explicit upper bound of
 at most 10 hops. Both generated and edited queries are checked before
 automatic execution. Use the ordinary language tabs for general queries or scripts.
-Cypher execution requires the Server's Cypher plugin. The currently tested Server
-has an anonymous-access compatibility defect: its Cypher endpoint rejects requests
-without authorization even when Server authentication is disabled. Hubble sign-in
-is unavailable in anonymous mode, so signing in cannot resolve this defect. Use
-Gremlin until the Server's anonymous Cypher path is fixed; authenticated Cypher
-deployments work normally. Hubble does not manufacture credentials as a workaround.
+Cypher execution requires the Server's Cypher plugin. Anonymous Cypher also requires
+a Server build containing [the merged anonymous-access fix](https://github.com/apache/hugegraph/pull/3366).
+Older builds may reject Cypher without credentials even when authentication is disabled;
+upgrade Server or use Gremlin in that case. Signing in cannot resolve this compatibility
+defect in anonymous mode. Authenticated Cypher deployments work normally.
 Model generation times out after 60 seconds;
 cancelling prevents further automatic execution, but does not guarantee that a
 query already submitted to Server has stopped.

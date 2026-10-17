@@ -287,7 +287,7 @@ const GraphContextSwitcher = () => {
 
     return (
         <div
-            className={style.context}
+            className={`${style.context} ${!pdEnabled ? style.fixedGraphspace : ''}`}
             role="group"
             aria-label={t('workbench.context.name')}
         >

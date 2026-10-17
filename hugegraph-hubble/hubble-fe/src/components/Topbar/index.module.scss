@@ -32,7 +32,9 @@ div.nav {
 }
 
 .header {
-  position: relative;
+  position: sticky;
+  top: 0;
+  z-index: var(--workbench-shell-layer);
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   column-gap: 16px;
@@ -48,7 +50,6 @@ div.nav {
   grid-column: 1;
   min-width: 0;
   align-items: center;
-  overflow: hidden;
 }
 
 .logo {
@@ -124,6 +125,8 @@ div.nav {
 
 @media (max-width: 900px) {
   .header {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    column-gap: 8px;
     padding: 0 12px 0 56px;
   }
 
@@ -143,5 +146,11 @@ div.nav {
 
   .right {
     margin-left: 6px;
+  }
+}
+
+@media (max-width: 360px) {
+  .header {
+    column-gap: 4px;
   }
 }
