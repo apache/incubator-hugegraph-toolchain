@@ -404,7 +404,7 @@ it('shows only a shared model name alongside its source, with no temporary crede
     showBar({text2gql: {...model(), source: 'shared'}});
     expect(screen.getByRole('status')).toHaveTextContent('deployment-model');
     expect(screen.getByRole('status')).not.toHaveTextContent('analysis.query.shared_ready');
-    expect(screen.queryByLabelText('API Key')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('analysis.query.temporary_api_key')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Base URL')).not.toBeInTheDocument();
 });
 

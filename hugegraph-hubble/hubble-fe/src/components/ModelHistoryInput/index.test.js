@@ -142,3 +142,19 @@ test('allows keyboard selection from history while preserving free input', () =>
     expect(input).toHaveValue('beta');
     expect(change).toHaveBeenLastCalledWith(expect.objectContaining({target: {value: 'beta'}}));
 });
+
+// AutoComplete and its custom Input must not both paint the same placeholder.
+test('renders the empty field placeholder once, including while focused', () => {
+    render(<ModelHistoryInput
+        baseUrl='https://one.example/v1'
+        value=''
+        aria-label='Model'
+        placeholder='Choose or type'
+    />);
+    const input = screen.getByRole('combobox', {name: 'Model'});
+    expect(input).toHaveAttribute('placeholder', 'Choose or type');
+    expect(screen.queryByText('Choose or type')).not.toBeInTheDocument();
+    userEvent.click(input);
+    expect(input).toHaveAttribute('placeholder', 'Choose or type');
+    expect(screen.queryByText('Choose or type')).not.toBeInTheDocument();
+});

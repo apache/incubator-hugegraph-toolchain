@@ -16,46 +16,38 @@
  * under the License.
  */
 
-import React, {useEffect, useId, useRef, useState} from 'react';
-import ResizeObserver from 'resize-observer-polyfill';
+import React, {useEffect, useId, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import ResizeHandle from '../../../components/ResizeHandle';
 import c from './index.module.scss';
 
 const MIN_RESULT_HEIGHT = 240;
-const MIN_HISTORY_HEIGHT = 150;
-const DEFAULT_HISTORY_HEIGHT = 160;
+// Reserve the same compact preview below the graph at the initial fold.
+const HISTORY_PREVIEW_HEIGHT = 160;
 const HANDLE_HEIGHT = 14;
-const clampResultHeight = (height, total) => Math.max(
-    MIN_RESULT_HEIGHT, Math.min(height, total - MIN_HISTORY_HEIGHT - HANDLE_HEIGHT)
-);
+const clampResultHeight = (height, maximum) => Math.max(MIN_RESULT_HEIGHT, Math.min(height, maximum));
 
-// Keep a stable result slot while switching result/history tabs or resizing either pane.
+// Resize only the graph slot; records flow below it in the browser document.
 const ResultsLayout = ({renderResult, history}) => {
     const {t} = useTranslation();
     const id = useId();
-    const layoutRef = useRef(null);
-    const [totalHeight, setTotalHeight] = useState(560);
+    const [viewportHeight, setViewportHeight] = useState(() => window.innerHeight);
     const [preferredHeight, setPreferredHeight] = useState(null);
-    const resultHeight = clampResultHeight(
-        preferredHeight ?? totalHeight - DEFAULT_HISTORY_HEIGHT - HANDLE_HEIGHT,
-        totalHeight
-    );
+    const defaultHeight = Math.max(440, Math.min(900, viewportHeight * 0.72))
+        - HISTORY_PREVIEW_HEIGHT - HANDLE_HEIGHT;
+    const maximumHeight = Math.max(MIN_RESULT_HEIGHT, viewportHeight);
+    const resultHeight = clampResultHeight(preferredHeight ?? defaultHeight, maximumHeight);
 
     useEffect(() => {
-        const element = layoutRef.current;
-        const updateHeight = () => setTotalHeight(element.getBoundingClientRect().height || 560);
-        updateHeight();
-        const observer = new ResizeObserver(updateHeight);
-        observer.observe(element);
-        return () => observer.disconnect();
+        const updateHeight = () => setViewportHeight(window.innerHeight);
+        window.addEventListener('resize', updateHeight);
+        return () => window.removeEventListener('resize', updateHeight);
     }, []);
 
     return (
         <div
-            ref={layoutRef}
             className={c.layout}
-            style={{gridTemplateRows: `${resultHeight}px ${HANDLE_HEIGHT}px minmax(0, 1fr)`}}
+            style={{gridTemplateRows: `${resultHeight}px ${HANDLE_HEIGHT}px auto`}}
         >
             <div id={`${id}-result`} className={c.result}>
                 {renderResult(resultHeight)}
@@ -63,7 +55,7 @@ const ResultsLayout = ({renderResult, history}) => {
             <ResizeHandle
                 value={resultHeight}
                 min={MIN_RESULT_HEIGHT}
-                max={totalHeight - MIN_HISTORY_HEIGHT - HANDLE_HEIGHT}
+                max={maximumHeight}
                 onChange={setPreferredHeight}
                 label={t('analysis.query.resize_results')}
                 controls={`${id}-result ${id}-history`}

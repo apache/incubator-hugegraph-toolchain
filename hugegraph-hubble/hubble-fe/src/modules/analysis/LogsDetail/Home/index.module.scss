@@ -45,16 +45,11 @@
 }
 
 
-// Only the query workspace opts into a resizable, compact history pane.
+// Query records stay dense, but use document scrolling for the full table.
 .compact {
-    height: 100%;
     margin-top: 0;
 
     :global {
-        .ant-tabs {
-            height: 100%;
-        }
-
         .ant-tabs-nav {
             flex: 0 0 auto;
             margin-bottom: 0;
@@ -63,7 +58,7 @@
         .ant-tabs-content-holder {
             min-height: 0;
             padding: 8px 12px;
-            overflow: auto;
+            overflow: visible;
         }
 
         .ant-table-pagination.ant-pagination {

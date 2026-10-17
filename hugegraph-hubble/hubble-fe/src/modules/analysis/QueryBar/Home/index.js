@@ -255,13 +255,13 @@ const QueryBar = props => {
                         </div>
                         <div className={c.modelField}>
                             <label htmlFor='text2gql-api-key'>
-                                API Key {text2gql.config.provider === 'ollama' && (
+                                {t('analysis.query.temporary_api_key')} {text2gql.config.provider === 'ollama' && (
                                     <span className={c.fieldHint}>{t('analysis.query.optional_field')}</span>
                                 )}
                             </label>
                             <Input.Password
                                 id='text2gql-api-key'
-                                aria-label='API Key'
+                                aria-label={t('analysis.query.temporary_api_key')}
                                 aria-required={text2gql.config.provider !== 'ollama'}
                                 autoComplete='new-password'
                                 placeholder={t('analysis.query.api_key_hint')}

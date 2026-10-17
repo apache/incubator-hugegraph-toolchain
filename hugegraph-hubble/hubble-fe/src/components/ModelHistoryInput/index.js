@@ -22,7 +22,8 @@ import {DownOutlined} from '@ant-design/icons';
 import {getBaseUrlHistory, getModelHistory} from '../../utils/modelHistory';
 import {USER_CHANGE_EVENT} from '../../utils/user';
 
-const ModelHistoryInput = ({baseUrl, field = 'model', onChange, onFocus, onBlur, 'aria-label': ariaLabel, value = '',
+const ModelHistoryInput = ({baseUrl, field = 'model', onChange, onFocus, onBlur, placeholder,
+    'aria-label': ariaLabel, value = '',
     maxLength = field === 'baseUrl' ? 2048 : 256, style, ...inputProps}) => {
     const readOptions = useCallback(() => (field === 'baseUrl' ? getBaseUrlHistory() : getModelHistory(baseUrl)),
         [baseUrl, field]);
@@ -84,6 +85,7 @@ const ModelHistoryInput = ({baseUrl, field = 'model', onChange, onFocus, onBlur,
             <Input
                 {...inputProps}
                 aria-label={ariaLabel}
+                placeholder={placeholder}
                 suffix={inputProps.suffix || <span>{history.length ? <DownOutlined aria-hidden='true' /> : null}</span>}
             />
         </AutoComplete>

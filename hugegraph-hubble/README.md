@@ -36,10 +36,11 @@ You can also write a query directly in the editor. Generated queries remain subj
 to the read-only checks after editing. Manual queries retain favorites and asynchronous
 execution. Drag the divider below the inputs to adjust both input heights together;
 the action buttons stay inside the bottom-right corner of each input. Graph, table
-and JSON results use the same result area. A second divider redistributes space
-between results and the compact execution/favorites panel without clearing data
-or resetting the graph view. Inputs and history start at 160px high, leaving more room
-for graph results. Ctrl/Command + Enter generates and runs a query when
+and JSON results use the same result area. A second divider adjusts the graph height
+without clearing data or resetting its view. Inputs start at 160px high, leaving more room for graph results.
+Execution records and favorites flow below the graph at their full height, so scrolling
+the browser reveals the entire current page of records without an inner scrollbar.
+Ctrl/Command + Enter generates and runs a query when
 the natural-language input is focused, or executes the statement when its editor
 is focused. In asynchronous mode, both generation and statement execution submit
 background tasks. Generated queries retain their read-only checks in either mode.
@@ -48,6 +49,8 @@ Model time comes from the server, includes repair calls, and excludes schema pre
 Execution records show the original natural-language question alongside each statement.
 
 ![Hubble Text2GQL with editable Gremlin and graph results](docs/images/showcase/text2gql.png)
+
+![Execution records expanded in the browser page](docs/images/showcase/text2gql-history.png)
 
 ![Hubble Text2Cypher with editable Cypher and graph results](docs/images/showcase/text2cypher.png)
 

@@ -295,7 +295,7 @@ test.each(['Original question', undefined])('loads a history statement and optio
     queryBar.remove();
 });
 
-test('lets the compact history pane own scrolling while preserving the legacy table', () => {
+test('avoids an inner table scroller in the query workspace while preserving the legacy table', () => {
     const props = {
         executeLogsDataRecords: [],
         executeLogsDataTotal: 0,
