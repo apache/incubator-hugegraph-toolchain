@@ -91,3 +91,16 @@ test('forwards cancellation and generation timeout without changing execution re
         '/graphspaces/DEFAULT/graphs/g/gremlin-query', {content: 'g.V()', text: 'Find people'},
         {...config, suppressBusinessErrorToast: true});
 });
+
+
+test.each([
+    ['gremlin', 'gremlin-query', 'g.V().limit(3)'],
+    ['cypher', 'cypher', 'MATCH (n) RETURN n LIMIT 3'],
+])('executes generated %s using POST with the question in its body', (language, endpoint, content) => {
+    const config = {signal: new AbortController().signal};
+    const body = {content, text: 'Find people', read_only: true};
+    analysis.executeText2Gql('DEFAULT', 'g', language, body, config);
+    expect(request.post).toHaveBeenCalledWith(`/graphspaces/DEFAULT/graphs/g/${endpoint}`, body,
+        {...config, suppressBusinessErrorToast: true});
+    expect(request.get).not.toHaveBeenCalled();
+});

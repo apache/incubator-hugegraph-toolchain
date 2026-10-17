@@ -18,6 +18,7 @@
 
 import request from './request';
 import qs from 'qs';
+import {DEFAULT_QUERY_LANGUAGE, QUERY_LANGUAGES} from '../utils/text2gql';
 
 // 图分析通用
 const getGraphSpaceList = config => {
@@ -73,12 +74,20 @@ const getExecutionLogs = (graphspace, graph, params) => {
     return request.get(`/graphspaces/${graphspace}/graphs/${graph}/execute-histories`, {params});
 };
 
-const getExecutionQuery = (graphspace, graph, params, config = {}) => {
+const executeText2Gql = (graphspace, graph, language, params, config = {}) => {
+    const dialect = QUERY_LANGUAGES[language];
+    if (!dialect) {
+        throw new Error('Unsupported query language');
+    }
     return request.post(
-        `/graphspaces/${graphspace}/graphs/${graph}/gremlin-query`,
+        `/graphspaces/${graphspace}/graphs/${graph}/${dialect.endpoint}`,
         params,
         {...config, suppressBusinessErrorToast: true}
     );
+};
+
+const getExecutionQuery = (graphspace, graph, params, config) => {
+    return executeText2Gql(graphspace, graph, DEFAULT_QUERY_LANGUAGE, params, config);
 };
 
 const generateText2Gql = (graphspace, graph, params, config = {}) => {
@@ -86,6 +95,11 @@ const generateText2Gql = (graphspace, graph, params, config = {}) => {
         `/graphspaces/${graphspace}/graphs/${graph}/text2gql`, params,
         {...config, timeout: 65000, suppressBusinessErrorToast: true}
     );
+};
+
+const getText2GqlConfig = (graphspace, graph, config = {}) => {
+    return request.get(`/graphspaces/${graphspace}/graphs/${graph}/text2gql/config`,
+        {...config, suppressBusinessErrorToast: true});
 };
 
 const getGraphData = (graphspace, graph) => {
@@ -233,7 +247,9 @@ export {
     switchOlapMode,
     getExecutionLogs,
     getExecutionQuery,
+    executeText2Gql,
     generateText2Gql,
+    getText2GqlConfig,
     getGraphData,
     putExecutionQuery,
     getExecutionTask,

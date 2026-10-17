@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.driver.SchemaManager;
+import org.apache.hugegraph.entity.enums.QueryLanguage;
 import org.apache.hugegraph.entity.query.Text2GqlRequest;
 import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.structure.schema.EdgeLabel;
@@ -108,6 +109,44 @@ public class Text2GqlServiceTest {
     }
 
     @Test
+    public void testCypherUsesSameSdkProtocolAndItsOwnPromptAndOutputGuard() throws Exception {
+        AtomicReference<JsonNode> body = new AtomicReference<>();
+        HttpServer server = server();
+        String cypher = "MATCH (n:person) WHERE n.name = 'Alice' RETURN n LIMIT 10";
+        server.createContext("/v1/chat/completions", exchange -> {
+            ObjectMapper mapper = new ObjectMapper();
+            body.set(mapper.readTree(exchange.getRequestBody()));
+            reply(exchange, 200, mapper.writeValueAsString(Map.of("choices", List.of(Map.of(
+                    "index", 0, "finish_reason", "stop", "message", Map.of(
+                            "role", "assistant", "reasoning_content", "ignored", "content",
+                            "```cypher\n" + cypher + "\n```"))))));
+        });
+        server.start();
+        try {
+            Text2GqlRequest request = request(server);
+            request.setLanguage(QueryLanguage.CYPHER);
+            assertEquals(cypher, new Text2GqlService().generate(graphClient(), request));
+            String prompt = body.get().get("messages").get(0).get("content").asText();
+            assertTrue(prompt.contains("openCypher"));
+            assertTrue(prompt.contains("person"));
+            assertFalse(prompt.contains("g.V()"));
+            assertFalse(body.get().has("response_format"));
+            assertFalse(body.get().has("tools"));
+            assertFalse(body.get().has("temperature"));
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    public void testGeneratedLanguageCannotBeConfusedWithAnotherDialect() {
+        assertEquals(502, failure(() -> Text2GqlService.normalize("g.V()", QueryLanguage.CYPHER)).status());
+        assertEquals(502, failure(() -> Text2GqlService.normalize("RETURN 1", QueryLanguage.GREMLIN)).status());
+        assertEquals(502, failure(() -> Text2GqlService.normalize(
+                "```gremlin\nRETURN 1\n```", QueryLanguage.CYPHER)).status());
+    }
+
+    @Test
     public void testFailuresNeverExposeUpstreamBodyOrCredentialsAndDoNotRetry() throws Exception {
         for (int status : new int[]{401, 429, 503}) {
             AtomicInteger calls = new AtomicInteger();
@@ -154,6 +193,38 @@ public class Text2GqlServiceTest {
     }
 
     @Test
+    public void testSlowResponseBodyTotalDeadlineMapsToGatewayTimeout() throws Exception {
+        HttpServer server = server();
+        server.createContext("/v1/chat/completions", exchange -> {
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, 0);
+            try {
+                for (int i = 0; i < 20; i++) {
+                    exchange.getResponseBody().write(' ');
+                    exchange.getResponseBody().flush();
+                    Thread.sleep(30);
+                }
+            } catch (IOException ignored) {
+                // The total deadline closes the client while this fixture is still sending its body.
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+            } finally {
+                exchange.close();
+            }
+        });
+        server.start();
+        try {
+            ExternalException failure = failure(() ->
+                    new Text2GqlService(Duration.ofMillis(150)).generate(graphClient(), request(server)));
+            assertEquals(504, failure.status());
+            assertEquals("text2gql.model-timeout", failure.getMessage());
+            assertNull(failure.getCause());
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
     public void testRedirectDoesNotForwardKey() throws Exception {
         AtomicInteger redirected = new AtomicInteger();
         HttpServer server = server();
@@ -188,7 +259,7 @@ public class Text2GqlServiceTest {
             assertEquals(400, failure(() -> Text2GqlService.validateBaseUrl(url)).status());
         }
         for (String output : List.of("g.V().drop()", "g.V();g.E()", "Here is your query: g.V()", "")) {
-            assertEquals(502, failure(() -> Text2GqlService.normalize(output)).status());
+            assertEquals(502, failure(() -> Text2GqlService.normalize(output, QueryLanguage.GREMLIN)).status());
         }
         assertEquals("http://127.0.0.1:11434/v1",
                      Text2GqlService.validateBaseUrl("http://127.0.0.1:11434/v1/"));
@@ -224,6 +295,7 @@ public class Text2GqlServiceTest {
         HugeClient client = Mockito.mock(HugeClient.class);
         SchemaManager schema = Mockito.mock(SchemaManager.class);
         Mockito.when(client.schema()).thenReturn(schema);
+        Mockito.when(client.supportsCypher()).thenReturn(true);
         Mockito.when(schema.getPropertyKeys()).thenThrow(new IllegalStateException("private graph token"));
         ExternalException failure = failure(() -> Text2GqlService.schema(client));
         assertEquals(502, failure.status());
@@ -235,10 +307,23 @@ public class Text2GqlServiceTest {
         assertEquals("text2gql.schema-too-large", failure(() -> Text2GqlService.schema(client)).getMessage());
     }
 
+    @Test
+    public void testUnsupportedCypherFailsBeforeReadingSchemaOrCallingModel() {
+        HugeClient client = Mockito.mock(HugeClient.class);
+        Text2GqlRequest request = new Text2GqlRequest();
+        request.setLanguage(QueryLanguage.CYPHER);
+        ExternalException failure = failure(() -> new Text2GqlService().generate(client, request));
+        assertEquals(400, failure.status());
+        assertEquals("text2gql.language-unavailable", failure.getMessage());
+        Mockito.verify(client).supportsCypher();
+        Mockito.verifyNoMoreInteractions(client);
+    }
+
     private static HugeClient graphClient() {
         HugeClient client = Mockito.mock(HugeClient.class);
         SchemaManager schema = Mockito.mock(SchemaManager.class);
         Mockito.when(client.schema()).thenReturn(schema);
+        Mockito.when(client.supportsCypher()).thenReturn(true);
         PropertyKey key = new PropertyKey("name");
         VertexLabel person = new VertexLabel("person");
         person.properties().add("name");

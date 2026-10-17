@@ -42,7 +42,7 @@ public class GremlinHistoryFailureTest {
         ReflectionTestUtils.setField(controller, "historyService", historyService);
 
         Assert.assertThrows(ExternalException.class, () -> controller.gremlin(
-                "DEFAULT", "hugegraph", new GremlinQuery("g.V().drop()", "Remove vertices")));
+                "DEFAULT", "hugegraph", new GremlinQuery("g.V().drop()", "Remove vertices", true)));
         Assert.assertThrows(ExternalException.class, () -> controller.gremlin(
                 "DEFAULT", "hugegraph", new GremlinQuery("g.V().drop()", "", true)));
         Mockito.verifyNoInteractions(queryService, historyService);
@@ -56,7 +56,7 @@ public class GremlinHistoryFailureTest {
         TestController controller = new TestController(client);
         ReflectionTestUtils.setField(controller, "queryService", queryService);
         ReflectionTestUtils.setField(controller, "historyService", historyService);
-        GremlinQuery query = new GremlinQuery("g.V().count()", "How many vertices?");
+        GremlinQuery query = new GremlinQuery("g.V().count()", "How many vertices?", true);
 
         controller.gremlin("DEFAULT", "hugegraph", query);
 
@@ -65,6 +65,22 @@ public class GremlinHistoryFailureTest {
         Mockito.verify(historyService).save(history.capture());
         Assert.assertEquals("How many vertices?", history.getValue().getText());
         Assert.assertEquals("g.V().count()", history.getValue().getContent());
+    }
+
+    @Test
+    public void testOrdinaryGremlinWithDescriptionStillAllowsMutationsWithoutReadOnlyMarker() {
+        HugeClient client = Mockito.mock(HugeClient.class);
+        QueryService queryService = Mockito.mock(QueryService.class);
+        ExecuteHistoryService historyService = Mockito.mock(ExecuteHistoryService.class);
+        TestController controller = new TestController(client);
+        ReflectionTestUtils.setField(controller, "queryService", queryService);
+        ReflectionTestUtils.setField(controller, "historyService", historyService);
+        GremlinQuery query = new GremlinQuery("g.V().drop()", "Remove vertices manually");
+
+        controller.gremlin("DEFAULT", "hugegraph", query);
+
+        Mockito.verify(queryService).executeGremlinQuery(client, query);
+        Mockito.verify(historyService).save(Mockito.any(ExecuteHistory.class));
     }
 
     @Test

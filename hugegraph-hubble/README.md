@@ -23,47 +23,117 @@ Run Gremlin queries and inspect their graph, table, or JSON results without leav
 
 ### Natural-language graph queries (Text2GQL)
 
-Open **Graph Query → GQL Traversal → Text2GQL**, select a model service, and enter its Base URL,
-model name and API Key. Ask a question about the selected graph. Hubble reads its
-schema using your current graph permissions, generates a Gremlin traversal, then
-automatically executes it through the existing query API. You can edit the generated
-Gremlin and run it again; graph, table and JSON results use the same views as ordinary queries.
+Open **Graph Query → GQL Traversal → Text2GQL** and ask a question about the selected
+graph. Hubble reads its schema using your current graph permissions, generates a
+read-only query, and automatically executes it. **Gremlin** is selected by default;
+choose **Cypher** in the generation-language selector for Text2Cypher. Both use the
+same model settings and question form. You can edit the generated query and run it
+again; graph, table and JSON results use the ordinary query views. The separate
+Gremlin and Cypher tabs continue to accept manually written queries.
 
 ![Hubble Text2GQL with editable Gremlin and graph results](docs/images/showcase/text2gql.png)
 
+![Hubble Text2Cypher with editable Cypher and graph results](docs/images/showcase/text2cypher.png)
+
 The screenshot uses a local mock model endpoint and a real HugeGraph test graph.
 
-| Preset | OpenAI-compatible Base URL | API Key |
+Choose where the model configuration comes from:
+
+- **Deployment default** uses the model configured by your administrator. Users do
+  not enter or receive its API Key. When available, this is the default for new users.
+- **Temporary custom** lets you enter your own connection type, Base URL, model and
+  API Key. Keys stay only in page memory and clear on refresh or account changes.
+  The connection type, URL and model are saved in account-scoped browser
+  `sessionStorage`, for this browser session only.
+
+During generation, a temporary API Key travels from the browser to Hubble, which
+uses it to call the selected model service. Temporary keys are not written to
+browser storage or Hubble's database.
+
+The connection types are **OpenAI compatible** and **Ollama (local)**. DeepSeek, GLM
+and OpenAI share the compatible interface; they are not separate protocol types.
+
+| Service example | Base URL | API Key |
 |---|---|---|
 | Ollama | `http://localhost:11434/v1` | Optional for a local unauthenticated service |
 | DeepSeek | `https://api.deepseek.com/v1` | Required |
 | GLM | `https://open.bigmodel.cn/api/paas/v4` | Required |
 | OpenAI | `https://api.openai.com/v1` | Required |
 
-The URL and model name are editable. Use a model actually available on that service;
-Ollama must already have the selected model installed. Local URLs refer to the
-**Hubble backend host**, including when Hubble runs in a container. Public model
-services require HTTPS; HTTP is supported for local/private-network models.
+Use a model actually available on that service. Local URLs refer to the **Hubble
+backend host**, including in containers. Public model services require HTTPS;
+HTTP is supported for local/private-network models. The question and schema are
+sent to the chosen model service. Execution history stores the question and Gremlin.
+For a model gateway, configure its Base URL explicitly; model calls do not use
+JVM or system proxy settings.
 
-API Keys are kept only in page memory and must be entered again after reloading the
-page. The provider, Base URL and model name are stored in browser `sessionStorage`,
-scoped to the signed-in account. Model configuration is not saved in Hubble's database.
-The question and schema metadata are sent to the selected model service. Execution
-history stores the question and executed Gremlin, as it does for other graph queries.
+#### Configure a deployment default
 
-Text2GQL accepts a single read-only traversal starting with `g.V()` or `g.E()`,
-with literal arguments, supported traversal steps, predicates and nested `__` traversals.
-It rejects graph mutations, arbitrary Groovy code and lambdas before automatic execution.
-Use the Gremlin console for general scripts. The model generation timeout is 60 seconds;
-cancelling the browser operation prevents further automatic execution, but does not
-guarantee a query already submitted to Server has stopped.
+In an authenticated deployment, administrators can open **System & Operations →
+Model settings** to enable a default model and update its connection or API Key.
+The form never reads a saved key back; leaving the key blank preserves it. Changing
+the endpoint requires supplying a new key, unless the local Ollama service needs none.
+Ordinary users cannot read or modify this management endpoint.
+
+![Hubble administrator model settings](docs/images/showcase/text2gql-settings.png)
+
+Managed keys are encrypted with AES-GCM before being stored in Hubble's database.
+On first save on a POSIX filesystem, Hubble creates a separate encryption key at
+`data/text2gql-master.key`, with owner-only permissions. Keep this
+file across restarts and back it up separately from the database: losing it makes
+saved API Keys unreadable. Operators can instead supply a Base64-encoded 32-byte
+key through `HUBBLE_TEXT2GQL_MASTER_KEY`, or set
+`text2gql.shared.master_key_file` to a separately managed key file. No encryption
+key or saved API Key is returned to the browser.
+On filesystems without POSIX file attributes, provide `HUBBLE_TEXT2GQL_MASTER_KEY`
+instead of relying on automatic key-file creation.
+
+For deployment-managed configuration, set these options in
+`conf/hugegraph-hubble.properties`:
+
+```properties
+text2gql.shared.enabled=true
+text2gql.shared.connection_type=openai
+text2gql.shared.base_url=https://api.deepseek.com/v1
+text2gql.shared.model=deepseek-chat
+```
+
+Provide the API Key through `HUBBLE_TEXT2GQL_API_KEY` or a mounted secret file named
+by `text2gql.shared.api_key_file`; the environment variable takes precedence.
+Once an administrator saves managed settings, that complete configuration takes
+precedence, including when disabled. Hubble never combines a deployment key with
+a user-supplied URL. Anonymous deployments have no management UI, and shared model
+use is disabled by default; trusted private deployments may explicitly set
+`text2gql.shared.allow_anonymous=true`. Custom model URLs also require sign-in by
+default. To allow them in a trusted private anonymous deployment, explicitly set
+`text2gql.custom.allow_anonymous=true`; callers can then reach model services on
+the Hubble backend's local network.
+
+Gremlin generation accepts a single read-only traversal starting with `g.V()` or `g.E()`,
+with literal arguments, supported steps, predicates and nested `__` traversals.
+Cypher generation accepts a restricted read-only subset of `MATCH`, `OPTIONAL MATCH`,
+`WHERE`, `WITH`, `RETURN`, `ORDER BY`, `SKIP` and `LIMIT`, with supported scalar and
+aggregate functions. It rejects mutations, procedure calls, subqueries, comments
+and multiple statements; variable-length paths require an explicit upper bound of
+at most 10 hops. Both generated and edited queries are checked before
+automatic execution. Use the ordinary language tabs for general queries or scripts.
+Cypher execution requires the Server's Cypher plugin; plugins whose REST entry
+requires authorization also require sign-in in an otherwise anonymous deployment.
+Hubble does not manufacture credentials to bypass that requirement.
+Model generation times out after 60 seconds;
+cancelling prevents further automatic execution, but does not guarantee that a
+query already submitted to Server has stopped.
 
 The backend adds only the direct dependency `langchain4j-open-ai:1.22.0`, using
-its JDK HTTP transport. It does not add a Python service, Spring starter, AI Services,
-Agent or RAG modules. Local token estimation is unused, so `jtokkit` is excluded.
-The SDK's required transitive reactive-streaming module is retained, including for
-synchronous calls. Protocol tests run real HTTP requests against a local fixture
-with the project's existing Jackson version; vendor credentials are not needed.
+the project's existing OkHttp transport. DNS results are validated in the actual
+connection lookup; redirects and proxy-based DNS bypasses are disabled. Upstream
+responses are limited to 2 MiB. There is
+no Python service, Spring starter, AI Services,
+Agent or RAG dependency. Unused `jtokkit` and JDK transport modules are excluded;
+the SDK's required transitive
+reactive-streaming module is retained. Encryption uses the JDK without new libraries.
+Protocol tests use real SDK HTTP requests against a local fixture with the project's
+existing Jackson version, without vendor credentials.
 
 ### Schema Templates
 

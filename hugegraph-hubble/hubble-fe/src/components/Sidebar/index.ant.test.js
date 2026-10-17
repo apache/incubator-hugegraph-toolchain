@@ -447,3 +447,33 @@ test('hides Account from an analyst who can read a space but cannot administer i
     expect(screen.getByRole('link', {name: '数据导入'})).toBeInTheDocument();
     expect(screen.queryByRole('link', {name: '账号管理'})).not.toBeInTheDocument();
 });
+
+
+test.each([true, false])('shows model settings only with administrator capability (%s)', async admin => {
+    useOperationsCapabilities.mockReturnValue({loading: false,
+        capabilities: admin ? ['accounts_manage'] : [], error: null});
+    await act(async () => render(
+        <MemoryRouter
+            initialEntries={['/settings/text2gql']}
+            future={{v7_startTransition: true, v7_relativeSplatPath: true}}
+        >
+            <Sidebar />
+        </MemoryRouter>
+    ));
+    expect(Boolean(screen.queryByRole('link', {name: '模型设置'}))).toBe(admin);
+});
+
+
+test('keeps model settings hidden in anonymous mode even if a stale capability exists', async () => {
+    sessionStorage.setItem('hubble_config_', JSON.stringify({auth_enabled: false, pd_enabled: false}));
+    useOperationsCapabilities.mockReturnValue({loading: false, capabilities: ['accounts_manage'], error: null});
+    await act(async () => render(
+        <MemoryRouter
+            initialEntries={['/settings/text2gql']}
+            future={{v7_startTransition: true, v7_relativeSplatPath: true}}
+        >
+            <Sidebar />
+        </MemoryRouter>
+    ));
+    expect(screen.queryByRole('link', {name: '模型设置'})).not.toBeInTheDocument();
+});

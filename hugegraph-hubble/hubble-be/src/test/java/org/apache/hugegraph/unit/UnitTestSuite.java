@@ -42,6 +42,11 @@ import org.apache.hugegraph.service.op.OperationsHttpClientTest;
 import org.apache.hugegraph.service.op.OperationsIdentityContractTest;
 import org.apache.hugegraph.service.op.OperationsPayloadParserTest;
 import org.apache.hugegraph.service.query.Text2GqlServiceTest;
+import org.apache.hugegraph.service.query.Text2GqlHttpClientTest;
+import org.apache.hugegraph.controller.query.Text2GqlSettingsControllerTest;
+import org.apache.hugegraph.service.query.Text2GqlSettingsServiceTest;
+import org.apache.hugegraph.service.query.Text2GqlSecretStoreTest;
+import org.apache.hugegraph.service.query.Text2GqlPersistenceTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -78,8 +83,15 @@ import org.junit.runners.Suite;
     GraphsControllerCanonicalTest.class,
     GremlinUtilTest.class,
     ReadOnlyGremlinTest.class,
+    ReadOnlyCypherTest.class,
+    CypherHistoryFailureTest.class,
     Text2GqlControllerTest.class,
     Text2GqlServiceTest.class,
+    Text2GqlHttpClientTest.class,
+    Text2GqlSettingsControllerTest.class,
+    Text2GqlSettingsServiceTest.class,
+    Text2GqlSecretStoreTest.class,
+    Text2GqlPersistenceTest.class,
     GremlinHistoryFailureTest.class,
     HubbleOptionsTest.class,
     IngestControllerTest.class,

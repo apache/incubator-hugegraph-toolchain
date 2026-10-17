@@ -26,6 +26,7 @@ import {useParams} from 'react-router-dom';
 import GraphAnalysisContext from '../../Context';
 import QueryBar from '../QueryBar/Home';
 import useText2Gql from './useText2Gql';
+import {DEFAULT_QUERY_LANGUAGE, QUERY_LANGUAGES} from '../../../utils/text2gql';
 import QueryResult from '../QueryResult/Home';
 import LogsDetail from '../LogsDetail/Home';
 import {GREMLIN_EXECUTES_MODE, ANALYSIS_TYPE, GRAPH_STATUS, PANEL_TYPE,
@@ -93,6 +94,8 @@ const AnalysisHome = () => {
     const [graphNums, setGraphNums] = useState({vertexCount: -1, edgeCount: -1});
     const [executeMode, setExecuteMode] = useState(QUERY);
     const [analysisMode, setAnalysisMode] = useState(GREMLIN);
+    const [queryLanguage, setQueryLanguage] = useState(DEFAULT_QUERY_LANGUAGE);
+    const historyMode = analysisMode === TEXT2GQL ? QUERY_LANGUAGES[queryLanguage].analysisType : analysisMode;
     const analysisModeRef = useRef(GREMLIN);
     const [panelType, setPanelType] = useState(CLOSED);
     const [executionLogsLoading, setExecutionLogsLoading] = useState(false);
@@ -133,10 +136,10 @@ const AnalysisHome = () => {
                 setExecutionLogsData({});
                 return;
             }
-            const request = Symbol('execution-logs');
+            const request = Symbol(`execution-logs:${analysisMode}`);
             executionLogsRequest.current = request;
             const params = {page_size: pageSize, page_no: pageExecute,
-                type: EXECUTION_LOGS_TYPE[analysisMode === TEXT2GQL ? GREMLIN : analysisMode]};
+                type: EXECUTION_LOGS_TYPE[historyMode]};
             setExecutionLogsLoading(true);
             setExecutionLogsError(false);
             setExecutionLogsData({});
@@ -164,7 +167,7 @@ const AnalysisHome = () => {
                 }
             }
         },
-        [graphSpace, graph, pageSize, pageExecute, analysisMode]
+        [graphSpace, graph, pageSize, pageExecute, analysisMode, historyMode]
     );
 
     const getFavoriteQueriesList = useCallback(
@@ -176,14 +179,14 @@ const AnalysisHome = () => {
                 setFavoriteQueriesData({});
                 return;
             }
-            const request = Symbol('favorite-queries');
+            const request = Symbol(`favorite-queries:${analysisMode}`);
             favoriteQueriesRequest.current = request;
             const params = {
                 page_size: pageSize,
                 page_no: pageFavorite,
                 content: search,
                 time_order: sortMode,
-                type: FAVORITE_TYPE[analysisMode === TEXT2GQL ? GREMLIN : analysisMode],
+                type: FAVORITE_TYPE[historyMode],
             };
             setFavoriteQueriesLoading(true);
             setFavoriteQueriesError(false);
@@ -212,7 +215,7 @@ const AnalysisHome = () => {
                 }
             }
         },
-        [graphSpace, graph, pageSize, pageFavorite, search, sortMode, analysisMode]
+        [graphSpace, graph, pageSize, pageFavorite, search, sortMode, analysisMode, historyMode]
     );
 
     const onFavoriteRefresh = useCallback(
@@ -306,6 +309,7 @@ const AnalysisHome = () => {
             executionLogsRequest.current = null;
             favoriteQueriesRequest.current = null;
             analysisModeRef.current = queryType;
+            setQueryLanguage(DEFAULT_QUERY_LANGUAGE);
             setCodeEditorContent(restoreQuery(graphSpace, graph, queryType));
             setAnalysisMode(queryType);
             initQueryResult();
@@ -333,6 +337,7 @@ const AnalysisHome = () => {
         queryRequest.current = null;
         graphNumsRequest.current = null;
         executionInFlight.current = null;
+        setQueryLanguage(DEFAULT_QUERY_LANGUAGE);
         setGraphNums({vertexCount: -1, edgeCount: -1});
         setCodeEditorContent(restoreQuery(graphSpace, graph, analysisModeRef.current));
         if (graphSpace && graph) {
@@ -379,12 +384,13 @@ const AnalysisHome = () => {
             }
             try {
                 let response;
-                if (tabKey === GREMLIN || tabKey === TEXT2GQL) {
-                    response = generated
-                        ? await api.analysis.getExecutionQuery(graphSpace, graph,
-                            {content: generated.content, text: generated.text, read_only: true},
-                            {signal: generated.signal})
-                        : await api.analysis.getExecutionQuery(graphSpace, graph, codeEditorContent);
+                if (generated) {
+                    response = await api.analysis.executeText2Gql(graphSpace, graph, generated.language,
+                        {content: generated.content, text: generated.text, read_only: true},
+                        {signal: generated.signal});
+                }
+                else if (tabKey === GREMLIN) {
+                    response = await api.analysis.getExecutionQuery(graphSpace, graph, codeEditorContent);
                 }
                 else {
                     response = await api.analysis.getCypherExecutionQuery(
@@ -441,6 +447,10 @@ const AnalysisHome = () => {
         execute: executeGenerated,
         clearResult: initQueryResult,
         clearEditor: setCodeEditorContent,
+        language: queryLanguage,
+        cypherEnabled,
+        onLanguageChange: setQueryLanguage,
+        editorContent: codeEditorContent,
         t,
     });
 
@@ -641,7 +651,7 @@ const AnalysisHome = () => {
                 favoriteQueriesData={favoriteQueriesData}
                 pageExecute={pageExecute}
                 onClickLoadContent={handleClickLoadContent}
-                analysisMode={analysisMode === TEXT2GQL ? GREMLIN : analysisMode}
+                analysisMode={historyMode}
                 executionLogsLoading={executionLogsLoading}
                 favoriteQueriesLoading={favoriteQueriesLoading}
                 executionLogsError={executionLogsError}

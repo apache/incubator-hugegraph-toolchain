@@ -264,3 +264,33 @@
         opacity: 0;
     }
 }
+
+.sourceRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    align-items: flex-end;
+
+    > .modelField {
+        flex: 0 1 230px;
+        min-width: 180px;
+    }
+
+    > p {
+        flex: 1 1 240px;
+        padding-bottom: 4px;
+    }
+}
+
+.languageRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+
+    > span {
+        color: #434343;
+        font-size: 13px;
+        font-weight: 500;
+    }
+}

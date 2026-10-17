@@ -53,6 +53,10 @@ const items = (t, pathname, capabilities = []) => {
         systemList = isAuthEnabled() ? [MY, ACCOUNT] : [];
     }
     const operationsList = [
+        ...(isAuthEnabled() && capabilities.includes('accounts_manage') ? [{
+            label: <Link to='/settings/text2gql'>{t('analysis.model_settings.title')}</Link>,
+            key: 'text2gql-settings',
+        }] : []),
         ...(pdMode && capabilities.includes('operations_health_read') ? [{
             label: <Link to='/operations/overview'>{t('operations.overview')}</Link>,
             key: 'overview',

@@ -16,9 +16,22 @@
  * under the License.
  */
 
+import {ANALYSIS_TYPE} from './constants';
+
 export const MODEL_PROVIDERS = {
     ollama: 'http://localhost:11434/v1',
-    deepseek: 'https://api.deepseek.com/v1',
-    glm: 'https://open.bigmodel.cn/api/paas/v4',
     openai: 'https://api.openai.com/v1',
+};
+
+export const DEFAULT_QUERY_LANGUAGE = 'gremlin';
+export const QUERY_LANGUAGES = {
+    gremlin: {label: 'Gremlin', analysisType: ANALYSIS_TYPE.GREMLIN,
+        endpoint: 'gremlin-query', editorTitleKey: 'analysis.query.generated_gremlin'},
+    cypher: {label: 'Cypher', analysisType: ANALYSIS_TYPE.CYPHER, requiresCypher: true,
+        endpoint: 'cypher', editorTitleKey: 'analysis.query.generated_cypher'},
+};
+
+export const supportsQueryLanguage = (language, cypherEnabled = false) => {
+    return Object.prototype.hasOwnProperty.call(QUERY_LANGUAGES, language)
+        && (!QUERY_LANGUAGES[language].requiresCypher || cypherEnabled === true);
 };

@@ -20,14 +20,16 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 import {scopedStorageKey, USER_CHANGE_EVENT} from '../../../utils/user';
 import {sanitizePublicError} from '../../../utils/publicError';
 import * as api from '../../../api';
-import {MODEL_PROVIDERS} from '../../../utils/text2gql';
+import {DEFAULT_QUERY_LANGUAGE, MODEL_PROVIDERS, supportsQueryLanguage} from '../../../utils/text2gql';
 
 const restoreConfig = identity => {
     try {
         const saved = JSON.parse(sessionStorage.getItem(identity) || '{}');
+        // Previous DeepSeek and GLM presets use the same OpenAI-compatible protocol.
+        const provider = saved.provider === 'ollama' ? 'ollama' : 'openai';
         return {
-            provider: Object.prototype.hasOwnProperty.call(MODEL_PROVIDERS, saved.provider) ? saved.provider : 'openai',
-            baseUrl: typeof saved.baseUrl === 'string' ? saved.baseUrl : MODEL_PROVIDERS.openai,
+            provider,
+            baseUrl: typeof saved.baseUrl === 'string' ? saved.baseUrl : MODEL_PROVIDERS[provider],
             model: typeof saved.model === 'string' ? saved.model : '',
             apiKey: '',
         };
@@ -37,8 +39,15 @@ const restoreConfig = identity => {
     }
 };
 
-export default function useText2Gql({scope, active, ready, execute, clearResult, clearEditor, t}) {
+export default function useText2Gql({scope, active, ready, execute, clearResult, clearEditor, t,
+    language = DEFAULT_QUERY_LANGUAGE, cypherEnabled = false, onLanguageChange, editorContent = ''}) {
     const [identity, setIdentity] = useState(() => scopedStorageKey('hubble.text2gql'));
+    const [identityVersion, setIdentityVersion] = useState(0);
+    const [source, setSource] = useState('custom');
+    const [sharedMetadata, setSharedMetadata] = useState({
+        scope: null, loading: false, available: false, customAvailable: false,
+    });
+    const metadataRequest = useRef(null);
     const [config, setConfig] = useState(() => restoreConfig(identity));
     const [question, setQuestion] = useState('');
     const [sourceQuestion, setSourceQuestion] = useState('');
@@ -46,8 +55,15 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
     const [error, setError] = useState('');
     const [errorType, setErrorType] = useState('error');
     const requestRef = useRef(null);
-    const currentScope = JSON.stringify([identity, scope.graphSpace, scope.graph,
+    const languageDrafts = useRef({});
+    const connectionScope = JSON.stringify([identity, identityVersion, scope.graphSpace, scope.graph,
         scope.routeGraphSpace, scope.routeGraph, active]);
+    const baseScopeRef = useRef(connectionScope);
+    baseScopeRef.current = connectionScope;
+    const currentScope = JSON.stringify([connectionScope, source, language,
+        supportsQueryLanguage(language, cypherEnabled)]);
+    const sharedConfig = sharedMetadata.scope === connectionScope ? sharedMetadata
+        : {loading: active && ready, available: false, customAvailable: false};
     const scopeRef = useRef(currentScope);
     scopeRef.current = currentScope;
 
@@ -58,9 +74,28 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
     }, []);
 
     useEffect(() => {
+        if (supportsQueryLanguage(language, cypherEnabled)) {
+            return;
+        }
+        invalidate();
+        languageDrafts.current = {};
+        setSourceQuestion('');
+        clearEditor('');
+        clearResult();
+        setError('');
+        onLanguageChange?.(DEFAULT_QUERY_LANGUAGE);
+    }, [clearEditor, clearResult, cypherEnabled, invalidate, language, onLanguageChange]);
+
+    useEffect(() => {
         const onIdentityChange = () => {
             // Invalidate synchronously, before the identity change re-renders.
             invalidate();
+            metadataRequest.current?.controller.abort();
+            metadataRequest.current = null;
+            setIdentityVersion(previous => previous + 1);
+            setSharedMetadata({scope: null, loading: false, available: false, customAvailable: false});
+            setSource('custom');
+            languageDrafts.current = {};
             setConfig(restoreConfig(scopedStorageKey('hubble.text2gql')));
             setIdentity(scopedStorageKey('hubble.text2gql'));
             clearEditor('');
@@ -75,6 +110,7 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
 
     useEffect(() => {
         invalidate();
+        languageDrafts.current = {};
         setQuestion('');
         setSourceQuestion('');
         setError('');
@@ -82,7 +118,79 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
             requestRef.current?.controller.abort();
             requestRef.current = null;
         };
-    }, [currentScope, invalidate]);
+    }, [connectionScope, invalidate]);
+
+    useEffect(() => {
+        if (!active || !ready) {
+            return undefined;
+        }
+        const request = {controller: new AbortController(), scope: connectionScope};
+        metadataRequest.current = request;
+        const isCurrent = () => metadataRequest.current === request
+            && baseScopeRef.current === request.scope;
+        setSharedMetadata({scope: connectionScope, loading: true, available: false, customAvailable: false});
+        api.analysis.getText2GqlConfig(scope.graphSpace, scope.graph, {signal: request.controller.signal})
+            .then(response => {
+                if (!isCurrent()) {
+                    return;
+                }
+                const data = response?.data;
+                const valid = response?.status === 200 && typeof data?.available === 'boolean';
+                const available = valid && data.available;
+                // Older successful metadata responses predate the separate custom capability.
+                const customAvailable = valid
+                    && (data.custom_available === true || data.custom_available === undefined);
+                setSharedMetadata({scope: connectionScope, loading: false, available, customAvailable,
+                    model: available && typeof data.model === 'string' ? data.model : '',
+                    reason: available ? undefined : data?.reason || 'unavailable'});
+                if (available) {
+                    invalidate();
+                }
+                setSource(available ? 'shared' : 'custom');
+            })
+            .catch(() => {
+                if (isCurrent()) {
+                    setSharedMetadata({scope: connectionScope, loading: false,
+                        available: false, customAvailable: false, reason: 'unavailable'});
+                    setSource('custom');
+                }
+            });
+        return () => {
+            request.controller.abort();
+            if (metadataRequest.current === request) {
+                metadataRequest.current = null;
+            }
+        };
+    }, [active, connectionScope, invalidate, ready, scope.graph, scope.graphSpace]);
+
+    const changeSource = useCallback(value => {
+        if (!((value === 'custom' && sharedConfig.customAvailable)
+            || (value === 'shared' && sharedConfig.available))) {
+            return;
+        }
+        invalidate();
+        setSource(value);
+        languageDrafts.current = {};
+        setSourceQuestion('');
+        setError('');
+        clearResult();
+        clearEditor('');
+    }, [clearEditor, clearResult, invalidate, sharedConfig.available, sharedConfig.customAvailable]);
+
+    const changeLanguage = useCallback(value => {
+        if (!supportsQueryLanguage(value, cypherEnabled) || value === language) {
+            return;
+        }
+        invalidate();
+        languageDrafts.current[language] = {content: editorContent, sourceQuestion};
+        const draft = languageDrafts.current[value];
+        setSourceQuestion(draft?.sourceQuestion || '');
+        clearEditor(draft?.content || '');
+        clearResult();
+        setError('');
+        onLanguageChange?.(value);
+    }, [clearEditor, clearResult, cypherEnabled, editorContent, invalidate, language,
+        onLanguageChange, sourceQuestion]);
 
     const updateConfig = useCallback((field, value) => {
         invalidate();
@@ -108,7 +216,12 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
     }, [clearResult, identity, invalidate]);
 
     const run = useCallback(async (content, text) => {
-        if (!ready || !active || requestRef.current || (content !== undefined && !content.trim())) {
+        if (!supportsQueryLanguage(language, cypherEnabled) || !ready || !active || requestRef.current
+            || (content !== undefined && !content.trim())) {
+            return;
+        }
+        if (content === undefined && (sharedConfig.loading
+            || (source === 'shared' ? !sharedConfig.available : !sharedConfig.customAvailable))) {
             return;
         }
         const request = {controller: new AbortController(), scope: currentScope};
@@ -118,20 +231,21 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
         setError('');
         setErrorType('error');
         try {
-            let gremlin = content;
+            let query = content;
             if (content === undefined) {
                 clearResult();
-                const response = await api.analysis.generateText2Gql(scope.graphSpace, scope.graph, {
-                    question: text,
-                    base_url: config.baseUrl.trim(),
-                    api_key: config.apiKey,
-                    model: config.model.trim(),
-                }, {signal: request.controller.signal});
+                const params = source === 'shared' ? {question: text, source: 'shared', language} : {
+                    question: text, source: 'custom', language, base_url: config.baseUrl.trim(),
+                    api_key: config.apiKey, model: config.model.trim(),
+                };
+                const response = await api.analysis.generateText2Gql(scope.graphSpace, scope.graph,
+                    params, {signal: request.controller.signal});
                 if (!isCurrent()) {
                     return;
                 }
-                gremlin = response?.data?.gremlin;
-                if (response?.status !== 200 || typeof gremlin !== 'string' || !gremlin.trim()) {
+                query = response?.data?.query;
+                if (response?.status !== 200 || response?.data?.language !== language
+                    || typeof query !== 'string' || !query.trim()) {
                     throw new Error(response?.message || t('analysis.query.text2gql_failed'));
                 }
                 setSourceQuestion(text);
@@ -139,7 +253,7 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
             if (!isCurrent()) {
                 return;
             }
-            await execute(gremlin, text, {signal: request.controller.signal, isCurrent});
+            await execute(query, text, {signal: request.controller.signal, isCurrent, language});
         }
         catch (failure) {
             if (isCurrent()) {
@@ -156,7 +270,8 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
                 setPending(false);
             }
         }
-    }, [active, clearResult, config, currentScope, execute, ready, scope, t]);
+    }, [active, clearResult, config, currentScope, cypherEnabled, execute, ready, scope, sharedConfig.available,
+        sharedConfig.customAvailable, sharedConfig.loading, source, language, t]);
 
     const cancel = useCallback(() => {
         invalidate();
@@ -167,6 +282,7 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
 
     return {
         config, updateConfig, question, setQuestion, pending, error, errorType,
+        source, changeSource, sharedConfig, language, changeLanguage,
         generate: () => run(undefined, question.trim()),
         rerun: content => run(content, sourceQuestion),
         cancel,

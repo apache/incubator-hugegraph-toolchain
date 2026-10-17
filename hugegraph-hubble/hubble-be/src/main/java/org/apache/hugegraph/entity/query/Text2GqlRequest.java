@@ -18,6 +18,8 @@
 
 package org.apache.hugegraph.entity.query;
 
+import org.apache.hugegraph.entity.enums.QueryLanguage;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.Getter;
@@ -29,10 +31,14 @@ public class Text2GqlRequest {
 
     private String question;
 
+    private String source = "custom";
+
+    private QueryLanguage language = QueryLanguage.GREMLIN;
+
     @JsonProperty("base_url")
     private String baseUrl;
 
-    @JsonProperty("api_key")
+    @JsonProperty(value = "api_key", access = JsonProperty.Access.WRITE_ONLY)
     private String apiKey;
 
     private String model;

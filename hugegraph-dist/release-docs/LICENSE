@@ -682,8 +682,6 @@ https://github.com/h2database/h2database/tree/version-2.3.232
         Apache-2.0 terms above
     (Apache-2.0) dev.langchain4j:langchain4j-http-client:1.22.0
         Apache-2.0 terms above
-    (Apache-2.0) dev.langchain4j:langchain4j-http-client-jdk:1.22.0
-        Apache-2.0 terms above
     (Apache-2.0) dev.langchain4j:langchain4j-open-ai:1.22.0
         Apache-2.0 terms above
     (Apache-2.0) dev.langchain4j:langchain4j-reactive-streaming:1.22.0-beta32

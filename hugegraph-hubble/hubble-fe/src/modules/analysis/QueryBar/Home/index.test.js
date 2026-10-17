@@ -61,6 +61,9 @@ jest.mock('../ContentCommon', () => ({
 jest.mock('react-i18next', () => ({
     useTranslation: () => ({t: key => ({
         'analysis.query.gremlin_tab': 'Gremlin',
+        'analysis.query.connection_type': 'Connection type',
+        'analysis.query.connection_openai': 'OpenAI compatible',
+        'analysis.query.connection_ollama': 'Ollama (local)',
         'analysis.query.gremlin_placeholder': 'For example: g.V().limit(10)',
         'analysis.query.cypher_tab': 'Cypher',
         'analysis.query.cypher_placeholder': 'For example: MATCH (n) RETURN n LIMIT 10',
@@ -336,7 +339,7 @@ it('keeps model field labels visible and ties Gremlin actions to the editor sect
     expect(screen.getByLabelText(/Base URL/)).toHaveAttribute('aria-required', 'true');
     expect(screen.getByLabelText('API Key')).toHaveAttribute('aria-required', 'true');
     const generated = screen.getByRole('region', {name: 'analysis.query.generated_gremlin'});
-    expect(generated).toContainElement(screen.getByRole('button', {name: 'analysis.query.run_edited_gremlin'}));
+    expect(generated).toContainElement(screen.getByRole('button', {name: 'analysis.query.run_edited_query'}));
     expect(screen.getByTestId('editor-gremlin')).toHaveAttribute(
         'data-aria-label', 'analysis.query.generated_gremlin'
     );
@@ -390,4 +393,136 @@ it('shows cancellation as neutral information and uses distinct IDs for both Gre
     const editorIds = [...container.querySelectorAll('[id^="query-editor-"]')].map(node => node.id);
     expect(editorIds).toHaveLength(2);
     expect(new Set(editorIds).size).toBe(2);
+});
+
+
+it('offers only OpenAI-compatible and local Ollama connection types', () => {
+    const text2gql = {
+        config: {provider: 'openai', baseUrl: 'https://api.deepseek.com/v1', model: 'test', apiKey: ''},
+        question: '', pending: false, updateConfig: jest.fn(), setQuestion: jest.fn(), generate: jest.fn(),
+    };
+    render(
+        <QueryBar
+            activeTab='Text2GQL'
+            codeEditorContent=''
+            text2gql={text2gql}
+            onTabsChange={jest.fn()}
+            setCodeEditorContent={jest.fn()}
+        />
+    );
+    expect(screen.getByText('Connection type')).toBeInTheDocument();
+    expect(screen.getByText('analysis.query.connection_openai_hint')).toBeInTheDocument();
+    fireEvent.mouseDown(document.getElementById('text2gql-provider'));
+    expect(screen.getAllByRole('option')).toHaveLength(2);
+    expect(screen.getByRole('option', {name: 'OpenAI compatible'})).toBeInTheDocument();
+    expect(screen.getByRole('option', {name: 'Ollama (local)'})).toBeInTheDocument();
+    expect(screen.getByLabelText(/Base URL/)).toHaveValue('https://api.deepseek.com/v1');
+});
+
+
+it('shows only safe shared model information and allows generation without personal credentials', () => {
+    const text2gql = {
+        config: {provider: 'openai', baseUrl: '', model: '', apiKey: ''},
+        source: 'shared', sharedConfig: {available: true, loading: false, model: 'deployment-model'},
+        question: 'Find people', pending: false, updateConfig: jest.fn(), setQuestion: jest.fn(),
+        generate: jest.fn(), changeSource: jest.fn(),
+    };
+    render(
+        <QueryBar
+            activeTab='Text2GQL'
+            codeEditorContent=''
+            text2gql={text2gql}
+            onTabsChange={jest.fn()}
+            setCodeEditorContent={jest.fn()}
+        />
+    );
+    expect(screen.queryByLabelText(/Base URL/)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('API Key')).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('deployment-model');
+    expect(screen.getByRole('button', {name: 'analysis.query.generate_query'})).toBeEnabled();
+});
+
+
+it('hides custom credentials and disables generation when neither model source is available', () => {
+    const text2gql = {
+        config: {provider: 'openai', baseUrl: 'https://private.example/v1', model: 'test', apiKey: 'private'},
+        source: 'custom', sharedConfig: {available: false, customAvailable: false, loading: false},
+        question: 'Find people', pending: false, updateConfig: jest.fn(), setQuestion: jest.fn(),
+        generate: jest.fn(), changeSource: jest.fn(),
+    };
+    render(
+        <QueryBar
+            activeTab='Text2GQL'
+            codeEditorContent=''
+            text2gql={text2gql}
+            onTabsChange={jest.fn()}
+            setCodeEditorContent={jest.fn()}
+        />
+    );
+    expect(screen.queryByLabelText(/Base URL/)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('API Key')).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('analysis.query.custom_unavailable');
+    expect(screen.getByRole('combobox').closest('.ant-select')).toHaveClass('ant-select-disabled');
+    const generate = screen.getByRole('button', {name: 'analysis.query.generate_query'});
+    expect(generate).toBeDisabled();
+    fireEvent.click(generate);
+    expect(text2gql.generate).not.toHaveBeenCalled();
+});
+
+
+it('defaults generation to Gremlin and offers a working Cypher editor through the same panel', () => {
+    const text2gql = {
+        config: {provider: 'ollama', baseUrl: 'http://localhost:11434/v1', model: 'local', apiKey: ''},
+        question: 'Find people', pending: false, updateConfig: jest.fn(), setQuestion: jest.fn(),
+        generate: jest.fn(), changeLanguage: jest.fn(),
+    };
+    const panel = language => (
+        <QueryBar
+            activeTab='Text2GQL'
+            cypherEnabled
+            codeEditorContent='MATCH (n) RETURN n LIMIT 3'
+            text2gql={{...text2gql, language}}
+            onTabsChange={jest.fn()}
+            setCodeEditorContent={jest.fn()}
+        />
+    );
+    const {rerender} = render(panel(undefined));
+    expect(screen.getByRole('radio', {name: 'Gremlin'})).toBeChecked();
+    fireEvent.click(screen.getByRole('radio', {name: 'Cypher'}));
+    expect(text2gql.changeLanguage).toHaveBeenCalledWith('cypher');
+    rerender(panel('cypher'));
+    expect(screen.getByRole('radio', {name: 'Cypher'})).toBeChecked();
+    expect(screen.getByRole('region', {name: 'analysis.query.generated_cypher'}))
+        .toContainElement(screen.getByTestId('editor-cypher'));
+    expect(screen.getByTestId('editor-cypher')).toHaveAttribute('data-aria-label', 'analysis.query.generated_cypher');
+    fireEvent.click(screen.getByRole('button', {name: 'analysis.query.generate_query'}));
+    expect(text2gql.generate).toHaveBeenCalledTimes(1);
+});
+
+
+it('disables Cypher natural-language generation with a clear server capability explanation', () => {
+    const text2gql = {
+        config: {provider: 'ollama', baseUrl: 'http://localhost:11434/v1', model: 'local', apiKey: ''},
+        question: 'Find people', pending: false, changeLanguage: jest.fn(), updateConfig: jest.fn(),
+        setQuestion: jest.fn(), generate: jest.fn(),
+    };
+    const panel = cypherEnabled => (
+        <QueryBar
+            activeTab='Text2GQL'
+            codeEditorContent='g.V()'
+            cypherEnabled={cypherEnabled}
+            text2gql={text2gql}
+            onTabsChange={jest.fn()}
+            setCodeEditorContent={jest.fn()}
+        />
+    );
+    const {rerender} = render(panel(false));
+    expect(screen.getByRole('radio', {name: 'Gremlin'})).toBeEnabled();
+    expect(screen.getByRole('radio', {name: 'Cypher'})).toBeDisabled();
+    expect(screen.getByText('analysis.query.cypher_unavailable')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('radio', {name: 'Cypher'}));
+    expect(text2gql.changeLanguage).not.toHaveBeenCalled();
+    rerender(panel(true));
+    expect(screen.getByRole('radio', {name: 'Cypher'})).toBeEnabled();
+    expect(screen.queryByText('analysis.query.cypher_unavailable')).not.toBeInTheDocument();
 });
