@@ -29,7 +29,10 @@ import org.junit.runners.Suite;
     BackupRestoreSafetyTest.class,
     RetryManagerTest.class,
     RestoreFailureTest.class,
-    HdfsDirectoryTest.class
+    HdfsDirectoryTest.class,
+    LocalDirectoryTest.class,
+    BackupFailureTest.class,
+    JsonGraphTest.class
 })
 public class FuncTestSuite {
 }

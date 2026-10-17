@@ -106,7 +106,9 @@ import org.junit.runners.Suite;
     PriorityFixTest.class,
     QueryServiceTest.class,
     ResponseAdvisorStatusTest.class,
-    UrlUtilTest.class
+    UrlUtilTest.class,
+    EntityUtilTest.class,
+    HubbleUtilTest.class
 })
 public class UnitTestSuite {
 }

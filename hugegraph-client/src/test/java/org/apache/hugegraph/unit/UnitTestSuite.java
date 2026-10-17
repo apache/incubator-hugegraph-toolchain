@@ -17,6 +17,7 @@
 
 package org.apache.hugegraph.unit;
 
+import org.apache.hugegraph.driver.GremlinManagerTest;
 import org.apache.hugegraph.driver.HugeClientCompatibilityTest;
 import org.apache.hugegraph.driver.ServerCompatibilityTest;
 import org.junit.runner.RunWith;
@@ -42,6 +43,11 @@ import org.junit.runners.Suite;
         CommonUtilTest.class,
         IdUtilTest.class,
         SplicingIdGeneratorTest.class,
+        HugeClientBuilderTest.class,
+        GremlinManagerTest.class,
+        ServerExceptionTest.class,
+        HugeClientFakeServerTest.class,
+        GraphElementTest.class,
         JsonUtilTest.class
 })
 public class UnitTestSuite {
