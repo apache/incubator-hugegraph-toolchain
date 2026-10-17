@@ -78,6 +78,8 @@ default and temporary models use these shared templates. Hubble always adds the
 current authorized graph schema and sends the question separately; editing a
 template does not disable backend read-only checks.
 
+![Text2GQL Prompt templates with few-shot examples](docs/images/showcase/text2gql-prompt.png)
+
 During generation, a temporary API Key travels from the browser to Hubble, which
 uses it to call the selected model service. Temporary keys are not written to
 browser storage or Hubble's database.
