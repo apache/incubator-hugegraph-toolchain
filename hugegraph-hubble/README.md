@@ -70,13 +70,17 @@ JVM or system proxy settings.
 
 #### Configure a deployment default
 
-In an authenticated deployment, administrators can open **System & Operations →
-Model settings** to enable a default model and update its connection or API Key.
+In a deployment whose HugeGraph Server has authentication disabled, or as an
+administrator in an authenticated deployment, open **System & Operations → Model
+settings** to save a default model and update its connection or API Key. The same
+server-verified `model_settings_manage` capability controls the UI and management
+API. All users who can access a non-authenticated deployment can manage its model
+settings; an authenticated deployment's ordinary users cannot. Enable Server
+authentication when this management access needs to be restricted.
 The form never reads a saved key back; leaving the key blank preserves it. Changing
 the endpoint requires supplying a new key, unless the local Ollama service needs none.
-Ordinary users cannot read or modify this management endpoint.
 
-![Hubble administrator model settings](docs/images/showcase/text2gql-settings.png)
+![Hubble shared model settings](docs/images/showcase/text2gql-settings.png)
 
 Managed keys are encrypted with AES-GCM before being stored in Hubble's database.
 On first save on a POSIX filesystem, Hubble creates a separate encryption key at
@@ -106,14 +110,14 @@ text2gql.shared.model=deepseek-chat
 
 Provide the API Key through `HUBBLE_TEXT2GQL_API_KEY` or a mounted secret file named
 by `text2gql.shared.api_key_file`; the environment variable takes precedence.
-Once an administrator saves managed settings, that complete configuration takes
+Once an authorized user saves managed settings, that complete configuration takes
 precedence, including when disabled. Hubble never combines a deployment key with
-a user-supplied URL. Anonymous deployments have no management UI, and shared model
-use is disabled by default; trusted private deployments may explicitly set
-`text2gql.shared.allow_anonymous=true`. Custom model URLs also require sign-in by
-default. To allow them in a trusted private anonymous deployment, explicitly set
-`text2gql.custom.allow_anonymous=true`; callers can then reach model services on
-the Hubble backend's local network.
+a user-supplied URL. Both temporary and shared model use follow the current Server
+connection and graph permissions: a non-authenticated Server needs no additional
+opt-in, while an authenticated Server requires a valid session. Model calls can
+reach services on the Hubble backend's local network, so keep a non-authenticated
+deployment within a trusted network. Missing credentials never switch an
+authenticated deployment into anonymous mode.
 
 Gremlin generation accepts a single read-only traversal starting with `g.V()` or `g.E()`,
 with literal arguments, supported steps, predicates and nested `__` traversals.

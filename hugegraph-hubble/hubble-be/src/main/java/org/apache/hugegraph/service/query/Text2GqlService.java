@@ -53,6 +53,9 @@ public class Text2GqlService {
     private static final byte[] AWS_IPV6_METADATA_ADDRESS = {
         (byte) 0xfd, 0, 0x0e, (byte) 0xc2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x02, 0x54
     };
+    private static final byte[] GCP_IPV6_METADATA_ADDRESS = {
+        (byte) 0xfd, 0x20, 0, (byte) 0xce, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x02, 0x54
+    };
     private static final Pattern CODE_BLOCK = Pattern.compile(
             "\\A```([A-Za-z]*)[ \\t]*\\R([\\s\\S]*?)\\R```\\z");
 
@@ -180,6 +183,7 @@ public class Text2GqlService {
     private static boolean isMetadataOrReserved(InetAddress address) {
         byte[] bytes = address.getAddress();
         return Arrays.equals(bytes, AWS_IPV6_METADATA_ADDRESS) ||
+               Arrays.equals(bytes, GCP_IPV6_METADATA_ADDRESS) ||
                (bytes.length == 4 && (bytes[0] == 0 || (bytes[0] & 0xff) == 255 ||
                                       "100.100.100.200".equals(address.getHostAddress())));
     }

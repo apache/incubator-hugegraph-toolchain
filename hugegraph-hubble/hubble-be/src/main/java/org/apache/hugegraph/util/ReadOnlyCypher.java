@@ -26,8 +26,8 @@ import org.apache.hugegraph.exception.ExternalException;
 
 /**
  * A bounded, deliberately restricted Cypher grammar for Text2GQL execution.
- * This is not a complete Cypher parser. Only read clauses, literal expressions,
- * parameters and explicitly listed functions are accepted; unsupported syntax
+ * This is not a complete Cypher parser. Only read clauses, literal expressions
+ * and explicitly listed functions are accepted; unsupported syntax
  * must fail closed instead of being forwarded to the graph server.
  */
 public final class ReadOnlyCypher {
@@ -88,14 +88,8 @@ public final class ReadOnlyCypher {
                 position = quotedEnd(query, position, current);
                 kind = current == '`' ? Kind.QUOTED_IDENTIFIER : Kind.STRING;
             } else if (current == '$') {
-                position++;
-                if (position == query.length() || !identifierStart(query.charAt(position))) {
-                    throw invalid();
-                }
-                while (position < query.length() && identifierPart(query.charAt(position))) {
-                    position++;
-                }
-                kind = Kind.PARAMETER;
+                // Text2GQL sends no parameter bindings, so accepting one could silently return no rows.
+                throw invalid();
             } else if (identifierStart(current)) {
                 position++;
                 while (position < query.length() && identifierPart(query.charAt(position))) {
@@ -200,7 +194,7 @@ public final class ReadOnlyCypher {
     }
 
     private enum Kind {
-        WORD, QUOTED_IDENTIFIER, STRING, NUMBER, PARAMETER, SYMBOL, END
+        WORD, QUOTED_IDENTIFIER, STRING, NUMBER, SYMBOL, END
     }
 
     private static final class Token {
@@ -375,8 +369,6 @@ public final class ReadOnlyCypher {
         private void patternProperties() {
             if (this.consume("{")) {
                 this.map(0);
-            } else if (this.current().kind == Kind.PARAMETER) {
-                this.position++;
             }
         }
 
@@ -469,7 +461,7 @@ public final class ReadOnlyCypher {
                 }
             } else if (this.consume("{")) {
                 this.map(depth + 1);
-            } else if (token.kind == Kind.STRING || token.kind == Kind.NUMBER || token.kind == Kind.PARAMETER ||
+            } else if (token.kind == Kind.STRING || token.kind == Kind.NUMBER ||
                        this.at("TRUE") || this.at("FALSE") || this.at("NULL")) {
                 this.position++;
             } else if (token.kind == Kind.WORD && this.tokens.get(this.position + 1).text.equals("(")) {

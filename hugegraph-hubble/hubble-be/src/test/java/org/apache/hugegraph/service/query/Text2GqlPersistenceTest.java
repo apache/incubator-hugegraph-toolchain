@@ -25,10 +25,16 @@ import java.sql.Statement;
 import java.util.Map;
 
 import org.apache.hugegraph.config.HugeConfig;
+import org.apache.hugegraph.controller.query.Text2GqlSettingsController;
+import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.entity.query.Text2GqlRequest;
 import org.apache.hugegraph.entity.query.Text2GqlSettingsRequest;
 import org.apache.hugegraph.mapper.query.Text2GqlConfigMapper;
 import org.apache.hugegraph.options.HubbleOptions;
+import org.apache.hugegraph.service.auth.AuthContextService;
+import org.apache.hugegraph.service.auth.AuthModeService;
+import org.apache.hugegraph.service.auth.UserService;
+import org.apache.hugegraph.service.space.GraphSpaceService;
 import org.apache.ibatis.mapping.Environment;
 import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.SqlSession;
@@ -42,6 +48,7 @@ import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -53,13 +60,13 @@ public class Text2GqlPersistenceTest {
     public TemporaryFolder temporary = new TemporaryFolder();
 
     @Test
-    public void testH2SnapshotAndEncryptedKeySurviveRestartAndRemainSingleton() throws Exception {
+    public void testAnonymousManagedH2SnapshotAndEncryptedKeySurviveRestartAndRemainSingleton() throws Exception {
         String url = "jdbc:h2:file:" + this.temporary.newFolder("database").toPath().resolve("metadata") +
                      ";DB_CLOSE_ON_EXIT=FALSE";
         Path keyFile = this.temporary.getRoot().toPath().resolve("master.key");
         HugeConfig config = Mockito.mock(HugeConfig.class);
-        Mockito.when(config.get(HubbleOptions.TEXT2GQL_SHARED_ENABLED)).thenReturn(true);
-        Mockito.when(config.get(HubbleOptions.TEXT2GQL_SHARED_ALLOW_ANONYMOUS)).thenReturn(false);
+        Mockito.when(config.get(HubbleOptions.TEXT2GQL_SHARED_ENABLED)).thenReturn(false);
+        Mockito.when(config.get(HubbleOptions.PD_ENABLED)).thenReturn(false);
         JdbcDataSource first = dataSource(url);
         new ResourceDatabasePopulator(new FileSystemResource("src/main/resources/database/schema.sql")).execute(first);
         Text2GqlSettingsRequest request = new Text2GqlSettingsRequest();
@@ -73,10 +80,13 @@ public class Text2GqlPersistenceTest {
             Text2GqlSettingsService service = new Text2GqlSettingsService(config,
                     session.getMapper(Text2GqlConfigMapper.class),
                     new Text2GqlSecretStore(keyFile, ignored -> null), ignored -> null);
-            service.save(request);
+            AnonymousModelController controller = new AnonymousModelController(config, service);
+            assertEquals(false, controller.get().get("enabled"));
+            assertEquals("deployment", controller.get().get("source"));
+            controller.update(request);
             request.setApiKey(null);
             request.setModel("second-model");
-            service.save(request);
+            new AnonymousModelController(config, service).update(request);
         }
         try (Connection connection = first.getConnection(); Statement statement = connection.createStatement()) {
             try (ResultSet result = statement.executeQuery("SELECT * FROM text2gql_config")) {
@@ -97,16 +107,45 @@ public class Text2GqlPersistenceTest {
             Text2GqlRequest question = new Text2GqlRequest();
             question.setSource("shared");
             question.setQuestion("Find people");
-            Text2GqlRequest resolved = service.sharedRequest(question, false);
+            Text2GqlRequest resolved = service.sharedRequest(question);
             assertEquals("second-model", resolved.getModel());
             assertEquals("secret-that-must-not-be-plaintext-in-h2", resolved.getApiKey());
-            assertEquals("managed", service.settings().get("source"));
+            assertEquals("managed", new AnonymousModelController(config, service).get().get("source"));
+            assertEquals(Map.of("available", true, "model", "second-model"), service.availability());
             request.setEnabled(false);
-            service.save(request);
-            assertEquals(Map.of("available", false, "reason", "not_configured"), service.availability(false));
+            new AnonymousModelController(config, service).update(request);
+            assertEquals(Map.of("available", false, "reason", "not_configured"), service.availability());
         }
         try (Connection connection = restarted.getConnection(); Statement statement = connection.createStatement()) {
             statement.execute("SHUTDOWN");
+        }
+    }
+
+    private static final class AnonymousModelController extends Text2GqlSettingsController {
+
+        private final HugeClient client = Mockito.mock(HugeClient.class);
+
+        private AnonymousModelController(HugeConfig config, Text2GqlSettingsService settings) {
+            this.authMode = Mockito.mock(AuthModeService.class);
+            Mockito.when(this.authMode.anonymous()).thenReturn(true);
+            this.authContextService = new AuthContextService(config, Mockito.mock(UserService.class),
+                    this.authMode, Mockito.mock(GraphSpaceService.class));
+            ReflectionTestUtils.setField(this, "settings", settings);
+        }
+
+        @Override
+        protected HugeClient authClient(String graphSpace, String graph) {
+            return this.client;
+        }
+
+        @Override
+        protected String getUser() {
+            return null;
+        }
+
+        @Override
+        protected String getToken() {
+            return null;
         }
     }
 

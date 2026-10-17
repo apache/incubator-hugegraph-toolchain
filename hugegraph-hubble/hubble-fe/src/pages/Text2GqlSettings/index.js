@@ -34,7 +34,7 @@ const safeSettings = data => ({
     source: data.source === 'managed' ? 'managed' : 'deployment',
 });
 
-const Text2GqlSettings = () => {
+const Text2GqlSettingsForm = () => {
     const {t} = useTranslation();
     const {identityEpoch} = useAuthContext();
     const translateRef = useRef(t);
@@ -280,6 +280,14 @@ const Text2GqlSettings = () => {
             )}
         </main>
     );
+};
+
+const Text2GqlSettings = () => {
+    const {loading, hasCapability} = useAuthContext();
+    if (loading) {
+        return <Spin />;
+    }
+    return hasCapability('model_settings_manage') ? <Text2GqlSettingsForm /> : null;
 };
 
 export default Text2GqlSettings;

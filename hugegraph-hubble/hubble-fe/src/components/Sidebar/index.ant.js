@@ -53,7 +53,7 @@ const items = (t, pathname, capabilities = []) => {
         systemList = isAuthEnabled() ? [MY, ACCOUNT] : [];
     }
     const operationsList = [
-        ...(isAuthEnabled() && capabilities.includes('accounts_manage') ? [{
+        ...(capabilities.includes('model_settings_manage') ? [{
             label: <Link to='/settings/text2gql'>{t('analysis.model_settings.title')}</Link>,
             key: 'text2gql-settings',
         }] : []),

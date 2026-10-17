@@ -34,18 +34,19 @@ public class ReadOnlyCypherTest {
             "MATCH p=(a:Person)-[r:KNOWS|:WORKS_WITH*1..3]->(b) RETURN p, relationships(p)",
             "MATCH (a)-[:KNOWS*..3]-(b) RETURN a, b",
             "MATCH (a)-[*3]-(b) RETURN a, b",
-            "MATCH (n:Person:Employee $props) RETURN n",
+            "MATCH (n:Person:Employee) RETURN n",
             "MATCH (n) OPTIONAL MATCH (n)-[r]->(m) WHERE m.active = true RETURN n, collect(m), count(r)",
             "MATCH (n) WITH n, count(*) AS total WHERE total > 0 MATCH (n)-->(m) RETURN m, total",
             "MATCH (n) WITH n ORDER BY n.age DESC LIMIT 20 WHERE n.age > 0 " +
                 "WITH n.name AS name, sum(n.age) AS total RETURN name, total ORDER BY total DESCENDING",
-            "MATCH (n) RETURN DISTINCT n.name ORDER BY n.name ASCENDING, n.age DESC SKIP $offset LIMIT $limit",
+            "MATCH (n) RETURN DISTINCT n.name ORDER BY n.name ASCENDING, n.age DESC SKIP 0 LIMIT 10",
             "MATCH (用户:人员 {姓名: '张三'}) RETURN 用户.姓名 AS 名字",
             "MATCH (n) WHERE n.age IN [18, 19, 20] AND NOT n.name IS NULL RETURN n",
             "MATCH (n) WHERE n.name STARTS WITH 'A' OR n.name ENDS WITH 'z' RETURN n",
             "MATCH (n) WHERE n.name CONTAINS 'a' AND n.name =~ 'A.*' RETURN n",
             "MATCH (n) WHERE n.age / 2 + 3 * 4 % 2 ^ 2 <> -1 AND n.valid != false RETURN n",
-            "RETURN 1, -2.5e+2, true, false, null, $name, [1, 2][0], {name: 'Alice'}.name",
+            "RETURN 1, -2.5e+2, true, false, null, [1, 2][0], {name: 'Alice'}.name",
+            "RETURN '$name'",
             "RETURN count(*), count(DISTINCT 1), coalesce(null, 'fallback'), substring('Alice', 0, 2)",
             "MATCH (n) RETURN count(n) AS count",
             "MATCH (n) RETURN n.count AS collect, n.exists AS exists, n.collect AS count",
@@ -88,6 +89,7 @@ public class ReadOnlyCypherTest {
             "USE hugegraph MATCH (n) RETURN n", "FOREACH (n IN [1] | CREATE ()) RETURN 1",
             "MATCH (n) RETURN n UNION MATCH (m) RETURN m",
             "RETURN 1 UNION ALL RETURN 2", "RETURN 1; RETURN 2", "RETURN 1;;",
+            "match (n) detach delete n return n", "Match (n) Set n.x = 1 Return n",
             "MATCH (start) RETURN start", "RETURN 1 AS end",
             "MATCH (n) RETURN n CREATE (m)", "MATCH (n) RETURN n WITH n RETURN n",
             "MATCH (n) RETURN n MATCH (m) RETURN m", "RETURN 1 WHERE true",
@@ -131,6 +133,15 @@ public class ReadOnlyCypherTest {
         };
         this.assertRejected(queries);
         Assert.assertThrows(ExternalException.class, () -> ReadOnlyCypher.validate(null));
+    }
+
+    @Test
+    public void rejectsUnboundParameters() {
+        this.assertRejected(new String[]{
+            "MATCH (n:Person:Employee $props) RETURN n",
+            "MATCH (n) RETURN n SKIP $offset LIMIT $limit",
+            "MATCH (n) WHERE n.name = $name RETURN n"
+        });
     }
 
     @Test

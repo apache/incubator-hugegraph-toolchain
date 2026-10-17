@@ -98,7 +98,7 @@ const Text2GqlSettingsRoute = () => {
     if (loading) {
         return null;
     }
-    return isAuthEnabled() && hasCapability('accounts_manage')
+    return hasCapability('model_settings_manage')
         ? <Text2GqlSettings /> : <Navigate to='/navigation' replace />;
 };
 

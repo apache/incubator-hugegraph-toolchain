@@ -449,9 +449,17 @@ test('hides Account from an analyst who can read a space but cannot administer i
 });
 
 
-test.each([true, false])('shows model settings only with administrator capability (%s)', async admin => {
-    useOperationsCapabilities.mockReturnValue({loading: false,
-        capabilities: admin ? ['accounts_manage'] : [], error: null});
+test.each([
+    [true, ['model_settings_manage'], true],
+    [true, ['accounts_manage'], false],
+    [false, ['model_settings_manage'], true],
+    [false, [], false],
+])('shows model settings using its server capability (%s, %j)', async (auth, capabilities, allowed) => {
+    sessionStorage.setItem('hubble_config_', JSON.stringify({auth_enabled: auth, pd_enabled: false}));
+    if (!auth) {
+        sessionStorage.removeItem('user_');
+    }
+    useOperationsCapabilities.mockReturnValue({loading: false, capabilities, error: null});
     await act(async () => render(
         <MemoryRouter
             initialEntries={['/settings/text2gql']}
@@ -460,20 +468,5 @@ test.each([true, false])('shows model settings only with administrator capabilit
             <Sidebar />
         </MemoryRouter>
     ));
-    expect(Boolean(screen.queryByRole('link', {name: '模型设置'}))).toBe(admin);
-});
-
-
-test('keeps model settings hidden in anonymous mode even if a stale capability exists', async () => {
-    sessionStorage.setItem('hubble_config_', JSON.stringify({auth_enabled: false, pd_enabled: false}));
-    useOperationsCapabilities.mockReturnValue({loading: false, capabilities: ['accounts_manage'], error: null});
-    await act(async () => render(
-        <MemoryRouter
-            initialEntries={['/settings/text2gql']}
-            future={{v7_startTransition: true, v7_relativeSplatPath: true}}
-        >
-            <Sidebar />
-        </MemoryRouter>
-    ));
-    expect(screen.queryByRole('link', {name: '模型设置'})).not.toBeInTheDocument();
+    expect(Boolean(screen.queryByRole('link', {name: '模型设置'}))).toBe(allowed);
 });

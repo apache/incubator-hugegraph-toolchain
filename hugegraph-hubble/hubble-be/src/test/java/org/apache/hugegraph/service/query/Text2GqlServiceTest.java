@@ -19,6 +19,7 @@
 package org.apache.hugegraph.service.query;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -290,6 +291,9 @@ public class Text2GqlServiceTest {
                                   "https://255.255.255.255/v1", "http://[fd00:ec2::254]/v1",
                                   "https://[fd00:ec2::254]/v1",
                                   "https://[FD00:0EC2:0000:0000:0000:0000:0000:0254]/v1",
+                                  "http://[fd20:ce::254]/v1", "https://[fd20:ce::254]/v1",
+                                  "http://[FD20:00CE:0000:0000:0000:0000:0000:0254]/v1",
+                                  "https://[FD20:00CE:0000:0000:0000:0000:0000:0254]/v1",
                                   "https://user:password@localhost/v1",
                                   "https://localhost/v1?key=secret", "https://localhost/v1#secret",
                                   "http://8.8.8.8/v1", "http://2130706433/v1", "http://localhost:0/v1")) {
@@ -298,10 +302,32 @@ public class Text2GqlServiceTest {
         for (String output : List.of("g.V().drop()", "g.V();g.E()", "Here is your query: g.V()", "")) {
             assertEquals(502, failure(() -> Text2GqlService.normalize(output, QueryLanguage.GREMLIN)).status());
         }
+        ExternalException parameterOutput = failure(() -> Text2GqlService.normalize(
+                "MATCH (n) WHERE n.name = $name RETURN n", QueryLanguage.CYPHER));
+        assertEquals(502, parameterOutput.status());
+        assertEquals("text2gql.invalid-output", parameterOutput.getMessage());
         assertEquals("http://127.0.0.1:11434/v1",
                      Text2GqlService.validateBaseUrl("http://127.0.0.1:11434/v1/"));
         assertEquals("http://[fd00:1234::1]:11434/v1",
                      Text2GqlService.validateBaseUrl("http://[fd00:1234::1]:11434/v1"));
+    }
+
+    @Test
+    public void testConnectionResolutionRejectsMetadataButPreservesOtherUniqueLocalAddresses() throws Exception {
+        for (boolean http : new boolean[]{false, true}) {
+            for (String address : List.of("fd20:ce::254", "FD20:00CE:0000:0000:0000:0000:0000:0254")) {
+                try {
+                    Text2GqlService.resolveAndValidate(address, http);
+                    fail("Expected metadata address rejection at connection resolution");
+                } catch (IllegalArgumentException expected) {
+                    // The address policy also runs when the transport resolves a new connection.
+                }
+            }
+            assertEquals(List.of(InetAddress.getByName("fd20:ce::255")),
+                         Text2GqlService.resolveAndValidate("fd20:ce::255", http));
+        }
+        assertEquals("http://[fd20:ce::255]:11434/v1",
+                     Text2GqlService.validateBaseUrl("http://[fd20:ce::255]:11434/v1"));
     }
 
     @Test

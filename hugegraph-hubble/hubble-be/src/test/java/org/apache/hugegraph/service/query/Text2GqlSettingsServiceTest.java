@@ -69,7 +69,6 @@ public class Text2GqlSettingsServiceTest {
         Mockito.when(this.config.get(HubbleOptions.TEXT2GQL_SHARED_BASE_URL)).thenReturn("http://127.0.0.1:11434/v1");
         Mockito.when(this.config.get(HubbleOptions.TEXT2GQL_SHARED_MODEL)).thenReturn("deployment-model");
         Mockito.when(this.config.get(HubbleOptions.TEXT2GQL_SHARED_API_KEY_FILE)).thenReturn("");
-        Mockito.when(this.config.get(HubbleOptions.TEXT2GQL_SHARED_ALLOW_ANONYMOUS)).thenReturn(false);
         this.mapper = Mockito.mock(Text2GqlConfigMapper.class);
         this.stored = new AtomicReference<>();
         Mockito.when(this.mapper.current()).thenAnswer(ignored -> this.stored.get());
@@ -92,13 +91,13 @@ public class Text2GqlSettingsServiceTest {
         assertFalse(new ObjectMapper().writeValueAsString(descriptor).contains("private-model-key"));
         assertFalse(descriptor.containsKey("api_key"));
         assertFalse(this.stored.get().getEncryptedApiKey().contains("private-model-key"));
-        Text2GqlRequest resolved = this.service.sharedRequest(shared(), false);
+        Text2GqlRequest resolved = this.service.sharedRequest(shared());
         assertEquals("private-model-key", resolved.getApiKey());
         assertEquals("http://127.0.0.1:11434/v1", resolved.getBaseUrl());
         assertEquals("managed-model", resolved.getModel());
         assertEquals("Find people", resolved.getQuestion());
-        assertEquals(Map.of("available", true, "model", "managed-model"), this.service.availability(false));
-        assertFalse(new ObjectMapper().writeValueAsString(this.service.availability(false)).contains("base_url"));
+        assertEquals(Map.of("available", true, "model", "managed-model"), this.service.availability());
+        assertFalse(new ObjectMapper().writeValueAsString(this.service.availability()).contains("base_url"));
     }
 
     @Test
@@ -111,8 +110,8 @@ public class Text2GqlSettingsServiceTest {
         assertEquals(encrypted, this.stored.get().getEncryptedApiKey());
         changed.setApiKey("");
         this.service.save(changed);
-        assertEquals("private-model-key", this.service.sharedRequest(shared(), false).getApiKey());
-        assertEquals("second-model", this.service.sharedRequest(shared(), false).getModel());
+        assertEquals("private-model-key", this.service.sharedRequest(shared()).getApiKey());
+        assertEquals("second-model", this.service.sharedRequest(shared()).getModel());
     }
 
     @Test
@@ -125,21 +124,21 @@ public class Text2GqlSettingsServiceTest {
         changed.setClearApiKey(true);
         this.service.save(changed);
         assertEquals(false, this.service.settings().get("has_api_key"));
-        assertEquals("", this.service.sharedRequest(shared(), false).getApiKey());
-        assertEquals("http://127.0.0.1:11435/v1", this.service.sharedRequest(shared(), false).getBaseUrl());
+        assertEquals("", this.service.sharedRequest(shared()).getApiKey());
+        assertEquals("http://127.0.0.1:11435/v1", this.service.sharedRequest(shared()).getBaseUrl());
     }
 
     @Test
     public void testManagedDisabledNeverFallsBackToEnabledDeployment() {
         Mockito.when(this.config.get(HubbleOptions.TEXT2GQL_SHARED_ENABLED)).thenReturn(true);
         this.service = this.service(Map.of("HUBBLE_TEXT2GQL_API_KEY", "deployment-secret"));
-        assertEquals(true, this.service.availability(false).get("available"));
+        assertEquals(true, this.service.availability().get("available"));
         Text2GqlSettingsRequest disabled = settings("openai", null);
         disabled.setEnabled(false);
         this.service.save(disabled);
         assertEquals("managed", this.service.settings().get("source"));
-        assertEquals(Map.of("available", false, "reason", "not_configured"), this.service.availability(false));
-        assertEquals(503, failure(() -> this.service.sharedRequest(shared(), false)).status());
+        assertEquals(Map.of("available", false, "reason", "not_configured"), this.service.availability());
+        assertEquals(503, failure(() -> this.service.sharedRequest(shared())).status());
     }
 
     @Test
@@ -148,23 +147,20 @@ public class Text2GqlSettingsServiceTest {
         Files.writeString(secret, "file-secret\n");
         Mockito.when(this.config.get(HubbleOptions.TEXT2GQL_SHARED_API_KEY_FILE)).thenReturn(secret.toString());
         Mockito.when(this.config.get(HubbleOptions.TEXT2GQL_SHARED_ENABLED)).thenReturn(true);
-        assertEquals("file-secret", this.service.sharedRequest(shared(), false).getApiKey());
+        assertEquals("file-secret", this.service.sharedRequest(shared()).getApiKey());
         this.service = this.service(Map.of("HUBBLE_TEXT2GQL_API_KEY", "environment-secret"));
-        assertEquals("environment-secret", this.service.sharedRequest(shared(), false).getApiKey());
+        assertEquals("environment-secret", this.service.sharedRequest(shared()).getApiKey());
         this.service.save(settings("openai", null));
-        assertEquals("environment-secret", this.service.sharedRequest(shared(), false).getApiKey());
+        assertEquals("environment-secret", this.service.sharedRequest(shared()).getApiKey());
         assertTrue(this.stored.get().getEncryptedApiKey().startsWith("v1:"));
     }
 
     @Test
-    public void testAnonymousAccessRequiresExplicitDeploymentOptIn() {
+    public void testManagedModelIsAvailableAfterAuthorizedSaveWithoutAnonymousOptIn() {
+        assertEquals(Map.of("available", false, "reason", "not_configured"), this.service.availability());
         this.service.save(settings("ollama", null));
-        assertEquals(Map.of("available", false, "reason", "authentication_required"),
-                     this.service.availability(true));
-        assertEquals(403, failure(() -> this.service.sharedRequest(shared(), true)).status());
-        Mockito.when(this.config.get(HubbleOptions.TEXT2GQL_SHARED_ALLOW_ANONYMOUS)).thenReturn(true);
-        assertEquals(true, this.service.availability(true).get("available"));
-        assertEquals("managed-model", this.service.sharedRequest(shared(), true).getModel());
+        assertEquals(true, this.service.availability().get("available"));
+        assertEquals("managed-model", this.service.sharedRequest(shared()).getModel());
     }
 
     @Test
@@ -179,7 +175,7 @@ public class Text2GqlSettingsServiceTest {
             } else {
                 request.setApiKey("foreign-secret");
             }
-            assertEquals(400, failure(() -> this.service.sharedRequest(request, false)).status());
+            assertEquals(400, failure(() -> this.service.sharedRequest(request)).status());
         }
     }
 
@@ -187,8 +183,8 @@ public class Text2GqlSettingsServiceTest {
     public void testMissingMasterFailsClosedAndDoesNotGenerateReplacement() throws Exception {
         this.service.save(settings("openai", "private-model-key"));
         Files.delete(this.masterFile);
-        assertEquals(Map.of("available", false, "reason", "unavailable"), this.service.availability(false));
-        assertEquals(503, failure(() -> this.service.sharedRequest(shared(), false)).status());
+        assertEquals(Map.of("available", false, "reason", "unavailable"), this.service.availability());
+        assertEquals(503, failure(() -> this.service.sharedRequest(shared())).status());
         assertFalse(Files.exists(this.masterFile));
         assertEquals("text2gql.shared.secret-unavailable",
                      failure(() -> this.service.save(settings("openai", null))).getMessage());
@@ -215,19 +211,11 @@ public class Text2GqlSettingsServiceTest {
     public void testDatabaseErrorsAreSafeAndDoNotActivateDeploymentFallback() {
         Mockito.when(this.config.get(HubbleOptions.TEXT2GQL_SHARED_ENABLED)).thenReturn(true);
         Mockito.when(this.mapper.current()).thenThrow(new IllegalStateException("private database error"));
-        assertEquals(Map.of("available", false, "reason", "unavailable"), this.service.availability(false));
+        assertEquals(Map.of("available", false, "reason", "unavailable"), this.service.availability());
         ExternalException failure = failure(() -> this.service.settings());
         assertEquals(503, failure.status());
         assertEquals("text2gql.shared.settings-unavailable", failure.getMessage());
         assertNull(failure.getCause());
-    }
-
-    @Test
-    public void testAnonymousCustomModelsAreDisabledByDefaultAndRequireDeploymentOptIn() {
-        assertFalse(this.service.customAvailable(true));
-        assertTrue(this.service.customAvailable(false));
-        Mockito.when(this.config.get(HubbleOptions.TEXT2GQL_CUSTOM_ALLOW_ANONYMOUS)).thenReturn(true);
-        assertTrue(this.service.customAvailable(true));
     }
 
     @Test
@@ -257,7 +245,7 @@ public class Text2GqlSettingsServiceTest {
             assertFalse(this.stored.get().isEnabled());
             assertEquals(offlineUrl, this.stored.get().getBaseUrl());
             assertEquals(encrypted, this.stored.get().getEncryptedApiKey());
-            assertEquals(Map.of("available", false, "reason", "not_configured"), this.service.availability(false));
+            assertEquals(Map.of("available", false, "reason", "not_configured"), this.service.availability());
             dns.verifyNoInteractions();
             request.setEnabled(true);
             assertEquals("text2gql.invalid-base-url", failure(() -> this.service.save(request)).getMessage());
@@ -271,7 +259,7 @@ public class Text2GqlSettingsServiceTest {
         this.service.save(settings("openai", "private-model-key"));
         Text2GqlRequest question = shared();
         question.setLanguage(QueryLanguage.CYPHER);
-        Text2GqlRequest resolved = this.service.sharedRequest(question, false);
+        Text2GqlRequest resolved = this.service.sharedRequest(question);
         assertEquals(QueryLanguage.CYPHER, resolved.getLanguage());
         assertEquals("private-model-key", resolved.getApiKey());
     }
@@ -289,7 +277,7 @@ public class Text2GqlSettingsServiceTest {
         assertEquals(false, this.service.save(request).get("has_api_key"));
         assertFalse(this.stored.get().isEnabled());
         assertEquals("", this.stored.get().getEncryptedApiKey());
-        assertEquals(Map.of("available", false, "reason", "not_configured"), this.service.availability(false));
+        assertEquals(Map.of("available", false, "reason", "not_configured"), this.service.availability());
         assertFalse(Files.exists(this.masterFile));
     }
 
@@ -309,7 +297,7 @@ public class Text2GqlSettingsServiceTest {
             assertEquals(false, this.service.save(request).get("has_api_key"));
             assertFalse(this.stored.get().isEnabled());
             assertEquals("", this.stored.get().getEncryptedApiKey());
-            assertEquals(Map.of("available", false, "reason", "not_configured"), this.service.availability(false));
+            assertEquals(Map.of("available", false, "reason", "not_configured"), this.service.availability());
         }
         assertFalse(Files.exists(this.masterFile));
     }

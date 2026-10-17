@@ -58,15 +58,7 @@ public class Text2GqlSettingsService {
         this.environment = environment;
     }
 
-    public boolean customAvailable(boolean anonymous) {
-        return !anonymous || Boolean.TRUE.equals(
-                this.config.get(HubbleOptions.TEXT2GQL_CUSTOM_ALLOW_ANONYMOUS));
-    }
-
-    public Map<String, Object> availability(boolean anonymous) {
-        if (anonymous && !this.allowAnonymous()) {
-            return Map.of("available", false, "reason", "authentication_required");
-        }
+    public Map<String, Object> availability() {
         try {
             Snapshot current = this.current();
             if (!current.configuration.isEnabled()) {
@@ -79,13 +71,10 @@ public class Text2GqlSettingsService {
         }
     }
 
-    public Text2GqlRequest sharedRequest(Text2GqlRequest request, boolean anonymous) {
+    public Text2GqlRequest sharedRequest(Text2GqlRequest request) {
         if (request == null || !"shared".equals(request.getSource()) ||
             hasText(request.getBaseUrl()) || hasText(request.getModel()) || hasText(request.getApiKey())) {
             throw new ExternalException("text2gql.shared.mixed-configuration");
-        }
-        if (anonymous && !this.allowAnonymous()) {
-            throw new ExternalException(403, "text2gql.shared.authentication-required");
         }
         Snapshot current = this.current();
         if (!current.configuration.isEnabled()) {
@@ -99,7 +88,7 @@ public class Text2GqlSettingsService {
         return resolved;
     }
 
-    /** Administrator-only descriptor. This deliberately never decrypts or serializes a secret. */
+    /** Management descriptor. This deliberately never decrypts or serializes a secret. */
     public Map<String, Object> settings() {
         return this.descriptor(this.current());
     }
@@ -169,10 +158,6 @@ public class Text2GqlSettingsService {
             throw new ExternalException(503, "text2gql.shared.settings-unavailable");
         }
         return this.descriptor(new Snapshot(updated, true));
-    }
-
-    private boolean allowAnonymous() {
-        return Boolean.TRUE.equals(this.config.get(HubbleOptions.TEXT2GQL_SHARED_ALLOW_ANONYMOUS));
     }
 
     private Snapshot current() {

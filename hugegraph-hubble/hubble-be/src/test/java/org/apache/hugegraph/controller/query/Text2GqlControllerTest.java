@@ -93,7 +93,7 @@ public class Text2GqlControllerTest {
         request.setSource("shared");
         Text2GqlRequest resolved = new Text2GqlRequest();
         resolved.setModel("shared-model");
-        Mockito.when(settings.sharedRequest(request, true)).thenReturn(resolved);
+        Mockito.when(settings.sharedRequest(request)).thenReturn(resolved);
         Mockito.when(service.generate(client, resolved)).thenReturn("g.V().limit(10)");
         assertEquals("g.V().limit(10)", controller.generate("space", "graph", request).get("query"));
         Mockito.verify(service).generate(client, resolved);
@@ -109,15 +109,15 @@ public class Text2GqlControllerTest {
         ReflectionTestUtils.setField(controller, "settings", settings);
         Mockito.when(client.schema()).thenReturn(schema);
         Mockito.when(schema.getPropertyKeys()).thenReturn(List.of());
-        Mockito.when(settings.availability(true)).thenReturn(Map.of("available", false));
-        assertEquals(Map.of("available", false, "custom_available", false),
+        Mockito.when(settings.availability()).thenReturn(Map.of("available", false));
+        assertEquals(Map.of("available", false, "custom_available", true),
                      controller.config("private-space", "private-graph"));
         assertEquals("private-space", controller.space);
         assertEquals("private-graph", controller.graph);
         org.mockito.InOrder order = Mockito.inOrder(client, schema, settings);
         order.verify(client).schema();
         order.verify(schema).getPropertyKeys();
-        order.verify(settings).availability(true);
+        order.verify(settings).availability();
         Mockito.when(schema.getPropertyKeys()).thenThrow(new ExternalException(403, "denied"));
         Mockito.clearInvocations(settings);
         try {
@@ -146,23 +146,12 @@ public class Text2GqlControllerTest {
     }
 
     @Test
-    public void testAnonymousCustomRequiresExplicitOptInBeforeCallingModel() {
+    public void testVerifiedAnonymousGraphCanUseCustomModel() {
         HugeClient client = Mockito.mock(HugeClient.class);
         Text2GqlService service = Mockito.mock(Text2GqlService.class);
-        Text2GqlSettingsService settings = Mockito.mock(Text2GqlSettingsService.class);
         BoundController controller = new BoundController(client, true);
         ReflectionTestUtils.setField(controller, "service", service);
-        ReflectionTestUtils.setField(controller, "settings", settings);
         Text2GqlRequest request = new Text2GqlRequest();
-        try {
-            controller.generate("space", "graph", request);
-            fail("Expected anonymous custom model access to be denied");
-        } catch (ExternalException failure) {
-            assertEquals(403, failure.status());
-            assertEquals("text2gql.custom.authentication-required", failure.getMessage());
-        }
-        Mockito.verifyNoInteractions(service);
-        Mockito.when(settings.customAvailable(true)).thenReturn(true);
         Mockito.when(service.generate(client, request)).thenReturn("g.V().count()");
         assertEquals("g.V().count()", controller.generate("space", "graph", request).get("query"));
         Mockito.verify(service).generate(client, request);

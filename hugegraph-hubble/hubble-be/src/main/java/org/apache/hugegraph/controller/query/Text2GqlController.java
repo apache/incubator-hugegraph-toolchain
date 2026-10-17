@@ -58,11 +58,9 @@ public class Text2GqlController extends BaseController {
             throw new ExternalException("text2gql.invalid-language");
         }
         if ("shared".equals(request.getSource())) {
-            request = this.settings.sharedRequest(request, this.anonymous());
+            request = this.settings.sharedRequest(request);
         } else if (!"custom".equals(request.getSource())) {
             throw new ExternalException("text2gql.invalid-request");
-        } else if (this.anonymous() && !this.settings.customAvailable(true)) {
-            throw new ExternalException(403, "text2gql.custom.authentication-required");
         }
         return Map.of("query", this.service.generate(client, request), "language", request.getLanguage().value());
     }
@@ -72,13 +70,8 @@ public class Text2GqlController extends BaseController {
                                       @PathVariable("graph") String graph) {
         HugeClient client = this.authClient(graphSpace, graph);
         client.schema().getPropertyKeys();
-        boolean anonymous = this.anonymous();
-        Map<String, Object> descriptor = new LinkedHashMap<>(this.settings.availability(anonymous));
-        descriptor.put("custom_available", this.settings.customAvailable(anonymous));
+        Map<String, Object> descriptor = new LinkedHashMap<>(this.settings.availability());
+        descriptor.put("custom_available", true);
         return descriptor;
-    }
-
-    private boolean anonymous() {
-        return this.authMode == null || this.authMode.anonymous();
     }
 }

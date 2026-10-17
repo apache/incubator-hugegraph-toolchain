@@ -21,10 +21,16 @@ import Text2GqlSettings from './index';
 import * as api from '../../api';
 
 let mockIdentityEpoch = 0;
+let mockAuthLoading = false;
+let mockCapabilities = new Set();
 jest.mock('../../api', () => ({config: {
     getText2GqlSettings: jest.fn(), updateText2GqlSettings: jest.fn(),
 }}));
-jest.mock('../../auth/AuthContext', () => ({useAuthContext: () => ({identityEpoch: mockIdentityEpoch})}));
+jest.mock('../../auth/AuthContext', () => ({useAuthContext: () => ({
+    identityEpoch: mockIdentityEpoch,
+    loading: mockAuthLoading,
+    hasCapability: capability => mockCapabilities.has(capability),
+})}));
 jest.mock('react-i18next', () => ({useTranslation: () => ({t: key => key})}));
 const initial = {enabled: true, connection_type: 'openai', base_url: 'https://model.example/v1',
     model: 'shared-model', has_api_key: true, source: 'managed'};
@@ -48,6 +54,8 @@ beforeEach(() => {
     localStorage.clear();
     sessionStorage.clear();
     mockIdentityEpoch = 0;
+    mockAuthLoading = false;
+    mockCapabilities = new Set(['model_settings_manage']);
     api.config.getText2GqlSettings.mockResolvedValue(response());
     api.config.updateText2GqlSettings.mockResolvedValue(response());
 });
@@ -167,4 +175,36 @@ test('marks enabled model fields as required and explains empty fields visually 
     fireEvent.click(screen.getByRole('switch'));
     expect(model).toHaveAttribute('aria-required', 'false');
     expect(model).toHaveAttribute('aria-invalid', 'false');
+});
+
+
+test.each([
+    [true, ['model_settings_manage']],
+    [false, ['accounts_manage']],
+    [false, []],
+])('does not load settings before management access is established (%s, %j)', (loading, capabilities) => {
+    mockAuthLoading = loading;
+    mockCapabilities = new Set(capabilities);
+    render(<Text2GqlSettings />);
+    expect(api.config.getText2GqlSettings).not.toHaveBeenCalled();
+    expect(screen.queryByLabelText('analysis.model_settings.replace_key')).not.toBeInTheDocument();
+});
+
+test('cancels a pending save and clears the in-memory key when management access is revoked', async () => {
+    const pending = deferred();
+    api.config.updateText2GqlSettings.mockReturnValue(pending.promise);
+    const view = await load();
+    fireEvent.change(keyInput(), {target: {value: 'revoked-secret'}});
+    await act(async () => fireEvent.click(saveButton()));
+    const signal = api.config.updateText2GqlSettings.mock.calls[0][1].signal;
+    mockCapabilities.clear();
+    view.rerender(<Text2GqlSettings />);
+    expect(signal.aborted).toBe(true);
+    expect(screen.queryByLabelText('analysis.model_settings.replace_key')).not.toBeInTheDocument();
+    await act(async () => pending.resolve(response({model: 'stale-model'})));
+    mockCapabilities.add('model_settings_manage');
+    view.rerender(<Text2GqlSettings />);
+    await screen.findByLabelText('analysis.model_settings.replace_key');
+    expect(keyInput()).toHaveValue('');
+    expect(screen.queryByDisplayValue('stale-model')).not.toBeInTheDocument();
 });

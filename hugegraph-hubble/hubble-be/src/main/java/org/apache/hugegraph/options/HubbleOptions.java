@@ -49,9 +49,6 @@ public class HubbleOptions extends OptionHolder {
         return instance;
     }
 
-    public static final ConfigOption<Boolean> TEXT2GQL_CUSTOM_ALLOW_ANONYMOUS =
-            new ConfigOption<>("text2gql.custom.allow_anonymous", "Allow anonymous custom model access.", false);
-
     public static final ConfigOption<Boolean> TEXT2GQL_SHARED_ENABLED =
             new ConfigOption<>("text2gql.shared.enabled", "Enable the deployment shared model.", false);
 
@@ -71,9 +68,6 @@ public class HubbleOptions extends OptionHolder {
 
     public static final ConfigOption<String> TEXT2GQL_SHARED_API_KEY_FILE =
             new ConfigOption<>("text2gql.shared.api_key_file", "File containing the deployment model API key.", "");
-
-    public static final ConfigOption<Boolean> TEXT2GQL_SHARED_ALLOW_ANONYMOUS =
-            new ConfigOption<>("text2gql.shared.allow_anonymous", "Allow anonymous shared model access.", false);
 
     public static final ConfigOption<String> TEXT2GQL_SHARED_MASTER_KEY_FILE =
             new ConfigOption<>(

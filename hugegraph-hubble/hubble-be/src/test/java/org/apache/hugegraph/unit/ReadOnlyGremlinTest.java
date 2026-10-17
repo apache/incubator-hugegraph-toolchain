@@ -55,6 +55,7 @@ public class ReadOnlyGremlinTest {
                 "g.V().sideEffect(__.drop())", "g.V().map(__.addV())",
                 "g.V(); g.V().drop()", "g.V()\ng.V().drop()",
                 "g.V().filter{it.get().remove()}", "g.V().map({System.exit(0)})",
+                "g.V().by(label.class)", "g.V().by(id.getClass())", "g.V().order().by(key.class)",
                 "g.V().has('name', System.getProperty('user.home'))",
                 "g.V().has('name', new File('/etc/passwd').text)",
                 "g.V().has('name', 'anything'.execute())",

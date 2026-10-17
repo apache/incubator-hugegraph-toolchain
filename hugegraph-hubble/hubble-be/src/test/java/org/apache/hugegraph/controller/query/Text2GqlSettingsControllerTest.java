@@ -20,12 +20,16 @@ package org.apache.hugegraph.controller.query;
 
 import java.util.Map;
 
+import org.apache.hugegraph.config.HugeConfig;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.entity.query.Text2GqlSettingsRequest;
 import org.apache.hugegraph.exception.ForbiddenException;
+import org.apache.hugegraph.options.HubbleOptions;
 import org.apache.hugegraph.service.auth.AuthModeService;
+import org.apache.hugegraph.service.auth.AuthContextService;
 import org.apache.hugegraph.service.auth.UserService;
 import org.apache.hugegraph.service.query.Text2GqlSettingsService;
+import org.apache.hugegraph.service.space.GraphSpaceService;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.http.MediaType;
@@ -42,8 +46,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class Text2GqlSettingsControllerTest {
 
     @Test
-    public void testAnonymousOrdinaryAndSpaceAdminCannotReadOrWriteModelSettings() {
-        for (String level : new String[]{"ANONYMOUS", "USER", "SPACEADMIN"}) {
+    public void testOrdinaryAndSpaceAdminCannotReadOrWriteModelSettings() {
+        for (String level : new String[]{"USER", "SPACEADMIN"}) {
             Text2GqlSettingsService settings = Mockito.mock(Text2GqlSettingsService.class);
             TestController controller = new TestController(level);
             ReflectionTestUtils.setField(controller, "settings", settings);
@@ -54,18 +58,66 @@ public class Text2GqlSettingsControllerTest {
     }
 
     @Test
-    public void testOnlyAdministratorCanReadAndUpdateSafeDescriptor() {
-        Text2GqlSettingsService settings = Mockito.mock(Text2GqlSettingsService.class);
-        TestController controller = new TestController("ADMIN");
-        ReflectionTestUtils.setField(controller, "settings", settings);
-        Map<String, Object> safe = Map.of("has_api_key", true, "model", "shared-model");
-        Text2GqlSettingsRequest request = new Text2GqlSettingsRequest();
-        Mockito.when(settings.settings()).thenReturn(safe);
-        Mockito.when(settings.save(request)).thenReturn(safe);
-        assertEquals(safe, controller.get());
-        assertEquals(safe, controller.update(request));
-        Mockito.verify(settings).settings();
-        Mockito.verify(settings).save(request);
+    public void testVerifiedAnonymousAndAdministratorCanReadAndUpdateSafeDescriptor() {
+        for (String level : new String[]{"ANONYMOUS", "ADMIN"}) {
+            Text2GqlSettingsService settings = Mockito.mock(Text2GqlSettingsService.class);
+            TestController controller = new TestController(level);
+            ReflectionTestUtils.setField(controller, "settings", settings);
+            Map<String, Object> safe = Map.of("has_api_key", true, "model", "shared-model");
+            Text2GqlSettingsRequest request = new Text2GqlSettingsRequest();
+            Mockito.when(settings.settings()).thenReturn(safe);
+            Mockito.when(settings.save(request)).thenReturn(safe);
+            assertEquals(safe, controller.get());
+            assertEquals(safe, controller.update(request));
+            Mockito.verify(settings).settings();
+            Mockito.verify(settings).save(request);
+        }
+    }
+
+    @Test
+    public void testMissingCredentialsCannotPretendAnAuthenticatedServerIsAnonymous() {
+        for (boolean missingUser : new boolean[]{false, true}) {
+            Text2GqlSettingsService settings = Mockito.mock(Text2GqlSettingsService.class);
+            TestController controller = new TestController("ADMIN");
+            if (missingUser) {
+                controller.username = null;
+            } else {
+                controller.token = null;
+            }
+            ReflectionTestUtils.setField(controller, "settings", settings);
+            assertForbidden(controller::get);
+            assertForbidden(() -> controller.update(new Text2GqlSettingsRequest()));
+            Mockito.verifyNoInteractions(settings, controller.client, controller.users);
+        }
+    }
+
+    @Test
+    public void testFreshServerProbeRejectsCachedAnonymousModeAfterAuthIsEnabledOrUnavailable() {
+        for (boolean unavailable : new boolean[]{false, true}) {
+            HugeClient probe = Mockito.mock(HugeClient.class);
+            Mockito.when(probe.isServerAuthEnabled()).thenReturn(false);
+            AuthModeService mode = new AuthModeService(null) {
+                @Override
+                protected HugeClient createUnauthClient() {
+                    return probe;
+                }
+            };
+            org.junit.Assert.assertTrue(mode.anonymous());
+            if (unavailable) {
+                Mockito.when(probe.isServerAuthEnabled()).thenThrow(new IllegalStateException("Server unavailable"));
+            } else {
+                Mockito.when(probe.isServerAuthEnabled()).thenReturn(true);
+            }
+            Text2GqlSettingsService settings = Mockito.mock(Text2GqlSettingsService.class);
+            TestController controller = new TestController("ANONYMOUS");
+            controller.useMode(mode);
+            ReflectionTestUtils.setField(controller, "settings", settings);
+            assertForbidden(controller::get);
+            assertForbidden(() -> controller.update(new Text2GqlSettingsRequest()));
+            org.junit.Assert.assertTrue(mode.enabled());
+            Mockito.verify(probe, Mockito.times(3)).isServerAuthEnabled();
+            Mockito.verifyNoInteractions(settings, controller.client, controller.users);
+        }
     }
 
     @Test
@@ -95,12 +147,28 @@ public class Text2GqlSettingsControllerTest {
     private static final class TestController extends Text2GqlSettingsController {
 
         private final HugeClient client = Mockito.mock(HugeClient.class);
+        private final UserService users = Mockito.mock(UserService.class);
+        private String username = "current-user";
+        private String token = "current-session-token";
 
         private TestController(String level) {
             this.authMode = Mockito.mock(AuthModeService.class);
             Mockito.when(this.authMode.anonymous()).thenReturn("ANONYMOUS".equals(level));
-            this.userService = Mockito.mock(UserService.class);
+            Mockito.when(this.authMode.refresh()).thenReturn(!"ANONYMOUS".equals(level));
+            if ("ANONYMOUS".equals(level)) {
+                this.username = null;
+                this.token = null;
+            }
+            this.userService = this.users;
             Mockito.when(this.userService.userLevel(this.client, "current-user")).thenReturn(level);
+            HugeConfig config = Mockito.mock(HugeConfig.class);
+            Mockito.when(config.get(HubbleOptions.PD_ENABLED)).thenReturn(false);
+            this.authContextService = new AuthContextService(config, this.userService,
+                                                            this.authMode, Mockito.mock(GraphSpaceService.class));
+        }
+
+        private void useMode(AuthModeService mode) {
+            this.authMode = mode;
         }
 
         @Override
@@ -109,8 +177,13 @@ public class Text2GqlSettingsControllerTest {
         }
 
         @Override
+        protected String getToken() {
+            return this.token;
+        }
+
+        @Override
         protected String getUser() {
-            return "current-user";
+            return this.username;
         }
     }
 }

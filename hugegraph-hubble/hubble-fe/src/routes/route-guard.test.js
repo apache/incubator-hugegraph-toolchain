@@ -104,13 +104,16 @@ describe('route guard', () => {
     });
 
     it.each([
-        [true, true, true], [true, false, false], [false, true, false],
-    ])('guards model settings with authenticated administrator capability (%s, %s)', (auth, admin, allowed) => {
+        [true, ['model_settings_manage'], true],
+        [true, ['accounts_manage'], false],
+        [false, ['model_settings_manage'], true],
+        [false, [], false],
+    ])('guards model settings using its server capability (%s, %j)', (auth, capabilities, allowed) => {
         isAuthEnabled.mockReturnValue(auth);
-        sessionStorage.setItem('user_', JSON.stringify({id: 'current-user'}));
-        if (admin) {
-            mockCapabilities.add('accounts_manage');
+        if (auth) {
+            sessionStorage.setItem('user_', JSON.stringify({id: 'current-user'}));
         }
+        mockCapabilities = new Set(capabilities);
         renderRoutes('/settings/text2gql');
         expect(Boolean(screen.queryByText('model settings page'))).toBe(allowed);
         expect(Boolean(screen.queryByText('navigation page'))).toBe(!allowed);

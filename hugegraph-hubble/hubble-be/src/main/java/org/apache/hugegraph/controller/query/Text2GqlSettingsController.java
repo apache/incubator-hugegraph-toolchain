@@ -41,13 +41,13 @@ public class Text2GqlSettingsController extends BaseController {
 
     @GetMapping
     public Map<String, Object> get() {
-        this.requireAccountManager();
+        this.requireModelSettingsManager();
         return this.settings.settings();
     }
 
     @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public Map<String, Object> update(@RequestBody Text2GqlSettingsRequest request) {
-        this.requireAccountManager();
+        this.requireModelSettingsManager();
         return this.settings.save(request);
     }
 }
