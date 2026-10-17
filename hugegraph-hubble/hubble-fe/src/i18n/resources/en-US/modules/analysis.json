@@ -59,7 +59,7 @@
       "shared_loading": "Checking the deployment model…",
       "shared_ready": "Deployment model ready:",
       "custom_hint": "Your temporary settings stay separate from the deployment default model",
-      "shared_auth_required": "Sign in to use the deployment default model, or enter temporary settings",
+      "shared_auth_required": "The deployment default model is unavailable for this connection; use temporary settings or contact an administrator",
       "shared_not_configured": "No deployment default model is configured; use temporary settings or contact an administrator",
       "shared_unavailable": "The deployment model is unavailable; temporary settings are still available",
       "shared_privacy": "Your question and current graph schema are sent to the deployment model; its API Key is never sent to your browser",

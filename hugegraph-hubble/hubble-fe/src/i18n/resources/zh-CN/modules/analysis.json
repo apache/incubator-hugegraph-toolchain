@@ -59,7 +59,7 @@
       "shared_loading": "正在检查部署默认模型…",
       "shared_ready": "部署默认模型可用：",
       "custom_hint": "临时配置独立使用，不会与部署默认模型的 Key 混用",
-      "shared_auth_required": "登录后可使用部署默认模型，也可填写临时配置",
+      "shared_auth_required": "当前连接无法使用部署默认模型，请使用临时配置或联系部署管理员",
       "shared_not_configured": "尚未配置部署默认模型，可使用临时配置或联系管理员",
       "shared_unavailable": "部署默认模型暂不可用，仍可填写临时配置",
       "shared_privacy": "问题和当前图 schema 会发送到部署默认模型，共享 API Key 不会发送到浏览器",
