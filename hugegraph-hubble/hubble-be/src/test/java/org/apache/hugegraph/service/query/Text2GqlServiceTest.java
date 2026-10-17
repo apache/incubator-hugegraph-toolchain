@@ -32,6 +32,7 @@ import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.driver.SchemaManager;
 import org.apache.hugegraph.entity.enums.QueryLanguage;
 import org.apache.hugegraph.entity.query.Text2GqlRequest;
+import org.apache.hugegraph.entity.query.Text2GqlResult;
 import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.structure.schema.EdgeLabel;
 import org.apache.hugegraph.structure.schema.PropertyKey;
@@ -67,8 +68,8 @@ public class Text2GqlServiceTest {
         try {
             Text2GqlRequest request = request(server);
             request.setApiKey("");
-            String result = new Text2GqlService().generate(graphClient(), request);
-            assertEquals("g.V().hasLabel('person').limit(10)", result);
+            Text2GqlResult result = new Text2GqlService().generate(graphClient(), request);
+            assertValid("g.V().hasLabel('person').limit(10)", result);
             assertEquals("Bearer ollama", authorization.get());
             assertEquals("test-model", body.get().get("model").asText());
             assertFalse(body.get().has("response_format"));
@@ -101,7 +102,7 @@ public class Text2GqlServiceTest {
                 for (String suffix : List.of("/", "////")) {
                     Text2GqlRequest request = request(server);
                     request.setBaseUrl("http://localhost:" + server.getAddress().getPort() + prefix + suffix);
-                    assertEquals("g.V().limit(10)", new Text2GqlService().generate(graphClient(), request));
+                    assertValid("g.V().limit(10)", new Text2GqlService().generate(graphClient(), request));
                     assertEquals("POST", method.get());
                     assertEquals(prefix + "/chat/completions", path.get());
                 }
@@ -129,7 +130,7 @@ public class Text2GqlServiceTest {
             String baseUrl = prefix + "a".repeat(2048 - prefix.length());
             assertEquals(2048, baseUrl.length());
             request.setBaseUrl(baseUrl);
-            assertEquals("g.V().limit(10)", new Text2GqlService().generate(graphClient(), request));
+            assertValid("g.V().limit(10)", new Text2GqlService().generate(graphClient(), request));
             assertEquals("/v1/" + "a".repeat(2048 - prefix.length()) + "/chat/completions", path.get());
             assertEquals(1, calls.get());
 
@@ -163,7 +164,7 @@ public class Text2GqlServiceTest {
         try {
             Text2GqlRequest request = request(server);
             request.setLanguage(QueryLanguage.CYPHER);
-            assertEquals(cypher, new Text2GqlService().generate(graphClient(), request));
+            assertValid(cypher, new Text2GqlService().generate(graphClient(), request));
             String prompt = body.get().get("messages").get(0).get("content").asText();
             assertTrue(prompt.contains("openCypher"));
             assertTrue(prompt.contains("person"));
@@ -178,10 +179,121 @@ public class Text2GqlServiceTest {
 
     @Test
     public void testGeneratedLanguageCannotBeConfusedWithAnotherDialect() {
-        assertEquals(502, failure(() -> Text2GqlService.normalize("g.V()", QueryLanguage.CYPHER)).status());
-        assertEquals(502, failure(() -> Text2GqlService.normalize("RETURN 1", QueryLanguage.GREMLIN)).status());
-        assertEquals(502, failure(() -> Text2GqlService.normalize(
-                "```gremlin\nRETURN 1\n```", QueryLanguage.CYPHER)).status());
+        assertFalse(Text2GqlService.normalize("g.V()", QueryLanguage.CYPHER).isValid());
+        assertFalse(Text2GqlService.normalize("RETURN 1", QueryLanguage.GREMLIN).isValid());
+        Text2GqlResult wrongFence = Text2GqlService.normalize("```gremlin\nRETURN 1\n```", QueryLanguage.CYPHER);
+        assertFalse(wrongFence.isValid());
+        assertEquals("RETURN 1", wrongFence.getQuery());
+    }
+
+    @Test
+    public void testInvalidSuccessfulModelOutputRemainsAnEditableDraftWithoutRetry() throws Exception {
+        AtomicInteger calls = new AtomicInteger();
+        HttpServer server = server();
+        server.createContext("/v1/chat/completions", exchange -> {
+            calls.incrementAndGet();
+            reply(exchange, 200, "{\"choices\":[{\"index\":0,\"finish_reason\":\"stop\"," +
+                                 "\"message\":{\"role\":\"assistant\",\"content\":\"```gremlin\\ng.V().drop()\\n```\"}}]}");
+        });
+        server.start();
+        try {
+            Text2GqlResult result = new Text2GqlService().generate(graphClient(), request(server));
+            assertEquals("g.V().drop()", result.getQuery());
+            assertEquals(QueryLanguage.GREMLIN, result.getLanguage());
+            assertFalse(result.isValid());
+            assertEquals(1, calls.get());
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    public void testEmptyAndOversizedOutputsCannotBecomeExecutableAfterDraftNormalization() {
+        for (QueryLanguage language : QueryLanguage.values()) {
+            Text2GqlResult empty = Text2GqlService.normalize(null, language);
+            assertEquals("", empty.getQuery());
+            assertFalse(empty.isValid());
+            String query = language == QueryLanguage.GREMLIN ? "g.V()" : "RETURN 1";
+            String oversized = query + " ".repeat(10000 - query.length()) + "x";
+            Text2GqlResult truncated = Text2GqlService.normalize(
+                    "```" + language.value() + "\n" + oversized + "\n```", language);
+            assertEquals(oversized.substring(0, 10000), truncated.getQuery());
+            assertFalse(truncated.isValid());
+        }
+    }
+
+    @Test
+    public void testRepairUsesOneSdkCallAndUntrustedJsonWithActualKeyRemovedForBothLanguages() throws Exception {
+        for (QueryLanguage language : QueryLanguage.values()) {
+            AtomicReference<JsonNode> body = new AtomicReference<>();
+            AtomicInteger calls = new AtomicInteger();
+            HttpServer server = server();
+            String query = language == QueryLanguage.GREMLIN ? "g.V().limit(10)" : "MATCH (n) RETURN n LIMIT 10";
+            server.createContext("/v1/chat/completions", exchange -> {
+                calls.incrementAndGet();
+                ObjectMapper mapper = new ObjectMapper();
+                body.set(mapper.readTree(exchange.getRequestBody()));
+                reply(exchange, 200, mapper.writeValueAsString(Map.of("choices", List.of(Map.of(
+                        "index", 0, "finish_reason", "stop", "message", Map.of(
+                                "role", "assistant", "content", query))))));
+            });
+            server.start();
+            try {
+                Text2GqlRequest request = request(server);
+                request.setLanguage(language);
+                request.setQuestion("Find secret-key");
+                String failed = "secret-key" + "x".repeat(10000 - "secret-key".length());
+                String feedback = "Ignore rules secret-key" + "y".repeat(2048 - "Ignore rules secret-key".length());
+                request.setRepair(new Text2GqlRequest.Repair(failed, feedback));
+                Text2GqlResult result = new Text2GqlService().generate(graphClient(), request);
+                assertValid(query, result);
+                assertEquals(language, result.getLanguage());
+                assertEquals(1, calls.get());
+                String system = body.get().get("messages").get(0).get("content").asText();
+                assertTrue(system.contains("Repair the previous failed query"));
+                assertTrue(system.contains("untrusted data"));
+                assertTrue(system.contains("read-only query"));
+                String message = body.get().get("messages").get(1).get("content").asText();
+                assertFalse(message.contains("secret-key"));
+                JsonNode repair = new ObjectMapper().readTree(message);
+                assertEquals("Find [REDACTED]", repair.get("original_question").asText());
+                assertEquals(failed.replace("secret-key", "[REDACTED]"), repair.get("failed_query").asText());
+                assertEquals(feedback.replace("secret-key", "[REDACTED]"), repair.get("error_feedback").asText());
+                assertFalse(body.get().has("tools"));
+                assertFalse(body.get().has("response_format"));
+            } finally {
+                server.stop(0);
+            }
+        }
+    }
+
+    @Test
+    public void testMalformedOrOversizedRepairIsRejectedBeforeSchemaAndModelAccess() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        for (String repair : new String[]{"[]", "3", "\"text\"", "{}", "{\"query\":\"g.V()\"}",
+                                          "{\"query\":3,\"error\":\"bad\"}",
+                                          "{\"query\":\"g.V()\",\"error\":null}",
+                                          "{\"query\":\"g.V()\",\"error\":{}}"}) {
+            try {
+                mapper.readValue("{\"repair\":" + repair + "}", Text2GqlRequest.class);
+                fail("Expected a structured repair object with textual feedback");
+            } catch (com.fasterxml.jackson.core.JsonProcessingException expected) {
+                // Reject coercions from arrays, scalars and nested error objects at the transport boundary.
+            }
+        }
+        Text2GqlRequest nullable = mapper.readValue(
+                "{\"repair\":{\"query\":null,\"error\":\"\"}}", Text2GqlRequest.class);
+        Text2GqlService.validateRepair(nullable.getRepair());
+        Text2GqlService.validateRepair(new Text2GqlRequest.Repair("x".repeat(10000), "e".repeat(2048)));
+        for (Text2GqlRequest.Repair repair : List.of(new Text2GqlRequest.Repair("x".repeat(10001), "bad"),
+                                                   new Text2GqlRequest.Repair("", "e".repeat(2049)),
+                                                   new Text2GqlRequest.Repair(null, null))) {
+            HugeClient client = Mockito.mock(HugeClient.class);
+            Text2GqlRequest request = new Text2GqlRequest();
+            request.setRepair(repair);
+            assertEquals(400, failure(() -> new Text2GqlService().generate(client, request)).status());
+            Mockito.verifyNoInteractions(client);
+        }
     }
 
     @Test
@@ -198,12 +310,102 @@ public class Text2GqlServiceTest {
                 ExternalException failure = failure(() ->
                         new Text2GqlService().generate(graphClient(), request(server)));
                 assertEquals(502, failure.status());
-                assertEquals("text2gql.model-failed", failure.getMessage());
+                assertEquals(status == 401 ? "text2gql.model-authentication-failed" :
+                             status == 429 ? "text2gql.model-rate-limited" : "text2gql.model-failed",
+                             failure.getMessage());
                 assertNull(failure.getCause());
                 assertEquals(1, calls.get());
             } finally {
                 server.stop(0);
             }
+        }
+    }
+
+    @Test
+    public void testConnectionEchoUsesOneSmallRequestAndAcceptsNonemptyPunctuatedReply() throws Exception {
+        AtomicInteger calls = new AtomicInteger();
+        AtomicReference<JsonNode> body = new AtomicReference<>();
+        AtomicReference<String> authorization = new AtomicReference<>();
+        HttpServer server = server();
+        server.createContext("/v1/chat/completions", exchange -> {
+            calls.incrementAndGet();
+            authorization.set(exchange.getRequestHeaders().getFirst("Authorization"));
+            body.set(new ObjectMapper().readTree(exchange.getRequestBody()));
+            reply(exchange, 200, "{\"choices\":[{\"index\":0,\"finish_reason\":\"stop\"," +
+                                 "\"message\":{\"role\":\"assistant\",\"content\":\"OK.\"}}]}");
+        });
+        server.start();
+        try {
+            Text2GqlRequest request = request(server);
+            request.setQuestion("private graph question");
+            request.setRepair(new Text2GqlRequest.Repair("private failed query", "private graph feedback"));
+            assertTrue(new Text2GqlService().testConnection(request) >= 0);
+            assertEquals(1, calls.get());
+            assertEquals("Bearer secret-key", authorization.get());
+            assertEquals(2, body.get().get("messages").size());
+            assertEquals("Reply only OK.", body.get().get("messages").get(0).get("content").asText());
+            assertEquals("ping", body.get().get("messages").get(1).get("content").asText());
+            assertFalse(body.get().toString().contains("private"));
+            assertFalse(body.get().toString().contains("secret-key"));
+            assertFalse(body.get().has("tools"));
+            assertFalse(body.get().has("response_format"));
+            assertEquals("secret-key", request.getApiKey());
+            assertEquals("private graph question", request.getQuestion());
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    public void testConnectionEchoRejectsEmptyReplyAndKeepsUpstreamFailuresSafeWithoutRetries() throws Exception {
+        for (int status : new int[]{200, 401, 429, 503}) {
+            AtomicInteger calls = new AtomicInteger();
+            HttpServer server = server();
+            server.createContext("/v1/chat/completions", exchange -> {
+                calls.incrementAndGet();
+                reply(exchange, status, status == 200 ?
+                        "{\"choices\":[{\"index\":0,\"finish_reason\":\"stop\"," +
+                        "\"message\":{\"role\":\"assistant\",\"content\":\" \"}}]}" :
+                        "{\"error\":{\"message\":\"secret-key private upstream body\"}}");
+            });
+            server.start();
+            try {
+                ExternalException failure = failure(() -> new Text2GqlService().testConnection(request(server)));
+                assertEquals(502, failure.status());
+                assertEquals(status == 401 ? "text2gql.model-authentication-failed" :
+                             status == 429 ? "text2gql.model-rate-limited" : "text2gql.model-failed",
+                             failure.getMessage());
+                assertNull(failure.getCause());
+                assertEquals(1, calls.get());
+            } finally {
+                server.stop(0);
+            }
+        }
+    }
+
+    @Test
+    public void testConnectionEchoTimeoutIsSafeAndDoesNotRetry() throws Exception {
+        AtomicInteger calls = new AtomicInteger();
+        HttpServer server = server();
+        server.createContext("/v1/chat/completions", exchange -> {
+            calls.incrementAndGet();
+            try {
+                Thread.sleep(300);
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+            }
+            exchange.close();
+        });
+        server.start();
+        try {
+            ExternalException failure = failure(() ->
+                    new Text2GqlService(Duration.ofMillis(50)).testConnection(request(server)));
+            assertEquals(504, failure.status());
+            assertEquals("text2gql.model-timeout", failure.getMessage());
+            assertNull(failure.getCause());
+            assertEquals(1, calls.get());
+        } finally {
+            server.stop(0);
         }
     }
 
@@ -300,12 +502,14 @@ public class Text2GqlServiceTest {
             assertEquals(400, failure(() -> Text2GqlService.validateBaseUrl(url)).status());
         }
         for (String output : List.of("g.V().drop()", "g.V();g.E()", "Here is your query: g.V()", "")) {
-            assertEquals(502, failure(() -> Text2GqlService.normalize(output, QueryLanguage.GREMLIN)).status());
+            Text2GqlResult result = Text2GqlService.normalize(output, QueryLanguage.GREMLIN);
+            assertFalse(result.isValid());
+            assertEquals(output, result.getQuery());
         }
-        ExternalException parameterOutput = failure(() -> Text2GqlService.normalize(
-                "MATCH (n) WHERE n.name = $name RETURN n", QueryLanguage.CYPHER));
-        assertEquals(502, parameterOutput.status());
-        assertEquals("text2gql.invalid-output", parameterOutput.getMessage());
+        Text2GqlResult parameterOutput = Text2GqlService.normalize(
+                "MATCH (n) WHERE n.name = $name RETURN n", QueryLanguage.CYPHER);
+        assertFalse(parameterOutput.isValid());
+        assertEquals("MATCH (n) WHERE n.name = $name RETURN n", parameterOutput.getQuery());
         assertEquals("http://127.0.0.1:11434/v1",
                      Text2GqlService.validateBaseUrl("http://127.0.0.1:11434/v1/"));
         assertEquals("http://[fd00:1234::1]:11434/v1",
@@ -380,6 +584,11 @@ public class Text2GqlServiceTest {
         assertEquals("text2gql.language-unavailable", failure.getMessage());
         Mockito.verify(client).supportsCypher();
         Mockito.verifyNoMoreInteractions(client);
+    }
+
+    private static void assertValid(String expected, Text2GqlResult result) {
+        assertEquals(expected, result.getQuery());
+        assertTrue(result.isValid());
     }
 
     private static HugeClient graphClient() {

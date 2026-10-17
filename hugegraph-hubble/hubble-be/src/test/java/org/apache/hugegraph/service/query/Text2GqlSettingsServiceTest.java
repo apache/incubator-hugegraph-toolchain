@@ -164,6 +164,26 @@ public class Text2GqlSettingsServiceTest {
     }
 
     @Test
+    public void testProbeConnectionResolutionCannotModifySavedSettingsOrEnableDisabledDefaults() {
+        assertEquals(503, failure(() -> this.service.sharedRequest(shared())).status());
+        this.service.save(settings("openai", "private-model-key"));
+        org.apache.hugegraph.entity.query.Text2GqlConfiguration before = this.stored.get();
+        Mockito.clearInvocations(this.mapper);
+        Text2GqlRequest resolved = this.service.sharedRequest(shared());
+        assertEquals("private-model-key", resolved.getApiKey());
+        org.junit.Assert.assertSame(before, this.stored.get());
+        Mockito.verify(this.mapper).current();
+        Mockito.verifyNoMoreInteractions(this.mapper);
+        Text2GqlSettingsRequest disabled = settings("openai", null);
+        disabled.setEnabled(false);
+        this.service.save(disabled);
+        Mockito.clearInvocations(this.mapper);
+        assertEquals(503, failure(() -> this.service.sharedRequest(shared())).status());
+        Mockito.verify(this.mapper).current();
+        Mockito.verifyNoMoreInteractions(this.mapper);
+    }
+
+    @Test
     public void testSharedRequestsCannotOverrideServerConnectionOrSecret() {
         this.service.save(settings("openai", "private-model-key"));
         for (String field : new String[]{"url", "model", "key"}) {
@@ -255,12 +275,15 @@ public class Text2GqlSettingsServiceTest {
     }
 
     @Test
-    public void testSharedModelPreservesRequestedQueryLanguage() {
+    public void testSharedModelPreservesRequestedQueryLanguageAndRepair() {
         this.service.save(settings("openai", "private-model-key"));
         Text2GqlRequest question = shared();
         question.setLanguage(QueryLanguage.CYPHER);
+        Text2GqlRequest.Repair repair = new Text2GqlRequest.Repair("MATCH (n) RETURN x", "Unknown variable x");
+        question.setRepair(repair);
         Text2GqlRequest resolved = this.service.sharedRequest(question);
         assertEquals(QueryLanguage.CYPHER, resolved.getLanguage());
+        org.junit.Assert.assertSame(repair, resolved.getRepair());
         assertEquals("private-model-key", resolved.getApiKey());
     }
 

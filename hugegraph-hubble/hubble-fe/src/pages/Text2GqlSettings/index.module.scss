@@ -88,8 +88,10 @@
     padding-top: 16px;
     border-top: 1px solid #f0f0f0;
 
-    :global(.ant-btn) {
-        flex-shrink: 0;
+    .buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
         margin-inline-start: auto;
     }
 }
@@ -112,4 +114,19 @@
         gap: 16px;
         padding: 16px;
     }
+}
+
+.testStatus {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    color: #667085;
+    font-size: 13px;
+}
+
+.testHint {
+    margin: -6px 0 0;
+    color: #667085;
+    font-size: 13px;
 }

@@ -92,6 +92,7 @@ const QueryBar = props => {
         setEditorExpanded(expanded => !expanded);
     }, []);
 
+    const executingGenerated = text2gql?.pending && text2gql.phase === 'execution';
     const language = text2gql?.language || DEFAULT_QUERY_LANGUAGE;
     const dialect = QUERY_LANGUAGES[language];
     const languageEnabled = supportsQueryLanguage(language, cypherEnabled);
@@ -402,16 +403,18 @@ const QueryBar = props => {
                                 <Space wrap>
                                     <Button
                                         type='primary'
-                                        loading={text2gql.pending && !isExecuting}
+                                        loading={text2gql.pending && !executingGenerated}
                                         disabled={!languageEnabled || text2gql.pending || sharedConfig.loading
                                         || !isGraphReady || !text2gql.question.trim()
                                         || (source === 'shared' ? !sharedConfig.available : !customAvailable)}
                                         onClick={onGenerate}
                                     >
-                                        {t(text2gql.pending && !isExecuting ? 'analysis.query.generating'
+                                        {t(text2gql.pending && !executingGenerated
+                                            ? text2gql.repairing
+                                                ? 'analysis.query.repairing' : 'analysis.query.generating'
                                             : 'analysis.query.generate_query')}
                                     </Button>
-                                    {text2gql.pending && !isExecuting && (
+                                    {text2gql.pending && (
                                         <Button onClick={text2gql.cancel}>
                                             {t('analysis.query.cancel_generation')}
                                         </Button>
@@ -427,17 +430,12 @@ const QueryBar = props => {
                                 <Space wrap>
                                     <Button
                                         disabled={!languageEnabled || !isGraphReady || isEmptyQuery || text2gql.pending}
-                                        loading={text2gql.pending && isExecuting}
+                                        loading={executingGenerated}
                                         onClick={onExecution}
                                     >
-                                        {t(text2gql.pending && isExecuting ? 'analysis.query.querying'
+                                        {t(executingGenerated ? 'analysis.query.querying'
                                             : 'analysis.query.run_edited_query')}
                                     </Button>
-                                    {text2gql.pending && isExecuting && (
-                                        <Button onClick={text2gql.cancel}>
-                                            {t('analysis.query.cancel_generation')}
-                                        </Button>
-                                    )}
                                 </Space>
                             </div>
                         </section>

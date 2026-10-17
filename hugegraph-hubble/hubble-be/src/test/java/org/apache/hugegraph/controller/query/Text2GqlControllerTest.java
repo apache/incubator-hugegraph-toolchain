@@ -25,6 +25,7 @@ import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.driver.SchemaManager;
 import org.apache.hugegraph.entity.enums.QueryLanguage;
 import org.apache.hugegraph.entity.query.Text2GqlRequest;
+import org.apache.hugegraph.entity.query.Text2GqlResult;
 import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.service.query.Text2GqlService;
 import org.apache.hugegraph.service.auth.AuthModeService;
@@ -50,9 +51,9 @@ public class Text2GqlControllerTest {
         BoundController controller = new BoundController(client);
         ReflectionTestUtils.setField(controller, "service", service);
         Text2GqlRequest request = new Text2GqlRequest();
-        Mockito.when(service.generate(client, request)).thenReturn("g.V().limit(10)");
+        Mockito.when(service.generate(client, request)).thenReturn(new Text2GqlResult("g.V().limit(10)", QueryLanguage.GREMLIN, true));
 
-        assertEquals("g.V().limit(10)", controller.generate("my-space", "my-graph", request).get("query"));
+        assertEquals("g.V().limit(10)", controller.generate("my-space", "my-graph", request).getQuery());
         assertEquals("my-space", controller.space);
         assertEquals("my-graph", controller.graph);
         Mockito.verify(service).generate(client, request);
@@ -94,8 +95,8 @@ public class Text2GqlControllerTest {
         Text2GqlRequest resolved = new Text2GqlRequest();
         resolved.setModel("shared-model");
         Mockito.when(settings.sharedRequest(request)).thenReturn(resolved);
-        Mockito.when(service.generate(client, resolved)).thenReturn("g.V().limit(10)");
-        assertEquals("g.V().limit(10)", controller.generate("space", "graph", request).get("query"));
+        Mockito.when(service.generate(client, resolved)).thenReturn(new Text2GqlResult("g.V().limit(10)", QueryLanguage.GREMLIN, true));
+        assertEquals("g.V().limit(10)", controller.generate("space", "graph", request).getQuery());
         Mockito.verify(service).generate(client, resolved);
         Mockito.verifyNoMoreInteractions(service);
     }
@@ -152,13 +153,13 @@ public class Text2GqlControllerTest {
         BoundController controller = new BoundController(client, true);
         ReflectionTestUtils.setField(controller, "service", service);
         Text2GqlRequest request = new Text2GqlRequest();
-        Mockito.when(service.generate(client, request)).thenReturn("g.V().count()");
-        assertEquals("g.V().count()", controller.generate("space", "graph", request).get("query"));
+        Mockito.when(service.generate(client, request)).thenReturn(new Text2GqlResult("g.V().count()", QueryLanguage.GREMLIN, true));
+        assertEquals("g.V().count()", controller.generate("space", "graph", request).getQuery());
         Mockito.verify(service).generate(client, request);
     }
 
     @Test
-    public void testGenerationResponseUsesOneQueryAndLanguageContractForBothDialects() {
+    public void testGenerationResponseUsesOneQueryLanguageAndValidityContractForBothDialects() throws Exception {
         for (QueryLanguage language : QueryLanguage.values()) {
             HugeClient client = Mockito.mock(HugeClient.class);
             Text2GqlService service = Mockito.mock(Text2GqlService.class);
@@ -166,9 +167,14 @@ public class Text2GqlControllerTest {
             ReflectionTestUtils.setField(controller, "service", service);
             Text2GqlRequest request = new Text2GqlRequest();
             request.setLanguage(language);
-            Mockito.when(service.generate(client, request)).thenReturn("generated-query");
-            assertEquals(Map.of("query", "generated-query", "language", language.value()),
-                         controller.generate("space", "graph", request));
+            for (boolean valid : new boolean[]{false, true}) {
+                Text2GqlResult result = new Text2GqlResult("generated-query", language, valid);
+                Mockito.when(service.generate(client, request)).thenReturn(result);
+                Text2GqlResult response = controller.generate("space", "graph", request);
+                assertSame(result, response);
+                assertEquals(Map.of("query", "generated-query", "language", language.value(), "valid", valid),
+                             new ObjectMapper().readValue(new ObjectMapper().writeValueAsString(response), Map.class));
+            }
         }
     }
 

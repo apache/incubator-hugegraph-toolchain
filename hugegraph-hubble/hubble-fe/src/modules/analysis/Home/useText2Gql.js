@@ -19,6 +19,7 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {scopedStorageKey, USER_CHANGE_EVENT} from '../../../utils/user';
 import {sanitizePublicError} from '../../../utils/publicError';
+import {canRepairQuery, queryFailure} from '../../../utils/queryFailure';
 import * as api from '../../../api';
 import {DEFAULT_QUERY_LANGUAGE, MODEL_PROVIDERS, supportsQueryLanguage} from '../../../utils/text2gql';
 
@@ -52,6 +53,11 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
     const [question, setQuestion] = useState('');
     const [sourceQuestion, setSourceQuestion] = useState('');
     const [pending, setPending] = useState(false);
+    const [repairing, setRepairing] = useState(false);
+    const [phase, setPhase] = useState('');
+    const [elapsedSeconds, setElapsedSeconds] = useState(0);
+    const startedAt = useRef(0);
+    const phaseStartedAt = useRef(0);
     const [error, setError] = useState('');
     const [errorType, setErrorType] = useState('error');
     const [errorStage, setErrorStage] = useState('');
@@ -72,7 +78,20 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
         requestRef.current?.controller.abort();
         requestRef.current = null;
         setPending(false);
+        setRepairing(false);
+        setPhase('');
+        setElapsedSeconds(0);
     }, []);
+
+    useEffect(() => {
+        if (!pending) {
+            return undefined;
+        }
+        const timer = setInterval(() => {
+            setElapsedSeconds(Math.floor((Date.now() - startedAt.current) / 1000));
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [pending]);
 
     useEffect(() => {
         if (supportsQueryLanguage(language, cypherEnabled)) {
@@ -234,55 +253,122 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
         const request = {controller: new AbortController(), scope: currentScope};
         requestRef.current = request;
         const isCurrent = () => requestRef.current === request && scopeRef.current === request.scope;
+        startedAt.current = Date.now();
+        setElapsedSeconds(0);
         setPending(true);
+        const enterPhase = value => {
+            phaseStartedAt.current = Date.now();
+            setPhase(value);
+        };
         setError('');
         setErrorStage('');
         setErrorType('error');
-        let stage = content === undefined ? 'generation' : 'execution';
+        const automatic = content === undefined;
+        const sanitizeError = (message, fallback = t('analysis.query.text2gql_failed')) => {
+            const redacted = config.apiKey && typeof message === 'string'
+                ? message.split(config.apiKey).join('[redacted]') : message;
+            return sanitizePublicError(redacted, fallback);
+        };
+        let stage = automatic ? 'generation' : 'execution';
+        let repaired = false;
+        const params = source === 'shared' ? {question: text, source: 'shared', language} : {
+            question: text, source: 'custom', language, base_url: config.baseUrl.trim(),
+            api_key: config.apiKey, model: config.model.trim(),
+        };
+        let repair;
         try {
             let query = content;
-            if (content === undefined) {
+            if (automatic) {
                 clearResult();
-                const params = source === 'shared' ? {question: text, source: 'shared', language} : {
-                    question: text, source: 'custom', language, base_url: config.baseUrl.trim(),
-                    api_key: config.apiKey, model: config.model.trim(),
-                };
-                const response = await api.analysis.generateText2Gql(scope.graphSpace, scope.graph,
-                    params, {signal: request.controller.signal});
+            }
+            while (isCurrent()) {
+                if (automatic) {
+                    stage = 'generation';
+                    const isRepair = Boolean(repair);
+                    enterPhase(isRepair ? 'repair_waiting' : 'waiting');
+                    let draft = '';
+                    if (!repair) {
+                        clearEditor('');
+                    }
+                    const response = await api.analysis.streamText2Gql(scope.graphSpace, scope.graph,
+                        repair ? {...params, repair} : params, {
+                            signal: request.controller.signal,
+                            onDelta: chunk => {
+                                if (!isCurrent()) {
+                                    return;
+                                }
+                                draft += chunk;
+                                setPhase(isRepair ? 'repair_streaming' : 'streaming');
+                                clearEditor(draft.replace(/^```[^\n]*\n/, '').replace(/\n?```$/, ''));
+                                setSourceQuestion(text);
+                            },
+                        });
+                    if (!isCurrent()) {
+                        return;
+                    }
+                    query = response?.data?.query;
+                    if (response?.status !== 200 || response?.data?.language !== language
+                        || typeof query !== 'string') {
+                        throw new Error(response?.message || t('analysis.query.text2gql_failed'));
+                    }
+                    // Show each draft before validation or execution, including an empty invalid response.
+                    clearEditor(query);
+                    setSourceQuestion(text);
+                    if (response.data.valid !== true || !query.trim()) {
+                        stage = 'validation';
+                        const message = t('analysis.query.invalid_generated_query');
+                        if (repaired) {
+                            throw new Error(message);
+                        }
+                        repaired = true;
+                        repair = {query: query.slice(0, 10000), error: sanitizeError(message)};
+                        setRepairing(true);
+                        continue;
+                    }
+                }
+                stage = 'execution';
+                enterPhase('execution');
+                let result;
+                try {
+                    result = await execute(query, text, {
+                        signal: request.controller.signal, isCurrent, language, sanitizeError,
+                    });
+                }
+                catch (failure) {
+                    result = queryFailure(failure, t('analysis.query.text2gql_failed'), sanitizeError);
+                }
                 if (!isCurrent()) {
                     return;
                 }
-                query = response?.data?.query;
-                if (response?.status !== 200 || response?.data?.language !== language
-                    || typeof query !== 'string' || !query.trim()) {
-                    throw new Error(response?.message || t('analysis.query.text2gql_failed'));
+                if (result?.ok !== false) {
+                    return;
                 }
-                setSourceQuestion(text);
+                if (!automatic || repaired || !canRepairQuery(result)) {
+                    throw new Error(result.message);
+                }
+                repaired = true;
+                repair = {query: query.slice(0, 10000), error: sanitizeError(result.message)};
+                setRepairing(true);
+                clearResult();
             }
-            if (!isCurrent()) {
-                return;
-            }
-            stage = 'execution';
-            await execute(query, text, {signal: request.controller.signal, isCurrent, language});
         }
         catch (failure) {
             if (isCurrent()) {
-                // Do not render server/provider errors that may echo a credential.
-                const message = failure?.response?.data?.message || failure?.message;
-                const safeMessage = config.apiKey && typeof message === 'string'
-                    ? message.split(config.apiKey).join('[redacted]') : message;
+                const message = sanitizeError(failure?.response?.data?.message || failure?.message);
                 setErrorStage(stage);
-                setError(sanitizePublicError(safeMessage, t('analysis.query.text2gql_failed')));
+                setError(`${message}\n${t('analysis.query.edit_query_retry')}`);
             }
         }
         finally {
             if (isCurrent()) {
                 requestRef.current = null;
                 setPending(false);
+                setRepairing(false);
+                setPhase('');
             }
         }
-    }, [active, clearResult, config, currentScope, cypherEnabled, execute, ready, scope, sharedConfig.available,
-        sharedConfig.customAvailable, sharedConfig.loading, source, language, t]);
+    }, [active, clearEditor, clearResult, config, currentScope, cypherEnabled, execute, ready, scope,
+        sharedConfig.available, sharedConfig.customAvailable, sharedConfig.loading, source, language, t]);
 
     const cancel = useCallback(() => {
         invalidate();
@@ -293,7 +379,10 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
     }, [clearResult, invalidate, t]);
 
     return {
-        config, updateConfig, question, setQuestion, pending, error, errorType, errorStage,
+        config, updateConfig, question, setQuestion, pending, repairing, phase, elapsedSeconds,
+        modelSlow: pending && ['waiting', 'repair_waiting'].includes(phase)
+            && Date.now() - phaseStartedAt.current >= 15000,
+        error, errorType, errorStage,
         source, changeSource, sharedConfig, language, changeLanguage,
         generate: () => run(undefined, question.trim()),
         rerun: content => run(content, sourceQuestion),

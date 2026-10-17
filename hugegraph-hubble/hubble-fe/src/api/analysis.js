@@ -18,6 +18,7 @@
 
 import request from './request';
 import qs from 'qs';
+import {streamText2Gql} from './text2gqlStream';
 import {DEFAULT_QUERY_LANGUAGE, QUERY_LANGUAGES} from '../utils/text2gql';
 
 // 图分析通用
@@ -249,6 +250,7 @@ export {
     getExecutionQuery,
     executeText2Gql,
     generateText2Gql,
+    streamText2Gql,
     getText2GqlConfig,
     getGraphData,
     putExecutionQuery,

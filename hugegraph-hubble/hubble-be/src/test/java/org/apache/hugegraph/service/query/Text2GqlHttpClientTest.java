@@ -26,6 +26,8 @@ import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -38,6 +40,12 @@ import dev.langchain4j.exception.HttpException;
 import dev.langchain4j.http.client.HttpClient;
 import dev.langchain4j.http.client.HttpMethod;
 import dev.langchain4j.http.client.HttpRequest;
+import dev.langchain4j.http.client.SuccessfulHttpResponse;
+import dev.langchain4j.http.client.sse.DefaultServerSentEventParser;
+import dev.langchain4j.http.client.sse.ServerSentEvent;
+import dev.langchain4j.http.client.sse.ServerSentEventContext;
+import dev.langchain4j.http.client.sse.ServerSentEventListener;
+import dev.langchain4j.http.client.sse.ServerSentEventParser;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 
 import static org.junit.Assert.assertEquals;
@@ -342,6 +350,328 @@ public class Text2GqlHttpClientTest {
             }
         } finally {
             server.stop(0);
+        }
+    }
+
+    @Test
+    public void shouldDeliverFirstEventBeforeResponseCompletes() throws Exception {
+        CountDownLatch release = new CountDownLatch(1);
+        HttpServer server = server(exchange -> {
+            exchange.getResponseHeaders().set("Content-Type", "text/event-stream");
+            exchange.sendResponseHeaders(200, 0);
+            try {
+                writeEvent(exchange, "first");
+                awaitRelease(release);
+                writeEvent(exchange, "last");
+            } finally {
+                exchange.close();
+            }
+        });
+        server.start();
+        StreamResult result = new StreamResult();
+        try {
+            adapter().build().execute(request(server), new DefaultServerSentEventParser(), result);
+            assertTrue("First event must arrive while the server is still waiting",
+                       result.first.await(2, TimeUnit.SECONDS));
+            assertEquals(1, result.events.get());
+            assertEquals(1L, result.finished.getCount());
+            assertEquals(200, result.status.get());
+            release.countDown();
+            assertTrue(result.finished.await(2, TimeUnit.SECONDS));
+            assertEquals(2, result.events.get());
+            assertEquals(1, result.closed.get());
+            assertEquals(null, result.error.get());
+        } finally {
+            release.countDown();
+            server.stop(0);
+        }
+    }
+
+    @Test
+    public void shouldRejectStreamingHttpErrorsWithoutExposingBodies() throws Exception {
+        for (int status : new int[]{401, 429}) {
+            HttpServer server = server(exchange -> {
+                byte[] secret = "private-upstream-error-key".getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(status, 0);
+                try {
+                    exchange.getResponseBody().write(secret);
+                } finally {
+                    exchange.close();
+                }
+            });
+            server.start();
+            try {
+                StreamResult result = new StreamResult();
+                adapter().build().execute(request(server), new DefaultServerSentEventParser(), result);
+                assertTrue(result.finished.await(2, TimeUnit.SECONDS));
+                assertTrue(result.error.get() instanceof HttpException);
+                assertEquals(status, ((HttpException) result.error.get()).statusCode());
+                assertFalse(result.error.get().getMessage().contains("private-upstream"));
+                assertEquals(0, result.events.get());
+                assertEquals(0, result.closed.get());
+            } finally {
+                server.stop(0);
+            }
+        }
+    }
+
+    @Test
+    public void shouldBoundChunkedStreamingResponseCumulatively() throws Exception {
+        HttpServer server = server(exchange -> {
+            exchange.sendResponseHeaders(200, 0);
+            try {
+                byte[] event = ("data: " + "x".repeat(1000) + "\n\n")
+                        .getBytes(StandardCharsets.UTF_8);
+                for (int i = 0; i < 3000; i++) {
+                    exchange.getResponseBody().write(event);
+                }
+            } catch (IOException ignored) {
+                // The bounded input closes the socket after the overflow sentinel.
+            } finally {
+                exchange.close();
+            }
+        });
+        server.start();
+        try {
+            StreamResult result = new StreamResult();
+            adapter().build().execute(request(server), new DefaultServerSentEventParser(), result);
+            assertTrue(result.finished.await(5, TimeUnit.SECONDS));
+            assertNotNull(result.error.get());
+            assertEquals("Upstream response exceeds the size limit", result.error.get().getMessage());
+            assertTrue(result.events.get() > 1);
+            assertTrue("The parser must not receive an over-limit event",
+                       result.events.get() * 1008 <= Text2GqlHttpClient.MAX_RESPONSE_BODY_BYTES);
+            assertEquals(0, result.closed.get());
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    public void shouldRetainStreamingTimeoutCauseBeforeFirstByte() throws Exception {
+        CountDownLatch release = new CountDownLatch(1);
+        HttpServer server = server(exchange -> {
+            awaitRelease(release);
+            exchange.close();
+        });
+        server.start();
+        try {
+            Text2GqlHttpClient adapter = adapter();
+            adapter.readTimeout(Duration.ofMillis(150));
+            StreamResult result = new StreamResult();
+            adapter.build().execute(request(server), new DefaultServerSentEventParser(), result);
+            assertTrue(result.finished.await(2, TimeUnit.SECONDS));
+            assertNotNull(findCause(result.error.get(), InterruptedIOException.class));
+            assertEquals(0, result.events.get());
+        } finally {
+            release.countDown();
+            server.stop(0);
+        }
+    }
+
+    @Test
+    public void shouldEnforceStreamingTotalDeadlineDuringContinuousEvents() throws Exception {
+        HttpServer server = server(exchange -> {
+            exchange.sendResponseHeaders(200, 0);
+            try {
+                for (int i = 0; i < 100; i++) {
+                    writeEvent(exchange, "partial");
+                    Thread.sleep(30);
+                }
+            } catch (IOException ignored) {
+                // Continuous bytes do not extend the overall deadline.
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+            } finally {
+                exchange.close();
+            }
+        });
+        server.start();
+        try {
+            Text2GqlHttpClient adapter = adapter();
+            adapter.readTimeout(Duration.ofMillis(250));
+            StreamResult result = new StreamResult();
+            adapter.build().execute(request(server), new DefaultServerSentEventParser(), result);
+            assertTrue(result.finished.await(2, TimeUnit.SECONDS));
+            assertNotNull(findCause(result.error.get(), InterruptedIOException.class));
+            assertTrue(result.events.get() > 0);
+            assertEquals(0, result.closed.get());
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    public void shouldCancelBeforeFirstEventAndBeforeCallRegistration() throws Exception {
+        for (boolean beforeRegistration : new boolean[]{false, true}) {
+            CountDownLatch connected = new CountDownLatch(1);
+            CountDownLatch release = new CountDownLatch(1);
+            HttpServer server = server(exchange -> {
+                connected.countDown();
+                awaitRelease(release);
+                exchange.close();
+            });
+            server.start();
+            try {
+                Text2GqlHttpClient adapter = adapter();
+                if (beforeRegistration) {
+                    adapter.cancel();
+                }
+                StreamResult result = new StreamResult();
+                adapter.build().execute(request(server), new DefaultServerSentEventParser(), result);
+                if (!beforeRegistration) {
+                    assertTrue(connected.await(2, TimeUnit.SECONDS));
+                    adapter.cancel();
+                }
+                assertTrue(result.finished.await(2, TimeUnit.SECONDS));
+                assertNotNull(result.error.get());
+                assertEquals(0, result.events.get());
+            } finally {
+                release.countDown();
+                server.stop(0);
+            }
+        }
+    }
+
+    @Test
+    public void shouldCancelDuringStreamFromRequestOrParsingContext() throws Exception {
+        for (boolean contextCancel : new boolean[]{false, true}) {
+            CountDownLatch release = new CountDownLatch(1);
+            HttpServer server = server(exchange -> {
+                exchange.sendResponseHeaders(200, 0);
+                try {
+                    writeEvent(exchange, "first");
+                    awaitRelease(release);
+                    writeEvent(exchange, "must-not-arrive");
+                } catch (IOException ignored) {
+                    // Cancellation closes the active response input and request.
+                } finally {
+                    exchange.close();
+                }
+            });
+            server.start();
+            try {
+                Text2GqlHttpClient adapter = adapter();
+                StreamResult result = new StreamResult() {
+                    @Override
+                    public void onEvent(ServerSentEvent event, ServerSentEventContext context) {
+                        super.onEvent(event, context);
+                        if (contextCancel) {
+                            context.parsingHandle().cancel();
+                            assertTrue(context.parsingHandle().isCancelled());
+                        }
+                    }
+                };
+                adapter.build().execute(request(server), new DefaultServerSentEventParser(), result);
+                assertTrue(result.first.await(2, TimeUnit.SECONDS));
+                if (!contextCancel) {
+                    adapter.cancel();
+                }
+                assertTrue(result.finished.await(2, TimeUnit.SECONDS));
+                release.countDown();
+                assertEquals(1, result.events.get());
+            } finally {
+                release.countDown();
+                server.stop(0);
+            }
+        }
+    }
+
+    @Test
+    public void shouldCloseStreamWhenParserOrListenerFails() throws Exception {
+        for (boolean listenerFailure : new boolean[]{false, true}) {
+            CountDownLatch release = new CountDownLatch(1);
+            HttpServer server = server(exchange -> {
+                exchange.sendResponseHeaders(200, 0);
+                try {
+                    writeEvent(exchange, "first");
+                    awaitRelease(release);
+                } finally {
+                    exchange.close();
+                }
+            });
+            server.start();
+            try {
+                StreamResult result = new StreamResult() {
+                    @Override
+                    public void onEvent(ServerSentEvent event, ServerSentEventContext context) {
+                        if (listenerFailure) {
+                            throw new IllegalStateException("Consumer failed");
+                        }
+                        super.onEvent(event, context);
+                    }
+                };
+                ServerSentEventParser parser = listenerFailure ? new DefaultServerSentEventParser() :
+                        (input, listener) -> {
+                            throw new IllegalStateException("Parser failed");
+                        };
+                adapter().build().execute(request(server), parser, result);
+                assertTrue(result.finished.await(2, TimeUnit.SECONDS));
+                assertEquals(listenerFailure ? "Consumer failed" : "Parser failed",
+                             result.error.get().getMessage());
+                assertEquals(0, result.closed.get());
+            } finally {
+                release.countDown();
+                server.stop(0);
+            }
+        }
+    }
+
+    private static Text2GqlHttpClient adapter() {
+        return new Text2GqlHttpClient(host ->
+                List.of(InetAddress.getByAddress(host, new byte[]{127, 0, 0, 1})));
+    }
+
+    private static HttpRequest request(HttpServer server) {
+        return HttpRequest.builder().method(HttpMethod.GET).url(url(server, "/stream")).build();
+    }
+
+    private static void writeEvent(HttpExchange exchange, String data) throws IOException {
+        exchange.getResponseBody().write(("data: " + data + "\n\n").getBytes(StandardCharsets.UTF_8));
+        exchange.getResponseBody().flush();
+    }
+
+    private static void awaitRelease(CountDownLatch release) throws IOException {
+        try {
+            if (!release.await(5, TimeUnit.SECONDS)) {
+                throw new IOException("Timed out waiting for the test reader");
+            }
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new IOException(exception);
+        }
+    }
+
+    private static class StreamResult implements ServerSentEventListener {
+
+        private final CountDownLatch first = new CountDownLatch(1);
+        private final CountDownLatch finished = new CountDownLatch(1);
+        private final AtomicInteger events = new AtomicInteger();
+        private final AtomicInteger status = new AtomicInteger();
+        private final AtomicInteger closed = new AtomicInteger();
+        private final AtomicReference<Throwable> error = new AtomicReference<>();
+
+        @Override
+        public void onOpen(SuccessfulHttpResponse response) {
+            this.status.set(response.statusCode());
+        }
+
+        @Override
+        public void onEvent(ServerSentEvent event, ServerSentEventContext context) {
+            this.events.incrementAndGet();
+            this.first.countDown();
+        }
+
+        @Override
+        public void onError(Throwable exception) {
+            this.error.set(exception);
+            this.finished.countDown();
+        }
+
+        @Override
+        public void onClose() {
+            this.closed.incrementAndGet();
+            this.finished.countDown();
         }
     }
 

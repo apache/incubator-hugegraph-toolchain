@@ -22,6 +22,7 @@
 
 import React, {useCallback, useEffect, useState, useContext, useMemo, useRef} from 'react';
 import {useTranslation} from 'react-i18next';
+import {Button} from 'antd';
 import GraphAnalysisContext from '../../../../Context';
 import Graph from '../../../../component/Graph';
 import Legend from '../../../../component/Legend';
@@ -71,6 +72,7 @@ const GraphResult = props => {
         isQueryMode,
         queryStatus,
         queryMessage,
+        queryProgress,
         asyncTaskId,
         resetGraphStatus,
         panelType,
@@ -529,6 +531,26 @@ const GraphResult = props => {
     const renderCanvas3D = () => (<Canvas3D data={graphData} />);
 
     const renderGraphView = () => {
+        if (queryProgress) {
+            return (
+                <GraphStatusView
+                    status={LOADING}
+                    message={t(`analysis.query.phase_${queryProgress.phase || 'waiting'}`)}
+                    details={(
+                        <div className={c.queryProgress}>
+                            <span aria-live='off'>
+                                {t('analysis.query.elapsed_seconds', {seconds: queryProgress.elapsedSeconds})}
+                            </span>
+                            <p>{t(queryProgress.phase === 'execution' ? 'analysis.query.execution_timeout_hint'
+                                : 'analysis.query.model_timeout_hint')}
+                            </p>
+                            {queryProgress.modelSlow && <p role='status'>{t('analysis.query.model_slow')}</p>}
+                            <Button onClick={queryProgress.cancel}>{t('analysis.query.cancel_generation')}</Button>
+                        </div>
+                    )}
+                />
+            );
+        }
         switch (queryStatus) {
             case STANDBY:
                 return (

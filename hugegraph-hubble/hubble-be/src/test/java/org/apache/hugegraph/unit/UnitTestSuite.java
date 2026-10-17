@@ -42,6 +42,7 @@ import org.apache.hugegraph.service.op.OperationsHttpClientTest;
 import org.apache.hugegraph.service.op.OperationsIdentityContractTest;
 import org.apache.hugegraph.service.op.OperationsPayloadParserTest;
 import org.apache.hugegraph.service.query.Text2GqlServiceTest;
+import org.apache.hugegraph.service.query.Text2GqlStreamTest;
 import org.apache.hugegraph.service.query.Text2GqlHttpClientTest;
 import org.apache.hugegraph.controller.query.Text2GqlSettingsControllerTest;
 import org.apache.hugegraph.service.query.Text2GqlSettingsServiceTest;
@@ -87,6 +88,7 @@ import org.junit.runners.Suite;
     CypherHistoryFailureTest.class,
     Text2GqlControllerTest.class,
     Text2GqlServiceTest.class,
+    Text2GqlStreamTest.class,
     Text2GqlHttpClientTest.class,
     Text2GqlSettingsControllerTest.class,
     Text2GqlSettingsServiceTest.class,

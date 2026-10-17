@@ -24,14 +24,16 @@ let mockIdentityEpoch = 0;
 let mockAuthLoading = false;
 let mockCapabilities = new Set();
 jest.mock('../../api', () => ({config: {
-    getText2GqlSettings: jest.fn(), updateText2GqlSettings: jest.fn(),
+    getText2GqlSettings: jest.fn(), updateText2GqlSettings: jest.fn(), testText2GqlSettings: jest.fn(),
 }}));
 jest.mock('../../auth/AuthContext', () => ({useAuthContext: () => ({
     identityEpoch: mockIdentityEpoch,
     loading: mockAuthLoading,
     hasCapability: capability => mockCapabilities.has(capability),
 })}));
-jest.mock('react-i18next', () => ({useTranslation: () => ({t: key => key})}));
+jest.mock('react-i18next', () => ({useTranslation: () => ({
+    t: (key, values) => (values ? `${key} ${JSON.stringify(values)}` : key),
+})}));
 const initial = {enabled: true, connection_type: 'openai', base_url: 'https://model.example/v1',
     model: 'shared-model', has_api_key: true, source: 'managed'};
 const response = values => ({status: 200, data: {...initial, ...values}});
@@ -43,7 +45,8 @@ const deferred = () => {
     return {promise, resolve};
 };
 const keyInput = () => screen.getByLabelText('analysis.model_settings.replace_key');
-const saveButton = () => screen.getByRole('button', {name: 'analysis.model_settings.save'});
+const saveButton = () => screen.getByRole('button', {name: /^analysis.model_settings.save(?:_test)?$/});
+const testButton = () => screen.getByRole('button', {name: 'analysis.model_settings.test_saved'});
 
 beforeAll(() => {
     window.matchMedia = window.matchMedia || (() => ({matches: false,
@@ -58,6 +61,7 @@ beforeEach(() => {
     mockCapabilities = new Set(['model_settings_manage']);
     api.config.getText2GqlSettings.mockResolvedValue(response());
     api.config.updateText2GqlSettings.mockResolvedValue(response());
+    api.config.testText2GqlSettings.mockResolvedValue({status: 200, data: {duration_ms: 1250}});
 });
 const load = async () => {
     const view = render(<Text2GqlSettings />);
@@ -68,9 +72,10 @@ const load = async () => {
 test('replaces a key without persisting or reading it back and clears the input after saving', async () => {
     await load();
     expect(keyInput()).toHaveValue('');
+    expect(keyInput()).toHaveAttribute('placeholder', 'analysis.model_settings.key_keep_placeholder');
     fireEvent.change(keyInput(), {target: {value: 'replacement-secret'}});
     await act(async () => fireEvent.click(saveButton()));
-    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('analysis.model_settings.saved'));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('analysis.model_settings.saved_tested'));
     expect(api.config.updateText2GqlSettings).toHaveBeenCalledWith({
         enabled: true, connection_type: 'openai', base_url: initial.base_url,
         model: 'shared-model', api_key: 'replacement-secret',
@@ -207,4 +212,127 @@ test('cancels a pending save and clears the in-memory key when management access
     await screen.findByLabelText('analysis.model_settings.replace_key');
     expect(keyInput()).toHaveValue('');
     expect(screen.queryByDisplayValue('stale-model')).not.toBeInTheDocument();
+});
+
+test('automatically tests enabled settings only after a successful save', async () => {
+    const saving = deferred();
+    api.config.updateText2GqlSettings.mockReturnValue(saving.promise);
+    await load();
+    await act(async () => fireEvent.click(saveButton()));
+    expect(api.config.testText2GqlSettings).not.toHaveBeenCalled();
+    await act(async () => saving.resolve(response()));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('analysis.model_settings.saved_tested'));
+    expect(api.config.testText2GqlSettings).toHaveBeenCalledTimes(1);
+    expect(api.config.testText2GqlSettings.mock.calls[0][0]).toEqual({signal: expect.any(AbortSignal)});
+    expect(screen.getByRole('alert')).toHaveTextContent('1.3');
+});
+
+test('manual test never saves and edits to fields or keys clear previous results', async () => {
+    await load();
+    await act(async () => fireEvent.click(testButton()));
+    expect(api.config.updateText2GqlSettings).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toHaveTextContent('analysis.model_settings.test_success');
+    fireEvent.change(screen.getByLabelText('analysis.query.model_name'), {target: {value: 'other'}});
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(testButton()).toBeDisabled();
+    expect(screen.getByText('analysis.model_settings.test_save_first')).toBeInTheDocument();
+    await act(async () => fireEvent.click(testButton()));
+    expect(api.config.testText2GqlSettings).toHaveBeenCalledTimes(1);
+    fireEvent.change(screen.getByLabelText('analysis.query.model_name'), {target: {value: initial.model}});
+    await act(async () => fireEvent.click(testButton()));
+    fireEvent.change(keyInput(), {target: {value: 'replacement-secret'}});
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(testButton()).toBeDisabled();
+});
+
+test('keeps the saved configuration and clears the key when the subsequent test fails', async () => {
+    api.config.testText2GqlSettings.mockRejectedValue({response: {data: {message: 'Invalid replacement-secret'}}});
+    await load();
+    fireEvent.change(keyInput(), {target: {value: 'replacement-secret'}});
+    await act(async () => fireEvent.click(saveButton()));
+    expect(screen.getByRole('alert')).toHaveTextContent('analysis.model_settings.saved_test_failed');
+    expect(screen.getByRole('alert')).not.toHaveTextContent('replacement-secret');
+    expect(screen.getByRole('alert')).not.toHaveTextContent('analysis.model_settings.save_failed');
+    expect(keyInput()).toHaveValue('');
+    expect(testButton()).toBeEnabled();
+    expect(api.config.updateText2GqlSettings).toHaveBeenCalledTimes(1);
+});
+
+test('does not test disabled settings or after a failed save', async () => {
+    await load();
+    fireEvent.click(screen.getByRole('switch'));
+    api.config.updateText2GqlSettings.mockResolvedValue(response({enabled: false}));
+    await act(async () => fireEvent.click(saveButton()));
+    expect(api.config.testText2GqlSettings).not.toHaveBeenCalled();
+    expect(testButton()).toBeDisabled();
+    expect(screen.getByText('analysis.model_settings.test_disabled')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('switch'));
+    api.config.updateText2GqlSettings.mockRejectedValue(new Error('save failed'));
+    await act(async () => fireEvent.click(saveButton()));
+    expect(api.config.testText2GqlSettings).not.toHaveBeenCalled();
+});
+
+test('shows elapsed seconds, prevents duplicate requests, and cancels without accepting late results', async () => {
+    await load();
+    jest.useFakeTimers();
+    const interval = jest.spyOn(window, 'setInterval');
+    const clearInterval = jest.spyOn(window, 'clearInterval');
+    try {
+        const pending = deferred();
+        api.config.testText2GqlSettings.mockReturnValue(pending.promise);
+        await act(async () => {
+            fireEvent.click(testButton());
+            fireEvent.click(testButton());
+        });
+        expect(api.config.testText2GqlSettings).toHaveBeenCalledTimes(1);
+        expect(saveButton()).toBeDisabled();
+        expect(keyInput()).toBeDisabled();
+        act(() => jest.advanceTimersByTime(3000));
+        expect(screen.getByRole('status')).toHaveTextContent('"seconds":3');
+        const signal = api.config.testText2GqlSettings.mock.calls[0][0].signal;
+        fireEvent.click(screen.getByRole('button', {name: 'analysis.model_settings.cancel_test'}));
+        expect(signal.aborted).toBe(true);
+        expect(screen.queryByRole('status')).not.toBeInTheDocument();
+        expect(clearInterval).toHaveBeenCalledWith(interval.mock.results[0].value);
+        await act(async () => pending.resolve({status: 200, data: {duration_ms: 9000}}));
+        expect(screen.getByRole('alert')).toHaveTextContent('analysis.model_settings.test_cancelled');
+        expect(testButton()).toBeEnabled();
+    }
+    finally {
+        interval.mockRestore();
+        clearInterval.mockRestore();
+        jest.useRealTimers();
+    }
+});
+
+test.each(['identity', 'permission', 'unmount'])('aborts testing on %s change and ignores late results', async mode => {
+    const pending = deferred();
+    api.config.testText2GqlSettings.mockReturnValue(pending.promise);
+    const view = await load();
+    await act(async () => fireEvent.click(testButton()));
+    const signal = api.config.testText2GqlSettings.mock.calls[0][0].signal;
+    if (mode === 'identity') {
+        mockIdentityEpoch++;
+        view.rerender(<Text2GqlSettings />);
+        await screen.findByLabelText('analysis.model_settings.replace_key');
+    }
+    else if (mode === 'permission') {
+        mockCapabilities.clear();
+        view.rerender(<Text2GqlSettings />);
+    }
+    else {
+        view.unmount();
+    }
+    expect(signal.aborted).toBe(true);
+    await act(async () => pending.resolve({status: 200, data: {duration_ms: 1000}}));
+    expect(screen.queryByText(/analysis.model_settings.test_success/)).not.toBeInTheDocument();
+});
+
+
+test.each(['openai', 'ollama'])('explains the empty Key field for an unconfigured %s connection', async type => {
+    api.config.getText2GqlSettings.mockResolvedValue(response({has_api_key: false, connection_type: type}));
+    await load();
+    expect(keyInput()).toHaveAttribute('placeholder', type === 'ollama'
+        ? 'analysis.model_settings.key_optional_placeholder' : 'analysis.model_settings.key_placeholder');
+    expect(keyInput()).toHaveValue('');
 });

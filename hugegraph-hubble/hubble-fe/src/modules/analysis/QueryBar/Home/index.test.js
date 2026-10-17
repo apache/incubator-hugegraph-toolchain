@@ -60,24 +60,25 @@ jest.mock('../ContentCommon', () => ({
     ),
 }));
 jest.mock('react-i18next', () => ({
-    useTranslation: () => ({t: key => ({
-        'analysis.query.gremlin_tab': 'Gremlin',
-        'analysis.query.connection_type': 'Connection type',
-        'analysis.query.connection_openai': 'OpenAI compatible',
-        'analysis.query.connection_ollama': 'Ollama (local)',
-        'analysis.query.gremlin_placeholder': 'For example: g.V().limit(10)',
-        'analysis.query.cypher_tab': 'Cypher',
-        'analysis.query.cypher_placeholder': 'For example: MATCH (n) RETURN n LIMIT 10',
-        'analysis.query.shortcut_hint': 'Ctrl / Command + Enter to run',
-        'analysis.query.text2gql_tab': 'Natural language',
-        'analysis.query.text2gql_title': 'Natural-language graph query',
-        'analysis.query.text2gql_description': 'This preview is not connected.',
-        'analysis.query.text2gql_placeholder': 'e.g. Show 10 vertices and the relationships between them',
-        'analysis.query.text2gql_badge': 'Coming soon',
-        'analysis.query.text2gql_privacy': 'Nothing is sent or executed.',
-        'analysis.query.collapse': 'Collapse',
-        'analysis.query.expand': 'Expand',
-    })[key] || key}),
+    useTranslation: () => ({t: (key, values) => (key === 'analysis.query.elapsed_seconds'
+        ? `Total elapsed ${values.seconds} s` : ({
+            'analysis.query.gremlin_tab': 'Gremlin',
+            'analysis.query.connection_type': 'Connection type',
+            'analysis.query.connection_openai': 'OpenAI compatible',
+            'analysis.query.connection_ollama': 'Ollama (local)',
+            'analysis.query.gremlin_placeholder': 'For example: g.V().limit(10)',
+            'analysis.query.cypher_tab': 'Cypher',
+            'analysis.query.cypher_placeholder': 'For example: MATCH (n) RETURN n LIMIT 10',
+            'analysis.query.shortcut_hint': 'Ctrl / Command + Enter to run',
+            'analysis.query.text2gql_tab': 'Natural language',
+            'analysis.query.text2gql_title': 'Natural-language graph query',
+            'analysis.query.text2gql_description': 'This preview is not connected.',
+            'analysis.query.text2gql_placeholder': 'e.g. Show 10 vertices and the relationships between them',
+            'analysis.query.text2gql_badge': 'Coming soon',
+            'analysis.query.text2gql_privacy': 'Nothing is sent or executed.',
+            'analysis.query.collapse': 'Collapse',
+            'analysis.query.expand': 'Expand',
+        })[key] || key)}),
 }));
 
 beforeAll(() => {
@@ -346,29 +347,37 @@ it('keeps model field labels visible and ties Gremlin actions to the editor sect
     );
 });
 
-it.each([false, true])('distinguishes model generation and graph execution loading (%s)', isExecuting => {
-    const text2gql = {
-        config: {provider: 'ollama', baseUrl: 'http://localhost:11434/v1', model: 'local', apiKey: ''},
-        question: 'Find people', pending: true, updateConfig: jest.fn(), setQuestion: jest.fn(),
-        generate: jest.fn(), cancel: jest.fn(),
-    };
-    render(
-        <QueryBar
-            activeTab='Text2GQL'
-            codeEditorContent='g.V()'
-            isExecuting={isExecuting}
-            text2gql={text2gql}
-            onTabsChange={jest.fn()}
-            setCodeEditorContent={jest.fn()}
-        />
-    );
-    const active = screen.getByRole('button', {
-        name: new RegExp(isExecuting ? 'analysis.query.querying' : 'analysis.query.generating'),
-    });
-    expect(active).toHaveClass('ant-btn-loading');
-    expect(screen.getByRole('textbox', {name: 'analysis.query.question_label'})).toBeDisabled();
-    expect(screen.getAllByRole('button', {name: 'analysis.query.cancel_generation'})).toHaveLength(1);
-});
+it.each([[false, false], [false, true], [true, false]])(
+    'distinguishes generation, repair and execution loading (execution=%s, repair=%s)', (isExecuting, repairing) => {
+        const text2gql = {
+            config: {provider: 'ollama', baseUrl: 'http://localhost:11434/v1', model: 'local', apiKey: ''},
+            question: 'Find people', pending: true, repairing,
+            phase: isExecuting ? 'execution' : repairing ? 'repair' : 'generation',
+            elapsedSeconds: 18, modelSlow: !isExecuting, updateConfig: jest.fn(), setQuestion: jest.fn(),
+            generate: jest.fn(), cancel: jest.fn(),
+        };
+        render(
+            <QueryBar
+                activeTab='Text2GQL'
+                codeEditorContent='g.V()'
+                isExecuting={isExecuting}
+                text2gql={text2gql}
+                onTabsChange={jest.fn()}
+                setCodeEditorContent={jest.fn()}
+            />
+        );
+        const active = screen.getByRole('button', {
+            name: new RegExp(isExecuting ? 'analysis.query.querying'
+                : repairing ? 'analysis.query.repairing' : 'analysis.query.generating'),
+        });
+        expect(active).toHaveClass('ant-btn-loading');
+        expect(screen.getByRole('textbox', {name: 'analysis.query.question_label'})).toBeDisabled();
+        const cancel = screen.getByRole('button', {name: 'analysis.query.cancel_generation'});
+        expect(cancel).toBeEnabled();
+        fireEvent.click(cancel);
+        expect(text2gql.cancel).toHaveBeenCalledTimes(1);
+    }
+);
 
 it('shows cancellation as neutral information and uses distinct IDs for both Gremlin editors', () => {
     const text2gql = {
@@ -566,7 +575,7 @@ it('keeps model settings collapsed until missing configuration needs attention, 
     expect(settings).not.toHaveAttribute('open');
 });
 
-it.each(['generation', 'execution', 'cancelled'])(
+it.each(['generation', 'validation', 'execution', 'cancelled'])(
     'keeps failures collapsed and offers model inspection only for generation errors (%s)', errorStage => {
         const text2gql = {
             config: {provider: 'ollama', baseUrl: 'http://localhost:11434/v1', model: 'local', apiKey: ''},

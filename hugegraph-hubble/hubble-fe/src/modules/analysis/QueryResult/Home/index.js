@@ -86,6 +86,7 @@ const QueryResult = props => {
         asyncTaskResult,
         queryStatus,
         queryMessage,
+        queryProgress,
         isQueryMode,
         ...args
     } = props;
@@ -170,7 +171,7 @@ const QueryResult = props => {
             />
         </div>
     );
-    const graphView = graphLimit.exceeded ? (
+    const graphView = graphLimit.exceeded && !queryProgress ? (
         <Alert
             showIcon
             type="warning"
@@ -182,12 +183,13 @@ const QueryResult = props => {
                 edgeLimit: GRAPH_EDGE_LIMIT,
             })}
         />
-    ) : nonGraphResult ? nonGraphPreview : (
+    ) : nonGraphResult && !queryProgress ? nonGraphPreview : (
         <GraphResult
             data={queryResultGraph}
             isQueryMode={isQueryMode}
             queryStatus={queryStatus}
             queryMessage={queryMessage}
+            queryProgress={queryProgress}
             asyncTaskId={asyncTaskResult}
             {...args}
         />
@@ -198,7 +200,7 @@ const QueryResult = props => {
             <Tabs
                 tabPosition="left"
                 className={c.queryResultTabs}
-                activeKey={activeView}
+                activeKey={queryProgress ? 1 : activeView}
                 onChange={setActiveView}
                 items={[
                     {

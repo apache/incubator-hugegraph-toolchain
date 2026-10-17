@@ -17,7 +17,7 @@
  */
 
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {Alert, Button, Checkbox, Input, Select, Spin, Switch} from 'antd';
+import {Alert, Button, Checkbox, Input, Select, Spin, Switch, Tooltip} from 'antd';
 import {useTranslation} from 'react-i18next';
 import {useAuthContext} from '../../auth/AuthContext';
 import * as api from '../../api';
@@ -45,6 +45,8 @@ const Text2GqlSettingsForm = () => {
     const [clearKey, setClearKey] = useState(false);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [testOrigin, setTestOrigin] = useState();
+    const [elapsedSeconds, setElapsedSeconds] = useState(0);
     const [feedback, setFeedback] = useState();
     const [revision, setRevision] = useState(0);
     const requestRef = useRef(null);
@@ -55,9 +57,11 @@ const Text2GqlSettingsForm = () => {
     useEffect(() => {
         const request = {controller: new AbortController(), epoch: identityEpoch};
         requestRef.current = request;
-        const current = () => requestRef.current === request && epochRef.current === request.epoch;
+        const current = () => requestRef.current === request && epochRef.current === request.epoch
+            && !request.controller.signal.aborted;
         setLoading(true);
         setSaving(false);
+        setTestOrigin();
         savePendingRef.current = false;
         setSettings();
         setSaved();
@@ -99,8 +103,14 @@ const Text2GqlSettingsForm = () => {
     const onEnabled = useCallback(value => update('enabled', value), [update]);
     const onBaseUrl = useCallback(event => update('base_url', event.target.value), [update]);
     const onModel = useCallback(event => update('model', event.target.value), [update]);
-    const onKey = useCallback(event => setApiKey(event.target.value), []);
-    const onClearKey = useCallback(event => setClearKey(event.target.checked), []);
+    const onKey = useCallback(event => {
+        setApiKey(event.target.value);
+        setFeedback();
+    }, []);
+    const onClearKey = useCallback(event => {
+        setClearKey(event.target.checked);
+        setFeedback();
+    }, []);
     const onConnection = useCallback(value => {
         setSettings(previous => ({...previous, connection_type: value, base_url: MODEL_PROVIDERS[value], model: ''}));
         setApiKey('');
@@ -109,13 +119,91 @@ const Text2GqlSettingsForm = () => {
     }, []);
     const reload = useCallback(() => setRevision(previous => previous + 1), []);
 
+    const testing = Boolean(testOrigin);
+    const busy = saving || testing;
+    useEffect(() => {
+        if (!testing) {
+            return undefined;
+        }
+        const started = Date.now();
+        setElapsedSeconds(0);
+        const timer = window.setInterval(() => setElapsedSeconds(Math.floor((Date.now() - started) / 1000)), 1000);
+        return () => window.clearInterval(timer);
+    }, [testing]);
+
+    const dirty = Boolean(settings && saved && (apiKey || clearKey
+        || ['enabled', 'connection_type', 'base_url', 'model'].some(field => settings[field] !== saved[field])));
+    const cannotTest = busy || loading || !saved?.enabled || dirty;
+    const testHint = dirty ? t('analysis.model_settings.test_save_first')
+        : !saved?.enabled ? t('analysis.model_settings.test_disabled') : undefined;
     const urlChanged = settings?.base_url.trim() !== saved?.base_url.trim();
     const endpointNeedsKey = saved?.has_api_key && urlChanged && !clearKey && !apiKey.trim()
         && settings?.connection_type !== 'ollama';
     const requiresKey = endpointNeedsKey || (settings?.enabled && settings.connection_type !== 'ollama'
         && (!saved?.has_api_key || urlChanged || clearKey) && !apiKey.trim());
-    const cannotSave = saving || loading || !settings || requiresKey || (settings.enabled
+    const cannotSave = busy || loading || !settings || requiresKey || (settings.enabled
         && (!settings.base_url.trim() || !settings.model.trim()));
+
+    const runTest = useCallback(async (request, afterSave, secret = '') => {
+        const current = () => requestRef.current === request && epochRef.current === request.epoch
+            && !request.controller.signal.aborted;
+        setTestOrigin(afterSave ? 'saved' : 'manual');
+        setFeedback();
+        try {
+            const response = await api.config.testText2GqlSettings({signal: request.controller.signal});
+            if (!current()) {
+                return;
+            }
+            if (response?.status !== 200 || !Number.isFinite(response.data?.duration_ms)) {
+                throw new Error(response?.message || t('analysis.model_settings.test_failed'));
+            }
+            setFeedback({type: 'success', message: t(afterSave
+                ? 'analysis.model_settings.saved_tested' : 'analysis.model_settings.test_success',
+            {seconds: (Math.max(0, response.data.duration_ms) / 1000).toFixed(1)})});
+        }
+        catch (failure) {
+            if (current()) {
+                const detail = failure?.response?.data?.message || failure?.message;
+                const redacted = secret && typeof detail === 'string'
+                    ? detail.split(secret).join('[redacted]') : detail;
+                const message = sanitizePublicError(redacted, t('analysis.model_settings.test_failed'));
+                setFeedback({type: 'error', message: t(afterSave
+                    ? 'analysis.model_settings.saved_test_failed' : 'analysis.model_settings.test_error',
+                {message})});
+            }
+        }
+        finally {
+            if (current()) {
+                setTestOrigin();
+            }
+        }
+    }, [t]);
+
+    const testSaved = useCallback(async () => {
+        if (cannotTest || savePendingRef.current) {
+            return;
+        }
+        const request = {controller: new AbortController(), epoch: identityEpoch};
+        requestRef.current = request;
+        savePendingRef.current = true;
+        try {
+            await runTest(request, false);
+        }
+        finally {
+            if (requestRef.current === request && epochRef.current === request.epoch) {
+                savePendingRef.current = false;
+            }
+        }
+    }, [cannotTest, identityEpoch, runTest]);
+
+    const cancelTest = useCallback(() => {
+        requestRef.current?.controller.abort();
+        requestRef.current = null;
+        savePendingRef.current = false;
+        setFeedback({type: 'info', message: t(testOrigin === 'saved'
+            ? 'analysis.model_settings.saved_test_cancelled' : 'analysis.model_settings.test_cancelled')});
+        setTestOrigin();
+    }, [t, testOrigin]);
 
     const save = useCallback(async () => {
         if (cannotSave || savePendingRef.current) {
@@ -123,7 +211,8 @@ const Text2GqlSettingsForm = () => {
         }
         const request = {controller: new AbortController(), epoch: identityEpoch};
         requestRef.current = request;
-        const current = () => requestRef.current === request && epochRef.current === request.epoch;
+        const current = () => requestRef.current === request && epochRef.current === request.epoch
+            && !request.controller.signal.aborted;
         const params = {
             enabled: settings.enabled, connection_type: settings.connection_type,
             base_url: settings.base_url.trim(), model: settings.model.trim(),
@@ -150,7 +239,13 @@ const Text2GqlSettingsForm = () => {
             setSaved(next);
             setApiKey('');
             setClearKey(false);
-            setFeedback({type: 'success', message: t('analysis.model_settings.saved')});
+            setSaving(false);
+            if (next.enabled) {
+                await runTest(request, true, apiKey);
+            }
+            else {
+                setFeedback({type: 'success', message: t('analysis.model_settings.saved')});
+            }
         }
         catch (failure) {
             if (current()) {
@@ -167,7 +262,7 @@ const Text2GqlSettingsForm = () => {
                 setSaving(false);
             }
         }
-    }, [apiKey, cannotSave, clearKey, identityEpoch, settings, t, urlChanged]);
+    }, [apiKey, cannotSave, clearKey, identityEpoch, runTest, settings, t, urlChanged]);
 
     return (
         <main className={c.page}>
@@ -188,7 +283,7 @@ const Text2GqlSettingsForm = () => {
                         <Switch
                             id='shared-model-enabled'
                             checked={settings.enabled}
-                            disabled={saving}
+                            disabled={busy}
                             onChange={onEnabled}
                         />
                     </div>
@@ -197,7 +292,7 @@ const Text2GqlSettingsForm = () => {
                         <Select
                             id='shared-model-connection'
                             value={settings.connection_type}
-                            disabled={saving}
+                            disabled={busy}
                             onChange={onConnection}
                             options={[
                                 {value: 'openai', label: t('analysis.query.connection_openai')},
@@ -217,7 +312,7 @@ const Text2GqlSettingsForm = () => {
                             aria-invalid={settings.enabled && !settings.base_url.trim()}
                             aria-required={settings.enabled}
                             maxLength={2048}
-                            disabled={saving}
+                            disabled={busy}
                             onChange={onBaseUrl}
                         />
                         <p>{t('analysis.query.local_url_hint')}</p>
@@ -233,7 +328,7 @@ const Text2GqlSettingsForm = () => {
                             aria-invalid={settings.enabled && !settings.model.trim()}
                             aria-required={settings.enabled}
                             maxLength={256}
-                            disabled={saving}
+                            disabled={busy}
                             onChange={onModel}
                         />
                     </div>
@@ -242,9 +337,13 @@ const Text2GqlSettingsForm = () => {
                         <Input.Password
                             id='shared-model-key'
                             value={apiKey}
+                            placeholder={t(saved.has_api_key ? 'analysis.model_settings.key_keep_placeholder'
+                                : settings.connection_type === 'ollama'
+                                    ? 'analysis.model_settings.key_optional_placeholder'
+                                    : 'analysis.model_settings.key_placeholder')}
                             maxLength={4096}
                             autoComplete='new-password'
-                            disabled={saving || clearKey}
+                            disabled={busy || clearKey}
                             onChange={onKey}
                             aria-describedby='shared-model-key-hint'
                         />
@@ -255,7 +354,7 @@ const Text2GqlSettingsForm = () => {
                         {saved.has_api_key && (
                             <Checkbox
                                 checked={clearKey}
-                                disabled={saving || Boolean(apiKey.trim())}
+                                disabled={busy || Boolean(apiKey.trim())}
                                 onChange={onClearKey}
                             >
                                 {t('analysis.model_settings.clear_key')}
@@ -272,10 +371,31 @@ const Text2GqlSettingsForm = () => {
                         <span className={c.source}>{t(saved.source === 'managed'
                             ? 'analysis.model_settings.source_managed' : 'analysis.model_settings.source_deployment')}
                         </span>
-                        <Button type='primary' disabled={cannotSave} loading={saving} onClick={save}>
-                            {t('analysis.model_settings.save')}
-                        </Button>
+                        <div className={c.buttons}>
+                            <Tooltip title={testHint}>
+                                <span>
+                                    <Button disabled={cannotTest} loading={testing} onClick={testSaved}>
+                                        {t('analysis.model_settings.test_saved')}
+                                    </Button>
+                                </span>
+                            </Tooltip>
+                            <Button type='primary' disabled={cannotSave} loading={saving} onClick={save}>
+                                {t(settings.enabled
+                                    ? 'analysis.model_settings.save_test' : 'analysis.model_settings.save')}
+                            </Button>
+                        </div>
                     </footer>
+                    {testing ? (
+                        <div className={c.testStatus}>
+                            <span role='status' aria-live='polite'>
+                                {t(testOrigin === 'saved' ? 'analysis.model_settings.saved_testing'
+                                    : 'analysis.model_settings.testing', {seconds: elapsedSeconds})}
+                            </span>
+                            <Button type='link' size='small' onClick={cancelTest}>
+                                {t('analysis.model_settings.cancel_test')}
+                            </Button>
+                        </div>
+                    ) : testHint && <p className={c.testHint}>{testHint}</p>}
                 </section>
             )}
         </main>

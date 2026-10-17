@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.apache.hugegraph.config.HugeConfig;
 import org.apache.hugegraph.driver.HugeClient;
+import org.apache.hugegraph.entity.query.Text2GqlRequest;
 import org.apache.hugegraph.entity.query.Text2GqlSettingsRequest;
 import org.apache.hugegraph.exception.ForbiddenException;
 import org.apache.hugegraph.options.HubbleOptions;
@@ -29,6 +30,7 @@ import org.apache.hugegraph.service.auth.AuthModeService;
 import org.apache.hugegraph.service.auth.AuthContextService;
 import org.apache.hugegraph.service.auth.UserService;
 import org.apache.hugegraph.service.query.Text2GqlSettingsService;
+import org.apache.hugegraph.service.query.Text2GqlService;
 import org.apache.hugegraph.service.space.GraphSpaceService;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -53,6 +55,7 @@ public class Text2GqlSettingsControllerTest {
             ReflectionTestUtils.setField(controller, "settings", settings);
             assertForbidden(controller::get);
             assertForbidden(() -> controller.update(new Text2GqlSettingsRequest()));
+            assertForbidden(controller::test);
             Mockito.verifyNoInteractions(settings);
         }
     }
@@ -87,6 +90,7 @@ public class Text2GqlSettingsControllerTest {
             ReflectionTestUtils.setField(controller, "settings", settings);
             assertForbidden(controller::get);
             assertForbidden(() -> controller.update(new Text2GqlSettingsRequest()));
+            assertForbidden(controller::test);
             Mockito.verifyNoInteractions(settings, controller.client, controller.users);
         }
     }
@@ -114,9 +118,43 @@ public class Text2GqlSettingsControllerTest {
             ReflectionTestUtils.setField(controller, "settings", settings);
             assertForbidden(controller::get);
             assertForbidden(() -> controller.update(new Text2GqlSettingsRequest()));
+            assertForbidden(controller::test);
             org.junit.Assert.assertTrue(mode.enabled());
-            Mockito.verify(probe, Mockito.times(3)).isServerAuthEnabled();
+            Mockito.verify(probe, Mockito.times(4)).isServerAuthEnabled();
             Mockito.verifyNoInteractions(settings, controller.client, controller.users);
+        }
+    }
+
+    @Test
+    public void testAnonymousAndAdministratorCanProbeOnlyTheResolvedSavedConfiguration() throws Exception {
+        for (String level : new String[]{"ANONYMOUS", "ADMIN"}) {
+            Text2GqlSettingsService settings = Mockito.mock(Text2GqlSettingsService.class);
+            Text2GqlService model = Mockito.mock(Text2GqlService.class);
+            TestController controller = new TestController(level);
+            ReflectionTestUtils.setField(controller, "settings", settings);
+            ReflectionTestUtils.setField(controller, "service", model);
+            Text2GqlRequest resolved = new Text2GqlRequest();
+            resolved.setBaseUrl("http://127.0.0.1:11434/v1");
+            resolved.setModel("saved-model");
+            resolved.setApiKey("private-saved-key");
+            Mockito.when(settings.sharedRequest(Mockito.any())).thenReturn(resolved);
+            Mockito.when(model.testConnection(resolved)).thenReturn(12L);
+            MockMvc mvc = MockMvcBuilders.standaloneSetup(controller).build();
+            String response = mvc.perform(post("/api/v1.3/settings/text2gql/test")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"base_url\":\"https://attacker.invalid/v1\",\"api_key\":\"client-key\"}"))
+                    .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+            assertEquals("{\"duration_ms\":12}", response);
+            org.mockito.ArgumentCaptor<Text2GqlRequest> request =
+                    org.mockito.ArgumentCaptor.forClass(Text2GqlRequest.class);
+            Mockito.verify(settings).sharedRequest(request.capture());
+            assertEquals("shared", request.getValue().getSource());
+            org.junit.Assert.assertNull(request.getValue().getBaseUrl());
+            org.junit.Assert.assertNull(request.getValue().getApiKey());
+            Mockito.verifyNoMoreInteractions(settings);
+            Mockito.verify(model).testConnection(resolved);
+            Mockito.verifyNoMoreInteractions(model);
+            Mockito.verify(controller.client, Mockito.never()).schema();
         }
     }
 

@@ -103,6 +103,10 @@
     gap: 12px;
     padding: 12px 16px;
 
+    :global(.ant-btn-loading[disabled]) {
+        color: #595959;
+    }
+
     h3, h4, p {
         margin: 0;
     }
@@ -125,6 +129,7 @@
         line-height: 1.6;
     }
 }
+
 
 .modelConfig {
     display: grid;

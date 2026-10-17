@@ -102,6 +102,16 @@ const notifyForbidden = config => {
     }
 };
 
+// Fetch-based streaming requests share the same session and permission handling.
+export const handleRequestAuthStatus = status => {
+    if (Number(status) === 401 && isAuthEnabled()) {
+        redirectToLogin();
+    }
+    else if (Number(status) === 403) {
+        notifyForbidden();
+    }
+};
+
 // Axios buildURL un-escapes [ and ] in query strings, but Tomcat rejects raw
 // brackets in the request target with a plain 400, so encode every character.
 const serializeParams = params => {

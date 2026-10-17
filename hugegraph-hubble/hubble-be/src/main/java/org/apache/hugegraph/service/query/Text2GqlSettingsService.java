@@ -85,6 +85,7 @@ public class Text2GqlSettingsService {
         }
         Text2GqlRequest resolved = this.connection(current, request.getQuestion());
         resolved.setLanguage(request.getLanguage());
+        resolved.setRepair(request.getRepair());
         return resolved;
     }
 

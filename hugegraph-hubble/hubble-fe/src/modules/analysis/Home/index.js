@@ -34,6 +34,7 @@ import {GREMLIN_EXECUTES_MODE, ANALYSIS_TYPE, GRAPH_STATUS, PANEL_TYPE,
 import * as api from '../../../api';
 import _ from 'lodash';
 import {scopedStorageKey} from '../../../utils/user';
+import {queryFailure} from '../../../utils/queryFailure';
 import {sanitizePublicError} from '../../../utils/publicError';
 import {isCypherEnabled} from '../../../utils/config';
 
@@ -408,12 +409,18 @@ const AnalysisHome = () => {
                     setQueryStatus(SUCCESS);
                 }
                 else {
-                    setQueryMessage(message || t('analysis.query_result.run_failed_action'));
+                    setQueryMessage(generated
+                        ? generated.sanitizeError(message, t('analysis.query_result.run_failed_action'))
+                        : message || t('analysis.query_result.run_failed_action'));
                     setQueryStatus(FAILED);
                 }
                 onExeLogsRefresh();
                 onFavoriteRefresh();
                 resetGraphInfo();
+                if (generated) {
+                    return status === 200 ? {ok: true}
+                        : queryFailure(response, t('analysis.query_result.run_failed_action'), generated.sanitizeError);
+                }
             }
             catch (error) {
                 if (!isCurrent()) {
@@ -421,11 +428,13 @@ const AnalysisHome = () => {
                 }
                 setQueryResult();
                 setAsyncTaskResult();
-                setQueryMessage(extractQueryErrorMessage(
-                    error,
-                    t('analysis.query_result.run_failed_action')
-                ));
+                const failure = queryFailure(error, t('analysis.query_result.run_failed_action'),
+                    generated?.sanitizeError);
+                setQueryMessage(failure.message);
                 setQueryStatus(FAILED);
+                if (generated) {
+                    return failure;
+                }
             }
         },
         [graph, graphSpace, codeEditorContent, onExeLogsRefresh, onFavoriteRefresh,
@@ -634,6 +643,10 @@ const AnalysisHome = () => {
                 text2gql={text2gql}
             />
             <QueryResult
+                queryProgress={analysisMode === TEXT2GQL && text2gql.pending ? {
+                    phase: text2gql.phase, elapsedSeconds: text2gql.elapsedSeconds,
+                    modelSlow: text2gql.modelSlow, cancel: text2gql.cancel,
+                } : undefined}
                 queryResult={queryResult}
                 asyncTaskResult={asyncTaskResult}
                 isQueryMode={isQueryMode}

@@ -25,7 +25,7 @@ import {setConfig} from '../../../utils/config';
 
 jest.mock('../../../api', () => ({
     analysis: {
-        generateText2Gql: jest.fn(),
+        streamText2Gql: jest.fn(),
         getText2GqlConfig: jest.fn(),
         getExecutionLogs: jest.fn(),
         fetchFavoriteQueries: jest.fn(),
@@ -579,8 +579,8 @@ it('does not let an older same-graph refresh overwrite current counts', async ()
 
 
 it('executes generated Gremlin directly and preserves its source when editing and rerunning', async () => {
-    api.analysis.generateText2Gql.mockResolvedValue({status: 200,
-        data: {language: 'gremlin', query: 'g.V().limit(2)'}});
+    api.analysis.streamText2Gql.mockResolvedValue({status: 200,
+        data: {valid: true, language: 'gremlin', query: 'g.V().limit(2)'}});
     api.analysis.executeText2Gql.mockResolvedValue({status: 200, data: {}});
     render(
         <GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
@@ -627,7 +627,7 @@ it('keeps the Text2GQL read-only marker when manually running a query with no so
 
 it('generates Cypher, reruns edits with the original question and restores each dialect draft', async () => {
     const query = 'MATCH (n) RETURN n LIMIT 2';
-    api.analysis.generateText2Gql.mockResolvedValue({status: 200, data: {query, language: 'cypher'}});
+    api.analysis.streamText2Gql.mockResolvedValue({status: 200, data: {valid: true, query, language: 'cypher'}});
     api.analysis.executeText2Gql.mockResolvedValue({status: 200, data: {}});
     render(
         <GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
@@ -732,5 +732,51 @@ it.each(['gremlin', 'cypher'])(
         await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
         expect(api.analysis.executeText2Gql).toHaveBeenLastCalledWith('DEFAULT', 'hugegraph', language,
             {content, text: '', read_only: true}, expect.any(Object));
+    }
+);
+
+
+it.each(['gremlin', 'cypher'])(
+    'repairs a %s execution failure once and keeps failed manual edits intact', async language => {
+        const query = language === 'gremlin' ? "g.V().limit('three')" : 'MATCH (n) RETRN n';
+        const fixed = language === 'gremlin' ? 'g.V().limit(3)' : 'MATCH (n) RETURN n LIMIT 3';
+        const diagnostic = '非法的 Gremlin 语句，详细信息: No signature of method: GraphTraversal.limit(String)';
+        api.analysis.streamText2Gql.mockResolvedValueOnce({status: 200, data: {query, language, valid: true}})
+            .mockResolvedValueOnce({status: 200, data: {query: fixed, language, valid: true}});
+        const failure = {response: {status: 400, data: {status: 460, message: diagnostic}}};
+        // Exercise both a rejected HTTP response and a resolved business failure.
+        if (language === 'gremlin') {
+            api.analysis.executeText2Gql.mockRejectedValueOnce(failure);
+        }
+        else {
+            api.analysis.executeText2Gql.mockResolvedValueOnce(failure.response.data);
+        }
+        api.analysis.executeText2Gql.mockResolvedValueOnce({status: 200, data: {}})
+            .mockRejectedValueOnce(failure);
+        render(
+            <GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
+                <AnalysisHome />
+            </GraphAnalysisContext.Provider>
+        );
+        await waitForInitialData();
+        fireEvent.click(screen.getByRole('button', {name: 'Natural language'}));
+        fireEvent.click(screen.getByRole('button', {name: 'Set model and question'}));
+        if (language === 'cypher') {
+            fireEvent.click(screen.getByRole('button', {name: 'Generate Cypher'}));
+        }
+        await waitFor(() => expect(screen.getByRole('button', {name: 'Generate'})).toBeEnabled());
+        await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Generate'})));
+        expect(api.analysis.streamText2Gql).toHaveBeenCalledTimes(2);
+        expect(api.analysis.streamText2Gql).toHaveBeenLastCalledWith('DEFAULT', 'hugegraph',
+            expect.objectContaining({language, question: 'Find people', repair: {query, error: diagnostic}}),
+            expect.any(Object));
+        expect(screen.getByTestId('query-content')).toHaveTextContent(fixed);
+        expect(screen.getByTestId('query-status')).toHaveTextContent('success');
+        fireEvent.click(screen.getByRole('button', {name: 'Edit query'}));
+        await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
+        expect(api.analysis.streamText2Gql).toHaveBeenCalledTimes(2);
+        expect(screen.getByTestId('query-content')).toHaveTextContent('g.E().limit(3)');
+        expect(screen.getByTestId('query-status')).toHaveTextContent('failed');
+        expect(screen.getByText(/query result failed/)).toHaveTextContent(diagnostic);
     }
 );

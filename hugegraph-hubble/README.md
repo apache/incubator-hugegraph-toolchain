@@ -41,7 +41,7 @@ Choose where the model configuration comes from:
 
 - **Deployment default** uses the model configured by your administrator. Users do
   not enter or receive its API Key. When available, this is the default for new users.
-- **Temporary custom** lets you enter your own connection type, Base URL, model and
+- **Temporary configuration** lets you enter your own connection type, Base URL, model and
   API Key. Keys stay only in page memory and clear on refresh or account changes.
   The connection type, URL and model are saved in account-scoped browser
   `sessionStorage`, for this browser session only.
@@ -79,6 +79,10 @@ settings; an authenticated deployment's ordinary users cannot. Enable Server
 authentication when this management access needs to be restricted.
 The form never reads a saved key back; leaving the key blank preserves it. Changing
 the endpoint requires supplying a new key, unless the local Ollama service needs none.
+**Save and test** saves an enabled configuration, then sends a minimal model request
+without graph data. **Test saved configuration** checks it again without saving;
+save or discard form edits first. Test feedback distinguishes a failed save from
+a saved configuration whose connection test failed, and shows elapsed time.
 
 ![Hubble shared model settings](docs/images/showcase/text2gql-settings.png)
 
@@ -127,11 +131,25 @@ aggregate functions. It rejects mutations, procedure calls, subqueries, comments
 and multiple statements; variable-length paths require an explicit upper bound of
 at most 10 hops. Both generated and edited queries are checked before
 automatic execution. Use the ordinary language tabs for general queries or scripts.
+If generated output fails validation, or execution reports a recognized syntax or
+schema error, Hubble requests at most one correction for that generation action.
+The model receives the original question, schema, failed statement and sanitized
+error feedback. Corrected statements pass the same read-only checks. If correction
+also fails, the statement remains editable alongside the error. Running an edited
+statement does not call the model. Connection, authentication, timeout and unknown
+failures do not trigger automatic correction; an empty result is not an error.
 Cypher execution requires the Server's Cypher plugin. Anonymous Cypher also requires
 a Server build containing [the merged anonymous-access fix](https://github.com/apache/hugegraph/pull/3366).
 Older builds may reject Cypher without credentials even when authentication is disabled;
 upgrade Server or use Gremlin in that case. Signing in cannot resolve this compatibility
 defect in anonymous mode. Authenticated Cypher deployments work normally.
+The result area shows whether Hubble is waiting for the model, receiving query
+text, correcting a query, or executing it, together with elapsed time. Query text
+streams into the editor as it arrives; only a complete response that passes the
+read-only checks is executed. Interrupted output remains available for editing.
+
+![Hubble streams query text and shows generation progress](docs/images/showcase/text2gql-streaming.png)
+
 Model generation times out after 60 seconds;
 cancelling prevents further automatic execution, but does not guarantee that a
 query already submitted to Server has stopped.

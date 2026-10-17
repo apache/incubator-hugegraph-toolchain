@@ -65,8 +65,9 @@ const loadResponseHandlers = modulePath => {
         isAuthEnabled,
     }));
 
-    const request = require(modulePath).default;
+    const {default: request, handleRequestAuthStatus} = require(modulePath);
     return {
+        handleRequestAuthStatus,
         resolve: responseHandlers[0].resolve,
         reject: responseHandlers[0].reject,
         messageError,
@@ -512,5 +513,24 @@ describe.each(['./request'])('%s error semantics', modulePath => {
         expect(instance.delete).toHaveBeenCalledWith(
             '/resource', {params: {name: 'value'}, ...config}
         );
+    });
+});
+
+
+describe('fetch streaming auth handling', () => {
+    it.each([true, false])('only expires a 401 session on authenticated deployments (%s)', enabled => {
+        const {handleRequestAuthStatus, isAuthEnabled, clearLogin} = loadResponseHandlers('./request');
+        isAuthEnabled.mockReturnValue(enabled);
+        handleRequestAuthStatus(401);
+        expect(clearLogin).toHaveBeenCalledTimes(enabled ? 1 : 0);
+    });
+
+    it('revalidates permissions after a forbidden stream', () => {
+        const {handleRequestAuthStatus} = loadResponseHandlers('./request');
+        const revalidate = jest.fn();
+        window.addEventListener('hubble:auth-revalidate', revalidate);
+        handleRequestAuthStatus(403);
+        expect(revalidate).toHaveBeenCalledTimes(1);
+        window.removeEventListener('hubble:auth-revalidate', revalidate);
     });
 });

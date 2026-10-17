@@ -18,6 +18,7 @@
 package org.apache.hugegraph.service.query;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
@@ -28,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import dev.langchain4j.exception.HttpException;
 import dev.langchain4j.http.client.HttpClient;
@@ -35,8 +38,13 @@ import dev.langchain4j.http.client.HttpClientBuilder;
 import dev.langchain4j.http.client.HttpMethod;
 import dev.langchain4j.http.client.HttpRequest;
 import dev.langchain4j.http.client.SuccessfulHttpResponse;
+import dev.langchain4j.http.client.sse.ServerSentEvent;
+import dev.langchain4j.http.client.sse.ServerSentEventContext;
 import dev.langchain4j.http.client.sse.ServerSentEventListener;
 import dev.langchain4j.http.client.sse.ServerSentEventParser;
+import dev.langchain4j.http.client.sse.ServerSentEventParsingHandle;
+import okhttp3.Call;
+import okhttp3.Callback;
 import okhttp3.ConnectionPool;
 import okhttp3.Headers;
 import okhttp3.MediaType;
@@ -58,6 +66,8 @@ public final class Text2GqlHttpClient implements HttpClientBuilder {
             MediaType.parse("application/json; charset=utf-8");
 
     private final DnsResolver resolver;
+    private final AtomicReference<Call> streamingCall = new AtomicReference<>();
+    private final AtomicBoolean cancelled = new AtomicBoolean();
     private Duration connectTimeout = Duration.ofSeconds(10);
     private Duration readTimeout = Duration.ofSeconds(60);
 
@@ -101,7 +111,16 @@ public final class Text2GqlHttpClient implements HttpClientBuilder {
                 .readTimeout(this.readTimeout)
                 .callTimeout(this.readTimeout)
                 .build();
-        return new OkHttpTransport(client);
+        return new OkHttpTransport(client, this.streamingCall, this.cancelled);
+    }
+
+    /** Cancel streaming work owned by this request-scoped builder, including before the first byte. */
+    public void cancel() {
+        this.cancelled.set(true);
+        Call call = this.streamingCall.get();
+        if (call != null) {
+            call.cancel();
+        }
     }
 
     private List<InetAddress> resolveAndValidate(String host) throws UnknownHostException {
@@ -142,9 +161,14 @@ public final class Text2GqlHttpClient implements HttpClientBuilder {
     private static final class OkHttpTransport implements HttpClient {
 
         private final OkHttpClient client;
+        private final AtomicReference<Call> streamingCall;
+        private final AtomicBoolean cancelled;
 
-        private OkHttpTransport(OkHttpClient client) {
+        private OkHttpTransport(OkHttpClient client, AtomicReference<Call> streamingCall,
+                                AtomicBoolean cancelled) {
             this.client = client;
+            this.streamingCall = streamingCall;
+            this.cancelled = cancelled;
         }
 
         @Override
@@ -220,7 +244,148 @@ public final class Text2GqlHttpClient implements HttpClientBuilder {
         @Override
         public void execute(HttpRequest request, ServerSentEventParser parser,
                             ServerSentEventListener listener) {
-            throw new UnsupportedOperationException("Streaming HTTP is not supported");
+            Objects.requireNonNull(parser, "parser");
+            Objects.requireNonNull(listener, "listener");
+            Call call = this.client.newCall(toOkHttpRequest(request));
+            if (!this.streamingCall.compareAndSet(null, call)) {
+                throw new IllegalStateException("A streaming request is already active");
+            }
+            if (this.cancelled.get()) {
+                call.cancel();
+            }
+            StreamListener streamListener = new StreamListener(listener, call);
+            call.enqueue(new Callback() {
+                @Override
+                public void onFailure(Call failedCall, IOException exception) {
+                    streamingCall.compareAndSet(call, null);
+                    streamListener.onError(exception);
+                }
+
+                @Override
+                public void onResponse(Call completedCall, Response response) {
+                    try (response) {
+                        if (!response.isSuccessful()) {
+                            // Do not read, retain or expose an upstream error body.
+                            throw new HttpException(response.code(), "Upstream HTTP request failed");
+                        }
+                        ResponseBody body = response.body();
+                        if (body == null) {
+                            throw new IllegalStateException("Upstream returned an empty response");
+                        }
+                        if (body.contentLength() > MAX_RESPONSE_BODY_BYTES) {
+                            throw new ResponseBodyTooLargeException();
+                        }
+                        listener.onOpen(SuccessfulHttpResponse.builder()
+                                .statusCode(response.code())
+                                .headers(response.headers().toMultimap())
+                                .build());
+                        try (InputStream input = new BoundedInputStream(body.byteStream())) {
+                            parser.parse(input, streamListener);
+                        }
+                        streamListener.onClose();
+                    } catch (Exception exception) {
+                        streamListener.onError(exception);
+                    } finally {
+                        streamingCall.compareAndSet(call, null);
+                    }
+                }
+            });
+        }
+
+        private static final class StreamListener implements ServerSentEventListener {
+
+            private final ServerSentEventListener delegate;
+            private final Call call;
+            private final AtomicBoolean terminal = new AtomicBoolean();
+
+            private StreamListener(ServerSentEventListener delegate, Call call) {
+                this.delegate = delegate;
+                this.call = call;
+            }
+
+            @Override
+            public void onEvent(ServerSentEvent event, ServerSentEventContext context) {
+                if (this.terminal.get() || this.call.isCanceled()) {
+                    return;
+                }
+                ServerSentEventParsingHandle handle = context.parsingHandle();
+                ServerSentEventContext cancellableContext = new ServerSentEventContext(
+                        new ServerSentEventParsingHandle() {
+                            @Override
+                            public void cancel() {
+                                call.cancel();
+                                handle.cancel();
+                            }
+
+                            @Override
+                            public boolean isCancelled() {
+                                return call.isCanceled() || handle.isCancelled();
+                            }
+                        });
+                try {
+                    this.delegate.onEvent(event, cancellableContext);
+                } catch (Exception exception) {
+                    // The SDK parser deliberately suppresses listener exceptions. Stop
+                    // the socket here so a failed consumer cannot keep reading tokens.
+                    this.onError(exception);
+                    cancellableContext.parsingHandle().cancel();
+                }
+            }
+
+            @Override
+            public void onError(Throwable exception) {
+                if (this.terminal.compareAndSet(false, true)) {
+                    this.call.cancel();
+                    try {
+                        this.delegate.onError(exception);
+                    } catch (Exception ignored) {
+                        // A failing terminal callback must not leak the connection.
+                    }
+                }
+            }
+
+            @Override
+            public void onClose() {
+                if (this.terminal.compareAndSet(false, true)) {
+                    this.delegate.onClose();
+                }
+            }
+        }
+
+        private static final class BoundedInputStream extends FilterInputStream {
+
+            private int remaining = MAX_RESPONSE_BODY_BYTES;
+
+            private BoundedInputStream(InputStream input) {
+                super(input);
+            }
+
+            @Override
+            public int read() throws IOException {
+                int value = this.in.read();
+                if (value >= 0) {
+                    if (this.remaining == 0) {
+                        throw new ResponseBodyTooLargeException();
+                    }
+                    this.remaining--;
+                }
+                return value;
+            }
+
+            @Override
+            public int read(byte[] buffer, int offset, int length) throws IOException {
+                if (length == 0) {
+                    return 0;
+                }
+                if (this.remaining == 0) {
+                    return this.read();
+                }
+                int count = this.in.read(buffer, offset, Math.min(length, this.remaining));
+                if (count > 0) {
+                    this.remaining -= count;
+                }
+                return count;
+            }
         }
 
         private static Request toOkHttpRequest(HttpRequest request) {
@@ -265,6 +430,10 @@ public final class Text2GqlHttpClient implements HttpClientBuilder {
         private static final class ResponseBodyTooLargeException extends IOException {
 
             private static final long serialVersionUID = 1L;
+
+            private ResponseBodyTooLargeException() {
+                super("Upstream response exceeds the size limit");
+            }
         }
     }
 }

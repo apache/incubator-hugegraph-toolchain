@@ -18,17 +18,27 @@
 
 package org.apache.hugegraph.controller.query;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.Map;
 
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.controller.BaseController;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.entity.query.Text2GqlRequest;
+import org.apache.hugegraph.entity.query.Text2GqlResult;
 import org.apache.hugegraph.exception.ExternalException;
+import org.apache.hugegraph.handler.MessageSourceHandler;
 import org.apache.hugegraph.service.query.Text2GqlSettingsService;
 import org.apache.hugegraph.service.query.Text2GqlService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -46,11 +56,52 @@ public class Text2GqlController extends BaseController {
     @Autowired
     private Text2GqlSettingsService settings;
 
+    @Autowired
+    private MessageSourceHandler messages;
+
     @PostMapping
-    public Map<String, String> generate(@PathVariable("graphspace") String graphSpace,
+    public Text2GqlResult generate(@PathVariable("graphspace") String graphSpace,
                                         @PathVariable("graph") String graph,
                                         @RequestBody Text2GqlRequest request) {
         HugeClient client = this.authClient(graphSpace, graph);
+        return this.service.generate(client, this.resolveRequest(request));
+    }
+
+    @PostMapping(value = "stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter stream(@PathVariable("graphspace") String graphSpace,
+                             @PathVariable("graph") String graph,
+                             @RequestBody Text2GqlRequest request,
+                             HttpServletResponse response) {
+        HugeClient client = this.authClient(graphSpace, graph);
+        HttpServletRequest servletRequest = this.getRequest();
+        Text2GqlService.PreparedGeneration prepared;
+        try {
+            prepared = this.service.prepare(client, this.resolveRequest(request));
+        } finally {
+            // ResponseBodyAdvice does not own SseEmitter completion. No graph client escapes to callbacks.
+            servletRequest.removeAttribute("hugeClient");
+            client.close();
+        }
+        Map<String, String> safeMessages = new LinkedHashMap<>();
+        for (String key : new String[]{"text2gql.model-failed", "text2gql.model-timeout",
+                                       "text2gql.model-authentication-failed", "text2gql.model-rate-limited"}) {
+            safeMessages.put(key, this.messages.getMessage(key));
+        }
+        response.setHeader("Cache-Control", "no-cache");
+        response.setHeader("X-Accel-Buffering", "no");
+        SseEmitter emitter = new SseEmitter(this.service.streamTimeoutMillis());
+        StreamEvents events = new StreamEvents(emitter, Map.copyOf(safeMessages));
+        emitter.onTimeout(events::timeout);
+        emitter.onError(failure -> events.cancel());
+        emitter.onCompletion(events::cancel);
+        events.waiting();
+        if (!events.finished.get()) {
+            events.attach(this.service.stream(prepared, events));
+        }
+        return emitter;
+    }
+
+    private Text2GqlRequest resolveRequest(Text2GqlRequest request) {
         if (request == null) {
             throw new ExternalException("text2gql.invalid-request");
         }
@@ -58,11 +109,90 @@ public class Text2GqlController extends BaseController {
             throw new ExternalException("text2gql.invalid-language");
         }
         if ("shared".equals(request.getSource())) {
-            request = this.settings.sharedRequest(request);
-        } else if (!"custom".equals(request.getSource())) {
+            return this.settings.sharedRequest(request);
+        }
+        if (!"custom".equals(request.getSource())) {
             throw new ExternalException("text2gql.invalid-request");
         }
-        return Map.of("query", this.service.generate(client, request), "language", request.getLanguage().value());
+        return request;
+    }
+
+    private static final class StreamEvents implements Text2GqlService.StreamListener {
+
+        private final SseEmitter emitter;
+        private final Map<String, String> messages;
+        private final AtomicBoolean finished = new AtomicBoolean();
+        private final AtomicReference<Text2GqlService.StreamControl> control = new AtomicReference<>();
+
+        private StreamEvents(SseEmitter emitter, Map<String, String> messages) {
+            this.emitter = emitter;
+            this.messages = messages;
+        }
+
+        private void attach(Text2GqlService.StreamControl control) {
+            this.control.set(control);
+            if (this.finished.get()) {
+                control.cancel();
+            }
+        }
+
+        private void waiting() {
+            this.send(Map.of("type", "waiting"));
+        }
+
+        @Override
+        public void onDelta(String text) {
+            if (!this.finished.get() && !this.send(Map.of("type", "delta", "text", text))) {
+                throw new IllegalStateException("SSE connection closed");
+            }
+        }
+
+        @Override
+        public void onResult(Text2GqlResult result) {
+            if (this.finished.compareAndSet(false, true)) {
+                this.send(Map.of("type", "result", "query", result.getQuery(),
+                                 "language", result.getLanguage().value(), "valid", result.isValid()));
+                this.emitter.complete();
+            }
+        }
+
+        @Override
+        public void onError(ExternalException failure) {
+            if (this.finished.compareAndSet(false, true)) {
+                String message = this.messages.getOrDefault(failure.getMessage(),
+                                                           this.messages.get("text2gql.model-failed"));
+                this.send(Map.of("type", "error", "message", message, "status", failure.status()));
+                this.emitter.complete();
+            }
+        }
+
+        private boolean send(Map<String, ?> event) {
+            try {
+                this.emitter.send(SseEmitter.event().data(event, MediaType.APPLICATION_JSON));
+                return true;
+            } catch (IOException | IllegalStateException ignored) {
+                this.cancel();
+                this.emitter.complete();
+                return false;
+            }
+        }
+
+        private void timeout() {
+            Text2GqlService.StreamControl current = this.control.get();
+            if (current == null) {
+                this.onError(new ExternalException(504, "text2gql.model-timeout"));
+            } else {
+                current.timeout();
+            }
+        }
+
+        private void cancel() {
+            this.finished.set(true);
+            Text2GqlService.StreamControl current = this.control.get();
+            if (current != null) {
+                current.cancel();
+            }
+        }
     }
 
     @GetMapping("config")

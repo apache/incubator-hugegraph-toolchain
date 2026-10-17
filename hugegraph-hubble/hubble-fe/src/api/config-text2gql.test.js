@@ -17,10 +17,10 @@
  */
 
 import request from './request';
-import {getText2GqlSettings, updateText2GqlSettings} from './config';
+import {getText2GqlSettings, updateText2GqlSettings, testText2GqlSettings} from './config';
 import {getText2GqlConfig} from './analysis';
 
-jest.mock('./request', () => ({get: jest.fn(), put: jest.fn()}));
+jest.mock('./request', () => ({get: jest.fn(), put: jest.fn(), post: jest.fn()}));
 
 test('uses separate safe metadata and administrator settings endpoints with abort signals', () => {
     const controller = new AbortController();
@@ -36,4 +36,13 @@ test('uses separate safe metadata and administrator settings endpoints with abor
         {...config, suppressBusinessErrorToast: true});
     expect(request.put).toHaveBeenCalledWith('/settings/text2gql', params,
         {...config, suppressBusinessErrorToast: true});
+});
+
+
+test('tests only the saved configuration without forwarding settings or keys', () => {
+    const controller = new AbortController();
+    testText2GqlSettings({signal: controller.signal});
+    expect(request.post).toHaveBeenCalledWith('/settings/text2gql/test', undefined, {
+        signal: controller.signal, timeout: 25000, suppressBusinessErrorToast: true,
+    });
 });

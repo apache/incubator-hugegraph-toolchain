@@ -19,8 +19,11 @@
 package org.apache.hugegraph.entity.query;
 
 import org.apache.hugegraph.entity.enums.QueryLanguage;
+import org.apache.hugegraph.exception.ExternalException;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -42,4 +45,29 @@ public class Text2GqlRequest {
     private String apiKey;
 
     private String model;
+
+    private Repair repair;
+
+    @Getter
+    public static final class Repair {
+
+        private final String query;
+        private final String error;
+
+        public Repair(String query, String error) {
+            this.query = query;
+            this.error = error;
+        }
+
+        @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
+        public static Repair fromJson(JsonNode value) {
+            JsonNode query = value == null ? null : value.get("query");
+            JsonNode error = value == null ? null : value.get("error");
+            if (value == null || !value.isObject() || error == null || !error.isTextual() ||
+                (query != null && !query.isNull() && !query.isTextual())) {
+                throw new ExternalException("text2gql.invalid-request");
+            }
+            return new Repair(query == null || query.isNull() ? null : query.textValue(), error.textValue());
+        }
+    }
 }
