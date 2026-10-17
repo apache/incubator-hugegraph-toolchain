@@ -41,8 +41,8 @@ const restoreConfig = identity => {
     }
 };
 
-export default function useText2Gql({scope, active, ready, execute, clearResult, clearEditor, t,
-    language = DEFAULT_QUERY_LANGUAGE, cypherEnabled = false, onLanguageChange, editorContent = ''}) {
+export default function useText2Gql({scope, active, ready, execute, clearResult, clearEditor, onGeneratedDraft, t,
+    language = DEFAULT_QUERY_LANGUAGE, cypherEnabled = false, onLanguageChange}) {
     const [identity, setIdentity] = useState(() => scopedStorageKey('hubble.text2gql'));
     const [identityVersion, setIdentityVersion] = useState(0);
     const [source, setSource] = useState('custom');
@@ -57,6 +57,7 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
     const [repairing, setRepairing] = useState(false);
     const [phase, setPhase] = useState('');
     const [elapsedSeconds, setElapsedSeconds] = useState(0);
+    const [generationDurationMs, setGenerationDurationMs] = useState(null);
     const startedAt = useRef(0);
     const phaseStartedAt = useRef(0);
     const [error, setError] = useState('');
@@ -77,11 +78,13 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
 
     const invalidate = useCallback(() => {
         requestRef.current?.controller.abort();
+        clearInterval(requestRef.current?.generationTimer);
         requestRef.current = null;
         setPending(false);
         setRepairing(false);
         setPhase('');
         setElapsedSeconds(0);
+        setGenerationDurationMs(null);
     }, []);
 
     useEffect(() => {
@@ -140,6 +143,7 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
         setErrorStage('');
         return () => {
             requestRef.current?.controller.abort();
+            clearInterval(requestRef.current?.generationTimer);
             requestRef.current = null;
         };
     }, [connectionScope, invalidate]);
@@ -194,28 +198,23 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
         }
         invalidate();
         setSource(value);
-        languageDrafts.current = {};
-        setSourceQuestion('');
         setError('');
         setErrorStage('');
         clearResult();
-        clearEditor('');
-    }, [clearEditor, clearResult, invalidate, sharedConfig.available, sharedConfig.customAvailable]);
+    }, [clearResult, invalidate, sharedConfig.available, sharedConfig.customAvailable]);
 
     const changeLanguage = useCallback(value => {
         if (!supportsQueryLanguage(value, cypherEnabled) || value === language) {
             return;
         }
         invalidate();
-        languageDrafts.current[language] = {content: editorContent, sourceQuestion};
-        const draft = languageDrafts.current[value];
-        setSourceQuestion(draft?.sourceQuestion || '');
-        clearEditor(draft?.content || '');
+        languageDrafts.current[language] = sourceQuestion;
+        setSourceQuestion(languageDrafts.current[value] || '');
         clearResult();
         setError('');
         setErrorStage('');
         onLanguageChange?.(value);
-    }, [clearEditor, clearResult, cypherEnabled, editorContent, invalidate, language,
+    }, [clearResult, cypherEnabled, invalidate, language,
         onLanguageChange, sourceQuestion]);
 
     const updateConfig = useCallback((field, value) => {
@@ -265,6 +264,11 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
         setErrorStage('');
         setErrorType('error');
         const automatic = content === undefined;
+        let generationDuration = 0;
+        if (automatic) {
+            setGenerationDurationMs(null);
+        }
+        const writeGeneratedDraft = onGeneratedDraft || clearEditor;
         const sanitizeError = (message, fallback = t('analysis.query.text2gql_failed')) => {
             const redacted = config.apiKey && typeof message === 'string'
                 ? message.split(config.apiKey).join('[redacted]') : message;
@@ -289,21 +293,60 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
                     enterPhase(isRepair ? 'repair_waiting' : 'waiting');
                     let draft = '';
                     if (!repair) {
-                        clearEditor('');
+                        writeGeneratedDraft('');
                     }
-                    const response = await api.analysis.streamText2Gql(scope.graphSpace, scope.graph,
-                        repair ? {...params, repair} : params, {
-                            signal: request.controller.signal,
-                            onDelta: chunk => {
-                                if (!isCurrent()) {
-                                    return;
-                                }
-                                draft += chunk;
-                                setPhase(isRepair ? 'repair_streaming' : 'streaming');
-                                clearEditor(draft.replace(/^```[^\n]*\n/, '').replace(/\n?```$/, ''));
-                                setSourceQuestion(text);
-                            },
-                        });
+                    const previousGenerationDuration = generationDuration;
+                    let generationStartedAt = null;
+                    const generationElapsed = () => Math.max(0, Date.now() - generationStartedAt);
+                    let response;
+                    let streamFailure;
+                    try {
+                        response = await api.analysis.streamText2Gql(scope.graphSpace, scope.graph,
+                            repair ? {...params, repair} : params, {
+                                signal: request.controller.signal,
+                                onWaiting: () => {
+                                    if (!isCurrent() || generationStartedAt !== null) {
+                                        return;
+                                    }
+                                    // The server finishes Schema preparation before emitting waiting.
+                                    generationStartedAt = Date.now();
+                                    if (previousGenerationDuration === null) {
+                                        return;
+                                    }
+                                    setGenerationDurationMs(previousGenerationDuration);
+                                    request.generationTimer = setInterval(() => {
+                                        if (isCurrent()) {
+                                            setGenerationDurationMs(previousGenerationDuration + generationElapsed());
+                                        }
+                                    }, 250);
+                                },
+                                onDelta: chunk => {
+                                    if (!isCurrent()) {
+                                        return;
+                                    }
+                                    draft += chunk;
+                                    setPhase(isRepair ? 'repair_streaming' : 'streaming');
+                                    writeGeneratedDraft(draft.replace(/^```[^\n]*\n/, '').replace(/\n?```$/, ''));
+                                    setSourceQuestion(text);
+                                },
+                            });
+                    }
+                    catch (failure) {
+                        streamFailure = failure;
+                        throw failure;
+                    }
+                    finally {
+                        clearInterval(request.generationTimer);
+                        request.generationTimer = undefined;
+                        if (isCurrent()) {
+                            const duration = response?.data?.duration_ms ?? streamFailure?.response?.data?.duration_ms;
+                            // SSE delivery may be buffered; only server timing is authoritative after completion.
+                            generationDuration = previousGenerationDuration === null
+                                || !Number.isFinite(duration) || duration < 0
+                                ? null : previousGenerationDuration + duration;
+                            setGenerationDurationMs(generationDuration);
+                        }
+                    }
                     if (!isCurrent()) {
                         return;
                     }
@@ -313,7 +356,7 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
                         throw new Error(response?.message || t('analysis.query.text2gql_failed'));
                     }
                     // Show each draft before validation or execution, including an empty invalid response.
-                    clearEditor(query);
+                    writeGeneratedDraft(query);
                     setSourceQuestion(text);
                     if (response.data.valid !== true || !query.trim()) {
                         stage = 'validation';
@@ -371,7 +414,7 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
                 setPhase('');
             }
         }
-    }, [active, clearEditor, clearResult, config, currentScope, cypherEnabled, execute, ready, scope,
+    }, [active, clearEditor, clearResult, config, currentScope, cypherEnabled, execute, onGeneratedDraft, ready, scope,
         sharedConfig.available, sharedConfig.customAvailable, sharedConfig.loading, source, language, t]);
 
     const cancel = useCallback(() => {
@@ -383,7 +426,7 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
     }, [clearResult, invalidate, t]);
 
     return {
-        config, updateConfig, question, setQuestion, pending, repairing, phase, elapsedSeconds,
+        config, updateConfig, question, setQuestion, pending, repairing, phase, elapsedSeconds, generationDurationMs,
         modelSlow: pending && ['waiting', 'repair_waiting'].includes(phase)
             && Date.now() - phaseStartedAt.current >= 15000,
         error, errorType, errorStage,

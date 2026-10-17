@@ -20,7 +20,8 @@
  * @file 图分析画布 Home
  */
 
-import React, {useCallback, useEffect, useState, useContext, useMemo, useRef} from 'react';
+import React, {useCallback, useEffect, useLayoutEffect, useState, useContext, useMemo, useRef} from 'react';
+import ResizeObserver from 'resize-observer-polyfill';
 import {useTranslation} from 'react-i18next';
 import {Button} from 'antd';
 import GraphAnalysisContext from '../../../../Context';
@@ -68,6 +69,7 @@ const GraphResult = props => {
     const {t} = useTranslation();
     const {
         data = {vertexs: [], edges: []},
+        fitHeight = false,
         metaData,
         isQueryMode,
         queryStatus,
@@ -84,6 +86,22 @@ const GraphResult = props => {
     } = props;
 
     const excuteStyleChangeCount = useRef(0);
+    const contentRef = useRef(null);
+
+    useLayoutEffect(() => {
+        if (!fitHeight) {
+            return;
+        }
+        const content = contentRef.current;
+        const updateHeight = () => {
+            const height = content.getBoundingClientRect().height;
+            content.style.setProperty('--analysis-result-height', `${height}px`);
+        };
+        updateHeight();
+        const observer = new ResizeObserver(updateHeight);
+        observer.observe(content);
+        return () => observer.disconnect();
+    }, [fitHeight]);
 
     const {edgeMeta, vertexMeta} = metaData || {};
     const graphSpaceInfo = useContext(GraphAnalysisContext);
@@ -457,6 +475,7 @@ const GraphResult = props => {
     const renderCanvas2D = () => (
         <Graph
             data={graphData}
+            fitViewOnResize={!fitHeight}
             layout={defaultLayout}
             layoutRevision={resultRevision}
             onGraphRender={onGraphRender}
@@ -604,7 +623,7 @@ const GraphResult = props => {
     };
 
     return (
-        <div className={c.graphResult}>
+        <div className={`${c.graphResult} ${fitHeight ? c.fitHeight : ''}`}>
             <GraphMenuBar
                 styleConfigData={styleConfigData}
                 graphData={graphData}
@@ -620,7 +639,9 @@ const GraphResult = props => {
                 showCanvasInfo={showCanvasInfo}
                 graphRenderMode={graphRenderMode}
             />
-            {renderGraphView()}
+            <div ref={contentRef} className={c.content}>
+                {renderGraphView()}
+            </div>
             <NumberCard
                 hasPadding={panelType !== CLOSED}
                 data={{

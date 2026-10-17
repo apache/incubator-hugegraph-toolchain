@@ -46,6 +46,20 @@ public class Text2GqlRequest {
 
     private String model;
 
+    private String prompt;
+
+    @JsonProperty("prompt")
+    public void readPrompt(JsonNode value) {
+        if (value != null && !value.isNull() && !value.isTextual()) {
+            throw new ExternalException("text2gql.invalid-prompts");
+        }
+        this.prompt = value == null || value.isNull() ? null : value.textValue();
+    }
+
+    public void setPrompt(String value) {
+        this.prompt = value;
+    }
+
     private Repair repair;
 
     @Getter

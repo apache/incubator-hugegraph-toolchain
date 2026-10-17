@@ -249,3 +249,15 @@ it('routes Text2GQL progress to the graph result view without affecting ordinary
     rerender(<QueryResult queryStatus='standby' isQueryMode />);
     expect(screen.queryByText('streaming')).not.toBeInTheDocument();
 });
+
+it('keeps the requested result slot height when switching views', () => {
+    const view = render(<QueryResult height={320} />);
+    const result = view.container.firstChild;
+    expect(result.style.height).toBe('320px');
+    expect(result.style.getPropertyValue('--analysis-result-height')).toBe('320px');
+    fireEvent.click(screen.getByRole('tab', {name: 'Table'}));
+    expect(view.container.firstChild).toBe(result);
+    expect(result.style.height).toBe('320px');
+    fireEvent.click(screen.getByRole('tab', {name: 'JSON'}));
+    expect(result.style.height).toBe('320px');
+});

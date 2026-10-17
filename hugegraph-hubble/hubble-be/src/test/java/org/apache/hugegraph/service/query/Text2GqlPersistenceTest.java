@@ -75,6 +75,7 @@ public class Text2GqlPersistenceTest {
         request.setBaseUrl("http://127.0.0.1:11434/v1");
         request.setModel("first-model");
         request.setApiKey("secret-that-must-not-be-plaintext-in-h2");
+        request.setPrompts(Map.of("gremlin", "Persisted Gremlin policy", "cypher", "Persisted Cypher policy"));
         try (SqlSession session = sessions(first).openSession(true)) {
             org.junit.Assert.assertNull(session.getMapper(Text2GqlConfigMapper.class).current());
             Text2GqlSettingsService service = new Text2GqlSettingsService(config,
@@ -85,6 +86,7 @@ public class Text2GqlPersistenceTest {
             assertEquals("deployment", controller.get().get("source"));
             controller.update(request);
             request.setApiKey(null);
+            request.setPrompts(null);
             request.setModel("second-model");
             new AnonymousModelController(config, service).update(request);
         }
@@ -93,6 +95,8 @@ public class Text2GqlPersistenceTest {
                 assertTrue(result.next());
                 assertEquals(1, result.getInt("id"));
                 assertEquals("second-model", result.getString("model"));
+                assertEquals("Persisted Gremlin policy", result.getString("gremlin_prompt"));
+                assertEquals("Persisted Cypher policy", result.getString("cypher_prompt"));
                 assertTrue(result.getString("encrypted_api_key").startsWith("v1:"));
                 assertFalse(result.getString("encrypted_api_key").contains("secret-that-must-not-be-plaintext"));
                 assertFalse(result.next());
@@ -109,6 +113,7 @@ public class Text2GqlPersistenceTest {
             question.setQuestion("Find people");
             Text2GqlRequest resolved = service.sharedRequest(question);
             assertEquals("second-model", resolved.getModel());
+            assertEquals("Persisted Gremlin policy", resolved.getPrompt());
             assertEquals("secret-that-must-not-be-plaintext-in-h2", resolved.getApiKey());
             assertEquals("managed", new AnonymousModelController(config, service).get().get("source"));
             assertEquals(Map.of("available", true, "model", "second-model"), service.availability());
@@ -118,6 +123,47 @@ public class Text2GqlPersistenceTest {
         }
         try (Connection connection = restarted.getConnection(); Statement statement = connection.createStatement()) {
             statement.execute("SHUTDOWN");
+        }
+    }
+
+    @Test
+    public void testOldH2SnapshotAddsPromptColumnsWithoutChangingModelSecretOrVersion() throws Exception {
+        String url = "jdbc:h2:mem:legacy-text2gql;DB_CLOSE_DELAY=-1";
+        JdbcDataSource source = dataSource(url);
+        ResourceDatabasePopulator initializer = new ResourceDatabasePopulator(
+                new FileSystemResource("src/main/resources/database/schema.sql"));
+        initializer.execute(source);
+        Path keyFile = this.temporary.getRoot().toPath().resolve("legacy-master.key");
+        Text2GqlSecretStore secrets = new Text2GqlSecretStore(keyFile, ignored -> null);
+        String encrypted = secrets.encrypt("legacy-model-key");
+        try (Connection connection = source.getConnection(); Statement statement = connection.createStatement()) {
+            statement.execute("ALTER TABLE text2gql_config DROP COLUMN gremlin_prompt");
+            statement.execute("ALTER TABLE text2gql_config DROP COLUMN cypher_prompt");
+            try (java.sql.PreparedStatement insert = connection.prepareStatement(
+                    "INSERT INTO text2gql_config VALUES (1, TRUE, 'openai', " +
+                    "'http://127.0.0.1:11434/v1', 'legacy-model', ?)")) {
+                insert.setString(1, encrypted);
+                insert.executeUpdate();
+            }
+        }
+        initializer.execute(source);
+        initializer.execute(source);
+        HugeConfig config = Mockito.mock(HugeConfig.class);
+        try (SqlSession session = sessions(source).openSession(true)) {
+            Text2GqlSettingsService service = new Text2GqlSettingsService(config,
+                    session.getMapper(Text2GqlConfigMapper.class), secrets, ignored -> null);
+            Text2GqlRequest request = new Text2GqlRequest();
+            request.setSource("shared");
+            request.setQuestion("Find people");
+            assertEquals("legacy-model", service.sharedRequest(request).getModel());
+            assertEquals("legacy-model-key", service.sharedRequest(request).getApiKey());
+            assertEquals(Text2GqlPrompts.defaults(), service.settings().get("prompts"));
+            assertEquals(encrypted, session.getMapper(Text2GqlConfigMapper.class).current().getEncryptedApiKey());
+        }
+        try (Connection connection = source.getConnection(); Statement statement = connection.createStatement();
+             ResultSet result = statement.executeQuery("SELECT VERSION FROM HUBBLE_SCHEMA_VERSION WHERE ID = 1")) {
+            assertTrue(result.next());
+            assertEquals(1, result.getInt(1));
         }
     }
 

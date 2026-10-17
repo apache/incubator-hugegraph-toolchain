@@ -18,7 +18,13 @@
 
 package org.apache.hugegraph.entity.query;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import org.apache.hugegraph.exception.ExternalException;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -36,6 +42,25 @@ public class Text2GqlSettingsRequest {
     private String baseUrl;
 
     private String model;
+
+    private Map<String, String> prompts;
+
+    /** Reject JSON scalar coercion so saved templates are always intentional text. */
+    @JsonProperty("prompts")
+    public void readPrompts(JsonNode value) {
+        if (value == null || !value.isObject()) {
+            throw new ExternalException("text2gql.invalid-prompts");
+        }
+        Map<String, String> parsed = new LinkedHashMap<>();
+        value.properties().forEach(entry -> {
+            if ((!"gremlin".equals(entry.getKey()) && !"cypher".equals(entry.getKey())) ||
+                !entry.getValue().isTextual()) {
+                throw new ExternalException("text2gql.invalid-prompts");
+            }
+            parsed.put(entry.getKey(), entry.getValue().textValue());
+        });
+        this.prompts = parsed;
+    }
 
     @JsonProperty(value = "api_key", access = JsonProperty.Access.WRITE_ONLY)
     private String apiKey;

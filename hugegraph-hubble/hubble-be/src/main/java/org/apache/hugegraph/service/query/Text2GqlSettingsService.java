@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import org.apache.hugegraph.config.HugeConfig;
+import org.apache.hugegraph.entity.enums.QueryLanguage;
 import org.apache.hugegraph.entity.query.Text2GqlConfiguration;
 import org.apache.hugegraph.entity.query.Text2GqlRequest;
 import org.apache.hugegraph.entity.query.Text2GqlSettingsRequest;
@@ -73,9 +74,11 @@ public class Text2GqlSettingsService {
 
     public Text2GqlRequest sharedRequest(Text2GqlRequest request) {
         if (request == null || !"shared".equals(request.getSource()) ||
-            hasText(request.getBaseUrl()) || hasText(request.getModel()) || hasText(request.getApiKey())) {
+            hasText(request.getBaseUrl()) || hasText(request.getModel()) || hasText(request.getApiKey()) ||
+            hasText(request.getPrompt())) {
             throw new ExternalException("text2gql.shared.mixed-configuration");
         }
+        Text2GqlPrompts.validate(request.getPrompt());
         Snapshot current = this.current();
         if (!current.configuration.isEnabled()) {
             throw new ExternalException(503, "text2gql.shared.not-configured");
@@ -86,7 +89,22 @@ public class Text2GqlSettingsService {
         Text2GqlRequest resolved = this.connection(current, request.getQuestion());
         resolved.setLanguage(request.getLanguage());
         resolved.setRepair(request.getRepair());
+        resolved.setPrompt(prompt(current.configuration, request.getLanguage()));
         return resolved;
+    }
+
+    /** Custom models use shared templates unless this request carries a temporary override. */
+    public void applyCustomPrompt(Text2GqlRequest request) {
+        Text2GqlPrompts.validate(request.getPrompt());
+        if (!hasText(request.getPrompt())) {
+            request.setPrompt(prompt(this.current().configuration, request.getLanguage()));
+        }
+    }
+
+    /** Safe graph-context descriptor: templates are readable without exposing connection credentials. */
+    public Map<String, Object> promptSettings() {
+        return Map.of("prompts", prompts(this.current().configuration),
+                      "default_prompts", Text2GqlPrompts.defaults());
     }
 
     /** Management descriptor. This deliberately never decrypts or serializes a secret. */
@@ -116,6 +134,10 @@ public class Text2GqlSettingsService {
             throw new ExternalException("text2gql.shared.invalid-settings");
         }
         Snapshot previous = this.current();
+        Map<String, String> suppliedPrompts = request.getPrompts();
+        if (suppliedPrompts != null) {
+            suppliedPrompts.values().forEach(Text2GqlPrompts::validate);
+        }
         boolean sameUrl = baseUrl.equals(normalized(previous.configuration.getBaseUrl()));
         boolean previousHasKey = this.hasKey(previous);
         if (!sameUrl && previousHasKey && suppliedKey.isEmpty() && !request.isClearApiKey()) {
@@ -153,6 +175,8 @@ public class Text2GqlSettingsService {
         updated.setBaseUrl(baseUrl);
         updated.setModel(model);
         updated.setEncryptedApiKey(encrypted);
+        updated.setGremlinPrompt(updatedPrompt(previous.configuration, suppliedPrompts, QueryLanguage.GREMLIN));
+        updated.setCypherPrompt(updatedPrompt(previous.configuration, suppliedPrompts, QueryLanguage.CYPHER));
         try {
             this.mapper.save(updated);
         } catch (RuntimeException exception) {
@@ -182,6 +206,8 @@ public class Text2GqlSettingsService {
     private Map<String, Object> descriptor(Snapshot snapshot) {
         Text2GqlConfiguration configuration = snapshot.configuration;
         Map<String, Object> descriptor = new LinkedHashMap<>();
+        descriptor.put("prompts", prompts(configuration));
+        descriptor.put("default_prompts", Text2GqlPrompts.defaults());
         descriptor.put("enabled", configuration.isEnabled());
         descriptor.put("connection_type", hasText(configuration.getConnectionType()) ?
                                           configuration.getConnectionType() : "openai");
@@ -190,6 +216,25 @@ public class Text2GqlSettingsService {
         descriptor.put("has_api_key", this.hasKey(snapshot));
         descriptor.put("source", snapshot.managed ? "managed" : "deployment");
         return descriptor;
+    }
+
+    private static Map<String, String> prompts(Text2GqlConfiguration configuration) {
+        return Map.of("gremlin", prompt(configuration, QueryLanguage.GREMLIN),
+                      "cypher", prompt(configuration, QueryLanguage.CYPHER));
+    }
+
+    private static String prompt(Text2GqlConfiguration configuration, QueryLanguage language) {
+        String stored = language == QueryLanguage.GREMLIN ?
+                        configuration.getGremlinPrompt() : configuration.getCypherPrompt();
+        return Text2GqlPrompts.effective(language, stored);
+    }
+
+    private static String updatedPrompt(Text2GqlConfiguration previous, Map<String, String> supplied,
+                                        QueryLanguage language) {
+        if (supplied == null || !supplied.containsKey(language.value())) {
+            return language == QueryLanguage.GREMLIN ? previous.getGremlinPrompt() : previous.getCypherPrompt();
+        }
+        return Text2GqlPrompts.stored(language, supplied.get(language.value()));
     }
 
     private boolean hasKey(Snapshot snapshot) {

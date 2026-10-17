@@ -20,6 +20,7 @@ package org.apache.hugegraph.controller.query;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -114,11 +115,14 @@ public class Text2GqlController extends BaseController {
         if (!"custom".equals(request.getSource())) {
             throw new ExternalException("text2gql.invalid-request");
         }
+        this.settings.applyCustomPrompt(request);
         return request;
     }
 
     private static final class StreamEvents implements Text2GqlService.StreamListener {
 
+        // Preparation/schema reads have finished before this stream's model timer starts.
+        private final long startedNanos = System.nanoTime();
         private final SseEmitter emitter;
         private final Map<String, String> messages;
         private final AtomicBoolean finished = new AtomicBoolean();
@@ -151,7 +155,8 @@ public class Text2GqlController extends BaseController {
         public void onResult(Text2GqlResult result) {
             if (this.finished.compareAndSet(false, true)) {
                 this.send(Map.of("type", "result", "query", result.getQuery(),
-                                 "language", result.getLanguage().value(), "valid", result.isValid()));
+                                 "language", result.getLanguage().value(), "valid", result.isValid(),
+                                 "duration_ms", this.durationMillis()));
                 this.emitter.complete();
             }
         }
@@ -161,9 +166,14 @@ public class Text2GqlController extends BaseController {
             if (this.finished.compareAndSet(false, true)) {
                 String message = this.messages.getOrDefault(failure.getMessage(),
                                                            this.messages.get("text2gql.model-failed"));
-                this.send(Map.of("type", "error", "message", message, "status", failure.status()));
+                this.send(Map.of("type", "error", "message", message, "status", failure.status(),
+                                 "duration_ms", this.durationMillis()));
                 this.emitter.complete();
             }
+        }
+
+        private long durationMillis() {
+            return TimeUnit.NANOSECONDS.toMillis(Math.max(0L, System.nanoTime() - this.startedNanos));
         }
 
         private boolean send(Map<String, ?> event) {
@@ -201,6 +211,7 @@ public class Text2GqlController extends BaseController {
         HugeClient client = this.authClient(graphSpace, graph);
         client.schema().getPropertyKeys();
         Map<String, Object> descriptor = new LinkedHashMap<>(this.settings.availability());
+        descriptor.putAll(this.settings.promptSettings());
         descriptor.put("custom_available", true);
         return descriptor;
     }

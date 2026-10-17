@@ -24,15 +24,18 @@ import {sanitizePublicError} from '../utils/publicError';
 const MAX_STREAM_BYTES = 1000000;
 const MAX_QUERY_LENGTH = 10000;
 
-const streamError = (message, status) => {
+const streamError = (message, status, durationMs) => {
     handleRequestAuthStatus(status);
     const error = new Error(sanitizePublicError(message, i18n.t('analysis.query.stream_incomplete')));
     error.response = {status, data: {status, message: error.message}};
+    if (Number.isFinite(durationMs) && durationMs >= 0) {
+        error.response.data.duration_ms = durationMs;
+    }
     return error;
 };
 
 // Parse SSE incrementally. Neither an unvalidated delta nor EOF is a result.
-const readQueryStream = async (body, onDelta) => {
+const readQueryStream = async (body, {onDelta, onWaiting}) => {
     if (!body?.getReader) {
         throw streamError();
     }
@@ -56,9 +59,12 @@ const readQueryStream = async (body, onDelta) => {
         }
         data = [];
         if (event.type === 'error') {
-            throw streamError(event.message, event.status);
+            throw streamError(event.message, event.status, event.duration_ms);
         }
-        if (event.type === 'delta') {
+        if (event.type === 'waiting') {
+            onWaiting?.();
+        }
+        else if (event.type === 'delta') {
             if (typeof event.text !== 'string' || (draftLength += event.text.length) > MAX_QUERY_LENGTH) {
                 throw streamError();
             }
@@ -157,7 +163,7 @@ const readErrorBody = async body => {
     }
 };
 
-export const streamText2Gql = async (graphspace, graph, params, {signal, onDelta} = {}) => {
+export const streamText2Gql = async (graphspace, graph, params, {signal, onDelta, onWaiting} = {}) => {
     const controller = new AbortController();
     let timedOut = false;
     const abort = () => controller.abort();
@@ -181,7 +187,7 @@ export const streamText2Gql = async (graphspace, graph, params, {signal, onDelta
             const status = [401, 403].includes(response.status) ? response.status : data?.status || response.status;
             throw streamError(data?.message, status);
         }
-        return await readQueryStream(response.body, onDelta);
+        return await readQueryStream(response.body, {onDelta, onWaiting});
     }
     catch (error) {
         if (timedOut) {

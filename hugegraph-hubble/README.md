@@ -23,13 +23,23 @@ Run Gremlin queries and inspect their graph, table, or JSON results without leav
 
 ### Natural-language graph queries (Text2GQL)
 
-Open **Graph Query → GQL Traversal → Text2GQL** and ask a question about the selected
-graph. Hubble reads its schema using your current graph permissions, generates a
-read-only query, and automatically executes it. **Gremlin** is selected by default;
-choose **Cypher** in the generation-language selector for Text2Cypher. Both use the
-same model settings and question form. You can edit the generated query and run it
-again; graph, table and JSON results use the ordinary query views. The separate
-Gremlin and Cypher tabs continue to accept manually written queries.
+Open **Graph Query → GQL Traversal** and ask a question in the **Text2GQL**
+workspace. The question and editable query share one view. Hubble reads the schema
+using your current graph permissions, generates a read-only query, and automatically
+executes it. **Gremlin** is selected by default; click the language button to switch
+to **Cypher**. Each language keeps its draft when you switch.
+
+You can also write a query directly in the editor. Generated queries remain subject
+to the read-only checks after editing. Manual queries retain favorites and asynchronous
+execution. Drag the divider below the inputs to adjust both input heights together;
+the action buttons stay inside the bottom-right corner of each input. Graph, table
+and JSON results use the same result area. A second divider redistributes space
+between results and the compact execution/favorites panel without clearing data
+or resetting the graph view. Ctrl/Command + Enter generates and runs a query when
+the natural-language input is focused, or executes the statement when its editor
+is focused. In asynchronous mode, the statement action submits a background task.
+The input footers show model generation time and query request time separately.
+Model time comes from the server, includes repair calls, and excludes schema preparation.
 
 ![Hubble Text2GQL with editable Gremlin and graph results](docs/images/showcase/text2gql.png)
 
@@ -50,6 +60,14 @@ Successful connection tests and temporary-model generation remember the Base URL
 and model name in account-scoped browser `localStorage`. Both inputs offer recent
 successful choices while still accepting new values: up to five models per URL
 and ten URLs. This history contains no API Keys.
+
+In **Model settings**, **Text2GQL Prompt** opens an editor with separate Gremlin
+and Cypher templates. You can add generation instructions and few-shot examples or
+restore the bundled defaults. Apply updates the form draft; Save persists the
+shared templates together with the model configuration in H2. Both deployment
+default and temporary models use these shared templates. Hubble always adds the
+current authorized graph schema and sends the question separately; editing a
+template does not disable backend read-only checks.
 
 During generation, a temporary API Key travels from the browser to Hubble, which
 uses it to call the selected model service. Temporary keys are not written to

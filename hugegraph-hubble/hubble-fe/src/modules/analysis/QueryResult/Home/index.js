@@ -88,6 +88,7 @@ const QueryResult = props => {
         queryMessage,
         queryProgress,
         isQueryMode,
+        height,
         ...args
     } = props;
 
@@ -172,19 +173,22 @@ const QueryResult = props => {
         </div>
     );
     const graphView = graphLimit.exceeded && !queryProgress ? (
-        <Alert
-            showIcon
-            type="warning"
-            message={t('analysis.query_result.graph_limit_title')}
-            description={t('analysis.query_result.graph_limit_description', {
-                nodes: graphLimit.nodeCount,
-                edges: graphLimit.edgeCount,
-                nodeLimit: GRAPH_NODE_LIMIT,
-                edgeLimit: GRAPH_EDGE_LIMIT,
-            })}
-        />
+        <div className={c.viewNotice}>
+            <Alert
+                showIcon
+                type="warning"
+                message={t('analysis.query_result.graph_limit_title')}
+                description={t('analysis.query_result.graph_limit_description', {
+                    nodes: graphLimit.nodeCount,
+                    edges: graphLimit.edgeCount,
+                    nodeLimit: GRAPH_NODE_LIMIT,
+                    edgeLimit: GRAPH_EDGE_LIMIT,
+                })}
+            />
+        </div>
     ) : nonGraphResult && !queryProgress ? nonGraphPreview : (
         <GraphResult
+            fitHeight={height !== undefined}
             data={queryResultGraph}
             isQueryMode={isQueryMode}
             queryStatus={queryStatus}
@@ -196,7 +200,10 @@ const QueryResult = props => {
     );
 
     return (
-        <div className={c.queryResult}>
+        <div
+            className={`${c.queryResult} ${height !== undefined ? c.sized : ''}`}
+            style={height !== undefined ? {height, '--analysis-result-height': `${height}px`} : undefined}
+        >
             <Tabs
                 tabPosition="left"
                 className={c.queryResultTabs}

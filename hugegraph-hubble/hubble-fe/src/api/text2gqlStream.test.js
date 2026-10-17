@@ -78,13 +78,16 @@ test('delivers incremental text before the terminal result, ignoring reasoning f
         }));
     fetch.mockResolvedValue(res);
     const onDelta = jest.fn();
+    const onWaiting = jest.fn();
     let completed = false;
-    const pending = streamText2Gql('DEFAULT', 'g', {}, {onDelta}).then(value => {
+    const pending = streamText2Gql('DEFAULT', 'g', {}, {onDelta, onWaiting}).then(value => {
         completed = true;
         return value;
     });
     await waitFor(() => expect(onDelta).toHaveBeenCalledWith('g.V()'));
     expect(completed).toBe(false);
+    expect(onWaiting).toHaveBeenCalledTimes(1);
+    expect(onWaiting.mock.invocationCallOrder[0]).toBeLessThan(onDelta.mock.invocationCallOrder[0]);
     finish({value: encoder.encode(event(resultEvent)), done: false});
     await pending;
     expect(onDelta).toHaveBeenCalledTimes(1);
@@ -155,3 +158,52 @@ test('expires a business 401 returned as JSON before the stream is established',
     await expect(streamText2Gql('DEFAULT', 'g', {})).rejects.toMatchObject({response: {status: 401}});
     expect(handleRequestAuthStatus).toHaveBeenCalledWith(401);
 });
+
+
+test.each(['preparation error', 'older server'])(
+    'does not announce model waiting before an explicit event (%s)', async mode => {
+        const onWaiting = jest.fn();
+        fetch.mockResolvedValue(response([encoder.encode(event(mode === 'preparation error'
+            ? {type: 'error', status: 500, message: 'Schema unavailable'} : resultEvent))]));
+        const pending = streamText2Gql('DEFAULT', 'g', {}, {onWaiting});
+        if (mode === 'preparation error') {
+            await expect(pending).rejects.toThrow('Schema unavailable');
+        }
+        else {
+            await expect(pending).resolves.toMatchObject({status: 200});
+        }
+        expect(onWaiting).not.toHaveBeenCalled();
+    }
+);
+
+
+test('preserves authoritative server duration when waiting and result are buffered together', async () => {
+    const terminal = {...resultEvent, duration_ms: 150};
+    fetch.mockResolvedValue(response([encoder.encode(event({type: 'waiting'})
+        + event({type: 'delta', text: 'g.V()'}) + event(terminal))]));
+    const onWaiting = jest.fn();
+    await expect(streamText2Gql('DEFAULT', 'g', {}, {onWaiting}))
+        .resolves.toMatchObject({data: {duration_ms: 150}});
+    expect(onWaiting).toHaveBeenCalledTimes(1);
+});
+
+test.each([150, 0, -1, NaN, Infinity, '150', null, undefined])(
+    'only preserves a safe nonnegative numeric duration on stream errors (%s)', async duration => {
+        fetch.mockResolvedValue(response([encoder.encode(event({type: 'error', status: 500,
+            message: 'Authorization: Bearer secret', duration_ms: duration}))]));
+        let failure;
+        try {
+            await streamText2Gql('DEFAULT', 'g', {});
+        }
+        catch (error) {
+            failure = error;
+        }
+        expect(failure.message).not.toContain('secret');
+        if (Number.isFinite(duration) && duration >= 0) {
+            expect(failure.response.data.duration_ms).toBe(duration);
+        }
+        else {
+            expect(failure.response.data).not.toHaveProperty('duration_ms');
+        }
+    }
+);

@@ -352,3 +352,43 @@ test.each(['openai', 'ollama'])('explains the empty Key field for an unconfigure
         ? 'analysis.model_settings.key_optional_placeholder' : 'analysis.model_settings.key_placeholder');
     expect(keyInput()).toHaveValue('');
 });
+
+const templates = {gremlin: 'shared Gremlin examples', cypher: 'shared Cypher examples'};
+const builtIn = {gremlin: 'default Gremlin examples', cypher: 'default Cypher examples'};
+
+test('applies shared Prompt drafts to the form and persists them only with Save', async () => {
+    api.config.getText2GqlSettings.mockResolvedValue(response({prompts: templates, default_prompts: builtIn}));
+    api.config.updateText2GqlSettings.mockResolvedValue(response({prompts: {...templates, gremlin: 'few-shot'},
+        default_prompts: builtIn}));
+    await load();
+    fireEvent.click(screen.getByRole('button', {name: 'analysis.prompt.title'}));
+    fireEvent.change(screen.getByRole('textbox', {name: /^analysis.prompt.template/}), {target: {value: 'few-shot'}});
+    fireEvent.click(screen.getByRole('button', {name: 'analysis.prompt.apply'}));
+    expect(api.config.updateText2GqlSettings).not.toHaveBeenCalled();
+    expect(testButton()).toBeDisabled();
+    await act(async () => fireEvent.click(saveButton()));
+    expect(api.config.updateText2GqlSettings.mock.calls[0][0].prompts).toEqual({...templates, gremlin: 'few-shot'});
+});
+
+test('cancels Prompt edits and restores only a chosen language as a form draft', async () => {
+    api.config.getText2GqlSettings.mockResolvedValue(response({prompts: templates, default_prompts: builtIn}));
+    await load();
+    fireEvent.click(screen.getByRole('button', {name: 'analysis.prompt.title'}));
+    fireEvent.change(screen.getByRole('textbox', {name: /^analysis.prompt.template/}), {target: {value: 'discard'}});
+    fireEvent.click(screen.getByRole('button', {name: 'analysis.prompt.cancel'}));
+    expect(testButton()).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', {name: 'analysis.prompt.title'}));
+    expect(screen.getByRole('textbox', {name: /^analysis.prompt.template/})).toHaveValue(templates.gremlin);
+    fireEvent.click(screen.getByRole('tab', {name: 'Cypher'}));
+    fireEvent.click(screen.getByRole('button', {name: 'analysis.prompt.reset_default'}));
+    fireEvent.click(screen.getByRole('button', {name: 'analysis.prompt.apply'}));
+    await act(async () => fireEvent.click(saveButton()));
+    expect(api.config.updateText2GqlSettings.mock.calls[0][0].prompts).toEqual({...templates, cypher: builtIn.cypher});
+});
+
+test('old settings responses keep model saving compatible without empty Prompt writes', async () => {
+    await load();
+    expect(screen.getByRole('button', {name: 'analysis.prompt.title'})).toBeDisabled();
+    await act(async () => fireEvent.click(saveButton()));
+    expect(api.config.updateText2GqlSettings.mock.calls[0][0]).not.toHaveProperty('prompts');
+});

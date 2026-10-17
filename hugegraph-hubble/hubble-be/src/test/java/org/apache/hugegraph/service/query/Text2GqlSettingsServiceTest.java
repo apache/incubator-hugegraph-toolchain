@@ -325,6 +325,84 @@ public class Text2GqlSettingsServiceTest {
         assertFalse(Files.exists(this.masterFile));
     }
 
+    @Test
+    public void testSharedAndTemporaryTemplatesAreSeparateAndResettable() throws Exception {
+        Map<String, String> defaults = Text2GqlPrompts.defaults();
+        assertEquals(defaults, this.service.promptSettings().get("prompts"));
+        Text2GqlSettingsRequest saved = settings("openai", "private-model-key");
+        saved.setPrompts(Map.of("gremlin", "Shared Gremlin policy", "cypher", "Shared Cypher policy"));
+        this.service.save(saved);
+        String encrypted = this.stored.get().getEncryptedApiKey();
+        assertEquals("Shared Gremlin policy", this.service.sharedRequest(shared()).getPrompt());
+        Text2GqlRequest cypher = shared();
+        cypher.setLanguage(QueryLanguage.CYPHER);
+        assertEquals("Shared Cypher policy", this.service.sharedRequest(cypher).getPrompt());
+        this.service.save(settings("openai", null));
+        assertEquals("Shared Gremlin policy", this.stored.get().getGremlinPrompt());
+        assertEquals(encrypted, this.stored.get().getEncryptedApiKey());
+
+        Text2GqlRequest custom = new Text2GqlRequest();
+        custom.setPrompt("Temporary policy");
+        this.service.applyCustomPrompt(custom);
+        assertEquals("Temporary policy", custom.getPrompt());
+        assertEquals("Shared Gremlin policy", this.stored.get().getGremlinPrompt());
+        custom.setPrompt("  ");
+        this.service.applyCustomPrompt(custom);
+        assertEquals("Shared Gremlin policy", custom.getPrompt());
+        Text2GqlRequest mixed = shared();
+        mixed.setPrompt("forbidden override");
+        assertEquals(400, failure(() -> this.service.sharedRequest(mixed)).status());
+
+        saved.setApiKey(null);
+        saved.setEnabled(false);
+        saved.setPrompts(Map.of("gremlin", "", "cypher", defaults.get("cypher")));
+        this.service.save(saved);
+        assertNull(this.stored.get().getGremlinPrompt());
+        assertNull(this.stored.get().getCypherPrompt());
+        assertEquals(defaults, this.service.promptSettings().get("prompts"));
+        assertEquals(encrypted, this.stored.get().getEncryptedApiKey());
+        custom.setPrompt(null);
+        this.service.applyCustomPrompt(custom);
+        assertEquals(defaults.get("gremlin"), custom.getPrompt());
+        assertFalse(new ObjectMapper().writeValueAsString(this.service.promptSettings()).contains("private-model-key"));
+    }
+
+    @Test
+    public void testMalformedAndOversizedTemplatesFailBeforeSavingOrModelAccess() throws Exception {
+        ObjectMapper json = new ObjectMapper();
+        for (String malformed : new String[]{"null", "[]", "42", "{\"sql\":\"select\"}",
+                                             "{\"gremlin\":null}", "{\"gremlin\":false}",
+                                             "{\"cypher\":123}", "{\"cypher\":{}}"}) {
+            try {
+                json.readValue("{\"prompts\":" + malformed + "}", Text2GqlSettingsRequest.class);
+                fail("Expected strict template validation: " + malformed);
+            } catch (com.fasterxml.jackson.core.JsonProcessingException expected) {
+                // Invalid JSON values are not coerced into editable template text.
+            }
+        }
+        for (String malformed : new String[]{"42", "false", "{}", "[]"}) {
+            try {
+                json.readValue("{\"prompt\":" + malformed + "}", Text2GqlRequest.class);
+                fail("Expected string prompt");
+            } catch (com.fasterxml.jackson.core.JsonProcessingException expected) {
+                // A temporary override must be explicit text too.
+            }
+        }
+        Text2GqlSettingsRequest request = settings("ollama", null);
+        request.setPrompts(Map.of("gremlin", "x".repeat(16001)));
+        assertEquals(400, failure(() -> this.service.save(request)).status());
+        Mockito.verify(this.mapper, Mockito.never()).save(Mockito.any());
+        Text2GqlRequest custom = new Text2GqlRequest();
+        custom.setPrompt("x".repeat(16001));
+        Mockito.clearInvocations(this.mapper);
+        assertEquals(400, failure(() -> this.service.applyCustomPrompt(custom)).status());
+        Mockito.verifyNoInteractions(this.mapper);
+        Text2GqlSettingsRequest valid = json.readValue("{\"prompts\":{\"gremlin\":\"sample\"}}",
+                                                      Text2GqlSettingsRequest.class);
+        assertEquals("sample", valid.getPrompts().get("gremlin"));
+        assertEquals("sample", json.readValue("{\"prompt\":\"sample\"}", Text2GqlRequest.class).getPrompt());
+    }
+
     private Text2GqlSettingsService service(Map<String, String> environment) {
         return new Text2GqlSettingsService(this.config, this.mapper,
                 new Text2GqlSecretStore(this.masterFile, environment::get), environment::get);

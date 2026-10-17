@@ -192,6 +192,10 @@ CREATE TABLE IF NOT EXISTS `text2gql_config` (
     PRIMARY KEY (`id`)
 );
 
+-- Idempotent additions also upgrade existing model settings without rewriting credentials.
+ALTER TABLE `text2gql_config` ADD COLUMN IF NOT EXISTS `gremlin_prompt` CLOB;
+ALTER TABLE `text2gql_config` ADD COLUMN IF NOT EXISTS `cypher_prompt` CLOB;
+
 -- Written only after the complete new schema has initialized successfully.
 CREATE TABLE IF NOT EXISTS "PUBLIC"."HUBBLE_SCHEMA_VERSION" (
     "ID" INT PRIMARY KEY CHECK ("ID" = 1),

@@ -35,3 +35,10 @@ export const supportsQueryLanguage = (language, cypherEnabled = false) => {
     return Object.prototype.hasOwnProperty.call(QUERY_LANGUAGES, language)
         && (!QUERY_LANGUAGES[language].requiresCypher || cypherEnabled === true);
 };
+
+// Only expose complete server templates; older servers may omit Prompt metadata.
+export const readPromptTemplates = value => (Object.keys(QUERY_LANGUAGES)
+    .every(language => typeof value?.[language] === 'string' && value[language].trim())
+    ? {gremlin: value.gremlin, cypher: value.cypher} : undefined);
+
+export const MAX_PROMPT_LENGTH = 16000;

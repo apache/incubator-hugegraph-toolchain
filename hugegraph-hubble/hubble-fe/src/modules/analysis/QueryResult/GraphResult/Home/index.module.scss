@@ -36,3 +36,20 @@
         margin: 0;
     }
 }
+
+.fitHeight {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+
+    > :first-child {
+        flex: 0 0 auto;
+    }
+
+    > .content {
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
+    }
+}

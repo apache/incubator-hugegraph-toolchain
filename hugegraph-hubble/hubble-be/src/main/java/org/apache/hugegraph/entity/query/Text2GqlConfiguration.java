@@ -32,6 +32,8 @@ public class Text2GqlConfiguration {
     private String connectionType;
     private String baseUrl;
     private String model;
+    private String gremlinPrompt;
+    private String cypherPrompt;
     @JsonIgnore
     private String encryptedApiKey;
 }

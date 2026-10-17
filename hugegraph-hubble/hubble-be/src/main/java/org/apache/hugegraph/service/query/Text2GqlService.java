@@ -89,6 +89,7 @@ public class Text2GqlService {
             throw new ExternalException("text2gql.invalid-request");
         }
         validateRepair(request.getRepair());
+        Text2GqlPrompts.validate(request.getPrompt());
         QueryLanguage language = request.getLanguage();
         if (language == null) {
             throw new ExternalException("text2gql.invalid-language");
@@ -99,7 +100,7 @@ public class Text2GqlService {
         String baseUrl = validateBaseUrl(required(request.getBaseUrl(), 2048));
         String key = apiKey(request);
         String schema = schema(client);
-        String instructions = language.instructions() + schema;
+        String instructions = Text2GqlPrompts.instructions(language, request.getPrompt(), schema);
         String userMessage = question;
         if (request.getRepair() != null) {
             instructions += "\nRepair the previous failed query using the schema and the original question. " +

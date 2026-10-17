@@ -111,7 +111,11 @@ public class Text2GqlControllerTest {
         Mockito.when(client.schema()).thenReturn(schema);
         Mockito.when(schema.getPropertyKeys()).thenReturn(List.of());
         Mockito.when(settings.availability()).thenReturn(Map.of("available", false));
-        assertEquals(Map.of("available", false, "custom_available", true),
+        Map<String, Object> templates = Map.of("prompts", Map.of("gremlin", "shared text"),
+                                              "default_prompts", Map.of("gremlin", "built-in text"));
+        Mockito.when(settings.promptSettings()).thenReturn(templates);
+        assertEquals(Map.of("available", false, "custom_available", true,
+                            "prompts", templates.get("prompts"), "default_prompts", templates.get("default_prompts")),
                      controller.config("private-space", "private-graph"));
         assertEquals("private-space", controller.space);
         assertEquals("private-graph", controller.graph);
@@ -119,6 +123,7 @@ public class Text2GqlControllerTest {
         order.verify(client).schema();
         order.verify(schema).getPropertyKeys();
         order.verify(settings).availability();
+        order.verify(settings).promptSettings();
         Mockito.when(schema.getPropertyKeys()).thenThrow(new ExternalException(403, "denied"));
         Mockito.clearInvocations(settings);
         try {
@@ -207,6 +212,7 @@ public class Text2GqlControllerTest {
 
         private BoundController(HugeClient client, boolean anonymous) {
             this.client = client;
+            ReflectionTestUtils.setField(this, "settings", Mockito.mock(Text2GqlSettingsService.class));
             this.authMode = Mockito.mock(AuthModeService.class);
             Mockito.when(this.authMode.anonymous()).thenReturn(anonymous);
         }

@@ -22,6 +22,7 @@ import GraphAnalysisContext from '../../Context';
 import * as api from '../../../api';
 import {EXECUTION_LOGS_TYPE} from '../../../utils/constants';
 import {setConfig} from '../../../utils/config';
+import {setUser} from '../../../utils/user';
 
 jest.mock('../../../api', () => ({
     analysis: {
@@ -46,14 +47,19 @@ jest.mock('../QueryBar/Home', () => props => (
     <div>
         <span data-testid='query-content'>{props.codeEditorContent}</span>
         <span data-testid='source-question'>{props.text2gql.question}</span>
-        <span data-testid='query-language'>{props.text2gql.language}</span>
-        <button onClick={() => props.onTabsChange('Text2GQL')}>Natural language</button>
-        <button onClick={() => props.onTabsChange('Cypher')}>Cypher</button>
-        <button onClick={() => props.text2gql.changeLanguage('cypher')}>Generate Cypher</button>
-        <button onClick={() => props.text2gql.changeLanguage('gremlin')}>Generate Gremlin</button>
+        <span data-testid='query-language'>{props.language}</span>
+        <span data-testid='editor-source'>{props.editorSource}</span>
+        <output data-testid='execution-duration'>{props.executionDurationMs ?? ''}</output>
+        <span data-testid='model-source'>{props.text2gql.source}</span>
+        <button onClick={() => props.onLanguageChange('cypher')}>Cypher</button>
+        <button onClick={() => props.onLanguageChange('cypher')}>Generate Cypher</button>
+        <button onClick={() => props.onLanguageChange('gremlin')}>Generate Gremlin</button>
         <button onClick={() => props.setCodeEditorContent('MATCH (n) RETURN n LIMIT 4')}>Edit Cypher</button>
         <button onClick={() => props.setCodeEditorContent('g.E().limit(3)')}>Edit query</button>
         <button onClick={() => props.onExecute(props.activeTab)}>Run current</button>
+        <button onClick={props.onClear}>Clear query</button>
+        <button onClick={() => props.text2gql.changeSource('shared')}>Use shared model</button>
+        <button onClick={() => props.text2gql.changeSource('custom')}>Use custom model</button>
         <button
             onClick={() => {
                 props.text2gql.updateConfig('provider', 'ollama');
@@ -106,11 +112,16 @@ jest.mock('../LogsDetail/Home', () => props => (
         >
             Load favorite statement
         </button>
+        <span>execution page {props.pageExecute}</span>
         <span>favorite page {props.pageFavorite}</span>
+        <span>execution loading {String(props.executionLogsLoading)}</span>
+        <span>favorite loading {String(props.favoriteQueriesLoading)}</span>
         <span>execution total {props.executionLogsData.total ?? 'pending'}</span>
         <span>favorite total {props.favoriteQueriesData.total ?? 'pending'}</span>
         <button onClick={() => props.onFavoritePageChange(2, 10)}>Go favorite page 2</button>
+        <button onClick={() => props.onExecutePageChange(2, 10)}>Go execution page 2</button>
         <span>{props.executionLogsData.records?.[0]?.content}</span>
+        <span>{props.favoriteQueriesData.records?.[0]?.content}</span>
         {props.executionLogsError && (
             <button onClick={props.onRetryExecutionLogs}>Retry records</button>
         )}
@@ -265,7 +276,8 @@ afterEach(() => {
 
 afterAll(() => consoleError.mockRestore());
 
-it('shows query results and Gremlin history for Text2GQL without executing an empty query', async () => {
+it('keeps AI generation available alongside the manual query and Gremlin history', async () => {
+    api.analysis.getExecutionQuery.mockResolvedValue({status: 200, data: {}});
     render(
         <GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
             <AnalysisHome />
@@ -273,10 +285,12 @@ it('shows query results and Gremlin history for Text2GQL without executing an em
     );
     await waitForInitialData();
     api.analysis.getExecutionQuery.mockClear();
-    fireEvent.click(screen.getByRole('button', {name: 'Natural language'}));
-    fireEvent.click(screen.getByRole('button', {name: 'Run current'}));
-    await act(async () => Promise.resolve());
-    expect(api.analysis.getExecutionQuery).not.toHaveBeenCalled();
+    expect(screen.getByTestId('editor-source')).toHaveTextContent('manual');
+    expect(screen.getByTestId('query-content')).toHaveTextContent('g.V().limit(10)');
+    expect(screen.getByRole('button', {name: 'Generate'})).toBeInTheDocument();
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
+    expect(api.analysis.getExecutionQuery).toHaveBeenCalledWith('DEFAULT', 'hugegraph', 'g.V().limit(10)');
+    expect(api.analysis.executeText2Gql).not.toHaveBeenCalled();
     expect(screen.getByText(/query result/)).toBeInTheDocument();
     expect(api.analysis.getExecutionLogs).toHaveBeenLastCalledWith(
         'DEFAULT', 'hugegraph', {page_size: 10, page_no: 1, type: '0'}
@@ -578,7 +592,7 @@ it('does not let an older same-graph refresh overwrite current counts', async ()
 });
 
 
-it('executes generated Gremlin directly and preserves its source when editing and rerunning', async () => {
+it('preserves generated Gremlin provenance when editing and rerunning in the shared editor', async () => {
     api.analysis.streamText2Gql.mockResolvedValue({status: 200,
         data: {valid: true, language: 'gremlin', query: 'g.V().limit(2)'}});
     api.analysis.executeText2Gql.mockResolvedValue({status: 200, data: {}});
@@ -588,7 +602,6 @@ it('executes generated Gremlin directly and preserves its source when editing an
         </GraphAnalysisContext.Provider>
     );
     await waitForInitialData();
-    fireEvent.click(screen.getByRole('button', {name: 'Natural language'}));
     fireEvent.click(screen.getByRole('button', {name: 'Set model and question'}));
     await waitFor(() => expect(screen.getByRole('button', {name: 'Generate'})).toBeEnabled());
     await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Generate'})));
@@ -597,6 +610,7 @@ it('executes generated Gremlin directly and preserves its source when editing an
         expect.objectContaining({signal: expect.any(Object)})
     );
     expect(screen.getByTestId('query-content')).toHaveTextContent('g.V().limit(2)');
+    expect(screen.getByTestId('editor-source')).toHaveTextContent('ai');
     fireEvent.click(screen.getByRole('button', {name: 'Edit question'}));
     fireEvent.click(screen.getByRole('button', {name: 'Edit query'}));
     await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
@@ -607,25 +621,24 @@ it('executes generated Gremlin directly and preserves its source when editing an
 });
 
 
-it('keeps the Text2GQL read-only marker when manually running a query with no source question', async () => {
-    api.analysis.executeText2Gql.mockResolvedValue({status: 200, data: {}});
+it('keeps hand-written statements manual alongside the AI assistant', async () => {
+    api.analysis.getExecutionQuery.mockResolvedValue({status: 200, data: {}});
     render(
         <GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
             <AnalysisHome />
         </GraphAnalysisContext.Provider>
     );
     await waitForInitialData();
-    fireEvent.click(screen.getByRole('button', {name: 'Natural language'}));
     fireEvent.click(screen.getByRole('button', {name: 'Edit query'}));
+    expect(screen.getByTestId('editor-source')).toHaveTextContent('manual');
     await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
-    expect(api.analysis.executeText2Gql).toHaveBeenLastCalledWith(
-        'DEFAULT', 'hugegraph', 'gremlin', {content: 'g.E().limit(3)', text: '', read_only: true},
-        expect.objectContaining({signal: expect.any(Object)})
-    );
+    expect(api.analysis.getExecutionQuery).toHaveBeenLastCalledWith('DEFAULT', 'hugegraph', 'g.E().limit(3)');
+    expect(api.analysis.executeText2Gql).not.toHaveBeenCalled();
 });
 
 
-it('generates Cypher, reruns edits with the original question and restores each dialect draft', async () => {
+it('preserves both text and execution provenance when switching between manual Gremlin and AI Cypher', async () => {
+    api.analysis.getExecutionQuery.mockResolvedValue({status: 200, data: {}});
     const query = 'MATCH (n) RETURN n LIMIT 2';
     api.analysis.streamText2Gql.mockResolvedValue({status: 200, data: {valid: true, query, language: 'cypher'}});
     api.analysis.executeText2Gql.mockResolvedValue({status: 200, data: {}});
@@ -635,11 +648,11 @@ it('generates Cypher, reruns edits with the original question and restores each 
         </GraphAnalysisContext.Provider>
     );
     await waitForInitialData();
-    fireEvent.click(screen.getByRole('button', {name: 'Natural language'}));
     fireEvent.click(screen.getByRole('button', {name: 'Set model and question'}));
     fireEvent.click(screen.getByRole('button', {name: 'Edit query'}));
     fireEvent.click(screen.getByRole('button', {name: 'Generate Cypher'}));
-    expect(screen.getByTestId('query-content')).toBeEmptyDOMElement();
+    expect(screen.getByTestId('query-content')).toHaveTextContent('MATCH (n) RETURN n LIMIT 10');
+    expect(screen.getByTestId('editor-source')).toHaveTextContent('manual');
     await waitFor(() => expect(screen.getByRole('button', {name: 'Generate'})).toBeEnabled());
     await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Generate'})));
     expect(api.analysis.executeText2Gql).toHaveBeenCalledWith(
@@ -658,14 +671,24 @@ it('generates Cypher, reruns edits with the original question and restores each 
     );
     await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Generate Gremlin'})));
     expect(screen.getByTestId('query-content')).toHaveTextContent('g.E().limit(3)');
+    expect(screen.getByTestId('editor-source')).toHaveTextContent('manual');
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
+    expect(api.analysis.getExecutionQuery).toHaveBeenLastCalledWith('DEFAULT', 'hugegraph', 'g.E().limit(3)');
+    expect(api.analysis.executeText2Gql).toHaveBeenCalledTimes(2);
     await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Generate Cypher'})));
     expect(screen.getByTestId('query-content')).toHaveTextContent('MATCH (n) RETURN n LIMIT 4');
+    expect(screen.getByTestId('editor-source')).toHaveTextContent('ai');
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
+    expect(api.analysis.executeText2Gql).toHaveBeenLastCalledWith('DEFAULT', 'hugegraph', 'cypher',
+        {content: 'MATCH (n) RETURN n LIMIT 4', text: 'Find people', read_only: true}, expect.any(Object));
+    expect(window.localStorage.getItem('hubble.query.alice.DEFAULT.hugegraph.Gremlin')).toBe('g.E().limit(3)');
+    expect(window.localStorage.getItem('hubble.query.alice.DEFAULT.hugegraph.Cypher')).toBeNull();
 });
 
 
 it.each([
     ['Gremlin', 'history'], ['Gremlin', 'favorite'], ['Cypher', 'history'], ['Cypher', 'favorite'],
-])('keeps the current %s result when loading a %s statement', async (mode, source) => {
+])('restores manual provenance for a %s %s without a source question', async (mode, source) => {
     const graph = {graph_view: {vertices: [{id: 'visible-result'}], edges: []}};
     api.analysis.getExecutionQuery.mockResolvedValue({status: 200, data: graph});
     api.analysis.getCypherExecutionQuery.mockResolvedValue({status: 200, data: graph});
@@ -679,29 +702,42 @@ it.each([
         await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Cypher'})));
     }
     const content = mode === 'Gremlin' ? 'g.V().limit(5)' : 'MATCH (n) RETURN n LIMIT 5';
-    const records = {status: 200, data: {records: [{content, text: 'Old question'}], total: 1}};
+    const records = {status: 200, data: {records: [{content}], total: 1}};
     api.analysis.getExecutionLogs.mockResolvedValue(records);
     api.analysis.fetchFavoriteQueries.mockResolvedValue(records);
     await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
     expect(screen.getByTestId('query-result')).toHaveTextContent(JSON.stringify(graph));
-    const status = screen.getByTestId('query-status').textContent;
     fireEvent.click(screen.getByRole('button', {name: `Load ${source} statement`}));
     expect(screen.getByTestId('query-content')).toHaveTextContent(content);
-    expect(screen.getByTestId('query-result')).toHaveTextContent(JSON.stringify(graph));
-    expect(screen.getByTestId('query-status')).toHaveTextContent(status);
+    expect(window.localStorage.getItem(`hubble.query.alice.DEFAULT.hugegraph.${mode}`)).toBe(content);
+    expect(screen.getByTestId('query-result')).toHaveTextContent('{}');
+    expect(screen.getByTestId('query-status')).not.toHaveTextContent('success');
+    expect(screen.getByTestId('editor-source')).toHaveTextContent('manual');
+    expect(screen.getByTestId('source-question')).toBeEmptyDOMElement();
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
+    if (mode === 'Gremlin') {
+        expect(api.analysis.getExecutionQuery).toHaveBeenLastCalledWith('DEFAULT', 'hugegraph', content);
+    }
+    else {
+        expect(api.analysis.getCypherExecutionQuery).toHaveBeenLastCalledWith(
+            'DEFAULT', 'hugegraph', {cypher: content}
+        );
+    }
+    expect(api.analysis.executeText2Gql).not.toHaveBeenCalled();
 });
 
 it.each(['gremlin', 'cypher'])(
     'clears Text2GQL results when loading %s statements and restores only their original question', async language => {
         const graph = {graph_view: {vertices: [{id: 'old-generated-result'}], edges: []}};
         api.analysis.executeText2Gql.mockResolvedValue({status: 200, data: graph});
+        api.analysis.getExecutionQuery.mockResolvedValue({status: 200, data: graph});
+        api.analysis.getCypherExecutionQuery.mockResolvedValue({status: 200, data: graph});
         render(
             <GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
                 <AnalysisHome />
             </GraphAnalysisContext.Provider>
         );
         await waitForInitialData();
-        await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Natural language'})));
         if (language === 'cypher') {
             await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Generate Cypher'})));
             fireEvent.click(screen.getByRole('button', {name: 'Edit Cypher'}));
@@ -715,10 +751,14 @@ it.each(['gremlin', 'cypher'])(
         api.analysis.fetchFavoriteQueries.mockResolvedValue({status: 200, data: {records: [{content}], total: 1}});
         await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
         expect(screen.getByTestId('query-result')).toHaveTextContent(JSON.stringify(graph));
+        const draftKey = `hubble.query.alice.DEFAULT.hugegraph.${language === 'gremlin' ? 'Gremlin' : 'Cypher'}`;
+        const manualDraft = window.localStorage.getItem(draftKey);
         fireEvent.click(screen.getByRole('button', {name: 'Load history statement'}));
+        expect(window.localStorage.getItem(draftKey)).toBe(manualDraft);
         expect(screen.getByTestId('query-result')).toHaveTextContent('{}');
         expect(screen.getByTestId('query-content')).toHaveTextContent(content);
         expect(screen.getByTestId('source-question')).toHaveTextContent(history.text);
+        expect(screen.getByTestId('editor-source')).toHaveTextContent('ai');
         expect(screen.getByTestId('query-language')).toHaveTextContent(language);
         fireEvent.click(screen.getByRole('button', {name: 'Edit question'}));
         await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
@@ -726,12 +766,21 @@ it.each(['gremlin', 'cypher'])(
             {content, text: history.text, read_only: true}, expect.any(Object));
         expect(screen.getByTestId('query-result')).toHaveTextContent(JSON.stringify(graph));
         fireEvent.click(screen.getByRole('button', {name: 'Load favorite statement'}));
+        expect(window.localStorage.getItem(draftKey)).toBe(content);
         expect(screen.getByTestId('query-result')).toHaveTextContent('{}');
         expect(screen.getByTestId('source-question')).toBeEmptyDOMElement();
+        expect(screen.getByTestId('editor-source')).toHaveTextContent('manual');
         expect(screen.getByTestId('query-language')).toHaveTextContent(language);
         await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
-        expect(api.analysis.executeText2Gql).toHaveBeenLastCalledWith('DEFAULT', 'hugegraph', language,
-            {content, text: '', read_only: true}, expect.any(Object));
+        expect(api.analysis.executeText2Gql).toHaveBeenCalledTimes(1);
+        if (language === 'gremlin') {
+            expect(api.analysis.getExecutionQuery).toHaveBeenLastCalledWith('DEFAULT', 'hugegraph', content);
+        }
+        else {
+            expect(api.analysis.getCypherExecutionQuery).toHaveBeenLastCalledWith(
+                'DEFAULT', 'hugegraph', {cypher: content}
+            );
+        }
     }
 );
 
@@ -759,7 +808,6 @@ it.each(['gremlin', 'cypher'])(
             </GraphAnalysisContext.Provider>
         );
         await waitForInitialData();
-        fireEvent.click(screen.getByRole('button', {name: 'Natural language'}));
         fireEvent.click(screen.getByRole('button', {name: 'Set model and question'}));
         if (language === 'cypher') {
             fireEvent.click(screen.getByRole('button', {name: 'Generate Cypher'}));
@@ -780,3 +828,273 @@ it.each(['gremlin', 'cypher'])(
         expect(screen.getByText(/query result failed/)).toHaveTextContent(diagnostic);
     }
 );
+
+it('keeps AI language drafts in memory while restoring only manual drafts after remount', async () => {
+    const saved = "g.V().has('saved', true)";
+    window.localStorage.setItem('hubble.query.alice.DEFAULT.hugegraph.Gremlin', saved);
+    api.analysis.streamText2Gql.mockResolvedValue({status: 200,
+        data: {valid: true, language: 'gremlin', query: 'g.V().limit(2)'}});
+    api.analysis.executeText2Gql.mockResolvedValue({status: 200, data: {}});
+    const workspace = (
+        <GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
+            <AnalysisHome />
+        </GraphAnalysisContext.Provider>
+    );
+    const {unmount} = render(workspace);
+    await waitForInitialData();
+    fireEvent.click(screen.getByRole('button', {name: 'Set model and question'}));
+    await waitFor(() => expect(screen.getByRole('button', {name: 'Generate'})).toBeEnabled());
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Generate'})));
+    fireEvent.click(screen.getByRole('button', {name: 'Edit query'}));
+    expect(screen.getByTestId('editor-source')).toHaveTextContent('ai');
+    expect(window.localStorage.getItem('hubble.query.alice.DEFAULT.hugegraph.Gremlin')).toBe(saved);
+    fireEvent.click(screen.getByRole('button', {name: 'Generate Cypher'}));
+    fireEvent.click(screen.getByRole('button', {name: 'Edit Cypher'}));
+    expect(screen.getByTestId('editor-source')).toHaveTextContent('manual');
+    fireEvent.click(screen.getByRole('button', {name: 'Generate Gremlin'}));
+    expect(screen.getByTestId('query-content')).toHaveTextContent('g.E().limit(3)');
+    expect(screen.getByTestId('editor-source')).toHaveTextContent('ai');
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
+    expect(api.analysis.executeText2Gql).toHaveBeenLastCalledWith('DEFAULT', 'hugegraph', 'gremlin',
+        {content: 'g.E().limit(3)', text: 'Find people', read_only: true}, expect.any(Object));
+    unmount();
+    render(workspace);
+    await waitForInitialData();
+    expect(screen.getByTestId('query-content')).toHaveTextContent(saved);
+    expect(screen.getByTestId('editor-source')).toHaveTextContent('manual');
+    expect(window.localStorage.getItem('hubble.query.alice.DEFAULT.hugegraph.Cypher'))
+        .toBe('MATCH (n) RETURN n LIMIT 4');
+});
+
+it('explicitly clears AI provenance before hand-written queries use the manual execution API', async () => {
+    api.analysis.streamText2Gql.mockResolvedValue({status: 200,
+        data: {valid: true, language: 'gremlin', query: 'g.V().limit(2)'}});
+    api.analysis.executeText2Gql.mockResolvedValue({status: 200, data: {}});
+    api.analysis.getExecutionQuery.mockResolvedValue({status: 200, data: {}});
+    render(
+        <GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
+            <AnalysisHome />
+        </GraphAnalysisContext.Provider>
+    );
+    await waitForInitialData();
+    fireEvent.click(screen.getByRole('button', {name: 'Set model and question'}));
+    await waitFor(() => expect(screen.getByRole('button', {name: 'Generate'})).toBeEnabled());
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Generate'})));
+    expect(screen.getByTestId('editor-source')).toHaveTextContent('ai');
+    fireEvent.click(screen.getByRole('button', {name: 'Clear query'}));
+    expect(screen.getByTestId('query-content')).toBeEmptyDOMElement();
+    expect(screen.getByTestId('source-question')).toBeEmptyDOMElement();
+    expect(screen.getByTestId('editor-source')).toHaveTextContent('manual');
+    fireEvent.click(screen.getByRole('button', {name: 'Edit query'}));
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
+    expect(api.analysis.getExecutionQuery).toHaveBeenLastCalledWith('DEFAULT', 'hugegraph', 'g.E().limit(3)');
+    expect(api.analysis.executeText2Gql).toHaveBeenCalledTimes(1);
+    expect(api.analysis.streamText2Gql).toHaveBeenCalledTimes(1);
+    expect(window.localStorage.getItem('hubble.query.alice.DEFAULT.hugegraph.Gremlin')).toBe('g.E().limit(3)');
+});
+
+it('preserves manual content and provenance when switching model sources or configuration', async () => {
+    api.analysis.getText2GqlConfig.mockResolvedValue({status: 200,
+        data: {available: true, custom_available: true, model: 'company-model'}});
+    api.analysis.getExecutionQuery.mockResolvedValue({status: 200, data: {}});
+    render(
+        <GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
+            <AnalysisHome />
+        </GraphAnalysisContext.Provider>
+    );
+    await waitForInitialData();
+    await waitFor(() => expect(screen.getByTestId('model-source')).toHaveTextContent('shared'));
+    fireEvent.click(screen.getByRole('button', {name: 'Edit query'}));
+    fireEvent.click(screen.getByRole('button', {name: 'Use custom model'}));
+    expect(screen.getByTestId('model-source')).toHaveTextContent('custom');
+    fireEvent.click(screen.getByRole('button', {name: 'Set model and question'}));
+    expect(screen.getByTestId('query-content')).toHaveTextContent('g.E().limit(3)');
+    expect(screen.getByTestId('editor-source')).toHaveTextContent('manual');
+    fireEvent.click(screen.getByRole('button', {name: 'Use shared model'}));
+    expect(screen.getByTestId('model-source')).toHaveTextContent('shared');
+    expect(screen.getByTestId('query-content')).toHaveTextContent('g.E().limit(3)');
+    expect(screen.getByTestId('editor-source')).toHaveTextContent('manual');
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
+    expect(api.analysis.getExecutionQuery).toHaveBeenLastCalledWith('DEFAULT', 'hugegraph', 'g.E().limit(3)');
+    expect(api.analysis.executeText2Gql).not.toHaveBeenCalled();
+    expect(api.analysis.streamText2Gql).not.toHaveBeenCalled();
+});
+
+it.each(['rows', 'errors', 'late resolve', 'late reject'])(
+    'clears account-scoped history and favorites on the same mounted graph (%s)', async previousState => {
+        const pending = {execution: [], favorite: []};
+        const load = source => (space, graph, params) => new Promise((resolve, reject) => {
+            pending[source].push({
+                user: JSON.parse(sessionStorage.getItem('user_')).user_name,
+                params, resolve, reject,
+            });
+        });
+        const records = content => ({status: 200, data: {records: [{content}], total: 20}});
+        api.analysis.getExecutionLogs.mockImplementation(load('execution'));
+        api.analysis.fetchFavoriteQueries.mockImplementation(load('favorite'));
+        render(
+            <GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
+                <AnalysisHome />
+            </GraphAnalysisContext.Provider>
+        );
+        await waitFor(() => {
+            expect(pending.execution).toHaveLength(1);
+            expect(pending.favorite).toHaveLength(1);
+        });
+        await act(async () => {
+            pending.execution[0].resolve(records('alice-first-history'));
+            pending.favorite[0].resolve(records('alice-first-favorite'));
+        });
+        fireEvent.click(screen.getByRole('button', {name: 'Edit query'}));
+        fireEvent.click(screen.getByRole('button', {name: 'Go execution page 2'}));
+        fireEvent.click(screen.getByRole('button', {name: 'Go favorite page 2'}));
+        await waitFor(() => {
+            expect(pending.execution[pending.execution.length - 1].params.page_no).toBe(2);
+            expect(pending.favorite[pending.favorite.length - 1].params.page_no).toBe(2);
+        });
+        const alice = {
+            execution: pending.execution[pending.execution.length - 1],
+            favorite: pending.favorite[pending.favorite.length - 1],
+        };
+        if (previousState === 'rows') {
+            await act(async () => {
+                alice.execution.resolve(records('alice-private-history'));
+                alice.favorite.resolve(records('alice-private-favorite'));
+            });
+            expect(screen.getByText('alice-private-history')).toBeInTheDocument();
+            expect(screen.getByText('alice-private-favorite')).toBeInTheDocument();
+        }
+        else if (previousState === 'errors') {
+            await act(async () => {
+                alice.execution.reject(new Error('alice history offline'));
+                alice.favorite.reject(new Error('alice favorites offline'));
+            });
+            expect(screen.getByRole('button', {name: 'Retry records'})).toBeInTheDocument();
+            expect(screen.getByRole('button', {name: 'Retry favorites'})).toBeInTheDocument();
+        }
+        await act(async () => setUser({id: 'bob', user_name: 'bob'}));
+        await waitFor(() => {
+            expect(pending.execution.some(request => request.user === 'bob')).toBe(true);
+            expect(pending.favorite.some(request => request.user === 'bob')).toBe(true);
+        });
+        const bob = {
+            execution: pending.execution[pending.execution.length - 1],
+            favorite: pending.favorite[pending.favorite.length - 1],
+        };
+        expect(bob.execution).toMatchObject({user: 'bob', params: {page_no: 1, page_size: 10}});
+        expect(bob.favorite).toMatchObject({user: 'bob', params: {page_no: 1, page_size: 10}});
+        expect(screen.getByText('execution page 1')).toBeInTheDocument();
+        expect(screen.getByText('favorite page 1')).toBeInTheDocument();
+        expect(screen.queryByText('alice-private-history')).not.toBeInTheDocument();
+        expect(screen.queryByText('alice-private-favorite')).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', {name: 'Retry records'})).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', {name: 'Retry favorites'})).not.toBeInTheDocument();
+        expect(screen.getByTestId('query-content')).toBeEmptyDOMElement();
+        expect(screen.getByTestId('editor-source')).toHaveTextContent('manual');
+        expect(window.localStorage.getItem('hubble.query.bob.DEFAULT.hugegraph.Gremlin')).toBeNull();
+        if (previousState.startsWith('late')) {
+            await act(async () => {
+                for (const source of ['execution', 'favorite']) {
+                    if (previousState === 'late resolve') {
+                        alice[source].resolve(records(`alice-late-${source}`));
+                    }
+                    else {
+                        alice[source].reject(new Error(`alice late ${source} failed`));
+                    }
+                }
+            });
+            expect(screen.queryByText('alice-late-execution')).not.toBeInTheDocument();
+            expect(screen.queryByText('alice-late-favorite')).not.toBeInTheDocument();
+            expect(screen.queryByRole('button', {name: 'Retry records'})).not.toBeInTheDocument();
+            expect(screen.queryByRole('button', {name: 'Retry favorites'})).not.toBeInTheDocument();
+        }
+        expect(screen.getByText('execution loading true')).toBeInTheDocument();
+        expect(screen.getByText('favorite loading true')).toBeInTheDocument();
+        await act(async () => {
+            bob.execution.resolve(records('bob-current-history'));
+            bob.favorite.resolve(records('bob-current-favorite'));
+        });
+        expect(screen.getByText('bob-current-history')).toBeInTheDocument();
+        expect(screen.getByText('bob-current-favorite')).toBeInTheDocument();
+        expect(screen.getByText('execution loading false')).toBeInTheDocument();
+        expect(screen.getByText('favorite loading false')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', {name: 'Load favorite statement'}));
+        expect(window.localStorage.getItem('hubble.query.bob.DEFAULT.hugegraph.Gremlin')).toBe('bob-current-favorite');
+        expect(window.localStorage.getItem('hubble.query.alice.DEFAULT.hugegraph.Gremlin')).toBe('g.E().limit(3)');
+    }
+);
+
+
+it.each(['gremlin', 'cypher'])('updates and freezes %s timing, clearing on graph changes', async language => {
+    let resolveQuery;
+    const request = new Promise(resolve => {
+        resolveQuery = resolve;
+    });
+    const apiCall = language === 'gremlin' ? api.analysis.getExecutionQuery : api.analysis.getCypherExecutionQuery;
+    apiCall.mockReturnValueOnce(request);
+    const workspace = graph => (
+        <GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph}}>
+            <AnalysisHome />
+        </GraphAnalysisContext.Provider>
+    );
+    const {rerender} = render(workspace('hugegraph'));
+    await waitForInitialData();
+    if (language === 'cypher') {
+        fireEvent.click(screen.getByRole('button', {name: 'Cypher'}));
+    }
+    jest.useFakeTimers();
+    const now = jest.spyOn(Date, 'now').mockReturnValue(1000);
+    try {
+        fireEvent.click(screen.getByRole('button', {name: 'Run current'}));
+        expect(screen.getByTestId('execution-duration')).toHaveTextContent('0');
+        now.mockReturnValue(1280);
+        act(() => jest.advanceTimersByTime(250));
+        expect(screen.getByTestId('execution-duration')).toHaveTextContent('280');
+        now.mockReturnValue(1590);
+        await act(async () => resolveQuery({status: 200, data: {}}));
+        expect(screen.getByTestId('execution-duration')).toHaveTextContent('590');
+        now.mockReturnValue(2590);
+        act(() => jest.advanceTimersByTime(1000));
+        expect(screen.getByTestId('execution-duration')).toHaveTextContent('590');
+        await act(async () => rerender(workspace('other-graph')));
+        expect(screen.getByTestId('execution-duration')).toBeEmptyDOMElement();
+    }
+    finally {
+        now.mockRestore();
+        jest.useRealTimers();
+    }
+});
+
+it('does not include LLM generation in database execution timing or accept stale completion', async () => {
+    let resolveModel;
+    let resolveQuery;
+    api.analysis.streamText2Gql.mockReturnValueOnce(new Promise(resolve => {
+        resolveModel = resolve;
+    }));
+    api.analysis.executeText2Gql.mockReturnValueOnce(new Promise(resolve => {
+        resolveQuery = resolve;
+    }));
+    render(
+        <GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
+            <AnalysisHome />
+        </GraphAnalysisContext.Provider>
+    );
+    await waitForInitialData();
+    fireEvent.click(screen.getByRole('button', {name: 'Set model and question'}));
+    const now = jest.spyOn(Date, 'now').mockReturnValue(1000);
+    try {
+        fireEvent.click(screen.getByRole('button', {name: 'Generate'}));
+        expect(screen.getByTestId('execution-duration')).toBeEmptyDOMElement();
+        now.mockReturnValue(4000);
+        await act(async () => resolveModel({status: 200,
+            data: {valid: true, language: 'gremlin', query: 'g.V().limit(2)'}}));
+        expect(screen.getByTestId('execution-duration')).toHaveTextContent('0');
+        fireEvent.click(screen.getByRole('button', {name: 'Clear query'}));
+        now.mockReturnValue(4500);
+        await act(async () => resolveQuery({status: 200, data: {}}));
+        expect(screen.getByTestId('execution-duration')).toBeEmptyDOMElement();
+    }
+    finally {
+        now.mockRestore();
+    }
+});

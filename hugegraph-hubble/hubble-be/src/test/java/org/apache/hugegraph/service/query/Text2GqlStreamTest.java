@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.hugegraph.controller.query.Text2GqlController;
@@ -104,6 +105,7 @@ public class Text2GqlStreamTest {
             assertEquals("g.V().limit(1)", deltas(events));
             JsonNode result = events.get(events.size() - 1);
             assertEquals("result", result.get("type").asText());
+            assertDuration(result);
             assertEquals("g.V().limit(1)", result.get("query").asText());
             assertTrue(result.get("valid").asBoolean());
             assertTrue(body.get().get("stream").asBoolean());
@@ -112,6 +114,47 @@ public class Text2GqlStreamTest {
             assertFalse(response.getResponse().getContentAsString().contains("secret-key"));
         } finally {
             finish.countDown();
+            server.stop(0);
+        }
+    }
+
+    @Test
+    public void testModelDurationIncludesDelayedProviderButExcludesSchemaPreparation() throws Exception {
+        AtomicLong schemaNanos = new AtomicLong();
+        HttpServer server = server();
+        server.createContext("/v1/chat/completions", exchange -> {
+            try {
+                Thread.sleep(120);
+                start(exchange);
+                chunk(exchange, "{\"content\":\"g.V().limit(1)\"}", null);
+                complete(exchange);
+            } catch (InterruptedException failure) {
+                Thread.currentThread().interrupt();
+            } finally {
+                exchange.close();
+            }
+        });
+        server.start();
+        try {
+            Fixture fixture = new Fixture(new Text2GqlService());
+            Mockito.when(fixture.client.schema().getPropertyKeys()).thenAnswer(invocation -> {
+                long started = System.nanoTime();
+                Thread.sleep(350);
+                schemaNanos.set(System.nanoTime() - started);
+                return List.of();
+            });
+            long started = System.nanoTime();
+            List<JsonNode> events = fixture.complete(fixture.start(modelRequest(server)));
+            long totalMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
+            JsonNode terminal = events.get(events.size() - 1);
+            assertEquals("result", terminal.get("type").asText());
+            assertDuration(terminal);
+            long duration = terminal.get("duration_ms").longValue();
+            assertTrue("Provider delay must be counted", duration >= 100);
+            assertTrue("Schema preparation must be excluded from model duration",
+                       totalMillis - duration >= TimeUnit.NANOSECONDS.toMillis(schemaNanos.get()) - 20);
+            assertFalse(events.get(0).has("duration_ms"));
+        } finally {
             server.stop(0);
         }
     }
@@ -200,6 +243,7 @@ public class Text2GqlStreamTest {
             assertEquals("g.V()", deltas(events));
             JsonNode terminal = events.get(events.size() - 1);
             assertEquals("error", terminal.get("type").asText());
+            assertDuration(terminal);
             assertEquals(502, terminal.get("status").asInt());
             assertEquals("SAFE:text2gql.model-failed", terminal.get("message").asText());
         } finally {
@@ -235,6 +279,7 @@ public class Text2GqlStreamTest {
                 assertEquals(2, events.size());
                 JsonNode terminal = events.get(1);
                 assertEquals("error", terminal.get("type").asText());
+                assertDuration(terminal);
                 assertEquals(timeout ? 504 : 502, terminal.get("status").asInt());
                 assertEquals(timeout ? "SAFE:text2gql.model-timeout" :
                                        "SAFE:text2gql.model-authentication-failed", terminal.get("message").asText());
@@ -320,6 +365,7 @@ public class Text2GqlStreamTest {
                 }
             };
             ReflectionTestUtils.setField(controller, "service", new Text2GqlService());
+            ReflectionTestUtils.setField(controller, "settings", Mockito.mock(Text2GqlSettingsService.class));
             Text2GqlRequest input = new Text2GqlRequest();
             input.setRepair(new Text2GqlRequest.Repair(null, null));
             try {
@@ -332,6 +378,13 @@ public class Text2GqlStreamTest {
             Mockito.verify(client, denied ? Mockito.never() : Mockito.times(1)).close();
             assertNull(request.getAttribute("hugeClient"));
         }
+    }
+
+    private static void assertDuration(JsonNode event) {
+        JsonNode duration = event.get("duration_ms");
+        assertTrue("Terminal event must carry a nonnegative duration_ms",
+                   duration != null && duration.isIntegralNumber() && duration.canConvertToLong() &&
+                   duration.longValue() >= 0);
     }
 
     private static void awaitDelta(MvcResult response) throws Exception {

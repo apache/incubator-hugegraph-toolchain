@@ -29,11 +29,12 @@ import useText2Gql from './useText2Gql';
 import {DEFAULT_QUERY_LANGUAGE, QUERY_LANGUAGES} from '../../../utils/text2gql';
 import QueryResult from '../QueryResult/Home';
 import LogsDetail from '../LogsDetail/Home';
+import ResultsLayout from '../ResultsLayout';
 import {GREMLIN_EXECUTES_MODE, ANALYSIS_TYPE, GRAPH_STATUS, PANEL_TYPE,
     FAVORITE_TYPE, EXECUTION_LOGS_TYPE, GRAPH_RENDER_MODE} from '../../../utils/constants';
 import * as api from '../../../api';
 import _ from 'lodash';
-import {scopedStorageKey} from '../../../utils/user';
+import {scopedStorageKey, USER_CHANGE_EVENT} from '../../../utils/user';
 import {queryFailure} from '../../../utils/queryFailure';
 import {sanitizePublicError} from '../../../utils/publicError';
 import {isCypherEnabled} from '../../../utils/config';
@@ -54,9 +55,6 @@ const queryDraftKey = (graphSpace, graph, mode) =>
     + `.${encodeURIComponent(graph || 'unknown')}.${encodeURIComponent(mode)}`;
 
 const restoreQuery = (graphSpace, graph, mode) => {
-    if (mode === TEXT2GQL) {
-        return '';
-    }
     try {
         const saved = window.localStorage.getItem(queryDraftKey(graphSpace, graph, mode));
         return saved?.trim() ? saved : DEFAULT_QUERIES[mode];
@@ -77,7 +75,7 @@ export const extractQueryErrorMessage = (error, fallback) => {
     return fallback;
 };
 
-const AnalysisHome = () => {
+const AnalysisHome = ({toolbarExtra}) => {
     const {t} = useTranslation();
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const {graphSpace: routeGraphSpace, graph: routeGraph} = useParams();
@@ -86,6 +84,7 @@ const AnalysisHome = () => {
         && (!routeGraph || routeGraph === graph);
     const cypherEnabled = isCypherEnabled();
     const [queryStatus, setQueryStatus] = useState(STANDBY);
+    const [executionDurationMs, setExecutionDurationMs] = useState(null);
     const [queryMessage, setQueryMessage] = useState();
     const [isQueryMode, setQueryMode] = useState(true);
     const [queryResult, setQueryResult] = useState();
@@ -94,10 +93,12 @@ const AnalysisHome = () => {
     const [propertyKeysRecords, setPropertyKeysRecords] = useState();
     const [graphNums, setGraphNums] = useState({vertexCount: -1, edgeCount: -1});
     const [executeMode, setExecuteMode] = useState(QUERY);
-    const [analysisMode, setAnalysisMode] = useState(GREMLIN);
     const [queryLanguage, setQueryLanguage] = useState(DEFAULT_QUERY_LANGUAGE);
-    const historyMode = analysisMode === TEXT2GQL ? QUERY_LANGUAGES[queryLanguage].analysisType : analysisMode;
-    const analysisModeRef = useRef(GREMLIN);
+    const analysisMode = QUERY_LANGUAGES[queryLanguage].analysisType;
+    const historyMode = analysisMode;
+    const [identityVersion, setIdentityVersion] = useState(0);
+    const [editorSource, setEditorSource] = useState('manual');
+    const languageDrafts = useRef({});
     const [panelType, setPanelType] = useState(CLOSED);
     const [executionLogsLoading, setExecutionLogsLoading] = useState(false);
     const [favoriteQueriesLoading, setFavoriteQueriesLoading] = useState(false);
@@ -115,18 +116,25 @@ const AnalysisHome = () => {
     const [sortMode, setSortMode] = useState();
     const [graphRenderMode, setGraphRenderMode] = useState(CANVAS2D);
     const queryRequest = useRef(null);
+    const executionTimer = useRef(null);
     const graphNumsRequest = useRef(null);
     const executionInFlight = useRef(null);
     const executionLogsRequest = useRef(null);
     const favoriteQueriesRequest = useRef(null);
 
+    const stopExecutionTimer = useCallback(() => {
+        clearInterval(executionTimer.current);
+        executionTimer.current = null;
+    }, []);
+
     useEffect(() => () => {
+        stopExecutionTimer();
         queryRequest.current = null;
         graphNumsRequest.current = null;
         executionInFlight.current = null;
         executionLogsRequest.current = null;
         favoriteQueriesRequest.current = null;
-    }, []);
+    }, [stopExecutionTimer]);
 
     const getExecutionLogsList = useCallback(
         async () => {
@@ -137,7 +145,7 @@ const AnalysisHome = () => {
                 setExecutionLogsData({});
                 return;
             }
-            const request = Symbol(`execution-logs:${analysisMode}`);
+            const request = Symbol(`execution-logs:${identityVersion}:${analysisMode}`);
             executionLogsRequest.current = request;
             const params = {page_size: pageSize, page_no: pageExecute,
                 type: EXECUTION_LOGS_TYPE[historyMode]};
@@ -168,7 +176,7 @@ const AnalysisHome = () => {
                 }
             }
         },
-        [graphSpace, graph, pageSize, pageExecute, analysisMode, historyMode]
+        [graphSpace, graph, pageSize, pageExecute, analysisMode, historyMode, identityVersion]
     );
 
     const getFavoriteQueriesList = useCallback(
@@ -180,7 +188,7 @@ const AnalysisHome = () => {
                 setFavoriteQueriesData({});
                 return;
             }
-            const request = Symbol(`favorite-queries:${analysisMode}`);
+            const request = Symbol(`favorite-queries:${identityVersion}:${analysisMode}`);
             favoriteQueriesRequest.current = request;
             const params = {
                 page_size: pageSize,
@@ -216,7 +224,7 @@ const AnalysisHome = () => {
                 }
             }
         },
-        [graphSpace, graph, pageSize, pageFavorite, search, sortMode, analysisMode, historyMode]
+        [graphSpace, graph, pageSize, pageFavorite, search, sortMode, analysisMode, historyMode, identityVersion]
     );
 
     const onFavoriteRefresh = useCallback(
@@ -244,11 +252,13 @@ const AnalysisHome = () => {
     const initQueryResult = useCallback(
         () => {
             setQueryStatus(STANDBY);
+            stopExecutionTimer();
+            setExecutionDurationMs(null);
             setQueryMessage();
             setQueryResult({});
             setPanelType(CLOSED);
         },
-        []
+        [stopExecutionTimer]
     );
 
     const getMetaData = useCallback(
@@ -303,27 +313,27 @@ const AnalysisHome = () => {
             setFavoritePage(defaultPageParams.page);
         }, []);
 
-    const onAnalysisModeChange = useCallback(
-        queryType => {
-            queryRequest.current = null;
-            executionInFlight.current = null;
-            executionLogsRequest.current = null;
-            favoriteQueriesRequest.current = null;
-            analysisModeRef.current = queryType;
-            setQueryLanguage(DEFAULT_QUERY_LANGUAGE);
-            setCodeEditorContent(restoreQuery(graphSpace, graph, queryType));
-            setAnalysisMode(queryType);
-            initQueryResult();
-            setExecutionLogsData({});
-            setFavoriteQueriesData({});
-            setExecutionLogsError(false);
-            setFavoriteQueriesError(false);
-            setExecutionLogsLoading(false);
-            setFavoriteQueriesLoading(false);
-            onResetPage();
-        },
-        [graph, graphSpace, initQueryResult, onResetPage]
-    );
+    const onLanguageChange = useCallback(language => {
+        languageDrafts.current[queryLanguage] = {content: codeEditorContent, source: editorSource};
+        const draft = languageDrafts.current[language];
+        queryRequest.current = null;
+        executionInFlight.current = null;
+        executionLogsRequest.current = null;
+        favoriteQueriesRequest.current = null;
+        setCodeEditorContent(draft?.content ?? restoreQuery(
+            graphSpace, graph, QUERY_LANGUAGES[language].analysisType
+        ));
+        setEditorSource(draft?.source || 'manual');
+        setQueryLanguage(language);
+        initQueryResult();
+        setExecutionLogsData({});
+        setFavoriteQueriesData({});
+        setExecutionLogsError(false);
+        setFavoriteQueriesError(false);
+        setExecutionLogsLoading(false);
+        setFavoriteQueriesLoading(false);
+        onResetPage();
+    }, [codeEditorContent, editorSource, graph, graphSpace, initQueryResult, onResetPage, queryLanguage]);
 
     const resetGraphInfo = useCallback(
         () => {
@@ -339,8 +349,10 @@ const AnalysisHome = () => {
         graphNumsRequest.current = null;
         executionInFlight.current = null;
         setQueryLanguage(DEFAULT_QUERY_LANGUAGE);
+        languageDrafts.current = {};
+        setEditorSource('manual');
         setGraphNums({vertexCount: -1, edgeCount: -1});
-        setCodeEditorContent(restoreQuery(graphSpace, graph, analysisModeRef.current));
+        setCodeEditorContent(restoreQuery(graphSpace, graph, GREMLIN));
         if (graphSpace && graph) {
             resetGraphInfo();
         }
@@ -373,9 +385,17 @@ const AnalysisHome = () => {
     const onExecuteQuery = useCallback(
         async (tabKey, generated) => {
             const request = Symbol('query');
+            const startedAt = Date.now();
             const isCurrent = () => queryRequest.current === request
                 && (!generated || generated.isCurrent());
             queryRequest.current = request;
+            stopExecutionTimer();
+            setExecutionDurationMs(0);
+            executionTimer.current = setInterval(() => {
+                if (isCurrent()) {
+                    setExecutionDurationMs(Math.max(0, Date.now() - startedAt));
+                }
+            }, 250);
             setQueryMode(true);
             setQueryStatus(LOADING);
             setPanelType(CLOSED);
@@ -436,9 +456,15 @@ const AnalysisHome = () => {
                     return failure;
                 }
             }
+            finally {
+                if (isCurrent()) {
+                    stopExecutionTimer();
+                    setExecutionDurationMs(Math.max(0, Date.now() - startedAt));
+                }
+            }
         },
         [graph, graphSpace, codeEditorContent, onExeLogsRefresh, onFavoriteRefresh,
-            queryResult, resetGraphInfo, t]
+            queryResult, resetGraphInfo, stopExecutionTimer, t]
     );
 
     const executeGenerated = useCallback((content, text, options) => {
@@ -449,17 +475,52 @@ const AnalysisHome = () => {
         return onExecuteQuery(TEXT2GQL, {content, text, ...options});
     }, [onExecuteQuery]);
 
+    const writeGeneratedDraft = useCallback(content => {
+        setEditorSource('ai');
+        setCodeEditorContent(content);
+    }, []);
+
+    const resetEditor = useCallback(content => {
+        languageDrafts.current = {};
+        setEditorSource('manual');
+        setCodeEditorContent(content);
+    }, []);
+
+    useEffect(() => {
+        const resetIdentity = () => {
+            queryRequest.current = null;
+            executionInFlight.current = null;
+            executionLogsRequest.current = null;
+            favoriteQueriesRequest.current = null;
+            setQueryLanguage(DEFAULT_QUERY_LANGUAGE);
+            resetEditor('');
+            setExecutionLogsData({});
+            setFavoriteQueriesData({});
+            setExecutionLogsLoading(false);
+            setFavoriteQueriesLoading(false);
+            setExecutionLogsError(false);
+            setFavoriteQueriesError(false);
+            onResetPage();
+            setPageSize(defaultPageParams.pageSize);
+            setSearch();
+            setSortMode();
+            setIdentityVersion(previous => previous + 1);
+        };
+        window.addEventListener(USER_CHANGE_EVENT, resetIdentity);
+        return () => window.removeEventListener(USER_CHANGE_EVENT, resetIdentity);
+    }, [onResetPage, resetEditor]);
+
     const text2gql = useText2Gql({
         scope: {graphSpace, graph, routeGraphSpace, routeGraph},
-        active: analysisMode === TEXT2GQL,
+        active: true,
         ready: isGraphReady,
         execute: executeGenerated,
         clearResult: initQueryResult,
-        clearEditor: setCodeEditorContent,
+        clearEditor: resetEditor,
+        onGeneratedDraft: writeGeneratedDraft,
         language: queryLanguage,
         cypherEnabled,
-        onLanguageChange: setQueryLanguage,
-        editorContent: codeEditorContent,
+        onLanguageChange,
         t,
     });
 
@@ -467,6 +528,8 @@ const AnalysisHome = () => {
         async tabKey => {
             const request = Symbol('task');
             queryRequest.current = request;
+            stopExecutionTimer();
+            setExecutionDurationMs(null);
             setQueryMode(false);
             setQueryStatus(LOADING);
             setPanelType(CLOSED);
@@ -509,12 +572,15 @@ const AnalysisHome = () => {
                 setQueryStatus(FAILED);
             }
         },
-        [codeEditorContent, graph, graphSpace, onExeLogsRefresh, onFavoriteRefresh, t]
+        [codeEditorContent, graph, graphSpace, onExeLogsRefresh, onFavoriteRefresh, stopExecutionTimer, t]
     );
 
     const onExecute = useCallback(
         tabKey => {
-            if (tabKey === TEXT2GQL) {
+            if (text2gql.pending) {
+                return;
+            }
+            if (editorSource === 'ai') {
                 text2gql.rerun(codeEditorContent);
                 return;
             }
@@ -539,7 +605,7 @@ const AnalysisHome = () => {
                 }
             });
         },
-        [codeEditorContent, executeMode, isGraphReady, onExecuteQuery, onExecuteTask, text2gql]
+        [codeEditorContent, editorSource, executeMode, isGraphReady, onExecuteQuery, onExecuteTask, text2gql]
     );
 
     useEffect(
@@ -564,7 +630,7 @@ const AnalysisHome = () => {
     const resetCodeEditorContent = useCallback(
         content => {
             setCodeEditorContent(content);
-            if (analysisMode !== TEXT2GQL) {
+            if (editorSource === 'manual') {
                 try {
                     window.localStorage.setItem(
                         queryDraftKey(graphSpace, graph, analysisMode), content
@@ -575,7 +641,7 @@ const AnalysisHome = () => {
                 }
             }
         },
-        [analysisMode, graph, graphSpace]
+        [analysisMode, editorSource, graph, graphSpace]
     );
 
     const updatePanelType = useCallback(
@@ -613,11 +679,32 @@ const AnalysisHome = () => {
     }, []);
 
     const handleClickLoadContent = useCallback((content, text) => {
-        resetCodeEditorContent(content);
-        if (analysisMode === TEXT2GQL) {
-            text2gql.loadSource(text);
+        const isAi = typeof text === 'string' && Boolean(text.trim());
+        setCodeEditorContent(content);
+        setEditorSource(isAi ? 'ai' : 'manual');
+        if (!isAi && typeof content === 'string') {
+            try {
+                window.localStorage.setItem(queryDraftKey(graphSpace, graph, analysisMode), content);
+            }
+            catch {
+                // History remains usable when browser storage is blocked.
+            }
         }
-    }, [analysisMode, resetCodeEditorContent, text2gql]);
+        text2gql.loadSource(text);
+    }, [analysisMode, graph, graphSpace, text2gql]);
+
+    const clearQuery = useCallback(() => {
+        text2gql.cancel();
+        setEditorSource('manual');
+        setCodeEditorContent('');
+        text2gql.loadSource('');
+        try {
+            window.localStorage.setItem(queryDraftKey(graphSpace, graph, analysisMode), '');
+        }
+        catch {
+            // Clearing still works when storage is blocked.
+        }
+    }, [analysisMode, graph, graphSpace, text2gql]);
 
     const onGraphRenderModeChange = useCallback(
         value => {
@@ -625,6 +712,33 @@ const AnalysisHome = () => {
         },
         []
     );
+
+    const renderQueryResult = useCallback(height => (
+        <QueryResult
+            height={height}
+            queryProgress={text2gql.pending ? {
+                phase: text2gql.phase, elapsedSeconds: text2gql.elapsedSeconds,
+                modelSlow: text2gql.modelSlow, cancel: text2gql.cancel,
+            } : undefined}
+            queryResult={queryResult}
+            asyncTaskResult={asyncTaskResult}
+            isQueryMode={isQueryMode}
+            metaData={metaData}
+            queryStatus={queryStatus}
+            queryMessage={queryMessage}
+            resetGraphStatus={resetGraphStatus}
+            panelType={panelType}
+            updatePanelType={updatePanelType}
+            propertyKeysRecords={propertyKeysRecords}
+            graphNums={graphNums}
+            graphRenderMode={graphRenderMode}
+            onGraphRenderModeChange={onGraphRenderModeChange}
+        />
+    ), [
+        asyncTaskResult, graphNums, graphRenderMode, isQueryMode, metaData,
+        onGraphRenderModeChange, panelType, propertyKeysRecords, queryMessage,
+        queryResult, queryStatus, resetGraphStatus, text2gql, updatePanelType,
+    ]);
 
     return (
         <>
@@ -634,52 +748,44 @@ const AnalysisHome = () => {
                 executeMode={executeMode}
                 onExecuteModeChange={onExecuteModeChange}
                 activeTab={analysisMode}
-                onTabsChange={onAnalysisModeChange}
+                language={queryLanguage}
+                onLanguageChange={text2gql.changeLanguage}
+                editorSource={editorSource}
+                onClear={clearQuery}
+                toolbarExtra={toolbarExtra}
                 onExecute={onExecute}
                 onRefresh={onFavoriteRefresh}
                 isExecuting={queryStatus === LOADING}
+                executionDurationMs={executionDurationMs}
                 isGraphReady={isGraphReady}
                 cypherEnabled={cypherEnabled}
                 text2gql={text2gql}
             />
-            <QueryResult
-                queryProgress={analysisMode === TEXT2GQL && text2gql.pending ? {
-                    phase: text2gql.phase, elapsedSeconds: text2gql.elapsedSeconds,
-                    modelSlow: text2gql.modelSlow, cancel: text2gql.cancel,
-                } : undefined}
-                queryResult={queryResult}
-                asyncTaskResult={asyncTaskResult}
-                isQueryMode={isQueryMode}
-                metaData={metaData}
-                queryStatus={queryStatus}
-                queryMessage={queryMessage}
-                resetGraphStatus={resetGraphStatus}
-                panelType={panelType}
-                updatePanelType={updatePanelType}
-                propertyKeysRecords={propertyKeysRecords}
-                graphNums={graphNums}
-                graphRenderMode={graphRenderMode}
-                onGraphRenderModeChange={onGraphRenderModeChange}
-            />
-            <LogsDetail
-                executionLogsData={executionLogsData}
-                favoriteQueriesData={favoriteQueriesData}
-                pageExecute={pageExecute}
-                onClickLoadContent={handleClickLoadContent}
-                analysisMode={historyMode}
-                executionLogsLoading={executionLogsLoading}
-                favoriteQueriesLoading={favoriteQueriesLoading}
-                executionLogsError={executionLogsError}
-                favoriteQueriesError={favoriteQueriesError}
-                onRetryExecutionLogs={retryExecutionLogs}
-                onRetryFavoriteQueries={retryFavoriteQueries}
-                pageSize={pageSize}
-                pageFavorite={pageFavorite}
-                onExecutePageChange={onExecutePageChange}
-                onFavoritePageChange={onFavoritePageChange}
-                onRefresh={onFavoriteRefresh}
-                onChangeSearchValue={onChangeFavorSearch}
-                onSortChange={onSortChange}
+            <ResultsLayout
+                renderResult={renderQueryResult}
+                history={(
+                    <LogsDetail
+                        compact
+                        executionLogsData={executionLogsData}
+                        favoriteQueriesData={favoriteQueriesData}
+                        pageExecute={pageExecute}
+                        onClickLoadContent={handleClickLoadContent}
+                        analysisMode={historyMode}
+                        executionLogsLoading={executionLogsLoading}
+                        favoriteQueriesLoading={favoriteQueriesLoading}
+                        executionLogsError={executionLogsError}
+                        favoriteQueriesError={favoriteQueriesError}
+                        onRetryExecutionLogs={retryExecutionLogs}
+                        onRetryFavoriteQueries={retryFavoriteQueries}
+                        pageSize={pageSize}
+                        pageFavorite={pageFavorite}
+                        onExecutePageChange={onExecutePageChange}
+                        onFavoritePageChange={onFavoritePageChange}
+                        onRefresh={onFavoriteRefresh}
+                        onChangeSearchValue={onChangeFavorSearch}
+                        onSortChange={onSortChange}
+                    />
+                )}
             />
         </>
     );

@@ -254,6 +254,54 @@ test('discards metadata from the previous graph before it can select a shared mo
     expect(result.current.sharedConfig.model).not.toBe('old-model');
 });
 
+test('switching model source preserves the current editor and original question for edited execution', async () => {
+    api.analysis.getText2GqlConfig.mockResolvedValue({status: 200, data: {
+        available: true, custom_available: true, model: 'shared-model',
+    }});
+    const {result} = renderHook(() => useText2Gql(props));
+    await waitFor(() => expect(result.current.source).toBe('shared'));
+    act(() => result.current.loadSource('Original generated question'));
+    props.clearEditor.mockClear();
+    act(() => result.current.changeSource('custom'));
+    expect(result.current.source).toBe('custom');
+    expect(props.clearEditor).not.toHaveBeenCalled();
+    await act(async () => result.current.rerun('g.V().limit(4)'));
+    expect(props.execute).toHaveBeenLastCalledWith('g.V().limit(4)', 'Original generated question',
+        expect.objectContaining({language: 'gremlin'}));
+    act(() => result.current.changeSource('shared'));
+    expect(props.clearEditor).not.toHaveBeenCalled();
+    await act(async () => result.current.rerun('g.V().count()'));
+    expect(props.execute).toHaveBeenLastCalledWith('g.V().count()', 'Original generated question', expect.any(Object));
+});
+
+test('language changes leave editor restoration to the workspace and preserve only per-language question provenance',
+    async () => {
+        const {result} = renderHook(() => {
+            const [language, setLanguage] = useState('gremlin');
+            const [content, setContent] = useState('g.V().limit(4)');
+            const hook = useText2Gql({...props, language, onLanguageChange: next => {
+                setLanguage(next);
+                setContent(next === 'cypher' ? 'MATCH (n) RETURN n' : 'g.V().limit(4)');
+            }});
+            return {...hook, content};
+        });
+        await configure(result);
+        act(() => result.current.loadSource('Gremlin question'));
+        props.clearEditor.mockClear();
+        act(() => result.current.changeLanguage('cypher'));
+        expect(result.current.content).toBe('MATCH (n) RETURN n');
+        expect(props.clearEditor).not.toHaveBeenCalled();
+        act(() => result.current.loadSource('Cypher question'));
+        act(() => result.current.changeLanguage('gremlin'));
+        expect(result.current.content).toBe('g.V().limit(4)');
+        await act(async () => result.current.rerun(result.current.content));
+        expect(props.execute).toHaveBeenLastCalledWith('g.V().limit(4)', 'Gremlin question', expect.any(Object));
+        act(() => result.current.changeLanguage('cypher'));
+        await act(async () => result.current.rerun(result.current.content));
+        expect(props.execute).toHaveBeenLastCalledWith('MATCH (n) RETURN n', 'Cypher question', expect.any(Object));
+        expect(props.clearEditor).not.toHaveBeenCalled();
+    });
+
 
 test('aborts and discards shared metadata when the signed-in account changes', async () => {
     const oldMetadata = deferred();
@@ -340,14 +388,12 @@ test.each(['loading', 'failure', 'invalid'])(
 );
 
 
-test('switching language cancels old generation while preserving question, config and dialect drafts', async () => {
+test('switching language cancels old generation while preserving question provenance and config', async () => {
     const delayed = deferred();
     api.analysis.streamText2Gql.mockReturnValueOnce(delayed.promise);
     const {result} = renderHook(() => {
         const [language, setLanguage] = useState('gremlin');
-        const [editorContent, setEditorContent] = useState('g.V().limit(4)');
-        return useText2Gql({...props, language, onLanguageChange: setLanguage,
-            editorContent, clearEditor: setEditorContent});
+        return useText2Gql({...props, language, onLanguageChange: setLanguage});
     });
     await configure(result);
     act(() => result.current.loadSource('Original question'));
@@ -412,9 +458,7 @@ test('revoking Cypher aborts generation and clears stale execution context befor
     api.analysis.streamText2Gql.mockReturnValueOnce(delayed.promise);
     const {result, rerender} = renderHook(({cypherEnabled}) => {
         const [language, setLanguage] = useState('gremlin');
-        const [editorContent, setEditorContent] = useState('');
-        return useText2Gql({...props, language, cypherEnabled, onLanguageChange: setLanguage,
-            editorContent, clearEditor: setEditorContent});
+        return useText2Gql({...props, language, cypherEnabled, onLanguageChange: setLanguage});
     }, {initialProps: {cypherEnabled: false}});
     await configure(result);
     act(() => result.current.changeLanguage('cypher'));
@@ -484,7 +528,9 @@ test.each(['generate', 'rerun'])('classifies %s execution failures separately fr
 });
 
 
-const generated = (query, valid = true, language = 'gremlin') => ({status: 200, data: {query, valid, language}});
+const generated = (query, valid = true, language = 'gremlin', durationMs) => ({
+    status: 200, data: {query, valid, language, duration_ms: durationMs},
+});
 const syntaxFailure = {ok: false, status: 460, message: 'No signature of method: GraphTraversal.limit(String)'};
 
 test.each(['gremlin', 'cypher'])('repairs invalid %s output once and executes only the displayed valid query',
@@ -706,28 +752,35 @@ test('counts total elapsed time across generation, repair and execution without 
         });
         expect(result.current.phase).toBe('waiting');
         expect(result.current.elapsedSeconds).toBe(0);
+        expect(result.current.generationDurationMs).toBeNull();
+        act(() => api.analysis.streamText2Gql.mock.calls[0][3].onWaiting());
+        expect(result.current.generationDurationMs).toBe(0);
         act(() => jest.advanceTimersByTime(14999));
         expect(result.current.elapsedSeconds).toBe(14);
         expect(result.current.modelSlow).toBe(false);
         act(() => jest.advanceTimersByTime(1));
         expect(result.current.elapsedSeconds).toBe(15);
+        expect(result.current.generationDurationMs).toBe(15000);
         expect(result.current.modelSlow).toBe(true);
         await act(async () => result.current.generate());
         expect(api.analysis.streamText2Gql).toHaveBeenCalledTimes(1);
-        await act(async () => generation.resolve(generated('invalid', false)));
+        await act(async () => generation.resolve(generated('invalid', false, 'gremlin', 15000)));
         expect(result.current.phase).toBe('repair_waiting');
+        act(() => api.analysis.streamText2Gql.mock.calls[1][3].onWaiting());
         expect(result.current.elapsedSeconds).toBe(15);
         expect(result.current.modelSlow).toBe(false);
         act(() => jest.advanceTimersByTime(15000));
         expect(result.current.elapsedSeconds).toBe(30);
         expect(result.current.modelSlow).toBe(true);
         expect(api.analysis.streamText2Gql).toHaveBeenCalledTimes(2);
-        await act(async () => repair.resolve(generated('g.V()')));
+        await act(async () => repair.resolve(generated('g.V()', true, 'gremlin', 15000)));
         expect(result.current.phase).toBe('execution');
+        expect(result.current.generationDurationMs).toBe(30000);
         expect(result.current.elapsedSeconds).toBe(30);
         expect(result.current.modelSlow).toBe(false);
         act(() => jest.advanceTimersByTime(5000));
         expect(result.current.elapsedSeconds).toBe(35);
+        expect(result.current.generationDurationMs).toBe(30000);
         expect(props.execute).toHaveBeenCalledTimes(1);
         await act(async () => {
             execution.resolve({ok: true});
@@ -745,9 +798,10 @@ test('counts total elapsed time across generation, repair and execution without 
     }
 });
 
-test.each(['cancel', 'graph', 'identity', 'unmount'])(
-    'clears the elapsed timer and rejects stale model completion on %s', async change => {
+test.each(['cancel', 'graph', 'identity', 'model', 'source', 'language', 'unmount'])(
+    'clears timers and generation duration and rejects stale model completion on %s', async change => {
         const delayed = deferred();
+        api.analysis.getText2GqlConfig.mockResolvedValue({status: 200, data: {available: true}});
         api.analysis.streamText2Gql.mockReturnValueOnce(delayed.promise);
         const {result, rerender, unmount} = renderHook(value => useText2Gql(value), {initialProps: props});
         await configure(result);
@@ -757,8 +811,10 @@ test.each(['cancel', 'graph', 'identity', 'unmount'])(
             act(() => {
                 pending = result.current.generate();
             });
+            act(() => api.analysis.streamText2Gql.mock.calls[0][3].onWaiting());
             act(() => jest.advanceTimersByTime(16000));
             expect(result.current.elapsedSeconds).toBe(16);
+            expect(result.current.generationDurationMs).toBe(16000);
             const signal = api.analysis.streamText2Gql.mock.calls[0][3].signal;
             if (change === 'unmount') {
                 unmount();
@@ -771,20 +827,37 @@ test.each(['cancel', 'graph', 'identity', 'unmount'])(
                     if (change === 'cancel') {
                         result.current.cancel();
                     }
+                    else if (change === 'model') {
+                        result.current.updateConfig('model', 'another-model');
+                    }
+                    else if (change === 'source') {
+                        result.current.changeSource('custom');
+                    }
+                    else if (change === 'language') {
+                        result.current.changeLanguage('cypher');
+                    }
                     else {
                         setUser({user_name: 'bob'});
                     }
                 });
             }
             expect(signal.aborted).toBe(true);
+            if (change !== 'unmount') {
+                expect(result.current.generationDurationMs).toBeNull();
+            }
             expect(jest.getTimerCount()).toBe(0);
             act(() => jest.advanceTimersByTime(20000));
+            act(() => api.analysis.streamText2Gql.mock.calls[0][3].onWaiting());
+            expect(jest.getTimerCount()).toBe(0);
             await act(async () => {
                 delayed.resolve(generated('stale query'));
                 await pending;
             });
             expect(props.execute).not.toHaveBeenCalled();
             expect(api.analysis.streamText2Gql).toHaveBeenCalledTimes(1);
+            if (change !== 'unmount') {
+                expect(result.current.generationDurationMs).toBeNull();
+            }
         }
         finally {
             unmount();
@@ -819,6 +892,53 @@ test('renders real partial text immediately but waits for a valid terminal resul
     expect(props.execute).toHaveBeenCalledWith('g.V().limit(3)', 'Find people', expect.any(Object));
 });
 
+test('routes initial, streamed and final generated drafts through the workspace provenance callback', async () => {
+    props.onGeneratedDraft = jest.fn();
+    api.analysis.streamText2Gql
+        .mockImplementationOnce((graphSpace, graph, params, {onDelta}) => {
+            onDelta('```gremlin\ng.V(');
+            return Promise.resolve(generated('g.V(', false));
+        })
+        .mockImplementationOnce((graphSpace, graph, params, {onDelta}) => {
+            onDelta('g.V()');
+            onDelta('.limit(3)');
+            return Promise.resolve(generated('g.V().limit(3)'));
+        });
+    const {result} = renderHook(() => useText2Gql(props));
+    await configure(result);
+    props.clearEditor.mockClear();
+    await act(async () => result.current.generate());
+    expect(props.onGeneratedDraft.mock.calls).toEqual([
+        [''], ['g.V('], ['g.V('], ['g.V()'], ['g.V().limit(3)'], ['g.V().limit(3)'],
+    ]);
+    expect(props.clearEditor).not.toHaveBeenCalled();
+    expect(api.analysis.streamText2Gql).toHaveBeenCalledTimes(2);
+    expect(props.execute).toHaveBeenCalledWith('g.V().limit(3)', 'Find people', expect.any(Object));
+});
+
+test('does not send stale streamed or terminal drafts to the workspace callback after cancellation', async () => {
+    props.onGeneratedDraft = jest.fn();
+    const delayed = deferred();
+    api.analysis.streamText2Gql.mockReturnValueOnce(delayed.promise);
+    const {result} = renderHook(() => useText2Gql(props));
+    await configure(result);
+    let pending;
+    act(() => {
+        pending = result.current.generate();
+    });
+    const {onDelta} = api.analysis.streamText2Gql.mock.calls[0][3];
+    act(() => onDelta('g.V('));
+    act(() => result.current.cancel());
+    props.onGeneratedDraft.mockClear();
+    await act(async () => {
+        onDelta('stale delta');
+        delayed.resolve(generated('g.V()'));
+        await pending;
+    });
+    expect(props.onGeneratedDraft).not.toHaveBeenCalled();
+    expect(props.execute).not.toHaveBeenCalled();
+});
+
 test('preserves streamed text on failure and ignores further deltas after cancellation', async () => {
     let reject;
     api.analysis.streamText2Gql.mockReturnValueOnce(new Promise((resolve, fail) => {
@@ -844,3 +964,241 @@ test('preserves streamed text on failure and ignores further deltas after cancel
     act(() => onDelta('stale text'));
     expect(props.clearEditor).not.toHaveBeenCalled();
 });
+
+const promptMetadata = {available: true, custom_available: true, model: 'shared-model',
+    prompts: {gremlin: 'shared Gremlin', cypher: 'shared Cypher'},
+    default_prompts: {gremlin: 'default Gremlin', cypher: 'default Cypher'}};
+
+test.each(['gremlin', 'cypher'])(
+    'lets the server select the shared %s Prompt for both model sources', async language => {
+        api.analysis.getText2GqlConfig.mockResolvedValue({status: 200, data: promptMetadata});
+        api.analysis.streamText2Gql.mockResolvedValue({status: 200,
+            data: {valid: true, language, query: language === 'gremlin' ? 'g.V()' : 'MATCH (n) RETURN n'}});
+        const {result} = renderHook(() => useText2Gql({...props, language}));
+        await configure(result);
+        await act(async () => result.current.generate());
+        const sharedRequest = api.analysis.streamText2Gql.mock.calls[0][2];
+        expect(sharedRequest).toMatchObject({source: 'shared', language});
+        expect(sharedRequest).not.toHaveProperty('prompt');
+        act(() => result.current.changeSource('custom'));
+        await act(async () => result.current.generate());
+        const customRequest = api.analysis.streamText2Gql.mock.calls[1][2];
+        expect(customRequest).toMatchObject({source: 'custom', language});
+        expect(customRequest).not.toHaveProperty('prompt');
+    }
+);
+
+test.each([true, false])(
+    'inherits the server Prompt for a custom model when shared model availability is %s', async available => {
+        api.analysis.getText2GqlConfig.mockResolvedValue({status: 200, data: {...promptMetadata, available}});
+        api.analysis.streamText2Gql.mockResolvedValue({status: 200,
+            data: {valid: true, language: 'gremlin', query: 'g.V()'}});
+        const {result} = renderHook(() => useText2Gql(props));
+        await configure(result);
+        if (available) {
+            act(() => result.current.changeSource('custom'));
+        }
+        await act(async () => result.current.generate());
+        const params = api.analysis.streamText2Gql.mock.calls[0][2];
+        expect(params).toMatchObject({source: 'custom', language: 'gremlin'});
+        expect(params).not.toHaveProperty('prompt');
+        expect(props.execute).toHaveBeenCalledTimes(1);
+    }
+);
+
+test('older metadata without Prompt templates keeps custom generation compatible', async () => {
+    api.analysis.streamText2Gql.mockResolvedValue({status: 200,
+        data: {valid: true, language: 'gremlin', query: 'g.V()'}});
+    const {result} = renderHook(() => useText2Gql(props));
+    await configure(result);
+    await act(async () => result.current.generate());
+    expect(api.analysis.streamText2Gql.mock.calls[0][2]).not.toHaveProperty('prompt');
+    expect(props.execute).toHaveBeenCalledTimes(1);
+});
+
+
+test('updates generation duration every 250ms, preserves it for reruns and freezes model failures', async () => {
+    const generation = deferred();
+    const rerun = deferred();
+    const failed = deferred();
+    api.analysis.streamText2Gql.mockReturnValueOnce(generation.promise).mockReturnValueOnce(failed.promise);
+    props.execute.mockResolvedValueOnce({ok: true}).mockReturnValueOnce(rerun.promise);
+    const {result, unmount} = renderHook(() => useText2Gql(props));
+    await configure(result);
+    expect(result.current.generationDurationMs).toBeNull();
+    jest.useFakeTimers();
+    try {
+        let pending;
+        act(() => {
+            pending = result.current.generate();
+        });
+        act(() => jest.advanceTimersByTime(3000));
+        expect(result.current.generationDurationMs).toBeNull();
+        act(() => api.analysis.streamText2Gql.mock.calls[0][3].onWaiting());
+        act(() => jest.advanceTimersByTime(249));
+        expect(result.current.generationDurationMs).toBe(0);
+        act(() => jest.advanceTimersByTime(1));
+        expect(result.current.generationDurationMs).toBe(250);
+        act(() => api.analysis.streamText2Gql.mock.calls[0][3].onWaiting());
+        expect(result.current.generationDurationMs).toBe(250);
+        expect(jest.getTimerCount()).toBe(2);
+        act(() => jest.advanceTimersByTime(875));
+        await act(async () => {
+            generation.resolve(generated('g.V()', true, 'gremlin', 1125));
+            await pending;
+        });
+        expect(result.current.generationDurationMs).toBe(1125);
+        act(() => {
+            pending = result.current.rerun('g.V().limit(2)');
+        });
+        act(() => jest.advanceTimersByTime(5000));
+        expect(result.current.generationDurationMs).toBe(1125);
+        await act(async () => {
+            rerun.resolve({ok: true});
+            await pending;
+        });
+        act(() => {
+            pending = result.current.generate();
+        });
+        expect(result.current.generationDurationMs).toBeNull();
+        act(() => jest.advanceTimersByTime(5000));
+        expect(result.current.generationDurationMs).toBeNull();
+        act(() => api.analysis.streamText2Gql.mock.calls[1][3].onWaiting());
+        act(() => jest.advanceTimersByTime(1375));
+        await act(async () => {
+            failed.resolve(Promise.reject(Object.assign(new Error('model failed'), {
+                response: {data: {duration_ms: 1375}},
+            })));
+            await pending;
+        });
+        expect(result.current.errorStage).toBe('generation');
+        expect(result.current.generationDurationMs).toBe(1375);
+        expect(jest.getTimerCount()).toBe(0);
+        act(() => jest.advanceTimersByTime(5000));
+        expect(result.current.generationDurationMs).toBe(1375);
+    }
+    finally {
+        unmount();
+        jest.useRealTimers();
+    }
+});
+
+test('adds repaired model duration while excluding the failed database execution between calls', async () => {
+    const first = deferred();
+    const second = deferred();
+    const execution = deferred();
+    api.analysis.streamText2Gql.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+    props.execute.mockReturnValueOnce(execution.promise).mockResolvedValueOnce({ok: true});
+    const {result, unmount} = renderHook(() => useText2Gql(props));
+    await configure(result);
+    jest.useFakeTimers();
+    try {
+        let pending;
+        act(() => {
+            pending = result.current.generate();
+        });
+        act(() => jest.advanceTimersByTime(2000));
+        expect(result.current.generationDurationMs).toBeNull();
+        act(() => api.analysis.streamText2Gql.mock.calls[0][3].onWaiting());
+        act(() => jest.advanceTimersByTime(750));
+        await act(async () => first.resolve(generated('g.V()', true, 'gremlin', 750)));
+        expect(result.current.generationDurationMs).toBe(750);
+        act(() => jest.advanceTimersByTime(6000));
+        expect(result.current.generationDurationMs).toBe(750);
+        await act(async () => execution.resolve(syntaxFailure));
+        expect(result.current.phase).toBe('repair_waiting');
+        act(() => jest.advanceTimersByTime(4000));
+        expect(result.current.generationDurationMs).toBe(750);
+        act(() => api.analysis.streamText2Gql.mock.calls[1][3].onWaiting());
+        act(() => jest.advanceTimersByTime(900));
+        await act(async () => {
+            second.resolve(generated('g.V().limit(3)', true, 'gremlin', 900));
+            await pending;
+        });
+        expect(result.current.generationDurationMs).toBe(1650);
+        expect(props.execute).toHaveBeenCalledTimes(2);
+        expect(jest.getTimerCount()).toBe(0);
+    }
+    finally {
+        unmount();
+        jest.useRealTimers();
+    }
+});
+
+
+test.each(['preparation error', 'older server'])(
+    'does not report model duration without server timing (%s)', async mode => {
+        const delayed = deferred();
+        api.analysis.streamText2Gql.mockReturnValue(delayed.promise);
+        const {result, unmount} = renderHook(() => useText2Gql(props));
+        await configure(result);
+        jest.useFakeTimers();
+        try {
+            let pending;
+            act(() => {
+                pending = result.current.generate();
+            });
+            act(() => jest.advanceTimersByTime(10000));
+            expect(result.current.generationDurationMs).toBeNull();
+            await act(async () => {
+                delayed.resolve(mode === 'preparation error' ? {status: 500, message: 'Schema unavailable'}
+                    : generated('g.V()'));
+                await pending;
+            });
+            expect(result.current.generationDurationMs).toBeNull();
+            expect(jest.getTimerCount()).toBe(0);
+        }
+        finally {
+            unmount();
+            jest.useRealTimers();
+        }
+    }
+);
+
+test.each(['initial', 'repair'])(
+    'keeps total model duration unknown when the %s response omits server timing', async missing => {
+        api.analysis.streamText2Gql
+            .mockImplementationOnce((graphSpace, graph, params, {onWaiting}) => {
+                onWaiting();
+                return Promise.resolve(generated('invalid draft', false, 'gremlin',
+                    missing === 'initial' ? undefined : 125));
+            })
+            .mockImplementationOnce((graphSpace, graph, params, {onWaiting}) => {
+                onWaiting();
+                return Promise.resolve(generated('g.V()', true, 'gremlin',
+                    missing === 'repair' ? undefined : 150));
+            });
+        const {result} = renderHook(() => useText2Gql(props));
+        await configure(result);
+        await act(async () => result.current.generate());
+        expect(result.current.generationDurationMs).toBeNull();
+        expect(props.execute).toHaveBeenCalledTimes(1);
+    }
+);
+
+
+test.each([0, 150])('uses server duration %sms when buffered waiting and result arrive together', async duration => {
+    api.analysis.streamText2Gql.mockImplementationOnce((graphSpace, graph, params, {onWaiting, onDelta}) => {
+        onWaiting();
+        onDelta('g.V()');
+        return Promise.resolve(generated('g.V()', true, 'gremlin', duration));
+    });
+    const {result} = renderHook(() => useText2Gql(props));
+    await configure(result);
+    await act(async () => result.current.generate());
+    expect(result.current.generationDurationMs).toBe(duration);
+    expect(props.execute).toHaveBeenCalledTimes(1);
+});
+
+test.each([undefined, null, -1, NaN, Infinity, '150'])(
+    'keeps final duration unknown for invalid server timing %s', async duration => {
+        api.analysis.streamText2Gql.mockImplementationOnce((graphSpace, graph, params, {onWaiting}) => {
+            onWaiting();
+            return Promise.resolve(generated('g.V()', true, 'gremlin', duration));
+        });
+        const {result} = renderHook(() => useText2Gql(props));
+        await configure(result);
+        await act(async () => result.current.generate());
+        expect(result.current.generationDurationMs).toBeNull();
+    }
+);

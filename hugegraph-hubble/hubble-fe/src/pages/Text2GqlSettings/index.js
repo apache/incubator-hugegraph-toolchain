@@ -21,10 +21,11 @@ import {Alert, Button, Checkbox, Input, Select, Spin, Switch, Tooltip} from 'ant
 import {useTranslation} from 'react-i18next';
 import {useAuthContext} from '../../auth/AuthContext';
 import * as api from '../../api';
-import {MODEL_PROVIDERS} from '../../utils/text2gql';
+import {MODEL_PROVIDERS, readPromptTemplates} from '../../utils/text2gql';
 import {sanitizePublicError} from '../../utils/publicError';
 import {rememberModel} from '../../utils/modelHistory';
 import ModelHistoryInput from '../../components/ModelHistoryInput';
+import PromptEditor from '../../components/PromptEditor';
 import c from './index.module.scss';
 
 const safeSettings = data => ({
@@ -34,6 +35,8 @@ const safeSettings = data => ({
     model: typeof data.model === 'string' ? data.model : '',
     has_api_key: data.has_api_key === true,
     source: data.source === 'managed' ? 'managed' : 'deployment',
+    prompts: readPromptTemplates(data.prompts),
+    defaultPrompts: readPromptTemplates(data.default_prompts),
 });
 
 const Text2GqlSettingsForm = () => {
@@ -45,6 +48,7 @@ const Text2GqlSettingsForm = () => {
     const [saved, setSaved] = useState();
     const [apiKey, setApiKey] = useState('');
     const [clearKey, setClearKey] = useState(false);
+    const [promptEditorOpen, setPromptEditorOpen] = useState(false);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [testOrigin, setTestOrigin] = useState();
@@ -69,6 +73,7 @@ const Text2GqlSettingsForm = () => {
         setSaved();
         setApiKey('');
         setClearKey(false);
+        setPromptEditorOpen(false);
         setFeedback();
         api.config.getText2GqlSettings({signal: request.controller.signal})
             .then(response => {
@@ -123,6 +128,14 @@ const Text2GqlSettingsForm = () => {
 
     const testing = Boolean(testOrigin);
     const busy = saving || testing;
+    const openPromptEditor = useCallback(() => setPromptEditorOpen(true), []);
+    const closePromptEditor = useCallback(() => setPromptEditorOpen(false), []);
+    const applyPrompts = useCallback(prompts => {
+        if (!busy) {
+            update('prompts', prompts);
+            setPromptEditorOpen(false);
+        }
+    }, [busy, update]);
     useEffect(() => {
         if (!testing) {
             return undefined;
@@ -134,7 +147,8 @@ const Text2GqlSettingsForm = () => {
     }, [testing]);
 
     const dirty = Boolean(settings && saved && (apiKey || clearKey
-        || ['enabled', 'connection_type', 'base_url', 'model'].some(field => settings[field] !== saved[field])));
+        || ['enabled', 'connection_type', 'base_url', 'model'].some(field => settings[field] !== saved[field])
+        || JSON.stringify(settings.prompts) !== JSON.stringify(saved.prompts)));
     const cannotTest = busy || loading || !saved?.enabled || dirty;
     const testHint = dirty ? t('analysis.model_settings.test_save_first')
         : !saved?.enabled ? t('analysis.model_settings.test_disabled') : undefined;
@@ -221,6 +235,9 @@ const Text2GqlSettingsForm = () => {
             enabled: settings.enabled, connection_type: settings.connection_type,
             base_url: settings.base_url.trim(), model: settings.model.trim(),
         };
+        if (settings.prompts) {
+            params.prompts = settings.prompts;
+        }
         if (apiKey.trim()) {
             params.api_key = apiKey;
         }
@@ -374,6 +391,31 @@ const Text2GqlSettingsForm = () => {
                             </p>
                         )}
                     </div>
+                    <div className={c.field}>
+                        <div>
+                            <Tooltip
+                                title={!settings.prompts || !settings.defaultPrompts
+                                    ? t('analysis.prompt.unavailable') : undefined}
+                            >
+                                <span>
+                                    <Button
+                                        disabled={busy || !settings.prompts || !settings.defaultPrompts}
+                                        onClick={openPromptEditor}
+                                    >
+                                        {t('analysis.prompt.title')}
+                                    </Button>
+                                </span>
+                            </Tooltip>
+                        </div>
+                        <p>{t('analysis.prompt.shared_hint')}</p>
+                    </div>
+                    {promptEditorOpen && <PromptEditor
+                        values={settings.prompts}
+                        defaults={settings.defaultPrompts}
+                        disabled={busy}
+                        onCancel={closePromptEditor}
+                        onApply={applyPrompts}
+                    />}
                     <footer className={c.actions}>
                         <span className={c.source}>{t(saved.source === 'managed'
                             ? 'analysis.model_settings.source_managed' : 'analysis.model_settings.source_deployment')}

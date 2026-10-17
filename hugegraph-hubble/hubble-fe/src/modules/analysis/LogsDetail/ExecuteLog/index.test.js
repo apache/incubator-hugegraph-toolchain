@@ -201,3 +201,17 @@ test.each(['Original question', undefined])('loads a history statement and optio
     scroll.mockRestore();
     queryBar.remove();
 });
+
+test('lets the compact history pane own scrolling while preserving the legacy table', () => {
+    const props = {
+        executeLogsDataRecords: [],
+        executeLogsDataTotal: 0,
+        pageExecute: 1,
+        pageSize: 10,
+    };
+    const view = render(<ExecuteLog {...props} />);
+    expect(view.container.querySelector('.ant-table-body')).not.toBeNull();
+    view.rerender(<ExecuteLog {...props} compact />);
+    expect(view.container.querySelector('.ant-table-body')).toBeNull();
+    expect(view.container.querySelector('.ant-table-small')).not.toBeNull();
+});

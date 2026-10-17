@@ -56,6 +56,7 @@ const LogsDetail = props => {
         onRefresh,
         analysisMode,
         onClickLoadContent,
+        compact = false,
     } = props;
 
     const context = useContext(GraphAnalysisContext);
@@ -177,6 +178,7 @@ const LogsDetail = props => {
                         />
                     )}
                     <ExecuteLog
+                        compact={compact}
                         executeLogsDataRecords={executeLogsDataRecords}
                         executeLogsDataTotal={executeLogsDataTotal}
                         isLoading={executionLogsLoading}
@@ -206,6 +208,7 @@ const LogsDetail = props => {
                         />
                     )}
                     <Favorite
+                        compact={compact}
                         favoriteQueriesDataRecords={favoriteQueriesDataRecords}
                         favoriteQueriesDataTotal={favoriteQueriesDataTotal}
                         isLoading={favoriteQueriesLoading}
@@ -223,7 +226,7 @@ const LogsDetail = props => {
     ];
 
     return (
-        <div className={c.footerTabs}>
+        <div className={`${c.footerTabs} ${compact ? c.compact : ''}`}>
             <Tabs type='card' items={tabItems} />
         </div>
     );

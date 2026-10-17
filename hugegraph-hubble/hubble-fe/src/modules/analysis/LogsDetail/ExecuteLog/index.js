@@ -137,6 +137,7 @@ const ExecuteLog = props => {
         onExecutePageChange,
         onAddCollection,
         onLoadContent,
+        compact = false,
     } = props;
 
     const [favoriteName, setFavoriteName] = useState();
@@ -362,7 +363,8 @@ const ExecuteLog = props => {
                 current: pageExecute,
                 pageSize: pageSize,
             }}
-            scroll={{y: 360}}
+            scroll={compact ? undefined : {y: 360}}
+            size={compact ? 'small' : 'default'}
             loading={isLoading}
         />
     );
