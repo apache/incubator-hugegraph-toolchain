@@ -115,3 +115,36 @@ it.each(['input.type', 'input.paste'])(
         expect(onChange).toHaveBeenNthCalledWith(2, 'g.V()');
     }
 );
+
+
+it.each([
+    ['gremlin', "g.V().hasLabel('person').has('name', '" + 'a'.repeat(200) + "').limit(10)"],
+    ['cypher', "MATCH (n:person) WHERE n.name = '" + 'a'.repeat(200) + "' RETURN n LIMIT 10"],
+])('keeps editing, undo and execution intact with %s soft-wrapping', (lang, value) => {
+    const onChange = jest.fn();
+    const execute = jest.fn();
+    const {container} = render(
+        <CodeEditor value={value} lang={lang} lineWrapping onChange={onChange} onExecutionShortcut={execute} />
+    );
+    const view = EditorView.findFromDOM(container.querySelector('.cm-editor'));
+    expect(view.lineWrapping).toBe(true);
+    expect(view.state.doc.lines).toBe(1);
+    expect(view.state.doc.toString()).toBe(value);
+    const limitStart = value.lastIndexOf('10');
+    act(() => view.dispatch({
+        changes: {from: limitStart, to: limitStart + 2, insert: '25'},
+        annotations: Transaction.userEvent.of('input.type'),
+    }));
+    const edited = value.slice(0, limitStart) + '25' + value.slice(limitStart + 2);
+    expect(onChange).toHaveBeenLastCalledWith(edited);
+    expect(view.state.doc.lines).toBe(1);
+    act(() => {
+        expect(undo(view)).toBe(true);
+    });
+    expect(view.state.doc.toString()).toBe(value);
+    expect(onChange).toHaveBeenLastCalledWith(value);
+    onChange.mockClear();
+    fireEvent.keyDown(container.querySelector('.cm-content'), {key: 'Enter', ctrlKey: true});
+    expect(execute).toHaveBeenCalledTimes(1);
+    expect(onChange).not.toHaveBeenCalled();
+});

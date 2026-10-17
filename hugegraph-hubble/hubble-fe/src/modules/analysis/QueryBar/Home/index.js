@@ -376,6 +376,7 @@ const QueryBar = props => {
                                 onChange={handleEditorChange}
                                 onExecutionShortcut={onExecution}
                                 lang={language}
+                                lineWrapping
                                 ariaLabel={t(`analysis.query.${language}_editor`)}
                                 readOnly={Boolean(text2gql?.pending)}
                                 placeholder={t(`analysis.query.${language}_placeholder`)}

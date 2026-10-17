@@ -36,6 +36,7 @@ const CodeEditor = ({
     readOnly = false,
     ariaLabel,
     minHeight,
+    lineWrapping = false,
     metaEnterNewline = false,
     onExecutionShortcut,
 }) => {
@@ -94,6 +95,7 @@ const CodeEditor = ({
                     })
                     : [],
                 basicSetup,
+                lineWrapping ? EditorView.lineWrapping : [],
                 readOnly ? [] : closeBrackets(),
                 readOnly ? [] : autocompletion({override: [myCompletions]}),
                 syntax.language ?? [],
@@ -147,7 +149,7 @@ const CodeEditor = ({
         return () => {
             cm.current.destroy();
         };
-    }, [ariaLabel, lang, metaEnterNewline, minHeight, readOnly,
+    }, [ariaLabel, lang, lineWrapping, metaEnterNewline, minHeight, readOnly,
         resolvedPlaceholder]);
 
     useEffect(() => {
