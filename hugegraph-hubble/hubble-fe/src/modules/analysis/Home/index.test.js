@@ -173,6 +173,20 @@ beforeEach(() => {
     api.manage.getMetaPropertyList.mockResolvedValue(okList);
 });
 
+const historyResponse = records => ({status: 200, data: {records, total: records.length}});
+const pendingResponse = () => {
+    let resolve;
+    const promise = new Promise(done => {
+        resolve = done;
+    });
+    return {promise, resolve};
+};
+const homeFor = (graph = 'hugegraph', graphSpace = 'DEFAULT') => (
+    <GraphAnalysisContext.Provider value={{graphSpace, graph}}>
+        <AnalysisHome />
+    </GraphAnalysisContext.Provider>
+);
+
 const waitForInitialData = async () => {
     expect(await screen.findByText('execution total 0')).toBeInTheDocument();
     expect(await screen.findByText('favorite total 0')).toBeInTheDocument();
@@ -1210,20 +1224,6 @@ it('does not include LLM generation in database execution timing or accept stale
     }
 });
 
-
-const historyResponse = records => ({status: 200, data: {records, total: records.length}});
-const pendingResponse = () => {
-    let resolve;
-    const promise = new Promise(done => {
-        resolve = done;
-    });
-    return {promise, resolve};
-};
-const homeFor = (graph = 'hugegraph', graphSpace = 'DEFAULT') => (
-    <GraphAnalysisContext.Provider value={{graphSpace, graph}}>
-        <AnalysisHome />
-    </GraphAnalysisContext.Provider>
-);
 
 it('restores the latest execution statement and its own question without executing or generating', async () => {
     const metadata = pendingResponse();
