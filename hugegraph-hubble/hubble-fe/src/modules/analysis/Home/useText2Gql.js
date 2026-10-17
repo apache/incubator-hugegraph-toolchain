@@ -20,6 +20,7 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 import {scopedStorageKey, USER_CHANGE_EVENT} from '../../../utils/user';
 import {sanitizePublicError} from '../../../utils/publicError';
 import {canRepairQuery, queryFailure} from '../../../utils/queryFailure';
+import {rememberModel} from '../../../utils/modelHistory';
 import * as api from '../../../api';
 import {DEFAULT_QUERY_LANGUAGE, MODEL_PROVIDERS, supportsQueryLanguage} from '../../../utils/text2gql';
 
@@ -324,6 +325,9 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
                         repair = {query: query.slice(0, 10000), error: sanitizeError(message)};
                         setRepairing(true);
                         continue;
+                    }
+                    if (params.source === 'custom') {
+                        rememberModel(params.base_url, params.model);
                     }
                 }
                 stage = 'execution';

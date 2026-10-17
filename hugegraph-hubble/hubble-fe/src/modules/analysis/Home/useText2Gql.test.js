@@ -21,6 +21,7 @@ import {act, renderHook, waitFor} from '@testing-library/react';
 import useText2Gql from './useText2Gql';
 import * as api from '../../../api';
 import {setUser} from '../../../utils/user';
+import {getModelHistory} from '../../../utils/modelHistory';
 
 jest.mock('../../../api', () => ({analysis: {streamText2Gql: jest.fn(), getText2GqlConfig: jest.fn()}}));
 const deferred = () => {
@@ -59,6 +60,8 @@ test('automatically executes the returned Gremlin and keeps its original questio
     const {result} = renderHook(() => useText2Gql(props));
     await configure(result);
     await act(async () => result.current.generate());
+    expect(getModelHistory(result.current.config.baseUrl)).toEqual(['test-model']);
+    expect(JSON.stringify({...sessionStorage, ...localStorage})).not.toContain('private-key');
     expect(props.execute).toHaveBeenCalledWith('g.V().limit(2)', 'Find people', expect.objectContaining({
         isCurrent: expect.any(Function), signal: expect.any(Object),
     }));

@@ -46,6 +46,11 @@ Choose where the model configuration comes from:
   The connection type, URL and model are saved in account-scoped browser
   `sessionStorage`, for this browser session only.
 
+Successful connection tests and temporary-model generation remember the Base URL
+and model name in account-scoped browser `localStorage`. Both inputs offer recent
+successful choices while still accepting new values: up to five models per URL
+and ten URLs. This history contains no API Keys.
+
 During generation, a temporary API Key travels from the browser to Hubble, which
 uses it to call the selected model service. Temporary keys are not written to
 browser storage or Hubble's database.

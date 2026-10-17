@@ -19,6 +19,7 @@
 import {act, fireEvent, render, screen, waitFor} from '@testing-library/react';
 import Text2GqlSettings from './index';
 import * as api from '../../api';
+import {getModelHistory} from '../../utils/modelHistory';
 
 let mockIdentityEpoch = 0;
 let mockAuthLoading = false;
@@ -82,9 +83,11 @@ test('replaces a key without persisting or reading it back and clears the input 
     }, expect.any(Object));
     expect(keyInput()).toHaveValue('');
     expect(JSON.stringify({...sessionStorage, ...localStorage})).not.toContain('replacement-secret');
+    expect(getModelHistory(initial.base_url)).toEqual([initial.model]);
 });
 
 test('keeps the saved key when only the model changes and the new key is blank', async () => {
+    api.config.updateText2GqlSettings.mockResolvedValue(response({model: 'new-model'}));
     await load();
     fireEvent.change(screen.getByLabelText('analysis.query.model_name'), {target: {value: 'new-model'}});
     await act(async () => fireEvent.click(saveButton()));
@@ -93,6 +96,7 @@ test('keeps the saved key when only the model changes and the new key is blank',
     expect(params).toMatchObject({model: 'new-model', base_url: initial.base_url});
     expect(params).not.toHaveProperty('api_key');
     expect(params).not.toHaveProperty('clear_api_key');
+    await waitFor(() => expect(getModelHistory(initial.base_url)).toEqual(['new-model']));
 });
 
 test('requires a replacement key after changing the OpenAI-compatible endpoint', async () => {
@@ -104,6 +108,17 @@ test('requires a replacement key after changing the OpenAI-compatible endpoint',
     expect(api.config.updateText2GqlSettings).not.toHaveBeenCalled();
     fireEvent.change(keyInput(), {target: {value: 'new-endpoint-secret'}});
     expect(saveButton()).toBeEnabled();
+});
+
+test.each(['openai', 'ollama'])('preserves the saved key when only URL trailing slashes change (%s)', async type => {
+    api.config.getText2GqlSettings.mockResolvedValue(response({connection_type: type}));
+    await load();
+    fireEvent.change(screen.getByLabelText('Base URL'), {target: {value: `${initial.base_url}/`}});
+    expect(saveButton()).toBeEnabled();
+    await act(async () => fireEvent.click(saveButton()));
+    const params = api.config.updateText2GqlSettings.mock.calls[0][0];
+    expect(params).not.toHaveProperty('api_key');
+    expect(params).not.toHaveProperty('clear_api_key');
 });
 
 test('makes clearing a configured key explicit and mutually exclusive with replacement', async () => {
@@ -120,7 +135,7 @@ test('makes clearing a configured key explicit and mutually exclusive with repla
 
 test('does not forward a previously configured cloud key to a new Ollama endpoint', async () => {
     await load();
-    fireEvent.mouseDown(screen.getByRole('combobox'));
+    fireEvent.mouseDown(screen.getByRole('combobox', {name: 'analysis.query.connection_type'}));
     fireEvent.click(screen.getByText('analysis.query.connection_ollama'));
     fireEvent.change(screen.getByLabelText('analysis.query.model_name'), {target: {value: 'local-model'}});
     expect(saveButton()).toBeEnabled();
@@ -175,7 +190,7 @@ test('marks enabled model fields as required and explains empty fields visually 
     expect(model.labels[0]).toHaveClass('requiredLabel');
     fireEvent.change(model, {target: {value: ''}});
     expect(model).toHaveAttribute('aria-invalid', 'true');
-    expect(model).toHaveClass('ant-input-status-error');
+    expect(model.closest('.ant-select')).toHaveClass('ant-select-status-error');
     expect(saveButton()).toBeDisabled();
     fireEvent.click(screen.getByRole('switch'));
     expect(model).toHaveAttribute('aria-required', 'false');
@@ -251,6 +266,7 @@ test('keeps the saved configuration and clears the key when the subsequent test 
     fireEvent.change(keyInput(), {target: {value: 'replacement-secret'}});
     await act(async () => fireEvent.click(saveButton()));
     expect(screen.getByRole('alert')).toHaveTextContent('analysis.model_settings.saved_test_failed');
+    expect(getModelHistory(initial.base_url)).toEqual([]);
     expect(screen.getByRole('alert')).not.toHaveTextContent('replacement-secret');
     expect(screen.getByRole('alert')).not.toHaveTextContent('analysis.model_settings.save_failed');
     expect(keyInput()).toHaveValue('');

@@ -27,6 +27,7 @@ import {DownOutlined, SwapOutlined, UpOutlined} from '@ant-design/icons';
 import {DEFAULT_QUERY_LANGUAGE, MODEL_PROVIDERS, QUERY_LANGUAGES,
     supportsQueryLanguage} from '../../../../utils/text2gql';
 import CodeEditor from '../../../../components/CodeEditor';
+import ModelHistoryInput from '../../../../components/ModelHistoryInput';
 import {ANALYSIS_TYPE} from '../../../../utils/constants';
 import {PrimaryActions, SecondaryActions} from '../ContentCommon';
 import c from './index.module.scss';
@@ -163,7 +164,7 @@ const QueryBar = props => {
     }, []);
     useEffect(() => {
         if (modelSettingsOpen && configPrompt) {
-            const field = modelSettingsRef.current?.querySelector('[aria-invalid="true"]')
+            const field = modelSettingsRef.current?.querySelector('input[aria-invalid="true"]')
                 || modelSettingsRef.current?.querySelector('#text2gql-base-url');
             field?.focus();
         }
@@ -310,11 +311,12 @@ const QueryBar = props => {
                                     <label htmlFor='text2gql-base-url'>
                                         Base URL
                                     </label>
-                                    <Input
+                                    <ModelHistoryInput
+                                        field='baseUrl'
                                         id='text2gql-base-url'
                                         aria-required='true'
                                         aria-describedby='text2gql-url-hint'
-                                        placeholder='https://…/v1'
+                                        placeholder={t('analysis.query.base_url_placeholder')}
                                         status={configPrompt && missingUrl ? 'error' : undefined}
                                         aria-invalid={configPrompt && missingUrl}
                                         value={text2gql.config.baseUrl}
@@ -329,7 +331,8 @@ const QueryBar = props => {
                                     <label htmlFor='text2gql-model'>
                                         {t('analysis.query.model_name')}
                                     </label>
-                                    <Input
+                                    <ModelHistoryInput
+                                        baseUrl={text2gql.config.baseUrl}
                                         id='text2gql-model'
                                         aria-label={t('analysis.query.model_name')}
                                         aria-required='true'

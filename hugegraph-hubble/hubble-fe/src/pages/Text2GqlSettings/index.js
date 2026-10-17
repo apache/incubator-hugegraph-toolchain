@@ -23,6 +23,8 @@ import {useAuthContext} from '../../auth/AuthContext';
 import * as api from '../../api';
 import {MODEL_PROVIDERS} from '../../utils/text2gql';
 import {sanitizePublicError} from '../../utils/publicError';
+import {rememberModel} from '../../utils/modelHistory';
+import ModelHistoryInput from '../../components/ModelHistoryInput';
 import c from './index.module.scss';
 
 const safeSettings = data => ({
@@ -136,7 +138,8 @@ const Text2GqlSettingsForm = () => {
     const cannotTest = busy || loading || !saved?.enabled || dirty;
     const testHint = dirty ? t('analysis.model_settings.test_save_first')
         : !saved?.enabled ? t('analysis.model_settings.test_disabled') : undefined;
-    const urlChanged = settings?.base_url.trim() !== saved?.base_url.trim();
+    const urlChanged = settings?.base_url.trim().replace(/\/+$/, '')
+        !== saved?.base_url.trim().replace(/\/+$/, '');
     const endpointNeedsKey = saved?.has_api_key && urlChanged && !clearKey && !apiKey.trim()
         && settings?.connection_type !== 'ollama';
     const requiresKey = endpointNeedsKey || (settings?.enabled && settings.connection_type !== 'ollama'
@@ -144,7 +147,7 @@ const Text2GqlSettingsForm = () => {
     const cannotSave = busy || loading || !settings || requiresKey || (settings.enabled
         && (!settings.base_url.trim() || !settings.model.trim()));
 
-    const runTest = useCallback(async (request, afterSave, secret = '') => {
+    const runTest = useCallback(async (request, afterSave, configuration, secret = '') => {
         const current = () => requestRef.current === request && epochRef.current === request.epoch
             && !request.controller.signal.aborted;
         setTestOrigin(afterSave ? 'saved' : 'manual');
@@ -157,6 +160,7 @@ const Text2GqlSettingsForm = () => {
             if (response?.status !== 200 || !Number.isFinite(response.data?.duration_ms)) {
                 throw new Error(response?.message || t('analysis.model_settings.test_failed'));
             }
+            rememberModel(configuration.base_url, configuration.model);
             setFeedback({type: 'success', message: t(afterSave
                 ? 'analysis.model_settings.saved_tested' : 'analysis.model_settings.test_success',
             {seconds: (Math.max(0, response.data.duration_ms) / 1000).toFixed(1)})});
@@ -187,14 +191,14 @@ const Text2GqlSettingsForm = () => {
         requestRef.current = request;
         savePendingRef.current = true;
         try {
-            await runTest(request, false);
+            await runTest(request, false, saved);
         }
         finally {
             if (requestRef.current === request && epochRef.current === request.epoch) {
                 savePendingRef.current = false;
             }
         }
-    }, [cannotTest, identityEpoch, runTest]);
+    }, [cannotTest, identityEpoch, runTest, saved]);
 
     const cancelTest = useCallback(() => {
         requestRef.current?.controller.abort();
@@ -241,7 +245,7 @@ const Text2GqlSettingsForm = () => {
             setClearKey(false);
             setSaving(false);
             if (next.enabled) {
-                await runTest(request, true, apiKey);
+                await runTest(request, true, next, apiKey);
             }
             else {
                 setFeedback({type: 'success', message: t('analysis.model_settings.saved')});
@@ -305,8 +309,10 @@ const Text2GqlSettingsForm = () => {
                         <label htmlFor='shared-model-url' className={settings.enabled ? c.requiredLabel : undefined}>
                             Base URL
                         </label>
-                        <Input
+                        <ModelHistoryInput
+                            field='baseUrl'
                             id='shared-model-url'
+                            placeholder={t('analysis.query.base_url_placeholder')}
                             value={settings.base_url}
                             status={settings.enabled && !settings.base_url.trim() ? 'error' : undefined}
                             aria-invalid={settings.enabled && !settings.base_url.trim()}
@@ -321,8 +327,10 @@ const Text2GqlSettingsForm = () => {
                         <label htmlFor='shared-model-name' className={settings.enabled ? c.requiredLabel : undefined}>
                             {t('analysis.query.model_name')}
                         </label>
-                        <Input
+                        <ModelHistoryInput
+                            baseUrl={settings.base_url}
                             id='shared-model-name'
+                            placeholder={t('analysis.query.model_name_placeholder')}
                             value={settings.model}
                             status={settings.enabled && !settings.model.trim() ? 'error' : undefined}
                             aria-invalid={settings.enabled && !settings.model.trim()}
@@ -350,7 +358,6 @@ const Text2GqlSettingsForm = () => {
                         <p id='shared-model-key-hint'>{t(saved.has_api_key
                             ? 'analysis.model_settings.key_configured' : 'analysis.model_settings.key_missing')}
                         </p>
-                        <p>{t('analysis.model_settings.key_hint')}</p>
                         {saved.has_api_key && (
                             <Checkbox
                                 checked={clearKey}
