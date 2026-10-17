@@ -22,8 +22,8 @@
 
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {Alert, Button, Input, Select, Space, Tabs} from 'antd';
-import {DownOutlined, UpOutlined} from '@ant-design/icons';
+import {Alert, Button, Input, Select, Space, Tabs, Tooltip} from 'antd';
+import {DownOutlined, SwapOutlined, UpOutlined} from '@ant-design/icons';
 import {DEFAULT_QUERY_LANGUAGE, MODEL_PROVIDERS, QUERY_LANGUAGES,
     supportsQueryLanguage} from '../../../../utils/text2gql';
 import CodeEditor from '../../../../components/CodeEditor';
@@ -103,11 +103,31 @@ const QueryBar = props => {
     const source = text2gql?.source || 'custom';
     const sharedConfig = text2gql?.sharedConfig || {available: false, loading: false};
     const customAvailable = sharedConfig.customAvailable !== false;
+    const nextLanguage = Object.keys(QUERY_LANGUAGES).find(value => (
+        value !== language && supportsQueryLanguage(value, cypherEnabled)
+    ));
+    const nextSource = source === 'shared' ? 'custom' : 'shared';
+    const sourceLabel = value => t(`analysis.query.source_${value}`);
+    const canSwitchSource = !sharedConfig.loading && (
+        nextSource === 'shared' ? sharedConfig.available : customAvailable
+    );
+    const sourceSwitchHint = sharedConfig.loading ? t('analysis.query.shared_loading')
+        : canSwitchSource ? t('analysis.query.switch_to', {name: sourceLabel(nextSource)})
+            : t(nextSource === 'custom' ? 'analysis.query.custom_unavailable'
+                : sharedConfig.reason === 'authentication_required' ? 'analysis.query.shared_auth_required'
+                    : sharedConfig.reason === 'not_configured' ? 'analysis.query.shared_not_configured'
+                        : 'analysis.query.shared_unavailable');
     const onSourceChange = useCallback(value => {
         setModelSettingsOpen(false);
         setConfigPrompt(false);
         text2gql.changeSource(value);
     }, [text2gql]);
+    const toggleLanguage = useCallback(() => onLanguageChange(nextLanguage), [nextLanguage, onLanguageChange]);
+    const toggleSource = useCallback(() => {
+        if (canSwitchSource) {
+            onSourceChange(nextSource);
+        }
+    }, [canSwitchSource, nextSource, onSourceChange]);
     const onProviderChange = useCallback(value => text2gql.updateConfig('provider', value), [text2gql]);
     const onBaseUrlChange = useCallback(event => text2gql.updateConfig('baseUrl', event.target.value), [text2gql]);
     const onModelChange = useCallback(event => text2gql.updateConfig('model', event.target.value), [text2gql]);
@@ -210,35 +230,37 @@ const QueryBar = props => {
             children: text2gql && (
                 <div className={c.text2gqlPanel} aria-busy={text2gql.pending}>
                     <div className={c.queryToolbar}>
-                        <Select
-                            id='text2gql-language'
-                            virtual={false}
-                            aria-label={t('analysis.query.generation_language')}
-                            className={c.languageSelect}
-                            value={language}
-                            onChange={onLanguageChange}
-                            size='small'
-                            options={Object.entries(QUERY_LANGUAGES).map(([value, config]) => ({
-                                value, label: config.label, disabled: !supportsQueryLanguage(value, cypherEnabled),
-                                'aria-disabled': !supportsQueryLanguage(value, cypherEnabled),
-                            }))}
-                        />
-                        <Select
-                            id='text2gql-source'
-                            virtual={false}
-                            aria-label={t('analysis.query.model_source')}
-                            className={c.sourceSelect}
-                            size='small'
-                            value={source}
-                            onChange={onSourceChange}
-                            disabled={sharedConfig.loading || (!sharedConfig.available && !customAvailable)}
-                            options={[
-                                {value: 'shared', label: t('analysis.query.source_shared'),
-                                    disabled: !sharedConfig.available},
-                                {value: 'custom', label: t('analysis.query.source_custom'),
-                                    disabled: !customAvailable},
-                            ]}
-                        />
+                        <Tooltip
+                            trigger={['hover', 'focus']}
+                            title={nextLanguage
+                                ? t('analysis.query.switch_to', {name: QUERY_LANGUAGES[nextLanguage].label})
+                                : t('analysis.query.cypher_unavailable')}
+                        >
+                            <Button
+                                id='text2gql-language'
+                                aria-label={`${t('analysis.query.generation_language')}: ${dialect.label}`}
+                                className={c.modeToggle}
+                                icon={<SwapOutlined aria-hidden='true' />}
+                                size='small'
+                                disabled={!nextLanguage}
+                                onClick={toggleLanguage}
+                            >
+                                {dialect.label}
+                            </Button>
+                        </Tooltip>
+                        <Tooltip trigger={['hover', 'focus']} title={sourceSwitchHint}>
+                            <Button
+                                id='text2gql-source'
+                                aria-label={`${t('analysis.query.model_source')}: ${sourceLabel(source)}`}
+                                className={`${c.modeToggle} ${c.sourceToggle}`}
+                                icon={<SwapOutlined aria-hidden='true' />}
+                                size='small'
+                                disabled={!canSwitchSource}
+                                onClick={toggleSource}
+                            >
+                                {sourceLabel(source)}
+                            </Button>
+                        </Tooltip>
                         <p className={c.modelStatus} role='status'>
                             {sharedConfig.loading ? t('analysis.query.shared_loading')
                                 : source === 'shared' ? [t('analysis.query.shared_ready'), sharedConfig.model]

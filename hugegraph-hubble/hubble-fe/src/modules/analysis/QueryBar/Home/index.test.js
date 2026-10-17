@@ -16,7 +16,8 @@
  */
 
 import {useState} from 'react';
-import {fireEvent, render, screen} from '@testing-library/react';
+import {act, fireEvent, render, screen} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import QueryBar from './index';
 
 jest.mock('../../../../components/CodeEditor', () => props => (
@@ -71,7 +72,7 @@ jest.mock('react-i18next', () => ({
         'analysis.query.text2gql_tab': 'Natural language',
         'analysis.query.text2gql_title': 'Natural-language graph query',
         'analysis.query.text2gql_description': 'This preview is not connected.',
-        'analysis.query.text2gql_placeholder': 'Describe the graph question',
+        'analysis.query.text2gql_placeholder': 'e.g. Show 10 vertices and the relationships between them',
         'analysis.query.text2gql_badge': 'Coming soon',
         'analysis.query.text2gql_privacy': 'Nothing is sent or executed.',
         'analysis.query.collapse': 'Collapse',
@@ -463,8 +464,7 @@ it('hides custom credentials and disables generation when neither model source i
     expect(screen.queryByLabelText(/Base URL/)).not.toBeInTheDocument();
     expect(screen.queryByLabelText('API Key')).not.toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent('analysis.query.custom_unavailable');
-    expect(screen.getByRole('combobox', {name: 'analysis.query.model_source'}).closest('.ant-select'))
-        .toHaveClass('ant-select-disabled');
+    expect(screen.getByRole('button', {name: /analysis.query.model_source:/})).toBeDisabled();
     const generate = screen.getByRole('button', {name: 'analysis.query.generate_query'});
     expect(generate).toBeDisabled();
     fireEvent.click(generate);
@@ -489,18 +489,18 @@ it('defaults generation to Gremlin and offers a working Cypher editor through th
         />
     );
     const {rerender} = render(panel(undefined));
-    const languageSelect = screen.getByRole('combobox', {name: 'analysis.query.generation_language'});
-    expect(languageSelect.closest('.ant-select')).toHaveTextContent('Gremlin');
-    fireEvent.mouseDown(languageSelect);
-    fireEvent.click(screen.getByText('Cypher', {selector: '.ant-select-item-option-content'}));
+    const languageButton = screen.getByRole('button', {name: 'analysis.query.generation_language: Gremlin'});
+    userEvent.click(languageButton);
     expect(text2gql.changeLanguage).toHaveBeenCalledWith('cypher');
     rerender(panel('cypher'));
-    expect(languageSelect.closest('.ant-select')).toHaveTextContent('Cypher');
+    expect(languageButton).toHaveAccessibleName('analysis.query.generation_language: Cypher');
     expect(screen.getByRole('region', {name: 'analysis.query.generated_cypher'}))
         .toContainElement(screen.getByTestId('editor-cypher'));
     expect(screen.getByTestId('editor-cypher')).toHaveAttribute('data-aria-label', 'analysis.query.generated_cypher');
     fireEvent.click(screen.getByRole('button', {name: 'analysis.query.generate_query'}));
     expect(text2gql.generate).toHaveBeenCalledTimes(1);
+    userEvent.click(languageButton);
+    expect(text2gql.changeLanguage).toHaveBeenLastCalledWith('gremlin');
 });
 
 
@@ -521,16 +521,17 @@ it('disables Cypher natural-language generation with a clear server capability e
         />
     );
     const {rerender} = render(panel(false));
-    const languageSelect = screen.getByRole('combobox', {name: 'analysis.query.generation_language'});
-    fireEvent.mouseDown(languageSelect);
-    expect(screen.getByRole('option', {name: 'Gremlin'})).not.toHaveAttribute('aria-disabled', 'true');
-    expect(screen.getByRole('option', {name: 'Cypher'})).toHaveAttribute('aria-disabled', 'true');
+    const languageButton = screen.getByRole('button', {name: 'analysis.query.generation_language: Gremlin'});
+    expect(languageButton).toBeDisabled();
     expect(screen.getByText('analysis.query.cypher_unavailable')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('option', {name: 'Cypher'}));
+    fireEvent.click(languageButton);
     expect(text2gql.changeLanguage).not.toHaveBeenCalled();
     rerender(panel(true));
-    expect(screen.getByRole('option', {name: 'Cypher'})).not.toHaveAttribute('aria-disabled', 'true');
+    const enabledLanguage = screen.getByRole('button', {name: 'analysis.query.generation_language: Gremlin'});
+    expect(enabledLanguage).toBeEnabled();
     expect(screen.queryByText('analysis.query.cypher_unavailable')).not.toBeInTheDocument();
+    userEvent.click(enabledLanguage);
+    expect(text2gql.changeLanguage).toHaveBeenCalledWith('cypher');
 });
 
 
@@ -600,27 +601,108 @@ it.each(['generation', 'execution', 'cancelled'])(
     }
 );
 
-it('switches generation language through the keyboard-accessible dropdown', () => {
+it.each([['Enter', '{Enter}'], ['Space', ' ']])(
+    'switches language and model source in both directions with native %s activation', (_, key) => {
+        const changeLanguage = jest.fn();
+        const changeSource = jest.fn();
+        const ControlledQueryBar = () => {
+            const [language, setLanguage] = useState('gremlin');
+            const [source, setSource] = useState('shared');
+            const text2gql = {
+                config: {provider: 'ollama', baseUrl: 'http://localhost:11434/v1', model: 'local', apiKey: ''},
+                question: '', pending: false, updateConfig: jest.fn(), setQuestion: jest.fn(), generate: jest.fn(),
+                sharedConfig: {available: true, customAvailable: true, loading: false},
+                language, source,
+                changeLanguage: value => {
+                    changeLanguage(value);
+                    setLanguage(value);
+                },
+                changeSource: value => {
+                    changeSource(value);
+                    setSource(value);
+                },
+            };
+            return (
+                <QueryBar
+                    activeTab='Text2GQL'
+                    cypherEnabled
+                    codeEditorContent=''
+                    text2gql={text2gql}
+                    onTabsChange={jest.fn()}
+                    setCodeEditorContent={jest.fn()}
+                />
+            );
+        };
+        render(<ControlledQueryBar />);
+        const language = screen.getByRole('button', {name: 'analysis.query.generation_language: Gremlin'});
+        const source = screen.getByRole('button', {name: 'analysis.query.model_source: analysis.query.source_shared'});
+        expect(language.closest('.queryToolbar')).toContainElement(source);
+        act(() => language.focus());
+        userEvent.keyboard(key);
+        expect(changeLanguage).toHaveBeenLastCalledWith('cypher');
+        expect(language).toHaveAccessibleName('analysis.query.generation_language: Cypher');
+        userEvent.keyboard(key);
+        expect(changeLanguage.mock.calls).toEqual([['cypher'], ['gremlin']]);
+        act(() => source.focus());
+        userEvent.keyboard(key);
+        expect(changeSource).toHaveBeenLastCalledWith('custom');
+        expect(source).toHaveAccessibleName('analysis.query.model_source: analysis.query.source_custom');
+        userEvent.keyboard(key);
+        expect(changeSource.mock.calls).toEqual([['custom'], ['shared']]);
+    }
+);
+
+it('switches model sources directly with one click and retains the current source label', () => {
+    const changeSource = jest.fn();
     const text2gql = {
         config: {provider: 'ollama', baseUrl: 'http://localhost:11434/v1', model: 'local', apiKey: ''},
         question: '', pending: false, updateConfig: jest.fn(), setQuestion: jest.fn(), generate: jest.fn(),
-        changeLanguage: jest.fn(),
+        sharedConfig: {available: true, customAvailable: true, loading: false}, changeSource,
     };
-    render(
+    const panel = source => (
         <QueryBar
             activeTab='Text2GQL'
-            cypherEnabled
             codeEditorContent=''
-            text2gql={text2gql}
+            text2gql={{...text2gql, source}}
             onTabsChange={jest.fn()}
             setCodeEditorContent={jest.fn()}
         />
     );
-    const language = screen.getByRole('combobox', {name: 'analysis.query.generation_language'});
-    fireEvent.keyDown(language, {key: 'ArrowDown', keyCode: 40});
-    fireEvent.keyDown(language, {key: 'ArrowDown', keyCode: 40});
-    fireEvent.keyDown(language, {key: 'Enter', keyCode: 13});
-    expect(text2gql.changeLanguage).toHaveBeenCalledWith('cypher');
-    const source = screen.getByRole('combobox', {name: 'analysis.query.model_source'});
-    expect(language.closest('.queryToolbar')).toContainElement(source);
+    const {rerender} = render(panel('custom'));
+    const source = screen.getByRole('button', {name: 'analysis.query.model_source: analysis.query.source_custom'});
+    userEvent.click(source);
+    expect(changeSource).toHaveBeenLastCalledWith('shared');
+    rerender(panel('shared'));
+    expect(source).toHaveAccessibleName('analysis.query.model_source: analysis.query.source_shared');
+    userEvent.click(source);
+    expect(changeSource.mock.calls).toEqual([['shared'], ['custom']]);
 });
+
+it.each([
+    ['custom', {available: false, customAvailable: true, loading: false, reason: 'not_configured'},
+        'analysis.query.shared_not_configured'],
+    ['shared', {available: true, customAvailable: false, loading: false}, 'analysis.query.custom_unavailable'],
+    ['custom', {available: true, customAvailable: true, loading: true}, 'analysis.query.shared_loading'],
+])('keeps the current source when the alternative is unavailable or loading (%s, %j)',
+    async (source, sharedConfig, hint) => {
+        const changeSource = jest.fn();
+        const text2gql = {
+            config: {provider: 'ollama', baseUrl: 'http://localhost:11434/v1', model: 'local', apiKey: ''},
+            question: '', pending: false, updateConfig: jest.fn(), setQuestion: jest.fn(), generate: jest.fn(),
+            source, sharedConfig, changeSource,
+        };
+        render(<QueryBar
+            activeTab='Text2GQL'
+            codeEditorContent=''
+            text2gql={text2gql}
+            onTabsChange={jest.fn()}
+            setCodeEditorContent={jest.fn()}
+        />);
+        const button = screen.getByRole('button', {name: new RegExp('analysis.query.model_source:')});
+        expect(button).toBeDisabled();
+        fireEvent.click(button);
+        expect(changeSource).not.toHaveBeenCalled();
+        userEvent.hover(button.parentElement);
+        expect(await screen.findByRole('tooltip')).toHaveTextContent(hint);
+    }
+);

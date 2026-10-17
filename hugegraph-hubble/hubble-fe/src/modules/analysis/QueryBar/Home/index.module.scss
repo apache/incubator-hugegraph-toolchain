@@ -186,12 +186,12 @@
     align-items: center;
     gap: 8px 12px;
 
-    .languageSelect {
-        width: 112px;
+    .modeToggle {
+        min-width: 104px;
     }
 
-    .sourceSelect {
-        width: clamp(160px, 30vw, 210px);
+    .sourceToggle {
+        min-width: 136px;
     }
 
     .modelStatus {
