@@ -49,6 +49,10 @@ public class ReadOnlyCypherTest {
             "RETURN count(*), count(DISTINCT 1), coalesce(null, 'fallback'), substring('Alice', 0, 2)",
             "MATCH (n) RETURN count(n) AS count",
             "MATCH (n) RETURN n.count AS collect, n.exists AS exists, n.collect AS count",
+            "MATCH (e:Event) RETURN e.start, e.end",
+            "MATCH (n {end: 1}) RETURN n",
+            "MATCH (n:START)-[:END|:CASE]->(m:SHOW) RETURN n.contains, {database: m.all}",
+            "MATCH (n:`RETURN`)-[:`CREATE`]->(m) RETURN n.`DELETE`",
             "WITH 1 AS number RETURN number",
             "MATCH (n) WITH * RETURN *"
         };
@@ -75,6 +79,7 @@ public class ReadOnlyCypherTest {
     public void rejectsWritesProceduresSubqueriesAndMultipleStatements() {
         String[] queries = {
             "CREATE (n) RETURN n", "MERGE (n) RETURN n", "MATCH (n) SET n.name = 'bad' RETURN n",
+            "MATCH (n:START) SET n.end = 1 RETURN n",
             "MATCH (n) REMOVE n.name RETURN n", "MATCH (n) DELETE n RETURN n",
             "MATCH (n) DETACH DELETE n RETURN n", "DROP DATABASE hugegraph",
             "CALL db.labels()", "CALL db.labels() YIELD label RETURN label",
@@ -83,6 +88,7 @@ public class ReadOnlyCypherTest {
             "USE hugegraph MATCH (n) RETURN n", "FOREACH (n IN [1] | CREATE ()) RETURN 1",
             "MATCH (n) RETURN n UNION MATCH (m) RETURN m",
             "RETURN 1 UNION ALL RETURN 2", "RETURN 1; RETURN 2", "RETURN 1;;",
+            "MATCH (start) RETURN start", "RETURN 1 AS end",
             "MATCH (n) RETURN n CREATE (m)", "MATCH (n) RETURN n WITH n RETURN n",
             "MATCH (n) RETURN n MATCH (m) RETURN m", "RETURN 1 WHERE true",
             "MATCH (n) WHERE EXISTS { MATCH (m) RETURN m } RETURN n",

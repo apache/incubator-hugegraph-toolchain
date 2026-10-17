@@ -314,7 +314,7 @@ public final class ReadOnlyCypher {
                 this.identifier();
             }
             while (this.consume(":")) {
-                this.identifier();
+                this.schemaName();
             }
             this.patternProperties();
             this.expect(")");
@@ -325,10 +325,10 @@ public final class ReadOnlyCypher {
                 this.identifier();
             }
             if (this.consume(":")) {
-                this.identifier();
+                this.schemaName();
                 while (this.consume("|")) {
                     this.consume(":");
-                    this.identifier();
+                    this.schemaName();
                 }
             }
             if (this.consume("*")) {
@@ -479,7 +479,7 @@ public final class ReadOnlyCypher {
             }
             while (true) {
                 if (this.consume(".")) {
-                    this.identifier();
+                    this.schemaName();
                 } else if (this.consume("[")) {
                     this.expression(0, depth + 1);
                     this.expect("]");
@@ -492,7 +492,7 @@ public final class ReadOnlyCypher {
         private void map(int depth) {
             if (!this.consume("}")) {
                 do {
-                    this.identifier();
+                    this.schemaName();
                     this.expect(":");
                     this.expression(0, depth + 1);
                 } while (this.consume(","));
@@ -531,6 +531,14 @@ public final class ReadOnlyCypher {
 
         private void identifier() {
             if (!this.isIdentifier()) {
+                throw invalid();
+            }
+            this.position++;
+        }
+
+        private void schemaName() {
+            Kind kind = this.current().kind;
+            if (kind != Kind.WORD && kind != Kind.QUOTED_IDENTIFIER) {
                 throw invalid();
             }
             this.position++;

@@ -97,14 +97,51 @@ public class Text2GqlServiceTest {
             });
             server.start();
             try {
-                Text2GqlRequest request = request(server);
-                request.setBaseUrl("http://localhost:" + server.getAddress().getPort() + prefix + "/");
-                assertEquals("g.V().limit(10)", new Text2GqlService().generate(graphClient(), request));
-                assertEquals("POST", method.get());
-                assertEquals(prefix + "/chat/completions", path.get());
+                for (String suffix : List.of("/", "////")) {
+                    Text2GqlRequest request = request(server);
+                    request.setBaseUrl("http://localhost:" + server.getAddress().getPort() + prefix + suffix);
+                    assertEquals("g.V().limit(10)", new Text2GqlService().generate(graphClient(), request));
+                    assertEquals("POST", method.get());
+                    assertEquals(prefix + "/chat/completions", path.get());
+                }
             } finally {
                 server.stop(0);
             }
+        }
+    }
+
+    @Test
+    public void testBaseUrlLengthBoundaryAtGenerationEntry() throws Exception {
+        AtomicInteger calls = new AtomicInteger();
+        AtomicReference<String> path = new AtomicReference<>();
+        HttpServer server = server();
+        server.createContext("/", exchange -> {
+            calls.incrementAndGet();
+            path.set(exchange.getRequestURI().getPath());
+            reply(exchange, 200, "{\"choices\":[{\"index\":0,\"finish_reason\":\"stop\"," +
+                                 "\"message\":{\"role\":\"assistant\",\"content\":\"g.V().limit(10)\"}}]}");
+        });
+        server.start();
+        try {
+            Text2GqlRequest request = request(server);
+            String prefix = request.getBaseUrl() + "/";
+            String baseUrl = prefix + "a".repeat(2048 - prefix.length());
+            assertEquals(2048, baseUrl.length());
+            request.setBaseUrl(baseUrl);
+            assertEquals("g.V().limit(10)", new Text2GqlService().generate(graphClient(), request));
+            assertEquals("/v1/" + "a".repeat(2048 - prefix.length()) + "/chat/completions", path.get());
+            assertEquals(1, calls.get());
+
+            request.setBaseUrl(baseUrl + "a");
+            assertEquals(2049, request.getBaseUrl().length());
+            HugeClient client = Mockito.mock(HugeClient.class);
+            ExternalException failure = failure(() -> new Text2GqlService().generate(client, request));
+            assertEquals(400, failure.status());
+            assertEquals("text2gql.invalid-request", failure.getMessage());
+            Mockito.verifyNoInteractions(client);
+            assertEquals(1, calls.get());
+        } finally {
+            server.stop(0);
         }
     }
 

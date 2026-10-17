@@ -63,7 +63,8 @@ and OpenAI share the compatible interface; they are not separate protocol types.
 Use a model actually available on that service. Local URLs refer to the **Hubble
 backend host**, including in containers. Public model services require HTTPS;
 HTTP is supported for local/private-network models. The question and schema are
-sent to the chosen model service. Execution history stores the question and Gremlin.
+sent to the chosen model service. Execution history stores the question and executed
+query (Gremlin or Cypher).
 For a model gateway, configure its Base URL explicitly; model calls do not use
 JVM or system proxy settings.
 
@@ -85,8 +86,13 @@ saved API Keys unreadable. Operators can instead supply a Base64-encoded 32-byte
 key through `HUBBLE_TEXT2GQL_MASTER_KEY`, or set
 `text2gql.shared.master_key_file` to a separately managed key file. No encryption
 key or saved API Key is returned to the browser.
-On filesystems without POSIX file attributes, provide `HUBBLE_TEXT2GQL_MASTER_KEY`
-instead of relying on automatic key-file creation.
+Automatic key-file creation requires POSIX file attributes and hard-link support
+to publish the complete key atomically. On other filesystems, provide
+`HUBBLE_TEXT2GQL_MASTER_KEY` instead.
+An existing master-key file must be a regular, non-symlink POSIX file with
+owner-only permissions (`0400` or `0600`). For a secret mount that uses symlinks,
+supply `HUBBLE_TEXT2GQL_MASTER_KEY` through the deployment's secret environment
+configuration instead.
 
 For deployment-managed configuration, set these options in
 `conf/hugegraph-hubble.properties`:
@@ -117,9 +123,12 @@ aggregate functions. It rejects mutations, procedure calls, subqueries, comments
 and multiple statements; variable-length paths require an explicit upper bound of
 at most 10 hops. Both generated and edited queries are checked before
 automatic execution. Use the ordinary language tabs for general queries or scripts.
-Cypher execution requires the Server's Cypher plugin; plugins whose REST entry
-requires authorization also require sign-in in an otherwise anonymous deployment.
-Hubble does not manufacture credentials to bypass that requirement.
+Cypher execution requires the Server's Cypher plugin. The currently tested Server
+has an anonymous-access compatibility defect: its Cypher endpoint rejects requests
+without authorization even when Server authentication is disabled. Hubble sign-in
+is unavailable in anonymous mode, so signing in cannot resolve this defect. Use
+Gremlin until the Server's anonymous Cypher path is fixed; authenticated Cypher
+deployments work normally. Hubble does not manufacture credentials as a workaround.
 Model generation times out after 60 seconds;
 cancelling prevents further automatic execution, but does not guarantee that a
 query already submitted to Server has stopped.

@@ -46,7 +46,8 @@ public final class ReadOnlyGremlin {
 
     private static final Set<String> CONSTANTS = Set.of(
             "true", "false", "null", "asc", "desc", "shuffle", "local", "global", "keys", "values",
-            "first", "last", "all", "mixed", "T.id", "T.label", "T.key", "T.value",
+            "first", "last", "all", "mixed", "id", "label", "key", "value",
+            "T.id", "T.label", "T.key", "T.value",
             "Order.asc", "Order.desc", "Order.shuffle", "Scope.local", "Scope.global",
             "Column.keys", "Column.values", "Pop.first", "Pop.last", "Pop.all", "Pop.mixed");
 

@@ -37,6 +37,8 @@ public class ReadOnlyGremlinTest {
                 "g.V().project('name', 'friends').by('name').by(__.out('knows').count())",
                 "g.V().repeat(__.out('knows')).times(2).path().by('name')",
                 "g.V().groupCount().by('name').order(Scope.local).by(Column.values, desc)",
+                "g.V().order().by(label).by(id)",
+                "g.V().group().by(key).by(value)",
                 "g.V().has('name', 'O\\'Brien').values('name');",
                 "g.V().has('name', '价格$10').valueMap()",
                 "g.V().has(\"name\", \"Alice\").count()"

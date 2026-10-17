@@ -20,18 +20,21 @@ package org.apache.hugegraph.service.query;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.SeekableByteChannel;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.PosixFileAttributes;
+import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -119,13 +122,49 @@ public class Text2GqlSecretStore {
                 }
                 this.createKeyFile();
             }
-            if (!Files.isRegularFile(this.keyFile) || Files.size(this.keyFile) > 128) {
-                throw unavailable();
-            }
-            return decodeKey(Files.readString(this.keyFile, StandardCharsets.US_ASCII).trim());
+            return this.readKeyFile();
         } catch (IOException | IllegalArgumentException | UnsupportedOperationException | SecurityException exception) {
             throw unavailable();
         }
+    }
+
+    private byte[] readKeyFile() throws IOException {
+        PosixFileAttributes before = secureAttributes(this.keyFile);
+        byte[] encoded = new byte[129];
+        try {
+            int length;
+            try (FileChannel channel = FileChannel.open(this.keyFile,
+                    StandardOpenOption.READ, LinkOption.NOFOLLOW_LINKS)) {
+                ByteBuffer buffer = ByteBuffer.wrap(encoded);
+                while (buffer.hasRemaining() && channel.read(buffer) != -1) {
+                    // Bound the read even if another process changes the file after the attribute check.
+                }
+                length = buffer.position();
+                if (length > 128) {
+                    throw unavailable();
+                }
+            }
+            PosixFileAttributes after = secureAttributes(this.keyFile);
+            if (!Objects.equals(before.fileKey(), after.fileKey()) ||
+                !before.lastModifiedTime().equals(after.lastModifiedTime()) || before.size() != after.size()) {
+                throw unavailable();
+            }
+            return decodeKey(new String(encoded, 0, length, StandardCharsets.US_ASCII).trim());
+        } finally {
+            Arrays.fill(encoded, (byte) 0);
+        }
+    }
+
+    private static PosixFileAttributes secureAttributes(Path file) throws IOException {
+        PosixFileAttributes attributes = Files.readAttributes(
+                file, PosixFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+        Set<PosixFilePermission> allowed = Set.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE);
+        if (!attributes.isRegularFile() || attributes.size() > 128 ||
+            !attributes.permissions().contains(PosixFilePermission.OWNER_READ) ||
+            !allowed.containsAll(attributes.permissions())) {
+            throw unavailable();
+        }
+        return attributes;
     }
 
     private void createKeyFile() throws IOException {
@@ -135,17 +174,28 @@ public class Text2GqlSecretStore {
         RANDOM.nextBytes(key);
         byte[] encoded = Base64.getEncoder().encode(key);
         Arrays.fill(key, (byte) 0);
-        try (SeekableByteChannel channel = Files.newByteChannel(
-                this.keyFile, Set.of(StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE),
-                PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")))) {
-            ByteBuffer buffer = ByteBuffer.wrap(encoded);
-            while (buffer.hasRemaining()) {
-                channel.write(buffer);
+        Path temporary = null;
+        try {
+            temporary = Files.createTempFile(parent, "." + this.keyFile.getFileName() + "-", ".tmp",
+                    PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")));
+            try (FileChannel channel = FileChannel.open(temporary,
+                    StandardOpenOption.WRITE, LinkOption.NOFOLLOW_LINKS)) {
+                ByteBuffer buffer = ByteBuffer.wrap(encoded);
+                while (buffer.hasRemaining()) {
+                    channel.write(buffer);
+                }
+                channel.force(true);
             }
+            // A hard link publishes the complete inode atomically and never replaces an existing winner.
+            // Unlike ATOMIC_MOVE, this has create-if-absent semantics across concurrent processes.
+            Files.createLink(this.keyFile, temporary);
         } catch (FileAlreadyExistsException ignored) {
-            // Another initializer won; read its key instead of overwriting it.
+            // Another initializer published first. Read and validate its key instead of using ours.
         } finally {
             Arrays.fill(encoded, (byte) 0);
+            if (temporary != null) {
+                Files.deleteIfExists(temporary);
+            }
         }
     }
 

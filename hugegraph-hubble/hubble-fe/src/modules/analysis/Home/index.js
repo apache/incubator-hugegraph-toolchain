@@ -605,8 +605,10 @@ const AnalysisHome = () => {
 
     const handleClickLoadContent = useCallback((content, text) => {
         resetCodeEditorContent(content);
-        text2gql.loadSource(text);
-    }, [resetCodeEditorContent, text2gql]);
+        if (analysisMode === TEXT2GQL) {
+            text2gql.loadSource(text);
+        }
+    }, [analysisMode, resetCodeEditorContent, text2gql]);
 
     const onGraphRenderModeChange = useCallback(
         value => {

@@ -141,9 +141,16 @@ public class Text2GqlSettingsService {
                     this.secrets.decrypt(encrypted);
                 }
             } else {
-                String deploymentKey = this.deploymentKey();
-                if (!deploymentKey.isEmpty()) {
-                    encrypted = this.secrets.encrypt(deploymentKey);
+                try {
+                    String deploymentKey = this.deploymentKey();
+                    if (!deploymentKey.isEmpty()) {
+                        encrypted = this.secrets.encrypt(deploymentKey);
+                    }
+                } catch (ExternalException exception) {
+                    if (request.getEnabled()) {
+                        throw exception;
+                    }
+                    // Closing an unusable deployment must not depend on recovering or encrypting its key.
                 }
             }
         }

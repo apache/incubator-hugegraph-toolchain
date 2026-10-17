@@ -45,6 +45,8 @@ jest.mock('../../../api', () => ({
 jest.mock('../QueryBar/Home', () => props => (
     <div>
         <span data-testid='query-content'>{props.codeEditorContent}</span>
+        <span data-testid='source-question'>{props.text2gql.question}</span>
+        <span data-testid='query-language'>{props.text2gql.language}</span>
         <button onClick={() => props.onTabsChange('Text2GQL')}>Natural language</button>
         <button onClick={() => props.onTabsChange('Cypher')}>Cypher</button>
         <button onClick={() => props.text2gql.changeLanguage('cypher')}>Generate Cypher</button>
@@ -66,6 +68,7 @@ jest.mock('../QueryBar/Home', () => props => (
     </div>
 ));
 jest.mock('../QueryResult/Home', () => ({
+    queryResult,
     queryStatus,
     queryMessage,
     graphRenderMode,
@@ -76,6 +79,8 @@ jest.mock('../QueryResult/Home', () => ({
 }) => (
     <div>
         query result {queryStatus} {queryMessage}
+        <output data-testid='query-result'>{JSON.stringify(queryResult)}</output>
+        <span data-testid='query-status'>{queryStatus}</span>
         <span>render mode {graphRenderMode}</span>
         <span>metadata ready {String(Boolean(metaData))}</span>
         <span>properties ready {String(Boolean(propertyKeysRecords))}</span>
@@ -86,6 +91,21 @@ jest.mock('../QueryResult/Home', () => ({
 jest.mock('../LogsDetail/Home', () => props => (
     <div>
         query history
+        <button
+            disabled={!props.executionLogsData.records?.[0]}
+            onClick={() => {
+                const row = props.executionLogsData.records[0];
+                props.onClickLoadContent(row.content, row.text);
+            }}
+        >
+            Load history statement
+        </button>
+        <button
+            disabled={!props.favoriteQueriesData.records?.[0]}
+            onClick={() => props.onClickLoadContent(props.favoriteQueriesData.records[0].content)}
+        >
+            Load favorite statement
+        </button>
         <span>favorite page {props.pageFavorite}</span>
         <span>execution total {props.executionLogsData.total ?? 'pending'}</span>
         <span>favorite total {props.favoriteQueriesData.total ?? 'pending'}</span>
@@ -641,3 +661,76 @@ it('generates Cypher, reruns edits with the original question and restores each 
     await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Generate Cypher'})));
     expect(screen.getByTestId('query-content')).toHaveTextContent('MATCH (n) RETURN n LIMIT 4');
 });
+
+
+it.each([
+    ['Gremlin', 'history'], ['Gremlin', 'favorite'], ['Cypher', 'history'], ['Cypher', 'favorite'],
+])('keeps the current %s result when loading a %s statement', async (mode, source) => {
+    const graph = {graph_view: {vertices: [{id: 'visible-result'}], edges: []}};
+    api.analysis.getExecutionQuery.mockResolvedValue({status: 200, data: graph});
+    api.analysis.getCypherExecutionQuery.mockResolvedValue({status: 200, data: graph});
+    render(
+        <GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
+            <AnalysisHome />
+        </GraphAnalysisContext.Provider>
+    );
+    await waitForInitialData();
+    if (mode === 'Cypher') {
+        await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Cypher'})));
+    }
+    const content = mode === 'Gremlin' ? 'g.V().limit(5)' : 'MATCH (n) RETURN n LIMIT 5';
+    const records = {status: 200, data: {records: [{content, text: 'Old question'}], total: 1}};
+    api.analysis.getExecutionLogs.mockResolvedValue(records);
+    api.analysis.fetchFavoriteQueries.mockResolvedValue(records);
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
+    expect(screen.getByTestId('query-result')).toHaveTextContent(JSON.stringify(graph));
+    const status = screen.getByTestId('query-status').textContent;
+    fireEvent.click(screen.getByRole('button', {name: `Load ${source} statement`}));
+    expect(screen.getByTestId('query-content')).toHaveTextContent(content);
+    expect(screen.getByTestId('query-result')).toHaveTextContent(JSON.stringify(graph));
+    expect(screen.getByTestId('query-status')).toHaveTextContent(status);
+});
+
+it.each(['gremlin', 'cypher'])(
+    'clears Text2GQL results when loading %s statements and restores only their original question', async language => {
+        const graph = {graph_view: {vertices: [{id: 'old-generated-result'}], edges: []}};
+        api.analysis.executeText2Gql.mockResolvedValue({status: 200, data: graph});
+        render(
+            <GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
+                <AnalysisHome />
+            </GraphAnalysisContext.Provider>
+        );
+        await waitForInitialData();
+        await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Natural language'})));
+        if (language === 'cypher') {
+            await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Generate Cypher'})));
+            fireEvent.click(screen.getByRole('button', {name: 'Edit Cypher'}));
+        }
+        else {
+            fireEvent.click(screen.getByRole('button', {name: 'Edit query'}));
+        }
+        const content = language === 'gremlin' ? 'g.V().limit(5)' : 'MATCH (n) RETURN n LIMIT 5';
+        const history = {content, text: 'Original historical question'};
+        api.analysis.getExecutionLogs.mockResolvedValue({status: 200, data: {records: [history], total: 1}});
+        api.analysis.fetchFavoriteQueries.mockResolvedValue({status: 200, data: {records: [{content}], total: 1}});
+        await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
+        expect(screen.getByTestId('query-result')).toHaveTextContent(JSON.stringify(graph));
+        fireEvent.click(screen.getByRole('button', {name: 'Load history statement'}));
+        expect(screen.getByTestId('query-result')).toHaveTextContent('{}');
+        expect(screen.getByTestId('query-content')).toHaveTextContent(content);
+        expect(screen.getByTestId('source-question')).toHaveTextContent(history.text);
+        expect(screen.getByTestId('query-language')).toHaveTextContent(language);
+        fireEvent.click(screen.getByRole('button', {name: 'Edit question'}));
+        await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
+        expect(api.analysis.executeText2Gql).toHaveBeenLastCalledWith('DEFAULT', 'hugegraph', language,
+            {content, text: history.text, read_only: true}, expect.any(Object));
+        expect(screen.getByTestId('query-result')).toHaveTextContent(JSON.stringify(graph));
+        fireEvent.click(screen.getByRole('button', {name: 'Load favorite statement'}));
+        expect(screen.getByTestId('query-result')).toHaveTextContent('{}');
+        expect(screen.getByTestId('source-question')).toBeEmptyDOMElement();
+        expect(screen.getByTestId('query-language')).toHaveTextContent(language);
+        await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
+        expect(api.analysis.executeText2Gql).toHaveBeenLastCalledWith('DEFAULT', 'hugegraph', language,
+            {content, text: '', read_only: true}, expect.any(Object));
+    }
+);

@@ -21,6 +21,8 @@ package org.apache.hugegraph.service.query;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
+import java.nio.file.AccessDeniedException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -272,6 +274,44 @@ public class Text2GqlSettingsServiceTest {
         Text2GqlRequest resolved = this.service.sharedRequest(question, false);
         assertEquals(QueryLanguage.CYPHER, resolved.getLanguage());
         assertEquals("private-model-key", resolved.getApiKey());
+    }
+
+    @Test
+    public void testOversizedDeploymentSecretCannotPreventDisabling() throws Exception {
+        Path file = this.temporary.getRoot().toPath().resolve("oversized-api-key.txt");
+        Files.writeString(file, "x".repeat(16385));
+        Mockito.when(this.config.get(HubbleOptions.TEXT2GQL_SHARED_ENABLED)).thenReturn(true);
+        Mockito.when(this.config.get(HubbleOptions.TEXT2GQL_SHARED_API_KEY_FILE)).thenReturn(file.toString());
+        Text2GqlSettingsRequest request = settings("openai", null);
+        assertEquals(503, failure(() -> this.service.save(request)).status());
+        assertNull(this.stored.get());
+        request.setEnabled(false);
+        assertEquals(false, this.service.save(request).get("has_api_key"));
+        assertFalse(this.stored.get().isEnabled());
+        assertEquals("", this.stored.get().getEncryptedApiKey());
+        assertEquals(Map.of("available", false, "reason", "not_configured"), this.service.availability(false));
+        assertFalse(Files.exists(this.masterFile));
+    }
+
+    @Test
+    public void testUnreadableDeploymentSecretCannotPreventDisabling() throws Exception {
+        Path file = this.temporary.getRoot().toPath().resolve("unreadable-api-key.txt");
+        Files.writeString(file, "private-model-key");
+        Mockito.when(this.config.get(HubbleOptions.TEXT2GQL_SHARED_ENABLED)).thenReturn(true);
+        Mockito.when(this.config.get(HubbleOptions.TEXT2GQL_SHARED_API_KEY_FILE)).thenReturn(file.toString());
+        Text2GqlSettingsRequest request = settings("openai", null);
+        try (MockedStatic<Files> files = Mockito.mockStatic(Files.class, Mockito.CALLS_REAL_METHODS)) {
+            files.when(() -> Files.readString(file, StandardCharsets.UTF_8))
+                 .thenThrow(new AccessDeniedException("unreadable fixture"));
+            assertEquals(503, failure(() -> this.service.save(request)).status());
+            assertNull(this.stored.get());
+            request.setEnabled(false);
+            assertEquals(false, this.service.save(request).get("has_api_key"));
+            assertFalse(this.stored.get().isEnabled());
+            assertEquals("", this.stored.get().getEncryptedApiKey());
+            assertEquals(Map.of("available", false, "reason", "not_configured"), this.service.availability(false));
+        }
+        assertFalse(Files.exists(this.masterFile));
     }
 
     private Text2GqlSettingsService service(Map<String, String> environment) {
