@@ -634,6 +634,15 @@ def check_cypher_graph_views(result, schema, prefix, kind):
         elif normalize_edges(elements) != expected_edges:
             raise RuntimeError(f"Cypher edge endpoints/labels mismatch in {view} view: {elements}")
 
+    graph = result.get("graph_view") or {}
+    vertices = graph.get("vertices") or []
+    edges = graph.get("edges") or []
+    if (len(vertices) != len(expected_vertices) or normalize_vertices(vertices) != expected_vertices or
+            any(v.get("label") != schema["vl_person"] for v in vertices)):
+        raise RuntimeError(f"Cypher graph enrichment vertices mismatch: {graph}")
+    if len(edges) != len(expected_edges) or normalize_edges(edges) != expected_edges:
+        raise RuntimeError(f"Cypher graph enrichment edges mismatch: {graph}")
+
 
 def run_hubble_query_checks(hubble_url, server_url, graph_space, graph_name, schema, prefix):
     checks = []

@@ -92,6 +92,22 @@ class GremlinFixtureTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "native.Missing"):
                 FIXTURE.configure(root, template)
 
+    def test_authenticated_template_keeps_http_auth_with_native_channelizer(self):
+        with tempfile.TemporaryDirectory(prefix="hubble-auth-fixture-") as temp:
+            root = pathlib.Path(temp)
+            (root / "conf").mkdir()
+            (root / "lib").mkdir()
+            (root / "conf/gremlin-server.yaml").write_text(
+                "channelizer: native.WsAndHttpChannelizer\nscriptEngines: {}\n"
+                "serializers:\n  - {className: native.Serializer}\n")
+            with zipfile.ZipFile(root / "lib/native.jar", "w") as jar:
+                jar.writestr("native/Serializer.class", b"class")
+            configured, _ = FIXTURE.configure(root, HERE / "hugegraph-server2/gremlin-server.yaml")
+            self.assertIn("channelizer: native.WsAndHttpChannelizer", configured)
+            self.assertIn("authenticator: org.apache.hugegraph.auth.StandardAuthenticator", configured)
+            self.assertIn("authenticationHandler: org.apache.hugegraph.auth.WsAndHttpBasicAuthHandler", configured)
+            self.assertIn("tokens: conf/rest-server.properties", configured)
+
     def test_archive_commit_and_hash_bind_the_supplied_payload(self):
         with tempfile.TemporaryDirectory(prefix="hubble-archive-input-") as temp:
             root = pathlib.Path(temp)

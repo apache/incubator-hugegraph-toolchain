@@ -219,10 +219,9 @@ class QuerySemanticsTest(unittest.TestCase):
             else:
                 vertex = query.endswith("RETURN n")
                 elements = self.vertices if vertex else self.edges
-                resource = "vertices" if vertex else "edges"
                 data = {"type": "VERTEX" if vertex else "EDGE",
                         "json_view": {"data": elements}, "table_view": {"rows": elements},
-                        "graph_view": {resource: elements}}
+                        "graph_view": {"vertices": self.vertices, "edges": self.edges}}
         elif "/execute-histories?" in url:
             data = {"records": [{"content": q, "status": "SUCCESS"} for q in self.queries]}
         else:
@@ -301,6 +300,17 @@ class QuerySemanticsTest(unittest.TestCase):
                     result[section][key].append(elements[0])
                     with self.assertRaisesRegex(RuntimeError, "count mismatch"):
                         SMOKE.check_cypher_graph_views(result, self.schema, "smoke", kind)
+
+    def test_missing_complementary_graph_elements_fail(self):
+        for kind, elements, complementary in [("VERTEX", self.vertices, "edges"),
+                                               ("EDGE", self.edges, "vertices")]:
+            with self.subTest(kind=kind):
+                result = {"type": kind, "json_view": {"data": elements},
+                          "table_view": {"rows": elements},
+                          "graph_view": {"vertices": self.vertices, "edges": self.edges}}
+                result["graph_view"][complementary] = []
+                with self.assertRaisesRegex(RuntimeError, "graph enrichment"):
+                    SMOKE.check_cypher_graph_views(result, self.schema, "smoke", kind)
 
     def test_loader_flow_invokes_hubble_query_checks(self):
         shortest_path = {"path": ["smoke_alice", "smoke_bob", "smoke_carol"]}
