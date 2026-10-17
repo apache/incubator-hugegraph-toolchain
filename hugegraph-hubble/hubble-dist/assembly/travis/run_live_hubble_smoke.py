@@ -447,9 +447,9 @@ def upload_csv(hubble_url, graph_space, graph_name, prefix, schema):
     job_id = job["id"]
     file_name = f"{prefix}_edges.csv"
     csv_text = (
-        f"source,target,{schema['pk_name']},{schema['pk_rank']}\n"
-        f"{prefix}_alice,{prefix}_bob,Alice,1\n"
-        f"{prefix}_bob,{prefix}_carol,Bob,2\n"
+        f"source,target,{schema['pk_name']},{schema['pk_rank']},target_name,target_rank\n"
+        f"{prefix}_alice,{prefix}_bob,Alice,1,Bob,2\n"
+        f"{prefix}_bob,{prefix}_carol,Bob,2,Carol,3\n"
     )
     token_map = unwrap(request(
         "GET",
@@ -518,7 +518,10 @@ def configure_mapping(hubble_url, graph_space, graph_name, job_id, file_id,
     unwrap(request("POST", f"{base}/{file_id}/vertex-mappings", {
         "label": schema["vl_person"],
         "id_fields": ["target"],
-        "field_mapping": [],
+        "field_mapping": [
+            {"column_name": "target_name", "mapped_name": schema["pk_name"]},
+            {"column_name": "target_rank", "mapped_name": schema["pk_rank"]}
+        ],
         "value_mapping": [],
         "null_values": null_values
     }), "add target vertex mapping")

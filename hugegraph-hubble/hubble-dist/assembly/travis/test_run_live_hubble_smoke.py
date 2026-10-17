@@ -16,6 +16,7 @@
 # limitations under the License.
 #
 
+import csv
 import importlib.util
 import io
 import tarfile
@@ -184,6 +185,50 @@ class AnalysisBoundaryTest(unittest.TestCase):
 
         self.assertEqual(["passed", "passed"],
                          [check["status"] for check in checks])
+
+
+class LoaderFixtureDataTest(unittest.TestCase):
+
+    def test_repeated_vertex_writes_have_identical_properties(self):
+        schema = {"vl_person": "smoke_person", "el_knows": "smoke_knows",
+                  "pk_name": "smoke_name", "pk_rank": "smoke_rank"}
+        mappings = []
+        rows = []
+
+        def multipart(_fields, _file_field, _file_name, content):
+            rows.extend(csv.DictReader(io.StringIO(content.decode())))
+            return b"multipart", "multipart/form-data"
+
+        def request(method, url, body=None, headers=None):
+            if url.endswith("/job-manager"):
+                data = {"id": 1}
+            elif "/upload-file/token?" in url:
+                data = {"smoke_edges.csv": "token"}
+            elif url.endswith("/upload-file"):
+                data = {"id": 2}
+            elif url.endswith("/file-setting"):
+                data = {"file_setting": {"column_names": list(rows[0])}}
+            else:
+                data = {}
+            if url.endswith("/vertex-mappings"):
+                mappings.append(body)
+            return {"status": 200, "data": data}
+
+        with mock.patch.object(SMOKE, "request", side_effect=request), \
+                mock.patch.object(SMOKE, "encode_multipart", side_effect=multipart):
+            SMOKE.upload_csv("http://hubble", "DEFAULT", "graph", "smoke", schema)
+            SMOKE.configure_mapping("http://hubble", "DEFAULT", "graph", 1, 2, schema)
+
+        vertices = {}
+        for mapping in mappings:
+            for row in rows:
+                vertex_id = row[mapping["id_fields"][0]]
+                properties = {m["mapped_name"]: row[m["column_name"]] for m in mapping["field_mapping"]}
+                if vertex_id in vertices:
+                    self.assertEqual(vertices[vertex_id], properties, vertex_id)
+                vertices[vertex_id] = properties
+        self.assertEqual({f"smoke_{name.lower()}": {"smoke_name": name, "smoke_rank": str(rank)}
+                          for rank, name in enumerate(("Alice", "Bob", "Carol"), 1)}, vertices)
 
 
 class QuerySemanticsTest(unittest.TestCase):
