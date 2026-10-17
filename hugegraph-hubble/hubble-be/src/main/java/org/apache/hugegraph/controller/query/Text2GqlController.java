@@ -19,7 +19,10 @@
 package org.apache.hugegraph.controller.query;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.LinkedHashMap;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -38,7 +41,9 @@ import org.apache.hugegraph.handler.MessageSourceHandler;
 import org.apache.hugegraph.service.query.Text2GqlSettingsService;
 import org.apache.hugegraph.service.query.Text2GqlService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -59,6 +64,10 @@ public class Text2GqlController extends BaseController {
 
     @Autowired
     private MessageSourceHandler messages;
+
+    @Autowired
+    @Qualifier("text2GqlHeartbeats")
+    private TaskScheduler heartbeats;
 
     @PostMapping
     public Text2GqlResult generate(@PathVariable("graphspace") String graphSpace,
@@ -96,8 +105,14 @@ public class Text2GqlController extends BaseController {
         emitter.onError(failure -> events.cancel());
         emitter.onCompletion(events::cancel);
         events.waiting();
-        if (!events.finished.get()) {
-            events.attach(this.service.stream(prepared, events));
+        events.startHeartbeat(this.heartbeats);
+        try {
+            if (!events.finished.get()) {
+                events.attach(this.service.stream(prepared, events));
+            }
+        } catch (RuntimeException failure) {
+            events.cancel();
+            throw failure;
         }
         return emitter;
     }
@@ -127,6 +142,7 @@ public class Text2GqlController extends BaseController {
         private final Map<String, String> messages;
         private final AtomicBoolean finished = new AtomicBoolean();
         private final AtomicReference<Text2GqlService.StreamControl> control = new AtomicReference<>();
+        private final AtomicReference<ScheduledFuture<?>> heartbeat = new AtomicReference<>();
 
         private StreamEvents(SseEmitter emitter, Map<String, String> messages) {
             this.emitter = emitter;
@@ -137,6 +153,26 @@ public class Text2GqlController extends BaseController {
             this.control.set(control);
             if (this.finished.get()) {
                 control.cancel();
+            }
+        }
+
+        private void startHeartbeat(TaskScheduler scheduler) {
+            ScheduledFuture<?> task = scheduler.scheduleAtFixedRate(() -> {
+                if (!this.finished.get()) {
+                    this.send(SseEmitter.event().comment("keep-alive"));
+                }
+            }, Instant.now().plusSeconds(2), Duration.ofSeconds(2));
+            this.heartbeat.set(task);
+            // Completion or a disconnect can race with scheduler registration.
+            if (this.finished.get()) {
+                this.stopHeartbeat();
+            }
+        }
+
+        private void stopHeartbeat() {
+            ScheduledFuture<?> task = this.heartbeat.getAndSet(null);
+            if (task != null) {
+                task.cancel(false);
             }
         }
 
@@ -154,6 +190,7 @@ public class Text2GqlController extends BaseController {
         @Override
         public void onResult(Text2GqlResult result) {
             if (this.finished.compareAndSet(false, true)) {
+                this.stopHeartbeat();
                 this.send(Map.of("type", "result", "query", result.getQuery(),
                                  "language", result.getLanguage().value(), "valid", result.isValid(),
                                  "duration_ms", this.durationMillis()));
@@ -164,6 +201,7 @@ public class Text2GqlController extends BaseController {
         @Override
         public void onError(ExternalException failure) {
             if (this.finished.compareAndSet(false, true)) {
+                this.stopHeartbeat();
                 String message = this.messages.getOrDefault(failure.getMessage(),
                                                            this.messages.get("text2gql.model-failed"));
                 this.send(Map.of("type", "error", "message", message, "status", failure.status(),
@@ -177,8 +215,12 @@ public class Text2GqlController extends BaseController {
         }
 
         private boolean send(Map<String, ?> event) {
+            return this.send(SseEmitter.event().data(event, MediaType.APPLICATION_JSON));
+        }
+
+        private boolean send(SseEmitter.SseEventBuilder event) {
             try {
-                this.emitter.send(SseEmitter.event().data(event, MediaType.APPLICATION_JSON));
+                this.emitter.send(event);
                 return true;
             } catch (IOException | IllegalStateException ignored) {
                 this.cancel();
@@ -188,6 +230,7 @@ public class Text2GqlController extends BaseController {
         }
 
         private void timeout() {
+            this.stopHeartbeat();
             Text2GqlService.StreamControl current = this.control.get();
             if (current == null) {
                 this.onError(new ExternalException(504, "text2gql.model-timeout"));
@@ -198,6 +241,7 @@ public class Text2GqlController extends BaseController {
 
         private void cancel() {
             this.finished.set(true);
+            this.stopHeartbeat();
             Text2GqlService.StreamControl current = this.control.get();
             if (current != null) {
                 current.cancel();

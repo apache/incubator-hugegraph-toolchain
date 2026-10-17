@@ -63,7 +63,9 @@ test('handles split UTF-8, CRLF, multiple data lines, comments and a terminal ev
     expect(res.reader.releaseLock).toHaveBeenCalledTimes(1);
     expect(fetch).toHaveBeenCalledWith('/api/v1.3/graphspaces/space%20a/graphs/g%2Fone/text2gql/stream',
         expect.objectContaining({method: 'POST', credentials: 'same-origin', body: '{"question":"图"}',
-            headers: expect.objectContaining({Accept: 'text/event-stream', 'Accept-Language': expect.any(String)})}));
+            headers: expect.objectContaining({
+                Accept: 'text/event-stream, application/json', 'Accept-Language': expect.any(String),
+            })}));
 });
 
 test('delivers incremental text before the terminal result, ignoring reasoning fields', async () => {

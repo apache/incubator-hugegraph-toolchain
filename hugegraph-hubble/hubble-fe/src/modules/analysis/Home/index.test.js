@@ -704,7 +704,7 @@ it('preserves both text and execution provenance when switching between manual G
 
 it.each([
     ['Gremlin', 'history'], ['Gremlin', 'favorite'], ['Cypher', 'history'], ['Cypher', 'favorite'],
-])('restores manual provenance for a %s %s without a source question', async (mode, source) => {
+])('loads a manual %s %s without clearing its result or restoring AI provenance', async (mode, source) => {
     const graph = {graph_view: {vertices: [{id: 'visible-result'}], edges: []}};
     api.analysis.getExecutionQuery.mockResolvedValue({status: 200, data: graph});
     api.analysis.getCypherExecutionQuery.mockResolvedValue({status: 200, data: graph});
@@ -726,8 +726,8 @@ it.each([
     fireEvent.click(screen.getByRole('button', {name: `Load ${source} statement`}));
     expect(screen.getByTestId('query-content')).toHaveTextContent(content);
     expect(window.localStorage.getItem(`hubble.query.alice.DEFAULT.hugegraph.${mode}`)).toBe(content);
-    expect(screen.getByTestId('query-result')).toHaveTextContent('{}');
-    expect(screen.getByTestId('query-status')).not.toHaveTextContent('success');
+    expect(screen.getByTestId('query-result')).toHaveTextContent(JSON.stringify(graph));
+    expect(screen.getByTestId('query-status')).toHaveTextContent('success');
     expect(screen.getByTestId('editor-source')).toHaveTextContent('manual');
     expect(screen.getByTestId('source-question')).toBeEmptyDOMElement();
     await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
@@ -740,6 +740,100 @@ it.each([
         );
     }
     expect(api.analysis.executeText2Gql).not.toHaveBeenCalled();
+});
+
+it.each([
+    ['query', 'history'], ['query', 'favorite'], ['task', 'history'], ['task', 'favorite'],
+])('resets an in-flight generated %s when loading a manual %s and allows another run', async (mode, source) => {
+    const generation = pendingResponse();
+    const generatedRun = pendingResponse();
+    const generatedGraph = {graph_view: {vertices: [{id: 'late-generated-result'}], edges: []}};
+    const manualGraph = {graph_view: {vertices: [{id: 'manual-result'}], edges: []}};
+    const manualContent = source === 'history' ? 'g.V().limit(11)' : 'g.V().limit(12)';
+    const intervalSpy = jest.spyOn(global, 'setInterval');
+    const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
+    let view;
+
+    try {
+        api.analysis.getExecutionLogs.mockResolvedValue(historyResponse([{content: manualContent}]));
+        api.analysis.fetchFavoriteQueries.mockResolvedValue(historyResponse([{content: manualContent}]));
+        api.analysis.streamText2Gql.mockReturnValueOnce(generation.promise);
+        if (mode === 'query') {
+            api.analysis.executeText2Gql.mockReturnValueOnce(generatedRun.promise);
+            api.analysis.getExecutionQuery.mockResolvedValue({status: 200, data: manualGraph});
+        }
+        else {
+            api.analysis.getExecutionTask.mockReturnValueOnce(generatedRun.promise)
+                .mockResolvedValueOnce({status: 200, data: {task_id: 43}});
+        }
+
+        view = render(homeFor());
+        await waitFor(() => {
+            expect(screen.getByText('execution total 1')).toBeInTheDocument();
+            expect(screen.getByText('favorite total 1')).toBeInTheDocument();
+            expect(screen.getByText('metadata ready true')).toBeInTheDocument();
+            expect(screen.getByText('properties ready true')).toBeInTheDocument();
+        });
+        fireEvent.click(screen.getByRole('button', {name: 'Set model and question'}));
+        if (mode === 'task') {
+            fireEvent.click(screen.getByRole('button', {name: 'Use async'}));
+        }
+        await waitFor(() => expect(screen.getByRole('button', {name: 'Generate'})).toBeEnabled());
+        await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Generate'})));
+        await act(async () => generation.resolve({status: 200, data: {
+            valid: true, language: 'gremlin', query: 'g.V().limit(2)',
+        }}));
+
+        if (mode === 'query') {
+            await waitFor(() => expect(api.analysis.executeText2Gql).toHaveBeenCalledTimes(1));
+            expect(screen.getByTestId('execution-duration')).toHaveTextContent('0');
+        }
+        else {
+            await waitFor(() => expect(api.analysis.getExecutionTask).toHaveBeenCalledTimes(1));
+        }
+        expect(screen.getByTestId('query-status')).toHaveTextContent('loading');
+
+        const queryTimer = mode === 'query' ? intervalSpy.mock.results.at(-1)?.value : undefined;
+        fireEvent.click(screen.getByRole('button', {name: `Load ${source} statement`}));
+        expect(screen.getByTestId('query-status')).toHaveTextContent('standby');
+        expect(screen.getByTestId('execution-duration')).toBeEmptyDOMElement();
+        expect(screen.getByTestId('query-progress')).toBeEmptyDOMElement();
+        expect(screen.getByTestId('result-mode')).toHaveTextContent('query');
+        expect(screen.getByTestId('query-result')).toHaveTextContent('{}');
+        expect(screen.getByTestId('query-content')).toHaveTextContent(manualContent);
+        expect(screen.getByTestId('editor-source')).toHaveTextContent('manual');
+        if (mode === 'query') {
+            expect(queryTimer).toBeDefined();
+            expect(clearIntervalSpy).toHaveBeenCalledWith(queryTimer);
+        }
+
+        await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
+        if (mode === 'query') {
+            expect(api.analysis.getExecutionQuery).toHaveBeenCalledWith(
+                'DEFAULT', 'hugegraph', manualContent
+            );
+            expect(screen.getByTestId('query-result')).toHaveTextContent(JSON.stringify(manualGraph));
+            expect(screen.getByTestId('query-status')).toHaveTextContent('success');
+            await act(async () => generatedRun.resolve({status: 200, data: generatedGraph}));
+            expect(screen.getByTestId('query-result')).toHaveTextContent(JSON.stringify(manualGraph));
+        }
+        else {
+            expect(api.analysis.getExecutionTask).toHaveBeenCalledTimes(2);
+            expect(api.analysis.getExecutionTask).toHaveBeenLastCalledWith(
+                'DEFAULT', 'hugegraph', {content: manualContent}
+            );
+            expect(screen.getByTestId('async-task')).toHaveTextContent('43');
+            expect(screen.getByTestId('query-status')).toHaveTextContent('success');
+            await act(async () => generatedRun.resolve({status: 200, data: {task_id: 99}}));
+            expect(screen.getByTestId('async-task')).toHaveTextContent('43');
+        }
+        expect(screen.getByTestId('query-status')).toHaveTextContent('success');
+    }
+    finally {
+        view?.unmount();
+        clearIntervalSpy.mockRestore();
+        intervalSpy.mockRestore();
+    }
 });
 
 it.each(['gremlin', 'cypher'])(
@@ -783,7 +877,7 @@ it.each(['gremlin', 'cypher'])(
         expect(screen.getByTestId('query-result')).toHaveTextContent(JSON.stringify(graph));
         fireEvent.click(screen.getByRole('button', {name: 'Load favorite statement'}));
         expect(window.localStorage.getItem(draftKey)).toBe(content);
-        expect(screen.getByTestId('query-result')).toHaveTextContent('{}');
+        expect(screen.getByTestId('query-result')).toHaveTextContent(JSON.stringify(graph));
         expect(screen.getByTestId('source-question')).toBeEmptyDOMElement();
         expect(screen.getByTestId('editor-source')).toHaveTextContent('manual');
         expect(screen.getByTestId('query-language')).toHaveTextContent(language);

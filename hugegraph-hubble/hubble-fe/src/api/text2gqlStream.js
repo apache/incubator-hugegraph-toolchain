@@ -179,7 +179,9 @@ export const streamText2Gql = async (graphspace, graph, params, {signal, onDelta
         const response = await fetch(`/api/v1.3/graphspaces/${encodeURIComponent(graphspace)}`
             + `/graphs/${encodeURIComponent(graph)}/text2gql/stream`, {
             method: 'POST', credentials: 'same-origin', signal: controller.signal,
-            headers: withLanguageHeader({'Content-Type': 'application/json', Accept: 'text/event-stream'}),
+            headers: withLanguageHeader({
+                'Content-Type': 'application/json', Accept: 'text/event-stream, application/json',
+            }),
             body: JSON.stringify(params),
         });
         if (!response.ok || !response.headers.get('content-type')?.includes('text/event-stream')) {

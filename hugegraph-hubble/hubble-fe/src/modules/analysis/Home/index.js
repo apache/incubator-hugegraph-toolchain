@@ -700,6 +700,14 @@ const AnalysisHome = ({toolbarExtra}) => {
 
     const handleClickLoadContent = useCallback((content, text) => {
         const isAi = typeof text === 'string' && Boolean(text.trim());
+        const isExecuting = queryStatus === LOADING;
+        if (isExecuting) {
+            // A history selection detaches any in-flight query before its response can update the view.
+            queryRequest.current = null;
+            executionInFlight.current = null;
+            setQueryMode(true);
+            setAsyncTaskResult();
+        }
         rememberDraft(content, isAi ? 'ai' : 'manual');
         setCodeEditorContent(content);
         setEditorSource(isAi ? 'ai' : 'manual');
@@ -711,8 +719,8 @@ const AnalysisHome = ({toolbarExtra}) => {
                 // History remains usable when browser storage is blocked.
             }
         }
-        text2gql.loadSource(text);
-    }, [analysisMode, graph, graphSpace, rememberDraft, text2gql]);
+        text2gql.loadSource(text, {preserveResult: !isAi && !isExecuting});
+    }, [analysisMode, graph, graphSpace, queryStatus, rememberDraft, text2gql]);
 
     const clearQuery = useCallback(() => {
         rememberDraft('', 'manual');

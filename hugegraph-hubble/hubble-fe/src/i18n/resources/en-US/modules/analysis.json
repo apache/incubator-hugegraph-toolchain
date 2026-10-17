@@ -291,7 +291,7 @@
       "task_navigation": {
         "success_alt": "Submitted successfully",
         "title": "Task submitted",
-        "description": "Your task will run in the background. Check its progress and results on the task page.",
+        "description": "Your task will run in the background. Check its progress and results on the task page",
         "task_id": "Task ID",
         "view": "View task progress"
       },
@@ -1048,13 +1048,13 @@
       "apply": "Apply",
       "cancel": "Cancel",
       "template": "{{language}} template",
-      "shared_hint": "Apply to this form, then save settings to persist the shared templates.",
-      "temporary_hint": "Override templates for this page only. Refreshing or switching accounts clears these changes.",
-      "schema_hint": "Schema is added automatically; questions are sent separately. Read-only checks remain enabled.",
-      "examples_hint": "Add business rules and a few example questions and queries.",
+      "shared_hint": "Apply to this form, then save settings to persist the shared templates",
+      "temporary_hint": "Override templates for this page only. Refreshing or switching accounts clears these changes",
+      "schema_hint": "Schema is added automatically; questions are sent separately. Read-only checks remain enabled",
+      "examples_hint": "Add business rules and a few example questions and queries",
       "reset_default": "Restore built-in default",
       "reset_shared": "Use shared default",
-      "unavailable": "Prompt templates are unavailable. Reload the page to try again."
+      "unavailable": "Prompt templates are unavailable. Reload the page to try again"
     },
     "model_settings": {
       "title": "Model settings",

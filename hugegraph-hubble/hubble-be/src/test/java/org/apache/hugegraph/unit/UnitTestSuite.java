@@ -24,6 +24,7 @@ import org.apache.hugegraph.controller.auth.GraphSpaceAuthOwnershipTest;
 import org.apache.hugegraph.controller.ingest.IngestControllerTest;
 import org.apache.hugegraph.controller.langchain.LangChainControllerSecurityTest;
 import org.apache.hugegraph.controller.query.Text2GqlControllerTest;
+import org.apache.hugegraph.controller.query.Text2GqlStreamTransportTest;
 import org.apache.hugegraph.controller.schema.SchemaControllerSecurityTest;
 import org.apache.hugegraph.controller.space.GraphSpaceControllerTest;
 import org.apache.hugegraph.controller.space.SchemaTemplateControllerSecurityTest;
@@ -87,6 +88,7 @@ import org.junit.runners.Suite;
     ReadOnlyCypherTest.class,
     CypherHistoryFailureTest.class,
     Text2GqlControllerTest.class,
+    Text2GqlStreamTransportTest.class,
     Text2GqlServiceTest.class,
     Text2GqlStreamTest.class,
     Text2GqlHttpClientTest.class,

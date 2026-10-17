@@ -291,7 +291,7 @@
       "task_navigation": {
         "success_alt": "提交成功",
         "title": "任务已提交",
-        "description": "任务将在后台运行，可前往任务页面查看进度和结果。",
+        "description": "任务将在后台运行，可前往任务页面查看进度和结果",
         "task_id": "任务 ID",
         "view": "查看任务进度"
       },
@@ -1048,13 +1048,13 @@
       "apply": "应用",
       "cancel": "取消",
       "template": "{{language}} 模板",
-      "shared_hint": "应用到表单后，保存设置即更新共享模板。",
-      "temporary_hint": "仅覆盖当前页面的模板，刷新页面或切换账户后清除。",
-      "schema_hint": "自动附加 Schema，问题单独发送；保留只读校验。",
-      "examples_hint": "可添加业务规则及几组问题与查询示例。",
+      "shared_hint": "应用到表单后，保存设置即更新共享模板",
+      "temporary_hint": "仅覆盖当前页面的模板，刷新页面或切换账户后清除",
+      "schema_hint": "自动附加 Schema，问题单独发送；保留只读校验",
+      "examples_hint": "可添加业务规则及几组问题与查询示例",
       "reset_default": "恢复内置默认",
       "reset_shared": "使用共享默认",
-      "unavailable": "暂时无法读取 Prompt 模板，请刷新页面重试。"
+      "unavailable": "暂时无法读取 Prompt 模板，请刷新页面重试"
     },
     "model_settings": {
       "title": "模型设置",

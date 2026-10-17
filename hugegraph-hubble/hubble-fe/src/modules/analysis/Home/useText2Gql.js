@@ -436,9 +436,11 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
         generate: options => run(undefined, question.trim(), options),
         rerun: (content, options) => run(content, sourceQuestion, options),
         cancel,
-        loadSource: text => {
+        loadSource: (text, {preserveResult = false} = {}) => {
             invalidate();
-            clearResult();
+            if (!preserveResult) {
+                clearResult();
+            }
             setError('');
             setErrorStage('');
             const source = typeof text === 'string' ? text : '';

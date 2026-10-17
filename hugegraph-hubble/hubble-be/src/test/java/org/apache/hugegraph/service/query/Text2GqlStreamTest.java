@@ -41,8 +41,10 @@ import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.handler.MessageSourceHandler;
 import org.apache.hugegraph.handler.ResponseAdvisor;
 import org.junit.Test;
+import org.junit.AfterClass;
 import org.mockito.Mockito;
 import org.springframework.http.MediaType;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -64,6 +66,22 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 public class Text2GqlStreamTest {
+
+    private static final ThreadPoolTaskScheduler HEARTBEATS = heartbeats();
+
+    private static ThreadPoolTaskScheduler heartbeats() {
+        ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+        scheduler.setThreadNamePrefix("text2gql-test-heartbeat-");
+        scheduler.setRemoveOnCancelPolicy(true);
+        scheduler.initialize();
+        return scheduler;
+    }
+
+    @AfterClass
+    public static void stopHeartbeats() {
+        HEARTBEATS.shutdown();
+    }
+
 
     @Test
     public void testMvcFlushesRealDeltasBeforeCompletionWithoutResponseAdviceWrappingOrThinking() throws Exception {
@@ -465,6 +483,7 @@ public class Text2GqlStreamTest {
                 }
             };
             ReflectionTestUtils.setField(controller, "service", service);
+            ReflectionTestUtils.setField(controller, "heartbeats", HEARTBEATS);
             ReflectionTestUtils.setField(controller, "settings", this.settings);
             ReflectionTestUtils.setField(controller, "messages", new MessageSourceHandler() {
                 @Override
