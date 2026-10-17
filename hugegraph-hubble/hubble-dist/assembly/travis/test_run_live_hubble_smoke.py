@@ -16,6 +16,7 @@
 # limitations under the License.
 #
 
+import csv
 import importlib.util
 import io
 import tarfile
@@ -184,6 +185,190 @@ class AnalysisBoundaryTest(unittest.TestCase):
 
         self.assertEqual(["passed", "passed"],
                          [check["status"] for check in checks])
+
+
+class LoaderFixtureDataTest(unittest.TestCase):
+
+    def test_repeated_vertex_writes_have_identical_properties(self):
+        schema = {"vl_person": "smoke_person", "el_knows": "smoke_knows",
+                  "pk_name": "smoke_name", "pk_rank": "smoke_rank"}
+        mappings = []
+        rows = []
+
+        def multipart(_fields, _file_field, _file_name, content):
+            rows.extend(csv.DictReader(io.StringIO(content.decode())))
+            return b"multipart", "multipart/form-data"
+
+        def request(method, url, body=None, headers=None):
+            if url.endswith("/job-manager"):
+                data = {"id": 1}
+            elif "/upload-file/token?" in url:
+                data = {"smoke_edges.csv": "token"}
+            elif url.endswith("/upload-file"):
+                data = {"id": 2}
+            elif url.endswith("/file-setting"):
+                data = {"file_setting": {"column_names": list(rows[0])}}
+            else:
+                data = {}
+            if url.endswith("/vertex-mappings"):
+                mappings.append(body)
+            return {"status": 200, "data": data}
+
+        with mock.patch.object(SMOKE, "request", side_effect=request), \
+                mock.patch.object(SMOKE, "encode_multipart", side_effect=multipart):
+            SMOKE.upload_csv("http://hubble", "DEFAULT", "graph", "smoke", schema)
+            SMOKE.configure_mapping("http://hubble", "DEFAULT", "graph", 1, 2, schema)
+
+        vertices = {}
+        for mapping in mappings:
+            for row in rows:
+                vertex_id = row[mapping["id_fields"][0]]
+                properties = {m["mapped_name"]: row[m["column_name"]] for m in mapping["field_mapping"]}
+                if vertex_id in vertices:
+                    self.assertEqual(vertices[vertex_id], properties, vertex_id)
+                vertices[vertex_id] = properties
+        self.assertEqual({f"smoke_{name.lower()}": {"smoke_name": name, "smoke_rank": str(rank)}
+                          for rank, name in enumerate(("Alice", "Bob", "Carol"), 1)}, vertices)
+
+
+class QuerySemanticsTest(unittest.TestCase):
+
+    def setUp(self):
+        self.schema = {"vl_person": "smoke_person", "el_knows": "smoke_knows",
+                       "pk_name": "smoke_name", "pk_rank": "smoke_rank"}
+        self.queries = []
+        self.cypher_enabled = True
+        self.vertices = [
+            {"id": "smoke_alice", "label": "smoke_person",
+             "properties": {"smoke_name": "Alice", "smoke_rank": 1}},
+            {"id": "smoke_bob", "label": "smoke_person",
+             "properties": {"smoke_name": "Bob", "smoke_rank": 2}},
+            {"id": "smoke_carol", "label": "smoke_person", "properties": {}}]
+        self.edges = [{"id": "edge1", "label": "smoke_knows", "source": "smoke_alice", "target": "smoke_bob"},
+                      {"id": "edge2", "label": "smoke_knows", "source": "smoke_bob", "target": "smoke_carol"}]
+
+    def request(self, method, url, body=None):
+        if url.endswith("/config"):
+            data = {"server_capabilities_verified": True, "cypher_enabled": self.cypher_enabled}
+        elif url.endswith("/gremlin-query"):
+            self.assertEqual("POST", method)
+            count = 3 if "g.V()" in body["content"] else 2
+            data = {"table_view": {"rows": [{"result": count}]}}
+        elif "/cypher?" in url:
+            self.assertEqual("GET", method)
+            query = SMOKE.urllib.parse.parse_qs(SMOKE.urllib.parse.urlsplit(url).query)["cypher"][0]
+            self.queries.append(query)
+            if query == "RETURN 1 AS value":
+                data = {"json_view": {"data": [{"value": 1}]},
+                        "table_view": {"rows": [{"result": {"value": 1}}]}}
+            else:
+                vertex = query.endswith("RETURN n")
+                elements = self.vertices if vertex else self.edges
+                data = {"type": "VERTEX" if vertex else "EDGE",
+                        "json_view": {"data": elements}, "table_view": {"rows": elements},
+                        "graph_view": {"vertices": self.vertices, "edges": self.edges}}
+        elif "/execute-histories?" in url:
+            data = {"records": [{"content": q, "status": "SUCCESS"} for q in self.queries]}
+        else:
+            self.fail(f"Unexpected query request: {method} {url}")
+        return {"status": 200, "data": data}
+
+    def run_checks(self, request=None):
+        with mock.patch.object(SMOKE, "request", side_effect=request or self.request):
+            return SMOKE.run_hubble_query_checks("http://hubble", "http://server", "DEFAULT", "graph",
+                                                 self.schema, "smoke")
+
+    def test_query_routes_validate_all_views_and_history(self):
+        checks = self.run_checks()
+        self.assertEqual(6, len(checks))
+        self.assertTrue(all(c["status"] == "passed" for c in checks))
+        self.assertEqual(["RETURN 1 AS value", "MATCH (n:`smoke_person`) RETURN n",
+                          "MATCH ()-[e:`smoke_knows`]->() RETURN e"], self.queries)
+
+    def test_disabled_server_skips_only_cypher(self):
+        self.cypher_enabled = False
+        versions = {"versions": {"core": "1.7.0"}}
+        with mock.patch.object(SMOKE, "server_json", return_value=versions) as server_json:
+            checks = self.run_checks()
+        server_json.assert_called_once_with("GET", "http://server", "/versions")
+        self.assertEqual(["passed", "passed", "skipped"], [c["status"] for c in checks])
+        self.assertEqual(versions, checks[-1]["server_versions"])
+        self.assertEqual([], self.queries)
+
+    def test_enabled_cypher_failure_is_not_skipped(self):
+        def request(method, url, body=None):
+            if "/cypher?" in url:
+                raise RuntimeError("Server query failed")
+            return self.request(method, url, body)
+        with self.assertRaisesRegex(RuntimeError, "Server query failed"):
+            self.run_checks(request)
+
+    def test_unverified_capability_is_not_skipped(self):
+        for capabilities in ({"server_capabilities_verified": False, "cypher_enabled": False},
+                             {"server_capabilities_verified": True}):
+            with self.subTest(capabilities=capabilities):
+                def request(method, url, body=None):
+                    if url.endswith("/config"):
+                        return {"status": 200, "data": capabilities}
+                    return self.request(method, url, body)
+                with self.assertRaisesRegex(RuntimeError, "unverified"):
+                    self.run_checks(request)
+
+    def test_failed_history_is_not_accepted(self):
+        def request(method, url, body=None):
+            response = self.request(method, url, body)
+            if "/execute-histories?" in url:
+                response["data"]["records"][0]["status"] = "FAILED"
+            return response
+        with self.assertRaisesRegex(RuntimeError, "execution history mismatch"):
+            self.run_checks(request)
+
+    def test_wrong_gremlin_count_fails(self):
+        with mock.patch.object(SMOKE, "run_hubble_gremlin", return_value={"table_view": {"rows": [0]}}):
+            with self.assertRaisesRegex(RuntimeError, "Gremlin vertices count"):
+                self.run_checks()
+
+    def test_missing_graph_conversion_fails(self):
+        result = {"type": "VERTEX", "json_view": {"data": self.vertices},
+                  "table_view": {"rows": self.vertices}, "graph_view": {"vertices": []}}
+        with self.assertRaisesRegex(RuntimeError, "missing graph view"):
+            SMOKE.check_cypher_graph_views(result, self.schema, "smoke", "VERTEX")
+
+    def test_duplicate_graph_rows_fail(self):
+        for kind, elements, resource in [("VERTEX", self.vertices, "vertices"),
+                                          ("EDGE", self.edges, "edges")]:
+            for section, key in [("json_view", "data"), ("table_view", "rows"), ("graph_view", resource)]:
+                with self.subTest(kind=kind, view=section):
+                    result = {"type": kind, "json_view": {"data": list(elements)},
+                              "table_view": {"rows": list(elements)},
+                              "graph_view": {resource: list(elements)}}
+                    result[section][key].append(elements[0])
+                    with self.assertRaisesRegex(RuntimeError, "count mismatch"):
+                        SMOKE.check_cypher_graph_views(result, self.schema, "smoke", kind)
+
+    def test_missing_complementary_graph_elements_fail(self):
+        for kind, elements, complementary in [("VERTEX", self.vertices, "edges"),
+                                               ("EDGE", self.edges, "vertices")]:
+            with self.subTest(kind=kind):
+                result = {"type": kind, "json_view": {"data": elements},
+                          "table_view": {"rows": elements},
+                          "graph_view": {"vertices": self.vertices, "edges": self.edges}}
+                result["graph_view"][complementary] = []
+                with self.assertRaisesRegex(RuntimeError, "graph enrichment"):
+                    SMOKE.check_cypher_graph_views(result, self.schema, "smoke", kind)
+
+    def test_loader_flow_invokes_hubble_query_checks(self):
+        shortest_path = {"path": ["smoke_alice", "smoke_bob", "smoke_carol"]}
+        with mock.patch.object(SMOKE, "create_schema", return_value=([], self.schema)), \
+                mock.patch.object(SMOKE, "upload_csv", return_value=(1, 2)), \
+                mock.patch.object(SMOKE, "configure_mapping"), \
+                mock.patch.object(SMOKE, "wait_for_load_task", return_value=(3, {"status": "SUCCEED"}, {})), \
+                mock.patch.object(SMOKE, "run_server_label_count", side_effect=[3, 2]), \
+                mock.patch.object(SMOKE, "server_json", return_value=shortest_path), \
+                mock.patch.object(SMOKE, "run_hubble_query_checks", return_value=[]) as query_checks:
+            SMOKE.run_live_function_flow("http://hubble", "http://server", "DEFAULT", "graph", "smoke")
+        query_checks.assert_called_once_with("http://hubble", "http://server", "DEFAULT", "graph",
+                                             self.schema, "smoke")
 
 
 if __name__ == "__main__":

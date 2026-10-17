@@ -34,7 +34,7 @@ SPEC.loader.exec_module(FIXTURE)
 
 
 class GremlinFixtureTest(unittest.TestCase):
-    def test_native_serializer_block_preserves_fixture_endpoints_and_plugins(self):
+    def test_native_serializers_preserve_fixture_endpoints_and_auth(self):
         for family in ("driver", "util"):
             with tempfile.TemporaryDirectory(prefix="hubble-fixture-") as temp:
                 root = pathlib.Path(temp)
@@ -42,17 +42,43 @@ class GremlinFixtureTest(unittest.TestCase):
                 (root / "lib").mkdir()
                 serializer = f"org.apache.tinkerpop.gremlin.{family}.ser.GraphBinaryMessageSerializerV1"
                 block = f"serializers:\n  - {{className: {serializer}}}\n"
-                (root / "conf/gremlin-server.yaml").write_text("port: 8182\n" + block + "metrics: {}\n")
+                (root / "conf/gremlin-server.yaml").write_text(
+                    "port: 8182\nchannelizer: native.Channelizer\nscriptEngines: {}\n" + block + "metrics: {}\n")
                 with zipfile.ZipFile(root / "lib/native.jar", "w") as jar:
                     jar.writestr(serializer.replace(".", "/") + ".class", b"class")
                 template = root / "fixture.yaml"
-                before = "port: 8183\nauthentication: {authenticator: test.Auth}\nscriptEngines: {}\n"
+                before = ("port: 8183\nauthentication: {authenticator: test.Auth}\n"
+                          "channelizer: native.Channelizer\nscriptEngines: {}\n")
                 after = "metrics: {consoleReporter: {enabled: false}}\n"
                 template.write_text(before + "serializers:\n  - {className: old.Missing}\n" + after)
                 text, report = FIXTURE.configure(root, template)
                 self.assertEqual(before + block + after, text)
                 self.assertEqual([serializer], report["verified_classes"])
                 self.assertIn("old.Missing", template.read_text())
+
+    def test_native_query_protocol_and_imports_preserve_fixture_address_and_auth(self):
+        with tempfile.TemporaryDirectory(prefix="hubble-query-fixture-") as temp:
+            root = pathlib.Path(temp)
+            (root / "conf").mkdir()
+            (root / "lib").mkdir()
+            native = ("channelizer: native.WsAndHttpChannelizer\n"
+                      "scriptEngines: {gremlin-groovy: {staticImports: [native.Cypher.*]}}\n"
+                      "serializers:\n  - {className: native.Serializer}\n")
+            (root / "conf/gremlin-server.yaml").write_text("port: 8182\n" + native)
+            with zipfile.ZipFile(root / "lib/native.jar", "w") as jar:
+                jar.writestr("native/Serializer.class", b"class")
+            template = root / "fixture.yaml"
+            template.write_text("host: 127.0.0.1\nport: 8183\n"
+                                "channelizer: old.HttpOnly\n"
+                                "scriptEngines: {old: {}}\n"
+                                "serializers:\n  - {className: old.Missing}\n"
+                                "authentication: {authenticator: fixture.Auth}\n")
+            configured, _ = FIXTURE.configure(root, template)
+            self.assertIn(native, configured)
+            self.assertIn("host: 127.0.0.1\nport: 8183\n", configured)
+            self.assertIn("authentication: {authenticator: fixture.Auth}", configured)
+            self.assertNotIn("old.HttpOnly", configured)
+            self.assertNotIn("old: {}", configured)
 
     def test_missing_native_serializer_is_rejected(self):
         with tempfile.TemporaryDirectory(prefix="hubble-fixture-") as temp:
@@ -65,6 +91,22 @@ class GremlinFixtureTest(unittest.TestCase):
             template.write_text(native)
             with self.assertRaisesRegex(ValueError, "native.Missing"):
                 FIXTURE.configure(root, template)
+
+    def test_authenticated_template_keeps_http_auth_with_native_channelizer(self):
+        with tempfile.TemporaryDirectory(prefix="hubble-auth-fixture-") as temp:
+            root = pathlib.Path(temp)
+            (root / "conf").mkdir()
+            (root / "lib").mkdir()
+            (root / "conf/gremlin-server.yaml").write_text(
+                "channelizer: native.WsAndHttpChannelizer\nscriptEngines: {}\n"
+                "serializers:\n  - {className: native.Serializer}\n")
+            with zipfile.ZipFile(root / "lib/native.jar", "w") as jar:
+                jar.writestr("native/Serializer.class", b"class")
+            configured, _ = FIXTURE.configure(root, HERE / "hugegraph-server2/gremlin-server.yaml")
+            self.assertIn("channelizer: native.WsAndHttpChannelizer", configured)
+            self.assertIn("authenticator: org.apache.hugegraph.auth.StandardAuthenticator", configured)
+            self.assertIn("authenticationHandler: org.apache.hugegraph.auth.WsAndHttpBasicAuthHandler", configured)
+            self.assertIn("tokens: conf/rest-server.properties", configured)
 
     def test_archive_commit_and_hash_bind_the_supplied_payload(self):
         with tempfile.TemporaryDirectory(prefix="hubble-archive-input-") as temp:

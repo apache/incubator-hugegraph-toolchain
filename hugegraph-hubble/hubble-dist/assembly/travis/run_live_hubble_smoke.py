@@ -447,9 +447,9 @@ def upload_csv(hubble_url, graph_space, graph_name, prefix, schema):
     job_id = job["id"]
     file_name = f"{prefix}_edges.csv"
     csv_text = (
-        f"source,target,{schema['pk_name']},{schema['pk_rank']}\n"
-        f"{prefix}_alice,{prefix}_bob,Alice,1\n"
-        f"{prefix}_bob,{prefix}_carol,Bob,2\n"
+        f"source,target,{schema['pk_name']},{schema['pk_rank']},target_name,target_rank\n"
+        f"{prefix}_alice,{prefix}_bob,Alice,1,Bob,2\n"
+        f"{prefix}_bob,{prefix}_carol,Bob,2,Carol,3\n"
     )
     token_map = unwrap(request(
         "GET",
@@ -518,7 +518,10 @@ def configure_mapping(hubble_url, graph_space, graph_name, job_id, file_id,
     unwrap(request("POST", f"{base}/{file_id}/vertex-mappings", {
         "label": schema["vl_person"],
         "id_fields": ["target"],
-        "field_mapping": [],
+        "field_mapping": [
+            {"column_name": "target_name", "mapped_name": schema["pk_name"]},
+            {"column_name": "target_rank", "mapped_name": schema["pk_rank"]}
+        ],
         "value_mapping": [],
         "null_values": null_values
     }), "add target vertex mapping")
@@ -591,6 +594,104 @@ def run_hubble_gremlin(hubble_url, graph_space, graph_name, content):
         f"{graph_name}/gremlin-query",
         {"content": content}
     ), f"Hubble Gremlin {content}")
+
+
+def run_hubble_cypher(hubble_url, graph_space, graph_name, content):
+    return unwrap(request(
+        "GET",
+        f"{hubble_url}/api/v1.3/graphspaces/{graph_space}/graphs/"
+        f"{graph_name}/cypher?{urllib.parse.urlencode({'cypher': content})}"
+    ), f"Hubble Cypher {content}")
+
+
+def check_cypher_graph_views(result, schema, prefix, kind):
+    resource = "vertices" if kind == "VERTEX" else "edges"
+    expected_count = 3 if kind == "VERTEX" else 2
+    expected_vertices = {f"{prefix}_{name}" for name in ("alice", "bob", "carol")}
+    expected_edges = {(f"{prefix}_alice", f"{prefix}_bob", schema["el_knows"]),
+                      (f"{prefix}_bob", f"{prefix}_carol", schema["el_knows"])}
+    if result.get("type") != kind:
+        raise RuntimeError(f"Cypher {resource} result type mismatch: {result}")
+    views = {"json": (result.get("json_view") or {}).get("data"),
+             "table": (result.get("table_view") or {}).get("rows"),
+             "graph": (result.get("graph_view") or {}).get(resource)}
+    ids = None
+    for view, elements in views.items():
+        if not isinstance(elements, list) or not elements:
+            raise RuntimeError(f"Cypher {resource} missing {view} view: {result}")
+        if len(elements) != expected_count:
+            raise RuntimeError(f"Cypher {resource} {view} view count mismatch: "
+                               f"{len(elements)} != {expected_count}")
+        current_ids = normalize_vertices(elements)
+        if ids is not None and current_ids != ids:
+            raise RuntimeError(f"Cypher {resource} IDs differ in {view} view")
+        ids = current_ids
+        if kind == "VERTEX":
+            if ids != expected_vertices or any(v.get("label") != schema["vl_person"] for v in elements):
+                raise RuntimeError(f"Cypher vertex IDs/labels mismatch in {view} view: {elements}")
+            by_id = {str(v["id"]): v.get("properties", {}) for v in elements}
+            for name, rank in (("Alice", 1), ("Bob", 2)):
+                properties = by_id[f"{prefix}_{name.lower()}"]
+                if properties.get(schema["pk_name"]) != name or properties.get(schema["pk_rank"]) != rank:
+                    raise RuntimeError(f"Cypher vertex properties mismatch in {view} view: {elements}")
+        elif normalize_edges(elements) != expected_edges:
+            raise RuntimeError(f"Cypher edge endpoints/labels mismatch in {view} view: {elements}")
+
+    graph = result.get("graph_view") or {}
+    vertices = graph.get("vertices") or []
+    edges = graph.get("edges") or []
+    if (len(vertices) != len(expected_vertices) or normalize_vertices(vertices) != expected_vertices or
+            any(v.get("label") != schema["vl_person"] for v in vertices)):
+        raise RuntimeError(f"Cypher graph enrichment vertices mismatch: {graph}")
+    if len(edges) != len(expected_edges) or normalize_edges(edges) != expected_edges:
+        raise RuntimeError(f"Cypher graph enrichment edges mismatch: {graph}")
+
+
+def run_hubble_query_checks(hubble_url, server_url, graph_space, graph_name, schema, prefix):
+    checks = []
+    for resource, label, expected in (("vertices", schema["vl_person"], 3),
+                                      ("edges", schema["el_knows"], 2)):
+        step = "V" if resource == "vertices" else "E"
+        query = f"g.{step}().hasLabel({json.dumps(label)}).count()"
+        actual = first_table_value(run_hubble_gremlin(hubble_url, graph_space, graph_name, query))
+        if actual != expected:
+            raise RuntimeError(f"Hubble Gremlin {resource} count {actual} != {expected}")
+        checks.append({"name": f"hubble-gremlin-{resource}-count", "status": "passed",
+                       "count": actual, "expected": expected})
+
+    capabilities = unwrap(request("GET", f"{hubble_url}/api/v1.3/config"), "Server capabilities")
+    if capabilities.get("server_capabilities_verified") is not True:
+        raise RuntimeError(f"Hubble Server capabilities are unverified: {capabilities}")
+    if capabilities.get("cypher_enabled") is False:
+        checks.append({"name": "hubble-cypher-semantics", "status": "skipped",
+                       "server_versions": server_json("GET", server_url, "/versions"),
+                       "reason": "Selected Server reports cypher_enabled=false"})
+        return checks
+    if capabilities.get("cypher_enabled") is not True:
+        raise RuntimeError(f"Hubble Cypher capability is unverified: {capabilities}")
+
+    queries = ["RETURN 1 AS value",
+               f"MATCH (n:`{schema['vl_person']}`) RETURN n",
+               f"MATCH ()-[e:`{schema['el_knows']}`]->() RETURN e"]
+    scalar = run_hubble_cypher(hubble_url, graph_space, graph_name, queries[0])
+    if ((scalar.get("json_view") or {}).get("data") != [{"value": 1}] or
+            first_table_value(scalar) != {"value": 1}):
+        raise RuntimeError(f"Hubble Cypher scalar conversion mismatch: {scalar}")
+    checks.append({"name": "hubble-cypher-scalar", "status": "passed", "value": 1})
+    for query, kind in zip(queries[1:], ("VERTEX", "EDGE")):
+        result = run_hubble_cypher(hubble_url, graph_space, graph_name, query)
+        check_cypher_graph_views(result, schema, prefix, kind)
+        checks.append({"name": f"hubble-cypher-{kind.lower()}-views", "status": "passed",
+                       "views": ["json", "table", "graph"]})
+    history = unwrap(request(
+        "GET", f"{hubble_url}/api/v1.3/graphspaces/{graph_space}/graphs/{graph_name}/"
+        "execute-histories?type=2&page_no=1&page_size=3"), "Cypher execution history")
+    records = history.get("records") or []
+    if (len(records) != 3 or {r.get("content") for r in records} != set(queries) or
+            any(r.get("status") != "SUCCESS" for r in records)):
+        raise RuntimeError(f"Hubble Cypher execution history mismatch: {history}")
+    checks.append({"name": "hubble-cypher-history", "status": "passed", "records": 3})
+    return checks
 
 
 def run_server_label_count(server_url, graph_name, resource, label):
@@ -679,6 +780,8 @@ def run_live_function_flow(hubble_url, server_url, graph_space, graph_name,
                    "status": "passed", "vertices": d_vertices,
                    "edges": d_edges, "expected_vertices": expected_vertices,
                    "expected_edges": expected_edges})
+
+    checks.extend(run_hubble_query_checks(hubble_url, server_url, graph_space, graph_name, schema, prefix))
 
     direct_shortest = server_json(
         "GET", server_url,
