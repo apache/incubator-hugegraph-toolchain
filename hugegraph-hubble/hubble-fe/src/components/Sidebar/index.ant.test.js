@@ -278,7 +278,6 @@ test('offers a second accessible collapse control beside Home', async () => {
     expect(navigation.querySelector('.ant-layout-sider'))
         .toHaveClass('ant-layout-sider-collapsed');
     expect(toggle).toHaveAccessibleName('打开主导航');
-    expect(toggle).toHaveStyle({width: '80px', minWidth: '80px'});
     const toggleSlot = toggle.closest('.workbench-navigation-toggle-slot');
     expect(toggleSlot).toBeInTheDocument();
     expect(toggleSlot.nextElementSibling).toHaveClass('ant-menu');

@@ -279,8 +279,6 @@ const Sidebar = () => {
                         <Tooltip title={toggleLabel} placement="right">
                             <Button
                                 className="workbench-navigation-inline-toggle"
-                                style={renderedCollapsed
-                                    ? {width: 80, minWidth: 80} : undefined}
                                 type="text"
                                 size="small"
                                 icon={collapsed

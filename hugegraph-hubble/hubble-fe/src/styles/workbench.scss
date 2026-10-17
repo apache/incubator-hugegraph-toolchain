@@ -97,25 +97,6 @@
         border-right: 0;
     }
 
-    .workbench-navigation-inline-toggle {
-        position: sticky;
-        z-index: 2;
-        top: 9px;
-        float: right;
-        width: 28px;
-        min-width: 28px;
-        height: 28px;
-        margin: 7px 12px -35px 0;
-        color: var(--workbench-color-text-secondary);
-        background: rgba(255, 255, 255, 0.88);
-
-        &:hover,
-        &:focus-visible {
-            color: var(--workbench-color-brand-strong);
-            background: #eaf2ff;
-        }
-    }
-
     .ant-menu-item,
     .ant-menu-submenu-title {
         width: calc(100% - 16px);
