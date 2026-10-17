@@ -17,7 +17,7 @@
  */
 
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {Alert, Button, Checkbox, Input, Select, Space, Spin, Switch} from 'antd';
+import {Alert, Button, Checkbox, Input, Select, Spin, Switch} from 'antd';
 import {useTranslation} from 'react-i18next';
 import {useAuthContext} from '../../auth/AuthContext';
 import * as api from '../../api';
@@ -268,14 +268,14 @@ const Text2GqlSettingsForm = () => {
                             </p>
                         )}
                     </div>
-                    <Space wrap>
-                        <Button type='primary' disabled={cannotSave} loading={saving} onClick={save}>
-                            {t('analysis.model_settings.save')}
-                        </Button>
+                    <footer className={c.actions}>
                         <span className={c.source}>{t(saved.source === 'managed'
                             ? 'analysis.model_settings.source_managed' : 'analysis.model_settings.source_deployment')}
                         </span>
-                    </Space>
+                        <Button type='primary' disabled={cannotSave} loading={saving} onClick={save}>
+                            {t('analysis.model_settings.save')}
+                        </Button>
+                    </footer>
                 </section>
             )}
         </main>

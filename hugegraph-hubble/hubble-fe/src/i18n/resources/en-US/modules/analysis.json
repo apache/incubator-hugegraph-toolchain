@@ -1017,7 +1017,7 @@
       "replace_key": "New API Key",
       "key_configured": "An API Key is configured; leave this blank to keep it",
       "key_missing": "No API Key is configured; Ollama can be used without one",
-      "key_hint": "Changing Base URL requires a new Key, except for Ollama; the browser does not save shared API keys",
+      "key_hint": "API keys saved here are encrypted on the server and never returned to the browser",
       "clear_key": "Clear the configured API Key",
       "key_required": "Enter a new API Key to enable this connection",
       "save": "Save settings",

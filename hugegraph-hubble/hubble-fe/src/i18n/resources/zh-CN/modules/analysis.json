@@ -1017,7 +1017,7 @@
       "replace_key": "新 API Key",
       "key_configured": "已配置 API Key，留空保留现有 Key",
       "key_missing": "尚未配置 API Key，Ollama 可不填",
-      "key_hint": "更换 Base URL 需要重新填写 Key，Ollama 除外；浏览器不会保存共享 API Key",
+      "key_hint": "在此保存的 API Key 会在服务端加密保存，不会返回浏览器",
       "clear_key": "清除已配置的 API Key",
       "key_required": "启用此接入方式需要填写新 API Key",
       "save": "保存设置",

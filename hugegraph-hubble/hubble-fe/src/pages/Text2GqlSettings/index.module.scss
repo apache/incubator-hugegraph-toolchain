@@ -18,8 +18,10 @@
 
 .page {
     width: 100%;
-    max-width: 1000px;
-    padding: 24px clamp(16px, 3vw, 32px) 40px;
+    max-width: 864px;
+    box-sizing: border-box;
+    margin-inline: auto;
+    padding: 32px clamp(16px, 3vw, 32px) 40px;
 
     h2 {
         margin: 0 0 8px;
@@ -40,8 +42,8 @@
 
 .form {
     display: grid;
-    max-width: 720px;
-    gap: 20px;
+    min-width: 0;
+    gap: 18px;
     margin-top: 16px;
     padding: 20px;
     background: #fff;
@@ -71,6 +73,25 @@
     label {
         font-weight: 600;
     }
+
+    :global(.ant-switch) {
+        flex-shrink: 0;
+    }
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 16px;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 16px;
+    border-top: 1px solid #f0f0f0;
+
+    :global(.ant-btn) {
+        flex-shrink: 0;
+        margin-inline-start: auto;
+    }
 }
 
 .page .field p.required {
@@ -80,4 +101,15 @@
 .requiredLabel::after {
     color: #cf1322;
     content: ' *';
+}
+
+@media (max-width: 480px) {
+    .page {
+        padding-top: 24px;
+    }
+
+    .form {
+        gap: 16px;
+        padding: 16px;
+    }
 }
