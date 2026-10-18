@@ -47,7 +47,7 @@ public class H2DataSourceConfig {
     @Bean
     public HikariDataSource dataSource(DataSourceProperties properties, Environment environment) {
         HikariDataSource dataSource = properties.initializeDataSourceBuilder()
-                                               .type(HikariDataSource.class).build();
+                                               .type(HubbleDataSource.class).build();
         // Binding must finish before validation and before SQL initialization can get a connection.
         Binder.get(environment).bind("spring.datasource.hikari", Bindable.ofInstance(dataSource));
         String url = dataSource.getJdbcUrl();
