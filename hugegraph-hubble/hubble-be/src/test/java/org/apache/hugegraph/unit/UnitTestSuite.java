@@ -74,6 +74,7 @@ import org.junit.runners.Suite;
     GraphMetricsControllerTest.class,
     HugeClientPoolServiceTest.class,
     H2StartupTest.class,
+    HubbleDataSourceTest.class,
     AvaticaRuntimeTest.class,
     JaxbRuntimeTest.class,
     GraphSpaceControllerTest.class,

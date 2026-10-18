@@ -41,6 +41,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.hugegraph.config.AsyncConfig;
+import org.apache.hugegraph.config.H2DataSourceConfig;
 import org.apache.hugegraph.config.HugeConfig;
 import org.apache.hugegraph.handler.HubbleDisposableBean;
 import org.apache.hugegraph.handler.LoadTaskExecutor;
@@ -57,7 +58,9 @@ import org.apache.hugegraph.service.schema.VertexLabelService;
 import org.junit.Test;
 import org.mockito.AdditionalAnswers;
 import org.mockito.Mockito;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.mock.env.MockEnvironment;
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.aop.Advisor;
 import org.springframework.aop.framework.Advised;
@@ -167,8 +170,12 @@ public class AsyncConfigLifecycleTest {
 
     private void closeScheduledMetadata(boolean interruptClose) throws Throwable {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-        HikariDataSource datasource = new HikariDataSource();
-        datasource.setJdbcUrl("jdbc:h2:mem:shared-async-drain-" + interruptClose);
+        DataSourceProperties properties = new DataSourceProperties();
+        properties.setUrl("jdbc:h2:mem:shared-async-drain-" + interruptClose);
+        properties.setDriverClassName("org.h2.Driver");
+        properties.setUsername("sa");
+        properties.setPassword("");
+        HikariDataSource datasource = new H2DataSourceConfig().dataSource(properties, new MockEnvironment());
         datasource.setMaximumPoolSize(2);
         datasource.setMinimumIdle(0);
         HugeConfig config = Mockito.mock(HugeConfig.class);
