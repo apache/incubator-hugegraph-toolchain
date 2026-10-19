@@ -49,7 +49,10 @@
       "open_button": "查看快捷键",
       "open_help": "打开或关闭快捷键总览",
       "run_query": "在图查询编辑器中执行当前语句",
-      "fullscreen_graph": "画布获得焦点后切换全屏"
+      "fullscreen_graph": "画布获得焦点后切换全屏",
+      "zoom_in_graph": "画布获得焦点后放大",
+      "zoom_out_graph": "画布获得焦点后缩小",
+      "fit_graph": "画布获得焦点后适应全部点边"
     },
     "context": {
       "name": "当前图上下文",

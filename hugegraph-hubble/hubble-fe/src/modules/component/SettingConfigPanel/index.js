@@ -24,6 +24,8 @@ import {useContext, useState, useId, useRef} from 'react';
 import {Form, Select, Switch, Cascader, Slider} from 'antd';
 import {useTranslation} from 'react-i18next';
 import {GraphContext} from '../Context';
+import RenderModeSwitcher from '../GraphRenderModeSwitcher';
+import {GRAPH_RENDER_MODE} from '../../../utils/constants';
 import c from './index.module.scss';
 
 const createFields = (elements, metadata = [], selectedFields) => {
@@ -52,7 +54,17 @@ const labelText = (element, fields, kind) => {
     return [...keys].map(key => key === '~id' ? kind === 'node' ? raw.id : raw.label : raw.properties?.[key])
         .filter(value => value !== undefined && value !== null).map(String).join('\n');
 };
-const OpenSettings = ({data, metaData, onChange, selectedFields}) => {
+const RenderSettings = ({renderMode, onRenderModeChange}) => {
+    const {t} = useTranslation();
+    return (
+        <details>
+            <summary>{t('analysis.canvas.render_mode')}</summary>
+            <RenderModeSwitcher buttonEnable value={renderMode} onClick={onRenderModeChange} />
+        </details>
+    );
+};
+
+const OpenSettings = ({data, metaData, onChange, selectedFields, renderMode, onRenderModeChange}) => {
     const {t} = useTranslation();
     const {controller, snapshot, run, showLegend = true, setShowLegend,
         showGrid = true, setShowGrid, showMinimap = true, setShowMinimap} = useContext(GraphContext);
@@ -147,15 +159,26 @@ const OpenSettings = ({data, metaData, onChange, selectedFields}) => {
                     <Switch aria-label={fieldLabel('enable_legend')} checked={showLegend} onChange={setShowLegend} />
                 </Form.Item>
             </Form>
+            {onRenderModeChange && <RenderSettings renderMode={renderMode} onRenderModeChange={onRenderModeChange} />}
         </div>
     );
 };
 
-const SettingConfigPanel = ({open, ...props}) => {
+const SettingConfigPanel = ({open, selectedFields, renderMode = GRAPH_RENDER_MODE.CANVAS2D,
+    onRenderModeChange, ...props}) => {
+    const {t} = useTranslation();
     // Keep only the user's field choices through panel closure. Options, fonts
     // and positions are read from the current graph when the panel reopens.
     // The owner's dataset key resets these choices for a new query result.
-    const selectedFields = useRef({node: new Map(), edge: new Map()});
-    return open ? <OpenSettings {...props} selectedFields={selectedFields} /> : null;
+    const localFields = useRef({node: new Map(), edge: new Map()});
+    if (!open) return null;
+    if (renderMode === GRAPH_RENDER_MODE.CANVAS3D) {
+        return <div className={c.canvasSetting}>
+            <div className={c.canvasSettingTitle}>{t('analysis.canvas.setting')}</div>
+            <RenderSettings renderMode={renderMode} onRenderModeChange={onRenderModeChange} />
+        </div>;
+    }
+    return <OpenSettings {...props} selectedFields={selectedFields ?? localFields}
+        renderMode={renderMode} onRenderModeChange={onRenderModeChange} />;
 };
 export default SettingConfigPanel;

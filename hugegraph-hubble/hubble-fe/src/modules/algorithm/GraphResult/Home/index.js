@@ -92,7 +92,7 @@ const GraphResult = props => {
 
 
     const graphSpaceInfo = useContext(GraphAnalysisContext);
-    const {graphData, currentRawData, clearGraph, styleConfigData, initialData, datasetKey, scopeKey, layout, layoutSettings, onReady: onGraphReady,
+    const {controller, graphData, currentRawData, clearGraph, styleConfigData, initialData, datasetKey, scopeKey, labelFields, layout, layoutSettings, onReady: onGraphReady,
         changeStyles: handleGraphStyleChange, changeLayout: handleLayoutChange,
         changeSettings: handleSettingChange, exportPng: handleExportPng,
         editElement: onEditElementChange, expand: getExpandInfo, filter: handleFilterChange, addElements}
@@ -129,6 +129,10 @@ const GraphResult = props => {
     const showCanvasInfo =  (_.size(data.vertices) !== 0 || _.size(data.edges) !== 0) && queryStatus === SUCCESS;
 
     const layoutPanelRef = useRef(null);
+    const handleQuickLayoutChange = useCallback(selection => {
+        layoutPanelRef.current?.cancel();
+        handleLayoutChange(selection);
+    }, [handleLayoutChange]);
     const handleUpdatePanel = useCallback(type => {
         if (panelType === LAYOUT) layoutPanelRef.current?.flush();
         updatePanelType(type);
@@ -291,6 +295,9 @@ const GraphResult = props => {
             />
             <SettingConfigPanel
                 key={datasetKey}
+                selectedFields={labelFields}
+                renderMode={graphRenderMode}
+                onRenderModeChange={handleSwitchRenderMode}
                 data={graphData}
                 metaData={metaData}
                 onChange={handleSettingChange}
@@ -318,7 +325,13 @@ const GraphResult = props => {
         </Graph>
     );
 
-    const renderCanvas3D = () => (<Canvas3D data={data3D} />);
+    const renderCanvas3D = () => (
+        <Canvas3D data={data3D} onExit={() => handleSwitchRenderMode(CANVAS2D)}>
+            <SettingConfigPanel open={panelType === SETTING} renderMode={graphRenderMode}
+                onRenderModeChange={handleSwitchRenderMode} />
+            <PanelControlButton show={panelType === SETTING} onClick={() => updatePanelType(CLOSED)} />
+        </Canvas3D>
+    );
 
     const statusMessage = useMemo(() => ({
         [STANDBY]: t('analysis.query_result.no_data'),
@@ -403,6 +416,9 @@ const GraphResult = props => {
     return (
         <div className={c.graphResult}>
             <GraphMenuBar
+                layout={layoutSettings}
+                layoutReady={controller?.getSnapshot().status === 'ready'}
+                handleQuickLayoutChange={handleQuickLayoutChange}
                 styleConfigData={styleConfigData}
                 graphData={graphData}
                 exportData={currentRawData}
@@ -413,7 +429,6 @@ const GraphResult = props => {
                 handleTogglePanel={handleTogglePanel}
                 handleClickNewAddNode={handleClickNewAddNode}
                 handleClickNewAddEdge={handleClickNewAddEdge}
-                handleSwitchRenderMode={handleSwitchRenderMode}
                 showCanvasInfo={showCanvasInfo}
                 graphRenderMode={graphRenderMode}
             />

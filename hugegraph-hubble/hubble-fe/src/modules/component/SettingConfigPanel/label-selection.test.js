@@ -26,7 +26,7 @@ beforeAll(() => {
         removeEventListener: jest.fn(), dispatchEvent: jest.fn()});
 });
 
-test.each(['node', 'edge'])('preserves selected %s fields across panel closure and resets them for a new dataset', async kind => {
+test.each([['node', 'closure'], ['edge', 'closure'], ['node', 'renderer-unmount'], ['edge', 'renderer-unmount']])('preserves selected %s fields across %s and resets them for a new dataset', async (kind, transition) => {
     const value = {controller: {}, snapshot: {status: 'ready'}, run: operation => Promise.resolve().then(operation)};
     const elementLabel = kind === 'node' ? 'person' : 'knows';
     const raw = {id: 'alice-id', label: elementLabel, properties: {name: 'Alice'}};
@@ -38,11 +38,16 @@ test.each(['node', 'edge'])('preserves selected %s fields across panel closure a
         data = {...data, [group]: data[group].map(element => ({...element,
             style: {...element.style, ...patches.find(patch => patch.id === element.id)?.style}}))};
     });
-    const content = (open, datasetKey = 1) => <GraphContext.Provider value={value}>
-        <SettingConfigPanel key={datasetKey} open={open} data={data}
+    const fields = new Map();
+    const content = (open, datasetKey = 1) => {
+        if (!fields.has(datasetKey)) fields.set(datasetKey, {current: {node: new Map(), edge: new Map()}});
+        return <GraphContext.Provider value={value}>
+        {(open || transition === 'closure') && <SettingConfigPanel key={datasetKey} open={open} data={data}
+            selectedFields={fields.get(datasetKey)}
             metaData={{[kind === 'node' ? 'vertexMeta' : 'edgeMeta']:
-                [{name: elementLabel, style: {display_fields: ['~id']}}]}} onChange={onChange} />
+                [{name: elementLabel, style: {display_fields: ['~id']}}]}} onChange={onChange} />}
     </GraphContext.Provider>;
+    };
     const view = render(content(true));
     const fieldLabel = key => `analysis.canvas.setting_panel.${key}`;
     fireEvent.mouseDown(screen.getByRole('combobox', {name: fieldLabel(`${kind}_label_property`)}));

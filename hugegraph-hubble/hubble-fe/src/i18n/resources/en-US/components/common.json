@@ -49,7 +49,10 @@
       "open_button": "View keyboard shortcuts",
       "open_help": "Open or close the shortcut overview",
       "run_query": "Run the current statement in the graph query editor",
-      "fullscreen_graph": "Toggle full screen after focusing the canvas"
+      "fullscreen_graph": "Toggle full screen after focusing the canvas",
+      "zoom_in_graph": "Zoom in after focusing the canvas",
+      "zoom_out_graph": "Zoom out after focusing the canvas",
+      "fit_graph": "Fit all elements after focusing the canvas"
     },
     "context": {
       "name": "Current graph context",

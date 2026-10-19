@@ -51,6 +51,7 @@ const Graph = ({data, datasetKey, layout = DEFAULT_LAYOUT, onReady, onClick, onD
     const {t} = useTranslation();
     const containerRef = useRef(null);
     const nodeClick = useRef(null);
+    const nativeCanvasMenuPending = useRef(false);
     const handlers = useRef({onClick, onDoubleClick});
     useLayoutEffect(() => { handlers.current = {onClick, onDoubleClick}; }, [onClick, onDoubleClick]);
     const [controller, setController] = useState(null);
@@ -127,18 +128,40 @@ const Graph = ({data, datasetKey, layout = DEFAULT_LAYOUT, onReady, onClick, onD
         if (!event.target.closest?.('[role="menu"]')) {
             // G6 resolves node/edge menus during pointerdown. Establish the blank
             // canvas fallback in capture, before that hit-tested callback runs.
-            setContextTarget(event.target.tagName === 'CANVAS' && event.button === 2
+            nativeCanvasMenuPending.current = event.target.tagName === 'CANVAS' && event.button === 2;
+            setContextTarget(nativeCanvasMenuPending.current
                 ? {kind: 'canvas', client: {x: event.clientX, y: event.clientY}} : null);
         }
     }, []);
     const canvasMenu = useCallback(event => {
-        if (event.target.tagName === 'CANVAS') {
-            event.preventDefault();
-        }
+        if (event.target.tagName !== 'CANVAS') return;
+        // macOS Ctrl+click can produce a native menu without G6's button-2
+        // pointerdown. Suppress it only when Hubble already opened its own menu.
+        if (nativeCanvasMenuPending.current) event.preventDefault();
+        nativeCanvasMenuPending.current = false;
     }, []);
+    const keyDown = useCallback(event => {
+        const container = event.currentTarget;
+        const target = event.target;
+        if (!controller || snapshot.status !== 'ready' || event.defaultPrevented
+            || event.ctrlKey || event.metaKey || event.altKey || event.isComposing
+            || event.nativeEvent.isComposing || event.keyCode === 229
+            || !(target instanceof Element) || !container.contains(target)
+            || target.closest('[data-hubble-graph]') !== container
+            || document.activeElement?.closest('[data-hubble-graph]') !== container
+            || target.closest('input, textarea, select, button, [role="button"], a, [contenteditable], '
+                + '[role="textbox"], [role="menu"], [role="dialog"], .cm-editor, .CodeMirror')) return;
+        const operation = event.key === '+' || event.key === '=' ? () => controller.zoomBy(1.25)
+            : event.key === '-' ? () => controller.zoomBy(0.8)
+                : event.key === '0' ? () => controller.fitView() : null;
+        if (!operation) return;
+        event.preventDefault();
+        void run(operation);
+    }, [controller, run, snapshot.status]);
     return <GraphContext.Provider value={context}>
         <div ref={containerRef} className={classnames(c.graph, {[c.layoutPanelOpen]: isPanelEnable, hiddenGrid: !showGrid})}
-            tabIndex={0} aria-label={t('analysis.canvas.graph_canvas')} onMouseDown={focus}
+            data-hubble-graph tabIndex={0} aria-label={t('analysis.canvas.graph_canvas')} onMouseDown={focus}
+            onKeyDown={keyDown}
             onPointerDownCapture={pointerDown} onContextMenuCapture={canvasMenu}>
             <GraphCanvas data={data} datasetKey={datasetKey} layout={layout} preset='interactive'
                 style={{height: '100%'}} onReady={ready} onClick={click} onDoubleClick={doubleClick}

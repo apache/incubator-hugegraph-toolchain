@@ -19,6 +19,7 @@ import {act, renderHook} from '@testing-library/react';
 import {message} from 'antd';
 import JSONbig from 'json-bigint';
 import {mergeGraphData} from '../../../visualization/model/data';
+import {GraphController} from '../../../visualization/runtime/GraphController';
 import {projectHubbleGraph} from '../../../visualization/hubble/adapter';
 import {useAnalysisGraph} from './useAnalysisGraph';
 import {adaptAnalysisGraph} from '../../../utils/analysisGraphData';
@@ -569,4 +570,98 @@ test.each([true, false])('same node IDs do not activate an old business result (
         : {...node, data: {...node.data, raw: {...node.data.raw, updated: true}}})};
     act(() => owner.publish(edited));
     expect(view.result.current.currentRawData().vertices[0]).toEqual({...next.vertices[2], updated: true});
+});
+
+const handoffRuntime = hold => {
+    let data = {nodes: [], edges: []};
+    const entered = deferred();
+    return {
+        entered: entered.promise,
+        onEvent: jest.fn(), idleInteraction: async () => {},
+        replace: async next => { entered.resolve(); if (hold) await hold.promise; data = next; },
+        read: () => data,
+        history: async () => {}, historyState: () => ({canUndo: false, canRedo: false}),
+        fitView: async () => {}, refreshLabelVisibility: async () => {},
+        visibility: async (ids, visible) => {
+            const apply = item => ids.includes(item.id)
+                ? {...item, style: {...item.style, visibility: visible ? 'visible' : 'hidden'}} : item;
+            data = {nodes: data.nodes.map(apply), edges: data.edges.map(apply)};
+        },
+        stop: jest.fn(), destroy: jest.fn(),
+    };
+};
+
+test.each(['idle', 'updating'])('a rapid renderer handoff preserves data and masks before first adoption (%s)', async phase => {
+    const held = deferred();
+    const first = new GraphController(handoffRuntime());
+    const runtime = handoffRuntime(held);
+    const remounted = new GraphController(runtime);
+    const final = new GraphController(handoffRuntime());
+    const view = renderHook(() => useAnalysisGraph(initial));
+    let replacement;
+    let restoration;
+    try {
+        await first.replaceData(view.result.current.initialData);
+        act(() => view.result.current.onReady(first));
+        await act(async () => {
+            await first.hide(['node:number:0']);
+            await first.setHiddenIds('filter', ['node:string:0']);
+        });
+        act(() => view.result.current.onReady(null));
+        act(() => {
+            replacement = remounted.replaceData(view.result.current.initialData);
+            restoration = view.result.current.onReady(remounted);
+        });
+        if (phase === 'updating') await act(async () => { await runtime.entered; });
+        expect(remounted.getSnapshot().status).toBe(phase);
+        expect(remounted.getSnapshot().data.nodes).toHaveLength(0);
+        expect(view.result.current.currentRawData()).toEqual(raw);
+        expect(view.result.current.graphData.nodes).toHaveLength(2);
+        act(() => view.result.current.onReady(null));
+        expect(view.result.current.initialData.nodes).toHaveLength(2);
+        expect(view.result.current.currentRawData()).toEqual(raw);
+        const nextReplacement = final.replaceData(view.result.current.initialData);
+        await act(async () => {
+            const nextRestoration = view.result.current.onReady(final);
+            await Promise.all([nextReplacement, nextRestoration]);
+        });
+        expect(final.getSnapshot().data.nodes).toHaveLength(2);
+        expect(final.getHiddenIds()).toEqual(['node:number:0']);
+        expect(final.getHiddenIds('filter')).toEqual(['node:string:0']);
+    } finally {
+        held.resolve();
+        await Promise.allSettled([replacement, restoration]);
+        view.unmount();
+        await Promise.all([first.dispose(), remounted.dispose(), final.dispose()]);
+    }
+});
+
+test('label choices survive renderer release and reset for each new dataset and scope', () => {
+    const view = renderHook(props => useAnalysisGraph(props), {initialProps: initial});
+    const choices = view.result.current.labelFields;
+    choices.current.node.set('person', [['person', 'name']]);
+    act(() => view.result.current.onReady(createController()));
+    act(() => view.result.current.onReady(null));
+    act(() => view.result.current.onReady(createController()));
+    expect(view.result.current.labelFields).toBe(choices);
+    view.rerender({...initial, metaData: {vertexMeta: []}});
+    expect(view.result.current.labelFields).toBe(choices);
+    view.rerender({...initial, data: {...raw}});
+    expect(view.result.current.labelFields).not.toBe(choices);
+    expect(view.result.current.labelFields.current.node.size).toBe(0);
+    const second = view.result.current.labelFields;
+    view.rerender({...initial, graphSpaceInfo: {graphSpace: 'OTHER', graph: 'two'}});
+    expect(view.result.current.labelFields).not.toBe(second);
+    expect(view.result.current.labelFields.current.node.size).toBe(0);
+});
+
+test('an adopted controller retains local edits even while a later command is updating', () => {
+    const owner = {...createController(), getSnapshot: jest.fn(createController().getSnapshot)};
+    const view = renderHook(() => useAnalysisGraph(initial));
+    act(() => view.result.current.onReady(owner));
+    const edited = adaptAnalysisGraph({vertices: [{id: 0, label: 'person', properties: {name: 'edited'}}], edges: []});
+    owner.getSnapshot.mockReturnValue({status: 'updating', data: edited});
+    expect(view.result.current.currentRawData().vertices).toEqual([{id: 0, label: 'person', properties: {name: 'edited'}}]);
+    act(() => view.result.current.onReady(null));
+    expect(view.result.current.initialData).toBe(edited);
 });

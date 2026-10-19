@@ -31,9 +31,9 @@ jest.mock('../../../../component/Graph', () => {
 });
 jest.mock('../../../../component/Canvas3D', () => {
     const {useEffect} = require('react');
-    return {__esModule: true, default: function MockCanvas3D() {
+    return {__esModule: true, default: function MockCanvas3D({onExit, children}) {
         useEffect(() => { mockMount3D(); return mockUnmount3D; }, []);
-        return <div data-testid="canvas-3d" />;
+        return <div data-testid="canvas-3d"><button onClick={onExit}>Return to 2D</button>{children}</div>;
     }};
 });
 jest.mock('../../../../component/Legend', () => () => null);
@@ -52,7 +52,7 @@ jest.mock('../../../../component/layoutConfigPanel/Home', () => {
         return null;
     };
 });
-jest.mock('../../../../component/SettingConfigPanel', () => () => null);
+jest.mock('../../../../component/SettingConfigPanel', () => props => { mockSettingsPanel(props); return null; });
 jest.mock('../../../../component/ClosePanelButton', () => props => props.show ? <button onClick={props.onClick}>Close panel</button> : null);
 jest.mock('../../../../component/StatisticsPanel/Home', () => () => null);
 jest.mock('../../../../component/MiniMap', () => () => null);
@@ -63,12 +63,11 @@ jest.mock('../GraphToolBar', () => props => <>
     <button onClick={() => props.updatePanelType(0)}>Toolbar close</button>
     <button onClick={props.handleClearGraph}>Clear graph</button>
 </>);
-jest.mock('../GraphMenubar', () => props => <>
+jest.mock('../GraphMenubar', () => props => { mockMenuBar(props); return <>
     <div>graph menu</div>
     <button onClick={() => props.handleTogglePanel(1)}>Toggle layout</button>
     <button onClick={() => props.handleTogglePanel(2)}>Open settings</button>
-    <button onClick={() => props.handleSwitchRenderMode('3D')}>Switch renderer</button>
-</>);
+</>; });
 
 const mockMount2D = jest.fn();
 const mockUnmount2D = jest.fn();
@@ -77,6 +76,8 @@ const mockUnmount3D = jest.fn();
 const mockEdgeDrawer = jest.fn();
 const mockNodeDrawer = jest.fn();
 const mockCounts = jest.fn();
+const mockSettingsPanel = jest.fn();
+const mockMenuBar = jest.fn();
 const mockFlushLayout = jest.fn();
 const mockCancelLayout = jest.fn();
 const mockLayoutPanel = jest.fn();
@@ -294,7 +295,8 @@ test.each(['Clear graph', 'Switch renderer'])('cancels pending layout edits for 
         queryStatus={GRAPH_STATUS.SUCCESS} panelType={PANEL_TYPE.LAYOUT}
         updatePanelType={jest.fn()} onGraphRenderModeChange={jest.fn()}
         graphRenderMode={GRAPH_RENDER_MODE.CANVAS2D} />);
-    fireEvent.click(screen.getByRole('button', {name: action}));
+    if (action === 'Switch renderer') act(() => mockSettingsPanel.mock.lastCall[0].onRenderModeChange(GRAPH_RENDER_MODE.CANVAS3D));
+    else fireEvent.click(screen.getByRole('button', {name: action}));
     expect(mockCancelLayout).toHaveBeenCalledTimes(1);
     expect(mockFlushLayout).not.toHaveBeenCalled();
 });
@@ -306,4 +308,51 @@ test('direct result unmount does not flush a layout edit', () => {
         updatePanelType={jest.fn()} graphRenderMode={GRAPH_RENDER_MODE.CANVAS2D} />);
     view.unmount();
     expect(mockFlushLayout).not.toHaveBeenCalled();
+});
+
+test('returns from unavailable 3D through the normal query renderer switch', () => {
+    const initial = {...props(), graphRenderMode: GRAPH_RENDER_MODE.CANVAS3D};
+    render(<GraphResult {...initial} />);
+    fireEvent.click(screen.getByRole('button', {name: 'Return to 2D'}));
+    expect(initial.onGraphRenderModeChange).toHaveBeenCalledWith(GRAPH_RENDER_MODE.CANVAS2D);
+    expect(initial.updatePanelType).toHaveBeenCalledWith(PANEL_TYPE.CLOSED);
+    expect(screen.getByText('graph menu')).toBeInTheDocument();
+});
+
+test('passes dataset-owned label choices to the 2D settings panel', () => {
+    const fields = {current: {node: new Map(), edge: new Map()}};
+    mockModel.labelFields = fields;
+    render(<GraphResult {...props()} />);
+    expect(mockSettingsPanel.mock.lastCall[0].selectedFields).toBe(fields);
+});
+
+test('keeps renderer settings reachable in 3D and switches back through the owned handler', () => {
+    const onGraphRenderModeChange = jest.fn();
+    const initial = {...props(), graphRenderMode: GRAPH_RENDER_MODE.CANVAS3D,
+        panelType: PANEL_TYPE.SETTING, onGraphRenderModeChange};
+    render(<GraphResult {...initial} />);
+    const settings = mockSettingsPanel.mock.lastCall[0];
+    expect(settings.open).toBe(true);
+    expect(settings.renderMode).toBe(GRAPH_RENDER_MODE.CANVAS3D);
+    act(() => settings.onRenderModeChange(GRAPH_RENDER_MODE.CANVAS2D));
+    expect(onGraphRenderModeChange).toHaveBeenCalledWith(GRAPH_RENDER_MODE.CANVAS2D);
+    expect(initial.updatePanelType).toHaveBeenCalledWith(PANEL_TYPE.CLOSED);
+});
+
+test('quick layout cancels pending panel edits and uses the existing layout update path', () => {
+    const changeLayout = jest.fn();
+    mockModel = {...mockModel, changeLayout, layoutSettings: {type: 'grid'},
+        graphData: {nodes: [{id: 'node:alice', data: {raw: {id: 'alice'}}}], edges: []}};
+    const initial = {...props(), panelType: PANEL_TYPE.LAYOUT};
+    const view = render(<GraphResult {...initial} />);
+    expect(mockMenuBar.mock.lastCall[0].layout).toBe(mockModel.layoutSettings);
+    act(() => mockMenuBar.mock.lastCall[0].handleQuickLayoutChange({type: 'radial'}));
+    expect(mockCancelLayout).toHaveBeenCalledTimes(1);
+    expect(mockFlushLayout).not.toHaveBeenCalled();
+    expect(changeLayout).toHaveBeenCalledTimes(1);
+    expect(changeLayout).toHaveBeenCalledWith({type: 'radial'});
+    mockModel.layoutSettings = {type: 'radial'};
+    view.rerender(<GraphResult {...initial} />);
+    expect(mockLayoutPanel.mock.lastCall[0].layout).toBe(mockModel.layoutSettings);
+    expect(initial.updatePanelType).not.toHaveBeenCalled();
 });

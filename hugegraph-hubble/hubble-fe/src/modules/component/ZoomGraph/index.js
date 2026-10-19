@@ -32,7 +32,7 @@ const ZoomGraph = () => {
     const ready = Boolean(controller && snapshot?.status === 'ready');
     return (
         <>
-            <Tooltip title={t('analysis.canvas.toolbar.zoom_out')} placement="bottom">
+            <Tooltip title={`${t('analysis.canvas.toolbar.zoom_out')} (-)`} placement="bottom">
                 <Button
                     disabled={!ready}
                     type="text"
@@ -41,7 +41,7 @@ const ZoomGraph = () => {
                     icon={<ZoomOutOutlined />}
                 />
             </Tooltip>
-            <Tooltip title={t('analysis.canvas.toolbar.zoom_in')} placement="bottom">
+            <Tooltip title={`${t('analysis.canvas.toolbar.zoom_in')} (+ / =)`} placement="bottom">
                 <Button
                     disabled={!ready}
                     type="text"

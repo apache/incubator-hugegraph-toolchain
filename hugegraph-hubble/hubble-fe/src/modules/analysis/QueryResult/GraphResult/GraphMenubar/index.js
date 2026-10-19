@@ -23,6 +23,7 @@
 import {useCallback} from 'react';
 import {useTranslation} from 'react-i18next';
 import MenuBar from '../../../../component/MenuBar';
+import QuickLayoutSwitcher from '../../../../component/QuickLayoutSwitcher';
 import ImportData from '../../../../component/ImportData';
 import ExportData from '../../../../component/ExportData';
 import StyleConfig from '../../../../component/styleConfig/Home';
@@ -31,7 +32,6 @@ import LayoutConfig from '../../../../component/LayoutConfig';
 import SettingConfig from '../../../../component/SettingConfig';
 import NewConfig from '../../../../component/NewConfig';
 import Statistics from '../../../../component/Statistics';
-import RenderModeSwitcher from '../../../../component/GraphRenderModeSwitcher';
 import {PANEL_TYPE, GRAPH_RENDER_MODE} from '../../../../../utils/constants';
 import {exportHubbleGraph} from '../../../../../visualization/hubble/adapter';
 import useDownloadJson from '../../../../../customHook/useDownloadJson';
@@ -44,6 +44,9 @@ const GraphMenuBar = props => {
     const {
         styleConfigData,
         graphData,
+        layout,
+        layoutReady,
+        handleQuickLayoutChange,
         exportData,
         handleImportData,
         handleExportPng,
@@ -52,7 +55,6 @@ const GraphMenuBar = props => {
         handleTogglePanel,
         handleClickNewAddNode,
         handleClickNewAddEdge,
-        handleSwitchRenderMode,
         showCanvasInfo,
         graphRenderMode,
     } = props;
@@ -148,11 +150,9 @@ const GraphMenuBar = props => {
             key: 6,
             content: (
                 <SettingConfig
-                    buttonEnable={buttonEnableForCanvas2D}
+                    buttonEnable={showCanvasInfo}
                     onClick={handleSettingPanel}
-                    tooltip={isCanvas2D
-                        ? t('analysis.canvas.tooltip.setting_2d')
-                        : t('analysis.canvas.tooltip.setting_3d')}
+                    tooltip={t('analysis.canvas.tooltip.setting_2d')}
                 />
             ),
         },
@@ -182,20 +182,12 @@ const GraphMenuBar = props => {
         },
     ];
 
-    const extraContent = [
-        {
-            key: 1,
-            content: (
-                <RenderModeSwitcher
-                    onClick={handleSwitchRenderMode}
-                    buttonEnable={showCanvasInfo}
-                    value={graphRenderMode}
-                    tooltip={t('analysis.canvas.tooltip.switch_2d')}
-                />
-            ),
-        },
-    ];
-
+    const extraContent = [{
+        key: 'quick-layout',
+        content: <QuickLayoutSwitcher layout={layout} onClick={handleQuickLayoutChange}
+            buttonEnable={buttonEnableForCanvas2D && layoutReady
+                && Boolean(graphData?.nodes?.length || graphData?.edges?.length)} />,
+    }];
     return (
         <MenuBar content={menubarContent} extra={extraContent} />
     );

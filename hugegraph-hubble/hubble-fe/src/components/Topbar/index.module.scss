@@ -137,6 +137,15 @@ div.nav {
       color: #164b7a;
     }
   }
+
+  :global(.ant-radio-group.ant-radio-group-solid) > :global(.ant-radio-button-wrapper) {
+    margin-inline: 0;
+    border-inline-start: 0;
+    border-start-start-radius: 999px;
+    border-start-end-radius: 999px;
+    border-end-start-radius: 999px;
+    border-end-end-radius: 999px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -399,32 +399,6 @@
             width: 100%;
         }
     }
-
-    .ant-modal.ant-zoom-enter,
-    .ant-modal.ant-zoom-appear {
-        opacity: 0;
-        transform: translateY(8px) scale(.985);
-    }
-
-    .ant-modal.ant-zoom-enter-active,
-    .ant-modal.ant-zoom-appear-active {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-        transition: opacity 180ms ease-out, transform 180ms ease-out;
-        animation: none;
-    }
-
-    .ant-modal.ant-zoom-leave {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-
-    .ant-modal.ant-zoom-leave-active {
-        opacity: 0;
-        transform: translateY(8px) scale(.985);
-        transition: opacity 140ms ease-in, transform 140ms ease-in;
-        animation: none;
-    }
 }
 
 @media (max-width: 600px) {

@@ -53,6 +53,7 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
     const {t} = useTranslation();
     const [controller, setController] = useState(null);
     const controllerRef = useRef(null);
+    const adoptedController = useRef(null);
     const stylesRef = useRef({});
     const previousData = useRef(data);
     const staleInput = useRef(null);
@@ -86,6 +87,17 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
     });
     const datasetRef = useRef(dataset);
     datasetRef.current = dataset;
+    const labelFields = useRef(null);
+    if (labelFields.current?.owner !== scopeOwner || labelFields.current.key !== dataset.key) {
+        labelFields.current = {owner: scopeOwner, key: dataset.key, current: {node: new Map(), edge: new Map()}};
+    }
+    const hasAdoptedData = useCallback((owner, state) => {
+        if (adoptedController.current === owner) return true;
+        if (state.status !== 'ready' || datasetRef.current.owner !== scopeOwner
+            || !sameBusinessProjection(datasetRef.current.data, state.data)) return false;
+        adoptedController.current = owner;
+        return true;
+    }, [scopeOwner]);
     const [layoutSettings, setLayoutSettings] = useState(() => analysisLayout({
         layout: Algorithm_Layout[algorithmName] ?? 'force', startId: options?.startId,
     }));
@@ -93,16 +105,18 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
     const activeController = ownerScope.current === scopeOwner ? controller : null;
     const snapshot = useGraphSnapshot(activeController);
     const initialData = dataset.owner === scopeOwner ? dataset.data : EMPTY_GRAPH;
-    const graphData = activeController && snapshot.status !== 'idle' && snapshot.status !== 'disposed'
+    const graphData = activeController && hasAdoptedData(activeController, snapshot)
+        && snapshot.status !== 'idle' && snapshot.status !== 'disposed'
         ? snapshot.data : initialData;
     const currentData = useCallback(() => {
         if (liveScope.current !== scopeOwner) return EMPTY_GRAPH;
         if (ownerScope.current === scopeOwner && controllerRef.current) {
             const state = controllerRef.current.getSnapshot();
-            if (state.status !== 'idle' && state.status !== 'disposed') return state.data;
+            if (hasAdoptedData(controllerRef.current, state)
+                && state.status !== 'idle' && state.status !== 'disposed') return state.data;
         }
         return datasetRef.current.owner === scopeOwner ? datasetRef.current.data : EMPTY_GRAPH;
-    }, [scopeOwner]);
+    }, [hasAdoptedData, scopeOwner]);
     const current = useCallback((token, owner) => alive.current && token === generation.current
         && liveScope.current === scopeOwner && ownerScope.current === scopeOwner
         && owner === controllerRef.current, [scopeOwner]);
@@ -167,14 +181,17 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
                 // Its preceding snapshot and masks belong to the old result.
                 retainedVisibility.current = null;
             }
-            else {
+            else if (hasAdoptedData(previous, previous.getSnapshot())) {
                 // Switching to the independent 3D renderer retains one immutable final snapshot.
                 const saved = previous.getSnapshot().data;
                 retainedVisibility.current = {owner: scopeOwner, key: datasetRef.current.key,
                     manual: previous.getHiddenIds(), filter: previous.getHiddenIds('filter')};
                 setDataset(currentDataset => ({...currentDataset, data: saved, owner: scopeOwner}));
             }
+            // A remounted canvas has no owned snapshot until its first replace commits.
+            // Keep the dataset and prior masks if it is released during that initial draw.
         }
+        if (value !== previous) adoptedController.current = null;
         controllerRef.current = value;
         ownerScope.current = value ? scopeOwner : null;
         generation.current++;
@@ -190,7 +207,7 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
                 ...(retained.filter.length ? [value.setHiddenIds('filter', retained.filter)] : []),
             ]);
         }
-    }, [scopeOwner]);
+    }, [hasAdoptedData, scopeOwner]);
     const run = useCallback(async (operation, propagateError = false) => {
         const token = generation.current;
         const owner = controllerRef.current;
@@ -215,8 +232,9 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
         const pending = pendingRaw.current;
         if (pending?.owner !== scopeOwner || liveScope.current !== scopeOwner
             || ownerScope.current !== scopeOwner || controllerRef.current !== owner) return;
-        if (!pending.awaitingCommit && !pending.edges.length) return;
         const state = owner.getSnapshot();
+        hasAdoptedData(owner, state);
+        if (!pending.awaitingCommit && !pending.edges.length) return;
         if (state.status !== 'ready' || pending.snapshotData === state.data) return;
         pending.snapshotData = state.data;
         const nodeIds = new Set(state.data.nodes.map(node => node.id));
@@ -233,7 +251,7 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
         if (removed.size) pending.edges = pending.edges.filter(edge =>
             !removed.has(hubbleRenderId('node', edge.source)) && !removed.has(hubbleRenderId('node', edge.target)));
         pending.nodeIds = nodeIds;
-    }, [scopeOwner]);
+    }, [hasAdoptedData, scopeOwner]);
     useEffect(() => {
         if (!activeController) return undefined;
         prunePending(activeController);
@@ -354,6 +372,7 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
     }), [current, run]);
     const styleConfigData = useMemo(() => getAnalysisStyles(graphData), [graphData]);
     return {controller: activeController, onReady, graphData, initialData, datasetKey: dataset.key, scopeKey: scope,
+        labelFields: labelFields.current,
         layout, layoutSettings, currentData, currentRawData, clearGraph, styleConfigData, run, expand, addElements, editElement,
         changeStyles, changeSettings, changeLayout, filter, exportPng};
 };

@@ -30,7 +30,7 @@ const FitCenter = () => {
     const {t} = useTranslation();
     const {controller, snapshot, run} = useContext(GraphContext);
     return (
-        <Tooltip title={t('analysis.canvas.toolbar.fit_center')} placement="bottom">
+        <Tooltip title={`${t('analysis.canvas.toolbar.fit_center')} (0)`} placement="bottom">
             <Button
                 disabled={!controller || snapshot?.status !== 'ready'}
                 type="text"

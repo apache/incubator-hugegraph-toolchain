@@ -95,6 +95,9 @@ export class G6Runtime implements GraphRuntime {
                 labelFill: options.theme === 'dark' ? '#e8e8ec' : '#49536A',
                 labelBackground: true, labelBackgroundFill: options.theme === 'dark' ? '#171923' : '#ffffff',
                 labelBackgroundOpacity: 0.85, loop: true, ...edgePresentation(datum.style),
+                // Dragging fronts nodes; G6 then recomputes incident edge model layers on state updates.
+                // Keep edge rendering below nodes so a crossing edge cannot steal their pointer events.
+                zIndex: -1,
                 ...this.labelTypography(datum.style, 11, [1, 3]),
                 label: datum.style?.label !== false && this.labels.edgeLabels}),
             state: {selected: datum => ({halo: false, lineWidth: 3, stroke: '#F59E0B',
@@ -104,7 +107,7 @@ export class G6Runtime implements GraphRuntime {
             transforms: [{type: 'hubble-parallel-edges'}],
             behaviors: preset === 'thumbnail' ? [] : [
                 'drag-canvas', 'zoom-canvas',
-                ...(interactive ? [{type: 'drag-element', shadow: false, hideEdge: 'none', animation: false,
+                {type: 'drag-element', shadow: false, hideEdge: 'none', animation: false,
                     enable: (event: IPointerEvent) => {
                         if (!this.alive || this.busy || event.targetType !== 'node') return false;
                         this.dragIdle = new Promise(resolve => { this.finishDrag = resolve; });
@@ -114,7 +117,7 @@ export class G6Runtime implements GraphRuntime {
                     onFinish: () => {
                         this.finishDrag?.(); this.finishDrag = undefined; this.dragIdle = null;
                         if (this.alive) this.handler({type: 'dragEnd'});
-                    }}] : []),
+                    }},
             ],
             plugins: [
                 {type: 'hubble-pin-bridge', key: 'pins'},

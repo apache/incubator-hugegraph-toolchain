@@ -16,6 +16,8 @@
  */
 
 import {fireEvent, render, screen, waitFor, within} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import {GRAPH_RENDER_MODE} from '../../../utils/constants';
 import SettingConfigPanel from './index';
 import Legend from '../Legend';
 import {GraphContext} from '../Context';
@@ -103,4 +105,32 @@ test('legend respects the owning context visibility', () => {
     expect(screen.queryByRole('button', {name: 'person'})).not.toBeInTheDocument();
     result.rerender(<GraphContext.Provider value={{...value, showLegend: true}}><Legend /></GraphContext.Provider>);
     expect(screen.getByRole('button', {name: 'person'})).toBeInTheDocument();
+});
+
+test('keeps experimental rendering inside a collapsed settings section', async () => {
+    const user = userEvent.setup();
+    const onRenderModeChange = jest.fn();
+    render(setting(fixture(), {renderMode: GRAPH_RENDER_MODE.CANVAS2D, onRenderModeChange}));
+    const summary = screen.getByText('analysis.canvas.render_mode', {selector: 'summary'});
+    expect(summary.parentElement).not.toHaveAttribute('open');
+    expect(screen.getByRole('combobox', {name: 'analysis.canvas.render_mode'})).not.toBeVisible();
+    await user.click(summary);
+    await user.click(screen.getByRole('combobox', {name: 'analysis.canvas.render_mode'}));
+    await user.click(await screen.findByText('analysis.canvas.mode_3d_experimental',
+        {selector: '.ant-select-item-option-content'}));
+    expect(onRenderModeChange).toHaveBeenCalledWith(GRAPH_RENDER_MODE.CANVAS3D);
+});
+
+test('offers a working return to 2D in 3D settings without mounting 2D-only controls', async () => {
+    const user = userEvent.setup();
+    const onRenderModeChange = jest.fn();
+    const unread = {get nodes() { throw new Error('3D settings must not inspect 2D data'); }};
+    render(<SettingConfigPanel open data={unread} renderMode={GRAPH_RENDER_MODE.CANVAS3D}
+        onRenderModeChange={onRenderModeChange} />);
+    expect(screen.queryByRole('switch')).not.toBeInTheDocument();
+    expect(screen.queryByRole('slider')).not.toBeInTheDocument();
+    await user.click(screen.getByText('analysis.canvas.render_mode', {selector: 'summary'}));
+    await user.click(screen.getByRole('combobox', {name: 'analysis.canvas.render_mode'}));
+    await user.click(await screen.findByText('analysis.canvas.mode_2d', {selector: '.ant-select-item-option-content'}));
+    expect(onRenderModeChange).toHaveBeenCalledWith(GRAPH_RENDER_MODE.CANVAS2D);
 });

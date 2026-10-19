@@ -24,8 +24,9 @@ import {BehaviorController} from '@antv/g6/lib/runtime/behavior';
 import Graph from './index';
 import {GraphContext} from '../Context';
 import Menu from '../Menu';
+import KeyboardAction from '../../../components/KeyboardAction';
 
-const mockController = {getSnapshot: jest.fn()};
+const mockController = {getSnapshot: jest.fn(), zoomBy: jest.fn(), fitView: jest.fn()};
 const mockSnapshot = {status: 'ready', data: {nodes: [], edges: []},
     selectedIds: [], hoveredIds: [], canUndo: false, canRedo: false};
 let mockCanvasProps;
@@ -56,10 +57,10 @@ const Probe = () => {
 
 // G6 emits its hit-tested menu during pointerdown, before the browser's
 // mousedown and contextmenu. Use the installed forwarder, not a later mock callback.
-const rightClick = kind => {
+const rightClick = (kind, {button = 2, ctrlKey = false, menuButton = button, suppressed = true} = {}) => {
     const surface = screen.getByTestId('graph-surface');
     const client = {x: 60, y: 90};
-    const input = {button: 2, bubbles: true, cancelable: true, clientX: client.x, clientY: client.y};
+    const input = {button, ctrlKey, bubbles: true, cancelable: true, clientX: client.x, clientY: client.y};
     const element = kind && Object.create(kind === 'node' ? BaseNode.prototype : BaseEdge.prototype, {
         id: {value: mockEvent.id}, type: {value: kind}, destroyed: {value: false},
     });
@@ -81,15 +82,15 @@ const rightClick = kind => {
         fireEvent(surface, new MouseEvent('pointerdown', input));
         const mouseDown = new MouseEvent('mousedown', input);
         fireEvent(surface, mouseDown);
-        const nativeMenu = new MouseEvent('contextmenu', input);
+        const nativeMenu = new MouseEvent('contextmenu', {...input, button: menuButton});
         fireEvent(surface, nativeMenu);
-        expect(nativeMenu.defaultPrevented).toBe(true);
+        expect(nativeMenu.defaultPrevented).toBe(suppressed);
         return mouseDown;
     }
     finally { behavior.destroy(); }
 };
 
-beforeEach(() => { jest.clearAllMocks(); jest.useFakeTimers(); });
+beforeEach(() => { jest.clearAllMocks(); jest.useFakeTimers(); mockSnapshot.status = 'ready'; });
 afterEach(() => { jest.useRealTimers(); });
 
 test('shares the controller snapshot without exposing an engine or rewriting result data', () => {
@@ -171,6 +172,24 @@ test('right mouse input cancels default canvas focus after the menu has focused 
     const leftMouseDown = new MouseEvent('mousedown', {button: 0, bubbles: true, cancelable: true});
     fireEvent(screen.getByTestId('graph-surface'), leftMouseDown);
     expect(leftMouseDown.defaultPrevented).toBe(false);
+});
+
+test.each([0, 2])('allows the native Ctrl+click menu with contextmenu button %s when G6 did not open a menu', menuButton => {
+    render(<Graph data={{nodes: [], edges: []}}><Probe /><Menu onClickAddNode={() => {}} /></Graph>);
+    rightClick('node');
+    expect(mockContext.contextTarget.kind).toBe('node');
+    const mouseDown = rightClick('node', {button: 0, ctrlKey: true, menuButton, suppressed: false});
+    expect(mouseDown.defaultPrevented).toBe(false);
+    expect(mockContext.contextTarget).toBeNull();
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+});
+
+test('does not suppress a later native menu without a new button-2 pointerdown', () => {
+    render(<Graph data={{nodes: [], edges: []}}><Probe /></Graph>);
+    rightClick('node');
+    const nativeMenu = new MouseEvent('contextmenu', {button: 2, bubbles: true, cancelable: true});
+    fireEvent(screen.getByTestId('graph-surface'), nativeMenu);
+    expect(nativeMenu.defaultPrevented).toBe(false);
 });
 
 test('left pointer input dismisses menus and focuses the canvas without stealing control focus', () => {
@@ -279,4 +298,95 @@ test('same-dataset handler refresh keeps the pending inspection and calls the la
     expect(original).not.toHaveBeenCalled();
     expect(latest).toHaveBeenCalledTimes(1);
     expect(latest).toHaveBeenCalledWith(mockEvent);
+});
+
+test('focused graph keys use the toolbar zoom factors and fit without handling F or browser zoom', () => {
+    render(<Graph data={{nodes: [], edges: []}}><Probe /></Graph>);
+    const container = mockContext.containerRef.current;
+    container.focus();
+    const press = (key, options = {}) => {
+        const event = new KeyboardEvent('keydown', {key, bubbles: true, cancelable: true, ...options});
+        fireEvent(container, event);
+        return event;
+    };
+    for (const [key, options] of [['+', {shiftKey: true}], ['=', {}], ['-', {}], ['0', {}]]) {
+        expect(press(key, options).defaultPrevented).toBe(true);
+    }
+    expect(mockController.zoomBy.mock.calls).toEqual([[1.25], [1.25], [0.8]]);
+    expect(mockController.fitView).toHaveBeenCalledTimes(1);
+    for (const options of [{ctrlKey: true}, {metaKey: true}, {altKey: true},
+        {isComposing: true}, {keyCode: 229}]) {
+        expect(press('=', options).defaultPrevented).toBe(false);
+    }
+    expect(press('f').defaultPrevented).toBe(false);
+    expect(mockController.zoomBy).toHaveBeenCalledTimes(3);
+    expect(mockController.fitView).toHaveBeenCalledTimes(1);
+});
+
+test.each([
+    ['input', <input key='input' aria-label='editing' />],
+    ['textarea', <textarea key='textarea' aria-label='editing' />],
+    ['select', <select key='select' aria-label='editing' />],
+    ['button', <button key='button' aria-label='editing'>Action</button>],
+    ['role button', <KeyboardAction key='role-button' onAction={() => {}} aria-label='editing'>Action</KeyboardAction>],
+    ['contenteditable', <div key='contenteditable' aria-label='editing' contentEditable tabIndex={0} />],
+    ['CM6', <div key='cm6' className='cm-editor'><div aria-label='editing' tabIndex={0} /></div>],
+    ['textbox', <div key='textbox' role='textbox' aria-label='editing' tabIndex={0} />],
+])('does not zoom while editing or using a %s control', (_name, editor) => {
+    render(<Graph data={{nodes: [], edges: []}}>{editor}</Graph>);
+    const target = screen.getByLabelText('editing');
+    target.focus();
+    const event = new KeyboardEvent('keydown', {key: '=', bubbles: true, cancelable: true});
+    fireEvent(target, event);
+    expect(event.defaultPrevented).toBe(false);
+    expect(mockController.zoomBy).not.toHaveBeenCalled();
+});
+
+test('does not zoom from a focused KeyboardAction descendant', () => {
+    render(<Graph data={{nodes: [], edges: []}}>
+        <KeyboardAction onAction={() => {}} aria-label='panel action'><span data-testid='action-label'>Panel</span></KeyboardAction>
+    </Graph>);
+    screen.getByRole('button', {name: 'panel action'}).focus();
+    for (const key of ['+', '=', '-', '0']) {
+        const event = new KeyboardEvent('keydown', {key, bubbles: true, cancelable: true});
+        fireEvent(screen.getByTestId('action-label'), event);
+        expect(event.defaultPrevented).toBe(false);
+    }
+    expect(mockController.zoomBy).not.toHaveBeenCalled();
+    expect(mockController.fitView).not.toHaveBeenCalled();
+});
+
+test('ignores prevented events, portal dialogs, unfocused graphs and not-ready controllers', () => {
+    const portal = <div role='dialog' aria-label='portal dialog' tabIndex={0} />;
+    const data = {nodes: [], edges: []};
+    const children = <><div tabIndex={0} data-testid='handled-key' onKeyDown={event => event.preventDefault()} />
+        {createPortal(portal, document.body)}</>;
+    const view = render(<Graph data={data}><Probe />{children}</Graph>);
+    const container = mockContext.containerRef.current;
+    fireEvent.keyDown(container, {key: '='});
+    const handled = screen.getByTestId('handled-key');
+    handled.focus();
+    fireEvent.keyDown(handled, {key: '='});
+    const dialog = screen.getByRole('dialog');
+    dialog.focus();
+    fireEvent.keyDown(dialog, {key: '='});
+    container.focus();
+    fireEvent.keyDown(document.body, {key: '='});
+    mockSnapshot.status = 'updating';
+    view.rerender(<Graph data={data}><Probe />{children}</Graph>);
+    fireEvent.keyDown(container, {key: '='});
+    expect(mockController.zoomBy).not.toHaveBeenCalled();
+});
+
+test('a focused nested graph handles its key once without triggering the parent canvas', () => {
+    const view = render(<Graph data={{nodes: [], edges: []}}>
+        <Graph data={{nodes: [], edges: []}} />
+    </Graph>);
+    const [outer, inner] = view.container.querySelectorAll('[data-hubble-graph]');
+    inner.focus();
+    fireEvent.keyDown(inner, {key: '='});
+    expect(mockController.zoomBy.mock.calls).toEqual([[1.25]]);
+    outer.focus();
+    fireEvent.keyDown(outer, {key: '0'});
+    expect(mockController.fitView).toHaveBeenCalledTimes(1);
 });

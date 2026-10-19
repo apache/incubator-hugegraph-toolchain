@@ -148,11 +148,15 @@
       "style": "Style",
       "filter": "Filter",
       "layout": "Layout",
+      "quick_layout_radial": "Use radial layout",
+      "quick_layout_force": "Use default force layout",
       "setting": "Settings",
       "new": "New",
       "statistics": "Statistics",
       "mode_2d": "2D Mode",
       "mode_3d": "3D Mode",
+      "render_mode": "Rendering mode",
+      "mode_3d_experimental": "3D (experimental)",
       "import_success": "Imported successfully",
       "number_card": {
         "paths": "Paths",
@@ -223,6 +227,8 @@
         "switch_2d": "No graph data to switch"
       },
       "canvas_3d": {
+        "unavailable": "3D mode could not be loaded or displayed",
+        "back_to_2d": "Return to 2D",
         "node": "Node",
         "edge": "Edge",
         "type": "Type",

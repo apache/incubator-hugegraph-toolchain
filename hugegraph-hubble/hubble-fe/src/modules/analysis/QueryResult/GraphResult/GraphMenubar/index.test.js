@@ -21,23 +21,28 @@ import JSONbig from 'json-bigint';
 import QueryMenuBar from './index';
 import AlgorithmMenuBar from '../../../../algorithm/GraphResult/GraphMenuBar';
 import {adaptAnalysisGraph} from '../../../../../utils/analysisGraphData';
-import {GRAPH_RENDER_MODE} from '../../../../../utils/constants';
+import {GRAPH_RENDER_MODE, PANEL_TYPE} from '../../../../../utils/constants';
 import useDownloadJson from '../../../../../customHook/useDownloadJson';
 
 jest.mock('react-i18next', () => ({useTranslation: () => ({t: key => key})}));
 jest.mock('../../../../../customHook/useDownloadJson', () => ({__esModule: true, default: jest.fn()}));
 jest.mock('../../../../component/MenuBar', () => ({__esModule: true,
-    default: ({content}) => <>{content.map(item => <span key={item.key}>{item.content}</span>)}</>}));
+    default: ({content, extra}) => <>
+        {content.map(item => <span key={item.key}>{item.content}</span>)}
+        {extra?.map(item => <aside key={item.key}>{item.content}</aside>)}
+    </>}));
 jest.mock('../../../../component/ExportData', () => ({__esModule: true,
     default: ({onExportJsonChange}) => <button onClick={() => onExportJsonChange('graph-export')}>export JSON</button>}));
 jest.mock('../../../../component/ImportData', () => ({__esModule: true, default: () => null}));
 jest.mock('../../../../component/styleConfig/Home', () => ({__esModule: true, default: () => null}));
 jest.mock('../../../../component/filter/Home', () => ({__esModule: true, default: () => null}));
 jest.mock('../../../../component/LayoutConfig', () => ({__esModule: true, default: () => null}));
-jest.mock('../../../../component/SettingConfig', () => ({__esModule: true, default: () => null}));
+jest.mock('../../../../component/SettingConfig', () => ({__esModule: true,
+    default: ({buttonEnable, onClick}) => <button disabled={!buttonEnable} onClick={onClick}>Settings</button>}));
 jest.mock('../../../../component/NewConfig', () => ({__esModule: true, default: () => null}));
 jest.mock('../../../../component/Statistics', () => ({__esModule: true, default: () => null}));
-jest.mock('../../../../component/GraphRenderModeSwitcher', () => ({__esModule: true, default: () => null}));
+jest.mock('../../../../component/GraphRenderModeSwitcher', () => ({__esModule: true,
+    default: () => <button>Experimental renderer shortcut</button>}));
 
 test.each([['query', QueryMenuBar], ['algorithm', AlgorithmMenuBar]])(
     '%s JSON export preserves full business records and exact IDs rather than rendering IDs', async (_kind, Menu) => {
@@ -74,5 +79,45 @@ test.each([['query', QueryMenuBar], ['algorithm', AlgorithmMenuBar]])(
         expect(exportData).toHaveBeenCalledTimes(1);
         expect(downloadJsonHandler).toHaveBeenCalledWith('graph-export', raw);
         expect(downloadJsonHandler.mock.calls[0][1].edges[0].id.toFixed()).toBe('900719925474099312345');
+    }
+);
+
+test.each([['query', QueryMenuBar], ['algorithm', AlgorithmMenuBar]])(
+    '%s keeps only the existing Settings entry available in 3D', async (_kind, Menu) => {
+        useDownloadJson.mockReturnValue({downloadJsonHandler: jest.fn()});
+        const handleTogglePanel = jest.fn();
+        const view = render(<Menu graphData={{nodes: [], edges: []}} showCanvasInfo
+            graphRenderMode={GRAPH_RENDER_MODE.CANVAS3D} handleTogglePanel={handleTogglePanel} />);
+        expect(screen.queryByRole('button', {name: 'Experimental renderer shortcut'})).not.toBeInTheDocument();
+        await userEvent.click(screen.getByRole('button', {name: 'Settings'}));
+        expect(handleTogglePanel).toHaveBeenCalledWith(PANEL_TYPE.SETTING);
+        view.rerender(<Menu graphData={{nodes: [], edges: []}} showCanvasInfo={false}
+            graphRenderMode={GRAPH_RENDER_MODE.CANVAS3D} handleTogglePanel={handleTogglePanel} />);
+        expect(screen.getByRole('button', {name: 'Settings'})).toBeDisabled();
+    }
+);
+
+test.each([['query', QueryMenuBar], ['algorithm', AlgorithmMenuBar]])(
+    '%s offers the next quick layout and disables it for 3D, loading and empty results', async (_kind, Menu) => {
+        useDownloadJson.mockReturnValue({downloadJsonHandler: jest.fn()});
+        const handleQuickLayoutChange = jest.fn();
+        const props = {graphData: {nodes: [{id: 'visible'}], edges: []}, showCanvasInfo: true,
+            graphRenderMode: GRAPH_RENDER_MODE.CANVAS2D, layout: {type: 'grid'}, layoutReady: true, handleQuickLayoutChange};
+        const view = render(<Menu {...props} />);
+        await userEvent.click(screen.getByRole('button', {name: 'analysis.canvas.quick_layout_radial'}));
+        expect(handleQuickLayoutChange).toHaveBeenLastCalledWith({type: 'radial'});
+        view.rerender(<Menu {...props} layout={{type: 'radial'}} />);
+        await userEvent.click(screen.getByRole('button', {name: 'analysis.canvas.quick_layout_force'}));
+        expect(handleQuickLayoutChange).toHaveBeenLastCalledWith({type: 'd3-force'});
+        for (const unavailable of [
+            {graphRenderMode: GRAPH_RENDER_MODE.CANVAS3D}, {showCanvasInfo: false}, {layoutReady: false},
+            {graphData: {nodes: [], edges: []}},
+        ]) {
+            view.rerender(<Menu {...props} {...unavailable} />);
+            const button = screen.getByRole('button', {name: 'analysis.canvas.quick_layout_radial'});
+            expect(button).toBeDisabled();
+            await userEvent.click(button);
+        }
+        expect(handleQuickLayoutChange).toHaveBeenCalledTimes(2);
     }
 );

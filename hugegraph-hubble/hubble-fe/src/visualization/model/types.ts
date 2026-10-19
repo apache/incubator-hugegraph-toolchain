@@ -18,6 +18,11 @@
 export type RawId = string | number;
 export type ElementKind = 'node' | 'edge';
 export type JsonValue = string | number | boolean | null | JsonValue[] | {[key: string]: JsonValue};
+/**
+ * Presentation attributes. Edge zIndex is reserved by the runtime: edges render
+ * below nodes so crossing edges cannot block node interaction. Supplied edge
+ * zIndex values remain in model snapshots but do not control drawing order.
+ */
 export interface GraphStyle {
     [key: string]: JsonValue | undefined;
     x?: number;

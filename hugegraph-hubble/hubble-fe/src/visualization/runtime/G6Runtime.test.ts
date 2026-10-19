@@ -115,8 +115,8 @@ test('forwards node and edge context menus through the real runtime and controll
     finally { await controller.dispose(); }
 });
 
-test('node dragging dismisses the tooltip and suppresses hover until release', async () => {
-    const runtime = new G6Runtime(document.createElement('div'));
+test.each(['interactive', 'preview'] as const)('%s node dragging dismisses the tooltip until release', async preset => {
+    const runtime = new G6Runtime(document.createElement('div'), {preset});
     const events = jest.fn();
     runtime.onEvent(events);
     const enter = mockHandlers.get('node:pointerenter') as (event: unknown) => void;
@@ -144,6 +144,12 @@ test('node dragging dismisses the tooltip and suppresses hover until release', a
         enter(event);
         expect(events.mock.calls.at(-1)?.[0].type).toBe('hover');
     }
+    finally { runtime.stop(); runtime.destroy(); }
+});
+
+test('thumbnail remains a non-draggable navigation preview', () => {
+    const runtime = new G6Runtime(document.createElement('div'), {preset: 'thumbnail'});
+    try { expect(mockOptions.behaviors).toEqual([]); }
     finally { runtime.stop(); runtime.destroy(); }
 });
 
@@ -293,6 +299,21 @@ test('zoom scales default and custom fonts only in rendering, including focused 
     expect(mockEngine.updateNodeData).not.toHaveBeenCalled();
     expect(mockEngine.layout).not.toHaveBeenCalled();
     runtime.stop(); runtime.destroy();
+});
+
+test('keeps a drag-raised edge below nodes without changing its model or presentation', () => {
+    const runtime = new G6Runtime(document.createElement('div'));
+    const edge: EdgeData = {id: 'crossing', source: '0', target: '1',
+        style: {zIndex: 0, stroke: '#123456', lineWidth: 2, labelText: 'knows'}};
+    try {
+        const style = mockOptions.edge?.style;
+        if (typeof style !== 'function') throw new Error('Expected public edge style mapper');
+        expect(style.call({} as NativeGraph, edge)).toMatchObject({
+            zIndex: -1, stroke: '#123456', lineWidth: 2, labelText: 'knows',
+        });
+        expect(edge.style?.zIndex).toBe(0);
+        expect(mockOptions.edge?.state?.active).not.toHaveProperty('zIndex');
+    } finally {runtime.stop(); runtime.destroy();}
 });
 
 test('medium overview retains node names and all data; edge hover, selection and zoom expose names', async () => {
