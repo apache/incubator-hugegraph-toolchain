@@ -175,6 +175,11 @@ jobs:
         env:
           CANDIDATE_SDK_MAVEN_TEST: mvn
         run: python3 -m unittest discover -s .github/scripts -p 'test_candidate_sdk.py'
+      - name: Test merged release profile
+        if: ${{ !cancelled() && steps.java.outcome == 'success' }}
+        env:
+          RELEASE_PROFILE_MAVEN_TEST: mvn
+        run: python3 -m unittest discover -s .github/scripts -p 'test_release_profile.py'
       - name: Check License Header
         if: ${{ !cancelled() && steps.checkout.outcome == 'success' }}
         uses: apache/skywalking-eyes@29bd646002b63bb4c0ed1648d1654c35fb8ff027
