@@ -406,11 +406,12 @@ Then use a web browser to access `ip:8088` and you can see the `Hubble` page. Yo
 
 ### 2. Clone source code then compile and install
 
-Hubble requires Java 17, Maven 3.9+, Python 3, and the exact Node LTS version
-in [`hubble-fe/.node-version`](hubble-fe/.node-version). Install Node using your
-preferred version manager, then run `corepack enable`. Corepack selects the
-pinned pnpm version from `hubble-fe/package.json`; no global Yarn installation
-or second Maven-managed Node runtime is needed.
+Hubble requires Java 17, Maven 3.9+, Python 3, and stable Node.js 24 at or above
+the minimum in [`hubble-fe/.node-version`](hubble-fe/.node-version). Install Node
+using your preferred version manager and install Corepack if your distribution
+does not include it, then run `corepack enable`. Corepack selects the pinned pnpm
+version from `hubble-fe/package.json`. Later Node 24 patch/minor releases are
+supported; Node 25 and prerelease builds require a separate compatibility upgrade.
 
 Download the toolchain source code.
 
@@ -573,6 +574,7 @@ the orchestration tests only validate gate wiring and status propagation:
 ```bash
 node --test hubble-dist/assembly/travis/ui_auth.test.js \
   hubble-dist/assembly/travis/graph_acceptance_helpers.test.js \
+  hubble-dist/assembly/travis/run_ui_graph_acceptance.test.js \
   hubble-dist/assembly/travis/run_ui_full_acceptance.test.js
 python3 hubble-dist/assembly/travis/test_run_live_hubble_smoke.py
 ```

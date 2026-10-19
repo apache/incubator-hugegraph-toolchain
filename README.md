@@ -395,6 +395,13 @@ Until the 1.8.0 SDK is available in Maven Central, apply the same `--settings "$
 | Spark | `mvn install -pl hugegraph-client,hugegraph-spark-connector -am -DskipTests -ntp` |
 | Go Client | `cd hugegraph-client-go && make all` |
 
+Hubble frontend builds require stable Node.js 24 (at least the version in
+[`hubble-fe/.node-version`](hugegraph-hubble/hubble-fe/.node-version)) and the exact pnpm version
+in [`hubble-fe/package.json`](hugegraph-hubble/hubble-fe/package.json). Install Corepack if your
+Node distribution does not include it, then run `corepack enable` and `pnpm --version` from
+`hugegraph-hubble/hubble-fe` before the Maven build. Later Node 24 patch/minor releases are supported;
+Node 25 and prerelease builds require a separate compatibility upgrade.
+
 ### Running Tests
 
 | Module | Test Type | Command |

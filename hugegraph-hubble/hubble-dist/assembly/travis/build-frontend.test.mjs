@@ -22,7 +22,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import {fileURLToPath} from 'node:url';
-import {buildEnvironment, fingerprint, inventory, validOutput} from './build-frontend.mjs';
+import {buildEnvironment, fingerprint, inventory, supportedNodeVersion, validOutput} from './build-frontend.mjs';
 
 const helper = fileURLToPath(new URL('./build-frontend.mjs', import.meta.url));
 const pnpmVersion = '12.14.0';
@@ -186,7 +186,7 @@ test('diagnostic builds have separate identities and invoke the explicit source-
 test('wrong Node or pnpm version fails before installing; concurrent writers fail explicitly', async t => {
   const f = await fixture(t);
   await writeFile(path.join(f.frontend, '.node-version'), '99.0.0');
-  assert.match(run(f).stderr, /requires Node 99.0.0/);
+  assert.match(run(f).stderr, /requires stable Node >=99.0.0/);
   await writeFile(path.join(f.frontend, '.node-version'), process.versions.node);
   await writeFile(path.join(f.frontend, 'package.json'), JSON.stringify({packageManager: 'pnpm@99.0.0'}));
   assert.match(run(f).stderr, /requires pnpm@99.0.0/);
@@ -243,4 +243,28 @@ test('symlinked inputs/outputs are rejected; environment values are never persis
   await assert.rejects(inventory(path.join(f.frontend, 'build')), /symlink/);
   assert.deepEqual(buildEnvironment({GITHUB_TOKEN: 'secret', NODE_ENV: 'test'}),
     {CI: 'true', NODE_ENV: 'production', TZ: 'UTC', NODE_OPTIONS: '--max-old-space-size=4096'});
+});
+
+test('Node minimum allows maintained patches and minors but rejects older, next-major and prerelease builds', () => {
+  for (const actual of ['24.22.0', '24.22.1', '24.23.0']) {
+    assert.equal(supportedNodeVersion(actual, '24.22.0'), true, actual);
+  }
+  for (const actual of ['24.21.9', '23.99.0', '25.0.0', '24.23.0-rc.1', 'v24.22.0', '24.22', '24.022.0']) {
+    assert.equal(supportedNodeVersion(actual, '24.22.0'), false, actual);
+  }
+  assert.equal(supportedNodeVersion('24.22.0', '24.22.0-rc.1'), false);
+});
+
+test('build cache fingerprints the running Node version when the minimum is older', async t => {
+  const f = await fixture(t);
+  const [major, minor, patch] = process.versions.node.split('.').map(Number);
+  assert.ok(minor > 0 || patch > 0, 'fixture requires a maintained patch/minor Node release');
+  const minimum = patch > 0 ? `${major}.${minor}.${patch - 1}` : `${major}.${minor - 1}.0`;
+  await writeFile(path.join(f.frontend, '.node-version'), minimum);
+  success(run(f));
+  const manifest = JSON.parse(await readFile(path.join(f.frontend, '.cache/frontend-build.json')));
+  assert.equal(manifest.inputHash, await fingerprint(f.frontend, 'production', process.versions.node, pnpmVersion,
+    f.environment));
+  assert.notEqual(manifest.inputHash, await fingerprint(f.frontend, 'production', minimum, pnpmVersion,
+    f.environment));
 });

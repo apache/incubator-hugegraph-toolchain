@@ -94,11 +94,23 @@ function run(command, args, options = {}) {
   if (result.status !== 0) throw new Error(`${command} ${args.join(' ')} failed (${result.signal || result.status})`);
 }
 
+// Only stable releases within the maintained major are supported. Keep the
+// minimum in .node-version; later patch/minor releases need no source edit.
+export function supportedNodeVersion(actual, minimum) {
+  const stable = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
+  if (!stable.test(actual) || !stable.test(minimum)) return false;
+  const [major, minor, patch] = actual.split('.').map(Number);
+  const [requiredMajor, requiredMinor, requiredPatch] = minimum.split('.').map(Number);
+  return major === requiredMajor &&
+    (minor > requiredMinor || (minor === requiredMinor && patch >= requiredPatch));
+}
+
 export async function buildFrontend({frontend = defaultFrontend, mode = 'production', force = false} = {}) {
   if (!['production', 'diagnostic'].includes(mode)) throw new Error(`Unknown frontend build mode: ${mode}`);
-  const nodeVersion = (await readFile(path.join(frontend, '.node-version'), 'utf8')).trim().replace(/^v/, '');
-  if (process.versions.node !== nodeVersion) {
-    throw new Error(`Hubble requires Node ${nodeVersion}; found ${process.versions.node}. ` +
+  const minimumNode = (await readFile(path.join(frontend, '.node-version'), 'utf8')).trim().replace(/^v/, '');
+  const nodeVersion = process.versions.node;
+  if (!supportedNodeVersion(nodeVersion, minimumNode)) {
+    throw new Error(`Hubble requires stable Node >=${minimumNode} in the same major; found ${nodeVersion}. ` +
       'See hubble-fe/.node-version.');
   }
   const {packageManager} = JSON.parse(await readFile(path.join(frontend, 'package.json'), 'utf8'));
