@@ -169,9 +169,8 @@ test('clears template, type, and hidden config after cancel and reopen', async (
     expect(within(dialog).getByPlaceholderText('datasource.form.name_placeholder'))
         .toHaveValue('local_csv_example');
 
-    await userEvent.click(within(dialog).getByRole('button', {
-        name: 'Cancel',
-    }));
+    const footer = dialog.querySelector('.ant-modal-footer');
+    await userEvent.click(within(footer).getByRole('button', {name: 'Cancel'}));
     await waitFor(() => expect(dialog).not.toBeInTheDocument());
     await userEvent.click(screen.getByRole('button', {
         name: 'reopen datasource',
