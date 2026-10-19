@@ -1,7 +1,7 @@
 # Hubble frontend third-party notices
 
-`inventory.json` identifies the 262 unique package/version pairs in the frozen
-pnpm production dependency closure. `THIRD-PARTY.txt` preserves 302 license and
+`inventory.json` identifies the 257 unique package/version pairs in the frozen
+pnpm production dependency closure. `THIRD-PARTY.txt` preserves 297 license and
 notice texts, including nested vendored D3/InternMap notices in `@antv/vendor`
 and the ECharts NOTICE. It replaces the obsolete React 16/Create React App
 inventory. Development-only tools are excluded. The production closure is

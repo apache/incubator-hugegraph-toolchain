@@ -23,10 +23,8 @@
     "@ant-design/icons": "6.3.4",
     "@ant-design/icons-svg": "4.6.0",
     "@antv/g6": "5.1.1",
-    "@antv/layout": "2.0.0",
     "@antv/x6": "3.1.8",
     "@codemirror/autocomplete": "6.20.3",
-    "@codemirror/commands": "6.11.1",
     "@codemirror/language": "6.13.1",
     "@codemirror/legacy-modes": "6.5.5",
     "@codemirror/state": "6.7.6",
@@ -43,8 +41,6 @@
     "i18next": "26.5.2",
     "json-bigint": "1.0.0",
     "lodash": "4.18.1",
-    "lodash-es": "4.18.1",
-    "prop-types": "15.8.1",
     "qs": "6.16.1",
     "react": "19.3.1",
     "react-dom": "19.3.1",
@@ -56,6 +52,8 @@
     "validator": "13.15.35"
   },
   "devDependencies": {
+    "@antv/layout": "2.0.0",
+    "@codemirror/commands": "6.11.1",
     "@eslint-react/eslint-plugin": "5.28.1",
     "@eslint/js": "10.0.1",
     "@jest/globals": "30.5.2",

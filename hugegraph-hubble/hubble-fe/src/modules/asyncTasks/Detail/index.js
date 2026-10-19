@@ -34,7 +34,7 @@ import {
     Status_Color,
     getTranslatedAsyncTaskConstants,
 } from '../../../utils/constants';
-import {intersection, size} from 'lodash-es';
+import {intersection, size} from 'lodash';
 import {format} from 'date-fns';
 import {useTranslation} from 'react-i18next';
 import {AsyncTaskResultContent} from '../Result';

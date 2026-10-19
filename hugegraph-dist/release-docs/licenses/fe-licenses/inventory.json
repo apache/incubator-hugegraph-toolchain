@@ -2,9 +2,9 @@
   "schema": 1,
   "scope": "pnpm list --prod --depth Infinity; conservative production dependency closure, including modules pruned by bundling",
   "lockfile": "hugegraph-hubble/hubble-fe/pnpm-lock.yaml",
-  "lockfileSha256": "44052d8b4bc1cdb04a9e97225c7bf1a36d2c3866037fd5bd2406eda408388efa",
+  "lockfileSha256": "6e92d95d4ce114f93ca33a745fa4d200f004f57c9d79bb98b9d68efc2d718249",
   "packageManager": "pnpm@12.14.0",
-  "packageCount": 262,
+  "packageCount": 257,
   "localPatches": [
     {
       "package": "@antv/g6@5.1.1",
@@ -3961,22 +3961,6 @@
       "status": "text-preserved"
     },
     {
-      "name": "js-tokens",
-      "version": "4.0.0",
-      "declaredLicense": "MIT",
-      "packageJsonSha256": "47345931827b3e26db9fe690abb81f856a0d040cbca8af1e69711a64cd58ce0d",
-      "texts": [
-        {
-          "source": "LICENSE",
-          "origin": "installed package",
-          "sha256": "2213d91c606205c71eb051a199478cdc2adde945893404d7f1421436dd6d5cc1",
-          "bytes": 1103
-        }
-      ],
-      "repository": "lydell/js-tokens",
-      "status": "text-preserved"
-    },
-    {
       "name": "json-bigint",
       "version": "1.0.0",
       "declaredLicense": "MIT",
@@ -4063,25 +4047,6 @@
         }
       ],
       "repository": "lodash/lodash",
-      "status": "text-preserved"
-    },
-    {
-      "name": "loose-envify",
-      "version": "1.4.0",
-      "declaredLicense": "MIT",
-      "packageJsonSha256": "8c2e27dae366396ced36fe0f7c6d35d71a1440fd8e82df5f2005a5297888a0d4",
-      "texts": [
-        {
-          "source": "LICENSE",
-          "origin": "installed package",
-          "sha256": "4eb7543b08d955a6d23fcc224601d43ff566e775be918805e26210d7f6eb4893",
-          "bytes": 1100
-        }
-      ],
-      "repository": {
-        "type": "git",
-        "url": "git://github.com/zertosh/loose-envify.git"
-      },
       "status": "text-preserved"
     },
     {
@@ -4342,22 +4307,6 @@
       "status": "text-preserved"
     },
     {
-      "name": "object-assign",
-      "version": "4.1.1",
-      "declaredLicense": "MIT",
-      "packageJsonSha256": "5990bbffa235fc675debd925d50f6c3f48a2b4526d8c9f7555cadec9029d0d7f",
-      "texts": [
-        {
-          "source": "license",
-          "origin": "installed package",
-          "sha256": "6fb9754611c20f6649f68805e8c990e83261f29316e29de9e6cedae607b8634c",
-          "bytes": 1119
-        }
-      ],
-      "repository": "sindresorhus/object-assign",
-      "status": "text-preserved"
-    },
-    {
       "name": "object-inspect",
       "version": "1.13.4",
       "declaredLicense": "MIT",
@@ -4415,22 +4364,6 @@
         }
       ],
       "repository": "preactjs/preact",
-      "status": "text-preserved"
-    },
-    {
-      "name": "prop-types",
-      "version": "15.8.1",
-      "declaredLicense": "MIT",
-      "packageJsonSha256": "96aa387585c686397a80616d6a563759576e9b9fac1f80d57874aa4ee4730a2c",
-      "texts": [
-        {
-          "source": "LICENSE",
-          "origin": "installed package",
-          "sha256": "f657f99d3fb9647db92628e96007aabb46e5f04f33e49999075aab8e250ca7ce",
-          "bytes": 1080
-        }
-      ],
-      "repository": "facebook/prop-types",
       "status": "text-preserved"
     },
     {
@@ -4526,26 +4459,6 @@
       "repository": {
         "type": "git",
         "url": "https://github.com/i18next/react-i18next.git"
-      },
-      "status": "text-preserved"
-    },
-    {
-      "name": "react-is",
-      "version": "16.13.1",
-      "declaredLicense": "MIT",
-      "packageJsonSha256": "06784c4340af9853928c519791684487b83076b3c84e8de6ba5f240e33700b71",
-      "texts": [
-        {
-          "source": "LICENSE",
-          "origin": "installed package",
-          "sha256": "52412d7bc7ce4157ea628bbaacb8829e0a9cb3c58f57f99176126bc8cf2bfc85",
-          "bytes": 1086
-        }
-      ],
-      "repository": {
-        "type": "git",
-        "url": "https://github.com/facebook/react.git",
-        "directory": "packages/react-is"
       },
       "status": "text-preserved"
     },
