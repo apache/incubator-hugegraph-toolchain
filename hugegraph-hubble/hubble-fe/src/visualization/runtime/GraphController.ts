@@ -56,6 +56,7 @@ export class GraphController {
     private drawnStates = new Set<string>();
     private hidden = new Set<string>();
     private styleTail: StyleBatch | null = null;
+    private hoverTail: {current: boolean} | null = null;
 
     constructor(private readonly runtime: GraphRuntime, private readonly options: ControllerOptions = {}) {
         this.layout = immutableCopy(options.layout ?? {type: (options.preset ?? 'interactive') === 'interactive' ? 'd3-force' : 'dagre'});
@@ -130,6 +131,7 @@ export class GraphController {
     private command<T>(run: (context: UpdateContext) => Promise<T>,
         version: number | null = this.queue.version, key?: string, observable = true): Promise<UpdateResult<T>> {
         this.styleTail = null;
+        this.hoverTail = null;
         return this.queue.submit(async context => {
             await this.runtime.idleInteraction();
             if (!context.isCurrent()) throw new Error('Graph update was superseded');
@@ -326,12 +328,17 @@ export class GraphController {
     undo = (): Promise<UpdateResult<void>> => this.replay('undo');
     redo = (): Promise<UpdateResult<void>> => this.replay('redo');
 
-    private setInteraction(selected: Set<string>, hovered: Set<string>, focused = this.focused): Promise<UpdateResult<void>> {
+    private setInteraction(selected: Set<string>, hovered: Set<string>, focused = this.focused,
+        hoverIntent?: {current: boolean}): Promise<UpdateResult<void>> {
         this.selected = selected;
         this.hovered = hovered;
         this.focused = focused;
-        return this.command(context => this.drawInteraction(selected, hovered, focused, context),
-            this.queue.version, 'interaction', false);
+        return this.command(async context => {
+            // Coalesce only consecutive pointer intents that have not entered the engine.
+            // Once states() starts, its result must still be adopted even if the pointer moves.
+            if (hoverIntent && !hoverIntent.current) return;
+            await this.drawInteraction(selected, hovered, focused, context);
+        }, this.queue.version, 'interaction', false);
     }
 
     private async drawInteraction(selected: Set<string>, hovered: Set<string>, focused: string | null,
@@ -463,8 +470,12 @@ export class GraphController {
             : event.type === 'leave' || event.type === 'canvasClick' ? new Set<string>() : this.hovered;
         const focused = event.type === 'hover' ? value?.id ?? null
             : event.type === 'leave' || event.type === 'canvasClick' ? null : this.focused;
-        void this.setInteraction(selected, hovered, focused)
-            .catch(error => this.reportFailure(error));
+        const transient = event.type === 'hover' || event.type === 'leave';
+        if (transient && this.hoverTail) this.hoverTail.current = false;
+        const hoverIntent = transient ? {current: true} : undefined;
+        const update = this.setInteraction(selected, hovered, focused, hoverIntent);
+        if (hoverIntent) this.hoverTail = hoverIntent;
+        void update.catch(error => this.reportFailure(error));
     }
 
     dispose(): Promise<void> {

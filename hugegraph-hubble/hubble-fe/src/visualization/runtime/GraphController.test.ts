@@ -532,3 +532,100 @@ test('async event callback failures report once and async error callbacks cannot
     }
     finally { logged.mockRestore(); await controller.dispose(); }
 });
+
+test.each(['leave', 'hover'] as const)('consecutive pointer intents waiting on a drag retain only final %s', async final => {
+    const {runtime, emit} = createRuntime();
+    const controller = new GraphController(runtime);
+    await controller.replaceData(input());
+    await controller.select(['unrelated']);
+    runtime.states.mockClear();
+    const drag = deferred(); const entered = deferred();
+    runtime.idleInteraction.mockImplementationOnce(async () => { entered.resolve(); await drag.promise; });
+    emit({type: 'hover', kind: 'node', id: 'a'});
+    await entered.promise;
+    emit({type: 'hover', kind: 'node', id: 'unrelated'});
+    emit({type: final, ...(final === 'hover' ? {kind: 'node' as const, id: 'b'} : {})});
+    drag.resolve();
+    await controller.idle();
+    expect(runtime.states).toHaveBeenCalledTimes(1);
+    const states = runtime.states.mock.calls[0][0];
+    expect(states.unrelated).toContain('selected');
+    expect(controller.getSnapshot().selectedIds).toEqual(['unrelated']);
+    if (final === 'leave') {
+        expect(controller.getSnapshot().hoveredIds).toEqual([]);
+        expect(states).toEqual({unrelated: ['selected']});
+    }
+    else {
+        expect(states.b).toEqual(['active', 'focused']);
+        expect(new Set(controller.getSnapshot().hoveredIds)).toEqual(new Set(['a', 'b', 'ab']));
+    }
+    await controller.dispose();
+});
+
+test('export between pointer intents preserves the previous hover before the export', async () => {
+    const {runtime, emit} = createRuntime();
+    const controller = new GraphController(runtime);
+    await controller.replaceData(input());
+    const order: string[] = [];
+    runtime.states.mockImplementation(async states => { order.push(states.a?.includes('focused') ? 'a' : 'b'); });
+    runtime.exportPng.mockImplementation(async () => { order.push('export'); return 'data:image/png;base64,ok'; });
+    const drag = deferred(); const entered = deferred();
+    runtime.idleInteraction.mockImplementationOnce(async () => { entered.resolve(); await drag.promise; });
+    emit({type: 'hover', kind: 'node', id: 'a'});
+    await entered.promise;
+    const exported = controller.exportPng();
+    emit({type: 'hover', kind: 'node', id: 'b'});
+    drag.resolve();
+    await exported; await controller.idle();
+    expect(order).toEqual(['a', 'export', 'b']);
+    await controller.dispose();
+});
+
+test('pointer movement during an engine draw still adopts its committed states before clearing', async () => {
+    const {runtime, emit} = createRuntime();
+    const controller = new GraphController(runtime);
+    await controller.replaceData(input());
+    const drawing = deferred(); const entered = deferred();
+    runtime.states.mockImplementationOnce(async () => { entered.resolve(); await drawing.promise; });
+    emit({type: 'hover', kind: 'node', id: 'a'});
+    await entered.promise;
+    emit({type: 'leave'});
+    drawing.resolve(); await controller.idle();
+    expect(runtime.states).toHaveBeenCalledTimes(2);
+    expect(runtime.states.mock.calls[1][0]).toEqual({a: [], b: [], ab: []});
+    expect(controller.getSnapshot().hoveredIds).toEqual([]);
+    await controller.dispose();
+});
+
+test('failed hover draw can be retried by the next valid pointer intent', async () => {
+    const {runtime, emit} = createRuntime(); const onError = jest.fn();
+    const controller = new GraphController(runtime, {onError});
+    await controller.replaceData(input());
+    runtime.states.mockRejectedValueOnce(new Error('draw failed'));
+    emit({type: 'hover', kind: 'node', id: 'a'});
+    await controller.idle();
+    expect(onError).toHaveBeenCalledTimes(1);
+    emit({type: 'hover', kind: 'node', id: 'a'});
+    await controller.idle();
+    expect(runtime.states).toHaveBeenCalledTimes(2);
+    expect(runtime.states.mock.calls[1][0].a).toEqual(['active', 'focused']);
+    expect(new Set(controller.getSnapshot().hoveredIds)).toEqual(new Set(['a', 'b', 'ab']));
+    await controller.dispose();
+});
+
+test.each(['replace', 'dispose'] as const)('waiting hover cannot publish across %s', async action => {
+    const {runtime, emit} = createRuntime();
+    const controller = new GraphController(runtime);
+    await controller.replaceData(input());
+    const drag = deferred(); const entered = deferred();
+    runtime.idleInteraction.mockImplementationOnce(async () => { entered.resolve(); await drag.promise; });
+    emit({type: 'hover', kind: 'node', id: 'a'});
+    await entered.promise;
+    const next = action === 'replace' ? controller.replaceData({nodes: [node('new')], edges: []}) : controller.dispose();
+    drag.resolve(); await next; await controller.idle();
+    expect(runtime.states).not.toHaveBeenCalled();
+    expect(controller.getSnapshot().hoveredIds).toEqual([]);
+    if (action === 'replace') expect(controller.getSnapshot().data.nodes.map(item => item.id)).toEqual(['new']);
+    else expect(runtime.destroy).toHaveBeenCalledTimes(1);
+    await controller.dispose();
+});

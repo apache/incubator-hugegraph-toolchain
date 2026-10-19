@@ -50,7 +50,8 @@ const Probe = () => {
     return null;
 };
 
-beforeEach(() => { jest.clearAllMocks(); });
+beforeEach(() => { jest.clearAllMocks(); jest.useFakeTimers(); });
+afterEach(() => { jest.useRealTimers(); });
 
 test('shares the controller snapshot without exposing an engine or rewriting result data', () => {
     const onReady = jest.fn();
@@ -66,6 +67,8 @@ test('shares the controller snapshot without exposing an engine or rewriting res
     expect(mockCanvasProps.layout).toBe(layout);
     expect(mockCanvasProps.datasetKey).toBe('query-1');
     fireEvent.click(screen.getByRole('button', {name: 'Inspect node'}));
+    expect(onClick).not.toHaveBeenCalled();
+    act(() => { jest.advanceTimersByTime(300); });
     expect(onClick).toHaveBeenCalledWith(mockEvent);
     expect(mockContext.containerRef.current).toContainElement(screen.getByTestId('graph-surface'));
     view.unmount();
@@ -102,4 +105,69 @@ test('tooltip fields remain React text and preserve long IDs without executing m
     expect(screen.getByText(/<script>unsafe<\/script>/)).toBeInTheDocument();
     expect(document.querySelector('script, img')).toBeNull();
     expect(screen.getByText(/nested:.*"value":"3"/)).toBeInTheDocument();
+});
+
+
+test('double-click expands immediately without opening a single-click details drawer', () => {
+    const onClick = jest.fn(); const onDoubleClick = jest.fn();
+    render(<Graph data={{nodes: [], edges: []}} onClick={onClick} onDoubleClick={onDoubleClick} />);
+    act(() => { mockCanvasProps.onClick(mockEvent); });
+    act(() => { jest.advanceTimersByTime(120); mockCanvasProps.onClick(mockEvent); mockCanvasProps.onDoubleClick(mockEvent); });
+    expect(onDoubleClick).toHaveBeenCalledTimes(1);
+    expect(onDoubleClick).toHaveBeenCalledWith(mockEvent);
+    act(() => { jest.advanceTimersByTime(500); });
+    expect(onClick).not.toHaveBeenCalled();
+});
+
+test('pending node inspection cannot run after a dataset change or unmount', () => {
+    const onClick = jest.fn(); const data = {nodes: [], edges: []};
+    const view = render(<Graph data={data} datasetKey='old' onClick={onClick} />);
+    act(() => { mockCanvasProps.onClick(mockEvent); });
+    view.rerender(<Graph data={data} datasetKey='new' onClick={onClick} />);
+    act(() => { jest.advanceTimersByTime(300); });
+    expect(onClick).not.toHaveBeenCalled();
+    act(() => { mockCanvasProps.onClick(mockEvent); });
+    view.unmount();
+    act(() => { jest.advanceTimersByTime(300); });
+    expect(onClick).not.toHaveBeenCalled();
+});
+
+test('edge inspection remains immediate and delayed node callback failures are reported', async () => {
+    const onClick = jest.fn();
+    render(<Graph data={{nodes: [], edges: []}} onClick={onClick} />);
+    const edge = {...mockEvent, kind: 'edge'};
+    act(() => { mockCanvasProps.onClick(edge); });
+    expect(onClick).toHaveBeenCalledWith(edge);
+    onClick.mockImplementationOnce(() => { throw new Error('inspection failed'); });
+    await act(async () => { mockCanvasProps.onClick(mockEvent); jest.advanceTimersByTime(300); });
+    expect(message.error).toHaveBeenCalledTimes(1);
+    expect(message.error).toHaveBeenCalledWith('inspection failed');
+});
+
+
+test('a newer target owns the details drawer without a stale node inspection', () => {
+    const onClick = jest.fn();
+    render(<Graph data={{nodes: [], edges: []}} onClick={onClick} />);
+    const edge = {...mockEvent, kind: 'edge', id: 'edge:ab'};
+    act(() => { mockCanvasProps.onClick(mockEvent); jest.advanceTimersByTime(100); mockCanvasProps.onClick(edge); });
+    act(() => { jest.advanceTimersByTime(300); });
+    expect(onClick.mock.calls).toEqual([[edge]]);
+    onClick.mockClear();
+    const other = {...mockEvent, id: 'node:b'};
+    act(() => { mockCanvasProps.onClick(mockEvent); jest.advanceTimersByTime(100); mockCanvasProps.onClick(other); });
+    expect(onClick).not.toHaveBeenCalled();
+    act(() => { jest.advanceTimersByTime(300); });
+    expect(onClick.mock.calls).toEqual([[other]]);
+});
+
+
+test('same-dataset handler refresh keeps the pending inspection and calls the latest handler', () => {
+    const original = jest.fn(); const latest = jest.fn(); const data = {nodes: [], edges: []};
+    const view = render(<Graph data={data} datasetKey='same' onClick={original} />);
+    act(() => { mockCanvasProps.onClick(mockEvent); jest.advanceTimersByTime(100); });
+    view.rerender(<Graph data={data} datasetKey='same' onClick={latest} onDoubleClick={() => {}} />);
+    act(() => { jest.advanceTimersByTime(200); });
+    expect(original).not.toHaveBeenCalled();
+    expect(latest).toHaveBeenCalledTimes(1);
+    expect(latest).toHaveBeenCalledWith(mockEvent);
 });

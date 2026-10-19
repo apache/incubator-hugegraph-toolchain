@@ -75,7 +75,7 @@ export class G6Runtime implements GraphRuntime {
         this.graph = new Graph({
             container, width: Math.max(container.clientWidth, 1), height: Math.max(container.clientHeight, 1),
             canvas, autoResize: false, animation: false,
-            padding: preset === 'thumbnail' ? 12 : options.minimap ? [36, 220, 36, 36] : 36,
+            padding: preset === 'thumbnail' ? 12 : options.minimap ? [36, 36, 36, 220] : 36,
             theme: options.theme ?? 'light', zoomRange: [0.03, 8], data: {nodes: [], edges: []},
             node: {
                 type: datum => typeof datum.data?.shape === 'string' ? datum.data.shape : 'circle',
@@ -104,7 +104,7 @@ export class G6Runtime implements GraphRuntime {
             transforms: [{type: 'hubble-parallel-edges'}],
             behaviors: preset === 'thumbnail' ? [] : [
                 'drag-canvas', 'zoom-canvas',
-                ...(interactive ? [{type: 'drag-element', shadow: true, animation: false,
+                ...(interactive ? [{type: 'drag-element', shadow: false, hideEdge: 'none', animation: false,
                     enable: (event: IPointerEvent) => {
                         if (!this.alive || this.busy || event.targetType !== 'node') return false;
                         this.dragIdle = new Promise(resolve => { this.finishDrag = resolve; });
@@ -122,7 +122,7 @@ export class G6Runtime implements GraphRuntime {
                     afterAddCommand: () => {
                         if (!this.replaying) this.getHistory()?.redoStack.splice(0);
                     }}] : []),
-                ...(interactive && options.minimap ? [{type: 'minimap', key: 'minimap', size: [180, 120]}] : []),
+                ...(interactive && options.minimap ? [{type: 'minimap', key: 'minimap', size: [180, 120], position: 'left-bottom'}] : []),
             ],
         });
         if (preset !== 'thumbnail') this.bindEvents();
@@ -288,10 +288,10 @@ export class G6Runtime implements GraphRuntime {
         return this.commit(false, async () => { this.graph.removeData(ids); await this.graph.draw(); });
     }
     setMinimap(visible: boolean): void {
-        this.graph.setOptions({padding: visible ? [36, 220, 36, 36] : 36});
+        this.graph.setOptions({padding: visible ? [36, 36, 36, 220] : 36});
         this.graph.setPlugins(previous => [
             ...previous.filter(plugin => typeof plugin !== 'object' || plugin.key !== 'minimap'),
-            ...(visible ? [{type: 'minimap', key: 'minimap', size: [180, 120]}] : []),
+            ...(visible ? [{type: 'minimap', key: 'minimap', size: [180, 120], position: 'left-bottom'}] : []),
         ]);
     }
 

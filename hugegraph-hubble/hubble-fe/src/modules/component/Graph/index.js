@@ -20,7 +20,7 @@
  * @file 画布公共组件
  */
 
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {message} from 'antd';
 import {useTranslation} from 'react-i18next';
 import classnames from 'classnames';
@@ -50,6 +50,9 @@ const Graph = ({data, datasetKey, layout = DEFAULT_LAYOUT, onReady, onClick, onD
     isPanelEnable, children}) => {
     const {t} = useTranslation();
     const containerRef = useRef(null);
+    const nodeClick = useRef(null);
+    const handlers = useRef({onClick, onDoubleClick});
+    useLayoutEffect(() => { handlers.current = {onClick, onDoubleClick}; }, [onClick, onDoubleClick]);
     const [controller, setController] = useState(null);
     const [contextTarget, setContextTarget] = useState(null);
     const [showLegend, setShowLegend] = useState(true);
@@ -68,6 +71,27 @@ const Graph = ({data, datasetKey, layout = DEFAULT_LAYOUT, onReady, onClick, onD
             return undefined;
         }
     }, [reportError]);
+    const cancelNodeClick = useCallback(() => {
+        if (nodeClick.current !== null) clearTimeout(nodeClick.current);
+        nodeClick.current = null;
+    }, []);
+    useLayoutEffect(() => cancelNodeClick, [cancelNodeClick, datasetKey]);
+    const click = useCallback(event => {
+        // Only the latest inspection opens a drawer; stale targets must not intercept a new double-click.
+        cancelNodeClick();
+        if (!handlers.current.onClick) return;
+        if (event.kind !== 'node') return run(() => handlers.current.onClick?.(event));
+        // Opening the details drawer immediately would intercept the second click.
+        // Preserve the original 300ms single/double-click distinction at the Hubble boundary.
+        nodeClick.current = setTimeout(() => {
+            nodeClick.current = null;
+            void run(() => handlers.current.onClick?.(event));
+        }, 300);
+    }, [cancelNodeClick, run]);
+    const doubleClick = useCallback(event => {
+        cancelNodeClick();
+        return run(() => handlers.current.onDoubleClick?.(event));
+    }, [cancelNodeClick, run]);
     const ready = useCallback(value => {
         setController(value);
         return onReady?.(value);
@@ -107,7 +131,7 @@ const Graph = ({data, datasetKey, layout = DEFAULT_LAYOUT, onReady, onClick, onD
             tabIndex={0} aria-label={t('analysis.canvas.graph_canvas')} onMouseDown={focus}
             onContextMenuCapture={canvasMenu}>
             <GraphCanvas data={data} datasetKey={datasetKey} layout={layout} preset='interactive'
-                style={{height: '100%'}} onReady={ready} onClick={onClick} onDoubleClick={onDoubleClick}
+                style={{height: '100%'}} onReady={ready} onClick={click} onDoubleClick={doubleClick}
                 onContextMenu={setContextTarget} onError={reportError} tooltip={tooltip}
                 aria-label={t('analysis.canvas.graph_canvas')} />
             {children}
