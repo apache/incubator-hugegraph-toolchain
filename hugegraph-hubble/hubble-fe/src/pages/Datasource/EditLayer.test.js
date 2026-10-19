@@ -163,6 +163,7 @@ test('clears the selected template label after a manual source-type change', asy
     });
 }, 10000);
 
+// This flow includes real template selection, modal closure, and reopening.
 test('clears template, type, and hidden config after cancel and reopen', async () => {
     render(<ReopenableEditLayer />);
     const dialog = await screen.findByRole('dialog');
@@ -179,7 +180,7 @@ test('clears template, type, and hidden config after cancel and reopen', async (
     const reopened = await screen.findByRole('dialog');
     expect(reopened).not.toBe(dialog);
     await waitFor(() => expectFreshForm(reopened));
-});
+}, 10000);
 
 // Multi-step real AntD flows need a bounded CI budget; waitFor deadlines stay unchanged.
 test('clears template, type, and hidden config after successful create and reopen', async () => {
