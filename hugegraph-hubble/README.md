@@ -296,6 +296,30 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
+<details>
+<summary>Optional experiment: share dependency directories across worktrees</summary>
+
+The default pnpm layout already reuses package files through its shared store,
+while each worktree has its own `node_modules/.pnpm` directory structure.
+pnpm's experimental **global virtual store** (`virtualStoreType: global`)
+also shares that structure, reducing repeated installation work for many local
+worktrees. Hubble leaves this option **disabled by default**; no project or
+global pnpm setting needs to change for the development commands above.
+
+Use this experiment only for trusted local worktrees. Shared package edits can
+affect other worktrees, and some tools need pnpm's ESM resolution hooks rather
+than a directly launched `node` process. Keep mutable outputs such as `build/`,
+`.cache` and Vite caches separate. Reported directory sizes do not establish
+physical disk savings because the default layout already shares package data.
+Keep normal distribution builds and CI on the validated default layout.
+
+See pnpm's [global virtual store guide](https://pnpm.io/global-virtual-store)
+for benefits and limitations, and the
+[`virtualStoreType` configuration reference](https://pnpm.io/settings/node-modules#virtualstoretype)
+for opt-in configuration details.
+
+</details>
+
 Run the backend incrementally with Java 17 and the Maven daemon:
 
 ```bash
