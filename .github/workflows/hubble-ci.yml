@@ -36,6 +36,7 @@ env:
 
 jobs:
   hubble-ci:
+    name: Hubble build and single-graph smoke (${{ matrix.SERVER_BASELINE }})
     runs-on: ubuntu-latest
     env:
       STATIC_DIR: hugegraph-hubble/hubble-dist/assembly/static
@@ -244,9 +245,9 @@ jobs:
       - name: Unit test
         run: mvn test -P unit-test -pl hugegraph-hubble/hubble-be -ntp
 
-      - name: API and real standalone graph UI acceptance
+      - name: API and real single-graph UI smoke
         env:
-          # This fixture has one graph. Scope/PD and auth-mode matrices remain separate gates.
+          # One graph only: this smoke does not prove the full scope/auth/PD/resource acceptance matrix.
           HUBBLE_GRAPH_CHECKS: example,authentication,query,schema,cards,algorithm
           HG_SERVER_BASELINE: ${{ matrix.SERVER_BASELINE }}
         run: |

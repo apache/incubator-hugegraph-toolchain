@@ -559,9 +559,13 @@ to a second scope. See the fixture fields in
 
 The standalone CI fixture has one graph and explicitly selects
 `HUBBLE_GRAPH_CHECKS=example,authentication,query,schema,cards,algorithm`.
-This is a subset: its report and manifest retain `fullRequestedMatrix: false`.
-A successful subset does not close the separate authenticated/anonymous,
-PD/GraphSpace, connection and permission matrices. Missing required fixtures or
+The wrapper report and manifest distinguish `requestedSmokeStatus` from
+`overallAcceptanceStatus`. Passing smoke reports `overallAcceptanceStatus: incomplete`
+and `fullRequestedMatrix: false`; `graphChecksComplete` records whether all seven
+graph checks passed. Even those seven checks do not prove the authenticated/anonymous,
+PD/GraphSpace, connection, permission, concurrency and resource matrices. This
+workflow supplies no independent required jobs for those remaining matrices.
+Missing required fixtures or
 capabilities produce `needs input` and exit 2; assertion/runtime failures exit 1.
 The wrapper propagates these states and never replaces the graph gate with a
 route smoke. Evidence is written under `target/hubble-live-acceptance` in CI;

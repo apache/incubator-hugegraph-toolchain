@@ -96,9 +96,10 @@ else
     ui_exit=$?
 fi
 
-"${node_bin}" - "${evidence_dir}" "${ui_exit}" <<'JS'
+"${node_bin}" - "${evidence_dir}" "${ui_exit}" "${script_dir}/run_ui_full_acceptance.js" <<'JS'
 const fs = require('node:fs');
 const path = require('node:path');
+const {acceptanceSummary} = require(process.argv[4]);
 const directory = process.argv[2];
 const runtime = JSON.parse(fs.readFileSync(path.join(directory, 'live-hubble-smoke.json'), 'utf8'));
 const uiExit = Number(process.argv[3]);
@@ -108,12 +109,13 @@ catch { ui = {status: 'failed', error: 'UI acceptance did not write a valid curr
 if (!ui || typeof ui !== 'object' || Array.isArray(ui)) ui = {status: 'failed'};
 const status = runtime.status !== 'passed' || !['passed', 'failed', 'needs input'].includes(ui.status)
   || (uiExit !== 0 && ui.status === 'passed') ? 'failed' : ui.status;
+const graphRequestedChecks = Array.isArray(ui.graphRequestedChecks) ? ui.graphRequestedChecks : [];
 fs.writeFileSync(path.join(directory, 'manifest.json'), JSON.stringify({
   status,
   hubbleUrl: runtime.hubble_url, serverUrl: runtime.server_url,
   graphspace: runtime.graphspace, graph: runtime.graph,
-  graphRequestedChecks: Array.isArray(ui.graphRequestedChecks) ? ui.graphRequestedChecks : [],
-  fullRequestedMatrix: status === 'passed' && ui.fullRequestedMatrix === true,
+  graphRequestedChecks,
+  ...acceptanceSummary(status, ui.graphChecksComplete === true, graphRequestedChecks),
   runtime: path.join(directory, 'live-hubble-smoke.json'), ui: path.join(directory, 'ui-full-acceptance.json')
 }, null, 2) + '\n');
 if (uiExit === 0 && status !== 'passed') process.exitCode = 1;

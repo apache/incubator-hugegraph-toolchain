@@ -125,6 +125,25 @@ function aggregateStatus(checks) {
 }
 function exitCode(status) { return status === 'passed' ? 0 : status === 'needs input' ? 2 : 1; }
 
+function acceptanceSummary(status, graphChecksComplete, requestedChecks) {
+  // Passing this runner proves its requested smoke only. Even all graph checks
+  // do not supply the deployment/auth/PD and runtime evidence listed below.
+  const missingGraphChecks = ALL_CHECKS.filter(name => !requestedChecks.includes(name));
+  return {
+    requestedSmokeStatus: status,
+    overallAcceptanceStatus: status === 'passed' ? 'incomplete' : status,
+    fullRequestedMatrix: false,
+    graphChecksComplete: graphChecksComplete === true,
+    remainingAcceptance: [
+      ...(missingGraphChecks.length ? [`Graph checks not requested: ${missingGraphChecks.join(', ')}`] : []),
+      'Not proved by this runner: both real authenticated and anonymous deployment environments',
+      'Not proved by this runner: PD/non-PD capabilities, GraphSpace/account permission and role combinations, '
+        + 'account visibility and connection resolver modes',
+      'Not proved by this runner: concurrent response ordering and memory/resource release'
+    ]
+  };
+}
+
 function main(configuration = options(), spawn = childProcess.spawnSync) {
   const config = {...configuration,
     hubbleUrl: publicHttpUrl(configuration.hubbleUrl, 'hubbleUrl').replace(/\/$/, ''),
@@ -153,11 +172,13 @@ function main(configuration = options(), spawn = childProcess.spawnSync) {
     checks.push({name: 'ui-graph-acceptance', status: error instanceof NeedsInput ? 'needs input' : 'failed',
       fullRequestedMatrix: false, error: redact(error.message, [config.password])});
   }
+  const status = aggregateStatus(checks);
+  const graphChecksComplete = checks.some(check => check.name === 'ui-graph-acceptance'
+    && check.status === 'passed' && check.fullRequestedMatrix === true);
   const report = {hubbleUrl: config.hubbleUrl, connId: config.connId, outputDir: config.outputDir,
-    graphRequestedChecks: config.graphChecks, checks, status: aggregateStatus(checks),
-    fullRequestedMatrix: checks.some(check => check.name === 'ui-graph-acceptance'
-      && check.status === 'passed' && check.fullRequestedMatrix === true),
-    coverage: 'Insecure HTTP/route/i18n smoke plus requested real graph checks; deployment/auth matrix remains separate'};
+    graphRequestedChecks: config.graphChecks, checks, status,
+    ...acceptanceSummary(status, graphChecksComplete, config.graphChecks),
+    coverage: 'Requested HTTP/route/i18n and real graph smoke only; overall acceptance is not proved'};
   fs.mkdirSync(path.dirname(config.jsonOutput), {recursive: true});
   fs.writeFileSync(config.jsonOutput, JSON.stringify(report, null, 2) + '\n');
   return report;
@@ -171,4 +192,5 @@ if (require.main === module) {
   }
   catch (error) {console.error(redact(error.message, [process.env.HUBBLE_PASSWORD])); process.exitCode = 1;}
 }
-module.exports = {options, fixtureFromLiveReport, prepareGraphArgs, run, aggregateStatus, exitCode, main};
+module.exports = {options, fixtureFromLiveReport, prepareGraphArgs, run, aggregateStatus, exitCode,
+  acceptanceSummary, main};

@@ -98,6 +98,8 @@ test('wrapper always runs graph gate, carries missing-input exit 2 and never wri
   assert.ok(calls[0].endsWith('run_ui_http_smoke.js'));
   assert.ok(calls[3].endsWith('run_ui_graph_acceptance.js'));
   assert.equal(report.status, 'needs input');
+  assert.equal(report.requestedSmokeStatus, 'needs input');
+  assert.equal(report.overallAcceptanceStatus, 'needs input');
   assert.equal(exitCode(report.status), 2);
   assert.equal(report.fullRequestedMatrix, false);
   assert.ok(!fs.readFileSync(cfg.jsonOutput, 'utf8').includes(cfg.password));
@@ -109,12 +111,55 @@ test('explicit standalone subset stays a subset in aggregate even when every req
   fs.writeFileSync(liveFile, JSON.stringify(liveReport())); cfg.liveReport = liveFile;
   const report = main(cfg, childRunner());
   assert.equal(report.status, 'passed');
+  assert.equal(report.requestedSmokeStatus, 'passed');
+  assert.equal(report.overallAcceptanceStatus, 'incomplete');
   assert.equal(report.fullRequestedMatrix, false);
+  assert.equal(report.graphChecksComplete, false);
+  assert.match(report.remainingAcceptance[0], /Graph checks not requested: scope/);
+  assert.ok(report.remainingAcceptance.some(item => /authenticated and anonymous/.test(item)));
   const fixture = JSON.parse(fs.readFileSync(path.join(cfg.outputDir, 'graph-fixture.json'), 'utf8'));
   assert.equal(fixture.canWriteSchema, true);
   assert.deepEqual(fixture.expected.vertexIds, ['real_123_alice', 'real_123_bob', 'real_123_carol']);
   assert.equal(fixture.graphspace, 'DEFAULT');
   assert.deepEqual(report.checks[3].remainingMatrix, ['Separate real auth-mode matrix']);
+});
+
+test('all graph checks may pass without proving the overall acceptance matrix', t => {
+  const report = main(config(directory(t)), childRunner());
+  assert.equal(report.status, 'passed');
+  assert.equal(exitCode(report.status), 0);
+  assert.equal(report.requestedSmokeStatus, 'passed');
+  assert.equal(report.checks[3].fullRequestedMatrix, true);
+  assert.equal(report.graphChecksComplete, true);
+  assert.equal(report.fullRequestedMatrix, false);
+  assert.equal(report.overallAcceptanceStatus, 'incomplete');
+  assert.equal(report.remainingAcceptance.length, 3);
+  for (const required of [/authenticated and anonymous/, /PD\/non-PD/,
+    /GraphSpace\/account permission and role combinations/, /memory\/resource release/]) {
+    assert.ok(report.remainingAcceptance.some(item => required.test(item)));
+  }
+});
+
+test('independent graph completion survives a failed browser or i18n smoke', t => {
+  for (const failedScript of ['run_ui_browser_smoke.js', 'run_ui_i18n_switch_smoke.js']) {
+    const cfg = config(directory(t));
+    const child = childRunner();
+    const report = main(cfg, (command, args, settings) => {
+      const result = child(command, args, settings);
+      if (!args[0].endsWith(failedScript)) return result;
+      const output = args[args.indexOf('--json-output') + 1];
+      fs.writeFileSync(output, JSON.stringify({status: 'failed'}));
+      return {...result, status: 1};
+    });
+    assert.equal(report.checks[3].status, 'passed');
+    assert.equal(report.checks[3].fullRequestedMatrix, true);
+    assert.equal(report.graphChecksComplete, true);
+    assert.equal(report.status, 'failed');
+    assert.equal(report.requestedSmokeStatus, 'failed');
+    assert.equal(report.overallAcceptanceStatus, 'failed');
+    assert.equal(report.fullRequestedMatrix, false);
+    assert.equal(exitCode(report.status), 1);
+  }
 });
 
 test('failed or inconsistent child cannot pass using a stale report or a nominal zero exit', t => {
@@ -141,7 +186,7 @@ test('unusable live report is recorded as a graph missing-input failure without 
 });
 
 // Exercise the actual shell orchestration with fixture commands, never a service/browser.
-test('distribution wrapper preserves needs-input manifest and exit 2 across cleanup', t => {
+test('distribution wrapper preserves requested smoke status and incomplete acceptance across cleanup', t => {
   const output = directory(t), evidence = path.join(output, 'evidence');
   fs.mkdirSync(evidence);
   fs.writeFileSync(path.join(evidence, 'manifest.json'), '{"status":"passed"}');
@@ -163,32 +208,49 @@ fs.appendFileSync(process.env.TEST_INVOCATIONS, JSON.stringify(args) + '\\n');
 if (process.env.HUBBLE_PASSWORD !== 'private-secret') process.exit(99);
 const file = args[args.indexOf('--json-output') + 1];
 const ui = args[0].endsWith('run_ui_full_acceptance.js');
+const mode = process.env.TEST_UI_MODE;
+const status = mode === 'needs input' ? 'needs input' : mode === 'graph-full-smoke-failed' ? 'failed' : 'passed';
+const graphComplete = mode === 'full' || mode === 'graph-full-smoke-failed';
 if (process.env.HUBBLE_URL !== 'https://example.invalid/deploy/hubble') process.exit(98);
 if (!ui && process.env.HUBBLE_SMOKE_SERVER_URL !== 'https://example.invalid/deploy/server') process.exit(98);
 fs.mkdirSync(path.dirname(file), {recursive: true});
-fs.writeFileSync(file, JSON.stringify(ui ? {status: 'needs input', fullRequestedMatrix: false,
-  graphRequestedChecks: ['example', 'scope']} : {status: 'passed', hubble_url: process.env.HUBBLE_URL,
+fs.writeFileSync(file, JSON.stringify(ui ? {status, fullRequestedMatrix: graphComplete,
+  graphChecksComplete: graphComplete, graphRequestedChecks: graphComplete
+    ? ${JSON.stringify(ALL_CHECKS)} : ['example', 'scope']}
+  : {status: 'passed', hubble_url: process.env.HUBBLE_URL,
   server_url: process.env.HUBBLE_SMOKE_SERVER_URL, graph: 'g', graphspace: 'DEFAULT'}));
-process.exit(ui ? 2 : 0);
+process.exit(ui ? status === 'needs input' ? 2 : status === 'failed' ? 1 : 0 : 0);
 `, {mode: 0o755});
-  const result = spawnSync('bash', [path.join(__dirname, 'verify-hubble-issue-694.sh'), tarball,
-    'https://example.invalid/deploy/server'], {
-    encoding: 'utf8', env: {...process.env, PYTHON: fixtureCommand, NODE: fixtureCommand,
-      HUBBLE_USERNAME: 'writer', HUBBLE_PASSWORD: 'private-secret',
-      HUBBLE_URL: 'https://example.invalid/deploy/hubble',
-      HUBBLE_694_EVIDENCE_DIR: evidence, TEST_INVOCATIONS: invocationFile}
-  });
-  assert.equal(result.status, 2, result.stderr);
-  const manifest = JSON.parse(fs.readFileSync(path.join(evidence, 'manifest.json'), 'utf8'));
-  assert.equal(manifest.status, 'needs input');
-  assert.equal(manifest.fullRequestedMatrix, false);
-  assert.equal(manifest.hubbleUrl, 'https://example.invalid/deploy/hubble');
-  assert.equal(manifest.serverUrl, 'https://example.invalid/deploy/server');
-  assert.deepEqual(manifest.graphRequestedChecks, ['example', 'scope']);
-  assert.ok(!result.stdout.includes('checks passed'));
-  assert.ok(!fs.readFileSync(invocationFile, 'utf8').includes('private-secret'));
-  assert.doesNotMatch(fs.readFileSync(invocationFile, 'utf8'), /https:\/\/example\.invalid\/deploy\/(?:hubble|server)/);
-  assert.ok(!JSON.stringify(manifest).includes('private-secret'));
+  for (const mode of ['needs input', 'subset', 'full', 'graph-full-smoke-failed']) {
+    const expectedStatus = mode === 'needs input' ? 'needs input'
+      : mode === 'graph-full-smoke-failed' ? 'failed' : 'passed';
+    const graphComplete = mode === 'full' || mode === 'graph-full-smoke-failed';
+    const result = spawnSync('bash', [path.join(__dirname, 'verify-hubble-issue-694.sh'), tarball,
+      'https://example.invalid/deploy/server'], {
+      encoding: 'utf8', env: {...process.env, PYTHON: fixtureCommand, NODE: fixtureCommand,
+        HUBBLE_USERNAME: 'writer', HUBBLE_PASSWORD: 'private-secret',
+        TEST_UI_MODE: mode,
+        HUBBLE_URL: 'https://example.invalid/deploy/hubble',
+        HUBBLE_694_EVIDENCE_DIR: evidence, TEST_INVOCATIONS: invocationFile}
+    });
+    assert.equal(result.status, exitCode(expectedStatus), result.stderr);
+    const manifest = JSON.parse(fs.readFileSync(path.join(evidence, 'manifest.json'), 'utf8'));
+    assert.equal(manifest.status, expectedStatus);
+    assert.equal(manifest.requestedSmokeStatus, manifest.status);
+    assert.equal(manifest.overallAcceptanceStatus, expectedStatus === 'passed' ? 'incomplete' : expectedStatus);
+    assert.equal(manifest.fullRequestedMatrix, false);
+    assert.equal(manifest.graphChecksComplete, graphComplete);
+    assert.ok(manifest.remainingAcceptance.some(item => /PD\/non-PD/.test(item)));
+    assert.ok(manifest.remainingAcceptance.some(item =>
+      /GraphSpace\/account permission and role combinations/.test(item)));
+    assert.equal(manifest.hubbleUrl, 'https://example.invalid/deploy/hubble');
+    assert.equal(manifest.serverUrl, 'https://example.invalid/deploy/server');
+    assert.deepEqual(manifest.graphRequestedChecks, graphComplete ? ALL_CHECKS : ['example', 'scope']);
+    assert.equal(result.stdout.includes('checks passed'), expectedStatus === 'passed');
+    assert.ok(!fs.readFileSync(invocationFile, 'utf8').includes('private-secret'));
+    assert.doesNotMatch(fs.readFileSync(invocationFile, 'utf8'), /https:\/\/example\.invalid\/deploy\/(?:hubble|server)/);
+    assert.ok(!JSON.stringify(manifest).includes('private-secret'));
+  }
 });
 
 test('graph child cannot claim success with an empty proof or mislabel a subset as full', t => {
