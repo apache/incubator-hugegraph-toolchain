@@ -18,6 +18,7 @@
 """SDK provenance fixtures and an opt-in real Maven parent-metadata regression."""
 
 import copy
+import hashlib
 import json
 import os
 import re
@@ -614,11 +615,13 @@ class SDKActionTest(unittest.TestCase):
         self.assertIn('VERSION = "1.7.0"', release)
         self.assertIn('apache-hugegraph-incubating-1.7.0.tar.gz', release)
 
-    def run_action(self, root, revision, corrupt=None):
+    def run_action(self, root, revision, corrupt=None, reuse=False, reuse_corrupt=None, consumers=1, empty_reuse=False):
         fixture = root / "fixture"
         candidate = CandidateDistributionTest()
         candidate.source_commit = sdk.COMMIT if revision == "1.8.0" else "b" * 40
         repository, manifest = candidate.fixture(fixture, revision)
+        if reuse:
+            manifest.update(source_dir='/original/producer/source', java_home='/original/producer/jdk')
         if corrupt == "source":
             manifest["commit"] = "0" * 40
         elif corrupt == "module":
@@ -632,6 +635,7 @@ class SDKActionTest(unittest.TestCase):
         installer = workspace / "hugegraph-client/assembly/travis/install-candidate-sdk.sh"
         installer.parent.mkdir(parents=True)
         installer.write_text('#!/bin/bash\nset -euo pipefail\n'
+                             'if [[ -n "${SDK_INSTALL_COUNT:-}" ]]; then echo install >> "$SDK_INSTALL_COUNT"; fi\n'
                              'cp -R "$SDK_FIXTURE/." "$3/"\n'
                              'mkdir -p "$2/hugegraph-server"\n'
                              'printf archive > "$2/hugegraph-server/apache-hugegraph-fixture.tar.gz"\n')
@@ -645,12 +649,144 @@ class SDKActionTest(unittest.TestCase):
         environment, output = root / "env", root / "output"
         action = (Path(__file__).resolve().parents[2] / ".github/actions/setup-candidate-sdk/action.yml").read_text()
         script = textwrap.dedent(action.split("      run: |\n", 1)[1].split("\n    - name:", 1)[0])
+        if empty_reuse:
+            workflow = (Path(__file__).resolve().parents[2] / '.github/workflows/hubble-ci.yml').read_text()
+            marker = '      - name: Validate requested SDK reuse\n'
+            if marker in workflow:
+                guard = workflow.split(marker, 1)[1].split('\n      - name:', 1)[0]
+                script = textwrap.dedent(guard.split('        run: |\n', 1)[1]) + '\n' + script
         env = dict(os.environ, HOME=str(home), RUNNER_TEMP=str(runner), GITHUB_WORKSPACE=str(workspace),
                    GITHUB_ENV=str(environment), GITHUB_OUTPUT=str(output), SDK_FIXTURE=str(repository),
                    SERVER_COMMIT=candidate.source_commit, SERVER_REPOSITORY=sdk.REPOSITORY,
                    SERVER_FETCH_REF=candidate.source_commit, MAVEN_OPTS="-Xmx1g",
-                   MAVEN_ARGS="-ntp --settings settings.xml")
-        result = subprocess.run(["bash", "-c", script], env=env, capture_output=True, text=True, timeout=10)
+                   MAVEN_ARGS="-ntp --settings settings.xml", SDK_FIXTURE_ARTIFACT='',
+                   SDK_INSTALL_COUNT=str(root / 'installer-count'))
+        if reuse:
+            helpers = workspace / 'hugegraph-client/assembly/travis'
+            source_helpers = Path(sdk.__file__).parent
+            for name in ('fixture.sh', 'manifest.py', 'release.py', 'service-wait.sh'):
+                shutil.copyfile(source_helpers / name, helpers / name)
+            action_input = workspace / '.github/actions/setup-candidate-sdk/action.yml'
+            action_input.parent.mkdir(parents=True)
+            action_input.write_text(action)
+            jdk = root / 'jdk/bin'
+            jdk.mkdir(parents=True)
+            java = jdk / 'java'
+            java.write_text('''#!/bin/bash
+cat >&2 <<PROPERTIES
+    java.vendor = ${SDK_TEST_VENDOR:-Eclipse Adoptium}
+    java.runtime.version = ${SDK_TEST_RUNTIME:-17.0.17+10}
+    java.vm.version = ${SDK_TEST_RUNTIME:-17.0.17+10}
+    java.specification.version = 17
+    os.arch = ${SDK_TEST_ARCH:-amd64}
+openjdk version "17.0.17"
+PROPERTIES
+''')
+            java.chmod(0o755)
+            maven = jdk / 'mvn'
+            maven.write_text('''#!/bin/bash
+if [[ "$*" != -version ]]; then echo forbidden-build >&2; exit 99; fi
+echo "Apache Maven ${SDK_TEST_MAVEN:-3.9.11} (fixture)"
+''')
+            maven.chmod(0o755)
+            env.update(JAVA_HOME=str(jdk.parent), PATH=str(jdk) + os.pathsep + env['PATH'],
+                       SDK_INSTALL_COUNT=str(root / 'installer-count'), FIXTURE_PLATFORM='Linux-X64')
+            fixture_env = dict(env, FIXTURE_REPOSITORY=sdk.REPOSITORY,
+                               FIXTURE_COMMIT=candidate.source_commit, FIXTURE_JAVA='17',
+                               FIXTURE_EXPORT_CANDIDATE_SDK='true', FIXTURE_MODE='build',
+                               FIXTURE_DIR=str(root / 'producer'))
+            # Actual fixture orchestration, with a test-local SDK installer and version probes only.
+            producer = subprocess.run(['bash', str(helpers / 'fixture.sh')], env=fixture_env,
+                                      capture_output=True, text=True, timeout=20)
+            self.assertEqual(0, producer.returncode, producer.stderr)
+            expected_installs = 1
+            caches = list((home / 'hugegraph-fixture-cache').iterdir())
+            self.assertEqual(1, len(caches))
+            fixture_env['FIXTURE_SDK_CACHE_HIT'] = 'true'
+            if reuse_corrupt == 'server-only-cache':
+                original = json.loads((root / 'producer/manifest.json').read_text())
+                identity = ''.join(original[key] + '\n' for key in ('repository', 'commit', 'java', 'config'))
+                legacy = home / 'hugegraph-fixture-cache' / hashlib.sha256(identity.encode()).hexdigest()
+                legacy.mkdir()
+                for name in ('server.tar.gz', 'manifest.json'):
+                    shutil.copyfile(root / 'producer' / name, legacy / name)
+                shutil.rmtree(caches[0])
+                fixture_env['FIXTURE_SDK_CACHE_HIT'] = 'false'
+                expected_installs = 2
+            elif reuse_corrupt == 'cache-missing-directory':
+                shutil.rmtree(caches[0])
+            elif reuse_corrupt == 'cache-missing-sdk':
+                shutil.rmtree(caches[0] / 'sdk')
+            elif reuse_corrupt == 'cache-jar':
+                (caches[0] / 'sdk' / manifest['artifacts'][-1]['path']).write_bytes(b'changed cached SDK')
+            fixture_env['FIXTURE_DIR'] = str(root / 'producer-warm')
+            warm = subprocess.run(['bash', str(helpers / 'fixture.sh')], env=fixture_env,
+                                  capture_output=True, text=True, timeout=20)
+            if reuse_corrupt in ('cache-missing-directory', 'cache-missing-sdk', 'cache-jar'):
+                self.assertNotEqual(0, warm.returncode)
+                self.assertEqual(['install'], (root / 'installer-count').read_text().splitlines())
+                return warm, {}, {}
+            self.assertEqual(0, warm.returncode, warm.stderr)
+            if expected_installs == 1:
+                self.assertIn('reactor builds: 0', warm.stdout)
+            self.assertEqual(['install'] * expected_installs, (root / 'installer-count').read_text().splitlines())
+            payload = root / 'producer-warm'
+            # Go/other Server-only consumers retain their existing manifest contract.
+            server_only = root / 'server-only'
+            server_only.mkdir()
+            for name in ('server.tar.gz', 'manifest.json'):
+                shutil.copyfile(payload / name, server_only / name)
+            server_env = dict(fixture_env, FIXTURE_DIR=str(server_only), FIXTURE_MODE='start',
+                              FIXTURE_EXPORT_CANDIDATE_SDK='false')
+            server = subprocess.run(['bash', str(helpers / 'fixture.sh')], env=server_env,
+                                    cwd=root, capture_output=True, text=True, timeout=20)
+            self.assertEqual(0, server.returncode, server.stderr)
+            env['MAVEN_OPTS'] = ('-Xmx3g -XX:MaxMetaspaceSize=768m -Dmaven.repo.local=/consumer/m2 '
+                                 '-Dhugegraph.version=' + revision + ' -Dsdk.validation.mode=candidate')
+            if reuse_corrupt == 'archive':
+                (payload / 'server.tar.gz').write_bytes(b'tampered')
+            elif reuse_corrupt == 'jar':
+                (payload / 'sdk' / manifest['artifacts'][-1]['path']).write_bytes(b'tampered')
+            elif reuse_corrupt == 'origin':
+                target = payload / 'sdk' / manifest['artifacts'][0]['path']
+                (target.parent / '_remote.repositories').unlink()
+            elif reuse_corrupt == 'missing-sdk':
+                shutil.rmtree(payload / 'sdk')
+            elif reuse_corrupt == 'inputs':
+                action_input.write_text(action + '\n# changed installer inputs\n')
+            elif reuse_corrupt == 'vendor':
+                env['SDK_TEST_VENDOR'] = 'Different JDK'
+            elif reuse_corrupt == 'jdk-build':
+                env['SDK_TEST_RUNTIME'] = '17.0.17+11'
+            elif reuse_corrupt == 'architecture':
+                env['SDK_TEST_ARCH'] = 'aarch64'
+            elif reuse_corrupt == 'maven':
+                env['SDK_TEST_MAVEN'] = '3.9.12'
+            elif reuse_corrupt == 'jvm-option':
+                env['MAVEN_OPTS'] += ' --add-opens=java.base/java.lang=ALL-UNNAMED'
+            elif reuse_corrupt == 'source':
+                env['SERVER_COMMIT'] = 'c' * 40
+            env['SDK_FIXTURE_ARTIFACT'] = 'current-fixture-this-run'
+            repositories = []
+            for index in range(consumers):
+                consumer = root / ('consumer-' + str(index))
+                consumer.mkdir()
+                if reuse_corrupt != 'missing-artifact':
+                    shutil.copytree(payload, consumer / 'candidate-sdk-fixture')
+                env['RUNNER_TEMP'] = str(consumer)
+                environment.unlink(missing_ok=True)
+                output.unlink(missing_ok=True)
+                result = subprocess.run(['bash', '-c', script], env=env,
+                                        capture_output=True, text=True, timeout=20)
+                if result.returncode:
+                    break
+                current = consumer / 'candidate-sdk-fixture/sdk'
+                self.assertFalse((current / 'consumer-private').exists())
+                (current / 'consumer-private').write_text('isolated consumer state')
+                repositories.append(str(current))
+            (root / 'consumer-repositories.json').write_text(json.dumps(repositories))
+        else:
+            result = subprocess.run(["bash", "-c", script], env=env, capture_output=True, text=True, timeout=10)
         variables = dict(line.split("=", 1) for line in environment.read_text().splitlines()) if environment.exists() else {}
         outputs = dict(line.split("=", 1) for line in output.read_text().splitlines()) if output.exists() else {}
         return result, variables, outputs
@@ -683,6 +819,89 @@ class SDKActionTest(unittest.TestCase):
                 result, variables, _ = self.run_action(Path(temporary), revision, corrupt)
                 self.assertNotEqual(0, result.returncode)
                 self.assertEqual({}, variables)
+
+    def test_complete_fixture_cache_and_two_consumers_never_repeat_the_sdk_reactor(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            result, variables, outputs = self.run_action(root, '1.8.0', reuse=True, consumers=2)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertEqual(['install'], (root / 'installer-count').read_text().splitlines())
+            repositories = json.loads((root / 'consumer-repositories.json').read_text())
+            self.assertEqual(2, len(set(repositories)))
+            self.assertEqual('1.8.0', variables['CANDIDATE_SDK_VERSION'])
+            self.assertEqual(Path(outputs['fixture-directory']) / 'sdk', Path(outputs['maven-repo']))
+            original = (root / 'fixture/m2/candidate-sdk-manifest.json').read_bytes()
+            self.assertEqual(original, Path(outputs['manifest']).read_bytes())
+            self.assertEqual('/original/producer/source', json.loads(original)['source_dir'])
+            self.assertEqual(sdk.digest(outputs['archive']), outputs['archive-sha256'])
+
+    def test_server_only_cache_is_not_an_sdk_cache_hit(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            result, _, _ = self.run_action(root, '1.8.0', reuse=True, reuse_corrupt='server-only-cache')
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual(['install', 'install'], (root / 'installer-count').read_text().splitlines())
+
+    def test_broken_exact_sdk_cache_fails_without_rebuilding(self):
+        for corrupt in ('cache-missing-directory', 'cache-missing-sdk', 'cache-jar'):
+            with self.subTest(corrupt=corrupt), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                result, variables, _ = self.run_action(root, '1.8.0', reuse=True, reuse_corrupt=corrupt)
+                self.assertNotEqual(0, result.returncode)
+                self.assertEqual({}, variables)
+                self.assertEqual(['install'], (root / 'installer-count').read_text().splitlines())
+
+    def test_explicit_reuse_rejects_wrong_inputs_or_payload_without_fresh_build_fallback(self):
+        for corrupt in ('missing-artifact', 'missing-sdk', 'archive', 'jar', 'origin',
+                        'source', 'inputs', 'vendor', 'jdk-build', 'architecture', 'maven', 'jvm-option'):
+            with self.subTest(corrupt=corrupt), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                result, variables, outputs = self.run_action(root, '1.8.0', reuse=True, reuse_corrupt=corrupt)
+                self.assertNotEqual(0, result.returncode, corrupt)
+                self.assertEqual({}, variables)
+                self.assertEqual({}, outputs)
+                self.assertEqual(['install'], (root / 'installer-count').read_text().splitlines())
+
+    def test_sdk_only_file_changes_do_not_invalidate_server_only_fingerprints(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            result, _, _ = self.run_action(root, '1.8.0', reuse=True)
+            self.assertEqual(0, result.returncode, result.stderr)
+            workspace = root / 'workspace'
+            helper = workspace / 'hugegraph-client/assembly/travis/manifest.py'
+            env = dict(os.environ, JAVA_HOME=str(root / 'jdk'), GITHUB_WORKSPACE=str(workspace),
+                       PATH=str(root / 'jdk/bin') + os.pathsep + os.environ['PATH'])
+
+            def fingerprint(command):
+                return subprocess.check_output([sys.executable, str(helper), command], env=env, text=True).strip()
+
+            server, candidate = fingerprint('inputs'), fingerprint('sdk-identity')
+            sdk_only = ('.github/actions/setup-candidate-sdk/action.yml',
+                        '.github/actions/get-hugegraph-commit/action.yml',
+                        '.github/actions/get-hugegraph-commit/resolve.cjs',
+                        'hugegraph-client/assembly/travis/verify_candidate_image_sdk.py')
+            for relative in sdk_only + ('hugegraph-client/assembly/travis/install-candidate-sdk.sh',
+                                        'hugegraph-client/assembly/travis/checkout-server.sh'):
+                path = workspace / relative
+                original = path.read_bytes() if path.exists() else None
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes((original or b'') + b'\n# input mutation\n')
+                self.assertEqual(relative in sdk_only, fingerprint('inputs') == server, relative)
+                self.assertNotEqual(candidate, fingerprint('sdk-identity'), relative)
+                if original is None:
+                    path.unlink()
+                else:
+                    path.write_bytes(original)
+
+    def test_requested_reuse_with_empty_name_stops_before_the_installer(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            result, variables, outputs = self.run_action(root, '1.8.0', empty_reuse=True)
+            self.assertNotEqual(0, result.returncode)
+            self.assertIn('SDK reuse requires current-artifact-name', result.stderr)
+            self.assertEqual({}, variables)
+            self.assertEqual({}, outputs)
+            self.assertFalse((root / 'installer-count').exists())
 
 
 if __name__ == "__main__":

@@ -243,6 +243,7 @@ jobs:
           commit-id: ${{ needs.plan.outputs.current-commit }}
           fetch-ref: ${{ needs.plan.outputs.current-ref }}
           java-version: '17'
+          export-candidate-sdk: ${{ needs.plan.outputs.hubble == 'true' }}
 
   client:
     permissions:
@@ -312,6 +313,7 @@ jobs:
     with:
       server-baselines: ${{ needs.plan.outputs.server-baselines }}
       current-artifact-name: ${{ needs.current-fixture.outputs.artifact }}
+      reuse-candidate-sdk: true
       current-commit: ${{ needs.plan.outputs.current-commit }}
       current-repository: ${{ needs.plan.outputs.current-repository }}
       current-ref: ${{ needs.plan.outputs.current-ref }}

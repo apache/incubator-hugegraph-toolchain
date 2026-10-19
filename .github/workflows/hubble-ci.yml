@@ -9,6 +9,9 @@ on:
       current-artifact-name:
         type: string
         required: true
+      reuse-candidate-sdk:
+        type: boolean
+        default: false
       current-repository:
         type: string
         required: true
@@ -78,9 +81,22 @@ jobs:
         if: matrix.SERVER_BASELINE == 'candidate'
         run: echo "SERVER_JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
 
+      - name: Validate requested SDK reuse
+        if: inputs.reuse-candidate-sdk
+        env:
+          SDK_FIXTURE_ARTIFACT: ${{ inputs.current-artifact-name }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$SDK_FIXTURE_ARTIFACT" ]]; then
+            echo 'SDK reuse requires current-artifact-name' >&2
+            exit 1
+          fi
+
       - name: Install locked candidate SDK
         id: candidate-sdk
         uses: ./.github/actions/setup-candidate-sdk
+        with:
+          fixture-artifact: ${{ inputs.reuse-candidate-sdk && inputs.current-artifact-name || '' }}
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v6
@@ -193,6 +209,8 @@ jobs:
           java-version: ${{ matrix.SERVER_BASELINE == 'candidate' && '17' || '11' }}
           java-home: ${{ env.SERVER_JAVA_HOME }}
           artifact-name: ${{ matrix.SERVER_BASELINE == 'candidate' && inputs.current-artifact-name || inputs.artifact-name }}
+          local-fixture-dir: ${{ matrix.SERVER_BASELINE == 'candidate' && steps.candidate-sdk.outputs.fixture-directory || '' }}
+          export-candidate-sdk: ${{ matrix.SERVER_BASELINE == 'candidate' && inputs.reuse-candidate-sdk }}
           commit-id: ${{ matrix.SERVER_BASELINE == 'candidate' && inputs.current-commit || inputs.server-commit }}
           repository: ${{ matrix.SERVER_BASELINE == 'candidate' && inputs.current-repository || inputs.server-repository }}
           fetch-ref: ${{ matrix.SERVER_BASELINE == 'candidate' && inputs.current-ref || inputs.server-ref }}
