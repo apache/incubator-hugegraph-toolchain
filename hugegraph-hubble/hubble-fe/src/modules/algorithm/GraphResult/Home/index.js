@@ -19,7 +19,7 @@
 /**
  * @file 图分析画布 Home
  */
-import {useCallback, useState, useContext, useMemo} from 'react';
+import {useCallback, useState, useContext, useMemo, useRef} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Empty, Space} from 'antd';
 import {Link} from 'react-router-dom';
@@ -92,7 +92,7 @@ const GraphResult = props => {
 
 
     const graphSpaceInfo = useContext(GraphAnalysisContext);
-    const {graphData, styleConfigData, initialData, datasetKey, scopeKey, layout, onReady: onGraphReady,
+    const {graphData, styleConfigData, initialData, datasetKey, scopeKey, layout, layoutSettings, onReady: onGraphReady,
         changeStyles: handleGraphStyleChange, changeLayout: handleLayoutChange,
         changeSettings: handleSettingChange, exportPng: handleExportPng,
         editElement: onEditElementChange, expand: getExpandInfo, filter: handleFilterChange, addElements}
@@ -128,6 +128,12 @@ const GraphResult = props => {
     const {jaccardsimilarity, rankObj, rankArray} = options || {};
     const showCanvasInfo =  (_.size(data.vertices) !== 0 || _.size(data.edges) !== 0) && queryStatus === SUCCESS;
 
+    const layoutPanelRef = useRef(null);
+    const handleUpdatePanel = useCallback(type => {
+        if (panelType === LAYOUT) layoutPanelRef.current?.flush();
+        updatePanelType(type);
+    }, [LAYOUT, panelType, updatePanelType]);
+
     const handleUpdateStatus = useCallback(
         (status, message, result) => {
             resetGraphStatus && resetGraphStatus(status, message, result);
@@ -137,13 +143,8 @@ const GraphResult = props => {
 
     const handleTogglePanel = useCallback(
         type => {
-            if (panelType === type) {
-                updatePanelType(CLOSED);
-            }
-            else {
-                updatePanelType(type);
-            }
-        }, [CLOSED, panelType, updatePanelType]
+            handleUpdatePanel(panelType === type ? CLOSED : type);
+        }, [CLOSED, handleUpdatePanel, panelType]
     );
 
     const handleClickNewAddNode = useCallback(
@@ -185,13 +186,14 @@ const GraphResult = props => {
 
     const handleClosePanel = useCallback(
         () => {
-            updatePanelType(CLOSED);
+            handleUpdatePanel(CLOSED);
         },
-        [CLOSED, updatePanelType]
+        [CLOSED, handleUpdatePanel]
     );
 
     const handleClearGraph = useCallback(
         () => {
+            layoutPanelRef.current?.cancel();
             resetGraphStatus && resetGraphStatus(STANDBY, undefined, {});
             updatePanelType(CLOSED);
         },
@@ -254,7 +256,7 @@ const GraphResult = props => {
             <GraphToolBar
                 handleClearGraph={handleClearGraph}
                 panelType={panelType}
-                updatePanelType={updatePanelType}
+                updatePanelType={handleUpdatePanel}
             />
             <Menu
                 onClickAddNode={handleClickAddNode}
@@ -280,7 +282,8 @@ const GraphResult = props => {
             />
             <PanelControlButton show={panelType !== CLOSED} onClick={handleClosePanel} />
             <LayoutConfigPanel
-                layout={layout}
+                ref={layoutPanelRef}
+                layout={layoutSettings}
                 data={graphData}
                 onChange={handleLayoutChange}
                 open={panelType === LAYOUT}
@@ -389,6 +392,7 @@ const GraphResult = props => {
 
     const handleSwitchRenderMode = useCallback(
         value => {
+            layoutPanelRef.current?.cancel();
             onGraphRenderModeChange(value);
             updatePanelType(CLOSED);
         },

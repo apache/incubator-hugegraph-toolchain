@@ -156,7 +156,7 @@ const QueryBar = props => {
         window.addEventListener('resize', updateBounds);
         return () => window.removeEventListener('resize', updateBounds);
     }, []);
-    const commonActionProps = {...props, isEmptyQuery, isExecuting: busy || !languageEnabled,
+    const commonActionProps = {...props, isGraphReady, isEmptyQuery, isExecuting: busy || !languageEnabled,
         favoriteCardVisible, setFavoriteCardVisible, allowAsync: true, allowFavorite: !aiSource, onClear};
 
     return (
@@ -380,7 +380,7 @@ const QueryBar = props => {
                                 lang={language}
                                 lineWrapping
                                 ariaLabel={t(`analysis.query.${language}_editor`)}
-                                readOnly={Boolean(text2gql?.pending)}
+                                readOnly={!isGraphReady || Boolean(text2gql?.pending)}
                                 placeholder={t(`analysis.query.${language}_placeholder`)}
                             />
                         </div>

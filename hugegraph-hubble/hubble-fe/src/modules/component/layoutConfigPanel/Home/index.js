@@ -20,12 +20,11 @@
  * @file LayoutConfigPanel
  */
 
-import {useState, useMemo, useEffect, useContext} from 'react';
+import {useState, useMemo, useEffect, useContext, useImperativeHandle} from 'react';
 import {Form, Select} from 'antd';
 import {useTranslation} from 'react-i18next';
 import debounce from 'lodash/debounce';
 import {GraphContext} from '../../Context';
-import {normalizeLayoutSettings} from '../../../../utils/analysisGraphPresentation';
 import ForceLayoutForm from '../Force';
 import CircularLayoutForm from '../Circular';
 import ConcentricLayoutForm from '../Concentric';
@@ -48,7 +47,7 @@ const defaults = (type, count) => ({
     radial: {unitRadius: 100, linkDistance: 100, nodeSize: 30, nodeSpacing: 24,
         preventOverlap: true, strictRadial: true},
 }[type] || {});
-const OpenLayout = ({layout, data, onChange}) => {
+const OpenLayout = ({layout, data, onChange, ref}) => {
     const {t} = useTranslation();
     const {controller, snapshot, run} = useContext(GraphContext);
     const [type, setType] = useState(layout?.type || 'd3-force');
@@ -56,13 +55,14 @@ const OpenLayout = ({layout, data, onChange}) => {
         const options = layout?.options || {};
         return {...defaults(type, data.nodes.length), ...options,
             ...(type === 'd3-force' ? {
-                linkDistance: options.link?.distance ?? 100,
-                nodeStrength: Math.abs(options.manyBody?.strength ?? -300),
-                preventOverlap: options.collide !== false,
+                linkDistance: options.linkDistance ?? options.link?.distance ?? 100,
+                nodeStrength: options.nodeStrength ?? Math.abs(options.manyBody?.strength ?? -300),
+                preventOverlap: options.preventOverlap ?? options.collide !== false,
             } : {})};
     });
     const scheduled = useMemo(() => debounce(value => run(() => onChange(value)), 100), [onChange, run]);
     useEffect(() => () => scheduled.cancel(), [scheduled]);
+    useImperativeHandle(ref, () => ({flush: () => scheduled.flush(), cancel: () => scheduled.cancel()}), [scheduled]);
     const ready = Boolean(controller && snapshot?.status === 'ready');
     const names = {'d3-force': 'force', circular: 'circular', concentric: 'concentric', dagre: 'dagre',
         grid: 'grid', radial: 'radial'};
@@ -72,15 +72,14 @@ const OpenLayout = ({layout, data, onChange}) => {
     const changedType = next => {
         scheduled.cancel();
         setType(next);
-        run(() => onChange(normalizeLayoutSettings({type: next, ...defaults(next, data.nodes.length)})));
+        run(() => onChange({type: next, options: defaults(next, data.nodes.length)}));
     };
     const changedOptions = (_changed, values) => {
         // Radial's selector carries rendering IDs, converted from the raw IDs at its boundary.
         const options = {...values};
         if (type === 'dagre' && options.align === 'center') options.align = undefined;
         if (type === 'circular' && options.ordering === 'data') options.ordering = undefined;
-        scheduled(normalizeLayoutSettings({type, ...(type === layout?.type ? layout.options : {}), ...options,
-            ...(type === 'radial' ? {options: {focusNode: options.focusNode}} : {})}));
+        scheduled({type, options: {...(type === layout?.type ? layout.options : {}), ...options}});
     };
     return (
         <div className={c.changeLayout}>
@@ -96,5 +95,7 @@ const OpenLayout = ({layout, data, onChange}) => {
         </div>
     );
 };
-const LayoutConfigPanel = ({open, ...props}) => open ? <OpenLayout key={props.layout?.type} {...props} /> : null;
+const LayoutConfigPanel = ({open, ref, ...props}) => {
+    return open ? <OpenLayout key={props.layout?.type} ref={ref} {...props} /> : null;
+};
 export default LayoutConfigPanel;

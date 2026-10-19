@@ -260,7 +260,8 @@ export class G6Runtime implements GraphRuntime {
                     x: {strength: 0.2}, y: {strength: 0.2}}
                 : layout.type === 'dagre' ? {rankdir: 'LR', ranksep: 100, nodesep: 60}
                 : layout.type === 'circular' ? {nodeSpacing: 0,
-                    radius: Math.max(120, this.graph.getNodeData().length * 100 / (2 * Math.PI))}
+                    ...(layout.options?.startRadius === undefined && layout.options?.endRadius === undefined
+                        ? {radius: Math.max(120, this.graph.getNodeData().length * 100 / (2 * Math.PI))} : {})}
                 : layout.type === 'grid' ? {preventOverlap: true, nodeSize: 48, nodeSpacing: 36}
                 : {preventOverlap: true, nodeSize: 48, nodeSpacing: 24};
             const type = layout.type === 'd3-force' ? 'hubble-pinned-d3-force' : layout.type;

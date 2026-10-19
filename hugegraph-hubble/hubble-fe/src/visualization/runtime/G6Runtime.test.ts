@@ -16,8 +16,10 @@
  */
 
 import type {Graph as NativeGraph, GraphOptions, GraphData as EngineData, NodeData, EdgeData} from '@antv/g6';
+import {CircularLayout} from '@antv/layout';
 import {G6Runtime} from './G6Runtime';
 import type {GraphData} from '../model/types';
+import type {GraphLayout} from './types';
 
 let mockZoom = 1;
 let mockOptions: GraphOptions;
@@ -70,6 +72,33 @@ const nodeState = (state: string, datum: NodeData) => {
     return mapper.call({} as NativeGraph, datum);
 };
 beforeEach(() => {jest.clearAllMocks(); mockZoom = 1; mockHandlers.clear();});
+
+test.each<{name: string; options: GraphLayout['options']; first: number; last: number}>([
+    {name: 'interpolated endpoints', options: {startRadius: 80, endRadius: 160}, first: 80, last: 160},
+    {name: 'start only', options: {startRadius: 80}, first: 80, last: 80},
+    {name: 'end only', options: {endRadius: 160}, first: 160, last: 160},
+    {name: 'explicit radius', options: {radius: 240, startRadius: 80, endRadius: 160}, first: 240, last: 240},
+    {name: 'zero radius', options: {radius: 0, startRadius: 80, endRadius: 160}, first: 80, last: 160},
+    {name: 'null radius', options: {radius: null, startRadius: 80, endRadius: 160}, first: 80, last: 160},
+    {name: 'default radius', options: {}, first: 120, last: 120},
+])('circular positions honor $name in the installed layout implementation', async ({options, first, last}) => {
+    const runtime = new G6Runtime(document.createElement('div'));
+    let algorithm: CircularLayout | undefined;
+    try {
+        await runtime.replace(data(6), {type: 'circular', options});
+        algorithm = new CircularLayout({...mockEngine.setLayout.mock.calls.at(-1)![0], center: [0, 0]});
+        await algorithm.execute({nodes: data(6).nodes});
+        const radii: number[] = [];
+        algorithm.forEachNode(node => radii.push(Math.hypot(node.x, node.y)));
+        expect(radii).toHaveLength(6);
+        expect(radii[0]).toBeCloseTo(first);
+        expect(radii.at(-1)).toBeCloseTo(last);
+    }
+    finally {
+        algorithm?.destroy();
+        runtime.stop(); runtime.destroy();
+    }
+});
 
 test('dense first draw suppresses labels, while hover/selection retain details without overriding explicit opt-out', async () => {
     const runtime = new G6Runtime(document.createElement('div'));

@@ -15,7 +15,8 @@
  * under the License.
  */
 
-import {fireEvent, render, screen, waitFor} from '@testing-library/react';
+import {createRef} from 'react';
+import {act, fireEvent, render, screen, waitFor} from '@testing-library/react';
 import LayoutConfigPanel from './index';
 import {GraphContext} from '../../Context';
 import {hubbleRenderId} from '../../../../visualization/hubble/adapter';
@@ -42,6 +43,35 @@ test('does not inspect graph data while closed', () => {
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
 });
 
+test('flushes the latest edit for an explicit panel close and never replays it after unmount', async () => {
+    const onChange = jest.fn();
+    const ref = createRef();
+    const view = render(panel(onChange, {ref, layout: {type: 'concentric', options: {startAngle: 0}}}));
+    fireEvent.change(screen.getByRole('spinbutton', {name: label('start_angle')}), {target: {value: '1'}});
+    expect(onChange).not.toHaveBeenCalled();
+    await act(async () => { ref.current.flush(); });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({type: 'concentric',
+        options: expect.objectContaining({startAngle: 1})}));
+    view.unmount();
+    await new Promise(resolve => setTimeout(resolve, 150));
+    expect(onChange).toHaveBeenCalledTimes(1);
+});
+
+test('direct unmount cancels the pending edit even through a retained imperative handle', async () => {
+    const onChange = jest.fn();
+    const ref = createRef();
+    const view = render(panel(onChange, {ref, layout: {type: 'concentric', options: {startAngle: 0}}}));
+    const handle = ref.current;
+    fireEvent.change(screen.getByRole('spinbutton', {name: label('start_angle')}), {target: {value: '1'}});
+    view.unmount();
+    await act(async () => {
+        handle.flush();
+        await new Promise(resolve => setTimeout(resolve, 150));
+    });
+    expect(onChange).not.toHaveBeenCalled();
+});
+
 test('offers six canonical layout choices and submits the selected layout', async () => {
     const onChange = jest.fn();
     render(panel(onChange));
@@ -54,19 +84,37 @@ test('offers six canonical layout choices and submits the selected layout', asyn
     expect(onChange.mock.calls.every(([value]) => value.options && !Object.hasOwn(value, 'pipes'))).toBe(true);
 });
 
-test('normalizes force options and cancels pending layout edits on close', async () => {
+test('submits editable force options and cancels pending edits on direct close', async () => {
     const onChange = jest.fn();
     const result = render(panel(onChange, {layout: {type: 'd3-force', options: {velocityDecay: 0.2}}}));
     fireEvent.change(screen.getByRole('spinbutton', {name: label('link_distance')}), {target: {value: '225'}});
     await waitFor(() => expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({
-        type: 'd3-force', options: expect.objectContaining({link: {distance: 225},
-            manyBody: {strength: -300}, velocityDecay: 0.2}),
+        type: 'd3-force', options: expect.objectContaining({linkDistance: 225,
+            nodeStrength: 300, velocityDecay: 0.2}),
     })));
     const count = onChange.mock.calls.length;
     fireEvent.change(screen.getByRole('spinbutton', {name: label('link_distance')}), {target: {value: '300'}});
     result.rerender(panel(onChange, {open: false}));
     await new Promise(resolve => setTimeout(resolve, 150));
     expect(onChange).toHaveBeenCalledTimes(count);
+});
+
+test('reopens the submitted force size and spacing without replacing them on the next edit', async () => {
+    const onChange = jest.fn();
+    const layout = {type: 'd3-force', options: {nodeSize: 70, nodeSpacing: 40, preventOverlap: false}};
+    const view = render(panel(onChange, {layout}));
+    fireEvent.change(screen.getByRole('spinbutton', {name: label('link_distance')}), {target: {value: '225'}});
+    await waitFor(() => expect(onChange).toHaveBeenCalledTimes(1));
+    const submitted = onChange.mock.lastCall[0];
+    view.rerender(panel(onChange, {layout: submitted, open: false}));
+    view.rerender(panel(onChange, {layout: submitted}));
+    expect(screen.getByRole('spinbutton', {name: label('node_size')})).toHaveValue('70');
+    expect(screen.getByRole('spinbutton', {name: label('node_spacing')})).toHaveValue('40');
+    const overlap = screen.getByRole('switch', {name: label('prevent_overlap')});
+    expect(overlap).not.toBeChecked();
+    fireEvent.click(overlap);
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith({type: 'd3-force',
+        options: expect.objectContaining({nodeSize: 70, nodeSpacing: 40, preventOverlap: true, linkDistance: 225})}));
 });
 
 test('keeps positive grid rows and converts radial raw IDs once at its selector', async () => {

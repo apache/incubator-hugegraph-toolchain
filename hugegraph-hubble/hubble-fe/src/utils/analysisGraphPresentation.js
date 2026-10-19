@@ -97,7 +97,9 @@ export const normalizeLayoutSettings = value => {
             options.manyBody = {...options.manyBody, strength: -Math.abs(source.nodeStrength)};
         }
         if (finite(source.maxIteration) && source.iterations === undefined) options.iterations = source.maxIteration;
-        if (source.preventOverlap === false || options.collide === false) options.collide = false;
+        if (source.preventOverlap === false || (source.preventOverlap === undefined && options.collide === false)) {
+            options.collide = false;
+        }
         else {
             const size = maxSize(source.nodeSize);
             const spacing = maxSize(source.nodeSpacing);

@@ -188,17 +188,26 @@ async function executeQuery(page, config, fixture, prefix, navigate = true) {
   if (navigate) await page.goto(`${config.hubbleUrl}/gremlin/${encodeURIComponent(fixture.graphspace)}/${encodeURIComponent(fixture.graph)}`);
   const editor = page.getByLabel('Gremlin query editor', {exact: true});
   await editor.waitFor({state: 'visible'});
+  const run = page.getByRole('button', {name: 'Run Query', exact: true});
+  await eventually(page, 'query graph scope is ready before editing', () => run.isEnabled());
   // CodeMirror must observe a real editing transaction, not a contenteditable DOM replacement.
   await editor.click();
   await page.keyboard.press('ControlOrMeta+A');
   await page.keyboard.insertText(fixture.query);
+  assert.equal(await editor.innerText(), fixture.query,
+    'Actual editor did not retain the exact requested Gremlin query string after input');
   const endpoint = `${scopePath(fixture)}/gremlin-query`;
-  const pending = page.waitForResponse(response => new URL(response.url()).pathname === endpoint
-    && response.request().method() === 'POST');
-  await page.getByRole('button', {name: 'Run Query', exact: true}).click();
-  const response = await pending;
-  assert.equal(response.request().postDataJSON(), fixture.query,
+  await eventually(page, 'query graph scope remains ready before execution', () => run.isEnabled());
+  assert.equal(await editor.innerText(), fixture.query,
+    'Actual editor did not retain the exact requested Gremlin query string before Run');
+  const pending = page.waitForRequest(request => new URL(request.url()).pathname === endpoint
+    && request.method() === 'POST');
+  await run.click();
+  const request = await pending;
+  assert.equal(request.postDataJSON(), fixture.query,
     'Actual browser POST did not submit the exact requested Gremlin query string');
+  const response = await request.response();
+  assert.ok(response, 'Actual browser Gremlin request did not receive a response');
   const data = await businessPayload(response, 'Real browser Gremlin query');
   const raw = data?.graph_view;
   assertFixtureGraph(raw, fixture);
@@ -210,6 +219,12 @@ async function executeQuery(page, config, fixture, prefix, navigate = true) {
   assert.ok(descriptions.some(text => text.startsWith(`Edges: ${raw.edges.length} in this result,`)), 'Rendered edge count does not match real response');
   return {raw, region, evidence: {route: page.url(), endpoint, method: 'POST',
     httpStatus: response.status(), vertexIds: raw.vertices.map(v => v.id), edgeIds: raw.edges.map(e => e.id), pixels, counts}};
+}
+async function selectVisibleScopeOption(page, combobox, label) {
+  await combobox.click();
+  // AntD's role=option accessibility proxy is hidden; use the actual painted option row.
+  await page.locator('.ant-select-dropdown:visible .ant-select-item-option')
+    .getByText(label, {exact: true}).click();
 }
 function nodeTooltip(id, vertices) {
   if (!vertices || !uniqueDisplayId(vertices, id)) {
@@ -671,11 +686,11 @@ async function main(configuration = options()) {
       const oldMenu = await graphContextMenu(page).elementHandle();
       if (next.graphspace !== fixture.graphspace) {
         if (!report.authentication.pdEnabled) throw new NeedsInput('Cross-GraphSpace switching needs a real PD fixture');
-        await page.getByRole('combobox', {name: 'Current GraphSpace', exact: true}).click();
-        await page.getByRole('option', {name: next.graphspaceDisplayName || next.graphspace, exact: true}).click();
+        await selectVisibleScopeOption(page, page.getByRole('combobox', {name: 'Current GraphSpace', exact: true}),
+          next.graphspaceDisplayName || next.graphspace);
       }
-      await page.getByRole('combobox', {name: 'Current graph', exact: true}).click();
-      await page.getByRole('option', {name: next.graphDisplayName || next.graph, exact: true}).click();
+      await selectVisibleScopeOption(page, page.getByRole('combobox', {name: 'Current graph', exact: true}),
+        next.graphDisplayName || next.graph);
       await page.waitForURL(url => url.pathname === `/gremlin/${encodeURIComponent(next.graphspace)}/${encodeURIComponent(next.graph)}`);
       await eventually(page, 'scope switch detaches old canvas', async () => !await oldCanvas.evaluate(element => element.isConnected));
       assert.equal(await oldMenu.evaluate(element => element.isConnected), false,
@@ -727,4 +742,5 @@ if (require.main === module) {
       process.exitCode = 1;
     });
 }
-module.exports = {ALL_CHECKS, USAGE, options, main, graphContextMenu, closeUiSession, nodeTooltip, executeQuery, collectGraphOverlayRects, assertPngWithGeometry};
+module.exports = {ALL_CHECKS, USAGE, options, main, graphContextMenu, closeUiSession, nodeTooltip, executeQuery,
+  selectVisibleScopeOption, collectGraphOverlayRects, assertPngWithGeometry};

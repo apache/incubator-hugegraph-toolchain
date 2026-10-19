@@ -16,7 +16,7 @@
  */
 
 import {Form, Modal, message} from 'antd';
-import {act, fireEvent, render, screen, waitFor} from '@testing-library/react';
+import {act, fireEvent, render, screen, waitFor, within} from '@testing-library/react';
 import {MemoryRouter} from 'react-router-dom';
 import BaseForm from './BaseForm';
 import FieldForm from './FieldForm';
@@ -72,7 +72,7 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     window.localStorage.clear();
     window.sessionStorage.clear();
     isPdEnabled.mockReturnValue(false);
@@ -82,7 +82,10 @@ beforeEach(() => {
 });
 
 afterEach(async () => {
-    act(() => Modal.destroyAll());
+    await act(async () => {
+        Modal.destroyAll();
+        await new Promise(resolve => setTimeout(resolve, 0));
+    });
     await waitFor(() => expect(screen.queryAllByRole('dialog')).toHaveLength(0));
 });
 
@@ -150,8 +153,13 @@ it('prepares an empty target graph with the named people-and-software demo', asy
     })).toBeInTheDocument();
     const prepare = screen.getByRole('button', {name: 'Build People & Software Demo'});
     await waitFor(() => expect(prepare).toBeEnabled());
-    fireEvent.click(prepare);
-    const confirm = await screen.findByRole('button', {name: 'Import example'});
+    await act(async () => {
+        fireEvent.click(prepare);
+        // Static Modal.confirm mounts a separate React root on the next task.
+        await new Promise(resolve => setTimeout(resolve, 0));
+    });
+    const confirm = within(screen.getByRole('dialog'))
+        .getByRole('button', {name: 'Import example'});
     await act(async () => fireEvent.click(confirm));
 
     await waitFor(() => expect(api.manage.loadSampleGraph).toHaveBeenCalledWith(
@@ -188,8 +196,13 @@ it('keeps demo preparation failure visible and lets the user retry', async () =>
     await screen.findByText('empty_graph', {selector: '.ant-select-content'});
     const prepare = screen.getByRole('button', {name: 'Build Red Chamber Demo'});
     await waitFor(() => expect(prepare).toBeEnabled());
-    fireEvent.click(prepare);
-    const confirm = await screen.findByRole('button', {name: 'Import example'});
+    await act(async () => {
+        fireEvent.click(prepare);
+        // Static Modal.confirm mounts a separate React root on the next task.
+        await new Promise(resolve => setTimeout(resolve, 0));
+    });
+    const confirm = within(screen.getByRole('dialog'))
+        .getByRole('button', {name: 'Import example'});
     await act(async () => fireEvent.click(confirm));
 
     expect(await screen.findByText('schema conflict')).toBeInTheDocument();
@@ -233,8 +246,13 @@ it('does not let an old graph-space demo response prepare a same-named graph', a
     await screen.findByText('shared_name', {selector: '.ant-select-content'});
     const prepare = screen.getByRole('button', {name: 'Build Red Chamber Demo'});
     await waitFor(() => expect(prepare).toBeEnabled());
-    fireEvent.click(prepare);
-    const confirm = await screen.findByRole('button', {name: 'Import example'});
+    await act(async () => {
+        fireEvent.click(prepare);
+        // Static Modal.confirm mounts a separate React root on the next task.
+        await new Promise(resolve => setTimeout(resolve, 0));
+    });
+    const confirm = within(screen.getByRole('dialog'))
+        .getByRole('button', {name: 'Import example'});
     fireEvent.click(confirm);
     await waitFor(() => expect(api.manage.loadSampleGraph).toHaveBeenCalled());
 
@@ -289,8 +307,13 @@ it('does not publish stale demo state after the form unmounts', async () => {
     await screen.findByText('empty_graph', {selector: '.ant-select-content'});
     const prepare = screen.getByRole('button', {name: 'Build Red Chamber Demo'});
     await waitFor(() => expect(prepare).toBeEnabled());
-    fireEvent.click(prepare);
-    const confirm = await screen.findByRole('button', {name: 'Import example'});
+    await act(async () => {
+        fireEvent.click(prepare);
+        // Static Modal.confirm mounts a separate React root on the next task.
+        await new Promise(resolve => setTimeout(resolve, 0));
+    });
+    const confirm = within(screen.getByRole('dialog'))
+        .getByRole('button', {name: 'Import example'});
     fireEvent.click(confirm);
     await waitFor(() => expect(api.manage.loadSampleGraph).toHaveBeenCalled());
     unmount();

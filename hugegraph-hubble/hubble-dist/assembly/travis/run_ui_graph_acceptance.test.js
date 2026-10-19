@@ -247,22 +247,73 @@ test('tooltip identity rejects typed ID display collisions rather than picking a
 });
 
 
-test('query input uses a real editor keyboard transaction and rejects stale or reshaped POST bodies', async () => {
+test('query input waits for ready scope, checks actual editor text and observes the first matching request', async () => {
   const {executeQuery} = require('./run_ui_graph_acceptance');
   const query = "g.V().hasLabel('person')\n.bothE()";
   for (const body of ["g.V('old')", {query}, query]) {
     const calls = [];
+    let text = 'g.V().limit(10)';
+    let readiness = 0;
     const editor = {waitFor: async () => {}, click: async () => {calls.push('editor.click');},
+      innerText: async () => {calls.push('editor.text'); return text;},
       fill: async () => {throw new Error('CodeMirror fill is forbidden in this test');}};
+    const request = {url: () => 'http://hubble/api/v1.3/graphspaces/S/graphs/g/gremlin-query',
+      method: () => 'POST', postDataJSON: () => body,
+      response: async () => {calls.push('request.response'); return {
+        ok: () => true, status: () => 200,
+        json: async () => {throw new Error('unit-stop-after-post-contract');}};}};
     const page = {getByLabel: () => editor,
-      keyboard: {press: async key => {calls.push(key);}, insertText: async text => {calls.push(text);}},
-      waitForResponse: async () => ({request: () => ({postDataJSON: () => body}),
-        ok: () => true, status: () => 200, json: async () => {throw new Error('unit-stop-after-post-contract');}}),
-      getByRole: () => ({click: async () => {calls.push('run.click');}})};
+      keyboard: {press: async key => {calls.push(key);}, insertText: async value => {calls.push(value); text = value;}},
+      waitForRequest: async predicate => {
+        calls.push('observe.request');
+        assert.equal(predicate({...request, method: () => 'GET'}), false);
+        assert.equal(predicate({...request, url: () => 'http://hubble/unrelated'}), false);
+        assert.equal(predicate(request), true, 'Stale body must be observed and rejected, not filtered out');
+        return request;
+      },
+      waitForResponse: () => {throw new Error('Observe the new Request, not an unrelated in-flight response');},
+      waitForTimeout: async () => {calls.push('wait.ready');},
+      getByRole: () => ({isEnabled: async () => {calls.push('run.enabled'); return ++readiness > 1;},
+        click: async () => {calls.push('run.click');}})};
     await assert.rejects(executeQuery(page, {}, {graphspace: 'S', graph: 'g', query}, 'unit', false),
       body === query ? /unit-stop-after-post-contract/ : /exact requested Gremlin query string/);
-    assert.deepEqual(calls, ['editor.click', 'ControlOrMeta+A', query, 'run.click']);
+    assert.deepEqual(calls, ['run.enabled', 'wait.ready', 'run.enabled', 'editor.click', 'ControlOrMeta+A', query,
+      'editor.text', 'run.enabled', 'editor.text', 'observe.request', 'run.click', ...(body === query ? ['request.response'] : [])]);
   }
+});
+
+test('query input rejects text replacement after editing or immediately before clicking Run', async () => {
+  const {executeQuery} = require('./run_ui_graph_acceptance');
+  for (const texts of [['stale'], ['g.V()', 'stale']]) {
+    let clicked = false;
+    const editor = {waitFor: async () => {}, click: async () => {}, innerText: async () => texts.shift()};
+    const page = {getByLabel: () => editor,
+      keyboard: {press: async () => {}, insertText: async () => {}},
+      getByRole: () => ({isEnabled: async () => true, click: async () => {clicked = true;}}),
+      waitForRequest: () => new Promise(() => {})};
+    await assert.rejects(executeQuery(page, {}, {graphspace: 'S', graph: 'g', query: 'g.V()'}, 'unit', false),
+      /editor.*exact requested Gremlin query string/);
+    assert.equal(clicked, false);
+  }
+});
+
+test('scope selection clicks the real visible AntD option with literal exact text', async () => {
+  const {selectVisibleScopeOption} = require('./run_ui_graph_acceptance');
+  const calls = [];
+  const label = 'Graph [2].*';
+  const combobox = {click: async () => {calls.push('combobox');}};
+  const page = {locator: selector => {
+    assert.equal(selector, '.ant-select-dropdown:visible .ant-select-item-option');
+    return {getByText: (text, options) => {
+      assert.equal(text, label);
+      assert.deepEqual(options, {exact: true});
+      return {click: async options => {
+        assert.equal(options, undefined, 'No force click or invisible accessibility proxy'); calls.push('visible.option');
+      }};
+    }};
+  }};
+  await selectVisibleScopeOption(page, combobox, label);
+  assert.deepEqual(calls, ['combobox', 'visible.option']);
 });
 
 function publicOverlayFixture(t) {

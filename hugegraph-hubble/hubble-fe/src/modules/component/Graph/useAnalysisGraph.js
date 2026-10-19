@@ -23,6 +23,7 @@ import {adaptAnalysisGraph} from '../../../utils/analysisGraphData';
 import {analysisLayout, normalizeLayoutSettings, getAnalysisStyles, applyAnalysisStyles}
     from '../../../utils/analysisGraphPresentation';
 import {exportHubbleGraph, hubbleRenderId} from '../../../visualization/hubble/adapter';
+import {mutableCopy} from '../../../visualization/model/ownership';
 import {filterData} from '../../../utils/filter';
 import {Algorithm_Layout, GRAPH_STATUS} from '../../../utils/constants';
 import * as api from '../../../api';
@@ -58,9 +59,10 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
     const [dataset, setDataset] = useState(() => ({data: convert(data), key: 0, owner: scopeOwner}));
     const datasetRef = useRef(dataset);
     datasetRef.current = dataset;
-    const [layout, setCurrentLayout] = useState(() => analysisLayout({
+    const [layoutSettings, setLayoutSettings] = useState(() => analysisLayout({
         layout: Algorithm_Layout[algorithmName] ?? 'force', startId: options?.startId,
     }));
+    const layout = useMemo(() => normalizeLayoutSettings(layoutSettings), [layoutSettings]);
     const activeController = ownerScope.current === scopeOwner ? controller : null;
     const snapshot = useGraphSnapshot(activeController);
     const initialData = dataset.owner === scopeOwner ? dataset.data : EMPTY_GRAPH;
@@ -107,7 +109,7 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
         previousData.current = data;
     }, [convert, data, queryStatus, scopeOwner]);
     useEffect(() => {
-        setCurrentLayout(analysisLayout({layout: Algorithm_Layout[algorithmName] ?? 'force', startId: options?.startId}));
+        setLayoutSettings(analysisLayout({layout: Algorithm_Layout[algorithmName] ?? 'force', startId: options?.startId}));
     }, [algorithmName, options?.startId]);
     const onReady = useCallback(value => {
         if (!alive.current || liveScope.current !== scopeOwner) return;
@@ -186,7 +188,7 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
     const changeSettings = useCallback(patches => run(() => controllerRef.current?.applyStyle(patches)), [run]);
     const changeLayout = useCallback(selection => {
         if (!alive.current || liveScope.current !== scopeOwner) return;
-        setCurrentLayout(normalizeLayoutSettings(selection));
+        setLayoutSettings(mutableCopy(selection));
     }, [scopeOwner]);
     const filter = useCallback(values => run(async () => {
         const owner = controllerRef.current;
@@ -221,6 +223,6 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
     }), [current, run]);
     const styleConfigData = useMemo(() => getAnalysisStyles(graphData), [graphData]);
     return {controller: activeController, onReady, graphData, initialData, datasetKey: dataset.key, scopeKey: scope,
-        layout, currentData, styleConfigData, run, expand, addElements, editElement,
+        layout, layoutSettings, currentData, styleConfigData, run, expand, addElements, editElement,
         changeStyles, changeSettings, changeLayout, filter, exportPng};
 };

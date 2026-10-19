@@ -378,6 +378,42 @@ it('disables execution while the graph is unavailable and leaves the empty edito
     expect(props.onExecute).not.toHaveBeenCalled();
 });
 
+it.each(['gremlin', 'cypher'])('only accepts %s edits once the graph scope is ready', async language => {
+    const base = properties({language, activeTab: language === 'gremlin' ? 'Gremlin' : 'Cypher'});
+    const initial = language === 'gremlin' ? 'g.V().limit(10)' : 'MATCH (n) RETURN n LIMIT 10';
+    const query = language === 'gremlin' ? 'g.V().bothE()' : 'MATCH (n) RETURN n.name';
+    const Controlled = ({ready}) => {
+        const [content, setContent] = useState(initial);
+        return <QueryBar {...base} isGraphReady={ready} codeEditorContent={content}
+            setCodeEditorContent={setContent} />;
+    };
+    const {rerender} = render(<Controlled ready={false} />);
+    const editor = screen.getByTestId('query-code-editor');
+    const execute = screen.getByRole('button', {name: 'analysis.query.execute_query'});
+    expect(editor).toHaveAttribute('readonly');
+    expect(execute).toBeDisabled();
+    await userEvent.type(editor, '.discarded');
+    expect(editor).toHaveValue(initial);
+
+    rerender(<Controlled ready />);
+    expect(editor).not.toHaveAttribute('readonly');
+    expect(execute).toBeEnabled();
+    await userEvent.clear(editor);
+    await userEvent.type(editor, query);
+    expect(editor).toHaveValue(query);
+
+    rerender(<Controlled ready={false} />);
+    expect(editor).toHaveAttribute('readonly');
+    await userEvent.type(editor, '.alsoDiscarded');
+    expect(editor).toHaveValue(query);
+    fireEvent.keyDown(editor, {key: 'Enter', ctrlKey: true});
+    expect(base.onExecute).not.toHaveBeenCalled();
+    rerender(<Controlled ready />);
+    expect(editor).not.toHaveAttribute('readonly');
+    await userEvent.type(editor, ' ');
+    expect(editor).toHaveValue(`${query} `);
+});
+
 it('opens custom settings by default and lets users collapse them, revealing missing fields on generation', async () => {
     const text2gql = {...model(), config: {...model().config, model: ''}};
     const {rerender, props} = showBar({text2gql});
@@ -459,4 +495,28 @@ it.each(['generation', 'validation', 'execution', 'cancelled'])(
 it('keeps Prompt template configuration out of the query workbench', () => {
     showBar();
     expect(screen.queryByRole('button', {name: 'analysis.prompt.title'})).not.toBeInTheDocument();
+});
+
+
+it('keeps clear and favorite actions disabled through graph scope readiness transitions', async () => {
+    const {props, rerender} = showBar({isGraphReady: false});
+    const clear = screen.getByRole('button', {name: 'common.action.clear'});
+    const favorite = screen.getByRole('button', {name: 'analysis.query.favorite'});
+    expect(clear).toBeDisabled();
+    expect(favorite).toBeDisabled();
+    await userEvent.click(clear);
+    expect(props.onClear).not.toHaveBeenCalled();
+    expect(props.setCodeEditorContent).not.toHaveBeenCalled();
+
+    rerender(<QueryBar {...props} isGraphReady />);
+    expect(clear).toBeEnabled();
+    expect(favorite).toBeEnabled();
+    await userEvent.click(clear);
+    expect(props.onClear).toHaveBeenCalledTimes(1);
+
+    rerender(<QueryBar {...props} isGraphReady={false} />);
+    expect(clear).toBeDisabled();
+    expect(favorite).toBeDisabled();
+    await userEvent.click(clear);
+    expect(props.onClear).toHaveBeenCalledTimes(1);
 });

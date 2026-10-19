@@ -291,9 +291,10 @@ it('shows the compact creator column only when task data contains it', async () 
     });
     api.manage.getMetricsTask.mockResolvedValue({status: 200, data: {}});
 
-    render(<Task />);
+    // Commit the initial mocked list response before inspecting accessible columns.
+    await act(async () => render(<Task />));
 
-    expect(await screen.findByRole('columnheader', {name: 'Creator'}))
+    expect(screen.getByRole('columnheader', {name: 'Creator'}))
         .toBeInTheDocument();
     expect(screen.getByText('admin')).toBeInTheDocument();
 });

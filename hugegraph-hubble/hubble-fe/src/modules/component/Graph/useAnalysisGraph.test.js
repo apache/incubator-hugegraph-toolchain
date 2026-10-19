@@ -48,6 +48,33 @@ const createController = () => {
 
 beforeEach(() => jest.clearAllMocks());
 
+test('retains one editable layout draft while projecting only engine options', () => {
+    const view = renderHook(props => useAnalysisGraph(props), {initialProps: initial});
+    const draft = {type: 'd3-force', options: {nodeSize: 70, nodeSpacing: 40,
+        preventOverlap: false, linkDistance: 225, nodeStrength: 180, uiOnly: 'not an engine option'}};
+    act(() => view.result.current.changeLayout(draft));
+    expect(view.result.current.layoutSettings).toEqual(draft);
+    expect(view.result.current.layout).toEqual({type: 'd3-force', options: {
+        collide: false, link: {distance: 225}, manyBody: {strength: -180},
+    }});
+    draft.options.nodeSize = 999;
+    expect(view.result.current.layoutSettings.options.nodeSize).toBe(70);
+    act(() => view.result.current.changeLayout({...view.result.current.layoutSettings,
+        options: {...view.result.current.layoutSettings.options, preventOverlap: true}}));
+    expect(view.result.current.layoutSettings.options).toMatchObject({nodeSize: 70, nodeSpacing: 40});
+    expect(view.result.current.layout.options.collide).toEqual({radius: 55});
+});
+
+test('a stale layout callback cannot apply edits after leaving and returning to its graph', () => {
+    const view = renderHook(props => useAnalysisGraph(props), {initialProps: initial});
+    const staleChange = view.result.current.changeLayout;
+    view.rerender({...initial, graphSpaceInfo: {graphSpace: 'OTHER', graph: 'two'}});
+    view.rerender(initial);
+    const settings = view.result.current.layoutSettings;
+    act(() => staleChange({type: 'concentric', options: {startAngle: 1}}));
+    expect(view.result.current.layoutSettings).toBe(settings);
+});
+
 test('keeps the existing immutable input while a new query loads and resets at a new result', () => {
     const view = renderHook(props => useAnalysisGraph(props), {initialProps: initial});
     const first = view.result.current.initialData;

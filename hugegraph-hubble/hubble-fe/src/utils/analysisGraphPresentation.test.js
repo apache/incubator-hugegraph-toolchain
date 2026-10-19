@@ -69,6 +69,12 @@ test('canonical D3 false forces and data options survive without mutation or cal
     }})).toEqual({type: 'd3-force', options: {link: {strength: 0.2}}});
 });
 
+test('an explicit overlap form edit can enable a previously disabled collision force', () => {
+    expect(normalizeLayoutSettings({type: 'd3-force', options: {
+        collide: false, preventOverlap: true, nodeSize: 70, nodeSpacing: 40,
+    }})).toEqual({type: 'd3-force', options: {collide: {radius: 55}}});
+});
+
 test('all six form layouts retain valid settings and remove old engine values', () => {
     expect(normalizeLayoutSettings({type: 'customGrid', rows: '', cols: 0, preventOverlap: false,
         position: () => ({row: 1})})).toEqual({type: 'grid', options: {preventOverlap: false}});

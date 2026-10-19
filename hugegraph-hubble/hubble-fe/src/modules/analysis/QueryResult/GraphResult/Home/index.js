@@ -96,7 +96,7 @@ const GraphResult = props => {
 
     const {edgeMeta, vertexMeta} = metaData || {};
     const graphSpaceInfo = useContext(GraphAnalysisContext);
-    const {graphData, styleConfigData, initialData, datasetKey, scopeKey, layout, onReady: onGraphReady,
+    const {graphData, styleConfigData, initialData, datasetKey, scopeKey, layout, layoutSettings, onReady: onGraphReady,
         changeStyles: handleGraphStyleChange, changeLayout: handleLayoutChange,
         changeSettings: handleSettingChange, exportPng: handleExportPng,
         editElement: onEditElementChange, expand: getExpandInfo, filter: handleFilterChange, addElements}
@@ -123,6 +123,12 @@ const GraphResult = props => {
     const [searchVertex, setSearchVertex] = useState({});
     const showCanvasInfo =  (_.size(data.vertices) !== 0 || _.size(data.edges) !== 0) && queryStatus === SUCCESS;
 
+    const layoutPanelRef = useRef(null);
+    const handleUpdatePanel = useCallback(type => {
+        if (panelType === LAYOUT) layoutPanelRef.current?.flush();
+        updatePanelType(type);
+    }, [panelType, updatePanelType]);
+
     const handleUpdateStatus = useCallback(
         (status, message, result) => {
             const uploadedData = {
@@ -137,13 +143,14 @@ const GraphResult = props => {
 
     const handleClosePanel = useCallback(
         () => {
-            updatePanelType(CLOSED);
+            handleUpdatePanel(CLOSED);
         },
-        [updatePanelType]
+        [handleUpdatePanel]
     );
 
     const handleClearGraph = useCallback(
         () => {
+            layoutPanelRef.current?.cancel();
             resetGraphStatus && resetGraphStatus(STANDBY, undefined, {});
             updatePanelType(CLOSED);
         },
@@ -207,6 +214,7 @@ const GraphResult = props => {
 
     const handleSwitchRenderMode = useCallback(
         value => {
+            layoutPanelRef.current?.cancel();
             onGraphRenderModeChange(value);
             updatePanelType(CLOSED);
 
@@ -249,13 +257,8 @@ const GraphResult = props => {
 
     const handleTogglePanel = useCallback(
         type => {
-            if (panelType === type) {
-                updatePanelType(CLOSED);
-            }
-            else {
-                updatePanelType(type);
-            }
-        }, [panelType, updatePanelType]
+            handleUpdatePanel(panelType === type ? CLOSED : type);
+        }, [handleUpdatePanel, panelType]
     );
 
     const renderCanvas2D = () => (
@@ -300,7 +303,8 @@ const GraphResult = props => {
             />
             <PanelControlButton show={panelType !== CLOSED} onClick={handleClosePanel} />
             <LayoutConfigPanel
-                layout={layout}
+                ref={layoutPanelRef}
+                layout={layoutSettings}
                 data={graphData}
                 onChange={handleLayoutChange}
                 open={panelType === LAYOUT}
@@ -322,7 +326,7 @@ const GraphResult = props => {
             <GraphToolBar
                 handleClearGraph={handleClearGraph}
                 panelType={panelType}
-                updatePanelType={updatePanelType}
+                updatePanelType={handleUpdatePanel}
             />
             <MiniMap />
             <StatisticPanel
