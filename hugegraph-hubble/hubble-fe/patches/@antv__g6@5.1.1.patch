@@ -1,3 +1,15 @@
+diff --git a/esm/behaviors/drag-element.js b/esm/behaviors/drag-element.js
+index 21891ec35cfaaf752f0a964e1cfb9ee703c3fa65..b1dcb59dc1446aeeb5314787285e9884db449e27 100644
+--- a/esm/behaviors/drag-element.js
++++ b/esm/behaviors/drag-element.js
+@@ -324,6 +324,7 @@ export class DragElement extends BaseBehavior {
+     destroy() {
+         var _a;
+         this.unbindEvents();
++        this.shortcut.destroy();
+         (_a = this.shadow) === null || _a === void 0 ? void 0 : _a.destroy();
+         super.destroy();
+     }
 diff --git a/esm/plugins/minimap/index.js b/esm/plugins/minimap/index.js
 index 3cd9b303a13c913496103f9b5f852bacbc34864c..cff72695447d75a34483617c9691e21bbf90ed8d 100644
 --- a/esm/plugins/minimap/index.js
@@ -208,6 +220,18 @@ index 872fd45dae14a9ff8730bab73562abf6e56839a4..98ae42e05e6fc18b635399d32cbe9b4d
  }
 -//# sourceMappingURL=canvas.js.map
 \ No newline at end of file
+diff --git a/lib/behaviors/drag-element.js b/lib/behaviors/drag-element.js
+index ea930386e8fbd432f84c2fe85c2601894801965a..73c421ed9e945f7904869b727fa201528ed5eff8 100644
+--- a/lib/behaviors/drag-element.js
++++ b/lib/behaviors/drag-element.js
+@@ -327,6 +327,7 @@ class DragElement extends base_behavior_1.BaseBehavior {
+     destroy() {
+         var _a;
+         this.unbindEvents();
++        this.shortcut.destroy();
+         (_a = this.shadow) === null || _a === void 0 ? void 0 : _a.destroy();
+         super.destroy();
+     }
 diff --git a/lib/plugins/minimap/index.js b/lib/plugins/minimap/index.js
 index f46f4b7b13567298bbc94547a4811f954bb01ec8..8755703b5feb55a59055b91f1e740f9416cbcf51 100644
 --- a/lib/plugins/minimap/index.js
@@ -404,6 +428,18 @@ index d09773192a298464aca1933220e76d36166531d5..fe19562349ee8611b67f62b267e2e5bc
  }
 -//# sourceMappingURL=canvas.js.map
 \ No newline at end of file
+diff --git a/src/behaviors/drag-element.ts b/src/behaviors/drag-element.ts
+index 8ecfa742c75b79c1dab02c2ba1d5a7d34bf9043f..c13eb552f145430ca6e751354758893c3405f0b1 100644
+--- a/src/behaviors/drag-element.ts
++++ b/src/behaviors/drag-element.ts
+@@ -486,6 +486,7 @@ export class DragElement extends BaseBehavior<DragElementOptions> {
+ 
+   public destroy() {
+     this.unbindEvents();
++    this.shortcut.destroy();
+     this.shadow?.destroy();
+     super.destroy();
+   }
 diff --git a/src/plugins/minimap/index.ts b/src/plugins/minimap/index.ts
 index cc6c92152c2255df8c3c67189a1182f43a7d26c6..ec1ed65d6f864892b3f2be6b4effb7e95b012e36 100644
 --- a/src/plugins/minimap/index.ts
