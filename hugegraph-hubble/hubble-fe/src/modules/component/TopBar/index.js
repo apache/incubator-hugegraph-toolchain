@@ -361,7 +361,7 @@ const TopBar = props => {
             }
             {
                 showNavigationButton && (
-                    <>
+                    <span className={c.metadataNavigation}>
                         <Button
                             size='small'
                             onClick={handleClickNavigate}
@@ -372,11 +372,10 @@ const TopBar = props => {
                         <Tooltip
                             placement="bottom"
                             title={t('analysis.topbar.metadata_tooltip')}
-                            className={c.questionCircleIcon}
                         >
                             <QuestionCircleOutlined />
                         </Tooltip>
-                    </>
+                    </span>
                 )
             }
             {

@@ -70,7 +70,7 @@ jest.mock('react-i18next', () => ({
 }));
 
 beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     Object.defineProperty(window, 'matchMedia', {
         writable: true,
         value: query => ({

@@ -19,9 +19,22 @@
 .pageHeader {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
+    row-gap: 8px;
+
+    .metadataNavigation {
+      display: inline-flex;
+      align-items: center;
+      flex-shrink: 0;
+      gap: 8px;
+      margin-inline-end: 16px;
+    }
 
     .olapSwitchButton {
+      display: inline-flex;
+      align-items: center;
       margin-left: auto;
+      white-space: nowrap;
     }
 
     .olapSwitchTitle {
@@ -39,10 +52,6 @@
 
     .vermeerInfo{
       margin-right: 18px;
-    }
-
-    .questionCircleIcon{
-      margin-left: 10px;
     }
 
     .contextError {
