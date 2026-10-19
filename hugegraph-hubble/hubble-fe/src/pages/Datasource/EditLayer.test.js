@@ -135,6 +135,7 @@ const expectFreshForm = dialog => {
     expect(form.queryByText('datasource.form.config_info')).not.toBeInTheDocument();
 };
 
+// Real AntD Select interactions exceed 5s on CI; keep the inner waitFor deadlines.
 test('clears the selected template label after a manual source-type change', async () => {
     render(
         <EditLayer
@@ -160,7 +161,7 @@ test('clears the selected template label after a manual source-type change', asy
         expect(within(dialog).getByPlaceholderText('datasource.form.url_placeholder'))
             .toBeInTheDocument();
     });
-});
+}, 10000);
 
 test('clears template, type, and hidden config after cancel and reopen', async () => {
     render(<ReopenableEditLayer />);
