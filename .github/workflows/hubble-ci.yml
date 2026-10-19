@@ -118,6 +118,8 @@ jobs:
           yarn i18n:check
           yarn test --watchAll=false --runInBand
           node --test ../hubble-dist/assembly/travis/ui_auth.test.js
+          node --test ../hubble-dist/assembly/travis/run_ui_http_smoke.test.js \
+            ../hubble-dist/assembly/travis/run_ui_full_acceptance.test.js
 
       - name: Install Playwright Chromium
         working-directory: hugegraph-hubble/hubble-fe
