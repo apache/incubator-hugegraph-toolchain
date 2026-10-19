@@ -63,6 +63,19 @@ const data = (count: number): GraphData => ({nodes: Array.from({length: count}, 
     id: String(index), data: {raw: {id: index}}, style: {labelText: `Node ${index}`},
 })), edges: []});
 
+test.each(['shiftKey', 'ctrlKey', 'metaKey'] as const)('forwards %s as additive click intent', modifier => {
+    const runtime = new G6Runtime(document.createElement('div'));
+    const events = jest.fn(); runtime.onEvent(events);
+    const click = mockHandlers.get('node:click') as (event: unknown) => void;
+    const event = {target: {id: '0'}, client: {x: 20, y: 30}};
+    try {
+        click({...event, [modifier]: true});
+        expect(events.mock.calls.at(-1)?.[0]).toMatchObject({type: 'click', id: '0', additiveSelection: true});
+        click(event);
+        expect(events.mock.calls.at(-1)?.[0].additiveSelection).not.toBe(true);
+    } finally { runtime.stop(); runtime.destroy(); }
+});
+
 test('node dragging dismisses the tooltip and suppresses hover until release', async () => {
     const runtime = new G6Runtime(document.createElement('div'));
     const events = jest.fn();

@@ -32,6 +32,8 @@ export interface RuntimeEvent {
     id?: string;
     kind?: ElementKind;
     client?: {x: number; y: number};
+    /** Shift, Control or Meta click toggles an element in the selection. */
+    additiveSelection?: boolean;
 }
 export type DeepReadonly<T> = T extends object ? {readonly [K in keyof T]: DeepReadonly<T[K]>} : T;
 export type CanvasEvent = DeepReadonly<GraphEvent & {client?: {x: number; y: number}}>;

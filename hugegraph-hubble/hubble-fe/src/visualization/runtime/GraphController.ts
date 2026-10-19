@@ -505,8 +505,12 @@ export class GraphController {
         if (event.type === 'leave' || event.type === 'canvasClick') this.notify(() => this.options.onHover?.(null));
         if (event.type === 'click' && value) this.notify(() => this.options.onClick?.(value));
         if (event.type === 'doubleClick' || event.type === 'contextMenu') return;
-        const selected = event.type === 'canvasClick' ? new Set<string>()
-            : event.type === 'click' && value ? new Set([value.id]) : this.selected;
+        let selected = event.type === 'canvasClick' ? new Set<string>() : this.selected;
+        if (event.type === 'click' && value) {
+            selected = event.additiveSelection ? new Set(this.selected) : new Set<string>();
+            if (selected.has(value.id)) selected.delete(value.id);
+            else selected.add(value.id);
+        }
         const related = event.type === 'hover' && value ? relatedElements(this.adjacency, value.kind, value.id) : null;
         const hovered = related ? new Set([...related.nodeIds, ...related.edgeIds])
             : event.type === 'leave' || event.type === 'canvasClick' ? new Set<string>() : this.hovered;

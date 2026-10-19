@@ -130,6 +130,38 @@ test('edge-only expansion is committed and duplicate expansion is a no-op', asyn
     await controller.dispose();
 });
 
+test('modifier clicks toggle selection while normal clicks and blank canvas reset it', async () => {
+    const {runtime, emit} = createRuntime();
+    const onClick = jest.fn();
+    const controller = new GraphController(runtime, {onClick});
+    await controller.replaceData(input());
+    const click = async (id: string, additiveSelection = false) => {
+        emit({type: 'click', kind: id === 'ab' ? 'edge' : 'node', id, additiveSelection});
+        await controller.idle();
+    };
+    await click('a');
+    await click('b', true);
+    expect(controller.getSnapshot().selectedIds).toEqual(['a', 'b']);
+    emit({type: 'leave'}); await controller.idle();
+    emit({type: 'dragEnd'}); await controller.idle();
+    expect(controller.getSnapshot().selectedIds).toEqual(['a', 'b']);
+    await click('a', true);
+    expect(controller.getSnapshot().selectedIds).toEqual(['b']);
+    await click('ab', true);
+    expect(controller.getSnapshot().selectedIds).toEqual(['b', 'ab']);
+    await click('a');
+    expect(controller.getSnapshot().selectedIds).toEqual(['a']);
+    await click('a', true);
+    expect(controller.getSnapshot().selectedIds).toEqual([]);
+    await click('b');
+    emit({type: 'canvasClick'}); await controller.idle();
+    expect(controller.getSnapshot().selectedIds).toEqual([]);
+    expect(controller.getSnapshot().canUndo).toBe(false);
+    expect(onClick).toHaveBeenCalledTimes(7);
+    expect(runtime.patch).not.toHaveBeenCalled();
+    await controller.dispose();
+});
+
 test('hover touches the previous and next neighborhood, keeps selection, and never reads the full graph', async () => {
     const {runtime, emit} = createRuntime();
     const onClick = jest.fn();

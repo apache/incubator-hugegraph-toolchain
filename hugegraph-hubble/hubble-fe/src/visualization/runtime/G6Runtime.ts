@@ -155,7 +155,9 @@ export class G6Runtime implements GraphRuntime {
                     if (type === 'hover' && this.dragIdle) return;
                     if (type === 'contextMenu') event.preventDefault();
                     const id = 'id' in event.target ? String(event.target.id) : undefined;
-                    this.handler({type, id, kind, client: {x: event.client.x, y: event.client.y}});
+                    this.handler({type, id, kind, client: {x: event.client.x, y: event.client.y},
+                        ...(type === 'click' && (event.shiftKey || event.ctrlKey || event.metaKey)
+                            ? {additiveSelection: true} : {})});
                 };
                 this.graph.on(`${kind}:${name}`, handler);
                 this.bindings.push([`${kind}:${name}`, handler]);
