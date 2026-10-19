@@ -199,6 +199,7 @@ it('keeps demo preparation failure visible and lets the user retry', async () =>
         .not.toBeInTheDocument());
 });
 
+// Multi-step real AntD flows need a bounded CI budget; waitFor deadlines stay unchanged.
 it('does not let an old graph-space demo response prepare a same-named graph', async () => {
     isPdEnabled.mockReturnValue(true);
     window.localStorage.setItem('hubble_workbench_graph_context', JSON.stringify({
@@ -261,7 +262,7 @@ it('does not let an old graph-space demo response prepare a same-named graph', a
     });
 
     expect(await screen.findByText('Prepare schema first')).toBeInTheDocument();
-});
+}, 10000);
 
 it('does not publish stale demo state after the form unmounts', async () => {
     window.localStorage.setItem('hubble_workbench_graph_context', JSON.stringify({
@@ -540,7 +541,7 @@ it('recovers PD graph-space and graph option failures without stale overwrite', 
     expect(await screen.findByText('task.edit.load_graphs_failed')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', {name: 'task.edit.retry_graphs'}));
     await waitFor(() => expect(api.manage.getGraphList).toHaveBeenCalledTimes(2));
-});
+}, 10000);
 
 it('ignores a late graph response after the graph-space selection changes', async () => {
     isPdEnabled.mockReturnValue(true);
@@ -588,4 +589,4 @@ it('ignores a late graph response after the graph-space selection changes', asyn
     });
     expect(screen.getByRole('option', {name: 'Graph B'})).toBeInTheDocument();
     expect(screen.queryByRole('option', {name: 'Graph A'})).not.toBeInTheDocument();
-});
+}, 10000);

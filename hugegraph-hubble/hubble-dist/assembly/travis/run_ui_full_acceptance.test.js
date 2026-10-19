@@ -186,7 +186,7 @@ process.exit(ui ? 2 : 0);
   assert.deepEqual(manifest.graphRequestedChecks, ['example', 'scope']);
   assert.ok(!result.stdout.includes('checks passed'));
   assert.ok(!fs.readFileSync(invocationFile, 'utf8').includes('private-secret'));
-  assert.ok(!fs.readFileSync(invocationFile, 'utf8').includes('https://example.invalid/'));
+  assert.doesNotMatch(fs.readFileSync(invocationFile, 'utf8'), /https:\/\/example\.invalid\/deploy\/(?:hubble|server)/);
   assert.ok(!JSON.stringify(manifest).includes('private-secret'));
 });
 

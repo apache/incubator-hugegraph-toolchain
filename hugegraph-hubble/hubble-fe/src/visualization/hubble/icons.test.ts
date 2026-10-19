@@ -27,7 +27,7 @@ test('every saved icon has a bundled local SVG and aliases resolve to the same i
         const svg = decodeURIComponent(image!.split(',')[1]);
         expect(svg).toContain('xmlns="http://www.w3.org/2000/svg"');
         expect(svg).toContain('<path');
-        expect(svg).not.toMatch(/<script|\son[a-z]+=|href=|<foreignObject|https?:\/\/(?!www.w3.org)/i);
+        expect(svg).not.toMatch(/<script|\son[a-z]+=|href=|<foreignObject|https?:\/\/(?!www\.w3\.org\/2000\/svg")/i);
     }
 });
 

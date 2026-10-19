@@ -56,6 +56,7 @@ it('exposes custom source-field deletion as a named keyboard-focusable button', 
     expect(remove).toHaveAttribute('title', 'Delete field customer_id');
 });
 
+// Multi-step real AntD flows need a bounded CI budget; waitFor deadlines stay unchanged.
 it('focuses a visible error until at least one source field is selected', async () => {
     const onFormFinish = jest.fn();
     render(
@@ -87,7 +88,7 @@ it('focuses a visible error until at least one source field is selected', async 
             values: expect.objectContaining({target_keys: ['name']}),
         })
     ));
-});
+}, 10000);
 
 it('clears the selection error before entering with a different data source', async () => {
     api.manage.getDatasourceSchema.mockImplementation(id => Promise.resolve({

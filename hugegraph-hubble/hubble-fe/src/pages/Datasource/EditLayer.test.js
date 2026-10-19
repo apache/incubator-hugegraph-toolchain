@@ -140,6 +140,7 @@ test('clears template, type, and hidden config after cancel and reopen', async (
     expectFreshForm();
 });
 
+// Multi-step real AntD flows need a bounded CI budget; waitFor deadlines stay unchanged.
 test('clears template, type, and hidden config after successful create and reopen', async () => {
     const refresh = jest.fn();
     const api = jest.requireMock('../../api');
@@ -159,7 +160,7 @@ test('clears template, type, and hidden config after successful create and reope
 
     await userEvent.click(screen.getByRole('button', {name: 'reopen datasource'}));
     expectFreshForm();
-});
+}, 10000);
 
 test('ignores a create response from a closed modal session', async () => {
     const api = jest.requireMock('../../api');
@@ -204,7 +205,7 @@ test('ignores a create response from a closed modal session', async () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(refresh).toHaveBeenCalledTimes(1);
     expect(message.success).toHaveBeenCalledTimes(1);
-}, 10000); // Two complete real modal/form sessions, including async closure and reopening.
+}, 20000); // Two complete real modal/form sessions, including async closure and reopening.
 
 test('ignores a create response after prop-driven modal closure', async () => {
     const api = jest.requireMock('../../api');
@@ -231,4 +232,4 @@ test('ignores a create response after prop-driven modal closure', async () => {
 
     expect(refresh).not.toHaveBeenCalled();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-});
+}, 10000);

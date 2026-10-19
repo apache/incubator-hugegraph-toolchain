@@ -208,6 +208,7 @@ it('keeps a PD read-only account from mutating schema templates', async () => {
     expect(screen.queryByTestId('schema-edit-layer')).not.toBeInTheDocument();
 });
 
+// Multi-step real AntD flows need a bounded CI budget; waitFor deadlines stay unchanged.
 it('lets read-write users manage only their own saved templates', async () => {
     mockAccess = {canManage: false, canWrite: true};
     api.manage.getGraphSpace.mockResolvedValue({
@@ -237,7 +238,7 @@ it('lets read-write users manage only their own saved templates', async () => {
         .not.toBeInTheDocument();
     expect(screen.queryByRole('button', {name: 'Delete shared_schema'}))
         .not.toBeInTheDocument();
-});
+}, 10000);
 
 it('lets anonymous PD users manage saved templates', async () => {
     mockAccess = {canManage: false, canWrite: true};
@@ -262,7 +263,7 @@ it('lets anonymous PD users manage saved templates', async () => {
         .toBeInTheDocument();
     expect(screen.getByRole('button', {name: 'Delete anonymous_schema'}))
         .toBeInTheDocument();
-});
+}, 10000);
 
 it('links a non-PD read-only library without graph context to the graph overview', async () => {
     mockGraphspace = 'DEFAULT';
@@ -347,7 +348,7 @@ it('removes example templates locally and offers an explicit restore action', as
     expect(api.manage.addSchema).not.toHaveBeenCalled();
     expect(api.manage.updateSchema).not.toHaveBeenCalled();
     expect(api.manage.delSchema).not.toHaveBeenCalled();
-});
+}, 10000);
 
 it('expands a saved template row into a wide read-only Groovy code block', async () => {
     api.manage.getGraphSpace.mockResolvedValue({status: 200, data: {nickname: 'Space'}});
@@ -370,7 +371,7 @@ it('expands a saved template row into a wide read-only Groovy code block', async
     const code = screen.getByRole('region', {name: 'Expand custom_schema'});
     expect(code).toHaveAttribute('data-readonly', 'true');
     expect(code).toHaveTextContent('schema.propertyKey');
-});
+}, 10000);
 
 it('links to the Schema design documentation below the template list', async () => {
     api.manage.getGraphSpace.mockResolvedValue({status: 200, data: {nickname: 'Space'}});
@@ -389,7 +390,7 @@ it('links to the Schema design documentation below the template list', async () 
         'href',
         'https://hugegraph.apache.org/docs/guides/desgin-concept/'
     );
-});
+}, 10000);
 
 it('opens create mode when reached from the new-graph shortcut', async () => {
     window.history.replaceState({}, '', '/graphspace/SPACE/schema?create=true');

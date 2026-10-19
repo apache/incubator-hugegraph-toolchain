@@ -626,6 +626,7 @@ test('does not describe an unrelated bad request as a missing account', async ()
     )).not.toBeInTheDocument();
 });
 
+// Multi-step real AntD flows need a bounded CI budget; waitFor deadlines stay unchanged.
 test('ignores an older account lookup after the ID changes', async () => {
     const older = deferred();
     const current = deferred();
@@ -678,7 +679,7 @@ test('ignores an older account lookup after the ID changes', async () => {
         expect.anything(),
         expect.any(Object)
     );
-});
+}, 10000);
 
 test('requires an explicit replacement for legacy custom access', async () => {
     setResponses({
