@@ -74,6 +74,7 @@ import org.junit.runners.Suite;
     GraphMetricsControllerTest.class,
     HugeClientPoolServiceTest.class,
     H2StartupTest.class,
+    HubbleDataSourceTest.class,
     AvaticaRuntimeTest.class,
     JaxbRuntimeTest.class,
     GraphSpaceControllerTest.class,
@@ -127,7 +128,9 @@ import org.junit.runners.Suite;
     PriorityFixTest.class,
     QueryServiceTest.class,
     ResponseAdvisorStatusTest.class,
-    UrlUtilTest.class
+    UrlUtilTest.class,
+    EntityUtilTest.class,
+    HubbleUtilTest.class
 })
 public class UnitTestSuite {
 }
