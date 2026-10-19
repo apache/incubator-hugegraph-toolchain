@@ -108,8 +108,10 @@ function run(name, args, jsonOutput, config, spawn = childProcess.spawnSync) {
     if (!graphEvidenceValid) reportError = 'Graph report does not prove every requested check or its declared coverage';
   }
   const status = result.status === 0 && evidence?.status === 'passed' && graphEvidenceValid ? 'passed'
+    : result.status === 0 && name === 'ui-insecure-http-smoke' && evidence?.status === 'skipped' ? 'skipped'
     : result.status === 2 && evidence?.status === 'needs input' ? 'needs input' : 'failed';
   return {name, startedAt, status, exitCode: result.status, signal: result.signal || undefined,
+    reason: evidence?.reason ? redact(evidence.reason, [config.password]) : undefined,
     report: jsonOutput, fullRequestedMatrix: evidence?.fullRequestedMatrix,
     requestedChecks: evidence?.requestedChecks, remainingMatrix: evidence?.remainingMatrix,
     stdout: redact(result.stdout || '', [config.password]),
@@ -117,7 +119,8 @@ function run(name, args, jsonOutput, config, spawn = childProcess.spawnSync) {
     error: result.error ? redact(result.error.message, [config.password]) : reportError};
 }
 function aggregateStatus(checks) {
-  return checks.some(check => check.status === 'failed') ? 'failed'
+  return checks.some(check => !['passed', 'needs input'].includes(check.status)
+      && !(check.name === 'ui-insecure-http-smoke' && check.status === 'skipped')) ? 'failed'
     : checks.some(check => check.status === 'needs input') ? 'needs input' : 'passed';
 }
 function exitCode(status) { return status === 'passed' ? 0 : status === 'needs input' ? 2 : 1; }
@@ -130,11 +133,13 @@ function main(configuration = options(), spawn = childProcess.spawnSync) {
   const common = ['--hubble-url', config.hubbleUrl, '--output-dir', config.outputDir,
     '--chromium-executable', config.chromiumExecutable];
   const checks = [];
-  for (const [name, extra] of [
-    ['ui-browser-smoke', ['--conn-id', config.connId]], ['ui-i18n-switch-smoke', []]
+  for (const [name, script, extra] of [
+    ['ui-insecure-http-smoke', 'run_ui_http_smoke.js', []],
+    ['ui-browser-smoke', 'run_ui_browser_smoke.js', ['--conn-id', config.connId]],
+    ['ui-i18n-switch-smoke', 'run_ui_i18n_switch_smoke.js', []]
   ]) {
     const report = path.join(config.outputDir, `${name}.json`);
-    checks.push(run(name, [path.join(__dirname, `run_${name.replaceAll('-', '_')}.js`),
+    checks.push(run(name, [path.join(__dirname, script),
       ...common, ...extra, '--json-output', report], report, config, spawn));
   }
   const graphReport = path.join(config.outputDir, 'ui-graph-acceptance.json');
@@ -152,7 +157,7 @@ function main(configuration = options(), spawn = childProcess.spawnSync) {
     graphRequestedChecks: config.graphChecks, checks, status: aggregateStatus(checks),
     fullRequestedMatrix: checks.some(check => check.name === 'ui-graph-acceptance'
       && check.status === 'passed' && check.fullRequestedMatrix === true),
-    coverage: 'Route/i18n smoke plus requested real graph checks; deployment/auth matrix remains separate'};
+    coverage: 'Insecure HTTP/route/i18n smoke plus requested real graph checks; deployment/auth matrix remains separate'};
   fs.mkdirSync(path.dirname(config.jsonOutput), {recursive: true});
   fs.writeFileSync(config.jsonOutput, JSON.stringify(report, null, 2) + '\n');
   return report;

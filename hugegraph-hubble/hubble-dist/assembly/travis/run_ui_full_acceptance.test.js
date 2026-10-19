@@ -19,7 +19,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const {spawnSync} = require('node:child_process');
-const {options, fixtureFromLiveReport, prepareGraphArgs, run, main, exitCode} = require('./run_ui_full_acceptance');
+const {options, fixtureFromLiveReport, prepareGraphArgs, run, aggregateStatus, main, exitCode} = require('./run_ui_full_acceptance');
 const {ALL_CHECKS} = require('./run_ui_graph_acceptance');
 
 function config(directory, args = []) {
@@ -94,8 +94,9 @@ test('wrapper always runs graph gate, carries missing-input exit 2 and never wri
     assert.ok(!args.includes(cfg.password));
     assert.equal(settings.env.HUBBLE_PASSWORD, cfg.password);
   }));
-  assert.equal(calls.length, 3);
-  assert.ok(calls[2].endsWith('run_ui_graph_acceptance.js'));
+  assert.equal(calls.length, 4);
+  assert.ok(calls[0].endsWith('run_ui_http_smoke.js'));
+  assert.ok(calls[3].endsWith('run_ui_graph_acceptance.js'));
   assert.equal(report.status, 'needs input');
   assert.equal(exitCode(report.status), 2);
   assert.equal(report.fullRequestedMatrix, false);
@@ -113,7 +114,7 @@ test('explicit standalone subset stays a subset in aggregate even when every req
   assert.equal(fixture.canWriteSchema, true);
   assert.deepEqual(fixture.expected.vertexIds, ['real_123_alice', 'real_123_bob', 'real_123_carol']);
   assert.equal(fixture.graphspace, 'DEFAULT');
-  assert.deepEqual(report.checks[2].remainingMatrix, ['Separate real auth-mode matrix']);
+  assert.deepEqual(report.checks[3].remainingMatrix, ['Separate real auth-mode matrix']);
 });
 
 test('failed or inconsistent child cannot pass using a stale report or a nominal zero exit', t => {
@@ -134,8 +135,8 @@ test('unusable live report is recorded as a graph missing-input failure without 
   cfg.liveReport = path.join(cfg.outputDir, 'live.json');
   fs.writeFileSync(cfg.liveReport, JSON.stringify({...liveReport(), graph: 'wrong'}));
   const report = main(cfg, childRunner());
-  assert.equal(report.checks.length, 3);
-  assert.equal(report.checks[2].name, 'ui-graph-acceptance');
+  assert.equal(report.checks.length, 4);
+  assert.equal(report.checks[3].name, 'ui-graph-acceptance');
   assert.equal(report.status, 'needs input');
 });
 
@@ -288,4 +289,73 @@ test('programmatic wrapper configuration cannot bypass URL validation', t => {
     assert.throws(() => main(invalid, () => {throw new Error('Unexpected child spawn');}),
       error => error.message === `Invalid ${field}`);
   }
+});
+
+function childReport(t, report, code = 0, name = 'ui-insecure-http-smoke') {
+  const cfg = config(directory(t));
+  const reportPath = path.join(cfg.outputDir, 'report.json');
+  return run(name, [
+    '-e',
+    'require("fs").writeFileSync(process.argv[1], process.argv[2]);' +
+      'process.exitCode = Number(process.argv[3]);',
+    reportPath, JSON.stringify(report), String(code)
+  ], reportPath, cfg);
+}
+
+test('retains the HTTPS skip and reason in the full acceptance check', t => {
+  const reason = 'HTTPS cannot exercise insecure HTTP; use an HTTP Hubble URL for this gate.';
+  const check = childReport(t, {status: 'skipped', reason});
+  assert.equal(check.status, 'skipped');
+  assert.equal(check.reason, reason);
+  const cfg = config(directory(t));
+  const graphRunner = childRunner('needs input', 2);
+  const wrapper = main(cfg, (command, args, settings) => {
+    if (!args[0].endsWith('run_ui_http_smoke.js')) return graphRunner(command, args, settings);
+    const report = args[args.indexOf('--json-output') + 1];
+    fs.writeFileSync(report, JSON.stringify({status: 'skipped', reason}));
+    return {status: 0};
+  });
+  assert.equal(wrapper.checks[0].status, 'skipped');
+  assert.equal(wrapper.checks[0].reason, reason);
+  assert.equal(wrapper.status, 'needs input');
+  assert.equal(wrapper.fullRequestedMatrix, false);
+  assert.equal(aggregateStatus([
+    check,
+    {name: 'ui-browser-smoke', status: 'passed'},
+    {name: 'ui-i18n-switch-smoke', status: 'passed'},
+    {name: 'ui-graph-acceptance', status: 'passed'}
+  ]), 'passed');
+});
+
+test('keeps child failures and malformed reports fail-closed', t => {
+  assert.equal(childReport(t, {status: 'failed'}).status, 'failed');
+  assert.equal(childReport(t, {status: 'skipped'}, 1).status, 'failed');
+  assert.equal(childReport(t, {}).status, 'failed');
+});
+
+test('allows skips only for the optional insecure HTTP check', t => {
+  assert.equal(aggregateStatus([
+    {name: 'ui-insecure-http-smoke', status: 'skipped'},
+    {name: 'ui-browser-smoke', status: 'failed'}
+  ]), 'failed');
+  assert.equal(aggregateStatus([
+    {name: 'ui-insecure-http-smoke', status: 'passed'},
+    {name: 'ui-i18n-switch-smoke', status: 'skipped'}
+  ]), 'failed');
+  assert.equal(aggregateStatus([
+    {name: 'ui-insecure-http-smoke', status: 'skipped'},
+    {name: 'ui-graph-acceptance', status: 'needs input'}
+  ]), 'needs input');
+  assert.equal(childReport(t, {status: 'skipped'}, 0, 'ui-graph-acceptance').status, 'failed');
+  assert.equal(aggregateStatus([{name: 'ui-browser-smoke', status: 'unknown'}]), 'failed');
+});
+
+test('existing child checks retain nonzero exit failure and require a current report', t => {
+  for (const name of ['ui-browser-smoke', 'ui-i18n-switch-smoke']) {
+    assert.equal(childReport(t, {status: 'passed'}, 0, name).status, 'passed');
+    assert.equal(childReport(t, {status: 'passed'}, 1, name).status, 'failed');
+  }
+  const cfg = config(directory(t));
+  const missing = run('ui-browser-smoke', ['-e', ''], path.join(cfg.outputDir, 'missing.json'), cfg);
+  assert.equal(missing.status, 'failed');
 });

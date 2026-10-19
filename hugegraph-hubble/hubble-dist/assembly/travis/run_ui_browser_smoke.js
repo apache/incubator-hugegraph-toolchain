@@ -279,6 +279,8 @@ if (require.main === module) {
 module.exports = {
   apiEntryPassed,
   createApiEntry,
+  chromiumExecutablePath,
+  loadPlaywright,
   matchesRequiredApi,
   readBusinessStatus,
   waitForRequiredResponse

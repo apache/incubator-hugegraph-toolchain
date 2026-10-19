@@ -127,6 +127,7 @@ jobs:
           pnpm test:ci
           node --test ../hubble-dist/assembly/travis/ui_auth.test.js \
             ../hubble-dist/assembly/travis/graph_acceptance_helpers.test.js \
+            ../hubble-dist/assembly/travis/run_ui_http_smoke.test.js \
             ../hubble-dist/assembly/travis/run_ui_full_acceptance.test.js
           node --test ../hubble-dist/assembly/travis/build-frontend.test.mjs
 
