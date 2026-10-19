@@ -39,7 +39,12 @@ inputs and output contents match. Frontend source, configuration, lockfile,
 dependency patches and tool versions participate in invalidation. A frontend
 build alone does not validate the backend, distribution or browser workflows.
 
-## G6 export cleanup patch
+The browser PNG gate uses pinned Pixelmatch tooling to recognize anti-aliased
+edge samples. These still require nearby graph pixels in the other image;
+missing nodes or edges, solid colors and opacity remain checked. Public DOM
+overlays and fractional screenshot fringes are recorded separately.
+
+## G6 rendering patch
 
 G6 is pinned to 5.1.1. `patches/@antv__g6@5.1.1.patch`, registered in
 `pnpm-workspace.yaml`, makes PNG export destroy its temporary offscreen Canvas
@@ -48,6 +53,11 @@ pending. A 10-second deadline also covers initialization and a missing render
 event, so failed rendering releases the temporary canvas. pnpm applies the patch
 during dependency installation; do not edit
 `node_modules` manually.
+
+The patch also refreshes Minimap geometry after layout changes. PNG export copies
+the existing display children into plain groups, preserving transforms, labels,
+markers and opacity without rerunning custom shape constructors and duplicating
+their children.
 
 The patch updates the published TypeScript, ESM and CommonJS implementations
 together. When upgrading G6, check whether upstream includes the fix, repeat

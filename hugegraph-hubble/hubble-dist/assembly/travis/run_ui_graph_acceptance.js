@@ -22,7 +22,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const {authenticateUi, logoutUi} = require('./ui_auth');
 const {
-  NeedsInput, argument, redact, publicHttpUrl, sha256, assertExportMatches, assertFixtureGraph,
+  NeedsInput, argument, redact, publicHttpUrl, sha256, typedId, assertExportMatches, assertFixtureGraph,
+  uniqueDisplayId, gremlinIdLiteral, connectedPair, assertExpandedGraph, assertVisibleGraphStats,
+  decodeScreenshot, screenshotAxes, screenshotOverlayRect, screenshotFringeRects, assertPngMatchesCanvas, dragTarget, assertLiveDragPixels,
   fixtureFromPrefix, loadPlaywright, chromePath, businessPayload, scopePath,
   pngDimensions, pixelEvidence, screenshot, canvasReady, findNode,
 } = require('./graph_acceptance_helpers');
@@ -156,6 +158,7 @@ async function exportBusiness(page, region, raw, directory, prefix) {
     await dialog.getByRole('button', {name: 'OK', exact: true}).click();
     const file = path.join(directory, `${prefix}-export.${kind}`);
     artifacts[kind] = await saveDownload(await pending, file);
+    await dialog.waitFor({state: 'hidden'});
     if (kind === 'json') assertExportMatches(JSON.parse(fs.readFileSync(file, 'utf8')), raw);
     else {
       const bytes = fs.readFileSync(file);
@@ -164,19 +167,38 @@ async function exportBusiness(page, region, raw, directory, prefix) {
       assert.ok(artifacts.png.pixels.coloredPixels > 30, 'Exported PNG contains no actual graph pixels');
     }
   }
+  await blankPointer(page, region);
   artifacts.canvas = await screenshot(page, region, path.join(directory, `${prefix}-exported-canvas.png`));
+  const bounds = await region.boundingBox();
+  const excluded = await visibleGraphOverlays(page, region);
+  const actual = await decodeScreenshot(page, fs.readFileSync(artifacts.canvas.file));
+  const exported = await decodeScreenshot(page, fs.readFileSync(artifacts.png.file));
+  const pixelRatio = await page.evaluate(() => window.devicePixelRatio);
+  const image = {width: actual.width, height: actual.height, pixelRatio};
+  const axes = screenshotAxes(bounds, image);
+  const excludedPixels = excluded.map(rect => screenshotOverlayRect(rect, axes));
+  const fringeRects = screenshotFringeRects(bounds, image);
+  artifacts.png.captureGeometry = {bounds, pixelRatio, screenshot: {width: actual.width, height: actual.height},
+    axes, overlays: excluded.map((rect, index) => ({dom: rect, pixels: excludedPixels[index]})), fringeRects};
+  artifacts.png.captureGeometryFile = path.join(directory, `${prefix}-png-geometry.json`);
+  artifacts.png.canvasAgreement = assertPngWithGeometry(actual, exported, artifacts.png.captureGeometry, artifacts.png.captureGeometryFile);
   return artifacts;
 }
 async function executeQuery(page, config, fixture, prefix, navigate = true) {
   if (navigate) await page.goto(`${config.hubbleUrl}/gremlin/${encodeURIComponent(fixture.graphspace)}/${encodeURIComponent(fixture.graph)}`);
   const editor = page.getByLabel('Gremlin query editor', {exact: true});
   await editor.waitFor({state: 'visible'});
-  await editor.fill(fixture.query);
+  // CodeMirror must observe a real editing transaction, not a contenteditable DOM replacement.
+  await editor.click();
+  await page.keyboard.press('ControlOrMeta+A');
+  await page.keyboard.insertText(fixture.query);
   const endpoint = `${scopePath(fixture)}/gremlin-query`;
   const pending = page.waitForResponse(response => new URL(response.url()).pathname === endpoint
     && response.request().method() === 'POST');
   await page.getByRole('button', {name: 'Run Query', exact: true}).click();
   const response = await pending;
+  assert.equal(response.request().postDataJSON(), fixture.query,
+    'Actual browser POST did not submit the exact requested Gremlin query string');
   const data = await businessPayload(response, 'Real browser Gremlin query');
   const raw = data?.graph_view;
   assertFixtureGraph(raw, fixture);
@@ -189,9 +211,143 @@ async function executeQuery(page, config, fixture, prefix, navigate = true) {
   return {raw, region, evidence: {route: page.url(), endpoint, method: 'POST',
     httpStatus: response.status(), vertexIds: raw.vertices.map(v => v.id), edgeIds: raw.edges.map(e => e.id), pixels, counts}};
 }
-async function fixedHistory(page, region, config, prefix) {
-  const point = await findNode(page, region, text => text.includes('Node ID:'),
-    path.join(config.outputDir, `${prefix}-node-candidates.png`));
+function nodeTooltip(id, vertices) {
+  if (!vertices || !uniqueDisplayId(vertices, id)) {
+    throw new NeedsInput('Actual node tooltip cannot uniquely distinguish this business ID from another displayed ID');
+  }
+  return text => text.split(/\r?\n/).some(line => line === `Node ID: ${String(id)}`);
+}
+function collectGraphOverlayRects(wrapper) {
+  const document = wrapper.ownerDocument;
+  const view = document.defaultView;
+  const bounds = wrapper.querySelector('[role="region"]').getBoundingClientRect();
+  const elements = [...wrapper.querySelectorAll('[role="tooltip"], [role="menu"], [aria-label="Legend"]'),
+    ...document.querySelectorAll('[role="dialog"], [role="menu"]')];
+  // The minimap's canvas and viewport border can overflow its border-box parent.
+  // Only include these immediate public UI children, not renderer descendants.
+  for (const minimap of wrapper.querySelectorAll('.g6-minimap, .minimap')) {
+    elements.push(minimap, ...[...minimap.children].filter(child => ['CANVAS', 'DIV'].includes(child.tagName)));
+  }
+  for (const toolbar of wrapper.querySelectorAll('[class*="toolBarTop"], [class*="toolBarWithPadding"]')) {
+    elements.push(...toolbar.querySelectorAll('button, select, input, [role="button"], [role="switch"], [role="combobox"]'));
+  }
+  for (const group of document.querySelectorAll('[role="group"][aria-label]')) {
+    if (/^(Nodes|Edges): /.test(group.getAttribute('aria-label'))) elements.push(group.parentElement.parentElement);
+  }
+  return [...new Set(elements)].filter(element => element.getClientRects().length
+    && view.getComputedStyle(element).visibility !== 'hidden' && view.getComputedStyle(element).opacity !== '0')
+    .map(element => {
+      const box = element.getBoundingClientRect();
+      return {x: box.x, y: box.y, width: box.width, height: box.height};
+    }).filter(rect => rect.width > 0 && rect.height > 0 && rect.x < bounds.right && rect.y < bounds.bottom
+      && rect.x + rect.width > bounds.left && rect.y + rect.height > bounds.top);
+}
+async function visibleGraphOverlays(page, region) {
+  return page.evaluate(collectGraphOverlayRects, await region.locator('..').elementHandle());
+}
+function assertPngWithGeometry(actual, exported, geometry, geometryFile) {
+  // Keep current public geometry available even when a subsequent pixel assertion fails.
+  fs.writeFileSync(geometryFile, JSON.stringify(geometry, null, 2) + '\n');
+  return assertPngMatchesCanvas(actual, exported,
+    [...geometry.overlays.map(overlay => overlay.pixels), ...geometry.fringeRects]);
+}
+
+async function graphStatistics(page, region, config, prefix) {
+  const data = await page.getByRole('group').evaluateAll(elements => {
+    const rect = element => {
+      const box = element.getBoundingClientRect();
+      return {x: box.x, y: box.y, width: box.width, height: box.height};
+    };
+    const counts = elements.filter(element => /^(Nodes|Edges): /.test(element.getAttribute('aria-label') || ''));
+    return {viewport: {x: 0, y: 0, width: innerWidth, height: innerHeight},
+      counts: counts.map(element => {
+        const card = element.parentElement;
+        const clips = [];
+        for (let ancestor = card.parentElement; ancestor; ancestor = ancestor.parentElement) {
+          const style = getComputedStyle(ancestor);
+          const x = /hidden|clip|auto|scroll/.test(style.overflowX);
+          const y = /hidden|clip|auto|scroll/.test(style.overflowY);
+          if (x || y) clips.push({rect: rect(ancestor), x, y});
+        }
+        return {label: element.getAttribute('aria-label'), rect: rect(card), clips,
+          pane: card.closest('[role="tabpanel"]') ? rect(card.closest('[role="tabpanel"]')) : null};
+      })};
+  });
+  data.minimaps = await region.locator('.g6-minimap, .minimap').evaluateAll(elements => elements
+    .filter(element => element.getClientRects().length && getComputedStyle(element).visibility !== 'hidden')
+    .map(element => {
+      const rect = value => {
+        const box = value.getBoundingClientRect();
+        return {x: box.x, y: box.y, width: box.width, height: box.height};
+      };
+      const clips = [];
+      for (let ancestor = element.parentElement; ancestor; ancestor = ancestor.parentElement) {
+        const style = getComputedStyle(ancestor);
+        const x = /hidden|clip|auto|scroll/.test(style.overflowX);
+        const y = /hidden|clip|auto|scroll/.test(style.overflowY);
+        if (x || y) clips.push({rect: rect(ancestor), x, y});
+      }
+      return {...rect(element), clips};
+    }));
+  data.canvas = await region.boundingBox();
+  assertVisibleGraphStats(data);
+  return {...data, screenshot: await screenshot(page, page, path.join(config.outputDir, `${prefix}-visible-statistics.png`))};
+}
+async function doubleClickExpansion(page, config, fixture, original) {
+  const {source} = connectedPair(original);
+  const single = {...fixture, query: `g.V(${gremlinIdLiteral(source.id)})`,
+    expected: {vertexIds: [source.id], edgeCount: 0}};
+  const before = await executeQuery(page, config, single, 'query-single-node', false);
+  const point = await findNode(page, before.region, nodeTooltip(source.id, before.raw.vertices),
+    path.join(config.outputDir, 'query-double-click-target.png'));
+  const endpoint = `${scopePath(fixture)}/gremlin-query`;
+  const pending = page.waitForResponse(response => new URL(response.url()).pathname === endpoint
+    && response.request().method() === 'PUT');
+  await page.mouse.dblclick(point.x, point.y);
+  const response = await pending;
+  const request = response.request().postDataJSON();
+  assert.equal(typedId(request.vertex_id), typedId(source.id), 'Expand request changed the business ID type/value');
+  assert.equal(request.vertex_label, source.label, 'Expand request changed the actual vertex label');
+  const incoming = (await businessPayload(response, 'Real double-click expansion'))?.graph_view;
+  const expansion = assertExpandedGraph(before.raw, incoming, source.id);
+  const expanded = expansion.graph;
+  const region = before.region;
+  const pixels = await canvasReady(page, region, path.join(config.outputDir, 'query-double-click-expanded.png'));
+  await eventually(page, 'real expanded node/edge counts', async () => {
+    const labels = await page.getByRole('group').evaluateAll(elements => elements.map(element => element.getAttribute('aria-label') || ''));
+    return labels.some(text => text.startsWith(`Nodes: ${expanded.vertices.length} in this result,`))
+      && labels.some(text => text.startsWith(`Edges: ${expanded.edges.length} in this result,`));
+  });
+  // The click timer is 300 ms; observe beyond it before checking for the old masking drawer.
+  await page.waitForTimeout(400);
+  assert.equal(await page.getByRole('dialog', {name: 'Data Details', exact: true}).isVisible(), false,
+    'Double-click opened the single-click Data Details drawer');
+  const added = expansion.neighbors.find(vertex => uniqueDisplayId(expanded.vertices, vertex.id));
+  if (!added) throw new NeedsInput('New neighbors have ambiguous displayed IDs; provide a fixture with a uniquely identifiable actual neighbor tooltip');
+  const neighbor = await findNode(page, region, nodeTooltip(added.id, expanded.vertices),
+    path.join(config.outputDir, 'query-expanded-neighbor-hit.png'));
+  const exports = await exportBusiness(page, region, expanded, config.outputDir, 'query-expanded');
+  const statistics = await graphStatistics(page, region, config, 'query-expanded');
+  await executeQuery(page, config, fixture, 'query-after-expand-restore', false);
+  return {endpoint, method: 'PUT', selectedId: source.id, selectedIdType: typeof source.id,
+    addedVertexIds: expansion.addedVertexIds,
+    addedEdgeIds: expansion.addedEdgeIds, detailsDrawerOpened: false,
+    pixels, actualNewNeighborTooltip: neighbor.tooltip, exports, statistics};
+}
+
+async function fixedHistory(page, region, config, prefix, raw) {
+  const pair = connectedPair(raw);
+  let point, neighbor;
+  // Use the real public camera control to make the edge's pixel samples readable.
+  for (let attempt = 0; attempt < 5; attempt++) {
+    neighbor = await findNode(page, region, nodeTooltip(pair.target.id, raw.vertices),
+      path.join(config.outputDir, `${prefix}-neighbor-candidates.png`));
+    point = await findNode(page, region, nodeTooltip(pair.source.id, raw.vertices),
+      path.join(config.outputDir, `${prefix}-node-candidates.png`));
+    if (Math.hypot(neighbor.x - point.x, neighbor.y - point.y) >= 130 || attempt === 4) break;
+    await page.getByRole('button', {name: 'Zoom In', exact: true}).click();
+    await blankPointer(page, region);
+  }
   await page.mouse.click(point.x, point.y);
   const details = page.getByRole('dialog', {name: 'Data Details', exact: true});
   await details.waitFor({state: 'visible'});
@@ -209,17 +365,33 @@ async function fixedHistory(page, region, config, prefix) {
   await eventually(page, 'undo restores unpinned state', async () => await fix.getAttribute('aria-pressed') === 'false');
   await redo.click();
   await eventually(page, 'redo restores pinned state', async () => await fix.getAttribute('aria-pressed') === 'true');
-  const drag = await screenshotInteraction(page, region, path.join(config.outputDir, `${prefix}-node-drag`), async () => {
+  await blankPointer(page, region);
+  const bounds = await region.boundingBox();
+  const obstacles = await visibleGraphOverlays(page, region);
+  const before = await screenshot(page, region, path.join(config.outputDir, `${prefix}-node-drag-before.png`));
+  const beforePixels = await decodeScreenshot(page, fs.readFileSync(before.file));
+  const target = dragTarget(point, neighbor, bounds, obstacles, beforePixels);
+  const local = value => ({x: (value.x - bounds.x) * beforePixels.width / bounds.width,
+    y: (value.y - bounds.y) * beforePixels.height / bounds.height});
+  let held, heldPixels;
+  try {
     await page.mouse.move(point.x, point.y);
     await page.mouse.down();
-    await page.mouse.move(point.x + 34, point.y + 22, {steps: 12});
-    await page.mouse.up();
-    await page.waitForTimeout(100);
-    if (await details.isVisible()) {
-      await details.getByLabel('Close', {exact: true}).click();
-      await details.waitFor({state: 'hidden'});
-    }
-  });
+    await page.mouse.move(target.x, target.y, {steps: 16});
+    await page.waitForTimeout(120);
+    held = await screenshot(page, region, path.join(config.outputDir, `${prefix}-node-drag-held.png`));
+    const image = await decodeScreenshot(page, fs.readFileSync(held.file));
+    heldPixels = assertLiveDragPixels(beforePixels, image,
+      {point: local(point), target: local(target), neighbor: local(neighbor)});
+  }
+  finally {await page.mouse.up();}
+  await page.waitForTimeout(100);
+  if (await details.isVisible()) {
+    await details.getByLabel('Close', {exact: true}).click();
+    await details.waitFor({state: 'hidden'});
+  }
+  const drag = {before, held, heldPixels, edgeId: pair.edge.id,
+    after: await changedPixels(page, region, before, path.join(config.outputDir, `${prefix}-node-drag-after.png`))};
   await eventually(page, 'real drag completes without runtime alert', async () => await region.getByRole('alert').count() === 0);
   return {selectedTooltip: point.tooltip, selectedDetails, pinnedAfterRedo: true, drag,
     screenshot: await screenshot(page, region, path.join(config.outputDir, `${prefix}-fixed-history.png`))};
@@ -393,8 +565,10 @@ async function main(configuration = options()) {
     await check('query', async () => {
       const fixture = requireBusiness();
       const {raw, region, evidence} = await executeQuery(page, config, fixture, 'query');
+      evidence.statistics = await graphStatistics(page, region, config, 'query');
+      evidence.doubleClickExpansion = await doubleClickExpansion(page, config, fixture, raw);
       evidence.camera = await exerciseCamera(page, region, config.outputDir, 'query', true);
-      evidence.fixedHistory = await fixedHistory(page, region, config, 'query');
+      evidence.fixedHistory = await fixedHistory(page, region, config, 'query', raw);
       evidence.exports = await exportBusiness(page, region, raw, config.outputDir, 'query');
       const before = await region.locator('canvas').first().elementHandle();
       await executeQuery(page, config, fixture, 'query-rerun', false);
@@ -553,4 +727,4 @@ if (require.main === module) {
       process.exitCode = 1;
     });
 }
-module.exports = {ALL_CHECKS, USAGE, options, main, graphContextMenu, closeUiSession};
+module.exports = {ALL_CHECKS, USAGE, options, main, graphContextMenu, closeUiSession, nodeTooltip, executeQuery, collectGraphOverlayRects, assertPngWithGeometry};

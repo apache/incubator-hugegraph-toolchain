@@ -90,3 +90,429 @@ test('URL validation rejects credential/query/fragment inputs without reflecting
     });
   }
 });
+
+test('single-node queries preserve numeric IDs and safely quote string IDs without Groovy interpolation', () => {
+  const {gremlinIdLiteral, connectedPair, assertExpandedGraph} = require('./graph_acceptance_helpers');
+  assert.equal(gremlinIdLiteral(7), '7');
+  assert.equal(gremlinIdLiteral('7'), "'7'");
+  assert.equal(gremlinIdLiteral("a'\\\n${danger}"), "'a\\'\\\\\\u000a${danger}'");
+  assert.throws(() => connectedPair(raw), NeedsInput);
+  const unambiguous = {vertices: [raw.vertices[0], {...raw.vertices[1], id: '8'}],
+    edges: [{...raw.edges[0], target: '8'}]};
+  const pair = connectedPair(unambiguous);
+  assert.equal(pair.source.id, 7);
+  assert.equal(pair.target.id, '8');
+  const single = {vertices: [raw.vertices[0]], edges: []};
+  assertExportMatches(assertExpandedGraph(single, raw, 7).graph, raw);
+  assert.throws(() => assertExpandedGraph(single, single, 7), /no neighbor/);
+  assert.throws(() => assertExpandedGraph(single, {...raw, edges: []}, 7), /no edge/);
+  assert.throws(() => connectedPair({vertices: [raw.vertices[0]], edges: []}), NeedsInput);
+});
+
+function statsFixture() {
+  return {viewport: {x: 0, y: 0, width: 1000, height: 700}, canvas: {x: 100, y: 300, width: 900, height: 400},
+    minimaps: [{x: 100, y: 600, width: 160, height: 100}],
+    counts: ['Nodes', 'Edges'].map((label, index) => ({label,
+      rect: {x: 800 + index * 60, y: 650, width: 50, height: 40},
+      pane: {x: 100, y: 300, width: 900, height: 400}, clips: []}))};
+}
+test('statistics evidence rejects the real clipping and minimap overlap regressions', () => {
+  const {assertVisibleGraphStats} = require('./graph_acceptance_helpers');
+  assertVisibleGraphStats(statsFixture());
+  for (const change of [
+    value => {value.counts[0].rect.y = 680;},
+    value => {value.counts[0].pane.height = 360;},
+    value => {value.counts[0].clips = [{rect: {x: 100, y: 300, width: 900, height: 370}, x: false, y: true}];},
+    value => {value.minimaps[0].x = 790;},
+    value => {value.minimaps = [];},
+    value => {value.minimaps[0].width = 0;},
+    value => {value.minimaps[0].height = 0;},
+    value => {value.minimaps[0].x = -200;},
+    value => {value.minimaps[0].y = 290;},
+    value => {value.minimaps[0].clips = [{rect: {x: 100, y: 600, width: 100, height: 100}, x: true, y: false}];},
+    value => {value.counts.pop();},
+    value => {value.minimaps[0] = {x: 700, y: 400, width: 100, height: 100};}
+  ]) {
+    const data = statsFixture(); change(data);
+    assert.throws(() => assertVisibleGraphStats(data));
+  }
+});
+function graphPixels({nodeAt = {x: 80, y: 100}, edgeFrom = nodeAt, ghost = false, edge = true} = {}) {
+  const width = 500, height = 350;
+  const data = new Array(width * height * 4).fill(255);
+  const set = (x, y, rgb) => {
+    const offset = (Math.round(y) * width + Math.round(x)) * 4;
+    for (let index = 0; index < 3; index++) data[offset + index] = rgb[index];
+  };
+  const neighbor = {x: 420, y: 100};
+  for (let step = 0; edge && step <= 1000; step++) {
+    const t = step / 1000;
+    set(edgeFrom.x + (neighbor.x - edgeFrom.x) * t, edgeFrom.y + (neighbor.y - edgeFrom.y) * t, [141, 151, 176]);
+  }
+  for (const center of [nodeAt, neighbor]) {
+    for (let y = -14; y <= 14; y++) for (let x = -14; x <= 14; x++) {
+      if (x * x + y * y <= 196) set(center.x + x, center.y + y, [92, 115, 230]);
+    }
+  }
+  if (ghost) for (let y = -16; y <= 16; y++) for (let x = -16; x <= 16; x++) {
+    if (Math.abs(x) === 16 || Math.abs(y) === 16) set(80 + x, 210 + y, [92, 115, 230]);
+  }
+  return {width, height, data};
+}
+test('held-drag evidence requires moved solid nodes and reconnected edge pixels before release', () => {
+  const {assertLiveDragPixels, dragTarget} = require('./graph_acceptance_helpers');
+  const geometry = {point: {x: 80, y: 100}, target: {x: 80, y: 210}, neighbor: {x: 420, y: 100}};
+  const before = graphPixels();
+  const real = graphPixels({nodeAt: geometry.target});
+  const evidence = assertLiveDragPixels(before, real, geometry);
+  assert.equal(evidence.mouseReleased, false);
+  assert.ok(evidence.edgeBands.every(band => band.oldEdgeInkRemoved >= 2 && band.newEdgeInkAdded >= 2));
+  assert.throws(() => assertLiveDragPixels(before, graphPixels({ghost: true}), geometry), /real filled node/);
+  assert.throws(() => assertLiveDragPixels(before,
+    graphPixels({nodeAt: geometry.target, edgeFrom: geometry.point}), geometry), /reconnect/);
+  assert.deepEqual(dragTarget(geometry.point, geometry.neighbor, {x: 0, y: 0, width: 500, height: 350}, [], before), geometry.target);
+  assert.throws(() => dragTarget({x: 1, y: 1}, {x: 2, y: 2}, {x: 0, y: 0, width: 5, height: 5}), NeedsInput);
+});
+
+
+test('expansion rejects disconnected new branches and missing edge endpoints, and reports only added edges', () => {
+  const {assertExpandedGraph} = require('./graph_acceptance_helpers');
+  const before = {vertices: [{id: 'clicked'}, {id: 'known'}],
+    edges: [{id: 'existing', source: 'clicked', target: 'known'}]};
+  const incoming = {vertices: [{id: 'new-a'}, {id: 'new-b'}],
+    edges: [{id: 'disconnected', source: 'new-a', target: 'new-b'}]};
+  assert.throws(() => assertExpandedGraph(before, incoming, 'clicked'), /connecting the clicked/);
+  assert.throws(() => assertExpandedGraph(before,
+    {...incoming, edges: [{id: 'dangling', source: 'clicked', target: 'missing'}]}, 'clicked'), /absent/);
+  const result = assertExpandedGraph(before, {...incoming,
+    edges: [{id: 'existing', source: 'clicked', target: 'known'},
+      {id: 'actual-neighbor', source: 'new-a', target: 'clicked'}]}, 'clicked');
+  assert.deepEqual(result.addedEdgeIds, ['actual-neighbor']);
+  assert.deepEqual(result.neighbors.map(vertex => vertex.id), ['new-a']);
+});
+
+test('drag target rejects actual overlay intersections along the path and tries the other direction', () => {
+  const {dragTarget} = require('./graph_acceptance_helpers');
+  const point = {x: 80, y: 200}, neighbor = {x: 420, y: 200}, bounds = {x: 0, y: 0, width: 500, height: 350};
+  const before = graphPixels({nodeAt: point});
+  const floating = {x: 60, y: 250, width: 40, height: 1};
+  assert.deepEqual(dragTarget(point, neighbor, bounds, [floating], before), {x: 80, y: 90});
+  assert.throws(() => dragTarget(point, neighbor, bounds, [floating,
+    {x: 50, y: 40, width: 80, height: 100}], before), NeedsInput);
+});
+
+test('viewport PNG comparison rejects stale single-node and locally omitted edge images', () => {
+  const {assertPngMatchesCanvas} = require('./graph_acceptance_helpers');
+  const actual = graphPixels();
+  const exported = structuredClone(actual);
+  const evidence = assertPngMatchesCanvas(actual, exported);
+  assert.equal(evidence.screenToExport.ratio, 1);
+  assert.equal(evidence.exportToScreen.ratio, 1);
+  // Transparent export background and opaque Chrome background describe the same graph.
+  for (let offset = 0; offset < exported.data.length; offset += 4) {
+    if (exported.data[offset] === 255 && exported.data[offset + 1] === 255 && exported.data[offset + 2] === 255) {
+      exported.data[offset + 3] = 0;
+    }
+  }
+  assertPngMatchesCanvas(actual, exported);
+  const stale = graphPixels({edge: false});
+  for (let y = 80; y <= 120; y++) for (let x = 400; x <= 440; x++) {
+    const offset = (y * stale.width + x) * 4;
+    stale.data[offset] = stale.data[offset + 1] = stale.data[offset + 2] = 255;
+  }
+  assert.throws(() => assertPngMatchesCanvas(actual, stale), /graph pixel positions/);
+  const missingSegment = structuredClone(actual);
+  for (let x = 220; x <= 235; x++) {
+    const offset = (100 * missingSegment.width + x) * 4;
+    missingSegment.data[offset] = missingSegment.data[offset + 1] = missingSegment.data[offset + 2] = 255;
+  }
+  assert.throws(() => assertPngMatchesCanvas(actual, missingSegment), /localized/);
+  assert.throws(() => assertPngMatchesCanvas(actual, {...actual, width: actual.width + 2}), /dimensions/);
+});
+
+test('PNG matching allows only one-pixel capture rounding and excludes actual overlay rectangles symmetrically', () => {
+  const {assertPngMatchesCanvas} = require('./graph_acceptance_helpers');
+  const actual = graphPixels();
+  const shifted = {width: actual.width, height: actual.height, data: new Array(actual.data.length).fill(255)};
+  for (let y = 0; y < actual.height; y++) for (let x = 0; x < actual.width - 1; x++) {
+    const from = (y * actual.width + x) * 4, to = (y * actual.width + x + 1) * 4;
+    for (let channel = 0; channel < 4; channel++) shifted.data[to + channel] = actual.data[from + channel];
+  }
+  assertPngMatchesCanvas(actual, shifted);
+  const overlay = structuredClone(actual);
+  for (let y = 200; y < 210; y++) for (let x = 250; x < 260; x++) {
+    const offset = (y * overlay.width + x) * 4;
+    overlay.data[offset] = 240; overlay.data[offset + 1] = 120; overlay.data[offset + 2] = 10;
+  }
+  assert.throws(() => assertPngMatchesCanvas(overlay, actual));
+  assertPngMatchesCanvas(overlay, actual, [{x: 250, y: 200, width: 10, height: 10}]);
+  assert.throws(() => assertPngMatchesCanvas(overlay, actual,
+    [{x: 0, y: 0, width: actual.width, height: actual.height}]), /no unoccluded/);
+});
+
+
+test('PNG matching rejects a hue change at unchanged graph positions', () => {
+  const {assertPngMatchesCanvas} = require('./graph_acceptance_helpers');
+  const actual = graphPixels(), hueChanged = structuredClone(actual);
+  for (let offset = 0; offset < hueChanged.data.length; offset += 4) {
+    if (hueChanged.data[offset] === 92 && hueChanged.data[offset + 1] === 115 && hueChanged.data[offset + 2] === 230) {
+      hueChanged.data[offset] = 230; hueChanged.data[offset + 2] = 92;
+    }
+  }
+  assert.throws(() => assertPngMatchesCanvas(actual, hueChanged), /graph pixel positions/);
+});
+
+test('drag target checks actual before pixels to avoid a same-color third node', () => {
+  const {dragTarget} = require('./graph_acceptance_helpers');
+  const point = {x: 80, y: 200}, neighbor = {x: 420, y: 200};
+  const bounds = {x: 0, y: 0, width: 500, height: 350};
+  const before = graphPixels({nodeAt: point});
+  const paintNode = center => {
+    for (let y = -14; y <= 14; y++) for (let x = -14; x <= 14; x++) {
+      if (x * x + y * y > 196) continue;
+      const offset = ((center.y + y) * before.width + center.x + x) * 4;
+      before.data[offset] = 92; before.data[offset + 1] = 115; before.data[offset + 2] = 230;
+    }
+  };
+  paintNode({x: 80, y: 310});
+  assert.deepEqual(dragTarget(point, neighbor, bounds, [], before), {x: 80, y: 90});
+  paintNode({x: 80, y: 90});
+  assert.throws(() => dragTarget(point, neighbor, bounds, [], before), NeedsInput);
+});
+
+
+test('viewport PNG comparison includes neutral gray edges and rejects their omission', () => {
+  const {assertPngMatchesCanvas} = require('./graph_acceptance_helpers');
+  const actual = graphPixels();
+  for (let offset = 0; offset < actual.data.length; offset += 4) {
+    if (actual.data[offset] === 141 && actual.data[offset + 1] === 151 && actual.data[offset + 2] === 176) {
+      actual.data[offset] = actual.data[offset + 1] = actual.data[offset + 2] = 150;
+    }
+  }
+  assertPngMatchesCanvas(actual, structuredClone(actual));
+  const missingEdge = structuredClone(actual);
+  for (let offset = 0; offset < missingEdge.data.length; offset += 4) {
+    if (missingEdge.data[offset] === 150 && missingEdge.data[offset + 1] === 150 && missingEdge.data[offset + 2] === 150) {
+      missingEdge.data[offset] = missingEdge.data[offset + 1] = missingEdge.data[offset + 2] = 255;
+    }
+  }
+  assert.throws(() => assertPngMatchesCanvas(actual, missingEdge), /graph pixel positions/);
+});
+
+test('viewport PNG comparison rejects a black background behind otherwise unchanged graph pixels', () => {
+  const {assertPngMatchesCanvas} = require('./graph_acceptance_helpers');
+  const actual = graphPixels(), darkBackground = structuredClone(actual);
+  for (let offset = 0; offset < darkBackground.data.length; offset += 4) {
+    if (darkBackground.data[offset] === 255 && darkBackground.data[offset + 1] === 255 && darkBackground.data[offset + 2] === 255) {
+      darkBackground.data[offset] = darkBackground.data[offset + 1] = darkBackground.data[offset + 2] = 0;
+    }
+  }
+  assert.throws(() => assertPngMatchesCanvas(actual, darkBackground), /graph pixel positions/);
+});
+
+test('actual pale CSS grid colors remain background rather than graph foreground', () => {
+  const {assertPngMatchesCanvas} = require('./graph_acceptance_helpers');
+  const exported = graphPixels(), withGrid = structuredClone(exported);
+  for (let y = 0; y < withGrid.height; y += 16) for (let x = 0; x < withGrid.width; x += 16) {
+    const offset = (y * withGrid.width + x) * 4;
+    if (withGrid.data[offset] !== 255 || withGrid.data[offset + 1] !== 255 || withGrid.data[offset + 2] !== 255) continue;
+    const color = (x + y) % 32 ? [237, 241, 244] : [238, 242, 244];
+    for (let channel = 0; channel < 3; channel++) withGrid.data[offset + channel] = color[channel];
+  }
+  const evidence = assertPngMatchesCanvas(withGrid, exported);
+  assert.equal(evidence.screenToExport.ratio, 1);
+  assert.equal(evidence.exportToScreen.ratio, 1);
+});
+
+
+test('public fractional screenshot bounds exclude only the enclosing CSS border sample', () => {
+  const {screenshotFringeRects, assertPngMatchesCanvas} = require('./graph_acceptance_helpers');
+  assert.deepEqual(screenshotFringeRects({x: 332.546875, y: 463, width: 1088.453125, height: 433},
+    {width: 1089, height: 433, pixelRatio: 1}), [{x: 0, y: 0, width: 1, height: 433}]);
+  const actual = graphPixels(), exported = structuredClone(actual);
+  for (let y = 0; y < actual.height; y++) {
+    const offset = y * actual.width * 4;
+    actual.data[offset] = actual.data[offset + 1] = actual.data[offset + 2] = 217;
+  }
+  assert.throws(() => assertPngMatchesCanvas(actual, exported));
+  const fringe = screenshotFringeRects({x: 10.5, y: 20, width: 499.5, height: 350},
+    {width: actual.width, height: actual.height, pixelRatio: 1});
+  assertPngMatchesCanvas(actual, exported, fringe);
+});
+
+test('screenshot fringe honors actual DPR and cannot exclude integral sample boundaries', () => {
+  const {screenshotFringeRects} = require('./graph_acceptance_helpers');
+  assert.deepEqual(screenshotFringeRects({x: 10, y: 20, width: 100, height: 50},
+    {width: 200, height: 100, pixelRatio: 2}), []);
+  assert.deepEqual(screenshotFringeRects({x: 10.25, y: 20.75, width: 100.5, height: 50.5},
+    {width: 202, height: 102, pixelRatio: 2}), [
+    {x: 0, y: 0, width: 1, height: 102}, {x: 201, y: 0, width: 1, height: 102},
+    {x: 0, y: 0, width: 202, height: 1}, {x: 0, y: 101, width: 202, height: 1}
+  ]);
+  assert.throws(() => screenshotFringeRects({x: 10, y: 20, width: 100, height: 50},
+    {width: 220, height: 100, pixelRatio: 2}), {name: 'NeedsInput',
+    message: 'PNG size does not match outward rounding of the public region bounds'});
+});
+
+test('fractional screenshot masking still rejects integral border ink, missing interior edges and hue changes', () => {
+  const {screenshotFringeRects, assertPngMatchesCanvas} = require('./graph_acceptance_helpers');
+  const actual = graphPixels();
+  const fringe = screenshotFringeRects({x: 10.5, y: 20, width: 499.5, height: 350},
+    {width: actual.width, height: actual.height, pixelRatio: 1});
+  const changed = structuredClone(actual);
+  for (let x = 220; x <= 235; x++) {
+    const offset = (100 * changed.width + x) * 4;
+    changed.data[offset] = changed.data[offset + 1] = changed.data[offset + 2] = 255;
+  }
+  assert.throws(() => assertPngMatchesCanvas(actual, changed, fringe), /localized/);
+  const hue = structuredClone(actual);
+  for (let offset = 0; offset < hue.data.length; offset += 4) {
+    if (hue.data[offset] === 92 && hue.data[offset + 1] === 115 && hue.data[offset + 2] === 230) {
+      hue.data[offset] = 230; hue.data[offset + 2] = 92;
+    }
+  }
+  assert.throws(() => assertPngMatchesCanvas(actual, hue, fringe), /graph pixel positions/);
+  const integerBorder = structuredClone(actual);
+  for (let y = 0; y < integerBorder.height; y++) {
+    const offset = y * integerBorder.width * 4;
+    integerBorder.data[offset] = integerBorder.data[offset + 1] = integerBorder.data[offset + 2] = 217;
+  }
+  const integral = screenshotFringeRects({x: 10, y: 20, width: 500, height: 350},
+    {width: actual.width, height: actual.height, pixelRatio: 1});
+  assert.deepEqual(integral, []);
+  assert.throws(() => assertPngMatchesCanvas(integerBorder, actual, integral));
+});
+
+test('CSS-first enclosure uses the actual PNG size when device-pixel enclosure differs', () => {
+  const {screenshotFringeRects} = require('./graph_acceptance_helpers');
+  assert.deepEqual(screenshotFringeRects({x: 10.75, y: 20.75, width: 100.5, height: 50.5},
+    {width: 204, height: 104, pixelRatio: 2}), [
+    {x: 0, y: 0, width: 2, height: 104}, {x: 202, y: 0, width: 2, height: 104},
+    {x: 0, y: 0, width: 204, height: 2}, {x: 0, y: 102, width: 204, height: 2}
+  ]);
+});
+
+function antialiasedCircle(phase) {
+  const width = 64, height = 64, data = new Array(width * height * 4).fill(255);
+  // Two subpixel phases of one solid circle, rasterized by ordinary 8x8 area
+  // sampling. This generates input images, not an anti-alias classification rule.
+  for (let y = 16; y < 48; y++) for (let x = 16; x < 48; x++) {
+    let covered = 0;
+    for (let sy = 0; sy < 8; sy++) for (let sx = 0; sx < 8; sx++) {
+      if (Math.hypot(x + (sx + .5) / 8 - 32 - phase, y + (sy + .5) / 8 - 32) < 14) covered++;
+    }
+    const alpha = covered / 64;
+    for (let channel = 0; channel < 3; channel++) {
+      data[(y * width + x) * 4 + channel] = Math.round([92, 115, 230][channel] * alpha + 255 * (1 - alpha));
+    }
+  }
+  return {width, height, data};
+}
+test('standard pixelmatch AA reconciles subpixel circle phases only beside real target foreground', () => {
+  const {assertPngMatchesCanvas} = require('./graph_acceptance_helpers');
+  const evidence = assertPngMatchesCanvas(antialiasedCircle(0), antialiasedCircle(.35));
+  assert.equal(evidence.antiAliasing.library, 'pixelmatch');
+  assert.equal(evidence.antiAliasing.version, '8.0.0');
+  assert.deepEqual(evidence.antiAliasing.options, {threshold: .1, includeAA: false, alpha: 0,
+    aaColor: [0, 255, 0], diffColor: [255, 0, 0], checkerboard: false, diffMask: false});
+  assert.ok(evidence.antiAliasing.aaPixels > 0);
+  for (const direction of [evidence.screenToExport, evidence.exportToScreen]) {
+    assert.ok(direction.rgbUnmatched > 0);
+    assert.ok(direction.aaConsidered > 0);
+    assert.ok(direction.aaAccepted > 0 && direction.aaAccepted <= direction.aaConsidered);
+    assert.ok(direction.ratio >= .98 && direction.worstTile >= .9);
+  }
+  const unpadded = antialiasedCircle(0);
+  const padded = {width: 65, height: 64, data: new Array(65 * 64 * 4).fill(255)};
+  for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) {
+    const from = (y * 64 + x) * 4, to = (y * 65 + x) * 4;
+    for (let channel = 0; channel < 4; channel++) padded.data[to + channel] = unpadded.data[from + channel];
+  }
+  assert.deepEqual(assertPngMatchesCanvas(unpadded, padded).antiAliasing.padded, {width: 65, height: 64});
+  const blank = {width: 64, height: 64, data: new Array(64 * 64 * 4).fill(255)};
+  assert.throws(() => assertPngMatchesCanvas(antialiasedCircle(0), blank), /graph pixel positions/);
+});
+
+test('AA cannot excuse a thin edge hue change or an incorrect solid fill opacity', () => {
+  const {assertPngMatchesCanvas} = require('./graph_acceptance_helpers');
+  const original = graphPixels(), hue = structuredClone(original);
+  for (let offset = 0; offset < original.data.length; offset += 4) {
+    if (original.data[offset] === 141 && original.data[offset + 1] === 151 && original.data[offset + 2] === 176) {
+      original.data[offset] = 0; original.data[offset + 1] = 0; original.data[offset + 2] = 255;
+      hue.data[offset] = 255; hue.data[offset + 1] = 0; hue.data[offset + 2] = 0;
+    }
+  }
+  assert.throws(() => assertPngMatchesCanvas(original, hue), /graph pixel positions/);
+  const translucent = graphPixels(), doubled = structuredClone(translucent);
+  for (let offset = 0; offset < translucent.data.length; offset += 4) {
+    if (translucent.data[offset] === 92 && translucent.data[offset + 1] === 115 && translucent.data[offset + 2] === 230) {
+      translucent.data[offset + 3] = 102; // 0.4 opacity
+      doubled.data[offset + 3] = 163; // Accidental double drawing produces about 0.64 opacity.
+    }
+  }
+  assert.throws(() => assertPngMatchesCanvas(translucent, doubled), /graph pixel positions/);
+});
+
+test('missing installed frontend pixelmatch requests input without installing dependencies', t => {
+  const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
+  const {spawnSync} = require('node:child_process');
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'hubble-pixelmatch-missing-'));
+  t.after(() => fs.rmSync(directory, {recursive: true, force: true}));
+  const helper = path.join(directory, 'graph_acceptance_helpers.js');
+  fs.copyFileSync(path.join(__dirname, 'graph_acceptance_helpers.js'), helper);
+  const result = spawnSync(process.execPath, ['-e', `
+    const assert = require('node:assert/strict');
+    const {assertPngMatchesCanvas} = require(${JSON.stringify(helper)});
+    const image = {width: 64, height: 64, data: new Array(64 * 64 * 4).fill(255)};
+    assert.throws(() => assertPngMatchesCanvas(image, image), {name: 'NeedsInput'});
+  `], {encoding: 'utf8', env: {...process.env, NODE_PATH: '',
+    PLAYWRIGHT_NODE_MODULES: path.join(directory, 'missing-frontend', 'node_modules')}});
+  assert.equal(result.status, 0, result.stderr);
+});
+
+test('actual Legend DOM rectangle projects to screenshot column 12 without a pseudo-DPR ratio', () => {
+  const {screenshotAxes, screenshotOverlayRect} = require('./graph_acceptance_helpers');
+  const axes = screenshotAxes({x: 332.546875, y: 463, width: 1088.453125, height: 433},
+    {width: 1089, height: 433, pixelRatio: 1});
+  assert.equal(axes.horizontal.origin, 332);
+  assert.equal(axes.vertical.origin, 463);
+  assert.deepEqual(screenshotOverlayRect({x: 344.546875, y: 483.25, width: 396.5, height: 20.25}, axes),
+    {x: 12, y: 20, width: 398, height: 21});
+});
+
+test('DOM overlay projection uses the proven DPR2 origin for either screenshot rounding model', () => {
+  const {screenshotAxes, screenshotOverlayRect} = require('./graph_acceptance_helpers');
+  const bounds = {x: 10.75, y: 20.75, width: 100.5, height: 50.5};
+  const overlay = {x: 12.125, y: 24.125, width: 3.5, height: 4.5};
+  const device = screenshotAxes(bounds, {width: 202, height: 102, pixelRatio: 2});
+  assert.equal(device.horizontal.model, 'device-pixel');
+  assert.equal(device.horizontal.origin, 21);
+  assert.equal(device.vertical.origin, 41);
+  assert.deepEqual(screenshotOverlayRect(overlay, device), {x: 3, y: 7, width: 8, height: 10});
+  const css = screenshotAxes(bounds, {width: 204, height: 104, pixelRatio: 2});
+  assert.equal(css.horizontal.model, 'css-first');
+  assert.equal(css.horizontal.origin, 20);
+  assert.equal(css.vertical.origin, 40);
+  assert.deepEqual(screenshotOverlayRect(overlay, css), {x: 4, y: 8, width: 8, height: 10});
+  assert.throws(() => screenshotAxes(bounds, {width: 205, height: 104, pixelRatio: 2}), {name: 'NeedsInput'});
+});
+
+test('outward DOM projection masks the Legend first column but preserves interior graph checks', () => {
+  const {screenshotAxes, screenshotOverlayRect, assertPngMatchesCanvas} = require('./graph_acceptance_helpers');
+  const actual = graphPixels(), exported = structuredClone(actual);
+  const axes = screenshotAxes({x: 332.546875, y: 463, width: 499.453125, height: 350},
+    {width: 500, height: 350, pixelRatio: 1});
+  const mask = screenshotOverlayRect({x: 344.546875, y: 483.25, width: 396.5, height: 20.25}, axes);
+  for (let y = 20; y < 41; y++) for (let x = 12; x < 410; x++) {
+    const offset = (y * actual.width + x) * 4;
+    actual.data[offset] = actual.data[offset + 1] = actual.data[offset + 2] = 217;
+  }
+  assert.throws(() => assertPngMatchesCanvas(actual, exported));
+  assertPngMatchesCanvas(actual, exported, [mask]);
+  const missingEdge = structuredClone(exported);
+  for (let x = 220; x <= 235; x++) {
+    const offset = (100 * missingEdge.width + x) * 4;
+    missingEdge.data[offset] = missingEdge.data[offset + 1] = missingEdge.data[offset + 2] = 255;
+  }
+  assert.throws(() => assertPngMatchesCanvas(actual, missingEdge, [mask]), /localized/);
+});
