@@ -213,6 +213,10 @@ async function canvasReady(page, region, screenshotFile) {
   throw new Error('Canvas screenshot contains no graph-colored pixels after bounded readiness wait');
 }
 async function findNode(page, region, matches, screenshotFile) {
+  // A tooltip over another node would mask that node out of the screenshot candidates.
+  await page.mouse.move(-1, -1);
+  await region.getByRole('tooltip').waitFor({state: 'hidden'});
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   const image = await screenshot(page, region, screenshotFile);
   const bounds = await region.boundingBox();
   for (const point of image.candidates) {

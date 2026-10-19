@@ -81,6 +81,7 @@ HUBBLE_URL="${hubble_url}" HUBBLE_SMOKE_SERVER_URL="${server_url}" \
     --leave-running \
     --json-output "${evidence_dir}/live-hubble-smoke.json"
 
+rm -f "${evidence_dir}/ui-full-acceptance.json"
 ui_exit=0
 if HUBBLE_USERNAME="${username}" HUBBLE_PASSWORD="${password}" \
 HUBBLE_URL="${hubble_url}" \
@@ -95,19 +96,27 @@ else
     ui_exit=$?
 fi
 
-"${node_bin}" - "${evidence_dir}" <<'JS'
+"${node_bin}" - "${evidence_dir}" "${ui_exit}" <<'JS'
 const fs = require('node:fs');
 const path = require('node:path');
 const directory = process.argv[2];
 const runtime = JSON.parse(fs.readFileSync(path.join(directory, 'live-hubble-smoke.json'), 'utf8'));
-const ui = JSON.parse(fs.readFileSync(path.join(directory, 'ui-full-acceptance.json'), 'utf8'));
+const uiExit = Number(process.argv[3]);
+let ui;
+try { ui = JSON.parse(fs.readFileSync(path.join(directory, 'ui-full-acceptance.json'), 'utf8')); }
+catch { ui = {status: 'failed', error: 'UI acceptance did not write a valid current report'}; }
+if (!ui || typeof ui !== 'object' || Array.isArray(ui)) ui = {status: 'failed'};
+const status = runtime.status !== 'passed' || !['passed', 'failed', 'needs input'].includes(ui.status)
+  || (uiExit !== 0 && ui.status === 'passed') ? 'failed' : ui.status;
 fs.writeFileSync(path.join(directory, 'manifest.json'), JSON.stringify({
-  status: runtime.status !== 'passed' ? 'failed' : ui.status,
+  status,
   hubbleUrl: runtime.hubble_url, serverUrl: runtime.server_url,
   graphspace: runtime.graphspace, graph: runtime.graph,
-  graphRequestedChecks: ui.graphRequestedChecks, fullRequestedMatrix: ui.fullRequestedMatrix,
+  graphRequestedChecks: Array.isArray(ui.graphRequestedChecks) ? ui.graphRequestedChecks : [],
+  fullRequestedMatrix: status === 'passed' && ui.fullRequestedMatrix === true,
   runtime: path.join(directory, 'live-hubble-smoke.json'), ui: path.join(directory, 'ui-full-acceptance.json')
 }, null, 2) + '\n');
+if (uiExit === 0 && status !== 'passed') process.exitCode = 1;
 JS
 
 if [[ "${ui_exit}" -ne 0 ]]; then

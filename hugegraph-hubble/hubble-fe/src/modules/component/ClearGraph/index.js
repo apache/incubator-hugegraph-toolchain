@@ -28,7 +28,7 @@ import {GraphContext} from '../Context';
 
 const ClearGraph = ({enable, onChange}) => {
     const {t} = useTranslation();
-    const {controller, snapshot, run} = useContext(GraphContext);
+    const {controller, snapshot, run, clearGraph} = useContext(GraphContext);
     const [clearModalVisible, setClearModalVisible] = useState(false);
     const activeController = useRef(null);
     useEffect(() => {
@@ -39,7 +39,8 @@ const ClearGraph = ({enable, onChange}) => {
     const ready = Boolean(controller && snapshot?.status === 'ready');
     const handleClear = async () => {
         if (!ready) return;
-        const result = await run(() => controller.replaceData({nodes: [], edges: []}, {newDataset: true}));
+        const result = clearGraph ? await clearGraph()
+            : await run(() => controller.replaceData({nodes: [], edges: []}, {newDataset: true}));
         if (activeController.current !== controller || result?.status !== 'applied') return;
         setClearModalVisible(false);
         await run(() => onChange?.());

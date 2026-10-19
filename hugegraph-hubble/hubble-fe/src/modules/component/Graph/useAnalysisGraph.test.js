@@ -17,6 +17,9 @@
 
 import {act, renderHook} from '@testing-library/react';
 import {message} from 'antd';
+import JSONbig from 'json-bigint';
+import {mergeGraphData} from '../../../visualization/model/data';
+import {projectHubbleGraph} from '../../../visualization/hubble/adapter';
 import {useAnalysisGraph} from './useAnalysisGraph';
 import {adaptAnalysisGraph} from '../../../utils/analysisGraphData';
 import * as api from '../../../api';
@@ -43,6 +46,7 @@ const createController = () => {
         updateElements: jest.fn(async () => ({status: 'applied'})),
         applyStyle: jest.fn(async () => ({status: 'applied'})),
         hide: jest.fn(async () => ({status: 'applied'})),
+        setHiddenIds: jest.fn(async () => ({status: 'applied'})),
     };
 };
 
@@ -173,7 +177,7 @@ test('expansion accepts an edge-only response and sends the raw business query u
     expect(api.analysis.putExecutionQuery).toHaveBeenCalledWith('DEFAULT', 'one', params);
     expect(owner.mergeData).toHaveBeenCalledWith(expect.objectContaining({nodes: [], edges: [
         expect.objectContaining({source: 'node:number:0', target: 'node:string:0'}),
-    ]}));
+    ]}), {preserveAppearance: true});
     expect(message.warning).not.toHaveBeenCalled();
 });
 
@@ -286,4 +290,280 @@ test('releasing the previous graph cannot restore its snapshot after a context s
     act(() => view.result.current.onReady(null));
     expect(view.result.current.initialData).toEqual({nodes: [], edges: []});
     expect(view.result.current.controller).toBeNull();
+});
+
+
+const observableController = input => {
+    let data = adaptAnalysisGraph(projectHubbleGraph(input).graph);
+    const listeners = new Set();
+    let selectedIds = [];
+    const publish = next => { data = next; listeners.forEach(listener => listener()); };
+    return {
+        ...createController(),
+        getSnapshot: () => ({status: 'ready', data, selectedIds}),
+        select: ids => { selectedIds = ids; listeners.forEach(listener => listener()); },
+        subscribe: listener => { listeners.add(listener); return () => listeners.delete(listener); },
+        publish,
+        mergeData: jest.fn(async next => {
+            const merged = mergeGraphData(data, next);
+            publish(merged.data);
+            return {status: 'applied', value: merged.changed};
+        }),
+        replaceData: jest.fn(async next => { publish(next); return {status: 'applied'}; }),
+    };
+};
+const partial = {vertices: [{id: 1, label: 'person'}], edges: [
+    {id: 'waiting', source: 1, target: 'later', label: 'knows', properties: {kept: true}},
+]};
+
+test('renders the valid partial graph while preserving detached dangling raw edges in JSON exports', () => {
+    const input = JSONbig.parse('{"vertices":[{"id":1},{"id":"1"},{"id":900719925474099312345}],'
+        + '"edges":[{"id":1,"source":1,"target":"1"},{"id":"1","source":1,"target":"later"},'
+        + '{"id":900719925474099312345,"source":900719925474099312345,"target":2}]}');
+    const view = renderHook(props => useAnalysisGraph(props), {initialProps: {...initial, data: input}});
+    expect(view.result.current.graphData.nodes).toHaveLength(3);
+    expect(view.result.current.graphData.edges).toHaveLength(1);
+    expect(view.result.current.currentRawData()).toEqual(input);
+    input.edges[1].target = 'mutated';
+    expect(view.result.current.currentRawData().edges[1].target).toBe('later');
+    expect(view.result.current.currentRawData().edges[2].id.toFixed()).toBe('900719925474099312345');
+    // Metadata updates also traverse projection rather than throwing on missing endpoints.
+    view.rerender({...initial, data: input, metaData: {vertexMeta: []}});
+    expect(view.result.current.graphData.edges).toHaveLength(1);
+    expect(view.result.current.currentRawData().edges[1].target).toBe('later');
+});
+
+test('retains missing edges through an incomplete expansion and promotes them only when the endpoint arrives', async () => {
+    const owner = observableController(partial);
+    const view = renderHook(() => useAnalysisGraph({...initial, data: partial}));
+    act(() => view.result.current.onReady(owner));
+    api.analysis.putExecutionQuery.mockResolvedValueOnce({status: 200, data: {graph_view: {
+        vertices: [], edges: [{id: 'another', source: 1, target: 'future'}],
+    }}});
+    await act(async () => { await view.result.current.expand({vertex_id: 1}); });
+    expect(owner.getSnapshot().data.edges).toHaveLength(0);
+    expect(view.result.current.currentRawData().edges.map(edge => edge.id)).toEqual(['waiting', 'another']);
+    api.analysis.putExecutionQuery.mockResolvedValueOnce({status: 200, data: {graph_view: {
+        vertices: [{id: 'later', label: 'person'}], edges: [],
+    }}});
+    await act(async () => { await view.result.current.expand({vertex_id: 1}); });
+    expect(owner.getSnapshot().data.edges.map(edge => edge.data.raw.id)).toEqual(['waiting']);
+    expect(view.result.current.currentRawData().edges.map(edge => edge.id)).toEqual(['waiting', 'another']);
+    expect(owner.mergeData).toHaveBeenLastCalledWith(expect.objectContaining({edges: [
+        expect.objectContaining({id: 'edge:string:waiting'}),
+    ]}), {preserveAppearance: true});
+});
+
+test('does not resurrect a pending edge after its known endpoint was deleted and then supplied again', async () => {
+    const owner = observableController(partial);
+    const view = renderHook(() => useAnalysisGraph({...initial, data: partial}));
+    act(() => view.result.current.onReady(owner));
+    // Both publications can occur before React paints: the subscription still observes the deletion.
+    act(() => { owner.publish({nodes: [], edges: []}); owner.publish(adaptAnalysisGraph({vertices: [{id: 1}, {id: 'later'}], edges: []})); });
+    api.analysis.putExecutionQuery.mockResolvedValueOnce({status: 200, data: {graph_view: {vertices: [], edges: []}}});
+    await act(async () => { await view.result.current.expand({vertex_id: 1}); });
+    expect(view.result.current.currentRawData().edges).toEqual([]);
+    expect(owner.getSnapshot().data.edges).toEqual([]);
+});
+
+test('explicitly clears a pending-only result and invalidates its in-flight expansion', async () => {
+    const input = {vertices: [], edges: [{id: 'only', source: 1, target: 2}]};
+    const owner = observableController(input);
+    const view = renderHook(() => useAnalysisGraph({...initial, data: input}));
+    act(() => view.result.current.onReady(owner));
+    expect(view.result.current.currentRawData().edges).toEqual(input.edges);
+    const pending = deferred();
+    api.analysis.putExecutionQuery.mockReturnValueOnce(pending.promise);
+    let request;
+    act(() => { request = view.result.current.expand({vertex_id: 1}); });
+    await act(async () => { await view.result.current.clearGraph(); });
+    expect(view.result.current.currentRawData()).toEqual({vertices: [], edges: []});
+    await act(async () => {
+        pending.resolve({status: 200, data: {graph_view: {vertices: [{id: 1}, {id: 2}], edges: input.edges}}});
+        await request;
+    });
+    expect(owner.mergeData).not.toHaveBeenCalled();
+    expect(owner.replaceData).toHaveBeenCalledWith({nodes: [], edges: []}, {newDataset: true});
+    expect(view.result.current.currentRawData()).toEqual({vertices: [], edges: []});
+});
+
+test('pending exports do not survive a new result or scope A-B-A and stale callbacks remain empty', () => {
+    const view = renderHook(props => useAnalysisGraph(props), {initialProps: {...initial, data: partial}});
+    const oldExport = view.result.current.currentRawData;
+    view.rerender({...initial, graphSpaceInfo: {graphSpace: 'OTHER', graph: 'two'}, data: partial});
+    expect(view.result.current.currentRawData()).toEqual({vertices: [], edges: []});
+    expect(oldExport()).toEqual({vertices: [], edges: []});
+    view.rerender({...initial, data: raw});
+    expect(view.result.current.currentRawData()).toEqual(raw);
+    expect(oldExport()).toEqual({vertices: [], edges: []});
+    view.rerender({...initial, data: partial});
+    expect(view.result.current.currentRawData().edges).toEqual(partial.edges);
+    view.rerender({...initial, data: {vertices: [], edges: []}});
+    expect(view.result.current.currentRawData()).toEqual({vertices: [], edges: []});
+});
+
+test('replaces the complete filter-owned hidden set on repeat and clears only that cause', async () => {
+    const owner = createController();
+    const view = renderHook(() => useAnalysisGraph(initial));
+    act(() => view.result.current.onReady(owner));
+    await act(async () => { await view.result.current.filter({filter: {rules: {vertex: [
+        {op_type: 'id', value: 0, rule: 'eq', data_type: 'TEXT'},
+    ], edge: []}, logic: 'and'}}); await view.result.current.filter({filter: {rules: {vertex: [
+        {op_type: 'id', value: 0, rule: 'eq', data_type: 'TEXT'},
+    ], edge: []}, logic: 'and'}}); await view.result.current.filter(); });
+    expect(owner.setHiddenIds.mock.calls).toEqual([['filter', ['node:string:0']],
+        ['filter', ['node:string:0']], ['filter', []]]);
+    expect(owner.hide).not.toHaveBeenCalled();
+});
+
+
+test('a new pending-only result is not pruned against the preceding nonempty ready snapshot', () => {
+    const owner = observableController(raw);
+    const view = renderHook(props => useAnalysisGraph(props), {initialProps: initial});
+    act(() => view.result.current.onReady(owner));
+    const next = {vertices: [], edges: [{id: 'next', source: 0, target: 'missing'}]};
+    view.rerender({...initial, data: next});
+    // GraphCanvas has not yet committed its queued replace.
+    expect(view.result.current.currentRawData()).toEqual(next);
+    act(() => owner.publish({nodes: [], edges: []}));
+    expect(view.result.current.currentRawData()).toEqual(next);
+});
+
+
+test('exports complete input while a newly mounted controller is idle', () => {
+    const input = {...partial, edges: [...partial.edges, {id: 'loop', source: 1, target: 1}]};
+    const owner = {...createController(), getSnapshot: () => mockEmptySnapshot};
+    const view = renderHook(() => useAnalysisGraph({...initial, data: input}));
+    act(() => view.result.current.onReady(owner));
+    expect(view.result.current.currentData()).toBe(view.result.current.initialData);
+    expect(view.result.current.currentRawData()).toEqual({...input, edges: [input.edges[1], input.edges[0]]});
+});
+
+
+test('a failed clear retains pending raw records without allowing its earlier expansion to revive', async () => {
+    const owner = observableController(partial);
+    owner.replaceData.mockRejectedValueOnce(new Error('clear failed'));
+    const view = renderHook(() => useAnalysisGraph({...initial, data: partial}));
+    act(() => view.result.current.onReady(owner));
+    const pending = deferred();
+    api.analysis.putExecutionQuery.mockReturnValueOnce(pending.promise);
+    let request;
+    act(() => { request = view.result.current.expand({vertex_id: 1}); });
+    await act(async () => { await view.result.current.clearGraph(); });
+    expect(view.result.current.currentRawData()).toEqual(partial);
+    expect(message.error).toHaveBeenCalledWith('clear failed');
+    await act(async () => {
+        pending.resolve({status: 200, data: {graph_view: {vertices: [{id: 'later'}], edges: []}}});
+        await request;
+    });
+    expect(owner.mergeData).not.toHaveBeenCalled();
+    expect(view.result.current.currentRawData()).toEqual(partial);
+});
+
+
+test('an old renderer publication cannot prune the replacement renderer pending projection', () => {
+    const first = observableController(partial);
+    const next = observableController(partial);
+    const view = renderHook(() => useAnalysisGraph({...initial, data: partial}));
+    act(() => view.result.current.onReady(first));
+    act(() => view.result.current.onReady(null));
+    act(() => view.result.current.onReady(next));
+    act(() => first.publish({nodes: [], edges: []}));
+    expect(view.result.current.currentRawData()).toEqual(partial);
+});
+
+
+test('a metadata refresh preserves current edits and deletions rather than replaying original query records', async () => {
+    const input = {vertices: [{id: 1}, {id: 'kept'}], edges: [
+        {id: 'waiting', source: 1, target: 'later'},
+    ]};
+    const owner = observableController(input);
+    const view = renderHook(props => useAnalysisGraph(props), {initialProps: {...initial, data: input}});
+    act(() => view.result.current.onReady(owner));
+    act(() => owner.publish(adaptAnalysisGraph({vertices: [{id: 'kept', properties: {edited: true}}], edges: []})));
+    view.rerender({...initial, data: input, metaData: {vertexMeta: [{name: 'person', style: {color: '#f00'}}]}});
+    expect(view.result.current.initialData.nodes.map(node => node.data.raw))
+        .toEqual([{id: 'kept', properties: {edited: true}}]);
+    expect(view.result.current.currentRawData().edges).toEqual([]);
+    api.analysis.putExecutionQuery.mockResolvedValueOnce({status: 200, data: {graph_view: {
+        vertices: [{id: 1}, {id: 'later'}], edges: [],
+    }}});
+    await act(async () => { await view.result.current.expand({vertex_id: 'kept'}); });
+    expect(owner.getSnapshot().data.edges).toEqual([]);
+});
+
+
+test('does not silently discard repeated edge records within a neighbor response', async () => {
+    const owner = observableController(partial);
+    const view = renderHook(() => useAnalysisGraph({...initial, data: partial}));
+    act(() => view.result.current.onReady(owner));
+    api.analysis.putExecutionQuery.mockResolvedValueOnce({status: 200, data: {graph_view: {
+        vertices: [], edges: [{id: 'duplicate', source: 1, target: 'a'}, {id: 'duplicate', source: 1, target: 'b'}],
+    }}});
+    await act(async () => { await view.result.current.expand({vertex_id: 1}); });
+    expect(owner.mergeData).not.toHaveBeenCalled();
+    expect(message.error).toHaveBeenCalledWith('Duplicate edge ID edge:string:duplicate');
+    expect(view.result.current.currentRawData()).toEqual(partial);
+});
+
+
+test('exports only the new owned typed result while its canvas replacement is queued', () => {
+    const old = {vertices: [{id: 0}, {id: '0'}], edges: [{id: 'old', source: 0, target: '0'}]};
+    const owner = observableController(old);
+    const view = renderHook(props => useAnalysisGraph(props), {initialProps: {...initial, data: old}});
+    act(() => view.result.current.onReady(owner));
+    const next = JSONbig.parse('{"vertices":[{"id":1,"properties":{"name":"new numeric"}},'
+        + '{"id":"1","properties":{"name":"new string"}},{"id":900719925474099312345}],'
+        + '"edges":[{"id":1,"source":1,"target":"1","properties":{"new":true}},'
+        + '{"id":"1","source":900719925474099312345,"target":"missing","extra":"pending"}]}');
+    view.rerender({...initial, data: next});
+    // The live controller still holds the old graph until its queued replacement commits.
+    expect(owner.getSnapshot().data.edges[0].data.raw.id).toBe('old');
+    const queuedExport = view.result.current.currentRawData();
+    expect(queuedExport).toEqual(next);
+    expect(queuedExport.vertices.map(vertex => typeof vertex.id)).toEqual(['number', 'string', 'object']);
+    expect(queuedExport.vertices[2].id.toFixed()).toBe('900719925474099312345');
+    expect(queuedExport.edges[1].source.toFixed()).toBe('900719925474099312345');
+    act(() => owner.publish(adaptAnalysisGraph(projectHubbleGraph(next).graph)));
+    expect(view.result.current.currentRawData()).toEqual(next);
+});
+
+
+test.each([true, false])('same node IDs do not activate an old business result (pending edges: %s)', pendingEdge => {
+    const old = JSONbig.parse('{"vertices":[{"id":1,"properties":{"name":"old numeric"}},'
+        + '{"id":"1","properties":{"name":"old string"}},{"id":900719925474099312345,"version":"old"}],'
+        + '"edges":[{"id":"old-edge","source":1,"target":"1","properties":{"version":"old"}}]}');
+    const next = JSONbig.parse('{"vertices":[{"id":1,"properties":{"name":"new numeric"}},'
+        + '{"id":"1","properties":{"name":"new string"}},{"id":900719925474099312345,"version":"new"}],'
+        + '"edges":[{"id":1,"source":"1","target":900719925474099312345,"properties":{"version":"new"}},'
+        + '{"id":"1","source":1,"target":1,"properties":{"version":"new loop"}}]}');
+    if (pendingEdge) next.edges.push({id: 'pending', source: next.vertices[2].id, target: 'missing', extra: 'new pending'});
+    const owner = observableController(old);
+    const view = renderHook(props => useAnalysisGraph(props), {initialProps: {...initial, data: old}});
+    act(() => view.result.current.onReady(owner));
+    view.rerender({...initial, data: next});
+    // Neither a selection-only publication nor a layout/style publication commits the new query data.
+    act(() => {
+        owner.select(['node:number:1']);
+        const previous = owner.getSnapshot().data;
+        owner.publish({...previous, nodes: previous.nodes.map(node => ({...node, style: {x: 99, fill: '#f00'}}))});
+    });
+    const queued = view.result.current.currentRawData();
+    expect(queued).toEqual(next);
+    expect(queued.vertices[2].id.toFixed()).toBe('900719925474099312345');
+    expect(queued.edges[0].id).toBe(1);
+    expect(queued.edges[1].id).toBe('1');
+    // Engine order, positions, selection and display style are independent of business projection identity.
+    const projection = adaptAnalysisGraph(projectHubbleGraph(next).graph);
+    const committed = {nodes: [...projection.nodes].reverse().map(node => ({...node,
+        data: {...node.data, fixed: true}, style: {x: 23, y: 57, fill: '#0f0'}})),
+    edges: [...projection.edges].reverse().map(edge => ({...edge, style: {stroke: '#00f'}}))};
+    act(() => owner.publish(committed));
+    expect(view.result.current.currentRawData()).toEqual({vertices: [...next.vertices].reverse(),
+        edges: [...next.edges.slice(0, 2)].reverse().concat(pendingEdge ? [next.edges[2]] : [])});
+    // Once committed, exports follow the current snapshot rather than remaining stuck on query input.
+    const edited = {...committed, nodes: committed.nodes.map((node, index) => index ? node
+        : {...node, data: {...node.data, raw: {...node.data.raw, updated: true}}})};
+    act(() => owner.publish(edited));
+    expect(view.result.current.currentRawData().vertices[0]).toEqual({...next.vertices[2], updated: true});
 });

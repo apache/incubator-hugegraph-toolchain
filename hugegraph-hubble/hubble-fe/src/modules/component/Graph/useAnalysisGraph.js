@@ -17,13 +17,15 @@
 
 import {useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {message} from 'antd';
+import {isEqual} from 'lodash';
 import {useTranslation} from 'react-i18next';
 import {useGraphSnapshot} from '../../../visualization/react';
 import {adaptAnalysisGraph} from '../../../utils/analysisGraphData';
 import {analysisLayout, normalizeLayoutSettings, getAnalysisStyles, applyAnalysisStyles}
     from '../../../utils/analysisGraphPresentation';
-import {exportHubbleGraph, hubbleRenderId} from '../../../visualization/hubble/adapter';
+import {exportHubbleGraph, hubbleRenderId, projectHubbleGraph} from '../../../visualization/hubble/adapter';
 import {mutableCopy} from '../../../visualization/model/ownership';
+import {GraphDataError} from '../../../visualization/model/data';
 import {filterData} from '../../../utils/filter';
 import {Algorithm_Layout, GRAPH_STATUS} from '../../../utils/constants';
 import * as api from '../../../api';
@@ -33,6 +35,17 @@ const EMPTY_META = {};
 const EMPTY_OPTIONS = {};
 const EMPTY_GRAPH = {nodes: [], edges: []};
 const rawGraph = value => ({vertices: value?.vertices ?? [], edges: value?.edges ?? []});
+const sameBusinessProjection = (expected, actual) => {
+    if (expected.nodes.length !== actual.nodes.length || expected.edges.length !== actual.edges.length) return false;
+    const nodes = new Map(actual.nodes.map(node => [node.id, node.data.raw]));
+    const edges = new Map(actual.edges.map(edge => [edge.id, edge]));
+    return expected.nodes.every(node => nodes.has(node.id) && isEqual(node.data.raw, nodes.get(node.id)))
+        && expected.edges.every(edge => {
+            const other = edges.get(edge.id);
+            return other && edge.source === other.source && edge.target === other.target
+                && isEqual(edge.data.raw, other.data.raw);
+        });
+};
 
 /** Shared query/algorithm business boundary. A mounted controller is the only graph truth. */
 export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, options = EMPTY_OPTIONS,
@@ -45,7 +58,7 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
     const staleInput = useRef(null);
     const generation = useRef(0);
     const alive = useRef(true);
-    const filteredIds = useRef(new Set());
+    const pendingRaw = useRef(null);
     const scope = JSON.stringify([graphSpaceInfo.graphSpace, graphSpaceInfo.graph]);
     const liveScope = useRef({key: scope});
     if (liveScope.current.key !== scope) liveScope.current = {key: scope};
@@ -56,7 +69,20 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
     const convert = useCallback((raw, normalizeOptions = {}, styles = stylesRef.current) =>
         adaptAnalysisGraph(rawGraph(raw), metaData ?? EMPTY_META, styles, options, algorithmName, normalizeOptions),
     [algorithmName, metaData, options]);
-    const [dataset, setDataset] = useState(() => ({data: convert(data), key: 0, owner: scopeOwner}));
+    const project = useCallback((raw, normalizeOptions = {}, styles = stylesRef.current) => {
+        const projection = projectHubbleGraph(rawGraph(raw), normalizeOptions.existingNodeIds);
+        return {data: convert(projection.graph, normalizeOptions, styles), pendingEdges: projection.pendingEdges};
+    }, [convert]);
+    const rememberPending = (projection, owner) => {
+        pendingRaw.current = {owner, edges: projection.pendingEdges,
+            nodeIds: new Set(projection.data.nodes.map(node => node.id)),
+            awaitingCommit: true};
+    };
+    const [dataset, setDataset] = useState(() => {
+        const projection = project(data);
+        rememberPending(projection, scopeOwner);
+        return {data: projection.data, key: 0, owner: scopeOwner};
+    });
     const datasetRef = useRef(dataset);
     datasetRef.current = dataset;
     const [layoutSettings, setLayoutSettings] = useState(() => analysisLayout({
@@ -70,7 +96,10 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
         ? snapshot.data : initialData;
     const currentData = useCallback(() => {
         if (liveScope.current !== scopeOwner) return EMPTY_GRAPH;
-        if (ownerScope.current === scopeOwner && controllerRef.current) return controllerRef.current.getSnapshot().data;
+        if (ownerScope.current === scopeOwner && controllerRef.current) {
+            const state = controllerRef.current.getSnapshot();
+            if (state.status !== 'idle' && state.status !== 'disposed') return state.data;
+        }
         return datasetRef.current.owner === scopeOwner ? datasetRef.current.data : EMPTY_GRAPH;
     }, [scopeOwner]);
     const current = useCallback((token, owner) => alive.current && token === generation.current
@@ -87,9 +116,11 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
             const fresh = previousData.current !== data;
             staleInput.current = fresh ? null : {data};
             stylesRef.current = {};
-            filteredIds.current.clear();
             // A result arriving with the new scope is valid; an unchanged old input is not.
-            const next = fresh && queryStatus !== GRAPH_STATUS.LOADING ? convert(data) : EMPTY_GRAPH;
+            const projection = fresh && queryStatus !== GRAPH_STATUS.LOADING ? project(data)
+                : {data: EMPTY_GRAPH, pendingEdges: []};
+            rememberPending(projection, scopeOwner);
+            const next = projection.data;
             previousData.current = data;
             setDataset(previous => ({data: next, key: previous.key + 1, owner: scopeOwner}));
             if (ownerScope.current !== scopeOwner) {
@@ -103,11 +134,22 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
         if (staleInput.current?.data === data) return;
         staleInput.current = null;
         const fresh = previousData.current !== data;
-        if (fresh) { stylesRef.current = {}; filteredIds.current.clear(); }
-        const next = convert(data);
+        if (fresh) stylesRef.current = {};
+        let next;
+        if (fresh) {
+            const projection = project(data);
+            rememberPending(projection, scopeOwner);
+            next = projection.data;
+        }
+        else {
+            // Metadata/settings refresh the current result, never replay the original query after local
+            // expansion, edit or deletion. Before canvas replacement commits, use its pending input.
+            const retained = pendingRaw.current?.awaitingCommit ? datasetRef.current.data : currentData();
+            next = convert(exportHubbleGraph(retained));
+        }
         setDataset(previous => ({data: next, key: previous.key + (fresh ? 1 : 0), owner: scopeOwner}));
         previousData.current = data;
-    }, [convert, data, queryStatus, scopeOwner]);
+    }, [convert, currentData, data, project, queryStatus, scopeOwner]);
     useEffect(() => {
         setLayoutSettings(analysisLayout({layout: Algorithm_Layout[algorithmName] ?? 'force', startId: options?.startId}));
     }, [algorithmName, options?.startId]);
@@ -142,6 +184,62 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
             return undefined;
         }
     }, [current]);
+    // A server deletion removes pending business edges incident to its formerly present node.
+    // Observe every controller publication, so deleting then re-adding before React paints cannot revive them.
+    const prunePending = useCallback(owner => {
+        const pending = pendingRaw.current;
+        if (pending?.owner !== scopeOwner || liveScope.current !== scopeOwner
+            || ownerScope.current !== scopeOwner || controllerRef.current !== owner) return;
+        if (!pending.awaitingCommit && !pending.edges.length) return;
+        const state = owner.getSnapshot();
+        if (state.status !== 'ready' || pending.snapshotData === state.data) return;
+        pending.snapshotData = state.data;
+        const nodeIds = new Set(state.data.nodes.map(node => node.id));
+        // Dataset props reach this hook before the canvas commits replacement. Do not interpret the
+        // previous ready snapshot as a deletion in the new result (including an empty edge-only view).
+        if (pending.awaitingCommit) {
+            if (datasetRef.current.owner !== scopeOwner
+                || !sameBusinessProjection(datasetRef.current.data, state.data)) return;
+            pending.awaitingCommit = false;
+            pending.nodeIds = nodeIds;
+            return;
+        }
+        const removed = new Set([...pending.nodeIds].filter(id => !nodeIds.has(id)));
+        if (removed.size) pending.edges = pending.edges.filter(edge =>
+            !removed.has(hubbleRenderId('node', edge.source)) && !removed.has(hubbleRenderId('node', edge.target)));
+        pending.nodeIds = nodeIds;
+    }, [scopeOwner]);
+    useEffect(() => {
+        if (!activeController) return undefined;
+        prunePending(activeController);
+        return activeController.subscribe?.(() => prunePending(activeController));
+    }, [activeController, prunePending]);
+    const currentRawData = useCallback(() => {
+        if (!alive.current || liveScope.current !== scopeOwner) return {vertices: [], edges: []};
+        const owner = ownerScope.current === scopeOwner ? controllerRef.current : null;
+        if (owner) prunePending(owner);
+        const pending = pendingRaw.current?.owner === scopeOwner ? pendingRaw.current : null;
+        // A fresh result owns its projection before the queued canvas replacement commits.
+        // Combining its pending edges with the preceding ready snapshot would mix query results.
+        const source = pending?.awaitingCommit && datasetRef.current.owner === scopeOwner
+            ? datasetRef.current.data : currentData();
+        return exportHubbleGraph(source, pending?.edges ?? []);
+    }, [currentData, prunePending, scopeOwner]);
+    const clearGraph = useCallback(async () => {
+        if (!alive.current || liveScope.current !== scopeOwner
+            || ownerScope.current !== scopeOwner || !controllerRef.current) return undefined;
+        // Invalidate an expansion before waiting for the controller queue, including a pending-only empty view.
+        const token = ++generation.current;
+        const owner = controllerRef.current;
+        const previous = pendingRaw.current;
+        const cleared = {owner: scopeOwner, edges: [], nodeIds: new Set()};
+        pendingRaw.current = cleared;
+        const result = await run(() => owner.replaceData(EMPTY_GRAPH, {newDataset: true}));
+        if (current(token, owner) && result?.status !== 'applied' && pendingRaw.current === cleared) {
+            pendingRaw.current = previous;
+        }
+        return result;
+    }, [current, run, scopeOwner]);
     const expand = useCallback(params => run(async () => {
         const owner = controllerRef.current;
         if (!owner) return;
@@ -152,13 +250,27 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
             if (!response.message) message.error(t('analysis.query_result.expand_failed'));
             return;
         }
-        const next = convert(response.data?.graph_view, {existingNodeIds: new Set(owner.getSnapshot().data.nodes.map(node => node.id))});
-        const result = await owner.mergeData(next);
-        if (current(token, owner) && result.status === 'applied' && !result.value) {
-            message.warning(t('analysis.query_result.no_more_neighbors'));
+        prunePending(owner);
+        const pending = pendingRaw.current?.owner === scopeOwner ? pendingRaw.current.edges : [];
+        const responseGraph = rawGraph(response.data?.graph_view);
+        const edges = new Map(pending.map(edge => [hubbleRenderId('edge', edge.id), edge]));
+        const responseIds = new Set();
+        responseGraph.edges.forEach(edge => {
+            const id = hubbleRenderId('edge', edge.id);
+            if (responseIds.has(id)) throw new GraphDataError(`Duplicate edge ID ${id}`);
+            responseIds.add(id);
+            edges.set(id, edge);
+        });
+        const projection = project({...responseGraph, edges: [...edges.values()]},
+            {existingNodeIds: new Set(owner.getSnapshot().data.nodes.map(node => node.id))});
+        const result = await owner.mergeData(projection.data, {preserveAppearance: true});
+        if (current(token, owner) && result.status === 'applied') {
+            pendingRaw.current = {owner: scopeOwner, edges: projection.pendingEdges,
+                nodeIds: new Set(owner.getSnapshot().data.nodes.map(node => node.id))};
+            if (!result.value && !projection.pendingEdges.length) message.warning(t('analysis.query_result.no_more_neighbors'));
         }
         return result;
-    }), [convert, current, graphSpaceInfo.graph, graphSpaceInfo.graphSpace, run, t]);
+    }), [current, graphSpaceInfo.graph, graphSpaceInfo.graphSpace, project, prunePending, run, scopeOwner, t]);
     const addElements = useCallback(raw => run(async () => {
         const owner = controllerRef.current;
         if (!owner) return;
@@ -193,7 +305,6 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
     const filter = useCallback(values => run(async () => {
         const owner = controllerRef.current;
         if (!owner) return;
-        const token = generation.current;
         const source = exportHubbleGraph(owner.getSnapshot().data);
         const rules = values?.filter;
         const result = rules ? filterData(source, rules.rules, rules.logic) : source;
@@ -201,15 +312,10 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
             ...(result?.vertices ?? []).map(node => hubbleRenderId('node', node.id)),
             ...(result?.edges ?? []).map(edge => hubbleRenderId('edge', edge.id)),
         ]);
-        const hidden = new Set([...owner.getSnapshot().data.nodes, ...owner.getSnapshot().data.edges]
-            .filter(item => !kept.has(item.id)).map(item => item.id));
-        const show = [...filteredIds.current].filter(id => !hidden.has(id));
-        const hide = [...hidden].filter(id => !filteredIds.current.has(id));
-        if (show.length) await owner.hide(show, false);
-        if (!current(token, owner)) return;
-        if (hide.length) await owner.hide(hide);
-        if (current(token, owner)) filteredIds.current = hidden;
-    }), [current, run]);
+        const hidden = [...owner.getSnapshot().data.nodes, ...owner.getSnapshot().data.edges]
+            .filter(item => !kept.has(item.id)).map(item => item.id);
+        return owner.setHiddenIds('filter', hidden);
+    }), [run]);
     const exportPng = useCallback(fileName => run(async () => {
         const owner = controllerRef.current;
         if (!owner) return;
@@ -223,6 +329,6 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
     }), [current, run]);
     const styleConfigData = useMemo(() => getAnalysisStyles(graphData), [graphData]);
     return {controller: activeController, onReady, graphData, initialData, datasetKey: dataset.key, scopeKey: scope,
-        layout, layoutSettings, currentData, styleConfigData, run, expand, addElements, editElement,
+        layout, layoutSettings, currentData, currentRawData, clearGraph, styleConfigData, run, expand, addElements, editElement,
         changeStyles, changeSettings, changeLayout, filter, exportPng};
 };

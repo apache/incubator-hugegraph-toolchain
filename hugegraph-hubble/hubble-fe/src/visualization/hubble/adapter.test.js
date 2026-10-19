@@ -16,7 +16,7 @@
  */
 
 import JSONbig from 'json-bigint';
-import {adaptHubbleGraph, adaptHubbleSchema, exportHubbleGraph, hubbleRenderId} from './adapter';
+import {adaptHubbleGraph, adaptHubbleSchema, exportHubbleGraph, hubbleRenderId, projectHubbleGraph} from './adapter';
 import {mergeGraphData} from '../model/data';
 import {normalizeIcon} from './styles';
 
@@ -116,4 +116,38 @@ test('keeps explicitly disabled icons hidden and falls back safely for unknown e
     expect(data.nodes[0].style.iconSrc).toBeUndefined();
     expect(data.nodes[0].data.icon).toBeUndefined();
     expect(data.nodes[0].style.size).toBe(30);
+});
+
+
+test('projects dangling business edges without weakening strict graph validation or changing typed IDs', () => {
+    const raw = JSONbig.parse('{"vertices":[{"id":1},{"id":"1"},{"id":900719925474099312345}],'
+        + '"edges":[{"id":1,"source":1,"target":"1"},{"id":"1","source":1,"target":"missing"},'
+        + '{"id":900719925474099312345,"source":900719925474099312345,"target":2}]}');
+    expect(() => adaptHubbleGraph(raw)).toThrow(/endpoint|missing/i);
+    const projected = projectHubbleGraph(raw);
+    expect(projected.graph.vertices).toEqual(raw.vertices);
+    expect(projected.graph.edges).toEqual([raw.edges[0]]);
+    expect(projected.pendingEdges).toEqual(raw.edges.slice(1));
+    expect(projected.pendingEdges[1].id.toFixed()).toBe('900719925474099312345');
+    expect(projected.pendingEdges[0]).not.toBe(raw.edges[1]);
+    expect(Object.isFrozen(projected.pendingEdges[0])).toBe(true);
+    expect(exportHubbleGraph(adaptHubbleGraph(projected.graph), projected.pendingEdges)).toEqual(raw);
+    const promoted = projectHubbleGraph({...raw, vertices: [...raw.vertices, {id: 'missing'}, {id: 2}]});
+    expect(promoted.pendingEdges).toEqual([]);
+    expect(promoted.graph.edges).toEqual(raw.edges);
+});
+
+test('projection still rejects unsupported endpoint IDs and duplicate typed edge IDs', () => {
+    expect(() => projectHubbleGraph({vertices: [], edges: [{id: 'e', source: {}, target: 2}]}))
+        .toThrow(/unsupported/);
+    expect(() => projectHubbleGraph({vertices: [], edges: [
+        {id: 'e', source: 1, target: 2}, {id: 'e', source: 2, target: 3},
+    ]})).toThrow(/duplicate/i);
+});
+
+test('raw export gives a currently drawn edge priority over an older pending record of the same typed ID', () => {
+    const raw = fixture();
+    expect(exportHubbleGraph(adaptHubbleGraph(raw), [
+        {...raw.edges[0], label: 'old'}, {id: '1', source: 1, target: 'missing'},
+    ]).edges).toEqual([...raw.edges, {id: '1', source: 1, target: 'missing'}]);
 });

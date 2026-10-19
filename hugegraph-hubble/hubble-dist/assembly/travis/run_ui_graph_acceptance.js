@@ -215,8 +215,8 @@ async function executeQuery(page, config, fixture, prefix, navigate = true) {
   const pixels = await canvasReady(page, region, path.join(config.outputDir, `${prefix}-ready.png`));
   const counts = await page.getByRole('group').allTextContents();
   const descriptions = await page.getByRole('group').evaluateAll(elements => elements.map(element => element.getAttribute('aria-label') || ''));
-  assert.ok(descriptions.some(text => text.startsWith(`Nodes: ${raw.vertices.length} in this result,`)), 'Rendered node count does not match real response');
-  assert.ok(descriptions.some(text => text.startsWith(`Edges: ${raw.edges.length} in this result,`)), 'Rendered edge count does not match real response');
+  assert.ok(descriptions.some(text => text.startsWith(`Nodes: ${raw.vertices.length} in this result,`)), 'Graph model node count does not match real response');
+  assert.ok(descriptions.some(text => text.startsWith(`Edges: ${raw.edges.length} in this result,`)), 'Graph model edge count does not match real response');
   return {raw, region, evidence: {route: page.url(), endpoint, method: 'POST',
     httpStatus: response.status(), vertexIds: raw.vertices.map(v => v.id), edgeIds: raw.edges.map(e => e.id), pixels, counts}};
 }

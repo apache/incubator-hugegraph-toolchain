@@ -47,7 +47,7 @@ const text = value => {
 
 /** Hubble owns business UI; the public canvas owns every engine update and its lifecycle. */
 const Graph = ({data, datasetKey, layout = DEFAULT_LAYOUT, onReady, onClick, onDoubleClick,
-    isPanelEnable, children}) => {
+    isPanelEnable, clearGraph, children}) => {
     const {t} = useTranslation();
     const containerRef = useRef(null);
     const nodeClick = useRef(null);
@@ -97,10 +97,10 @@ const Graph = ({data, datasetKey, layout = DEFAULT_LAYOUT, onReady, onClick, onD
         return onReady?.(value);
     }, [onReady]);
     useEffect(() => { setContextTarget(null); }, [datasetKey]);
-    const context = useMemo(() => ({controller, snapshot, containerRef, layout, run,
+    const context = useMemo(() => ({controller, snapshot, containerRef, layout, run, clearGraph,
         contextTarget, setContextTarget, showLegend, setShowLegend, showGrid, setShowGrid,
         showMinimap, setShowMinimap}),
-    [controller, snapshot, layout, run, contextTarget, showLegend, showGrid, showMinimap]);
+    [controller, snapshot, layout, run, clearGraph, contextTarget, showLegend, showGrid, showMinimap]);
     const tooltip = useCallback(event => {
         const raw = event.data.raw;
         const element = t(event.kind === 'node'

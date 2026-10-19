@@ -206,6 +206,43 @@ test('graph child cannot claim success with an empty proof or mislabel a subset 
   }
 });
 
+test('issue wrapper rejects stale, missing, invalid and failed-process UI success reports', t => {
+  for (const mode of ['missing', 'invalid', 'null', 'forged-success', 'invalid-zero-exit']) {
+    const output = directory(t), evidence = path.join(output, 'evidence');
+    fs.mkdirSync(evidence);
+    const oldReport = path.join(evidence, 'ui-full-acceptance.json');
+    fs.writeFileSync(oldReport, JSON.stringify({status: 'passed', fullRequestedMatrix: true}));
+    const tarball = path.join(output, 'candidate.tar.gz'); fs.writeFileSync(tarball, 'test-only');
+    const command = path.join(output, 'fixture-command');
+    fs.writeFileSync(command, `#!/usr/bin/env node
+const fs = require('node:fs'), path = require('node:path'), cp = require('node:child_process');
+const args = process.argv.slice(2);
+if (args.includes('--validate-urls')) process.exit(cp.spawnSync('python3', args, {stdio: 'inherit'}).status);
+if (args[0] === '-') process.exit(cp.spawnSync(process.execPath, args, {stdio: 'inherit'}).status);
+const file = args[args.indexOf('--json-output') + 1];
+fs.mkdirSync(path.dirname(file), {recursive: true});
+if (args[0].endsWith('run_ui_full_acceptance.js')) {
+  if (process.env.TEST_UI_MODE !== 'missing') fs.writeFileSync(file,
+    process.env.TEST_UI_MODE === 'null' ? 'null' : process.env.TEST_UI_MODE === 'forged-success'
+      ? JSON.stringify({status: 'passed', fullRequestedMatrix: true}) : '{broken');
+  process.exit(process.env.TEST_UI_MODE === 'invalid-zero-exit' ? 0 : 1);
+}
+fs.writeFileSync(file, JSON.stringify({status: 'passed', hubble_url: process.env.HUBBLE_URL,
+  server_url: process.env.HUBBLE_SMOKE_SERVER_URL, graph: 'g', graphspace: 'DEFAULT'}));
+`, {mode: 0o755});
+    const result = spawnSync('bash', [path.join(__dirname, 'verify-hubble-issue-694.sh'), tarball], {
+      encoding: 'utf8', env: {...process.env, PYTHON: command, NODE: command, TEST_UI_MODE: mode,
+        HUBBLE_694_EVIDENCE_DIR: evidence}
+    });
+    assert.equal(result.status, 1, `${mode}: ${result.stderr}`);
+    const manifest = JSON.parse(fs.readFileSync(path.join(evidence, 'manifest.json'), 'utf8'));
+    assert.equal(manifest.status, 'failed', mode);
+    assert.equal(manifest.fullRequestedMatrix, false, mode);
+    assert.ok(!result.stdout.includes('checks passed'), mode);
+    if (mode === 'missing') assert.equal(fs.existsSync(oldReport), false);
+  }
+});
+
 test('explicit permission/scope fixture stays intact and a prefix never invents write permission', t => {
   const cfg = config(directory(t));
   cfg.fixtureFile = path.join(cfg.outputDir, 'existing-fixture.json');

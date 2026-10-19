@@ -173,8 +173,20 @@ const equalValue = (left: unknown, right: unknown): boolean => {
         Object.prototype.hasOwnProperty.call(right, key) && equalValue(value, rightRecord[key]));
 };
 
+export interface MergeOptions {
+    /** Neighbour expansion updates raw records without resetting the existing rendered appearance. */
+    preserveAppearance?: boolean;
+}
+
+const preserveAppearance = <T extends GraphNode | GraphEdge>(previous: T, next: T): T => {
+    const result = {...next, data: {...previous.data, raw: next.data.raw}};
+    if (previous.style === undefined) delete result.style;
+    else result.style = previous.style;
+    return result;
+};
+
 /** Linear in the number of graph elements and their record fields. Edge-only expansion is a change. */
-export const mergeGraphData = (current: GraphData, incoming: GraphData): MergeResult => {
+export const mergeGraphData = (current: GraphData, incoming: GraphData, options: MergeOptions = {}): MergeResult => {
     const normalized = normalizeGraphData(current);
     const partial = normalizeGraphData(incoming, {existingNodeIds: new Set(normalized.nodes.map(node => node.id))});
     const nodes = new Map(normalized.nodes.map(node => [node.id, node]));
@@ -185,7 +197,8 @@ export const mergeGraphData = (current: GraphData, incoming: GraphData): MergeRe
     const updatedEdgeIds: string[] = [];
     for (const node of partial.nodes) {
         const previous = nodes.get(node.id);
-        const next = previous ? preserveNode(previous, node) : node;
+        const next = previous ? (options.preserveAppearance ? preserveAppearance(previous, node)
+            : preserveNode(previous, node)) : node;
         if (!previous) {
             addedNodeIds.push(node.id);
             nodes.set(node.id, next);
@@ -197,8 +210,9 @@ export const mergeGraphData = (current: GraphData, incoming: GraphData): MergeRe
     }
     for (const edge of partial.edges) {
         const previous = edges.get(edge.id);
-        const next = previous ? {...edge, data: {...previous.data, ...edge.data},
-            ...(previous.style || edge.style ? {style: {...previous.style, ...edge.style}} : {})} : edge;
+        const next = previous ? (options.preserveAppearance ? preserveAppearance(previous, edge)
+            : {...edge, data: {...previous.data, ...edge.data},
+                ...(previous.style || edge.style ? {style: {...previous.style, ...edge.style}} : {})}) : edge;
         if (!previous) {
             addedEdgeIds.push(edge.id);
             edges.set(edge.id, next);

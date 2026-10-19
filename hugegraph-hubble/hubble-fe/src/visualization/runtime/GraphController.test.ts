@@ -62,7 +62,11 @@ const createRuntime = () => {
         setMinimap: jest.fn((_visible: boolean) => {}),
         states: jest.fn(async (_states: Record<string, string[]>) => {}),
         refreshLabelVisibility: jest.fn(async (_itemCount: number) => {}),
-        visibility: jest.fn(async (_ids: string[], _visible: boolean) => {}),
+        visibility: jest.fn(async (ids: string[], visible: boolean) => {
+            const apply = <T extends GraphNode | GraphEdge>(item: T): T => ids.includes(item.id)
+                ? {...item, style: {...item.style, visibility: visible ? 'visible' : 'hidden'}} : item;
+            data = {nodes: data.nodes.map(apply), edges: data.edges.map(apply)};
+        }),
         fitView: jest.fn(async () => {}), zoomBy: jest.fn(async (_factor: number) => {}),
         resize: jest.fn((_width: number, _height: number) => {}), exportPng: jest.fn(async () => 'data:image/png;base64,ok'),
         history: jest.fn(async (_action: 'undo' | 'redo' | 'clear') => {}),
@@ -627,5 +631,90 @@ test.each(['replace', 'dispose'] as const)('waiting hover cannot publish across 
     expect(controller.getSnapshot().hoveredIds).toEqual([]);
     if (action === 'replace') expect(controller.getSnapshot().data.nodes.map(item => item.id)).toEqual(['new']);
     else expect(runtime.destroy).toHaveBeenCalledTimes(1);
+    await controller.dispose();
+});
+
+
+test('expansion preserves the appearance committed by a preceding queued style command', async () => {
+    const {runtime} = createRuntime();
+    const controller = new GraphController(runtime);
+    const initial = input(); initial.nodes[0].data = {...initial.nodes[0].data, fixed: true, shape: 'diamond', icon: 'star', group: 'saved'};
+    await controller.replaceData(initial);
+    const style = controller.applyStyle([{id: 'a', kind: 'node', style: {fill: 'red', size: 80}},
+        {id: 'ab', kind: 'edge', style: {stroke: 'purple', lineWidth: 5}}]);
+    const expansion = {nodes: [{...node('a'), data: {raw: {id: 'a', changed: true}, shape: 'circle', fixed: false},
+        style: {fill: 'blue', size: 20}}, {...node('c'), style: {fill: 'green'}}], edges: [
+        {id: 'ab', source: 'a', target: 'b', data: {raw: {id: 'ab', changed: true}}, style: {stroke: 'black'}},
+        {id: 'ac', source: 'a', target: 'c', data: {raw: {id: 'ac'}}, style: {stroke: 'green'}},
+    ]};
+    const merged = controller.mergeData(expansion, {preserveAppearance: true});
+    await Promise.all([style, merged]);
+    expect(controller.getSnapshot().data.nodes[0]).toMatchObject({data: {fixed: true, shape: 'diamond', icon: 'star', group: 'saved',
+        raw: {changed: true}}, style: {x: 15, y: 10, fill: 'red', size: 80}});
+    expect(controller.getSnapshot().data.edges[0]).toMatchObject({data: {raw: {changed: true}}, style: {stroke: 'purple', lineWidth: 5}});
+    expect(controller.getSnapshot().data.nodes.at(-1)?.style?.fill).toBe('green');
+    expect(controller.getSnapshot().data.edges.at(-1)?.style?.stroke).toBe('green');
+    runtime.patch.mockClear(); runtime.layout.mockClear();
+    expect(await controller.mergeData(expansion, {preserveAppearance: true})).toEqual({status: 'applied', value: false});
+    expect(runtime.patch).not.toHaveBeenCalled(); expect(runtime.layout).not.toHaveBeenCalled();
+    await controller.updateElements({nodes: [{...node('a'), style: {fill: 'orange'}}]});
+    expect(controller.getSnapshot().data.nodes[0].style?.fill).toBe('orange');
+    await controller.mergeData({nodes: [{...node('a'), style: {fill: 'blue'}}], edges: []});
+    expect(controller.getSnapshot().data.nodes[0].style?.fill).toBe('blue');
+    await controller.dispose();
+});
+
+test('named filter masks replace atomically without clearing overlapping manual hides', async () => {
+    const {runtime} = createRuntime(); const controller = new GraphController(runtime);
+    await controller.replaceData(input());
+    runtime.history.mockClear(); runtime.replace.mockClear();
+    await controller.hide(['a', 'ab']);
+    await controller.setHiddenIds('filter', ['a', 'b']);
+    await controller.setHiddenIds('filter', ['b']);
+    expect(runtime.read().nodes.find(node => node.id === 'a')?.style?.visibility).toBe('hidden');
+    await controller.hide(['a'], false);
+    expect(runtime.read().nodes.find(node => node.id === 'a')?.style?.visibility).toBe('visible');
+    expect(runtime.read().edges[0].style?.visibility).toBe('hidden');
+    await controller.setHiddenIds('filter', []);
+    expect(runtime.read().nodes.find(node => node.id === 'b')?.style?.visibility).toBe('visible');
+    expect(runtime.read().edges[0].style?.visibility).toBe('hidden');
+    await controller.hide(['ab'], false);
+    expect(runtime.read().edges[0].style?.visibility).toBe('visible');
+    await controller.setHiddenIds('filter', ['a']);
+    await controller.setHiddenIds('category', ['a']);
+    await controller.setHiddenIds('filter', []);
+    expect(runtime.read().nodes[0].style?.visibility).toBe('hidden');
+    await controller.setHiddenIds('category', []);
+    expect(runtime.read().nodes[0].style?.visibility).toBe('visible');
+    expect(runtime.history).not.toHaveBeenCalled(); expect(runtime.patch).not.toHaveBeenCalled();
+    expect(runtime.layout).not.toHaveBeenCalled(); expect(runtime.replace).not.toHaveBeenCalled();
+    await controller.dispose();
+});
+
+test('named masks survive merge, styles and history, prune absent IDs and clear for new datasets', async () => {
+    const {runtime, setData} = createRuntime(); const controller = new GraphController(runtime);
+    await controller.replaceData(input());
+    await controller.hide(['b']); await controller.setHiddenIds('filter', ['a', 'missing']);
+    const added = {id: 'ac', source: 'a', target: 'unrelated', data: {raw: {id: 'ac'}}};
+    await controller.mergeData({nodes: [], edges: [added]});
+    expect(runtime.read().edges.at(-1)?.style?.visibility).toBe('hidden');
+    await controller.applyStyle([{id: 'a', kind: 'node', style: {fill: 'red', visibility: 'visible'}}]);
+    expect(runtime.read().nodes[0].style?.visibility).toBe('hidden');
+    for (const action of ['undo', 'redo'] as const) {
+        runtime.history.mockImplementationOnce(async () => {setData(input());});
+        await controller[action]();
+        expect(runtime.read().nodes.slice(0, 2).map(node => node.style?.visibility)).toEqual(['hidden', 'hidden']);
+        expect(runtime.read().edges[0].style?.visibility).toBe('hidden');
+        expect(runtime.patch.mock.calls.at(-1)?.[1]).toBe(false);
+    }
+    await controller.replaceData(input(), {newDataset: false});
+    expect(runtime.read().nodes.slice(0, 2).map(node => node.style?.visibility)).toEqual(['hidden', 'hidden']);
+    await controller.removeElements(['a']);
+    await controller.mergeData({nodes: [node('a'), node('missing')], edges: []});
+    expect(runtime.read().nodes.find(node => node.id === 'a')?.style?.visibility).not.toBe('hidden');
+    expect(runtime.read().nodes.find(node => node.id === 'missing')?.style?.visibility).not.toBe('hidden');
+    await controller.replaceData(input(), {newDataset: true});
+    expect(runtime.read().nodes.map(node => node.style?.visibility)).not.toContain('hidden');
+    expect(runtime.layout).toHaveBeenCalledTimes(2);
     await controller.dispose();
 });

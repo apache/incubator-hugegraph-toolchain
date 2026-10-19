@@ -156,3 +156,19 @@ test('renders toolbar content as React DOM without navigation or engine plugin w
     expect(button('fit_center')).toBeInTheDocument();
     expect(screen.queryByRole('link')).not.toBeInTheDocument();
 });
+
+
+test('clear confirmation delegates to the Hubble projection owner before notifying the parent', async () => {
+    const value = makeValue();
+    value.clearGraph = jest.fn(async () => ({status: 'applied'}));
+    const onChange = jest.fn();
+    render(view(value, <ClearGraph enable onChange={onChange} />));
+    fireEvent.click(button('clear_canvas'));
+    expect(value.clearGraph).not.toHaveBeenCalled();
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', {
+        name: 'analysis.canvas.clear_graph.ok',
+    }));
+    await waitFor(() => expect(onChange).toHaveBeenCalledTimes(1));
+    expect(value.clearGraph).toHaveBeenCalledTimes(1);
+    expect(value.controller.replaceData).not.toHaveBeenCalled();
+});

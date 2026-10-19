@@ -16,6 +16,7 @@
  */
 
 import {GraphDataError, normalizeGraphData, renderId} from '../model/data';
+import {immutableCopy} from '../model/ownership';
 import type {ElementKind, GraphData, GraphEdge, GraphNode, NormalizeOptions} from '../model/types';
 import {asRecord, edgeStyle, nodeShape, nodeStyle, normalizeIcon} from './styles';
 import type {HubbleStyle} from './styles';
@@ -143,8 +144,36 @@ export const adaptHubbleSchema = (input: HubbleGraph, showLabels = true): GraphD
     };
 };
 
-/** Return original records, including typed IDs, endpoints, statistics and arbitrary properties. */
-export const exportHubbleGraph = (data: GraphData): HubbleGraph => ({
-    vertices: data.nodes.map(node => node.data.raw),
-    edges: data.edges.map(edge => edge.data.raw),
-});
+/** Hubble may return an incomplete edge view. Retain its owned raw records outside the strict engine model. */
+export const projectHubbleGraph = (input: HubbleGraph, existingNodeIds: ReadonlySet<string> = new Set()):
+    {graph: HubbleGraph; pendingEdges: Record<string, unknown>[]} => {
+    if (!input || !Array.isArray(input.vertices) || !Array.isArray(input.edges)) {
+        throw new GraphDataError('Hubble graph requires vertices and edges arrays');
+    }
+    const nodes = new Set(existingNodeIds);
+    input.vertices.forEach(raw => nodes.add(hubbleRenderId('node', raw.id)));
+    const seen = new Set<string>();
+    const edges: Record<string, unknown>[] = [];
+    const pendingEdges: Record<string, unknown>[] = [];
+    for (const raw of input.edges) {
+        const id = hubbleRenderId('edge', raw.id);
+        if (seen.has(id)) throw new GraphDataError(`Duplicate edge ID ${id}`);
+        seen.add(id);
+        const source = hubbleRenderId('node', raw.source);
+        const target = hubbleRenderId('node', raw.target);
+        if (nodes.has(source) && nodes.has(target)) edges.push(raw);
+        else pendingEdges.push(immutableCopy(raw));
+    }
+    return {graph: {vertices: input.vertices, edges}, pendingEdges};
+};
+
+/** Return original records, including typed IDs, endpoints, statistics and undrawn business edges. */
+export const exportHubbleGraph = (data: GraphData, pendingEdges: Record<string, unknown>[] = []): HubbleGraph => {
+    const edges = data.edges.map(edge => edge.data.raw);
+    const ids = new Set(edges.map(edge => hubbleRenderId('edge', edge.id)));
+    for (const raw of pendingEdges) {
+        const id = hubbleRenderId('edge', raw.id);
+        if (!ids.has(id)) { edges.push(raw); ids.add(id); }
+    }
+    return {vertices: data.nodes.map(node => node.data.raw), edges};
+};

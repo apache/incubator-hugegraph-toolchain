@@ -121,3 +121,38 @@ test('repeated expansion retains renderer edge geometry without reporting a fals
         {id: 'edge', source: 'a', target: 'a', data: {raw}},
     ]})).toMatchObject({changed: false, data: current});
 });
+
+
+test('expansion preserves existing appearance and display data while updating raw records', () => {
+    const current = graph();
+    current.nodes[0] = {...current.nodes[0], data: {...current.nodes[0].data,
+        fixed: true, shape: 'diamond', icon: 'star', group: 'saved', label: 'old-label', legend: 'old-legend'},
+    style: {x: 10, y: 20, fill: 'red', size: 80, labelText: 'saved'}};
+    current.edges[0] = {...current.edges[0], data: {...current.edges[0].data, group: 'saved-edge'},
+        style: {stroke: 'purple', lineWidth: 5, labelText: 'saved-edge'}};
+    const incoming = {nodes: [{...node('a', 2), data: {...node('a', 2).data, fixed: false,
+        shape: 'circle', icon: 'default', group: 'default', label: 'new-label', legend: 'new-legend'},
+    style: {x: 99, y: 99, fill: 'blue', size: 20, labelText: 'default', stroke: 'black'}},
+    {...node('d'), style: {fill: 'green'}}], edges: [
+        {...edge('ab', 'a', 'b'), data: {raw: {id: 'ab', weight: 2}, group: 'default-edge'},
+            style: {stroke: 'black', lineWidth: 1}}, {...edge('ad', 'a', 'd'), style: {stroke: 'green'}},
+    ]};
+    const merged = mergeGraphData(current, incoming, {preserveAppearance: true});
+    expect(merged.data.nodes[0]).toEqual({...current.nodes[0], data: {...current.nodes[0].data, raw: incoming.nodes[0].data.raw}});
+    expect(merged.data.edges[0]).toEqual({...current.edges[0], data: {...current.edges[0].data, raw: incoming.edges[0].data.raw}});
+    expect(merged.data.nodes.at(-1)).toEqual(incoming.nodes[1]);
+    expect(merged.data.edges.at(-1)).toEqual(incoming.edges[1]);
+    expect(merged.updatedNodeIds).toEqual(['a']);
+    expect(merged.updatedEdgeIds).toEqual(['ab']);
+    expect(mergeGraphData(merged.data, incoming, {preserveAppearance: true})).toMatchObject({changed: false, data: merged.data});
+    expect(current.nodes[0].data.raw.value).toBe(1);
+});
+
+test('appearance preservation does not introduce default appearance into an existing unstyled element', () => {
+    const current = graph();
+    const incoming = {nodes: [{...node('a'), data: {...node('a').data, shape: 'circle'}, style: {fill: 'blue'}}],
+        edges: [{...edge('ab', 'a', 'b'), style: {stroke: 'blue'}}]};
+    expect(mergeGraphData(current, incoming, {preserveAppearance: true})).toMatchObject({changed: false, data: current});
+    const refresh = preserveNodePositions(current, {...current, nodes: [incoming.nodes[0], ...current.nodes.slice(1)]});
+    expect(refresh.nodes[0].style?.fill).toBe('blue');
+});

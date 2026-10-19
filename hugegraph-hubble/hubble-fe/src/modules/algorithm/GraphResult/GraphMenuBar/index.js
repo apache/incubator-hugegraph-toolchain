@@ -44,6 +44,7 @@ const GraphMenuBar = props => {
     const {
         styleConfigData,
         graphData,
+        exportData,
         handleImportData,
         handleExportPng,
         handleGraphStyleChange,
@@ -64,9 +65,9 @@ const GraphMenuBar = props => {
 
     const handleExportJson = useCallback(
         fileName => {
-            downloadJsonHandler(fileName, exportHubbleGraph(graphData));
+            downloadJsonHandler(fileName, exportData ? exportData() : exportHubbleGraph(graphData));
         },
-        [downloadJsonHandler, graphData]
+        [downloadJsonHandler, exportData, graphData]
     );
     const handleToggleLayout = useCallback(
         () => handleTogglePanel(LAYOUT),

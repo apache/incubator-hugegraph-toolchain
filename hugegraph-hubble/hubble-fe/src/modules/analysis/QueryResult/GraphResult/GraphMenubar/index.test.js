@@ -59,3 +59,20 @@ test.each([['query', QueryMenuBar], ['algorithm', AlgorithmMenuBar]])(
         expect(payload.vertices[0].extra).toEqual([1, 2]);
     }
 );
+
+
+test.each([['query', QueryMenuBar], ['algorithm', AlgorithmMenuBar]])(
+    '%s JSON export reads the current complete business projection, including undrawn typed edges', async (_kind, Menu) => {
+        const raw = JSONbig.parse('{"vertices":[{"id":1}],"edges":[{"id":900719925474099312345,'
+            + '"source":1,"target":"missing","properties":{"kept":true}}]}');
+        const exportData = jest.fn(() => raw);
+        const downloadJsonHandler = jest.fn();
+        useDownloadJson.mockReturnValue({downloadJsonHandler});
+        render(<Menu graphData={adaptAnalysisGraph({vertices: raw.vertices, edges: []})}
+            exportData={exportData} showCanvasInfo graphRenderMode={GRAPH_RENDER_MODE.CANVAS2D} />);
+        await userEvent.click(screen.getByRole('button', {name: 'export JSON'}));
+        expect(exportData).toHaveBeenCalledTimes(1);
+        expect(downloadJsonHandler).toHaveBeenCalledWith('graph-export', raw);
+        expect(downloadJsonHandler.mock.calls[0][1].edges[0].id.toFixed()).toBe('900719925474099312345');
+    }
+);

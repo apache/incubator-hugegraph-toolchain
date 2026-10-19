@@ -92,7 +92,7 @@ const GraphResult = props => {
 
 
     const graphSpaceInfo = useContext(GraphAnalysisContext);
-    const {graphData, styleConfigData, initialData, datasetKey, scopeKey, layout, layoutSettings, onReady: onGraphReady,
+    const {graphData, currentRawData, clearGraph, styleConfigData, initialData, datasetKey, scopeKey, layout, layoutSettings, onReady: onGraphReady,
         changeStyles: handleGraphStyleChange, changeLayout: handleLayoutChange,
         changeSettings: handleSettingChange, exportPng: handleExportPng,
         editElement: onEditElementChange, expand: getExpandInfo, filter: handleFilterChange, addElements}
@@ -244,6 +244,7 @@ const GraphResult = props => {
     }, [getExpandInfo, handleCloseSearch]);
     const renderCanvas2D = () => (
         <Graph
+            clearGraph={clearGraph}
             key={scopeKey}
             data={initialData}
             datasetKey={datasetKey}
@@ -404,6 +405,7 @@ const GraphResult = props => {
             <GraphMenuBar
                 styleConfigData={styleConfigData}
                 graphData={graphData}
+                exportData={currentRawData}
                 handleImportData={handleUpdateStatus}
                 handleExportPng={handleExportPng}
                 handleGraphStyleChange={handleGraphStyleChange}

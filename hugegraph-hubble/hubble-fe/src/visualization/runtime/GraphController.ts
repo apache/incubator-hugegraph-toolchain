@@ -17,6 +17,7 @@
 
 import {buildAdjacencyIndex, relatedElements} from '../model/adjacency';
 import {assertGraphStyle, mergeGraphData, normalizeGraphData, preserveNodePositions, sameTopology} from '../model/data';
+import type {MergeOptions} from '../model/data';
 import type {ElementKind, GraphData, GraphEdge, GraphNode, GraphStyle} from '../model/types';
 import {immutableCopy} from '../model/ownership';
 import {UpdateQueue} from './UpdateQueue';
@@ -32,6 +33,7 @@ interface StyleBatch {
     patches: Map<string, StylePatch>;
     result: Promise<UpdateResult<void>>;
 }
+const manualVisibility = Symbol('manual visibility');
 const emptyGraph = (): GraphData => ({nodes: [], edges: []});
 
 /** The only application write boundary. Engine state is read back after committed commands. */
@@ -55,6 +57,7 @@ export class GraphController {
     private focused: string | null = null;
     private drawnStates = new Set<string>();
     private hidden = new Set<string>();
+    private readonly hiddenReasons = new Map<string | symbol, Set<string>>();
     private styleTail: StyleBatch | null = null;
     private hoverTail: {current: boolean} | null = null;
 
@@ -94,7 +97,12 @@ export class GraphController {
         this.hovered = new Set([...this.hovered].filter(id => this.elements.has(id)));
         if (this.focused && !this.elements.has(this.focused)) this.focused = null;
         this.drawnStates = new Set([...this.drawnStates].filter(id => this.elements.has(id)));
-        this.hidden = new Set([...this.hidden].filter(id => this.elements.has(id)));
+        for (const [reason, ids] of this.hiddenReasons) {
+            const remaining = new Set([...ids].filter(id => this.elements.has(id)));
+            if (remaining.size) this.hiddenReasons.set(reason, remaining);
+            else this.hiddenReasons.delete(reason);
+        }
+        this.refreshHidden();
         this.publish({data, ...this.runtime.historyState(), selectedIds: [...this.selected], hoveredIds: [...this.hovered]});
     }
 
@@ -112,6 +120,10 @@ export class GraphController {
             this.elements.set(id, {kind: 'edge', datum});
         }
         this.publish({data: {nodes, edges}, ...this.runtime.historyState()});
+    }
+
+    private refreshHidden(): void {
+        this.hidden = new Set([...this.hiddenReasons.values()].flatMap(ids => [...ids]));
     }
 
     private withVisibility(data: GraphData): GraphData {
@@ -159,7 +171,10 @@ export class GraphController {
             this.notify(() => this.options.onHover?.(null));
             const previous = this.initialized ? this.runtime.read() : emptyGraph();
             const same = this.initialized && options.newDataset === false && sameTopology(previous, data);
-            if (options.newDataset !== false) this.hidden.clear();
+            if (options.newDataset !== false) {
+                this.hiddenReasons.clear();
+                this.hidden.clear();
+            }
             const next = this.withVisibility(same ? preserveNodePositions(previous, data) : data);
             const revision = this.layoutRevision;
             const runLayout = options.layout !== false && (!same || this.appliedLayoutRevision !== revision);
@@ -182,10 +197,11 @@ export class GraphController {
         }, version);
     }
 
-    async mergeData(input: GraphData): Promise<UpdateResult<boolean>> {
+    async mergeData(input: GraphData, options: MergeOptions = {}): Promise<UpdateResult<boolean>> {
         const incoming = immutableCopy(input);
+        const policy = immutableCopy(options);
         return this.command(async context => {
-            const result = mergeGraphData(this.runtime.read(), incoming);
+            const result = mergeGraphData(this.runtime.read(), incoming, policy);
             if (!result.changed) return false;
             // Expansion is recorded; the following system layout is not another user command.
             const nodeIds = new Set([...result.addedNodeIds, ...result.updatedNodeIds]);
@@ -273,27 +289,53 @@ export class GraphController {
         });
     }
 
+    /** Manual hide state is independent of named masks such as filters. */
     hide(ids: string[], hidden = true): Promise<UpdateResult<void>> {
+        const requested = [...ids];
         return this.command(async context => {
-            const affected = new Set<string>();
-            for (const id of ids) {
-                if (!this.elements.has(id)) continue;
-                if (hidden) this.hidden.add(id); else this.hidden.delete(id);
-                affected.add(id);
-                this.adjacency.incidentEdges.get(id)?.forEach(edge => affected.add(edge));
-            }
-            const visible: string[] = [];
-            const invisible: string[] = [];
+            const manual = new Set(this.hiddenReasons.get(manualVisibility));
+            const affected = requested.filter(id => this.elements.has(id));
             for (const id of affected) {
-                const endpoints = this.adjacency.endpoints.get(id);
-                const isHidden = this.hidden.has(id) || Boolean(endpoints?.some(node => this.hidden.has(node)));
-                (isHidden ? invisible : visible).push(id);
+                if (hidden) manual.add(id); else manual.delete(id);
             }
-            if (invisible.length) await this.runtime.visibility(invisible, false);
-            if (!context.isCurrent()) return;
-            if (visible.length) await this.runtime.visibility(visible, true);
-            if (context.isCurrent()) this.adopt();
+            if (manual.size) this.hiddenReasons.set(manualVisibility, manual);
+            else this.hiddenReasons.delete(manualVisibility);
+            this.refreshHidden();
+            await this.updateVisibility(affected, context);
         });
+    }
+
+    /** Atomically replace one view mask without changing any other source of hidden elements. */
+    setHiddenIds(reason: string, ids: string[]): Promise<UpdateResult<void>> {
+        const requested = [...ids];
+        return this.command(async context => {
+            const previous = this.hiddenReasons.get(reason) ?? new Set<string>();
+            const next = new Set(requested.filter(id => this.elements.has(id)));
+            if (next.size) this.hiddenReasons.set(reason, next);
+            else this.hiddenReasons.delete(reason);
+            this.refreshHidden();
+            await this.updateVisibility(new Set([...previous, ...next]), context);
+        });
+    }
+
+    private async updateVisibility(ids: Iterable<string>, context: UpdateContext): Promise<void> {
+        const affected = new Set<string>();
+        for (const id of ids) {
+            if (!this.elements.has(id)) continue;
+            affected.add(id);
+            this.adjacency.incidentEdges.get(id)?.forEach(edge => affected.add(edge));
+        }
+        const visible: string[] = [];
+        const invisible: string[] = [];
+        for (const id of affected) {
+            const endpoints = this.adjacency.endpoints.get(id);
+            const isHidden = this.hidden.has(id) || Boolean(endpoints?.some(node => this.hidden.has(node)));
+            (isHidden ? invisible : visible).push(id);
+        }
+        if (invisible.length) await this.runtime.visibility(invisible, false);
+        if (!context.isCurrent()) return;
+        if (visible.length) await this.runtime.visibility(visible, true);
+        if (context.isCurrent()) this.adopt();
     }
 
     fitView = (): Promise<UpdateResult<void>> => this.command(async () => { await this.runtime.fitView(); }, null);

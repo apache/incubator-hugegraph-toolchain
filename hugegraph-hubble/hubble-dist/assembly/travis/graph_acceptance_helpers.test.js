@@ -24,6 +24,35 @@ const raw = {
     {id: '7', label: 'person', properties: {name: '乙'}}],
   edges: [{id: 'edge', source: 7, target: '7', label: 'knows', properties: {weight: .25}}],
 };
+
+test('node candidates are captured only after the previous real tooltip has disappeared', async () => {
+  const events = [];
+  const tooltip = {
+    waitFor: async ({state}) => {events.push(state);},
+    innerText: async () => 'Node ID: next-node',
+  };
+  const page = {
+    mouse: {move: async (x, y) => {events.push([x, y]);}},
+    locator: () => ({}),
+    evaluate: async (_callback, value) => typeof value === 'string'
+      ? {width: 100, height: 100, coloredPixels: 80, candidates: [{x: 50, y: 50}]}
+      : events.push('frame'),
+  };
+  const region = {
+    getByRole: role => {assert.equal(role, 'tooltip'); return tooltip;},
+    locator: () => ({count: async () => 1}),
+    boundingBox: async () => ({x: 100, y: 200, width: 100, height: 100}),
+    screenshot: async () => {
+      assert.deepEqual(events, [[-1, -1], 'hidden', 'frame']);
+      events.push('capture');
+      return Buffer.from('external screenshot');
+    },
+  };
+  const {findNode} = require('./graph_acceptance_helpers');
+  const result = await findNode(page, region, text => text.includes('next-node'), '/unused/unit-test.png');
+  assert.equal(result.tooltip, 'Node ID: next-node');
+  assert.deepEqual(events.slice(3), ['capture', [150, 250], 'frame', 'visible']);
+});
 test('raw export comparison accepts record order but preserves complete typed records', () => {
   assertExportMatches({...raw, vertices: [...raw.vertices].reverse()}, raw);
   const changedId = structuredClone(raw);
