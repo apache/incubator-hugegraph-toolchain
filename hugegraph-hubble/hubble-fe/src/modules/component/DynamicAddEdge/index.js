@@ -20,7 +20,7 @@
  * @file  添加出入边
  */
 
-import {useState, useCallback, useEffect, useContext, useRef} from 'react';
+import {useState, useCallback, useEffect, useContext, useRef, useId} from 'react';
 import {Drawer, Input, Button, message, Form, Select, Col, Row} from 'antd';
 import {useTranslation} from 'react-i18next';
 import GraphAnalysisContext from '../../Context';
@@ -40,6 +40,7 @@ const AddEdgeDrawer = props => {
     } =  props;
 
     const {t} = useTranslation();
+    const formId = useId();
     const {graphSpace: currentGraphSpace, graph: currentGraph} = useContext(GraphAnalysisContext);
 
     const [relatedGraphEdges, setRelatedEdges] = useState([]);
@@ -338,6 +339,7 @@ const AddEdgeDrawer = props => {
             }
 
             <Form
+                name={`add-edge-${formId}`}
                 form={addForm}
                 disabled={pending}
                 onFinish={onFormFinish}

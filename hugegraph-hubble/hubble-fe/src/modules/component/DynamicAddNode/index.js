@@ -20,7 +20,7 @@
  * @file  添加节点
  */
 
-import {useCallback, useEffect, useState, useContext, useRef} from 'react';
+import {useCallback, useEffect, useState, useContext, useRef, useId} from 'react';
 import {Drawer, Select, Input, Button, message, Form, Row, Col} from 'antd';
 import {useTranslation} from 'react-i18next';
 import GraphAnalysisContext from '../../Context';
@@ -38,6 +38,7 @@ const DynamicAddNode = props => {
     } = props;
 
     const {t} = useTranslation();
+    const formId = useId();
     const {graphSpace: currentGraphSpace, graph: currentGraph} = useContext(GraphAnalysisContext);
     const [form] = Form.useForm();
     const generation = useRef(0);
@@ -256,6 +257,7 @@ const DynamicAddNode = props => {
             ]}
         >
             <Form
+                name={`add-vertex-${formId}`}
                 form={form}
                 disabled={pending}
                 labelAlign='left'
