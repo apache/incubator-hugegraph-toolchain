@@ -1036,9 +1036,11 @@ const EditLayer = ({edit, visible, onCancel, refresh}) => {
             open={visible}
             width={600}
             onOk={onFinish}
-            confirmLoading={loading}
+            // Keep cancellation available while the request is pending. AntD 6's
+            // confirmLoading also suppresses onCancel; the request epoch owns stale-response handling.
+            okButtonProps={{loading}}
             afterClose={handleClose}
-            destroyOnClose
+            destroyOnHidden
         >
             <Form
                 form={form}

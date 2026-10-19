@@ -492,7 +492,7 @@ const NodeDetail = () => {
                 <Alert
                     type='error'
                     showIcon
-                    message={t('operations.node_unavailable')}
+                    title={t('operations.node_unavailable')}
                     action={(
                         <Space>
                             <Button size='small' onClick={back}>
@@ -569,7 +569,7 @@ const NodeDetail = () => {
                 <RefreshButton loading={loading} onClick={refresh} />
             </header>
             {error && (
-                <Alert type='warning' showIcon message={t('operations.refresh_failed')} />
+                <Alert type='warning' showIcon title={t('operations.refresh_failed')} />
             )}
             <SourceStrip
                 sources={data?.sources}
@@ -583,20 +583,15 @@ const NodeDetail = () => {
                 <h3 id='operations-node-summary-heading'>
                     {t('operations.node_profile')}
                 </h3>
-                <Descriptions column={{xxl: 4, xl: 3, lg: 2, md: 1, sm: 1, xs: 1}}>
-                    <Descriptions.Item label={t('operations.type')}>
-                        {displayNodeType(node.type)}
-                    </Descriptions.Item>
-                    {node.role && (
-                        <Descriptions.Item label={t('operations.role')}>
-                            {nodeRoleLabel(node, t)}
-                        </Descriptions.Item>
-                    )}
-                    <Descriptions.Item label={t('operations.version')}>
-                        {node.version ?? '—'}
-                    </Descriptions.Item>
-                    <Descriptions.Item label={t('operations.node_id')}>{node.id}</Descriptions.Item>
-                </Descriptions>
+                <Descriptions
+                    column={{xxl: 4, xl: 3, lg: 2, md: 1, sm: 1, xs: 1}}
+                    items={[
+                        {key: 'type', label: t('operations.type'), children: displayNodeType(node.type)},
+                        node.role && {key: 'role', label: t('operations.role'), children: nodeRoleLabel(node, t)},
+                        {key: 'version', label: t('operations.version'), children: node.version ?? '—'},
+                        {key: 'id', label: t('operations.node_id'), children: node.id},
+                    ].filter(Boolean)}
+                />
             </section>
             <section
                 className='operations-metric-grid'

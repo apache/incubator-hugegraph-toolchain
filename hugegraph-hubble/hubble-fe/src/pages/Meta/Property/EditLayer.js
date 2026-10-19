@@ -38,7 +38,7 @@ const EditPropertyLayer = ({visible, onCancle, graphspace, graph, refresh}) => {
         try {
             values = await form.validateFields();
         }
-        catch (error) {
+        catch {
             // Ant Design rejects for field validation; the form already owns
             // the inline feedback, so this is not a request failure.
             return;
@@ -82,8 +82,8 @@ const EditPropertyLayer = ({visible, onCancle, graphspace, graph, refresh}) => {
             cancelText={t('common.action.cancel')}
             cancelButtonProps={{disabled: loading}}
             closable={!loading}
-            maskClosable={false}
-            destroyOnClose
+            mask={{closable: false}}
+            destroyOnHidden
             width={560}
         >
             <Form

@@ -20,9 +20,10 @@
  * @file K-out API(POST，高级版)
  */
 
-import React, {useState, useCallback, useContext} from 'react';
+import AlgorithmPanel from '../../../AlgorithmPanel';
+import {useState, useCallback, useContext} from 'react';
 import {useTranslation} from 'react-i18next';
-import {Input, Collapse, Select, InputNumber} from 'antd';
+import {Input, Select, InputNumber} from 'antd';
 import Form from '../../../PersistentForm';
 import {BranchesOutlined} from '@ant-design/icons';
 import * as api from '../../../../../../api';
@@ -137,11 +138,8 @@ const KoutPost = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<BranchesOutlined />}
                     name={KOUT_POST}
@@ -213,7 +211,7 @@ const KoutPost = props => {
                 </Form.Item>
                 <StepFormItem />
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

@@ -56,7 +56,7 @@
     border-top: 1px solid rgba(0, 0, 0, .06);
 }
 
-/* .ant-modal-content {
+/* .ant-modal-container {
     width: 600px;
 } */
 
@@ -69,11 +69,11 @@
     background-color: #fff;
 }
 
-.ant-page-header {
+.hubble-page-header {
     padding: 24px 10px 24px;
 }
 
-.ant-page-header-content {
+.hubble-page-header-content {
     padding-top: 24px;
 }
 

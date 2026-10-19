@@ -63,7 +63,7 @@ export const propertiesValidator = (rule, value) => {
     }
     const propertiesArr = value.trim().split('\n') || [];
     for (const item of propertiesArr) {
-        const [key, value] = item?.split('=');
+        const [key, value] = item.split('=');
         if (!key || !value) {
             return Promise.reject(new Error(validationMessage('properties_format')));
         }
@@ -252,7 +252,7 @@ export const formatPropertiesValue = properties => {
     const propertiesArr = properties?.trim().split('\n') || [];
     const propertiesValue = {};
     for (const item of propertiesArr) {
-        const [key, value] = item?.split('=');
+        const [key, value] = item.split('=');
         if (key && value) {
             const valueLength = value.length;
             if (valueLength > 2 && value[0] === '\'' && value[valueLength - 1] === '\'') {

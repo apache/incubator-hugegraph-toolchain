@@ -20,8 +20,9 @@
  * @file Egonet算法
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Input, Collapse, Select, Tooltip, InputNumber} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import {useState, useCallback, useContext} from 'react';
+import {Input, Select, Tooltip, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
 import {GatewayOutlined, DownOutlined, RightOutlined, QuestionCircleOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
@@ -211,11 +212,8 @@ const Egonet = props => {
     };
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<GatewayOutlined />}
                     name={EGONET}
@@ -274,7 +272,7 @@ const Egonet = props => {
                     desc={t('analysis.algorithm.oltp.common.limit_crosspoints')}
                 />
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

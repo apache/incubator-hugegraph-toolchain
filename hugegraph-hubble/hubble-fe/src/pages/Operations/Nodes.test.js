@@ -21,7 +21,7 @@ import {message} from 'antd';
 import {MemoryRouter, useLocation, useNavigate} from 'react-router-dom';
 import Nodes from './Nodes';
 import {getNodes} from '../../api/operations';
-import '../../i18n';
+import i18n from '../../i18n';
 import enPages from '../../i18n/resources/en-US/modules/pages.json';
 import zhPages from '../../i18n/resources/zh-CN/modules/pages.json';
 
@@ -193,6 +193,17 @@ test('does not treat the standalone fixed SERVER type as a clearable filter', as
 test('ships the clear-filters action in Chinese and English', () => {
     expect(zhPages.operations.clear_filters).toBe('清空筛选');
     expect(enPages.operations.clear_filters).toBe('Clear filters');
+});
+
+test.each([
+    [0, '0 nodes', '0 个节点'],
+    [1, '1 node', '1 个节点'],
+    [2, '2 nodes', '2 个节点'],
+])('pluralizes the %i-node count in both languages', (count, english, chinese) => {
+    for (const key of ['result_count', 'node_count']) {
+        expect(i18n.t(`operations.${key}`, {lng: 'en-US', count})).toBe(english);
+        expect(i18n.t(`operations.${key}`, {lng: 'zh-CN', count})).toBe(chinese);
+    }
 });
 
 test('shows stale observation metadata and exposes real detail links', async () => {

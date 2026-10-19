@@ -20,39 +20,22 @@
  * @file  RefreshGraph 刷新布局
  */
 
-import React, {useCallback, useContext} from 'react';
+import {useContext} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Button, Tooltip} from 'antd';
 import {SyncOutlined} from '@ant-design/icons';
 import {GraphContext} from '../Context';
-import {disableChangeDataRelayout} from '../Graph/data';
 
 const RefreshGraph = () => {
     const {t} = useTranslation();
-    const {graph} = useContext(GraphContext);
-
-    const handleRefreshGraph = useCallback(
-        () => {
-            const {layout} = graph.cfg;
-            if (layout) {
-                graph.destroyLayout();
-                graph.updateLayout(
-                    disableChangeDataRelayout(layout),
-                    'center',
-                    undefined,
-                    false
-                );
-            }
-        },
-        [graph]
-    );
-
+    const {controller, snapshot, layout, run} = useContext(GraphContext);
     return (
-        <Tooltip title={t('analysis.canvas.toolbar.refresh_layout')} placement='bottom'>
+        <Tooltip title={t('analysis.canvas.toolbar.refresh_layout')} placement="bottom">
             <Button
+                disabled={!controller || snapshot?.status !== 'ready' || !layout}
                 type="text"
                 aria-label={t('analysis.canvas.toolbar.refresh_layout')}
-                onClick={handleRefreshGraph}
+                onClick={() => run(() => controller.setLayout(layout))}
                 icon={<SyncOutlined />}
             />
         </Tooltip>

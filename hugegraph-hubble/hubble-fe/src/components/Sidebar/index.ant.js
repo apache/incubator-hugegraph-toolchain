@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {Button, Layout, Menu, Tooltip} from 'antd';
 import {
     HomeOutlined,

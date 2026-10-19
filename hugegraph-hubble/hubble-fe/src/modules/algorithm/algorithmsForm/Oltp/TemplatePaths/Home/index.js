@@ -20,9 +20,10 @@
  * @file TemplatePaths
  */
 
-import React, {useState, useCallback, useContext} from 'react';
+import AlgorithmPanel from '../../../AlgorithmPanel';
+import {useState, useCallback, useContext} from 'react';
 import {useTranslation} from 'react-i18next';
-import {Collapse, InputNumber} from 'antd';
+import {InputNumber} from 'antd';
 import Form from '../../../PersistentForm';
 import {ReconciliationOutlined} from '@ant-design/icons';
 import GraphAnalysisContext from '../../../../../Context';
@@ -129,11 +130,8 @@ const TemplatePaths = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<ReconciliationOutlined />}
                     name={TEMPLATEPATHS}
@@ -187,7 +185,7 @@ const TemplatePaths = props => {
                     <InputNumber />
                 </Form.Item>
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

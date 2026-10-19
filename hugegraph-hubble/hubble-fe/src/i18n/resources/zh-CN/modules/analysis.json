@@ -404,6 +404,7 @@
         "add_success": "添加成功",
         "save_success": "保存成功",
         "save_failed": "保存失败",
+        "sync_failed": "服务端已保存，画布同步失败，请重新查询，勿重复添加",
         "get_edge_type_failed": "获取边类型失败",
         "get_edge_property_failed": "获取边属性失败",
         "get_vertex_property_failed": "获取点属性失败",

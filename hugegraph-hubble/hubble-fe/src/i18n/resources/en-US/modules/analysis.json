@@ -404,6 +404,7 @@
         "add_success": "Added successfully",
         "save_success": "Saved successfully",
         "save_failed": "Save failed",
+        "sync_failed": "Saved on the server but not synced to the canvas; run the query again and do not add it again",
         "get_edge_type_failed": "Failed to get edge types",
         "get_edge_property_failed": "Failed to get edge properties",
         "get_vertex_property_failed": "Failed to get vertex properties",

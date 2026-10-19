@@ -20,8 +20,9 @@
  * @file JaccardSimilarityPost
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Input, Collapse, Select, Tooltip, InputNumber} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import {useState, useCallback, useContext} from 'react';
+import {Input, Select, Tooltip, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
 import {CrownOutlined, DownOutlined, RightOutlined, QuestionCircleOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
@@ -112,7 +113,7 @@ const JaccardSimilarityPost = props => {
             const propertiesArr = properties.trim().split('\n') || [];
             const propertiesValue = {};
             for (const item of propertiesArr) {
-                const [key, value] = item?.split('=');
+                const [key, value] = item.split('=');
                 if (key && value) {
                     const valueLength = value.length;
                     if (valueLength > 2 && value[0] === '\'' && value[valueLength - 1] === '\'') {
@@ -227,11 +228,8 @@ const JaccardSimilarityPost = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<CrownOutlined />}
                     name={JACCARD_SIMILARITY_POST}
@@ -280,7 +278,7 @@ const JaccardSimilarityPost = props => {
                 </Form.Item>
                 {stepFormItems}
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

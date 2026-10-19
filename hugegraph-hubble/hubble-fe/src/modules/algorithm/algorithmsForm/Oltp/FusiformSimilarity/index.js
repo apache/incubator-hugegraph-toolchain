@@ -20,8 +20,9 @@
  * @file FusiformSimilarity算法
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Input, Collapse, InputNumber} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import {useState, useCallback, useContext} from 'react';
+import {Input, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
 import {MonitorOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
@@ -111,11 +112,8 @@ const FusiformSimilarity = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<MonitorOutlined />}
                     name={FUSIFORM_SIMILARITY}
@@ -228,7 +226,7 @@ const FusiformSimilarity = props => {
                     desc={t('analysis.algorithm.oltp.fusiform_similarity.with_intermediary')}
                 />
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

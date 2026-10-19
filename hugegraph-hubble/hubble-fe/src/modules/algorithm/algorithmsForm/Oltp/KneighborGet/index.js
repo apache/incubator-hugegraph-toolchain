@@ -20,9 +20,10 @@
  * @file KneighborGet算法
  */
 
-import React, {useState, useCallback, useContext} from 'react';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import {useState, useCallback, useContext} from 'react';
 import {useTranslation} from 'react-i18next';
-import {Input, Collapse} from 'antd';
+import {Input, } from 'antd';
 import Form from '../../PersistentForm';
 import {HeatMapOutlined} from '@ant-design/icons';
 import AlgorithmNameHeader from '../../AlgorithmNameHeader';
@@ -107,11 +108,8 @@ const KneighborGet = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<HeatMapOutlined />}
                     name={K_NEIGHBOR}
@@ -153,7 +151,7 @@ const KneighborGet = props => {
                     desc={t('analysis.algorithm.oltp.kout_post.limit')}
                 />
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

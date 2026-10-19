@@ -28,7 +28,6 @@ jest.mock('react-router-dom', () => ({
     ...jest.requireActual('react-router-dom'),
     useParams: () => ({graphspace: 'DEFAULT', graph: 'hugegraph', taskId: '9'}),
 }));
-jest.mock('react-json-view', () => ({src}) => <pre>{JSON.stringify(src)}</pre>);
 jest.mock('react-i18next', () => ({
     useTranslation: () => ({t: key => ({
         'analysis.async_task.result_load_failed': 'Could not load task result.',
@@ -58,7 +57,7 @@ it('keeps result failure visible and retries the same task', async () => {
         'Could not load task result.'
     );
     fireEvent.click(screen.getByRole('button', {name: 'Retry result'}));
-    expect(await screen.findByText('{"ok":true}')).toBeInTheDocument();
+    expect(await screen.findByText('true')).toBeInTheDocument();
     await waitFor(() => expect(api.analysis.fetchAsyncTaskResult).toHaveBeenCalledTimes(2));
 });
 
@@ -86,5 +85,5 @@ it('keeps task context and a graph-scoped return entry visible', async () => {
     expect(screen.getByText('DEFAULT / hugegraph / Task 9')).toBeInTheDocument();
     expect(screen.getByRole('link', {name: 'Back to task management'}))
         .toHaveAttribute('href', '/asyncTasks/DEFAULT/hugegraph');
-    expect(await screen.findByText('{"ok":true}')).toBeInTheDocument();
+    expect(await screen.findByText('true')).toBeInTheDocument();
 });

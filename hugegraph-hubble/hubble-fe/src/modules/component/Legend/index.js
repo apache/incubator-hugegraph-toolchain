@@ -20,79 +20,58 @@
  * @file  Legend
  */
 
-import {useContext, useEffect, useRef, useCallback} from 'react';
+import {useContext, useMemo, useEffect} from 'react';
 import {useTranslation} from 'react-i18next';
-
 import {GraphContext} from '../Context';
-import CustomLegend from './customLegend';
 
-const Legend = props => {
+const Legend = () => {
     const {t} = useTranslation();
-    const context = useContext(GraphContext);
-    const legendRef = useRef(null);
-    const {graph} = context;
-    const {data} = props;
-
-    const filterFunctions = useCallback(
-        legendData => {
-            let filter = {};
-            legendData?.nodes.forEach(node => {
-                const key = node.id;
-                filter[key] = d => d.legendType === node.id;
-            });
-            legendData?.edges.forEach(edge => {
-                const key = edge.id;
-                filter[key] = d => d.legendType === edge.id;
-            });
-            return filter;
-        },
-        []
-    );
-
-    useEffect(() => {
-        const filter = filterFunctions(data);
-        const legendOptions = {
-            data: data,
-            layout: 'vertical',
-            title: t('analysis.canvas.legend.title'),
-            width: 1000,
-            align: 'left',
-            containerStyle: {
-                fill: '#fff',
-                lineWidth: '0',
-            },
-            titleConfig: {
-                position: 'left',
-                offsetX: 0,
-                offsetY: 0,
-                style: {
-                    textAlign: 'end',
-                    fontSize: 12,
-                    fontWeight: 'bold',
-                },
-            },
-            position: 'top-left',
-            offsetY: 0,
-            filter: {
-                enable: true,
-                multiple: true,
-                trigger: 'click',
-                graphActiveState: 'activeByLegend',
-                graphInactiveState: 'inactiveByLegend',
-                filterFunctions: filter,
-            },
-        };
-        const legendInstance = new CustomLegend(legendOptions);
-        legendRef.current = legendInstance;
-        graph?.addPlugin(legendInstance);
-        return () => {
-            if (graph && !graph.destroyed) {
-                graph.removePlugin(legendInstance);
+    const {controller, snapshot, run, showLegend = true} = useContext(GraphContext);
+    const groups = useMemo(() => {
+        const result = [];
+        for (const kind of ['nodes', 'edges']) {
+            const labels = new Map();
+            for (const element of snapshot?.data[kind] || []) {
+                const label = element.data.legend;
+                if (label === undefined) continue;
+                if (!labels.has(label)) labels.set(label, []);
+                labels.get(label).push(element);
             }
-        };
-    },
-    [data, filterFunctions, graph, t]);
-
+            labels.forEach((elements, label) => result.push({kind, label, elements}));
+        }
+        return result;
+    }, [snapshot?.data]);
+    useEffect(() => {
+        if (!controller || !showLegend) return undefined;
+        return () => { run(() => controller.highlight([])); };
+    }, [controller, run, showLegend]);
+    if (!showLegend || !groups.length) return null;
+    const ready = Boolean(controller && snapshot?.status === 'ready');
+    return (
+        <div aria-label={t('analysis.canvas.legend.title')} style={{position: 'absolute', left: 12, top: 8,
+            maxWidth: 'calc(100% - 24px)', display: 'flex', gap: 6, flexWrap: 'wrap', zIndex: 2}}>
+            <span>{t('analysis.canvas.legend.title')}</span>
+            {groups.map(({kind, label, elements}) => {
+                const ids = elements.map(element => element.id);
+                const hidden = elements.every(element => element.style?.visibility === 'hidden');
+                const color = elements[0].style?.stroke || elements[0].style?.fill || '#667085';
+                return (
+                    <button key={`${kind}:${label}`} type="button" disabled={!ready}
+                        aria-pressed={!hidden}
+                        onPointerEnter={() => { if (ready) run(() => controller.highlight(ids)); }}
+                        onPointerLeave={() => { if (ready) run(() => controller.highlight([])); }}
+                        onFocus={() => { if (ready) run(() => controller.highlight(ids)); }}
+                        onBlur={() => { if (ready) run(() => controller.highlight([])); }}
+                        onClick={() => run(() => controller.hide(ids, !hidden))}
+                        style={{border: '1px solid #d9d9d9', borderRadius: 4, background: '#fff',
+                            padding: '2px 7px', opacity: hidden ? 0.5 : 1, cursor: 'pointer'}}>
+                        <span aria-hidden="true" style={{color, marginRight: 4}}>{kind === 'nodes' ? '●' : '━'}</span>
+                        {label}
+                    </button>
+                );
+            })}
+        </div>
+    );
 };
 
 export default Legend;

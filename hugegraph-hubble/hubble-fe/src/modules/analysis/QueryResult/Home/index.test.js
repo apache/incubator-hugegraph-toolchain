@@ -15,7 +15,6 @@
  * under the License.
  */
 
-import React from 'react';
 import {fireEvent, render, screen} from '@testing-library/react';
 import QueryResult from './index';
 import {
@@ -47,8 +46,10 @@ jest.mock('react-i18next', () => ({
         },
     }),
 }));
-jest.mock('../GraphResult/Home', () => ({queryProgress}) => (
-    <div>graph canvas {queryProgress && <span>{queryProgress.phase}</span>}</div>
+jest.mock('../GraphResult/Home', () => ({queryProgress, onRefreshGraphNums}) => (
+    <div>graph canvas {queryProgress && <span>{queryProgress.phase}</span>}
+        <button onClick={() => onRefreshGraphNums?.()}>Refresh saved graph counts</button>
+    </div>
 ));
 jest.mock('../TableView', () => () => <div>table result</div>);
 jest.mock('../JsonView', () => () => <div>json result</div>);
@@ -260,4 +261,14 @@ it('keeps the requested result slot height when switching views', () => {
     expect(result.style.height).toBe('320px');
     fireEvent.click(screen.getByRole('tab', {name: 'JSON'}));
     expect(result.style.height).toBe('320px');
+});
+
+it('passes the server-count refresh callback through to the query graph result', () => {
+    const onRefreshGraphNums = jest.fn();
+    render(<QueryResult queryStatus='success'
+        queryResult={{graph_view: {vertices: [{id: 'existing'}], edges: []}}}
+        onRefreshGraphNums={onRefreshGraphNums} />);
+    fireEvent.click(screen.getByRole('button', {name: 'Refresh saved graph counts'}));
+    expect(onRefreshGraphNums).toHaveBeenCalledTimes(1);
+    expect(onRefreshGraphNums).toHaveBeenCalledWith();
 });

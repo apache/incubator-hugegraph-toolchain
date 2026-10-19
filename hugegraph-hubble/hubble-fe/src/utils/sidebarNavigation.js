@@ -16,7 +16,7 @@
  * under the License.
  */
 
-export const getSidebarMenuKey = (pathname, pdEnabled) => {
+export const getSidebarMenuKey = (pathname, _pdEnabled) => {
     const normalizedPath = typeof pathname === 'string' ? pathname : '';
 
     if (/^\/graphspace\/[^/]+\/graph\/[^/]+\/meta\/?$/.test(normalizedPath)) {

@@ -67,17 +67,9 @@ const ShortcutHelp = () => {
             <Typography.Paragraph type='secondary'>
                 {t('workbench.shortcuts.description')}
             </Typography.Paragraph>
-            <Descriptions column={1} size='small' bordered>
-                <Descriptions.Item label={<kbd>?</kbd>}>
-                    {t('workbench.shortcuts.open_help')}
-                </Descriptions.Item>
-                <Descriptions.Item label={<kbd>Ctrl/⌘ + Enter</kbd>}>
-                    {t('workbench.shortcuts.run_query')}
-                </Descriptions.Item>
-                <Descriptions.Item label={<kbd>F</kbd>}>
-                    {t('workbench.shortcuts.fullscreen_graph')}
-                </Descriptions.Item>
-            </Descriptions>
+            <Descriptions column={1} size='small' bordered items={[{key: 0, label: <kbd>?</kbd>, children: t('workbench.shortcuts.open_help')},
+{key: 1, label: <kbd>Ctrl/⌘ + Enter</kbd>, children: t('workbench.shortcuts.run_query')},
+{key: 2, label: <kbd>F</kbd>, children: t('workbench.shortcuts.fullscreen_graph')}].filter(Boolean)} />
         </Modal>
     );
 };

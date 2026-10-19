@@ -20,7 +20,6 @@
  * @file 3D/2D 切换按钮
  */
 
-import React from 'react';
 import {useTranslation} from 'react-i18next';
 import {Tooltip, Segmented} from 'antd';
 import {GRAPH_RENDER_MODE} from '../../../utils/constants';

@@ -20,9 +20,10 @@
  * @file KoutGet算法
  */
 
-import React, {useState, useCallback, useContext} from 'react';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import {useState, useCallback, useContext} from 'react';
 import {useTranslation} from 'react-i18next';
-import {Input, Collapse, Select} from 'antd';
+import {Input, Select} from 'antd';
 import Form from '../../PersistentForm';
 import {RadarChartOutlined} from '@ant-design/icons';
 import AlgorithmNameHeader from '../../AlgorithmNameHeader';
@@ -113,11 +114,8 @@ const KoutGet = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<RadarChartOutlined />}
                     name={K_OUT}
@@ -173,7 +171,7 @@ const KoutGet = props => {
                     />
                 </Form.Item>
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

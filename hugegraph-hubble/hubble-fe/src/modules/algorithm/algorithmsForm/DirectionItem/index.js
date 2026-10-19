@@ -20,7 +20,6 @@
  * @file DirectionItem
  */
 
-import React from 'react';
 import {Select} from 'antd';
 import Form from '../PersistentForm';
 import {useTranslation} from 'react-i18next';

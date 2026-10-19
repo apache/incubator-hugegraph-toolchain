@@ -16,9 +16,10 @@
  * under the License.
  */
 
+import PageHeader from '../../components/PageHeader';
 import {useCallback, useState, useEffect, useRef} from 'react';
 import {
-    Alert, Table, Space, PageHeader, Row, Col, Input, Button, message, Modal, Spin, Empty,
+    Alert, Table, Space, Row, Col, Input, Button, message, Modal, Spin, Empty,
     Card, Typography, Tag, Divider,
 } from 'antd';
 import EditLayer from './EditLayer';
@@ -43,7 +44,7 @@ const loadHiddenBuiltins = () => {
         const stored = JSON.parse(window.localStorage.getItem(HIDDEN_BUILTINS_KEY));
         return Array.isArray(stored) ? stored : [];
     }
-    catch (error) {
+    catch {
         return [];
     }
 };
@@ -52,7 +53,7 @@ const saveHiddenBuiltins = names => {
     try {
         window.localStorage.setItem(HIDDEN_BUILTINS_KEY, JSON.stringify(names));
     }
-    catch (error) {
+    catch {
         // The starting points still work when browser storage is unavailable.
     }
 };
@@ -347,7 +348,6 @@ const Schema = () => {
         <>
             <Spin spinning={graphspaceLoading || listLoading}>
                 <PageHeader
-                    ghost={false}
                     onBack={handleBack}
                     title={t(
                         pdMode
@@ -385,7 +385,7 @@ const Schema = () => {
                         <Alert
                             showIcon
                             type='info'
-                            message={t('schema_template.read_only.title')}
+                            title={t('schema_template.read_only.title')}
                             description={t('schema_template.read_only.description')}
                             action={!pdMode ? (
                                 <Button type='primary' href={templateApplyPath}>
@@ -402,7 +402,7 @@ const Schema = () => {
                         <Alert
                             showIcon
                             type='error'
-                            message={t('schema_template.graphspace_failed')}
+                            title={t('schema_template.graphspace_failed')}
                             action={(
                                 <Button size='small' onClick={retryGraphspace}>
                                     {t('schema_template.retry_graphspace')}
@@ -414,7 +414,7 @@ const Schema = () => {
                         <Alert
                             showIcon
                             type='error'
-                            message={t('schema_template.load_failed')}
+                            title={t('schema_template.load_failed')}
                             action={(
                                 <Button size='small' onClick={retryList}>
                                     {t('schema_template.retry')}

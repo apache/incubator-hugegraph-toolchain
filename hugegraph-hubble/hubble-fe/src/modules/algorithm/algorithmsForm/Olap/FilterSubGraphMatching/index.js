@@ -20,8 +20,9 @@
  * @file FilterSubGraphMatching算法
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Collapse, InputNumber, Input} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import {useState, useCallback, useContext} from 'react';
+import {InputNumber, Input} from 'antd';
 import Form from '../../PersistentForm';
 import {FunnelPlotOutlined} from '@ant-design/icons';
 import GraphAnalysisContext from '../../../../Context';
@@ -38,7 +39,6 @@ import {useTranslation} from 'react-i18next';
 const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.filter_subgraph_matching';
 
 
-// eslint-disable-next-line
 const placeholder = '[{"id":"A","label":"person",},{"id":"B","label":"person","property_filter":"$element.x > 3"},{"id":"C","label":"person","edges":[{"targetId":"A","label":"knows","property_filter":"$element.x > 3"}]},{"id":"D","label":"person","property_filter":"$element.x > 3","edges":[{"targetId":"B","label":"knows",},{"targetId":"F","label":"knows","property_filter":"$element.x > 3"},{"targetId":"C","label":"knows",},{"targetId":"E","label":"knows",}]},{"id":"E","label":"person",},{"id":"F","label":"person","property_filter":"$element.x > 3","edges":[{"targetId":"B","label":"knows","property_filter":"$element.x > 3"},{"targetId":"C","label":"knows","property_filter":"$element.x > 3"}]}]';
 
 const FilterSubGraphMatching = props => {
@@ -119,11 +119,8 @@ const FilterSubGraphMatching = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={info.icon}
                     name={FILTER_SUBGRAPH_MATCHING}
@@ -166,7 +163,7 @@ const FilterSubGraphMatching = props => {
                 </Form.Item>
                 <OlapComputerItem />
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

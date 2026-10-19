@@ -168,7 +168,15 @@ test('keeps empty create errors in the form without an unhandled rejection or AP
     await waitFor(() => expect(screen.getByRole('combobox')).toBeEnabled());
     await userEvent.click(screen.getByRole('button', {name: 'OK'}));
 
-    await waitFor(() => expect(screen.getAllByRole('alert').length).toBeGreaterThan(0));
+    await waitFor(() => {
+        const error = screen.getByText('This field is required');
+        const input = screen.getByPlaceholderText('graph.form.name_placeholder');
+        expect(error).toBeVisible();
+        expect(input).toHaveAttribute('aria-invalid', 'true');
+        const descriptions = (input.getAttribute('aria-describedby') || '').split(/\s+/u)
+            .map(id => document.getElementById(id)).filter(Boolean);
+        expect(descriptions.some(element => element.contains(error))).toBe(true);
+    });
     expect(api.manage.addGraph).not.toHaveBeenCalled();
     expect(api.manage.updateGraph).not.toHaveBeenCalled();
     expect(unhandledRejection).not.toHaveBeenCalled();
@@ -658,7 +666,7 @@ test('creates the graph before importing a selected example dataset', async () =
     await userEvent.click(screen.getByText('schema_template.builtin.people_network'));
     await userEvent.click(screen.getByRole('radio', {
         name: 'graph.form.sample_hlm',
-    }));
+    }).closest('label'));
     fireEvent.click(document.querySelector('.ant-modal-footer .ant-btn-primary'));
 
     await waitFor(() => expect(api.manage.addGraph).toHaveBeenCalled());
@@ -695,10 +703,10 @@ test('lets users clear the optional example dataset choice', async () => {
     );
     await userEvent.click(screen.getByRole('radio', {
         name: 'graph.form.sample_hlm',
-    }));
+    }).closest('label'));
     await userEvent.click(screen.getByRole('radio', {
         name: 'graph.form.sample_none',
-    }));
+    }).closest('label'));
     fireEvent.click(document.querySelector('.ant-modal-footer .ant-btn-primary'));
 
     await waitFor(() => expect(api.manage.addGraph).toHaveBeenCalled());

@@ -24,7 +24,7 @@
     max-width: calc(100vw - 32px);
     padding-bottom: 0;
 
-    :global(.ant-modal-content) {
+    :global(.ant-modal-container) {
         display: flex;
         flex-direction: column;
         height: min(840px, calc(100vh - 48px));
@@ -35,7 +35,7 @@
         flex-shrink: 0;
     }
 
-    :global(.ant-modal-content) > :global(.ant-modal-body) {
+    :global(.ant-modal-container) > :global(.ant-modal-body) {
         display: flex;
         flex: 1;
         flex-direction: column;
@@ -101,12 +101,12 @@
     .modal {
         max-width: calc(100vw - 24px);
 
-        :global(.ant-modal-content) {
+        :global(.ant-modal-container) {
             height: calc(100vh - 24px);
             height: calc(100dvh - 24px);
         }
 
-        :global(.ant-modal-content) > :global(.ant-modal-body) {
+        :global(.ant-modal-container) > :global(.ant-modal-body) {
             padding-inline: 16px;
         }
     }

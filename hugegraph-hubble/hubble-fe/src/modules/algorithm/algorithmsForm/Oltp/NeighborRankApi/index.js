@@ -20,8 +20,9 @@
  * @file NeighborRankApi
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Input, Collapse, Select, InputNumber, Button, Tooltip} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import {useState, useCallback, useContext} from 'react';
+import {Input, Select, InputNumber, Button, Tooltip} from 'antd';
 import Form from '../../PersistentForm';
 import {ScheduleOutlined, DownOutlined, RightOutlined, PlusOutlined, QuestionCircleOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
@@ -185,10 +186,10 @@ const NeighborRankApi = props => {
                 name={['steps']}
                 initialValue={[{}]}
             >
-                {(lists, {add, remove}, {errors}) => (
+                {(lists, {add, remove}, {errors: _errors}) => (
                     <>
                         {
-                            lists.map((item, index) => {
+                            lists.map((item, _index) => {
                                 return (
                                     <div key={item.key}>
                                         {stepFormItems(item)}
@@ -251,11 +252,8 @@ const NeighborRankApi = props => {
     };
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<ScheduleOutlined />}
                     name={NEIGHBOR_RANK_API}
@@ -305,7 +303,7 @@ const NeighborRankApi = props => {
                 </Form.Item>
                 {renderSteps()}
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

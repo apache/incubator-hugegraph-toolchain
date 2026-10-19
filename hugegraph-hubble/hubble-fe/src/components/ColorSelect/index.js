@@ -1,4 +1,3 @@
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,8 +16,8 @@
  * under the License.
  */
 
-import {useCallback, useEffect, useId, useRef, useState} from 'react';
-import {ChromePicker} from 'react-color';
+import {useCallback, useRef, useState} from 'react';
+import {ColorPicker} from 'antd';
 import styles from './index.module.scss';
 import {useTranslation} from 'react-i18next';
 
@@ -27,76 +26,35 @@ const InputColorSelect = ({value, onChange, disable}) => {
     const [visible, setVisible] = useState(false);
     const [color, setColor] = useState('#5c73e6');
     const triggerRef = useRef(null);
-    const pickerId = useId();
-
-    const showPicker = useCallback(() => {
-        if (disable) {
-            return;
+    const currentColor = value || color;
+    const handleOpenChange = useCallback(open => {
+        setVisible(open);
+        if (!open) {
+            triggerRef.current?.focus();
         }
-
-        setVisible(true);
-    }, [disable]);
-
-    const hidePicker = useCallback(() => {
-        if (disable) {
-            return;
-        }
-
-        setVisible(false);
-        triggerRef.current?.focus();
-    }, [disable]);
-
+    }, []);
+    const handleChange = useCallback(next => {
+        const hex = next.toHexString();
+        setColor(hex);
+        onChange?.(hex);
+    }, [onChange]);
     const handleKeyDown = useCallback(event => {
-        if (event.key === 'Escape' && visible) {
+        if (event.key === 'Escape') {
             event.preventDefault();
-            hidePicker();
+            handleOpenChange(false);
         }
-    }, [hidePicker, visible]);
-
-    const handleClick = useCallback(color => {
-        if (disable) {
-            return;
-        }
-
-        setColor(color.hex);
-
-        onChange?.(color.hex);
-    }, [onChange, disable]);
-
-    useEffect(() => {
-        if (value) {
-            setColor(value);
-        }
-    }, [value]);
+    }, [handleOpenChange]);
 
     return (
-        <div className={styles.wrap} onKeyDown={handleKeyDown}>
-            {disable ? <div className={styles.disable} /> : null}
-            <div className={styles.swatch}>
-                <button
-                    ref={triggerRef}
-                    type='button'
-                    className={styles.color}
-                    style={{background: `${color}`}}
-                    onClick={showPicker}
-                    disabled={disable}
-                    aria-label={t('style_config.color_picker')}
-                    aria-expanded={visible}
-                    aria-controls={visible ? pickerId : undefined}
-                />
-            </div>
-            {visible ? (
-                <div className={styles.popover} id={pickerId}>
-                    <button
-                        type='button'
-                        className={styles.cover}
-                        onClick={hidePicker}
-                        aria-label={t('style_config.close_color_picker')}
-                    />
-                    <ChromePicker color={color} onChange={handleClick} disableAlpha />
-                </div>
-            ) : null}
-        </div>
+        <ColorPicker value={currentColor} onChange={handleChange} disabled={disable}
+            disabledAlpha format='hex' open={visible && !disable} onOpenChange={handleOpenChange}
+            panelRender={panel => <div onKeyDown={handleKeyDown}>{panel}</div>}>
+            <span className={styles.swatch} onKeyDown={handleKeyDown}>
+                <button ref={triggerRef} type='button' className={styles.color}
+                    style={{background: currentColor}} disabled={disable}
+                    aria-label={t('style_config.color_picker')} aria-expanded={visible && !disable} />
+            </span>
+        </ColorPicker>
     );
 };
 

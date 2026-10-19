@@ -20,8 +20,9 @@
  * @file PersonalPageRank算法
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Input, Collapse, Select, InputNumber} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import {useState, useCallback, useContext} from 'react';
+import {Input, Select, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
 import {TeamOutlined} from '@ant-design/icons';
 import GraphAnalysisContext from '../../../../Context';
@@ -116,11 +117,8 @@ const PersonalPageRank = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={info.icon}
                     name={PERSONAL_PAGE_RANK}
@@ -190,10 +188,11 @@ const PersonalPageRank = props => {
                     <Select
                         placeholder={t(OWNED_TEXT_PATH + '.use_id_fixlength_query')}
                         allowClear
-                    >
-                        <Select.Option value>{t('common.verify.yes')}</Select.Option>
-                        <Select.Option value={false}>{t('common.verify.no')}</Select.Option>
-                    </Select>
+                        options={[
+                            {value: true, label: t('common.verify.yes')},
+                            {value: false, label: t('common.verify.no')},
+                        ]}
+                    />
                 </Form.Item>
                 <Form.Item
                     labelCol={{span: 24}}
@@ -207,7 +206,7 @@ const PersonalPageRank = props => {
                 </Form.Item>
                 <OlapComputerItem />
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

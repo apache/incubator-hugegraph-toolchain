@@ -123,8 +123,6 @@ const FilterForm = ({index, remove, propertyList}) => {
 
     const valuePlaceholder = t('analysis.canvas.filter_drawer.value');
 
-    // const getFromEvent = useCallback(value => moment(value).format('YYYY-MM-DD'), []);
-    // const getFromProps = useCallback(value => ({value: value ? moment(value) : ''}), []);
 
     return (
         <Form

@@ -20,7 +20,6 @@
  * @file  NeighborRankApi算法展示
  */
 
-import React from 'react';
 import {useTranslation} from 'react-i18next';
 import {colors} from '../../../../utils/constants';
 import JaccRankView from '../../../component/JaccRankView';

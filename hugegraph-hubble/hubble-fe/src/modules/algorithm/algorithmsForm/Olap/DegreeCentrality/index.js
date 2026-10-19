@@ -20,8 +20,9 @@
  * @file DegreeCentrality算法
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Input, Collapse, InputNumber} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import {useState, useCallback, useContext} from 'react';
+import {Input, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
 import {ControlOutlined} from '@ant-design/icons';
 import GraphAnalysisContext from '../../../../Context';
@@ -113,11 +114,8 @@ const DegreeCentrality = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={info.icon}
                     name={DEGREE_CENTRALIT}
@@ -173,7 +171,7 @@ const DegreeCentrality = props => {
                 </Form.Item>
                 <OlapComputerItem />
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

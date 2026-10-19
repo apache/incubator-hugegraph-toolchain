@@ -20,10 +20,11 @@
  * @file Louvain算法
  */
 
-import React, {
+import AlgorithmPanel from '../../AlgorithmPanel';
+import {
     useState, useCallback, useContext, useEffect, useMemo, useRef,
 } from 'react';
-import {Input, Collapse, InputNumber} from 'antd';
+import {Input, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
 import {HomeOutlined} from '@ant-design/icons';
 import GraphAnalysisContext from '../../../../Context';
@@ -153,11 +154,8 @@ const Louvain = props => {
     }, [debouncedRunAvailability]);
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={info.icon}
                     name={LOUVAIN}
@@ -211,7 +209,7 @@ const Louvain = props => {
                 </Form.Item>
                 <OlapComputerItem />
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

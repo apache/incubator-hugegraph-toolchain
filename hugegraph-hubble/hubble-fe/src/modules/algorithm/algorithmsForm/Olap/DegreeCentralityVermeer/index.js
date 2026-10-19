@@ -20,8 +20,9 @@
  * @file DegreeCentralityVermeer算法
  */
 
-import React, {useState, useCallback, useContext, useEffect} from 'react';
-import {Collapse, InputNumber, Select} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import {useState, useCallback, useContext, useEffect} from 'react';
+import {InputNumber, Select} from 'antd';
 import Form from '../../PersistentForm';
 import {ControlOutlined} from '@ant-design/icons';
 import GraphAnalysisContext from '../../../../Context';
@@ -125,11 +126,8 @@ const DegreeCentralityVermeer = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={info.icon}
                     name={DEGREE_CENTRALIT}
@@ -170,7 +168,7 @@ const DegreeCentralityVermeer = props => {
                     <Select allowClear options={directionOptions} />
                 </Form.Item>
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

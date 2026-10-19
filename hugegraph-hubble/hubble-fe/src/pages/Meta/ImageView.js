@@ -16,10 +16,10 @@
  * under the License.
  */
 
-import {useEffect, useCallback, useRef, useState} from 'react';
+import {useEffect, useCallback, useMemo, useRef, useState} from 'react';
 import {useParams} from 'react-router-dom';
 import * as api from '../../api';
-import GraphView from '../../components/GraphinView';
+import {GraphCanvas} from '../../visualization/react';
 import {EditPropertyLayer} from './Property/EditLayer';
 import {EditVertexLayer} from './Vertex/EditLayer';
 import {EditEdgeLayer} from './Edge/EditLayer';
@@ -27,7 +27,7 @@ import PropertyTable from './Property';
 import {
     Alert, Button, Row, Space, Col, Drawer, Spin, Modal, Select, Typography, message,
 } from 'antd';
-import {formatToGraphInData} from '../../utils/formatGraphInData';
+import {adaptHubbleSchema} from '../../visualization/hubble/adapter';
 import {useTranslation} from 'react-i18next';
 import styles from './ImageView.module.scss';
 import {BUILTIN_SCHEMA_TEMPLATES} from '../Schema/builtinSchemaTemplates';
@@ -39,6 +39,8 @@ const SCHEMA_LABEL_DOCS_URL
 const PAGE_ERROR_CONFIG = {suppressBusinessErrorToast: true};
 const BUILTIN_TEMPLATE_SOURCE = 'builtin:';
 const SAVED_TEMPLATE_SOURCE = 'saved:';
+const EMPTY_DATA = {nodes: [], edges: []};
+const EMPTY_LIST = [];
 
 const enlargeSmallSchema = data => {
     if (!data.nodes?.length || data.nodes.length >= 10) {
@@ -49,17 +51,14 @@ const enlargeSmallSchema = data => {
             ...node,
             style: {
                 ...node.style,
-                label: {...node.style?.label, fontSize: 18},
-                keyshape: {...node.style?.keyshape, size: 72},
-                icon: {...node.style?.icon, fontSize: 20},
+                labelFontSize: 18, size: 72, iconFontSize: 20, iconWidth: 20, iconHeight: 20,
             },
         })),
         edges: data.edges.map(edge => ({
             ...edge,
             style: {
                 ...edge.style,
-                label: {...edge.style?.label, fontSize: 16},
-                keyshape: {...edge.style?.keyshape, lineWidth: 2.5},
+                labelFontSize: 16, lineWidth: 2.5,
             },
         })),
     };
@@ -78,8 +77,7 @@ const formatKeys = keys => {
     return Array.isArray(keys) ? keys.join(', ') : '';
 };
 
-const SchemaTooltip = ({model, type, t, canWrite}) => {
-    const schema = model?.data || {};
+const SchemaTooltip = ({schema, type, t, canWrite}) => {
     const properties = formatProperties(schema.properties);
     const isVertex = type === 'vertex';
     const details = isVertex ? [
@@ -116,18 +114,19 @@ const SchemaTooltip = ({model, type, t, canWrite}) => {
 
 const ImageView = () => {
     const {t} = useTranslation();
-    // const graphRef = useRef(null);
     const {graphspace, graph} = useParams();
     const {canWrite} = useGraphspaceAccess(graphspace);
-    const [data, setData] = useState({vertices: [], edges: []});
+    const scope = JSON.stringify([graphspace, graph]);
+    const [loaded, setLoaded] = useState({scope: null, data: EMPTY_DATA, vertexList: [], propertyList: []});
+    const data = loaded.scope === scope ? loaded.data : EMPTY_DATA;
+    const vertexList = loaded.scope === scope ? loaded.vertexList : EMPTY_LIST;
+    const propertyList = loaded.scope === scope ? loaded.propertyList : EMPTY_LIST;
     const [propertyVisible, setPropertyVisible] = useState(false);
     const [vertexVisible, setVertexVisible] = useState(false);
     const [edgeVisible, setEdgeVisible] = useState(false);
     const [propertyListVisible, setPropertyListVisible] = useState(false);
     const [vertexName, setVertexName] = useState('');
     const [edgeName, setEdgeName] = useState('');
-    const [propertyList, setPropertyList] = useState([]);
-    const [vertexList, setVertexList] = useState([]);
     const [loading, setLoading] = useState(false);
     const [loadError, setLoadError] = useState(false);
     const requestToken = useRef(null);
@@ -274,7 +273,7 @@ const ImageView = () => {
             setTemplateVisible(false);
             handleRefresh();
         }
-        catch (error) {
+        catch {
             if (templateApplyToken.current !== token) {
                 return;
             }
@@ -290,37 +289,31 @@ const ImageView = () => {
         }
     }, [graph, graphspace, handleRefresh, selectedTemplate, t]);
 
-    const handleDoubleClick = useCallback((id, type, data) => {
+    const handleDoubleClick = useCallback(({kind, data: {raw}}) => {
         if (!canWrite) {
             return;
         }
-        if (type === 'node') {
+        if (kind === 'node') {
             setVertexVisible(true);
             setEdgeVisible(false);
-            setVertexName(data.label);
+            setVertexName(String(raw.label ?? raw.id ?? ''));
         }
-
-        if (type === 'edge') {
+        if (kind === 'edge') {
             setVertexVisible(false);
             setEdgeVisible(true);
-            setEdgeName(data.label);
+            setEdgeName(String(raw.label ?? raw.id ?? ''));
         }
     }, [canWrite]);
 
-    const renderVertexTooltip = useCallback(({model}) => (
-        <SchemaTooltip model={model} type='vertex' t={t} canWrite={canWrite} />
+    const renderTooltip = useCallback(event => (
+        <SchemaTooltip schema={event.data.raw} type={event.kind === 'node' ? 'vertex' : 'edge'}
+            t={t} canWrite={canWrite} />
     ), [canWrite, t]);
-
-    const renderEdgeTooltip = useCallback(({model}) => (
-        <SchemaTooltip model={model} type='edge' t={t} canWrite={canWrite} />
-    ), [canWrite, t]);
+    const handleCanvasError = useCallback(() => setLoadError(true), []);
 
     const loadSchemaView = useCallback(() => {
         const token = Symbol('schema-image');
         requestToken.current = token;
-        setData({nodes: [], edges: []});
-        setVertexList([]);
-        setPropertyList([]);
         setLoadError(false);
         setLoading(true);
         Promise.allSettled([
@@ -338,21 +331,24 @@ const ImageView = () => {
                 setLoadError(true);
                 return;
             }
-            setData(enlargeSmallSchema(formatToGraphInData(view.value.data)));
-            setVertexList(vertices.value.data.records.map(item => ({
-                label: item.name, value: item.name,
-            })));
-            setPropertyList(properties.value.data.records.map(item => ({
-                label: item.name,
-                value: item.name,
-                data_type: item.data_type,
-            })));
+            setLoaded({
+                scope,
+                data: enlargeSmallSchema(adaptHubbleSchema(view.value.data)),
+                vertexList: vertices.value.data.records.map(item => ({label: item.name, value: item.name})),
+                propertyList: properties.value.data.records.map(item => ({
+                    label: item.name, value: item.name, data_type: item.data_type,
+                })),
+            });
+        }).catch(() => {
+            if (requestToken.current === token) {
+                setLoadError(true);
+            }
         }).finally(() => {
             if (requestToken.current === token) {
                 setLoading(false);
             }
         });
-    }, [graph, graphspace]);
+    }, [graph, graphspace, scope]);
 
     useEffect(() => {
         loadSchemaView();
@@ -381,6 +377,9 @@ const ImageView = () => {
         && !data.nodes?.length && !data.edges?.length
         && !vertexList.length && !propertyList.length;
     const smallSchema = Boolean(data.nodes?.length && data.nodes.length < 10);
+    const layout = useMemo(() => ({type: 'dagre', options: {
+        rankdir: 'LR', nodesep: smallSchema ? 90 : 60, ranksep: smallSchema ? 240 : 150,
+    }}), [smallSchema]);
     const builtinNames = Object.keys(BUILTIN_SCHEMA_TEMPLATES);
     const savedOptions = savedTemplates
         .map(item => ({
@@ -436,7 +435,7 @@ const ImageView = () => {
                 <Alert
                     type='error'
                     showIcon
-                    message={t('schema.image_view.load_failed')}
+                    title={t('schema.image_view.load_failed')}
                     action={(
                         <Button size='small' onClick={loadSchemaView}>
                             {t('schema.retry')}
@@ -444,7 +443,6 @@ const ImageView = () => {
                     )}
                 />
             )}
-            {/* <div ref={graphRef} style={{display: 'inline-block', width: 1000, height: 600}} /> */}
             <Row justify='space-between' align='middle' className={styles.toolbar}>
                 <Col>
                     {!schemaIsEmpty && schemaActions}
@@ -497,22 +495,16 @@ const ImageView = () => {
                         </section>
                     )
                 ) : (
-                    <GraphView
+                    <GraphCanvas
+                        key={scope}
                         data={data}
-                        config={{
-                            minZoom: 0.5,
-                            maxZoom: 2,
-                            fitCenter: true,
-                        }}
-                        layout={{
-                            type: 'gForce',
-                            gravity: 10,
-                            linkDistance: smallSchema ? 240 : 150,
-                        }}
+                        preset='preview'
+                        layout={layout}
                         onDoubleClick={canWrite ? handleDoubleClick : undefined}
-                        nodeTooltip={renderVertexTooltip}
-                        edgeTooltip={renderEdgeTooltip}
-                        height={600}
+                        tooltip={renderTooltip}
+                        onError={handleCanvasError}
+                        style={{height: 600}}
+                        aria-label={t('schema.title')}
                     />
                 )}
             </Spin>
@@ -529,14 +521,14 @@ const ImageView = () => {
                     }}
                     onOk={applySchemaTemplate}
                     onCancel={closeTemplatePicker}
-                    destroyOnClose
+                    destroyOnHidden
                 >
                     <Spin spinning={templateLoading}>
                         {templateLoadError ? (
                             <Alert
                                 type='error'
                                 showIcon
-                                message={t('schema.image_view.template_load_failed')}
+                                title={t('schema.image_view.template_load_failed')}
                                 action={(
                                     <Button size='small' onClick={loadSchemaTemplates}>
                                         {t('schema.image_view.retry_templates')}
@@ -544,7 +536,7 @@ const ImageView = () => {
                                 )}
                             />
                         ) : (
-                            <Space direction='vertical' size='middle' style={{width: '100%'}}>
+                            <Space orientation='vertical' size='middle' style={{width: '100%'}}>
                                 <Typography.Text>
                                     {t('schema.image_view.template_picker_help')}
                                 </Typography.Text>
@@ -599,7 +591,7 @@ const ImageView = () => {
             <Drawer
                 open={propertyListVisible}
                 onClose={hidePropertyListLayer}
-                width={600}
+                size={600}
                 mask={false}
                 title={t('schema.image_view.view_properties')}
             >

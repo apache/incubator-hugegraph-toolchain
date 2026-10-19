@@ -16,6 +16,7 @@
  * under the License.
  */
 
+import {assignBrowserLocation, replaceBrowserLocation} from '../utils/browserNavigation';
 import axios from 'axios';
 import {message} from 'antd';
 import JSONbig from 'json-bigint';
@@ -45,14 +46,14 @@ const redirectToLogin = () => {
     user.clearLogin();
     if (logoutTransition) {
         sessionStorage.removeItem('redirect');
-        window.location.replace('/login');
+        replaceBrowserLocation('/login');
         return;
     }
     if (window.location.pathname !== '/login') {
         const redirect = `${window.location.pathname}${window.location.search}`
                          + window.location.hash;
         sessionStorage.setItem('redirect', redirect);
-        window.location.href = `/login?redirect=${encodeURIComponent(redirect)}`;
+        assignBrowserLocation(`/login?redirect=${encodeURIComponent(redirect)}`);
     }
 };
 

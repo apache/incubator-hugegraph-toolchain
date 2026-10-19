@@ -20,13 +20,14 @@
  * @file 图算法 Home
  */
 
-import React, {useCallback, useState, useEffect, useContext, useRef} from 'react';
+import {useCallback, useState, useEffect, useContext, useRef, useMemo, useLayoutEffect} from 'react';
 import AlgorithmFormHome from '../algorithmsForm/Home';
 import GraphResult from '../GraphResult/Home';
 import LogsDetail from '../LogsDetail/Home';
 import GraphAnalysisContext from '../../Context';
 import {GRAPH_STATUS, PANEL_TYPE, GRAPH_RENDER_MODE, useTranslatedConstants} from '../../../utils/constants';
 import * as api from '../../../api';
+import {USER_CHANGE_EVENT} from '../../../utils/user';
 import _ from 'lodash';
 import c from './index.module.scss';
 
@@ -47,6 +48,7 @@ const AlgorithmHome = () => {
     const [metaData, setMetaData] = useState();
     const [propertyKeysRecords, setPropertyKeysRecords] = useState();
     const [graphNums, setGraphNums] = useState({vertexCount: -1, edgeCount: -1});
+    const [identityVersion, setIdentityVersion] = useState(0);
     const [algorithmMode, setAlgorithmMode] = useState();
     const [queryStatus, setQueryStatus] = useState(STANDBY);
     const [queryMessage, setQueryMessage] = useState();
@@ -70,6 +72,23 @@ const AlgorithmHome = () => {
     const executionLogsRequest = useRef(null);
     const favoriteQueriesRequest = useRef(null);
     const graphNumsRequest = useRef(null);
+    const graphNumsScope = useMemo(() => ({graphSpace, graph, identityVersion}), [graphSpace, graph, identityVersion]);
+    const graphNumsOwner = useRef(null);
+    useLayoutEffect(() => {
+        graphNumsOwner.current = graphNumsScope;
+        return () => { graphNumsOwner.current = null; };
+    }, [graphNumsScope]);
+
+    useEffect(() => {
+        const resetIdentity = () => {
+            graphNumsRequest.current = null;
+            graphNumsOwner.current = null;
+            setGraphNums({vertexCount: -1, edgeCount: -1});
+            setIdentityVersion(previous => previous + 1);
+        };
+        window.addEventListener(USER_CHANGE_EVENT, resetIdentity);
+        return () => window.removeEventListener(USER_CHANGE_EVENT, resetIdentity);
+    }, []);
 
     useEffect(() => () => {
         executionLogsRequest.current = null;
@@ -116,21 +135,34 @@ const AlgorithmHome = () => {
 
     const getGraphNumsInfo = useCallback(
         async () => {
+            if (graphNumsOwner.current !== graphNumsScope || !graphSpace || !graph) return {status: 'disposed'};
             const request = Symbol('algorithm-graph-counts');
             graphNumsRequest.current = request;
-            setGraphNums({vertexCount: -1, edgeCount: -1});
-            const response = await api.analysis.getGraphData(graphSpace, graph);
-            if (graphNumsRequest.current !== request) {
-                return;
+            let response;
+            try {
+                response = await api.analysis.getGraphData(graphSpace, graph);
+            } catch {
+                response = null;
             }
-            const {status, data} = response || {};
-            if (status === 200) {
-                const {vertexcount, edgecount} = data || {};
-                setGraphNums({vertexCount: vertexcount, edgeCount: edgecount});
+            if (graphNumsOwner.current !== graphNumsScope || graphNumsRequest.current !== request) {
+                return {status: 'superseded'};
             }
+            if (response?.status !== 200) {
+                setGraphNums({vertexCount: null, edgeCount: null});
+                return {status: 'unavailable'};
+            }
+            const {vertexcount, edgecount} = response.data || {};
+            setGraphNums({vertexCount: vertexcount, edgeCount: edgecount});
+            return {status: 'refreshed'};
         },
-        [graph, graphSpace]
+        [graph, graphSpace, graphNumsScope]
     );
+
+    useEffect(() => {
+        graphNumsRequest.current = null;
+        setGraphNums({vertexCount: -1, edgeCount: -1});
+        void getGraphNumsInfo();
+    }, [getGraphNumsInfo]);
 
     const getFavoriteQueriesList = useCallback(
         async () => {
@@ -165,6 +197,7 @@ const AlgorithmHome = () => {
                     throw new Error('algorithm favorites unavailable');
                 }
                 setFavoriteQueriesData({
+                    page: pageFavorite,
                     records: data?.records ?? [],
                     total: data?.total ?? 0,
                 });
@@ -251,6 +284,7 @@ const AlgorithmHome = () => {
     useEffect(
         () => {
             if (pageFavorite > 1
+                && favoriteQueriesData.page === pageFavorite
                 && !favoriteQueriesLoading
                 && !favoriteQueriesError
                 && Array.isArray(favoriteQueriesData.records)
@@ -262,15 +296,6 @@ const AlgorithmHome = () => {
             pageFavorite, pageSize]
     );
 
-    const resetGraphInfo = useCallback(
-        () => {
-            getMetaData();
-            getPropertykeys();
-            getGraphNumsInfo();
-        },
-        [getGraphNumsInfo, getMetaData, getPropertykeys]
-    );
-
     const onResetPage = useCallback(
         () => {
             setExecutePage(defaultPageParams.page);
@@ -280,11 +305,12 @@ const AlgorithmHome = () => {
 
     useEffect(() => {
         if (graphSpace && graph) {
-            resetGraphInfo();
+            getMetaData();
+            getPropertykeys();
         }
         initQueryResult();
         onResetPage();
-    }, [graph, graphSpace, initQueryResult, onResetPage, resetGraphInfo]);
+    }, [graph, graphSpace, getMetaData, getPropertykeys, initQueryResult, onResetPage]);
 
 
     const handleUpdateCurrentAlgorithm = useCallback(value => {
@@ -382,6 +408,7 @@ const AlgorithmHome = () => {
                     algorithm={algorithmOnCanvas}
                     panelType={panelType}
                     graphNums={graphNums}
+                    onRefreshGraphNums={getGraphNumsInfo}
                     propertyKeysRecords={propertyKeysRecords}
                     updatePanelType={updatePanelType}
                     resetGraphStatus={resetGraphStatus}

@@ -26,12 +26,11 @@ import {
 } from 'antd';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import * as api from '../../../api';
-import ReactJsonView from 'react-json-view';
+import JsonViewer from '../../../components/JsonViewer';
 import {useTranslation} from 'react-i18next';
 import {TaskStatus} from '../status';
 import style from './index.module.scss';
 
-const {Panel} = Collapse;
 
 const displayValue = (value, fallback) => (
     value === null || value === undefined || value === '' ? fallback : value
@@ -68,7 +67,7 @@ const ViewLayer = ({visible, onCancel, task_id}) => {
             }
             setError(true);
         }
-        catch (requestError) {
+        catch {
             if (detailRequest.current === token) {
                 setError(true);
             }
@@ -98,14 +97,14 @@ const ViewLayer = ({visible, onCancel, task_id}) => {
             open={visible}
             width={600}
             onOk={onFinish}
-            destroyOnClose
+            destroyOnHidden
         >
             <Spin spinning={loading}>
                 {error && (
                     <Alert
                         type='error'
                         showIcon
-                        message={t('task.view.unavailable')}
+                        title={t('task.view.unavailable')}
                         action={(
                             <Button size='small' onClick={loadDetail}>
                                 {t('task.view.retry')}
@@ -115,45 +114,44 @@ const ViewLayer = ({visible, onCancel, task_id}) => {
                 )}
                 {data && (
                     <>
-                        <Descriptions bordered size='small' column={1}>
-                            <Descriptions.Item label={t('task.view.name')}>
-                                {displayValue(data.job_name ?? data.name, unavailable)}
-                            </Descriptions.Item>
-                            <Descriptions.Item label={t('task.view.target_space')}>
-                                {displayValue(data.graphspace, unavailable)}
-                            </Descriptions.Item>
-                            <Descriptions.Item label={t('task.view.target_graph')}>
-                                {displayValue(data.graph, unavailable)}
-                            </Descriptions.Item>
-                            <Descriptions.Item label={t('task.view.status')}>
-                                <TaskStatus status={data.job_status ?? data.status} />
-                            </Descriptions.Item>
-                            <Descriptions.Item label={t('task.view.data_size')}>
-                                {displayValue(data.job_size, unavailable)}
-                            </Descriptions.Item>
-                            <Descriptions.Item label={t('task.view.duration')}>
-                                {displayValue(data.job_duration, unavailable)}
-                            </Descriptions.Item>
-                            <Descriptions.Item label={t('task.view.create_time')}>
-                                {displayValue(data.create_time, unavailable)}
-                            </Descriptions.Item>
-                            <Descriptions.Item label={t('task.view.update_time')}>
-                                {displayValue(data.update_time, unavailable)}
-                            </Descriptions.Item>
-                        </Descriptions>
-                        <Collapse className={style.technical_details} ghost>
-                            <Panel header={t('task.view.technical_details')} key='technical'>
-                                <div className={style.raw_json}>
-                                    <ReactJsonView
-                                        src={data}
-                                        name={false}
-                                        displayObjectSize={false}
-                                        displayDataTypes={false}
-                                        groupArraysAfterLength={50}
-                                    />
-                                </div>
-                            </Panel>
-                        </Collapse>
+                        <Descriptions bordered size='small' column={1} items={[
+                            {
+                                key: 'name', label: t('task.view.name'),
+                                children: displayValue(data.job_name ?? data.name, unavailable),
+                            },
+                            {
+                                key: 'space', label: t('task.view.target_space'),
+                                children: displayValue(data.graphspace, unavailable),
+                            },
+                            {
+                                key: 'graph', label: t('task.view.target_graph'),
+                                children: displayValue(data.graph, unavailable),
+                            },
+                            {
+                                key: 'status', label: t('task.view.status'),
+                                children: <TaskStatus status={data.job_status ?? data.status} />,
+                            },
+                            {
+                                key: 'size', label: t('task.view.data_size'),
+                                children: displayValue(data.job_size, unavailable),
+                            },
+                            {
+                                key: 'duration', label: t('task.view.duration'),
+                                children: displayValue(data.job_duration, unavailable),
+                            },
+                            {
+                                key: 'created', label: t('task.view.create_time'),
+                                children: displayValue(data.create_time, unavailable),
+                            },
+                            {
+                                key: 'updated', label: t('task.view.update_time'),
+                                children: displayValue(data.update_time, unavailable),
+                            },
+                        ]} />
+                        <Collapse className={style.technical_details} ghost items={[{
+                            key: 'technical', label: t('task.view.technical_details'),
+                            children: <div className={style.raw_json}><JsonViewer value={data} /></div>,
+                        }]} />
                     </>
                 )}
             </Spin>

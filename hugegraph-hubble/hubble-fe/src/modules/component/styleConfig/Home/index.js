@@ -20,7 +20,7 @@
  * @file 外观设置
  */
 
-import React, {useCallback, useState} from 'react';
+import {useCallback, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Button, Tooltip} from 'antd';
 import ConfigModal from '../ConfigModal';
@@ -32,7 +32,6 @@ const StyleConfig = props => {
         styleConfig,
         onChange,
         buttonEnable,
-        refreshExcuteCount,
         tooltip,
     } = props;
 
@@ -49,9 +48,8 @@ const StyleConfig = props => {
         styleConfig => {
             onChange(styleConfig);
             setModalVisible(false);
-            refreshExcuteCount && refreshExcuteCount();
         },
-        [onChange, refreshExcuteCount]
+        [onChange]
     );
 
     const handleStyleModalCancel = useCallback(

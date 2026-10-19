@@ -20,8 +20,9 @@
  * @file BetweennessCentralityVermeer算法
  */
 
-import React, {useState, useCallback, useContext, useEffect} from 'react';
-import {Collapse, InputNumber, Select} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import {useState, useCallback, useContext, useEffect} from 'react';
+import {InputNumber, Select} from 'antd';
 import Form from '../../PersistentForm';
 import {ControlOutlined} from '@ant-design/icons';
 import GraphAnalysisContext from '../../../../Context';
@@ -119,11 +120,8 @@ const BetweennessCentralityVermeer = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={info.icon}
                     name={BETWEENNESS_CENTRALITY}
@@ -173,7 +171,7 @@ const BetweennessCentralityVermeer = props => {
                     <Select allowClear options={boolOptions} />
                 </Form.Item>
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

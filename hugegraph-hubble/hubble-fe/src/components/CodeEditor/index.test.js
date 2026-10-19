@@ -21,12 +21,6 @@ import {Transaction} from '@codemirror/state';
 import {undo} from '@codemirror/commands';
 import CodeEditor from './index';
 
-// CRA's Jest resolver ignores these packages' CommonJS export conditions.
-jest.mock('@marijn/find-cluster-break', () => jest.requireActual('@marijn/find-cluster-break/dist/index.cjs'));
-jest.mock('@codemirror/legacy-modes/mode/groovy', () => (
-    jest.requireActual('@codemirror/legacy-modes/mode/groovy.cjs')
-));
-
 jest.mock('react-i18next', () => {
     const translate = key => key;
     return {useTranslation: () => ({t: translate})};
@@ -147,4 +141,42 @@ it.each([
     fireEvent.keyDown(container.querySelector('.cm-content'), {key: 'Enter', ctrlKey: true});
     expect(execute).toHaveBeenCalledTimes(1);
     expect(onChange).not.toHaveBeenCalled();
+});
+
+
+it('connects form errors to the real editable content and updates accessibility without rebuilding or losing undo', () => {
+    const onChange = jest.fn();
+    const {container, rerender} = render(<>
+        <div id='schema_help'>Schema is required</div>
+        <CodeEditor id='schema' value='g.V()' onChange={onChange} aria-required />
+    </>);
+    const root = container.querySelector('.cm-editor');
+    const content = container.querySelector('.cm-content');
+    const view = EditorView.findFromDOM(root);
+    expect(content).toHaveAttribute('id', 'schema');
+    expect(content).toHaveAttribute('aria-required', 'true');
+    content.focus();
+    act(() => view.dispatch({changes: {from: 5, insert: '.limit(1)'},
+        annotations: Transaction.userEvent.of('input.type')}));
+    rerender(<>
+        <div id='schema_help'>Schema is required</div>
+        <CodeEditor id='schema' value='g.V().limit(1)' onChange={onChange}
+            aria-required aria-invalid='true' aria-describedby='schema_help' />
+    </>);
+    expect(container.querySelector('.cm-editor')).toBe(root);
+    expect(document.activeElement).toBe(content);
+    expect(content).toHaveAttribute('aria-invalid', 'true');
+    expect(content).toHaveAccessibleDescription('Schema is required');
+    expect(onChange).toHaveBeenCalledTimes(1);
+    act(() => { expect(undo(view)).toBe(true); });
+    expect(view.state.doc.toString()).toBe('g.V()');
+    rerender(<>
+        <div id='schema_help'>Schema is required</div>
+        <CodeEditor value='g.V()' onChange={onChange} aria-required={false} />
+    </>);
+    expect(container.querySelector('.cm-editor')).toBe(root);
+    expect(content).not.toHaveAttribute('id');
+    expect(content).not.toHaveAttribute('aria-invalid');
+    expect(content).not.toHaveAttribute('aria-describedby');
+    expect(content).toHaveAttribute('aria-required', 'false');
 });

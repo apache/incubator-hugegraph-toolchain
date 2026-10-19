@@ -20,8 +20,9 @@
  * @file FilteredRingsDetection算法
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Collapse, InputNumber, Input} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import {useState, useCallback, useContext} from 'react';
+import {InputNumber, Input} from 'antd';
 import Form from '../../PersistentForm';
 import {SafetyCertificateOutlined} from '@ant-design/icons';
 import GraphAnalysisContext from '../../../../Context';
@@ -119,11 +120,8 @@ const FilteredRingsDetection = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={info.icon}
                     name={FILTERED_RINGS_DETECTION}
@@ -192,7 +190,7 @@ const FilteredRingsDetection = props => {
                 </Form.Item>
                 <OlapComputerItem />
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

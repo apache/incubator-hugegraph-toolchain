@@ -20,7 +20,7 @@
  * @file 图分析 Home
  */
 
-import React, {useState, useCallback, useEffect, useContext, useRef} from 'react';
+import {useState, useCallback, useEffect, useContext, useRef, useMemo, useLayoutEffect} from 'react';
 import {useTranslation} from 'react-i18next';
 import {useParams} from 'react-router-dom';
 import GraphAnalysisContext from '../../Context';
@@ -118,6 +118,12 @@ const AnalysisHome = ({toolbarExtra}) => {
     const queryRequest = useRef(null);
     const executionTimer = useRef(null);
     const graphNumsRequest = useRef(null);
+    const graphNumsScope = useMemo(() => ({graphSpace, graph, identityVersion}), [graphSpace, graph, identityVersion]);
+    const graphNumsOwner = useRef(null);
+    useLayoutEffect(() => {
+        graphNumsOwner.current = graphNumsScope;
+        return () => { graphNumsOwner.current = null; };
+    }, [graphNumsScope]);
     const executionInFlight = useRef(null);
     const executionLogsRequest = useRef(null);
     const favoriteQueriesRequest = useRef(null);
@@ -216,7 +222,7 @@ const AnalysisHome = ({toolbarExtra}) => {
                 if (status !== 200) {
                     throw new Error('favorite queries unavailable');
                 }
-                setFavoriteQueriesData({records: data.records, total: data.total});
+                setFavoriteQueriesData({page: pageFavorite, records: data.records, total: data.total});
             }
             catch {
                 if (favoriteQueriesRequest.current === request) {
@@ -296,21 +302,34 @@ const AnalysisHome = ({toolbarExtra}) => {
 
     const getGraphNumsInfo = useCallback(
         async () => {
+            if (graphNumsOwner.current !== graphNumsScope || !graphSpace || !graph) return {status: 'disposed'};
             const request = Symbol('graph-counts');
             graphNumsRequest.current = request;
-            const response = await api.analysis.getGraphData(graphSpace, graph);
-            if (graphNumsRequest.current !== request) {
-                return;
+            let response;
+            try {
+                response = await api.analysis.getGraphData(graphSpace, graph);
+            } catch {
+                response = null;
             }
-            const {status, data} = response || {};
-            if (status === 200) {
-                const {vertexcount, edgecount} = data || {};
-                const numsInfo = {vertexCount: vertexcount, edgeCount: edgecount};
-                setGraphNums(numsInfo);
+            if (graphNumsOwner.current !== graphNumsScope || graphNumsRequest.current !== request) {
+                return {status: 'superseded'};
             }
+            if (response?.status !== 200) {
+                setGraphNums({vertexCount: null, edgeCount: null});
+                return {status: 'unavailable'};
+            }
+            const {vertexcount, edgecount} = response.data || {};
+            setGraphNums({vertexCount: vertexcount, edgeCount: edgecount});
+            return {status: 'refreshed'};
         },
-        [graph, graphSpace]
+        [graph, graphSpace, graphNumsScope]
     );
+
+    useEffect(() => {
+        graphNumsRequest.current = null;
+        setGraphNums({vertexCount: -1, edgeCount: -1});
+        void getGraphNumsInfo();
+    }, [getGraphNumsInfo]);
 
     const onResetPage = useCallback(
         () => {
@@ -350,19 +369,18 @@ const AnalysisHome = ({toolbarExtra}) => {
 
     useEffect(() => {
         queryRequest.current = null;
-        graphNumsRequest.current = null;
         executionInFlight.current = null;
         setQueryLanguage(DEFAULT_QUERY_LANGUAGE);
         languageDrafts.current = {};
         setEditorSource('manual');
-        setGraphNums({vertexCount: -1, edgeCount: -1});
         setCodeEditorContent(restoreQuery(graphSpace, graph, GREMLIN));
         if (graphSpace && graph) {
-            resetGraphInfo();
+            getMetaData();
+            getPropertykeys();
         }
         initQueryResult();
         onResetPage();
-    }, [graph, graphSpace, initQueryResult, onResetPage, resetGraphInfo]);
+    }, [graph, graphSpace, getMetaData, getPropertykeys, initQueryResult, onResetPage]);
 
     const onExecuteModeChange = useCallback(
         mode => {
@@ -375,6 +393,7 @@ const AnalysisHome = ({toolbarExtra}) => {
     useEffect(
         () => {
             if (pageFavorite > 1
+                && favoriteQueriesData.page === pageFavorite
                 && !favoriteQueriesLoading
                 && !favoriteQueriesError
                 && Array.isArray(favoriteQueriesData.records)
@@ -552,6 +571,9 @@ const AnalysisHome = ({toolbarExtra}) => {
     useEffect(() => {
         const resetIdentity = () => {
             queryRequest.current = null;
+            graphNumsRequest.current = null;
+            graphNumsOwner.current = null;
+            setGraphNums({vertexCount: -1, edgeCount: -1});
             executionInFlight.current = null;
             executionLogsRequest.current = null;
             favoriteQueriesRequest.current = null;
@@ -784,11 +806,12 @@ const AnalysisHome = ({toolbarExtra}) => {
             updatePanelType={updatePanelType}
             propertyKeysRecords={propertyKeysRecords}
             graphNums={graphNums}
+            onRefreshGraphNums={getGraphNumsInfo}
             graphRenderMode={graphRenderMode}
             onGraphRenderModeChange={onGraphRenderModeChange}
         />
     ), [
-        asyncTaskResult, graphNums, graphRenderMode, isQueryMode, metaData,
+        asyncTaskResult, getGraphNumsInfo, graphNums, graphRenderMode, isQueryMode, metaData,
         onGraphRenderModeChange, panelType, propertyKeysRecords, queryMessage,
         queryResult, queryStatus, resetGraphStatus, text2gql, updatePanelType,
     ]);

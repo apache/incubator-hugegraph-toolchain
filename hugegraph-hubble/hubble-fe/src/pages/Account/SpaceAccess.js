@@ -180,7 +180,7 @@ const ErrorAlert = ({error, retry, t}) => (error ? (
     <Alert
         type="error"
         showIcon
-        message={t('account.space_access.load_error')}
+        title={t('account.space_access.load_error')}
         action={(
             <Button size="small" onClick={retry}>
                 {t('common.action.retry')}
@@ -388,10 +388,10 @@ const SpaceAccess = ({
             }
             if (isMissingAccount(error, t)) {
                 setMissingAccountId(value);
-                throw new Error(accountNotFoundMessage());
+                throw new Error(accountNotFoundMessage(), {cause: error});
             }
             throw new Error(
-                t('account.space_access.member.account_check_failed')
+                t('account.space_access.member.account_check_failed'), {cause: error}
             );
         }
         if (!isCurrent()) {
@@ -557,7 +557,7 @@ const SpaceAccess = ({
             <Alert
                 type="info"
                 showIcon
-                message={t('account.space_access.no_spaces')}
+                title={t('account.space_access.no_spaces')}
             />
         );
     }
@@ -595,13 +595,13 @@ const SpaceAccess = ({
                 okText={replacingCustomAccess
                     ? t('account.space_access.member.replace')
                     : t('common.action.save')}
-                destroyOnClose
+                destroyOnHidden
             >
                 {replacingCustomAccess && (
                     <Alert
                         type="warning"
                         showIcon
-                        message={t('account.space_access.member.custom_title')}
+                        title={t('account.space_access.member.custom_title')}
                         description={t(
                             'account.space_access.member.custom_description'
                         )}

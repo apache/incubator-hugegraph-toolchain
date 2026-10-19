@@ -15,12 +15,41 @@
  * limitations under the License.
  */
 
-import fs from 'fs';
-import path from 'path';
+import {act, fireEvent, screen, waitFor} from '@testing-library/react';
+import {useLocation, useNavigate} from 'react-router-dom';
+import ReactDOM from 'react-dom/client';
 
-test('production router opts into validated v7 transition behavior', () => {
-    const source = fs.readFileSync(path.join(__dirname, 'index.js'), 'utf8');
+jest.mock('react-dom/client', () => {
+    const actual = jest.requireActual('react-dom/client');
+    return {...actual, createRoot: jest.fn(actual.createRoot)};
+});
+jest.mock('./App', () => function RouterProbe() {
+    const location = useLocation();
+    const navigate = useNavigate();
+    return <>
+        <output role="status">{location.pathname}{location.search}{location.hash}</output>
+        <button onClick={() => navigate('/graphspace/DEFAULT/graph/hugegraph/meta')}>Schema</button>
+    </>;
+});
 
-    expect(source).toContain('v7_startTransition: true');
-    expect(source).toContain('v7_relativeSplatPath: true');
+test('production entry preserves deep links and navigates through the real router', async () => {
+    const container = document.createElement('div');
+    container.id = 'root';
+    document.body.append(container);
+    window.history.replaceState({}, '', '/gremlin/DEFAULT/hugegraph?x=1#result');
+    let root;
+    try {
+        await act(async () => { await import('./index'); });
+        root = ReactDOM.createRoot.mock.results.at(-1).value;
+        expect(screen.getByRole('status')).toHaveTextContent('/gremlin/DEFAULT/hugegraph?x=1#result');
+        fireEvent.click(screen.getByRole('button', {name: 'Schema'}));
+        await waitFor(() => expect(screen.getByRole('status'))
+            .toHaveTextContent('/graphspace/DEFAULT/graph/hugegraph/meta'));
+        expect(window.location.pathname).toBe('/graphspace/DEFAULT/graph/hugegraph/meta');
+    }
+    finally {
+        if (root) await act(async () => root.unmount());
+        container.remove();
+        window.history.replaceState({}, '', '/');
+    }
 });

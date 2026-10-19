@@ -20,7 +20,7 @@
  * @file  GraphMenuBar(图分析)
  */
 
-import React, {useCallback} from 'react';
+import {useCallback} from 'react';
 import {useTranslation} from 'react-i18next';
 import MenuBar from '../../../../component/MenuBar';
 import ImportData from '../../../../component/ImportData';
@@ -33,7 +33,7 @@ import NewConfig from '../../../../component/NewConfig';
 import Statistics from '../../../../component/Statistics';
 import RenderModeSwitcher from '../../../../component/GraphRenderModeSwitcher';
 import {PANEL_TYPE, GRAPH_RENDER_MODE} from '../../../../../utils/constants';
-import {formatToDownloadData} from '../../../../../utils/formatGraphResultData';
+import {exportHubbleGraph} from '../../../../../visualization/hubble/adapter';
 import useDownloadJson from '../../../../../customHook/useDownloadJson';
 
 const {LAYOUT, SETTING, STATISTICS} = PANEL_TYPE;
@@ -52,7 +52,6 @@ const GraphMenuBar = props => {
         handleClickNewAddNode,
         handleClickNewAddEdge,
         handleSwitchRenderMode,
-        refreshExcuteCount,
         showCanvasInfo,
         graphRenderMode,
     } = props;
@@ -65,7 +64,7 @@ const GraphMenuBar = props => {
 
     const handleExportJson = useCallback(
         fileName => {
-            downloadJsonHandler(fileName, formatToDownloadData(graphData));
+            downloadJsonHandler(fileName, exportHubbleGraph(graphData));
         },
         [downloadJsonHandler, graphData]
     );
@@ -114,7 +113,6 @@ const GraphMenuBar = props => {
                     styleConfig={styleConfigData}
                     onChange={handleGraphStyleChange}
                     buttonEnable={buttonEnableForCanvas2D}
-                    refreshExcuteCount={refreshExcuteCount}
                     tooltip={isCanvas2D
                         ? t('analysis.canvas.tooltip.style_2d')
                         : t('analysis.canvas.tooltip.style_3d')}

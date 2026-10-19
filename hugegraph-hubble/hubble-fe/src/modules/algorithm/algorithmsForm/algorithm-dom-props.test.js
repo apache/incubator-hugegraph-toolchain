@@ -27,32 +27,6 @@ const collectJavaScript = directory => fs.readdirSync(directory, {withFileTypes:
         return entry.name.endsWith('.js') && !entry.name.endsWith('.test.js') ? [entryPath] : [];
     });
 
-test('algorithm component props are not forwarded to Collapse panel DOM', () => {
-    const offenders = collectJavaScript(__dirname).flatMap(file => {
-        const source = fs.readFileSync(file, 'utf8');
-        return /<Collapse\.Panel[\s\S]*?\{\.\.\.props\}/u.test(source)
-            ? [path.relative(__dirname, file)]
-            : [];
-    });
-
-    expect(offenders).toEqual([]);
-});
-
-test('algorithm panels forward only the collapse control contract', () => {
-    const offenders = collectJavaScript(__dirname).flatMap(file => {
-        const source = fs.readFileSync(file, 'utf8');
-        if (!source.includes('<Collapse.Panel')) {
-            return [];
-        }
-        const hasContract = source.includes('isActive={props.isActive}')
-            && source.includes('onItemClick={props.onItemClick}')
-            && source.includes('panelKey={props.panelKey}');
-        return hasContract ? [] : [path.relative(__dirname, file)];
-    });
-
-    expect(offenders).toEqual([]);
-});
-
 test('max_depth defaults stay optional', () => {
     const offenders = collectJavaScript(__dirname).flatMap(file => {
         const source = fs.readFileSync(file, 'utf8');

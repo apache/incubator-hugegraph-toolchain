@@ -20,7 +20,7 @@
  * @file Gremlin query actions
  */
 
-import React, {useCallback, useContext, useState} from 'react';
+import {useCallback, useContext, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Button, Tooltip, Popover, message, Space} from 'antd';
 import {ClockCircleOutlined, ThunderboltOutlined} from '@ant-design/icons';
@@ -149,10 +149,10 @@ const SecondaryActions = props => {
                 {t('common.action.clear')}
             </Button>
             {allowFavorite && (
-                <Popover
+                <Popover classNames={{root: c.favoriteModel}}
                     placement='bottom'
                     trigger='click'
-                    overlayClassName={c.favoriteModel}
+
                     title={t('analysis.query.favorite_statement')}
                     content={favoriteContent}
                     open={favoriteCardVisible}

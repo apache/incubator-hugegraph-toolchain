@@ -20,6 +20,7 @@ import {act, fireEvent, render, screen, waitFor} from '@testing-library/react';
 import AlgorithmHome from './index';
 import GraphAnalysisContext from '../../Context';
 import * as api from '../../../api';
+import {setUser} from '../../../utils/user';
 
 jest.mock('../../../api', () => ({
     analysis: {
@@ -36,7 +37,11 @@ jest.mock('../../../api', () => ({
 jest.mock('../algorithmsForm/Home', () => props => (
     <div>algorithm forms edges {props.graphNums.edgeCount}</div>
 ));
-jest.mock('../GraphResult/Home', () => () => <div>algorithm result</div>);
+const mockGraphResultProps = jest.fn();
+jest.mock('../GraphResult/Home', () => props => {
+    mockGraphResultProps(props);
+    return <div>algorithm result counts {String(props.graphNums.vertexCount)} {String(props.graphNums.edgeCount)}</div>;
+});
 jest.mock('../LogsDetail/Home', () => props => (
     <div>
         <span>favorite page {props.pageFavorite}</span>
@@ -153,4 +158,158 @@ it('invalidates old graph counts immediately when the graph changes', async () =
         data: {vertexcount: 0, edgecount: 0},
     }));
     expect(screen.getByText('algorithm forms edges 0')).toBeInTheDocument();
+});
+
+const countsHomeFor = (graph = 'graph-a', graphSpace = 'DEFAULT') => (
+    <GraphAnalysisContext.Provider value={{graphSpace, graph}}>
+        <AlgorithmHome />
+    </GraphAnalysisContext.Provider>
+);
+
+it('refreshes server graph totals through the callback passed to the result without resetting confirmed counts', async () => {
+    api.analysis.getGraphData.mockResolvedValue({status: 200, data: {vertexcount: 7, edgecount: 9}});
+    render(countsHomeFor());
+    expect(await screen.findByText('algorithm result counts 7 9')).toBeInTheDocument();
+    const initialCalls = api.analysis.getGraphData.mock.calls.length;
+    const onRefreshGraphNums = mockGraphResultProps.mock.lastCall[0].onRefreshGraphNums;
+    api.analysis.getGraphData.mockResolvedValueOnce({status: 200, data: {vertexcount: 7, edgecount: 9}});
+    await act(async () => onRefreshGraphNums());
+    expect(api.analysis.getGraphData).toHaveBeenCalledTimes(initialCalls + 1);
+    expect(api.analysis.getGraphData).toHaveBeenLastCalledWith('DEFAULT', 'graph-a');
+    expect(screen.getByText('algorithm result counts 7 9')).toBeInTheDocument();
+    api.analysis.getGraphData.mockResolvedValueOnce({status: 200, data: {vertexcount: 8, edgecount: 12}});
+    await act(async () => onRefreshGraphNums());
+    expect(screen.getByText('algorithm result counts 8 12')).toBeInTheDocument();
+    api.analysis.getGraphData.mockRejectedValueOnce(new Error('statistics unavailable'));
+    await act(async () => { await expect(onRefreshGraphNums()).resolves.toEqual({status: 'unavailable'}); });
+    expect(screen.getByText('algorithm result counts null null')).toBeInTheDocument();
+});
+
+it.each(['graph', 'space', 'return-to-a'].flatMap(change =>
+    ['success', 'http-error', 'network-error'].map(outcome => [change, outcome])))('rejects stale count-refresh callbacks after a %s change with late %s responses', async (change, outcome) => {
+    api.analysis.getGraphData.mockResolvedValue({status: 200, data: {vertexcount: 7, edgecount: 9}});
+    const view = render(countsHomeFor());
+    expect(await screen.findByText('algorithm result counts 7 9')).toBeInTheDocument();
+    const staleRefresh = mockGraphResultProps.mock.lastCall[0].onRefreshGraphNums;
+    let resolveOld;
+    let rejectOld;
+    api.analysis.getGraphData.mockImplementationOnce(() => new Promise((resolve, reject) => {
+        resolveOld = resolve;
+        rejectOld = reject;
+    }));
+    act(() => { void staleRefresh(); });
+    api.analysis.getGraphData.mockResolvedValue({status: 200, data: {vertexcount: 20, edgecount: 21}});
+    view.rerender(countsHomeFor(change === 'space' ? 'graph-a' : 'graph-b', change === 'space' ? 'OTHER' : 'DEFAULT'));
+    expect(await screen.findByText('algorithm result counts 20 21')).toBeInTheDocument();
+    if (change === 'return-to-a') {
+        api.analysis.getGraphData.mockResolvedValue({status: 200, data: {vertexcount: 30, edgecount: 31}});
+        view.rerender(countsHomeFor());
+        expect(await screen.findByText('algorithm result counts 30 31')).toBeInTheDocument();
+    }
+    const calls = api.analysis.getGraphData.mock.calls.length;
+    await act(async () => staleRefresh());
+    expect(api.analysis.getGraphData).toHaveBeenCalledTimes(calls);
+    await act(async () => {
+        if (outcome === 'network-error') rejectOld(new Error('old scope unavailable'));
+        else resolveOld({status: outcome === 'success' ? 200 : 503, data: {vertexcount: 100, edgecount: 101}});
+    });
+    expect(screen.getByText(change === 'return-to-a' ? 'algorithm result counts 30 31' : 'algorithm result counts 20 21')).toBeInTheDocument();
+    const currentRefresh = mockGraphResultProps.mock.lastCall[0].onRefreshGraphNums;
+    view.unmount();
+    await currentRefresh();
+    expect(api.analysis.getGraphData).toHaveBeenCalledTimes(calls);
+});
+
+it('keeps the latest same-graph refresh and ignores a refresh response after unmount', async () => {
+    api.analysis.getGraphData.mockResolvedValue({status: 200, data: {vertexcount: 7, edgecount: 9}});
+    const view = render(countsHomeFor());
+    expect(await screen.findByText('algorithm result counts 7 9')).toBeInTheDocument();
+    const onRefreshGraphNums = mockGraphResultProps.mock.lastCall[0].onRefreshGraphNums;
+    const first = deferred();
+    const second = deferred();
+    api.analysis.getGraphData.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+    act(() => { void onRefreshGraphNums(); void onRefreshGraphNums(); });
+    await act(async () => second.resolve({status: 200, data: {vertexcount: 20, edgecount: 21}}));
+    await act(async () => first.resolve({status: 200, data: {vertexcount: 10, edgecount: 11}}));
+    expect(screen.getByText('algorithm result counts 20 21')).toBeInTheDocument();
+    const pending = deferred();
+    api.analysis.getGraphData.mockReturnValueOnce(pending.promise);
+    act(() => { void onRefreshGraphNums(); });
+    view.unmount();
+    await act(async () => pending.resolve({status: 200, data: {vertexcount: 40, edgecount: 41}}));
+});
+
+it.each(['http-error', 'network-error'])('marks current graph totals unavailable after a %s refresh and recovers on retry', async outcome => {
+    api.analysis.getGraphData.mockResolvedValue({status: 200, data: {vertexcount: 7, edgecount: 9}});
+    render(countsHomeFor());
+    expect(await screen.findByText('algorithm result counts 7 9')).toBeInTheDocument();
+    const onRefreshGraphNums = mockGraphResultProps.mock.lastCall[0].onRefreshGraphNums;
+    if (outcome === 'http-error') api.analysis.getGraphData.mockResolvedValueOnce({status: 503});
+    else api.analysis.getGraphData.mockRejectedValueOnce(new Error('statistics unavailable'));
+    await act(async () => { await expect(onRefreshGraphNums()).resolves.toEqual({status: 'unavailable'}); });
+    expect(screen.getByText('algorithm result counts null null')).toBeInTheDocument();
+    await act(async () => { await expect(onRefreshGraphNums()).resolves.toEqual({status: 'refreshed'}); });
+    expect(screen.getByText('algorithm result counts 7 9')).toBeInTheDocument();
+});
+
+it('does not let a failed older same-graph refresh invalidate a newer successful total', async () => {
+    api.analysis.getGraphData.mockResolvedValue({status: 200, data: {vertexcount: 7, edgecount: 9}});
+    render(countsHomeFor());
+    expect(await screen.findByText('algorithm result counts 7 9')).toBeInTheDocument();
+    const onRefreshGraphNums = mockGraphResultProps.mock.lastCall[0].onRefreshGraphNums;
+    let rejectOld;
+    api.analysis.getGraphData.mockImplementationOnce(() => new Promise((resolve, reject) => { rejectOld = reject; }));
+    act(() => { void onRefreshGraphNums(); });
+    api.analysis.getGraphData.mockResolvedValueOnce({status: 200, data: {vertexcount: 20, edgecount: 21}});
+    await act(async () => onRefreshGraphNums());
+    await act(async () => rejectOld(new Error('older statistics failed')));
+    expect(screen.getByText('algorithm result counts 20 21')).toBeInTheDocument();
+});
+
+it.each([false, true].flatMap(returnToAlice =>
+    ['success', 'http-error', 'network-error'].map(outcome => [returnToAlice, outcome])))('isolates graph counts across setUser on the mounted graph (return to Alice: %s, old response: %s)', async (returnToAlice, outcome) => {
+    setUser({id: 'alice', user_name: 'alice'});
+    api.analysis.getGraphData.mockResolvedValue({status: 200, data: {vertexcount: 7, edgecount: 9}});
+    const view = render(countsHomeFor());
+    expect(await screen.findByText('algorithm result counts 7 9')).toBeInTheDocument();
+    const staleRefresh = mockGraphResultProps.mock.lastCall[0].onRefreshGraphNums;
+    let resolveOld;
+    let rejectOld;
+    api.analysis.getGraphData.mockImplementationOnce(() => new Promise((resolve, reject) => {
+        resolveOld = resolve;
+        rejectOld = reject;
+    }));
+    act(() => { void staleRefresh(); });
+    const beforeIdentityChange = api.analysis.getGraphData.mock.calls.length;
+    let resolveCurrent;
+    api.analysis.getGraphData.mockImplementationOnce(() => new Promise(resolve => { resolveCurrent = resolve; }));
+    let immediateOldRefresh;
+    let synchronousCalls;
+    await act(async () => {
+        setUser({id: 'bob', user_name: 'bob'});
+        // This invocation runs before React commits the new identity epoch.
+        immediateOldRefresh = staleRefresh();
+        synchronousCalls = api.analysis.getGraphData.mock.calls.length;
+        await expect(immediateOldRefresh).resolves.toEqual({status: 'disposed'});
+    });
+    expect(synchronousCalls).toBe(beforeIdentityChange);
+    expect(api.analysis.getGraphData).toHaveBeenCalledTimes(beforeIdentityChange + 1);
+    expect(api.analysis.getGraphData).toHaveBeenLastCalledWith('DEFAULT', 'graph-a');
+    expect(screen.getByText('algorithm result counts -1 -1')).toBeInTheDocument();
+    await act(async () => resolveCurrent({status: 200, data: {vertexcount: 20, edgecount: 21}}));
+    expect(screen.getByText('algorithm result counts 20 21')).toBeInTheDocument();
+    if (returnToAlice) {
+        api.analysis.getGraphData.mockResolvedValue({status: 200, data: {vertexcount: 30, edgecount: 31}});
+        await act(async () => setUser({id: 'alice', user_name: 'alice'}));
+        expect(screen.getByText('algorithm result counts 30 31')).toBeInTheDocument();
+    }
+    const calls = api.analysis.getGraphData.mock.calls.length;
+    await act(async () => { await expect(staleRefresh()).resolves.toEqual({status: 'disposed'}); });
+    expect(api.analysis.getGraphData).toHaveBeenCalledTimes(calls);
+    await act(async () => {
+        if (outcome === 'network-error') rejectOld(new Error('old account count failure'));
+        else resolveOld({status: outcome === 'success' ? 200 : 503, data: {vertexcount: 100, edgecount: 101}});
+    });
+    expect(screen.getByText(returnToAlice ? 'algorithm result counts 30 31' : 'algorithm result counts 20 21')).toBeInTheDocument();
+    view.unmount();
 });

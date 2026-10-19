@@ -16,30 +16,35 @@
  * under the License.
  */
 
-import {render, screen} from '@testing-library/react';
+import {fireEvent, render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {InputColorSelect} from './index';
 
-jest.mock('react-i18next', () => ({
-    useTranslation: () => ({t: key => key}),
-}));
+jest.mock('react-i18next', () => ({useTranslation: () => ({t: key => key})}));
 
-jest.mock('react-color', () => ({
-    ChromePicker: () => <div>picker content</div>,
-}));
-
-test('opens and closes the color picker with keyboard state and focus recovery', async () => {
-    render(<InputColorSelect />);
-
+test('opens the actual picker, edits hex and closes with focus recovery', async () => {
+    const onChange = jest.fn();
+    render(<InputColorSelect value='#5c73e6' onChange={onChange} />);
     const trigger = screen.getByRole('button', {name: 'style_config.color_picker'});
     expect(trigger).toHaveAttribute('aria-expanded', 'false');
-
     trigger.focus();
     await userEvent.keyboard('{Enter}');
-    expect(screen.getByText('picker content')).toBeInTheDocument();
     expect(trigger).toHaveAttribute('aria-expanded', 'true');
-
+    const hex = await screen.findByDisplayValue('5c73e6');
+    fireEvent.change(hex, {target: {value: '123456'}});
+    fireEvent.blur(hex);
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith('#123456'));
     await userEvent.keyboard('{Escape}');
-    expect(screen.queryByText('picker content')).not.toBeInTheDocument();
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
     expect(trigger).toHaveFocus();
+});
+
+test('disables the trigger and accepts external color updates', () => {
+    const {rerender} = render(<InputColorSelect value='#123456' disable />);
+    const trigger = screen.getByRole('button', {name: 'style_config.color_picker'});
+    expect(trigger).toBeDisabled();
+    expect(trigger).toHaveStyle({background: '#123456'});
+    rerender(<InputColorSelect value='#654321' />);
+    expect(trigger).toBeEnabled();
+    expect(trigger).toHaveStyle({background: '#654321'});
 });

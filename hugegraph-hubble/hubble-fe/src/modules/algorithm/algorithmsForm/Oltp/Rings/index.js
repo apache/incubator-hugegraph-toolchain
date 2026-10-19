@@ -20,8 +20,9 @@
  * @file Rings
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Input, Collapse} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import {useState, useCallback, useContext} from 'react';
+import {Input, } from 'antd';
 import Form from '../../PersistentForm';
 import {BlockOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
@@ -108,11 +109,8 @@ const Rings = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<BlockOutlined />}
                     name={RINGS}
@@ -153,7 +151,7 @@ const Rings = props => {
                 <CapacityItem />
                 <LimitItem initialValue={10} desc={t('analysis.algorithm.oltp.common.limit_crosspoints')} />
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

@@ -20,8 +20,9 @@
  * @file Crosspoints算法
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Input, Collapse, Select, InputNumber} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import {useState, useCallback, useContext} from 'react';
+import {Input, Select, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
 import AlgorithmNameHeader from '../../AlgorithmNameHeader';
 import {ProjectOutlined} from '@ant-design/icons';
@@ -106,11 +107,8 @@ const Crosspoints = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<ProjectOutlined />}
                     name={CROSSPOINTS}
@@ -203,7 +201,7 @@ const Crosspoints = props => {
                     <InputNumber />
                 </Form.Item>
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

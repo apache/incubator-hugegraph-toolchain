@@ -20,7 +20,7 @@
  * @file OLAP算法item
  */
 
-import React, {useContext} from 'react';
+import {useContext} from 'react';
 import GraphAnalysisContext from '../../../../Context';
 import PageRank from '../PageRank';
 import PageRankVermeer from '../PageRankVermeer';

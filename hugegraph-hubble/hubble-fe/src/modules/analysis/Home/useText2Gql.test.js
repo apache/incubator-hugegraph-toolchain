@@ -1044,7 +1044,8 @@ test('updates generation duration every 250ms, preserves it for reruns and freez
         expect(result.current.generationDurationMs).toBe(250);
         act(() => api.analysis.streamText2Gql.mock.calls[0][3].onWaiting());
         expect(result.current.generationDurationMs).toBe(250);
-        expect(jest.getTimerCount()).toBe(2);
+        // Total elapsed ticker, model duration ticker and the bounded slow-model timeout.
+        expect(jest.getTimerCount()).toBe(3);
         act(() => jest.advanceTimersByTime(875));
         await act(async () => {
             generation.resolve(generated('g.V()', true, 'gremlin', 1125));

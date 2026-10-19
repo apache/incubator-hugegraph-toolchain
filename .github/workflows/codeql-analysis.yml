@@ -17,6 +17,8 @@ jobs:
     env:
       # Preserve the master scan identity when invoked by a reusable-workflow caller.
       CODEQL_ACTION_ANALYSIS_KEY: .github/workflows/codeql-analysis.yml:analyze
+      MAVEN_OPTS: -Xmx3g -XX:MaxMetaspaceSize=768m
+      NODE_OPTIONS: --max-old-space-size=4096
     name: Analyze
     runs-on: ubuntu-latest
     permissions:
@@ -47,11 +49,29 @@ jobs:
       if: matrix.language == 'java'
       uses: ./.github/actions/setup-candidate-sdk
 
-    - name: Use Node.js 16
-      if: matrix.language == 'javascript'
+    - name: Use pinned Hubble Node.js
+      if: matrix.language == 'java' || matrix.language == 'javascript'
       uses: actions/setup-node@v6
       with:
-        node-version: '16'
+        node-version-file: hugegraph-hubble/hubble-fe/.node-version
+    - name: Activate pinned pnpm
+      id: pnpm
+      if: matrix.language == 'java' || matrix.language == 'javascript'
+      working-directory: hugegraph-hubble/hubble-fe
+      run: |
+        corepack enable
+        pnpm --version
+        echo "store=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+        echo "version=$(node -p 'require("./package.json").packageManager')" >> "$GITHUB_OUTPUT"
+        echo "node=$(node --version)" >> "$GITHUB_OUTPUT"
+    - name: Cache pnpm downloads
+      if: matrix.language == 'java' || matrix.language == 'javascript'
+      uses: actions/cache@v6
+      with:
+        path: ${{ steps.pnpm.outputs.store }}
+        key: ${{ runner.os }}-${{ runner.arch }}-${{ steps.pnpm.outputs.node }}-${{ steps.pnpm.outputs.version }}-${{ hashFiles('hugegraph-hubble/hubble-fe/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ runner.arch }}-${{ steps.pnpm.outputs.node }}-${{ steps.pnpm.outputs.version }}-
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v4

@@ -20,8 +20,9 @@
  * @file JaccardSimilarityGet算法
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Input, Collapse} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import {useState, useCallback, useContext} from 'react';
+import {Input, } from 'antd';
 import Form from '../../PersistentForm';
 import {AppstoreAddOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
@@ -105,11 +106,8 @@ const JaccardSimilarityGet = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<AppstoreAddOutlined />}
                     name={JACCARD_SIMILARITY}
@@ -150,7 +148,7 @@ const JaccardSimilarityGet = props => {
                 <LabelItem />
                 <MaxDegreeItem isRequired={false} initialValue={10000} validator={maxDegreeValidator} />
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

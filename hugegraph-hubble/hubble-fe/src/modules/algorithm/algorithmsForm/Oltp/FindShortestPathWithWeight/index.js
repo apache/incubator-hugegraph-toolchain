@@ -20,8 +20,9 @@
  * @file 查找带权重的最短路径
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Input, Collapse, Select, InputNumber} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import {useState, useCallback, useContext} from 'react';
+import {Input, Select, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
 import {SecurityScanOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
@@ -112,11 +113,8 @@ const FindShortestPathWithWeight = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<SecurityScanOutlined />}
                     name={FINDSHORTESTPATHWITHWEIGHT}
@@ -201,7 +199,7 @@ const FindShortestPathWithWeight = props => {
                     <InputNumber />
                 </Form.Item>
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

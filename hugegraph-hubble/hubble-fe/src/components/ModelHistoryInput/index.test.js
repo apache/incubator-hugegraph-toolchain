@@ -60,29 +60,29 @@ test('shows every recent model on focus, filters only while typing and selects t
         const change = jest.fn();
         render(<ControlledInput baseUrl='https://one.example/v1' onChange={change} aria-label='Model' />);
         const input = screen.getByRole('combobox', {name: 'Model'});
-        userEvent.click(input);
+        await userEvent.click(input);
         expect(await screen.findByRole('option', {name: 'beta'})).toBeInTheDocument();
         expect(screen.getByText('alpha', {selector: '.ant-select-item-option-content'})).toBeInTheDocument();
         const options = [...document.querySelectorAll('.ant-select-item-option-content')];
         expect(options.map(option => option.textContent)).toEqual(['beta', 'alpha']);
-        userEvent.clear(input);
-        userEvent.type(input, 'bet');
+        await userEvent.clear(input);
+        await userEvent.type(input, 'bet');
         expect(screen.queryByText('alpha', {selector: '.ant-select-item-option-content'})).not.toBeInTheDocument();
-        userEvent.click(screen.getByText('beta', {selector: '.ant-select-item-option-content'}));
+        await userEvent.click(screen.getByText('beta', {selector: '.ant-select-item-option-content'}));
         expect(input).toHaveValue('beta');
         expect(change).toHaveBeenLastCalledWith(expect.objectContaining({target: {value: 'beta'}}));
-        userEvent.click(screen.getByRole('button', {name: 'Other focus target'}));
-        userEvent.click(input);
+        await userEvent.click(screen.getByRole('button', {name: 'Other focus target'}));
+        await userEvent.click(input);
         expect(await screen.findByText('alpha', {selector: '.ant-select-item-option-content'})).toBeInTheDocument();
     }
 );
 
-test('supports free input without recording unsuccessful model or URL values', () => {
+test('supports free input without recording unsuccessful model or URL values', async () => {
     render(<ControlledInput baseUrl='https://one.example/v1' aria-label='Model' />);
     const before = localStorage.getItem('hubble.text2gql.models.alice');
     const input = screen.getByRole('combobox', {name: 'Model'});
-    userEvent.clear(input);
-    userEvent.type(input, 'not-a-known-model');
+    await userEvent.clear(input);
+    await userEvent.type(input, 'not-a-known-model');
     expect(input).toHaveValue('not-a-known-model');
     expect(localStorage.getItem('hubble.text2gql.models.alice')).toBe(before);
 });
@@ -91,9 +91,9 @@ test('uses the same successful records to offer recently used Base URLs', async 
     const change = jest.fn();
     render(<ControlledInput field='baseUrl' onChange={change} aria-label='Base URL' />);
     const input = screen.getByRole('combobox', {name: 'Base URL'});
-    userEvent.click(input);
+    await userEvent.click(input);
     expect(await screen.findByRole('option', {name: 'https://two.example/v1'})).toBeInTheDocument();
-    userEvent.click(screen.getByText('https://one.example/v1', {selector: '.ant-select-item-option-content'}));
+    await userEvent.click(screen.getByText('https://one.example/v1', {selector: '.ant-select-item-option-content'}));
     expect(input).toHaveValue('https://one.example/v1');
     expect(change).toHaveBeenLastCalledWith(expect.objectContaining({target: {value: 'https://one.example/v1'}}));
 });
@@ -133,18 +133,22 @@ test('keeps disabled inputs disabled and does not open history', () => {
 });
 
 
-test('allows keyboard selection from history while preserving free input', () => {
+test('allows keyboard selection from history while preserving free input', async () => {
     const change = jest.fn();
     render(<ControlledInput baseUrl='https://one.example/v1' onChange={change} aria-label='Model' />);
     const input = screen.getByRole('combobox', {name: 'Model'});
-    userEvent.click(input);
-    userEvent.keyboard('{ArrowDown}{Enter}');
+    await userEvent.click(input);
+    // rc-select reads native `which`; user-event 14 leaves that legacy field unset.
+    fireEvent.keyDown(input, {key: 'ArrowDown', code: 'ArrowDown', keyCode: 40, which: 40});
+    const activeOption = document.getElementById(input.getAttribute('aria-activedescendant'));
+    expect(activeOption).toHaveTextContent('beta');
+    fireEvent.keyDown(input, {key: 'Enter', code: 'Enter', keyCode: 13, which: 13});
     expect(input).toHaveValue('beta');
     expect(change).toHaveBeenLastCalledWith(expect.objectContaining({target: {value: 'beta'}}));
 });
 
 // AutoComplete and its custom Input must not both paint the same placeholder.
-test('renders the empty field placeholder once, including while focused', () => {
+test('renders the empty field placeholder once, including while focused', async () => {
     render(<ModelHistoryInput
         baseUrl='https://one.example/v1'
         value=''
@@ -154,7 +158,7 @@ test('renders the empty field placeholder once, including while focused', () => 
     const input = screen.getByRole('combobox', {name: 'Model'});
     expect(input).toHaveAttribute('placeholder', 'Choose or type');
     expect(screen.queryByText('Choose or type')).not.toBeInTheDocument();
-    userEvent.click(input);
+    await userEvent.click(input);
     expect(input).toHaveAttribute('placeholder', 'Choose or type');
     expect(screen.queryByText('Choose or type')).not.toBeInTheDocument();
 });

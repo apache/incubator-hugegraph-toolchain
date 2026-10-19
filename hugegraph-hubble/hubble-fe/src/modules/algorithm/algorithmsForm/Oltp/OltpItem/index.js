@@ -20,7 +20,6 @@
  * @file OLTP算法item
  */
 
-import React from 'react';
 import {ALGORITHM_NAME, getCanonicalAlgorithmName} from '../../../../../utils/constants';
 import KoutGet from '../KoutGet';
 import KneighborGet from '../KneighborGet';

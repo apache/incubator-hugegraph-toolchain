@@ -1,0 +1,250 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with this
+ * work for additional information regarding copyright ownership. The ASF
+ * licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
+import {act, fireEvent, render, screen} from '@testing-library/react';
+import GraphResult from './index';
+import {GRAPH_STATUS, GRAPH_RENDER_MODE, PANEL_TYPE} from '../../../../../utils/constants';
+
+jest.mock('react-i18next', () => ({useTranslation: () => ({t: (key, values) =>
+    values?.seconds === undefined ? key : `${key} ${values.seconds}`})}));
+jest.mock('../../../../component/Graph/useAnalysisGraph', () => ({useAnalysisGraph: () => mockModel}));
+jest.mock('../../../../component/Graph', () => {
+    const {useEffect} = require('react');
+    return {__esModule: true, default: function MockGraph({children}) {
+        useEffect(() => { mockMount2D(); return mockUnmount2D; }, []);
+        return <div data-testid="canvas-2d">{children}</div>;
+    }};
+});
+jest.mock('../../../../component/Canvas3D', () => {
+    const {useEffect} = require('react');
+    return {__esModule: true, default: function MockCanvas3D() {
+        useEffect(() => { mockMount3D(); return mockUnmount3D; }, []);
+        return <div data-testid="canvas-3d" />;
+    }};
+});
+jest.mock('../../../../component/Legend', () => () => null);
+jest.mock('../../../../component/Menu', () => props => <button onClick={() => props.onClickAddEdge({}, true)}>Add edge</button>);
+jest.mock('../../../../component/Search', () => () => null);
+jest.mock('../../../../component/DynamicAddNode', () => props => { mockNodeDrawer(props); return null; });
+jest.mock('../../../../component/DynamicAddEdge', () => props => {
+    mockEdgeDrawer(props);
+    return props.open ? <button onClick={props.onCancel}>Close edge drawer</button> : null;
+});
+jest.mock('../../../../component/layoutConfigPanel/Home', () => () => null);
+jest.mock('../../../../component/SettingConfigPanel', () => () => null);
+jest.mock('../../../../component/ClosePanelButton', () => () => null);
+jest.mock('../../../../component/StatisticsPanel/Home', () => () => null);
+jest.mock('../../../../component/MiniMap', () => () => null);
+jest.mock('../../../../component/NumberCard', () => props => { mockCounts(props); return null; });
+jest.mock('../../../../component/TaskNavigateView', () => () => <div>task result</div>);
+jest.mock('../../../../component/EditElement', () => () => null);
+jest.mock('../GraphToolBar', () => () => null);
+jest.mock('../GraphMenubar', () => () => null);
+
+const mockMount2D = jest.fn();
+const mockUnmount2D = jest.fn();
+const mockMount3D = jest.fn();
+const mockUnmount3D = jest.fn();
+const mockEdgeDrawer = jest.fn();
+const mockNodeDrawer = jest.fn();
+const mockCounts = jest.fn();
+let mockModel;
+const raw = {vertices: [{id: 'alice', label: 'person', properties: {}}], edges: []};
+const canonical = {nodes: [{id: 'node:alice', data: {raw: raw.vertices[0]}}], edges: []};
+const props = () => ({data: raw, isQueryMode: true, queryStatus: GRAPH_STATUS.SUCCESS,
+    graphRenderMode: GRAPH_RENDER_MODE.CANVAS2D, panelType: PANEL_TYPE.CLOSED,
+    updatePanelType: jest.fn(), onGraphRenderModeChange: jest.fn()});
+beforeEach(() => {
+    jest.clearAllMocks();
+    mockModel = {graphData: canonical, initialData: canonical, styleConfigData: {nodes: {}, edges: {}},
+        datasetKey: 1, layout: {type: 'd3-force'}};
+});
+
+test('keeps the existing canvas through progress phases and cancellation, with accessible status and elapsed time', () => {
+    const initial = props();
+    const result = render(<GraphResult {...initial} />);
+    const canvas = screen.getByTestId('canvas-2d');
+    const cancel = jest.fn();
+    result.rerender(<GraphResult {...initial} queryProgress={{phase: 'waiting', elapsedSeconds: 1, cancel}} />);
+    expect(canvas).toContainElement(screen.getByRole('region', {name: 'analysis.query_result.loading'}));
+    expect(screen.getByRole('status')).toHaveTextContent('analysis.query.phase_waiting');
+    expect(screen.getByText('analysis.query.elapsed_seconds 1')).toHaveAttribute('aria-live', 'off');
+    result.rerender(<GraphResult {...initial} queryProgress={{phase: 'repair_streaming', elapsedSeconds: 72,
+        modelSlow: true, cancel}} />);
+    expect(screen.getByText('analysis.query.phase_repair_streaming')).toBeInTheDocument();
+    expect(screen.getByText('analysis.query.model_slow')).toHaveAttribute('role', 'status');
+    result.rerender(<GraphResult {...initial} queryStatus={GRAPH_STATUS.LOADING}
+        queryProgress={{phase: 'execution', elapsedSeconds: 75, cancel}} />);
+    expect(screen.getByText('analysis.query.execution_timeout_hint')).toBeInTheDocument();
+    expect(screen.queryByText('analysis.query.model_timeout_hint')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', {name: 'analysis.query.cancel_generation'}));
+    expect(cancel).toHaveBeenCalledTimes(1);
+    result.rerender(<GraphResult {...initial} />);
+    expect(screen.queryByRole('region', {name: 'analysis.query_result.loading'})).not.toBeInTheDocument();
+    expect(screen.getByTestId('canvas-2d')).toBe(canvas);
+    expect(mockMount2D).toHaveBeenCalledTimes(1);
+    expect(mockUnmount2D).not.toHaveBeenCalled();
+});
+
+test('keeps progress while the existing 3D canvas is mounted', () => {
+    const initial = {...props(), graphRenderMode: GRAPH_RENDER_MODE.CANVAS3D};
+    const result = render(<GraphResult {...initial} />);
+    const canvas = screen.getByTestId('canvas-3d');
+    result.rerender(<GraphResult {...initial} queryStatus={GRAPH_STATUS.LOADING}
+        queryProgress={{phase: 'execution', elapsedSeconds: 4, cancel: jest.fn()}} />);
+    expect(screen.getByRole('status')).toHaveTextContent('analysis.query.phase_execution');
+    result.rerender(<GraphResult {...initial} />);
+    expect(screen.getByTestId('canvas-3d')).toBe(canvas);
+    expect(mockMount3D).toHaveBeenCalledTimes(1);
+    expect(mockUnmount3D).not.toHaveBeenCalled();
+});
+
+test('keeps the no-graph progress status page and exposes cancellation', () => {
+    mockModel = {...mockModel, graphData: {nodes: [], edges: []}, initialData: {nodes: [], edges: []}};
+    const cancel = jest.fn();
+    const result = render(<GraphResult {...props()} data={{vertices: [], edges: []}}
+        queryStatus={GRAPH_STATUS.STANDBY} queryProgress={{phase: 'waiting', elapsedSeconds: 2, cancel}} />);
+    expect(screen.getByRole('status')).toHaveTextContent('analysis.query.phase_waiting');
+    expect(screen.queryByTestId('canvas-2d')).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', {name: 'analysis.query_result.loading'})).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', {name: 'analysis.query.cancel_generation'}));
+    expect(cancel).toHaveBeenCalledTimes(1);
+    result.rerender(<GraphResult {...props()} data={{vertices: [], edges: []}} queryStatus={GRAPH_STATUS.STANDBY} />);
+    expect(screen.queryByText('analysis.query.phase_waiting')).not.toBeInTheDocument();
+    expect(mockMount2D).not.toHaveBeenCalled();
+});
+
+test.each([GRAPH_STATUS.FAILED, GRAPH_STATUS.UPLOAD_FAILED])('terminal %s overrides stale progress and retained data', status => {
+    const initial = props();
+    const result = render(<GraphResult {...initial} />);
+    result.rerender(<GraphResult {...initial} queryStatus={status} queryMessage="actual failure"
+        queryProgress={{phase: 'waiting', elapsedSeconds: 99, cancel: jest.fn()}} />);
+    expect(screen.getByText('actual failure')).toBeInTheDocument();
+    expect(screen.queryByText('analysis.query.phase_waiting')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', {name: 'analysis.query.cancel_generation'})).not.toBeInTheDocument();
+    expect(screen.queryByTestId('canvas-2d')).not.toBeInTheDocument();
+    expect(mockUnmount2D).toHaveBeenCalledTimes(1);
+});
+
+test('does not turn a task result into progress when the query-only progress prop arrives late', () => {
+    render(<GraphResult {...props()} isQueryMode={false}
+        queryProgress={{phase: 'waiting', elapsedSeconds: 99, cancel: jest.fn()}} />);
+    expect(screen.getByText('task result')).toBeInTheDocument();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('canvas-2d')).not.toBeInTheDocument();
+});
+
+test('only projects raw node choices while the edge drawer is visible and keeps raw records by reference', () => {
+    const reads = jest.fn(() => raw.vertices[0]);
+    const node = {id: 'node:alice', data: {get raw() { return reads(); }}};
+    mockModel = {...mockModel, graphData: {nodes: [node], edges: []}};
+    const initial = props();
+    const result = render(<GraphResult {...initial} />);
+    expect(reads).not.toHaveBeenCalled();
+    expect(mockEdgeDrawer).toHaveBeenLastCalledWith(expect.objectContaining({graphData: null}));
+    fireEvent.click(screen.getByRole('button', {name: 'Add edge'}));
+    expect(reads).toHaveBeenCalledTimes(1);
+    const choices = mockEdgeDrawer.mock.lastCall[0].graphData;
+    expect(choices).toEqual({vertices: raw.vertices});
+    expect(choices.vertices[0]).toBe(raw.vertices[0]);
+    result.rerender(<GraphResult {...initial} queryProgress={{phase: 'waiting', elapsedSeconds: 1}} />);
+    expect(reads).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', {name: 'Close edge drawer'}));
+    expect(mockEdgeDrawer).toHaveBeenLastCalledWith(expect.objectContaining({graphData: null}));
+    expect(reads).toHaveBeenCalledTimes(1);
+});
+
+
+test.each(['node', 'edge'])('returns %s write-apply failures to the drawer without changing totals', async kind => {
+    const error = new Error('local apply failed');
+    const onRefreshGraphNums = jest.fn().mockResolvedValue();
+    mockModel = {...mockModel, graphData: {nodes: [{id: 'existing', data: {raw: {id: 'existing'}}}], edges: []},
+        addElements: jest.fn().mockRejectedValue(error)};
+    render(<GraphResult data={{vertices: [{id: 'existing', label: 'person'}], edges: []}} isQueryMode
+        queryStatus={GRAPH_STATUS.SUCCESS} panelType={PANEL_TYPE.CLOSED}
+        graphNums={{vertexCount: 7, edgeCount: 9}} onRefreshGraphNums={onRefreshGraphNums}
+        graphRenderMode={GRAPH_RENDER_MODE.CANVAS2D} updatePanelType={jest.fn()} />);
+    const callback = kind === 'node' ? mockNodeDrawer.mock.lastCall[0].onOK : mockEdgeDrawer.mock.lastCall[0].onOk;
+    await act(async () => { await expect(callback({vertices: [{id: 'saved'}], edges: [{id: 'saved-edge'}]})).rejects.toBe(error); });
+    expect(onRefreshGraphNums).toHaveBeenCalledTimes(1);
+    expect(mockCounts.mock.lastCall[0].data).toMatchObject({allGraphNodesNum: 7, allGraphEdgesNum: 9});
+});
+
+test.each(['applied', 'superseded', 'disposed', undefined])('preserves %s write-apply outcome while refreshing server totals independently', async status => {
+    const outcome = status ? {status} : undefined;
+    const onRefreshGraphNums = jest.fn().mockResolvedValue();
+    mockModel = {...mockModel, graphData: {nodes: [{id: 'existing', data: {raw: {id: 'existing'}}}], edges: []},
+        addElements: jest.fn().mockResolvedValue(outcome)};
+    render(<GraphResult data={{vertices: [{id: 'existing', label: 'person'}], edges: []}} isQueryMode
+        queryStatus={GRAPH_STATUS.SUCCESS} panelType={PANEL_TYPE.CLOSED}
+        graphNums={{vertexCount: 7, edgeCount: 9}} onRefreshGraphNums={onRefreshGraphNums}
+        graphRenderMode={GRAPH_RENDER_MODE.CANVAS2D} updatePanelType={jest.fn()} />);
+    await act(async () => {
+        await expect(mockNodeDrawer.mock.lastCall[0].onOK({vertices: [{id: 'saved'}]}))
+            .resolves.toEqual(outcome ?? {status: 'disposed'});
+        await expect(mockEdgeDrawer.mock.lastCall[0].onOk({edges: [{id: 'saved-edge'}]}))
+            .resolves.toEqual(outcome ?? {status: 'disposed'});
+    });
+    expect(mockCounts.mock.lastCall[0].data).toMatchObject({
+        allGraphNodesNum: 7, allGraphEdgesNum: 9,
+    });
+    expect(onRefreshGraphNums).toHaveBeenCalledTimes(2);
+});
+
+const countedGraphProps = () => ({data: {vertices: [{id: 'existing', label: 'person'}], edges: []},
+    isQueryMode: true, queryStatus: GRAPH_STATUS.SUCCESS, panelType: PANEL_TYPE.CLOSED,
+    graphNums: {vertexCount: 7, edgeCount: 9}, graphRenderMode: GRAPH_RENDER_MODE.CANVAS2D,
+    updatePanelType: jest.fn()});
+
+test.each([
+    ['node', {vertices: [{id: 'existing'}, {id: 'existing'}]}],
+    ['node', {vertices: [{id: 'already-in-db-but-not-on-canvas'}]}],
+    ['edge', {vertices: [{id: 'existing'}, {id: 'already-in-db-but-not-on-canvas'}], edges: [{id: 'saved-edge'}]}],
+])('refreshes authoritative totals after a saved %s without inferring inserts from returned IDs', async (kind, saved) => {
+    mockModel = {...mockModel, addElements: jest.fn().mockResolvedValue({status: 'applied'})};
+    const onRefreshGraphNums = jest.fn().mockResolvedValue();
+    const initial = {...countedGraphProps(), onRefreshGraphNums};
+    const view = render(<GraphResult {...initial} />);
+    const callback = kind === 'node' ? mockNodeDrawer.mock.lastCall[0].onOK : mockEdgeDrawer.mock.lastCall[0].onOk;
+    await act(async () => { await expect(callback(saved)).resolves.toEqual({status: 'applied'}); });
+    expect(mockModel.addElements).toHaveBeenCalledWith(saved);
+    expect(onRefreshGraphNums).toHaveBeenCalledTimes(1);
+    expect(mockCounts.mock.lastCall[0].data).toMatchObject({allGraphNodesNum: 7, allGraphEdgesNum: 9});
+    view.rerender(<GraphResult {...initial} graphNums={{vertexCount: 40, edgeCount: 60}} />);
+    expect(mockCounts.mock.lastCall[0].data).toMatchObject({allGraphNodesNum: 40, allGraphEdgesNum: 60});
+});
+
+test.each(['node', 'edge'])('a failed statistics refresh never rejects a saved %s canvas application', async kind => {
+    mockModel = {...mockModel, addElements: jest.fn().mockResolvedValue({status: 'applied'})};
+    const onRefreshGraphNums = jest.fn().mockRejectedValue(new Error('statistics unavailable'));
+    render(<GraphResult {...countedGraphProps()} onRefreshGraphNums={onRefreshGraphNums} />);
+    const callback = kind === 'node' ? mockNodeDrawer.mock.lastCall[0].onOK : mockEdgeDrawer.mock.lastCall[0].onOk;
+    await act(async () => { await expect(callback({vertices: [{id: 'saved'}]})).resolves.toEqual({status: 'applied'}); });
+    expect(onRefreshGraphNums).toHaveBeenCalledTimes(1);
+    expect(mockCounts.mock.lastCall[0].data).toMatchObject({allGraphNodesNum: 7, allGraphEdgesNum: 9});
+});
+
+test('a pending statistics refresh does not delay returning the canvas application outcome', async () => {
+    mockModel = {...mockModel, addElements: jest.fn().mockResolvedValue({status: 'applied'})};
+    const onRefreshGraphNums = jest.fn(() => new Promise(() => {}));
+    render(<GraphResult {...countedGraphProps()} onRefreshGraphNums={onRefreshGraphNums} />);
+    await act(async () => {
+        await expect(mockNodeDrawer.mock.lastCall[0].onOK({vertices: [{id: 'saved'}]}))
+            .resolves.toEqual({status: 'applied'});
+    });
+    expect(onRefreshGraphNums).toHaveBeenCalledTimes(1);
+});

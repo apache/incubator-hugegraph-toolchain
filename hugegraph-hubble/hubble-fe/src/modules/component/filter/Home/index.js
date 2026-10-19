@@ -20,12 +20,13 @@
  * @file 筛选
  */
 
-import React, {useCallback, useState} from 'react';
+import {useCallback, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Button, Tooltip} from 'antd';
 import {FilterOutlined} from '@ant-design/icons';
 import Filter from '../FilterDrawer';
-import {formatToStyleData, formatToDownloadData} from '../../../../utils/formatGraphResultData';
+import {getAnalysisStyles} from '../../../../utils/analysisGraphPresentation';
+import {exportHubbleGraph} from '../../../../visualization/hubble/adapter';
 
 const FilterHome = props => {
     const {t} = useTranslation();
@@ -39,14 +40,14 @@ const FilterHome = props => {
     const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
     const [changeData, setChangeData] = useState({});
 
-    const style = formatToStyleData(graphData);
-    const dataSouce = formatToDownloadData(graphData);
+    const [projection, setProjection] = useState(null);
 
     const handleClickFilterConfig = useCallback(
         () => {
+            setProjection({style: getAnalysisStyles(graphData), data: exportHubbleGraph(graphData)});
             setIsFilterModalVisible(true);
         },
-        []
+        [graphData]
     );
 
     const handleClickFilterCancel = useCallback(
@@ -74,13 +75,13 @@ const FilterHome = props => {
                     {t('analysis.canvas.filter')}
                 </Button>
             </Tooltip>
-            <Filter
+            {projection && <Filter
                 open={isFilterModalVisible}
                 onCancel={handleClickFilterCancel}
-                rawTypeInfo={style}
-                dataSource={dataSouce}
+                rawTypeInfo={projection.style}
+                dataSource={projection.data}
                 onChange={handleFilter}
-            />
+            />}
         </>
     );
 };

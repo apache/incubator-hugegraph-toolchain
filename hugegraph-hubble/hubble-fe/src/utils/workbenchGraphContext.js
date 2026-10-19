@@ -25,7 +25,7 @@ const decodePathPart = value => {
     try {
         return decodeURIComponent(value);
     }
-    catch (error) {
+    catch {
         return value;
     }
 };
@@ -110,7 +110,7 @@ const readWorkbenchGraphContext = (storage = localStorage) => {
             ? {graphspace: value.graphspace, graph: value.graph}
             : {graphspace: value.graphspace};
     }
-    catch (error) {
+    catch {
         return {};
     }
 };
@@ -126,7 +126,7 @@ const writeWorkbenchGraphContext = (storage = localStorage, context = {}) => {
         storage.setItem(scopedStorageKey(STORAGE_KEY), JSON.stringify(value));
         return true;
     }
-    catch (error) {
+    catch {
         return false;
     }
 };

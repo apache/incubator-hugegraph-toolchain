@@ -20,8 +20,9 @@
  * @file ResourceAllocation算法
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Input, Collapse, InputNumber} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import {useState, useCallback, useContext} from 'react';
+import {Input, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
 import {BlockOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
@@ -102,11 +103,8 @@ const ResourceAllocation = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<BlockOutlined />}
                     name={RESOURCE_ALLOCATION}
@@ -163,7 +161,7 @@ const ResourceAllocation = props => {
                     <InputNumber />
                 </Form.Item>
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

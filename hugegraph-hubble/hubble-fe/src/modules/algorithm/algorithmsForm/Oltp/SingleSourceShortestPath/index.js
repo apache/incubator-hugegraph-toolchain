@@ -20,8 +20,9 @@
  * @file SingleSourceShortestPath
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Input, Collapse, Select, InputNumber} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import {useState, useCallback, useContext} from 'react';
+import {Input, Select, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
 import {SisternodeOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
@@ -113,11 +114,8 @@ const SingleSourceShortestPath = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<SisternodeOutlined />}
                     name={SINGLESOURCESHORTESTPATH}
@@ -194,7 +192,7 @@ const SingleSourceShortestPath = props => {
                     <InputNumber />
                 </Form.Item>
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

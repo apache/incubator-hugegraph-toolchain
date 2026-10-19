@@ -74,7 +74,7 @@ it('focuses a visible error until at least one source field is selected', async 
 
     fireEvent.click(screen.getByRole('tree')
         .querySelector('.ant-tree-checkbox'));
-    const move = document.querySelector('.ant-transfer-operation button');
+    const move = screen.getByRole('button', {name: 'task.edit.select_source_fields'});
     fireEvent.click(move);
 
     await waitFor(() => expect(

@@ -20,21 +20,20 @@
  * @file 切换环形布局组件 circular
  */
 
-import React, {useMemo} from 'react';
-import {Form, Switch, Segmented} from 'antd';
+import {useMemo, useId} from 'react';
+import {Form, Switch, Segmented, InputNumber} from 'antd';
 import {useTranslation} from 'react-i18next';
-import SliderComponent from '../../../../components/SlideComponent';
-import _ from 'lodash';
 import c from './index.module.scss';
 
 const CircularLayoutForm = props => {
-    const {handleFormChange, initialValues} = props;
+    const {handleFormChange, initialValues, disabled} = props;
     const {t} = useTranslation();
+    const instanceId = useId();
     const {useForm} = Form;
     const [circularLayoutForm] = useForm();
     const orderingOptions = useMemo(
         () => [
-            {value: null, label: t('analysis.canvas.layout_panel.ordering_data')},
+            {value: 'data', label: t('analysis.canvas.layout_panel.ordering_data')},
             {value: 'topology', label: t('analysis.canvas.layout_panel.ordering_topology')},
             {value: 'degree', label: t('analysis.canvas.layout_panel.ordering_degree')},
         ],
@@ -43,8 +42,10 @@ const CircularLayoutForm = props => {
 
     return (
         <Form
+            name={instanceId}
             form={circularLayoutForm}
-            onValuesChange={_.debounce(handleFormChange, 100)}
+            onValuesChange={handleFormChange}
+            disabled={disabled}
             labelCol={{span: 24}}
             initialValues={initialValues}
             className={c.circularLayoutForm}
@@ -54,28 +55,28 @@ const CircularLayoutForm = props => {
                 label={t('analysis.canvas.layout_panel.start_radius')}
                 tooltip={t('analysis.canvas.layout_panel.start_radius_tooltip')}
             >
-                <SliderComponent min={30} max={1000} />
+                <InputNumber aria-label={t('analysis.canvas.layout_panel.start_radius')} style={{width: '100%'}} min={30} max={1000} />
             </Form.Item>
             <Form.Item
                 name='endRadius'
                 label={t('analysis.canvas.layout_panel.end_radius')}
                 tooltip={t('analysis.canvas.layout_panel.end_radius_tooltip')}
             >
-                <SliderComponent min={30} max={1000} />
+                <InputNumber aria-label={t('analysis.canvas.layout_panel.end_radius')} style={{width: '100%'}} min={30} max={1000} />
             </Form.Item>
             <Form.Item
                 name='divisions'
                 label={t('analysis.canvas.layout_panel.divisions')}
                 tooltip={t('analysis.canvas.layout_panel.divisions_tooltip')}
             >
-                <SliderComponent min={1} max={100} />
+                <InputNumber aria-label={t('analysis.canvas.layout_panel.divisions')} style={{width: '100%'}} min={1} max={100} />
             </Form.Item>
             <Form.Item
                 name='angleRatio'
                 label={t('analysis.canvas.layout_panel.angle_ratio')}
                 tooltip={t('analysis.canvas.layout_panel.angle_ratio_tooltip')}
             >
-                <SliderComponent min={1} max={100} />
+                <InputNumber aria-label={t('analysis.canvas.layout_panel.angle_ratio')} style={{width: '100%'}} min={1} max={100} />
             </Form.Item>
             <Form.Item
                 name='ordering'
@@ -91,7 +92,7 @@ const CircularLayoutForm = props => {
                 labelCol={{span: 20}}
                 labelAlign='left'
             >
-                <Switch />
+                <Switch aria-label={t('analysis.canvas.layout_panel.clockwise')} />
             </Form.Item>
         </Form>
     );

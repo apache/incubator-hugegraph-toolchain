@@ -20,8 +20,9 @@
  * @file CustomizedCrosspoints算法
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Collapse, InputNumber} from 'antd';
+import AlgorithmPanel from '../../../AlgorithmPanel';
+import {useState, useCallback, useContext} from 'react';
+import {InputNumber} from 'antd';
 import Form from '../../../PersistentForm';
 import {NodeIndexOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
@@ -120,11 +121,8 @@ const CustomizedCrosspoints = props => {
 
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<NodeIndexOutlined />}
                     name={CUSTOMIZED_CROSSPOINTS}
@@ -167,7 +165,7 @@ const CustomizedCrosspoints = props => {
                     <InputNumber />
                 </Form.Item>
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

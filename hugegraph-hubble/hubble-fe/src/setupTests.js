@@ -21,3 +21,52 @@
 // expect(element).toHaveTextContent(/react/i)
 // learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom';
+import {MessageChannel as NodeMessageChannel} from 'node:worker_threads';
+
+// jsdom has no layout engine. Unit tests mount real components; Chrome
+// acceptance verifies measurements and actual ResizeObserver behaviour.
+if (typeof window !== 'undefined') {
+    const browserComputedStyle = window.getComputedStyle;
+    window.getComputedStyle = element => browserComputedStyle.call(window, element);
+    // rc-form uses a real browser macrotask. Native Node ports preserve that
+    // scheduling, while unref prevents their listeners from holding Jest open.
+    const channels = new Set();
+    globalThis.MessageChannel = class extends NodeMessageChannel {
+        constructor() {
+            super();
+            channels.add(this);
+            for (const port of [this.port1, this.port2]) {
+                let prototype = port;
+                let descriptor;
+                while (prototype && !descriptor) {
+                    descriptor = Object.getOwnPropertyDescriptor(prototype, 'onmessage');
+                    prototype = Object.getPrototypeOf(prototype);
+                }
+                if (!descriptor?.set || !descriptor?.get) {
+                    throw new Error('Node MessagePort must expose onmessage');
+                }
+                Object.defineProperty(port, 'onmessage', {
+                    configurable: true,
+                    get: () => descriptor.get.call(port),
+                    set: listener => {
+                        descriptor.set.call(port, listener);
+                        port.unref();
+                    },
+                });
+                port.unref();
+            }
+        }
+    };
+    afterAll(() => {
+        channels.forEach(channel => {
+            channel.port1.close();
+            channel.port2.close();
+        });
+        channels.clear();
+    });
+    globalThis.ResizeObserver = class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+    };
+}

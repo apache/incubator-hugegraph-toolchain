@@ -20,8 +20,9 @@
  * @file Links算法
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Collapse, InputNumber, Input} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import {useState, useCallback, useContext} from 'react';
+import {InputNumber, Input} from 'antd';
 import Form from '../../PersistentForm';
 import {UngroupOutlined} from '@ant-design/icons';
 import GraphAnalysisContext from '../../../../Context';
@@ -41,7 +42,6 @@ const Links = props => {
     const {ALGORITHM_NAME} = useTranslatedConstants();
     const {LINKS} = ALGORITHM_NAME;
     const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
-    // eslint-disable-next-line
     const placeholder='{"start_vertexes":["A","B","C","D","E"],"vertex_end_condition":{"label":"user","property_filter":"$element.age <= 90"},"edge_end_condition":{"label":"pay","property_filter":"double($out.money) >= 4"},"edge_compare_condition":{"label":"pay","property_filter":"$out.money > $in.money"}}';
     const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.links';
 
@@ -117,11 +117,8 @@ const Links = props => {
         [form]
     );
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={info.icon}
                     name={LINKS}
@@ -173,7 +170,7 @@ const Links = props => {
                 </Form.Item>
                 <OlapComputerItem />
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

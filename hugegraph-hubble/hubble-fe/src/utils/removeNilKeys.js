@@ -38,7 +38,7 @@ function isProvided(value) {
 }
 
 function transToNumber(val) {
-    const matchVal = val.match(/\`(.*)\`/);
+    const matchVal = val.match(/`(.*)`/);
 
     return matchVal ? Number(matchVal[1]) : val;
 }

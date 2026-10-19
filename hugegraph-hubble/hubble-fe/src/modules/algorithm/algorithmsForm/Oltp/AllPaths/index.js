@@ -20,8 +20,9 @@
  * @file AllPaths算法
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Input, Collapse, Select, Tooltip, InputNumber} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import {useState, useCallback, useContext} from 'react';
+import {Input, Select, Tooltip, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
 import {ClusterOutlined, QuestionCircleOutlined, DownOutlined, RightOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
@@ -207,11 +208,8 @@ const AllPaths = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<ClusterOutlined />}
                     name={ALLPATHS}
@@ -241,7 +239,7 @@ const AllPaths = props => {
                 <CapacityItem />
                 <LimitItem initialValue={10} desc={t('analysis.algorithm.oltp.template_paths.limit')} />
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

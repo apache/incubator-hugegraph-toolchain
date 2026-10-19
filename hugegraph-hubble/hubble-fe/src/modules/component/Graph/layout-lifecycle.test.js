@@ -15,292 +15,91 @@
  * under the License.
  */
 
-import React from 'react';
-import {act, render, waitFor} from '@testing-library/react';
+import {useContext, useEffect} from 'react';
+import {act, fireEvent, render, screen} from '@testing-library/react';
+import {message} from 'antd';
 import Graph from './index';
+import {GraphContext} from '../Context';
 
-const mockGraphInstances = [];
-const mockResizeObservers = [];
+const mockController = {getSnapshot: jest.fn()};
+const mockSnapshot = {status: 'ready', data: {nodes: [], edges: []},
+    selectedIds: [], hoveredIds: [], canUndo: false, canRedo: false};
+let mockCanvasProps;
+let mockContext;
+const mockEvent = {id: 'node:number:0', kind: 'node', data: {raw: {id: 0, label: 'person'}}};
 
-const mockCreateGraph = options => {
-    const handlers = {};
-    const config = {...options};
-    const group = {
-        resetMatrix: jest.fn(),
-        getCanvasBBox: jest.fn(() => ({x: 0, y: 0, width: 320, height: 240})),
-    };
-    const instance = {
-        destroyed: false,
-        on: jest.fn((name, handler) => {
-            handlers[name] = handler;
-        }),
-        get: jest.fn(key => ({
-            canvas: {set: jest.fn()},
-            group,
-            height: 600,
-            layout: config.layout,
-            width: 800,
-        })[key]),
-        set: jest.fn((key, value) => {
-            if (key === 'layout') {
-                config.layout = value;
-            }
-        }),
-        getZoom: jest.fn(() => 1),
-        getNodes: jest.fn(() => []),
-        getEdges: jest.fn(() => []),
-        data: jest.fn(),
-        refresh: jest.fn(),
-        changeSize: jest.fn(),
-        translate: jest.fn(),
-        zoom: jest.fn(() => true),
-        destroy: jest.fn(),
-        changeData: jest.fn(() => {
-            // G6 changeData() reads this flag from cfg.layout. Its second
-            // argument controls stack behavior, not automatic relayout.
-            if (config.layout?.relayoutAtChangeData !== false) {
-                instance.updateLayout(config.layout);
-            }
-        }),
-        updateLayout: jest.fn(layout => {
-            config.layout = layout;
-            handlers.afterlayout?.();
-        }),
-        render: jest.fn(() => {
-            handlers.afterrender?.();
-            handlers.afterlayout?.();
-        }),
-    };
-    mockGraphInstances.push({config, group, instance});
-    return instance;
+jest.mock('../../../visualization/react', () => ({
+    useGraphSnapshot: () => mockSnapshot,
+    GraphCanvas: props => {
+        mockCanvasProps = props;
+        const {onReady} = props;
+        useEffect(() => {
+            onReady(mockController);
+            return () => onReady(null);
+        }, [onReady]);
+        return <>
+            <canvas data-testid='graph-surface' />
+            <button onClick={() => props.onClick?.(mockEvent)}>Inspect node</button>
+        </>;
+    },
+}));
+jest.mock('react-i18next', () => ({useTranslation: () => ({t: key => key})}));
+jest.mock('antd', () => ({message: {error: jest.fn()}}));
+const Probe = () => {
+    mockContext = useContext(GraphContext);
+    return null;
 };
 
-jest.mock('@antv/g6', () => ({
-    __esModule: true,
-    default: {
-        Graph: function MockGraph(options) {
-            return mockCreateGraph(options);
-        },
-    },
-}));
-jest.mock('@antv/graphin-icons', () => ({
-    __esModule: true,
-    default: () => ({glyphs: []}),
-}));
-jest.mock('react-i18next', () => ({
-    useTranslation: () => ({t: key => key}),
-}));
-jest.mock('resize-observer-polyfill', () => ({
-    __esModule: true,
-    default: class ResizeObserver {
-        constructor(callback) {
-            mockResizeObservers.push(callback);
-        }
-        observe() {}
-        disconnect() {}
-    },
-}));
-jest.mock('../../../customHook/useCustomNode', () => () => {});
-jest.mock('../../../customHook/useCustomGrid', () => () => {});
-jest.mock('../../../customHook/useCustomEdge', () => () => {});
+beforeEach(() => { jest.clearAllMocks(); });
 
-const graphData = nodeCount => ({
-    nodes: Array.from({length: nodeCount}, (_, index) => ({id: String(index)})),
-    edges: [],
+test('shares the controller snapshot without exposing an engine or rewriting result data', () => {
+    const onReady = jest.fn();
+    const onClick = jest.fn();
+    const data = {nodes: [], edges: []};
+    const layout = {type: 'grid'};
+    const view = render(<Graph data={data} datasetKey='query-1' layout={layout}
+        onReady={onReady} onClick={onClick}><Probe /></Graph>);
+    expect(mockContext.controller).toBe(mockController);
+    expect(mockContext.snapshot).toBe(mockSnapshot);
+    expect(mockContext).not.toHaveProperty('graph');
+    expect(mockCanvasProps.data).toBe(data);
+    expect(mockCanvasProps.layout).toBe(layout);
+    expect(mockCanvasProps.datasetKey).toBe('query-1');
+    fireEvent.click(screen.getByRole('button', {name: 'Inspect node'}));
+    expect(onClick).toHaveBeenCalledWith(mockEvent);
+    expect(mockContext.containerRef.current).toContainElement(screen.getByTestId('graph-surface'));
+    view.unmount();
+    expect(onReady).toHaveBeenLastCalledWith(null);
 });
 
-beforeEach(() => {
-    mockGraphInstances.length = 0;
-    mockResizeObservers.length = 0;
+test('catches command failures once and preserves successful command results', async () => {
+    render(<Graph data={{nodes: [], edges: []}}><Probe /></Graph>);
+    const result = {status: 'applied', value: true};
+    await expect(mockContext.run(async () => result)).resolves.toBe(result);
+    await expect(mockContext.run(async () => { throw new Error('draw failed'); })).resolves.toBeUndefined();
+    expect(message.error).toHaveBeenCalledTimes(1);
+    expect(message.error).toHaveBeenCalledWith('draw failed');
 });
 
-test('keeps automatic changeData relayout disabled in the actual G6 layout config', async () => {
-    render(
-        <Graph
-            data={graphData(10)}
-            layout={{layout: 'force', nodeCount: 10}}
-            layoutRevision={1}
-        />
-    );
-
-    await waitFor(() => expect(mockGraphInstances).toHaveLength(1));
-    expect(mockGraphInstances[0].config.layout).toMatchObject({
-        type: 'force2',
-        relayoutAtChangeData: false,
-    });
+test('canvas menus are owned by the current instance and reset at a dataset boundary', () => {
+    const data = {nodes: [], edges: []};
+    const view = render(<Graph data={data} datasetKey='query-1'><Probe /></Graph>);
+    fireEvent.contextMenu(screen.getByTestId('graph-surface'), {clientX: 60, clientY: 90});
+    expect(mockContext.contextTarget).toEqual({kind: 'canvas', client: {x: 60, y: 90}});
+    act(() => mockCanvasProps.onContextMenu({...mockEvent, client: {x: 60, y: 90}}));
+    expect(mockContext.contextTarget.kind).toBe('node');
+    view.rerender(<Graph data={data} datasetKey='query-2'><Probe /></Graph>);
+    expect(mockContext.contextTarget).toBeNull();
 });
 
-test('does not let graph-level position animation overwrite a completed force layout', async () => {
-    render(
-        <Graph
-            data={graphData(7)}
-            layout={{layout: 'force', nodeCount: 7}}
-            layoutRevision={1}
-        />
-    );
-
-    await waitFor(() => expect(mockGraphInstances).toHaveLength(1));
-
-    // Force2 is deliberately synchronous (`layout.animate: false`). G6's
-    // graph-level animation otherwise starts positionsAnimate() after the
-    // layout, racing result refreshes and restoring stale grid positions.
-    expect(mockGraphInstances[0].config.animate).toBe(false);
-});
-
-test('does not layout or fit a metadata refresh at the same result revision', async () => {
-    const initialData = graphData(10);
-    const view = render(
-        <Graph
-            data={initialData}
-            layout={{layout: 'force', nodeCount: 10}}
-            layoutRevision={1}
-        />
-    );
-    await waitFor(() => expect(mockGraphInstances).toHaveLength(1));
-    const {instance} = mockGraphInstances[0];
-    instance.updateLayout.mockClear();
-    instance.translate.mockClear();
-
-    view.rerender(
-        <Graph
-            data={{...initialData, nodes: initialData.nodes.map(node => ({...node}))}}
-            layout={{layout: 'force', nodeCount: 10}}
-            layoutRevision={1}
-        />
-    );
-
-    await waitFor(() => expect(instance.changeData).toHaveBeenCalled());
-    expect(instance.updateLayout).not.toHaveBeenCalled();
-    expect(instance.translate).not.toHaveBeenCalled();
-});
-
-test('lays out and fits a new 600-node revision once with the new large-graph config', async () => {
-    const view = render(
-        <Graph
-            data={graphData(10)}
-            layout={{layout: 'force', nodeCount: 10}}
-            layoutRevision={1}
-        />
-    );
-    await waitFor(() => expect(mockGraphInstances).toHaveLength(1));
-    const {instance} = mockGraphInstances[0];
-    instance.changeData.mockClear();
-    instance.updateLayout.mockClear();
-    instance.translate.mockClear();
-
-    view.rerender(
-        <Graph
-            data={graphData(600)}
-            layout={{layout: 'force', nodeCount: 600}}
-            layoutRevision={2}
-        />
-    );
-
-    await waitFor(() => expect(instance.updateLayout).toHaveBeenCalledTimes(1));
-    expect(instance.updateLayout).toHaveBeenCalledWith(expect.objectContaining({
-        linkDistance: 48,
-        maxIteration: 260,
-        preventOverlap: false,
-        relayoutAtChangeData: false,
-    }));
-    expect(instance.translate).toHaveBeenCalledTimes(1);
-});
-
-test('restores the changeData guard after a user layout change', async () => {
-    const view = render(
-        <Graph
-            data={graphData(10)}
-            layout={{layout: 'force', nodeCount: 10}}
-            layoutRevision={1}
-        />
-    );
-    await waitFor(() => expect(mockGraphInstances).toHaveLength(1));
-    const {config, instance} = mockGraphInstances[0];
-
-    // LayoutConfigPanel replaces cfg.layout with an ordinary layout object.
-    instance.updateLayout({type: 'circular'});
-    expect(config.layout.relayoutAtChangeData).toBeUndefined();
-    instance.changeData.mockClear();
-    instance.updateLayout.mockClear();
-    instance.translate.mockClear();
-
-    view.rerender(
-        <Graph
-            data={graphData(12)}
-            layout={{layout: 'force', nodeCount: 12}}
-            layoutRevision={2}
-        />
-    );
-
-    await waitFor(() => expect(instance.updateLayout).toHaveBeenCalledTimes(1));
-    expect(instance.set).toHaveBeenCalledWith('layout', expect.objectContaining({
-        type: 'circular',
-        relayoutAtChangeData: false,
-    }));
-    expect(instance.updateLayout).toHaveBeenCalledWith(expect.objectContaining({
-        type: 'circular',
-        relayoutAtChangeData: false,
-    }));
-    expect(instance.translate).toHaveBeenCalledTimes(1);
-});
-
-test.each([undefined, true, false])('resizes the existing canvas with fitViewOnResize=%s', async option => {
-    const view = render(
-        <Graph
-            data={graphData(10)}
-            layout={{layout: 'force', nodeCount: 10}}
-            layoutRevision={1}
-            fitViewOnResize={option}
-        />
-    );
-    await waitFor(() => expect(mockGraphInstances).toHaveLength(1));
-    const {group, instance} = mockGraphInstances[0];
-    // Initial layout still fits, even when interactive resizes preserve the viewport.
-    expect(group.resetMatrix).toHaveBeenCalled();
-    group.resetMatrix.mockClear();
-    instance.updateLayout.mockClear();
-
-    act(() => mockResizeObservers[0]([{contentRect: {width: 800, height: 420}}]));
-
-    expect(instance.changeSize).toHaveBeenCalledWith(800, 420);
-    expect(group.resetMatrix).toHaveBeenCalledTimes(option === false ? 0 : 1);
-    expect(instance.updateLayout).not.toHaveBeenCalled();
-    expect(mockGraphInstances).toHaveLength(1);
-    group.resetMatrix.mockClear();
-
-    view.rerender(
-        <Graph
-            data={graphData(12)}
-            layout={{layout: 'force', nodeCount: 12}}
-            layoutRevision={2}
-            fitViewOnResize={option}
-        />
-    );
-    await waitFor(() => expect(instance.updateLayout).toHaveBeenCalledTimes(1));
-    expect(group.resetMatrix).toHaveBeenCalledTimes(1);
-});
-
-test('cancels a pending resize when the canvas unmounts', () => {
-    jest.useFakeTimers();
-    try {
-        const view = render(
-            <Graph
-                data={graphData(10)}
-                layout={{layout: 'force', nodeCount: 10}}
-                fitViewOnResize={false}
-            />
-        );
-        const {instance} = mockGraphInstances[0];
-        act(() => {
-            mockResizeObservers[0]([{contentRect: {width: 800, height: 420}}]);
-            mockResizeObservers[0]([{contentRect: {width: 800, height: 500}}]);
-        });
-        expect(instance.changeSize).toHaveBeenCalledTimes(1);
-        view.unmount();
-        act(() => jest.runOnlyPendingTimers());
-        expect(instance.changeSize).toHaveBeenCalledTimes(1);
-    }
-    finally {
-        jest.useRealTimers();
-    }
+test('tooltip fields remain React text and preserve long IDs without executing markup', () => {
+    render(<Graph data={{nodes: [], edges: []}} />);
+    render(mockCanvasProps.tooltip({kind: 'node', data: {raw: {
+        id: 900719925474099312345n, label: '<script>unsafe</script>',
+        properties: {payload: '<img src=x onerror=alert(1)>', nested: {value: 3n}},
+    }}}));
+    expect(screen.getByText(/900719925474099312345/)).toBeInTheDocument();
+    expect(screen.getByText(/<script>unsafe<\/script>/)).toBeInTheDocument();
+    expect(document.querySelector('script, img')).toBeNull();
+    expect(screen.getByText(/nested:.*"value":"3"/)).toBeInTheDocument();
 });

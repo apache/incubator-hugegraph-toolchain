@@ -43,7 +43,7 @@ const blockFor = selector => {
 test('scopes the modal surface contract to the Ant Design portal root', () => {
     const modal = blockFor('.ant-modal-root {');
 
-    expect(modal).toMatch(/\.ant-modal-content\s*\{/);
+    expect(modal).toMatch(/\.ant-modal-container\s*\{/);
     expect(modal).toMatch(/border-radius:\s*(?:10|11|12)px/);
     expect(modal).toContain('.ant-modal-mask');
     expect(modal).toContain('box-shadow:');

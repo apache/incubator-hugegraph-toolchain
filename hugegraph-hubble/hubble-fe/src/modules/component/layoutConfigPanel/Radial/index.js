@@ -20,21 +20,24 @@
  * @file  径向布局
  */
 
-import React from 'react';
-import {Form, InputNumber, Input, Switch} from 'antd';
+import {useId} from 'react';
+import {Form, InputNumber, Select, Switch} from 'antd';
+import {hubbleRenderId} from '../../../../visualization/hubble/adapter';
 import {useTranslation} from 'react-i18next';
-import _ from 'lodash';
 
 const RadialForm = props => {
-    const {handleFormChange, initialValues} = props;
+    const {handleFormChange, initialValues, disabled, data} = props;
     const {t} = useTranslation();
+    const instanceId = useId();
     const {useForm} = Form;
     const [form] = useForm();
 
     return (
         <Form
+            name={instanceId}
             form={form}
-            onValuesChange={_.debounce(handleFormChange, 100)}
+            onValuesChange={handleFormChange}
+            disabled={disabled}
             initialValues={initialValues}
             labelCol={{span: 24}}
         >
@@ -43,35 +46,37 @@ const RadialForm = props => {
                 label={t('analysis.canvas.layout_panel.unit_radius')}
                 tooltip={t('analysis.canvas.layout_panel.unit_radius_tooltip')}
             >
-                <InputNumber style={{width: '100%'}} min={1} />
+                <InputNumber aria-label={t('analysis.canvas.layout_panel.unit_radius')} style={{width: '100%'}} min={1} />
             </Form.Item>
             <Form.Item
                 name='linkDistance'
                 label={t('analysis.canvas.layout_panel.link_distance_short')}
                 tooltip={t('analysis.canvas.layout_panel.link_distance')}
             >
-                <InputNumber style={{width: '100%'}} min={1} />
+                <InputNumber aria-label={t('analysis.canvas.layout_panel.link_distance_short')} style={{width: '100%'}} min={1} />
             </Form.Item>
             <Form.Item
                 name='nodeSize'
                 label={t('analysis.canvas.layout_panel.node_size')}
                 tooltip={t('analysis.canvas.layout_panel.node_size_tooltip')}
             >
-                <InputNumber style={{width: '100%'}} min={1} />
+                <InputNumber aria-label={t('analysis.canvas.layout_panel.node_size')} style={{width: '100%'}} min={1} />
             </Form.Item>
             <Form.Item
                 name='focusNode'
                 label={t('analysis.canvas.layout_panel.focus_node')}
                 tooltip={t('analysis.canvas.layout_panel.focus_node_tooltip')}
             >
-                <Input style={{width: '100%'}} />
+                <Select aria-label={t('analysis.canvas.layout_panel.focus_node')} allowClear showSearch optionFilterProp="label" style={{width: '100%'}}
+                    options={data.nodes.map(node => ({value: hubbleRenderId('node', node.data.raw.id),
+                        label: String(node.data.raw.id)}))} />
             </Form.Item>
             <Form.Item
                 name='nodeSpacing'
                 label={t('analysis.canvas.layout_panel.node_spacing')}
                 tooltip={t('analysis.canvas.layout_panel.radial_node_spacing_tooltip')}
             >
-                <InputNumber style={{width: '100%'}} min={1} />
+                <InputNumber aria-label={t('analysis.canvas.layout_panel.node_spacing')} style={{width: '100%'}} min={1} />
             </Form.Item>
             <Form.Item
                 name='preventOverlap'
@@ -81,7 +86,7 @@ const RadialForm = props => {
                 labelCol={{span: 20}}
                 tooltip={t('analysis.canvas.layout_panel.radial_prevent_overlap_tooltip')}
             >
-                <Switch />
+                <Switch aria-label={t('analysis.canvas.layout_panel.prevent_overlap')} />
             </Form.Item>
             <Form.Item
                 name='strictRadial'
@@ -91,7 +96,7 @@ const RadialForm = props => {
                 labelCol={{span: 20}}
                 tooltip={t('analysis.canvas.layout_panel.strict_radial_tooltip')}
             >
-                <Switch />
+                <Switch aria-label={t('analysis.canvas.layout_panel.strict_radial')} />
             </Form.Item>
         </Form>
     );

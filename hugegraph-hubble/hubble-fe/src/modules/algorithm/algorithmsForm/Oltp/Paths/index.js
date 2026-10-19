@@ -20,8 +20,9 @@
  * @file 查找所有路径（GET）
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Input, Collapse, InputNumber} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import {useState, useCallback, useContext} from 'react';
+import {Input, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
 import {PullRequestOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
@@ -103,11 +104,8 @@ const Paths = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<PullRequestOutlined />}
                     name={PATHS}
@@ -186,7 +184,7 @@ const Paths = props => {
                     desc={t('analysis.algorithm.oltp.paths.limit')}
                 />
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

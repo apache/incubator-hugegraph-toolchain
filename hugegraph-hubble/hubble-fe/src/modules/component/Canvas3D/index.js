@@ -20,7 +20,7 @@
  * @file 3D ForceGraph
  */
 
-import React, {useEffect, useMemo, useRef} from 'react';
+import {useEffect, useMemo, useRef} from 'react';
 import * as THREE from 'three';
 import ForceGraph3D from '3d-force-graph';
 import {useTranslation} from 'react-i18next';
@@ -76,15 +76,15 @@ const Canvas3D = props => {
     const graphData = useMemo(
         () => ({
             nodes: data.nodes.map(node => {
-                const {id, properties, itemType, label, style, size} = node;
-                return {id, properties, itemType, label, style, size};
+                const {id, rawId, properties, itemType, label, style, size} = node;
+                return {id, rawId, properties, itemType, label, style, size};
             }),
             links: data.edges.map(edge => {
                 const {metaConfig = {}, curvature = 0, rotation = 0} = edge;
                 const {style: metaStyle = {}, edgelabel_type: edgeLabelType} = metaConfig;
                 const {with_arrow: hasArrow} = metaStyle;
-                const {id, source, target, label, type, style, properties} = edge;
-                return {id, source, target, label, style, type, hasArrow,
+                const {id, rawId, source, target, label, type, style, properties} = edge;
+                return {id, rawId, source, target, label, style, type, hasArrow,
                     edgeLabelType, properties, curvature, rotation};
             }),
         }),
@@ -97,7 +97,6 @@ const Canvas3D = props => {
             const MaterialMap = new Map();
             const width = elem.offsetWidth;
             const height = elem.offsetHeight;
-            // eslint-disable-next-line @babel/new-cap
             graphRef.current = ForceGraph3D()(elem)
                 // basicConfig
                 .width(width)
@@ -109,9 +108,9 @@ const Canvas3D = props => {
                 .graphData(graphData)
                 // nodeStyle
                 .nodeLabel(node => {
-                    const {itemType, id, properties} = node;
+                    const {itemType, id, rawId, properties} = node;
                     const propertiesStr = formatTooltipProperties(properties);
-                    return formatLabelString(labels, labels.node, itemType, id, propertiesStr);
+                    return formatLabelString(labels, labels.node, itemType, rawId ?? id, propertiesStr);
                 })
                 .nodeThreeObject(node => {
                     const {itemType} = node;
@@ -134,9 +133,9 @@ const Canvas3D = props => {
                 })
                 // linkStyle
                 .linkLabel(link => {
-                    const {label, id, properties, edgeLabelType} = link;
+                    const {label, id, rawId, properties, edgeLabelType} = link;
                     const propertiesStr = formatTooltipProperties(properties);
-                    return formatLabelString(labels, labels.edge, label, id, propertiesStr, edgeLabelType);
+                    return formatLabelString(labels, labels.edge, label, rawId ?? id, propertiesStr, edgeLabelType);
                 })
                 .linkColor(links => links.style.stroke)
                 .linkOpacity(0.4)

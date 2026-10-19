@@ -16,12 +16,12 @@
  * under the License.
  */
 
+import PageHeader from '../../components/PageHeader';
 import {
     Table,
     Space,
     Row,
     Col,
-    PageHeader,
     Button,
     Input,
     Radio,
@@ -47,7 +47,7 @@ import {
     DEFAULT_GRAPHSPACE,
     isGraphDefaultMutationEnabled,
 } from '../../utils/productMode';
-import moment from 'moment';
+import dayjs from 'dayjs';
 import GraphCard from './Card';
 import ClearGraphConfirmModal from './ClearGraphConfirmModal';
 import KeyboardAction from '../../components/KeyboardAction';
@@ -99,6 +99,7 @@ const Graph = () => {
     const [listType, setListType] = useState('image');
     const [refresh, setRefresh] = useState(false);
     const [pagination, setPagination] = useState({current: 1, pageSize: 11});
+    const {current: page, pageSize} = pagination;
     const [loading, setLoading] = useState(false);
     const [listUnavailable, setListUnavailable] = useState(false);
     const [clearSelection, setClearSelection] = useState(null);
@@ -327,7 +328,7 @@ const Graph = () => {
         }
         catch (error) {
             const errorMessage = error?.response?.data?.message || error?.message;
-            throw new Error(sanitizePublicError(errorMessage, fallbackError));
+            throw new Error(sanitizePublicError(errorMessage, fallbackError), {cause: error});
         }
     }, [graphspace, t]);
 
@@ -344,7 +345,7 @@ const Graph = () => {
                     {t('graph.empty.clear_filters')}
                 </Button>
             ) : canManage ? (
-                <Space direction='vertical' size={8}>
+                <Space orientation='vertical' size={8}>
                     {graphCreateEnabled && (
                         <Button type='primary' onClick={showEditLayer}>
                             {t('graph.empty.create')}
@@ -386,14 +387,14 @@ const Graph = () => {
             dataIndex: 'create_time',
             align: 'center',
             width: 140,
-            render: val => (val ? moment(val).format('YYYY-MM-DD') : '--'),
+            render: val => (val ? dayjs(val).format('YYYY-MM-DD') : '--'),
         },
         {
             title: t('graph.detail.update_data'),
             dataIndex: 'update_time',
             align: 'center',
             width: 140,
-            render: val => (val ? moment(val).format('YYYY-MM-DD') : '--'),
+            render: val => (val ? dayjs(val).format('YYYY-MM-DD') : '--'),
         },
         {
             title: t('graph.col.creator'),
@@ -542,12 +543,12 @@ const Graph = () => {
         api.manage.getGraphList(graphspace, {
             create_time: dateData,
             query: graphname,
-            page_no: pagination.current,
-            page_size: pagination.pageSize,
+            page_no: page,
+            page_size: pageSize,
         }, {suppressBusinessErrorToast: true}).then(res => {
             if (res.status === 200) {
                 setData(res.data.records);
-                setPagination({...pagination, total: res.data.total});
+                setPagination(value => ({...value, total: res.data.total}));
 
                 return;
             }
@@ -558,8 +559,7 @@ const Graph = () => {
             setLoading(false);
         });
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [refresh, pagination.current, listType, dateData, graphspace, graphname]);
+    }, [refresh, page, pageSize, listType, dateData, graphspace, graphname]);
 
     return (
         <Spin spinning={loading}>
@@ -578,14 +578,13 @@ const Graph = () => {
                 />
             </TopbarPageContextSlot>
             <PageHeader
-                ghost={false}
                 onBack={handleBack}
                 title={t('graph.title')}
             >
                 <Row justify='space-between'>
                     <Col>
                         <DatePicker
-                            value={dateData ? moment(dateData) : null}
+                            value={dateData ? dayjs(dateData) : null}
                             onChange={handleDatePickerChange}
                         />
                     </Col>
@@ -607,7 +606,7 @@ const Graph = () => {
                     <Alert
                         showIcon
                         type='error'
-                        message={t('graph.unavailable')}
+                        title={t('graph.unavailable')}
                         action={(
                             <Button size='small' onClick={handleRefresh}>
                                 {t('common.action.retry')}
@@ -619,7 +618,7 @@ const Graph = () => {
                     <Alert
                         showIcon
                         type='info'
-                        message={graphCreateUnavailableHint}
+                        title={graphCreateUnavailableHint}
                     />
                 )}
                 {listType === 'image'

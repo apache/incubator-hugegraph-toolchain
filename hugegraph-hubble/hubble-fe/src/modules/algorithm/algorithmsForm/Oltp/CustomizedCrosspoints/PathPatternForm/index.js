@@ -20,7 +20,7 @@
  * @file CustomizedCrosspoints PathPatter
  */
 
-import React, {useState, useCallback} from 'react';
+import {useState, useCallback} from 'react';
 import {Input, Button, Select, Tooltip, InputNumber} from 'antd';
 import Form from '../../../PersistentForm';
 import {DownOutlined, RightOutlined, PlusOutlined, QuestionCircleOutlined} from '@ant-design/icons';
@@ -97,10 +97,10 @@ const PathPatternsFormItems = () => {
                 name={[param, 'steps']}
                 initialValue={[{}]}
             >
-                {(lists, {add, remove}, {errors}) => (
+                {(lists, {add, remove}, {errors: _errors}) => (
                     <div className={s.stepsItemsContent}>
                         {
-                            lists.map((item, index) => {
+                            lists.map((item, _index) => {
                                 return (
                                     <div key={item.key} className={s.stepContent}>
                                         {stepFormItems(item)}

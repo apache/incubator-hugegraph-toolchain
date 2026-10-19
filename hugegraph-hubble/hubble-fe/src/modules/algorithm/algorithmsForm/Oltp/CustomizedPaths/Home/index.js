@@ -20,8 +20,9 @@
  * @file CustomizedPaths
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Collapse, Select, InputNumber} from 'antd';
+import AlgorithmPanel from '../../../AlgorithmPanel';
+import {useState, useCallback, useContext} from 'react';
+import {Select, InputNumber} from 'antd';
 import Form from '../../../PersistentForm';
 import {ProfileOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
@@ -128,11 +129,8 @@ const CustomizedPaths = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<ProfileOutlined />}
                     name={CUSTOMIZEDPATHS}
@@ -192,7 +190,7 @@ const CustomizedPaths = props => {
                     <InputNumber />
                 </Form.Item>
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

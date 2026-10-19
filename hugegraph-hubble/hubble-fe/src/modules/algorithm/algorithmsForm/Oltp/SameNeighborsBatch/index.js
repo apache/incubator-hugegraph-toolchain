@@ -20,8 +20,9 @@
  * @file SameNeighborsBatch算法
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Input, Collapse, InputNumber} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import {useState, useCallback, useContext} from 'react';
+import {Input, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
 import {ForkOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
@@ -107,11 +108,8 @@ const SameNeighborsBatch = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<ForkOutlined />}
                     name={SAME_NEIGHBORS_BATCH}
@@ -165,7 +163,7 @@ const SameNeighborsBatch = props => {
                     desc={t('analysis.algorithm.oltp.common.limit_crosspoints')}
                 />
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

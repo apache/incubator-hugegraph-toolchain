@@ -20,8 +20,9 @@
  * @file K-neighbor API(POST，高级版)
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Input, Collapse, Select, Tooltip, InputNumber} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import {useState, useCallback, useContext} from 'react';
+import {Input, Select, Tooltip, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
 import {DownOutlined, RightOutlined, DeleteRowOutlined, QuestionCircleOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
@@ -102,7 +103,7 @@ const KneighborPost = props => {
             const propertiesArr = properties.trim().split('\n') || [];
             const propertiesValue = {};
             for (const item of propertiesArr) {
-                const [key, value] = item?.split('=');
+                const [key, value] = item.split('=');
                 if (key && value) {
                     const valueLength = value.length;
                     if (valueLength > 2 && value[0] === '\'' && value[valueLength - 1] === '\'') {
@@ -239,11 +240,8 @@ const KneighborPost = props => {
     };
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<DeleteRowOutlined />}
                     name={KNEIGHBOR_POST}
@@ -293,7 +291,7 @@ const KneighborPost = props => {
                 </Form.Item>
                 {stepFormItems()}
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

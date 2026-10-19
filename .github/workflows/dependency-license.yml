@@ -30,6 +30,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SCRIPT_DEPENDENCY: hugegraph-dist/scripts/dependency
+      MAVEN_OPTS: -Xmx3g -XX:MaxMetaspaceSize=768m
+      NODE_OPTIONS: --max-old-space-size=4096
     steps:
       - name: Checkout source
         uses: actions/checkout@v7
@@ -38,10 +40,27 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-      - name: Use Node.js 16
+      - name: Use pinned Hubble Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '16'
+          node-version-file: hugegraph-hubble/hubble-fe/.node-version
+      - name: Activate pinned pnpm
+        id: pnpm
+        working-directory: hugegraph-hubble/hubble-fe
+        run: |
+          corepack enable
+          pnpm --version
+          echo "store=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+          echo "version=$(node -p 'require("./package.json").packageManager')" >> "$GITHUB_OUTPUT"
+          echo "node=$(node --version)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache pnpm downloads
+        uses: actions/cache@v6
+        with:
+          path: ${{ steps.pnpm.outputs.store }}
+          key: ${{ runner.os }}-${{ runner.arch }}-${{ steps.pnpm.outputs.node }}-${{ steps.pnpm.outputs.version }}-${{ hashFiles('hugegraph-hubble/hubble-fe/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-${{ steps.pnpm.outputs.node }}-${{ steps.pnpm.outputs.version }}-
 
       - name: Install locked candidate SDK
         uses: ./.github/actions/setup-candidate-sdk

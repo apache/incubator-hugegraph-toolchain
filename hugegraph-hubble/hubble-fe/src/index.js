@@ -16,43 +16,38 @@
  * under the License.
  */
 
-import React from 'react';
 import ReactDOM from 'react-dom/client';
 import {BrowserRouter} from 'react-router-dom';
-import {ConfigProvider} from 'antd';
+import {App as AntApp, ConfigProvider} from 'antd';
 import {useTranslation} from 'react-i18next';
-// FIXME: Consolidate moment into date-fns after replacing filter comparisons
-// and Ant Design date values together; removing it piecemeal changes semantics.
-import 'moment/locale/zh-cn';
+import dayjs from 'dayjs';
+import 'dayjs/locale/zh-cn';
+import 'antd/dist/reset.css';
+import {useEffect} from 'react';
 import './index.css';
 import App from './App';
-import reportWebVitals from './reportWebVitals';
-import zhCN from 'antd/lib/locale/zh_CN';
-import enUS from 'antd/lib/locale/en_US';
+import zhCN from 'antd/locale/zh_CN';
+import enUS from 'antd/locale/en_US';
 import './i18n';
 
 const LocalizedApp = () => {
     const {i18n} = useTranslation();
     const locale = i18n.language === 'zh-CN' ? zhCN : enUS;
+    useEffect(() => {
+        dayjs.locale(i18n.language === 'zh-CN' ? 'zh-cn' : 'en');
+    }, [i18n.language]);
     return (
         <ConfigProvider locale={locale}>
-            <App />
+            <AntApp>
+                <App />
+            </AntApp>
         </ConfigProvider>
     );
-};
-const routerFuture = {
-    v7_startTransition: true,
-    v7_relativeSplatPath: true,
 };
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
 root.render(
-    <BrowserRouter future={routerFuture}>
+    <BrowserRouter>
         <LocalizedApp />
     </BrowserRouter>
 );
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();

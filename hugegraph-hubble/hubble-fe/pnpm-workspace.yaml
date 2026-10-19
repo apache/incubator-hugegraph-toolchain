@@ -1,0 +1,25 @@
+packages:
+  - '.'
+
+engineStrict: true
+strictPeerDependencies: true
+saveExact: true
+
+minimumReleaseAgeExclude:
+  - i18next@26.5.2
+  - react-i18next@17.1.0
+# X6 3.1.8 imports tslib at runtime but declares it only as a devDependency.
+packageExtensions:
+  '@antv/x6@3.1.8':
+    dependencies:
+      tslib: '2.8.1'
+
+# Native watcher/resolver postinstalls from the pinned registry packages.
+allowBuilds:
+  '@parcel/watcher@2.6.0': true
+  'unrs-resolver@1.12.2': true
+  '@swc/core@1.16.18': true
+
+verifyDepsBeforeRun: error
+patchedDependencies:
+  '@antv/g6@5.1.1': patches/@antv__g6@5.1.1.patch

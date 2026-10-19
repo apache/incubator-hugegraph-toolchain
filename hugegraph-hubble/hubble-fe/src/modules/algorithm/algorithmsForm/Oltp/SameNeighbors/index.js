@@ -20,8 +20,9 @@
  * @file SameNeighbors算法
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Input, Collapse} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import {useState, useCallback, useContext} from 'react';
+import {Input, } from 'antd';
 import Form from '../../PersistentForm';
 import {ApartmentOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
@@ -107,11 +108,8 @@ const SameNeighbors = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<ApartmentOutlined />}
                     name={SAME_NEIGHBORS}
@@ -156,7 +154,7 @@ const SameNeighbors = props => {
                     desc={t('analysis.algorithm.oltp.same_neighbors.limit')}
                 />
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

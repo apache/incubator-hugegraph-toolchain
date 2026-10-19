@@ -20,8 +20,9 @@
  * @file ClosenessCentrality算法
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Input, Collapse, InputNumber} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import {useState, useCallback, useContext} from 'react';
+import {Input, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
 import {DeleteColumnOutlined} from '@ant-design/icons';
 import GraphAnalysisContext from '../../../../Context';
@@ -114,11 +115,8 @@ const ClosenessCentrality = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={info.icon}
                     name={CLOSENESS_CENTRALITY}
@@ -182,7 +180,7 @@ const ClosenessCentrality = props => {
                 </Form.Item>
                 <OlapComputerItem />
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

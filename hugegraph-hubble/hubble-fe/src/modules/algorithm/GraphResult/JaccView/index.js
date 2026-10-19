@@ -20,7 +20,6 @@
  * @file  JACCARD_SIMILARITY等算法展示
  */
 
-import React from 'react';
 import {useTranslation} from 'react-i18next';
 import JaccRankView from '../../../component/JaccRankView';
 import c from './index.module.scss';

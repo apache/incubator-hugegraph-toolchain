@@ -16,8 +16,9 @@
  * under the License.
  */
 
-import React, {useState, useCallback, useEffect, useRef} from 'react';
-import {Alert, Button, PageHeader, Spin} from 'antd';
+import PageHeader from '../../components/PageHeader';
+import {useState, useCallback, useEffect, useRef} from 'react';
+import {Alert, Button, Spin} from 'antd';
 import AnalysisHome from '../analysis/Home';
 import AlgorithmHome from '../algorithm/Home';
 import AsyncTaskHome from '../asyncTasks/Home';
@@ -234,7 +235,6 @@ const GraphAnalysisHome = props => {
         <GraphAnalysisContext.Provider value={context}>
             {moduleName !== GREMLIN && <PageHeader
                 className='graphAnalysisHeader'
-                ghost={false}
                 onBack={false}
                 title={t(pageHeaderNameKeys[moduleName])}
                 subTitle={moduleName === ALGORITHMS
@@ -246,7 +246,7 @@ const GraphAnalysisHome = props => {
                 <Alert
                     type='error'
                     showIcon
-                    message={t('analysis.topbar.get_vermeer_failed')}
+                    title={t('analysis.topbar.get_vermeer_failed')}
                     action={(
                         <Button size='small' onClick={getVermeer}>
                             {t('analysis.topbar.retry_vermeer')}
@@ -258,7 +258,7 @@ const GraphAnalysisHome = props => {
                 <Alert
                     type='error'
                     showIcon
-                    message={t('analysis.topbar.olap_failed')}
+                    title={t('analysis.topbar.olap_failed')}
                     action={(
                         <Button size='small' onClick={retryOlap}>
                             {t('analysis.topbar.retry_olap')}

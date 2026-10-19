@@ -20,8 +20,9 @@
  * @file 查找最短路径
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Input, Collapse, Select, InputNumber} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import {useState, useCallback, useContext} from 'react';
+import {Input, Select, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
 import {ForkOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
@@ -112,11 +113,8 @@ const FindShortestPath = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<ForkOutlined />}
                     name={FINDSHORTESTPATH}
@@ -202,7 +200,7 @@ const FindShortestPath = props => {
                     <InputNumber />
                 </Form.Item>
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

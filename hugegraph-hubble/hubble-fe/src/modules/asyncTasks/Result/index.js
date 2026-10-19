@@ -20,12 +20,12 @@
  * @file 异步任务结果
  */
 
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {Link, useParams} from 'react-router-dom';
 import {Alert, Button, Empty, Spin} from 'antd';
 import {useTranslation} from 'react-i18next';
 import * as api from '../../../api/index';
-import ReactJsonView from 'react-json-view';
+import JsonViewer from '../../../components/JsonViewer';
 import convertStringToJSON from '../../../utils/convertStringToJSON';
 import c from './index.module.scss';
 
@@ -94,7 +94,7 @@ export const AsyncTaskResultContent = ({
                 <Alert
                     showIcon
                     type='error'
-                    message={t('analysis.async_task.result_load_failed')}
+                    title={t('analysis.async_task.result_load_failed')}
                     action={(
                         <Button size='small' onClick={getResult}>
                             {t('analysis.async_task.retry_result')}
@@ -102,19 +102,15 @@ export const AsyncTaskResultContent = ({
                     )}
                 />
             )}
-            {loading && <Spin tip={t('analysis.async_task.result_loading')} />}
+            {loading && <Spin description={t('analysis.async_task.result_loading')} />}
             {!loading && !error && (
                 !hasResult ? (
                     <Empty description={t('analysis.async_task.no_result')} />
                 ) : resultForJSON === null ? (
                     asyncTaskResultJson
                 ) : (
-                    <ReactJsonView
-                        src={resultForJSON}
-                        name={false}
-                        displayObjectSize={false}
-                        displayDataTypes={false}
-                        groupArraysAfterLength={50}
+                    <JsonViewer
+                        value={resultForJSON}
                     />
                 )
             )}

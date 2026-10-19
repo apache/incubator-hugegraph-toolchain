@@ -20,8 +20,9 @@
  * @file PageRank_Vermeer算法
  */
 
-import React, {useState, useCallback, useContext, useEffect} from 'react';
-import {Collapse, InputNumber} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import {useState, useCallback, useContext, useEffect} from 'react';
+import {InputNumber} from 'antd';
 import Form from '../../PersistentForm';
 import {BranchesOutlined} from '@ant-design/icons';
 import GraphAnalysisContext from '../../../../Context';
@@ -112,11 +113,8 @@ const PageRankVermeer = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={info.icon}
                     name={PAGE_RANK}
@@ -176,7 +174,7 @@ const PageRankVermeer = props => {
                     <InputNumber />
                 </Form.Item>
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 
