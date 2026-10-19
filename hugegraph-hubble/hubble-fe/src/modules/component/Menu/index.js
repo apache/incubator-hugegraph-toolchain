@@ -45,10 +45,11 @@ const Menu = ({onClickAddNode, onClickAddEdge, onClickExpand, onClickSearch}) =>
                 setContextTarget(null);
             }
         };
-        document.addEventListener('pointerdown', dismiss);
+        // Dismiss the old menu before G6 emits a new one from pointerdown.
+        document.addEventListener('pointerdown', dismiss, true);
         document.addEventListener('keydown', dismiss);
         return () => {
-            document.removeEventListener('pointerdown', dismiss);
+            document.removeEventListener('pointerdown', dismiss, true);
             document.removeEventListener('keydown', dismiss);
         };
     }, [target, setContextTarget]);

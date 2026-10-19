@@ -446,6 +446,8 @@ bin/start-hubble.sh -d
 The frontend has one production build, `pnpm run build` (i18n, TypeScript, Vite).
 `pnpm run build:diagnostic` runs the same checks and adds source maps. Normal
 release builds do not create maps only to discard them during packaging.
+Diagnostic source maps remain in `hubble-fe/build`; distribution packaging
+excludes them from `ui/` so the release archive still passes its source-map audit.
 
 Maven runs the shared frontend entry point at `prepare-package`; Java `compile`
 and `test` do not install packages or compile the UI. The same entry point can
@@ -531,6 +533,8 @@ small authenticated test dataset: [query](docs/images/g6/query.png),
 [algorithm](docs/images/g6/algorithm.png), [Schema](docs/images/g6/schema.png) and
 [graph cards](docs/images/g6/cards.png). These examples do not replace the
 separate scale, anonymous, GraphSpace and permission checks below.
+Additional running-UI checks show [visible settings panels](docs/images/g6/query-settings.png)
+and [new vertices in the current viewport](docs/images/g6/query-new-vertex.png).
 
 The distribution gate starts the packaged Hubble against an existing real Server,
 loads an isolated three-node/two-edge fixture, then runs route/i18n smoke and real

@@ -193,6 +193,43 @@ test('statistics evidence rejects the real clipping and minimap overlap regressi
     assert.throws(() => assertVisibleGraphStats(data));
   }
 });
+function panelGeometry() {
+  return {name: 'Settings', viewport: {x: 0, y: 0, width: 1600, height: 1080},
+    graph: {x: 334, y: 462, width: 1246, height: 564},
+    panel: {x: 1230, y: 462, width: 350, height: 564},
+    control: {x: 1254, y: 612, width: 302, height: 32}, clips: [],
+    scrolls: [{beforeTop: 0, beforeLeft: 0, top: 0, left: 0}]};
+}
+test('canvas panel geometry accepts controls contained in the graph and viewport', () => {
+  const {assertVisibleGraphPanel} = require('./graph_acceptance_helpers');
+  for (const name of ['Settings', 'Layout', 'Statistics']) {
+    assertVisibleGraphPanel({...panelGeometry(), name});
+  }
+});
+test('canvas panel geometry rejects controls pushed below the full-height canvas', () => {
+  const {assertVisibleGraphPanel} = require('./graph_acceptance_helpers');
+  const geometry = panelGeometry();
+  geometry.panel.y += geometry.graph.height;
+  geometry.control.y += geometry.graph.height;
+  assert.throws(() => assertVisibleGraphPanel(geometry), /clipped outside/);
+});
+test('canvas panel geometry rejects auto-scroll that would conceal the clipping regression', () => {
+  const {assertVisibleGraphPanel} = require('./graph_acceptance_helpers');
+  const geometry = panelGeometry();
+  geometry.scrolls[0].top = 447;
+  assert.throws(() => assertVisibleGraphPanel(geometry), /changed ancestor scrollTop/);
+  geometry.scrolls[0].beforeTop = 447;
+  assert.throws(() => assertVisibleGraphPanel(geometry), /already scrolled/);
+});
+test('canvas panel geometry checks intervening clipping bounds and scroll evidence', () => {
+  const {assertVisibleGraphPanel} = require('./graph_acceptance_helpers');
+  const geometry = panelGeometry();
+  geometry.clips.push({rect: {...geometry.panel, height: 160}, x: false, y: true});
+  assert.throws(() => assertVisibleGraphPanel(geometry), /vertically clipped by an ancestor/);
+  geometry.clips = [];
+  geometry.scrolls = [];
+  assert.throws(() => assertVisibleGraphPanel(geometry), /missing ancestor scroll evidence/);
+});
 function graphPixels({nodeAt = {x: 80, y: 100}, edgeFrom = nodeAt, ghost = false, edge = true} = {}) {
   const width = 500, height = 350;
   const data = new Array(width * height * 4).fill(255);

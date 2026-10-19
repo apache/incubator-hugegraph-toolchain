@@ -23,7 +23,7 @@ const path = require('node:path');
 const {authenticateUi, logoutUi} = require('./ui_auth');
 const {
   NeedsInput, argument, redact, publicHttpUrl, sha256, typedId, assertExportMatches, assertFixtureGraph,
-  uniqueDisplayId, gremlinIdLiteral, connectedPair, assertExpandedGraph, assertVisibleGraphStats,
+  uniqueDisplayId, gremlinIdLiteral, connectedPair, assertExpandedGraph, assertVisibleGraphStats, assertVisibleGraphPanel,
   assertOverallPng, assertOffscreenPan, assertOverallPanInvariant,
   decodeScreenshot, screenshotAxes, screenshotOverlayRect, screenshotFringeRects, assertPngMatchesCanvas, dragTarget, assertLiveDragPixels,
   fixtureFromPrefix, loadPlaywright, chromePath, businessPayload, scopePath,
@@ -290,6 +290,71 @@ async function selectVisibleScopeOption(page, combobox, label) {
   // AntD's role=option accessibility proxy is hidden; use the actual painted option row.
   await page.locator('.ant-select-dropdown:visible .ant-select-item-option')
     .getByText(label, {exact: true}).click();
+}
+async function canvasPanelVisibility(page, region, config, prefix) {
+  const wrapper = region.locator('..');
+  const graphElement = await region.elementHandle();
+  const wrapperElement = await wrapper.elementHandle();
+  const before = await wrapper.evaluate(element => {
+    const scrolls = [];
+    for (let current = element; current; current = current.parentElement) {
+      scrolls.push({top: current.scrollTop, left: current.scrollLeft});
+    }
+    return scrolls;
+  });
+  const panels = [
+    {name: 'Settings', toggle: /\bSettings$/, control: page.getByRole('combobox', {name: /Node Label Property/})},
+    {name: 'Layout', toggle: /^(?:deployment-unit )?Layout$/, control: page.getByRole('combobox', {name: 'Layout Type', exact: true})},
+    {name: 'Statistics', toggle: /\bStatistics$/, control: page.getByRole('radiogroup', {name: 'Statistics view', exact: true})},
+  ];
+  const results = [];
+  for (const {name, toggle, control} of panels) {
+    const button = page.getByRole('button', {name: toggle});
+    for (const opening of ['first', 'reopen']) {
+      await button.click();
+      await control.waitFor({state: 'visible'});
+      // Read geometry before interacting with any panel input: locator.click()
+      // would scroll clipped controls into view and hide a positioning regression.
+      const geometry = await control.evaluate((element, {graphElement, wrapperElement, before, name}) => {
+        const rect = value => {
+          if (!value) return null;
+          const box = value.getBoundingClientRect();
+          return {x: box.x, y: box.y, width: box.width, height: box.height};
+        };
+        let panel = element.parentElement;
+        while (panel && !(getComputedStyle(panel).position === 'absolute' && panel.offsetParent === wrapperElement)) {
+          panel = panel.parentElement;
+        }
+        const clips = [];
+        for (let current = element.parentElement; current; current = current.parentElement) {
+          const style = getComputedStyle(current);
+          const x = /hidden|clip|auto|scroll/.test(style.overflowX);
+          const y = /hidden|clip|auto|scroll/.test(style.overflowY);
+          if (x || y) clips.push({rect: rect(current), x, y});
+        }
+        const scrolls = [];
+        for (let current = wrapperElement; current; current = current.parentElement) {
+          const baseline = before[scrolls.length];
+          scrolls.push({top: current.scrollTop, left: current.scrollLeft,
+            beforeTop: baseline?.top, beforeLeft: baseline?.left});
+        }
+        return {name, viewport: {x: 0, y: 0, width: innerWidth, height: innerHeight},
+          graph: rect(graphElement), panel: rect(panel), control: rect(element), clips, scrolls};
+      }, {graphElement, wrapperElement, before, name});
+      const evidence = {name, opening, geometry,
+        screenshot: await screenshot(page, page, path.join(config.outputDir, `${prefix}-${name.toLowerCase()}-${opening}.png`))};
+      try {assertVisibleGraphPanel(geometry); evidence.status = 'passed';}
+      catch (error) {evidence.status = 'failed'; evidence.error = error.message;}
+      results.push(evidence);
+      await button.click();
+      await control.waitFor({state: 'hidden'});
+    }
+  }
+  const file = path.join(config.outputDir, `${prefix}-panel-visibility.json`);
+  fs.writeFileSync(file, JSON.stringify(results, null, 2) + '\n');
+  assert.ok(results.every(result => result.status === 'passed'),
+    `Canvas panel controls must be visible without scrolling on first open and reopen; see ${file}`);
+  return results;
 }
 function nodeTooltip(id, vertices) {
   if (!vertices || !uniqueDisplayId(vertices, id)) {
@@ -649,6 +714,7 @@ async function main(configuration = options()) {
     await check('query', async () => {
       const fixture = requireBusiness();
       const {raw, region, evidence} = await executeQuery(page, config, fixture, 'query');
+      evidence.panels = await canvasPanelVisibility(page, region, config, 'query');
       evidence.statistics = await graphStatistics(page, region, config, 'query');
       evidence.doubleClickExpansion = await doubleClickExpansion(page, config, fixture, raw);
       evidence.camera = await exerciseCamera(page, region, config.outputDir, 'query', true);
@@ -812,4 +878,4 @@ if (require.main === module) {
     });
 }
 module.exports = {ALL_CHECKS, USAGE, options, main, graphContextMenu, closeUiSession, nodeTooltip, executeQuery,
-  selectVisibleScopeOption, collectGraphOverlayRects, assertPngWithGeometry, dragTargetWithEvidence, offscreenPanPath, overallExportWithPan, saveDownload};
+  selectVisibleScopeOption, canvasPanelVisibility, collectGraphOverlayRects, assertPngWithGeometry, dragTargetWithEvidence, offscreenPanPath, overallExportWithPan, saveDownload};

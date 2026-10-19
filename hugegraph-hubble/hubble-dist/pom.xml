@@ -143,7 +143,9 @@
                             <target>
                                 <delete dir="${top.level.dir}/${final.name}/ui"/>
                                 <copy todir="${top.level.dir}/${final.name}/ui">
-                                    <fileset dir="${hubble-fe.dir}/build"/>
+                                    <fileset dir="${hubble-fe.dir}/build">
+                                        <exclude name="**/*.map"/>
+                                    </fileset>
                                 </copy>
                                 <exec executable="python3" failonerror="true">
                                     <arg value="${repo.root.dir}/hugegraph-client/assembly/travis/verify_candidate_image_sdk.py"/>

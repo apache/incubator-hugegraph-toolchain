@@ -92,7 +92,9 @@ const add3DGeometry = edges => {
 export const toCanvas3DData = (graphData, meta = {}) => {
     const vertices = indexMeta(meta.vertexMeta);
     const edgeLabels = indexMeta(meta.edgeMeta);
-    const nodes = graphData.nodes.map(node => {
+    const visibleNodes = graphData.nodes.filter(node => node.style?.visibility !== 'hidden');
+    const visibleIds = new Set(visibleNodes.map(node => node.id));
+    const nodes = visibleNodes.map(node => {
         const raw = node.data.raw;
         return mutableCopy({
             id: node.id,
@@ -107,7 +109,8 @@ export const toCanvas3DData = (graphData, meta = {}) => {
             metaConfig: vertices.get(raw.label),
         });
     });
-    const edges = graphData.edges.map(edge => {
+    const edges = graphData.edges.filter(edge => edge.style?.visibility !== 'hidden'
+        && visibleIds.has(edge.source) && visibleIds.has(edge.target)).map(edge => {
         const raw = edge.data.raw;
         const metadata = edgeLabels.get(raw.label) || {};
         return mutableCopy({

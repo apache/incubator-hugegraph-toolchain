@@ -113,23 +113,33 @@ const Graph = ({data, datasetKey, layout = DEFAULT_LAYOUT, onReady, onClick, onD
         </>;
     }, [t]);
     const focus = useCallback(event => {
+        // A right-button pointerdown already focused the menu's first action.
+        // Keep the browser's later default focus from moving it back to canvas.
+        if (event.target.tagName === 'CANVAS' && event.button === 2) {
+            event.preventDefault();
+            return;
+        }
         if (!event.target.closest?.('button, input, textarea, select, a, [contenteditable="true"]')) {
             event.currentTarget.focus({preventScroll: true});
         }
+    }, []);
+    const pointerDown = useCallback(event => {
         if (!event.target.closest?.('[role="menu"]')) {
-            setContextTarget(null);
+            // G6 resolves node/edge menus during pointerdown. Establish the blank
+            // canvas fallback in capture, before that hit-tested callback runs.
+            setContextTarget(event.target.tagName === 'CANVAS' && event.button === 2
+                ? {kind: 'canvas', client: {x: event.clientX, y: event.clientY}} : null);
         }
     }, []);
     const canvasMenu = useCallback(event => {
         if (event.target.tagName === 'CANVAS') {
             event.preventDefault();
-            setContextTarget({kind: 'canvas', client: {x: event.clientX, y: event.clientY}});
         }
     }, []);
     return <GraphContext.Provider value={context}>
         <div ref={containerRef} className={classnames(c.graph, {[c.layoutPanelOpen]: isPanelEnable, hiddenGrid: !showGrid})}
             tabIndex={0} aria-label={t('analysis.canvas.graph_canvas')} onMouseDown={focus}
-            onContextMenuCapture={canvasMenu}>
+            onPointerDownCapture={pointerDown} onContextMenuCapture={canvasMenu}>
             <GraphCanvas data={data} datasetKey={datasetKey} layout={layout} preset='interactive'
                 style={{height: '100%'}} onReady={ready} onClick={click} onDoubleClick={doubleClick}
                 onContextMenu={setContextTarget} onError={reportError} tooltip={tooltip}

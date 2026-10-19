@@ -50,7 +50,7 @@ beforeEach(() => {
 
 test('saves using raw ID and reports only one raw patch with preserved primary properties', async () => {
     const value = fixture();
-    const onChange = jest.fn();
+    const onChange = jest.fn().mockResolvedValue({status: 'applied'});
     const cancel = jest.fn();
     render(content(value, {onChange, cancel}));
     edit();
@@ -103,7 +103,7 @@ test('edge editing preserves original endpoints and uses rendering ID only for c
     const value = fixture();
     api.analysis.getEdgeProperties.mockResolvedValue({status: 200, data: {nullableProps: ['weight']}});
     api.analysis.updateEdgeProperties.mockResolvedValue({status: 200});
-    const onChange = jest.fn();
+    const onChange = jest.fn().mockResolvedValue({status: 'applied'});
     render(content(value, {onChange, drawerInfo: {kind: 'edge', renderingId: 'edge:render', id: 'business-edge',
         itemType: 'knows', source: initial.id, target: 'peer', properties: {weight: '1'}}}));
     edit();

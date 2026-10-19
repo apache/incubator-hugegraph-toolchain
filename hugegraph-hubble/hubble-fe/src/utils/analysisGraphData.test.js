@@ -139,6 +139,22 @@ test('3D raw IDs retain exact BigNumber prototypes and native bigint', () => {
     expect(output.nodes[0].id).not.toBe(output.nodes[1].id);
 });
 
+test('3D projection retains the current filter and excludes edges with hidden endpoints', () => {
+    const raw = fixture();
+    raw.edges.push({id: 'visible', source: '0', target: 2, label: 'knows'},
+        {id: 'hidden-edge', source: '0', target: 2, label: 'knows'});
+    const graph = adaptAnalysisGraph(raw);
+    graph.nodes[0].style.visibility = 'hidden';
+    graph.edges[2].style.visibility = 'hidden';
+    const source = immutableCopy(graph);
+    const output = toCanvas3DData(source);
+    expect(output.nodes.map(node => node.rawId)).toEqual(['0', 2]);
+    expect(output.edges.map(edge => edge.rawId)).toEqual(['visible']);
+    expect(source.nodes).toHaveLength(3);
+    expect(source.edges).toHaveLength(3);
+    expect(output.edges[0]).toMatchObject({curvature: 0, rotation: 0});
+});
+
 test('3D geometry groups parallel, reversed and more than eight self-loop edges in linear passes', () => {
     const raw = fixture();
     raw.edges = [

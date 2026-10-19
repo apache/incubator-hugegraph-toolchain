@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-"""Run the real POM cleanup target against generated files and protected runtime data."""
+"""Run the real POM cleanup and UI copy targets against generated and runtime files."""
 
 import argparse
 import copy
@@ -37,6 +37,11 @@ def main():
     execution = copy.deepcopy(execution)
     for element in execution.iter():
         element.tag = element.tag.rsplit("}", 1)[-1]
+    archive = next(element for element in tree.findall(".//m:execution", namespace)
+                   if element.findtext("m:id", namespaces=namespace) == "archive-and-audit-hubble")
+    ui_copy = copy.deepcopy(archive.find("m:configuration/m:target/m:copy", namespace))
+    for element in ui_copy.iter():
+        element.tag = element.tag.rsplit("}", 1)[-1]
     with tempfile.TemporaryDirectory(prefix="hubble-release-cleanup-") as directory:
         base = Path(directory)
         release = base / "release"
@@ -54,6 +59,13 @@ def main():
             file = release / name
             file.parent.mkdir(parents=True, exist_ok=True)
             file.write_bytes(contents)
+        frontend = base / "hubble-fe"
+        assets = {"index.html": b"<html>diagnostic build</html>", "assets/app.js": b"application code"}
+        source_maps = {"app.js.map": b"root source map", "assets/app.js.map": b"nested source map"}
+        for name, contents in {**assets, **source_maps}.items():
+            file = frontend / "build" / name
+            file.parent.mkdir(parents=True, exist_ok=True)
+            file.write_bytes(contents)
         project = ET.Element("project")
         for name, value in (("modelVersion", "4.0.0"), ("groupId", "hubble.build.fixture"),
                             ("artifactId", "release-cleanup"), ("version", "1")):
@@ -61,11 +73,17 @@ def main():
         properties = ET.SubElement(project, "properties")
         ET.SubElement(properties, "top.level.dir").text = str(base)
         ET.SubElement(properties, "final.name").text = "release"
+        ET.SubElement(properties, "hubble-fe.dir").text = str(frontend)
         plugin = ET.SubElement(ET.SubElement(ET.SubElement(project, "build"), "plugins"), "plugin")
         for name, value in (("groupId", "org.apache.maven.plugins"), ("artifactId", "maven-antrun-plugin"),
                             ("version", "1.8")):
             ET.SubElement(plugin, name).text = value
-        ET.SubElement(plugin, "executions").append(execution)
+        executions = ET.SubElement(plugin, "executions")
+        executions.append(execution)
+        copy_execution = ET.SubElement(executions, "execution")
+        ET.SubElement(copy_execution, "id").text = "copy-diagnostic-ui"
+        ET.SubElement(ET.SubElement(copy_execution, "goals"), "goal").text = "run"
+        ET.SubElement(ET.SubElement(copy_execution, "configuration"), "target").append(ui_copy)
         pom = base / "pom.xml"
         ET.ElementTree(project).write(pom, encoding="utf-8", xml_declaration=True)
         command = ["mvn", "-o", "-f", str(pom), "-Dmaven.repo.local=" + str(args.maven_repo),
@@ -77,6 +95,14 @@ def main():
             assert all(not (release / name).exists() for name in generated_dirs + metadata), repetition
             assert all((release / name).read_bytes() == contents for name, contents in protected.items()), repetition
         print("Real Ant cleanup is idempotent; stale generated files removed, database/logs/uploads/notes preserved.")
+        command[-2] = "org.apache.maven.plugins:maven-antrun-plugin:1.8:run@copy-diagnostic-ui"
+        result = subprocess.run(command, capture_output=True, text=True)
+        if result.returncode:
+            raise RuntimeError(result.stdout + result.stderr)
+        assert all((release / "ui" / name).read_bytes() == contents for name, contents in assets.items())
+        assert not list((release / "ui").rglob("*.map")), "Diagnostic source maps leaked into the release UI"
+        assert all((frontend / "build" / name).read_bytes() == contents for name, contents in source_maps.items())
+        print("Real Ant UI copy retains runtime assets, excludes source maps, and preserves diagnostic build maps.")
 
 
 if __name__ == "__main__":
