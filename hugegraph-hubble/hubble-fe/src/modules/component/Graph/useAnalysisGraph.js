@@ -98,9 +98,10 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
         adoptedController.current = owner;
         return true;
     }, [scopeOwner]);
-    const [layoutSettings, setLayoutSettings] = useState(() => analysisLayout({
+    const defaultLayout = useMemo(() => analysisLayout({
         layout: Algorithm_Layout[algorithmName] ?? 'force', startId: options?.startId,
-    }));
+    }), [algorithmName, options?.startId]);
+    const [layoutSettings, setLayoutSettings] = useState(() => defaultLayout);
     const layout = useMemo(() => normalizeLayoutSettings(layoutSettings), [layoutSettings]);
     const activeController = ownerScope.current === scopeOwner ? controller : null;
     const snapshot = useGraphSnapshot(activeController);
@@ -170,8 +171,8 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
         previousData.current = data;
     }, [convert, currentData, data, project, queryStatus, scopeOwner]);
     useEffect(() => {
-        setLayoutSettings(analysisLayout({layout: Algorithm_Layout[algorithmName] ?? 'force', startId: options?.startId}));
-    }, [algorithmName, options?.startId]);
+        setLayoutSettings(mutableCopy(defaultLayout));
+    }, [defaultLayout]);
     const onReady = useCallback(value => {
         if (!alive.current || liveScope.current !== scopeOwner) return;
         const previous = controllerRef.current;
@@ -373,6 +374,6 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
     const styleConfigData = useMemo(() => getAnalysisStyles(graphData), [graphData]);
     return {controller: activeController, onReady, graphData, initialData, datasetKey: dataset.key, scopeKey: scope,
         labelFields: labelFields.current,
-        layout, layoutSettings, currentData, currentRawData, clearGraph, styleConfigData, run, expand, addElements, editElement,
+        layout, layoutSettings, defaultLayout, currentData, currentRawData, clearGraph, styleConfigData, run, expand, addElements, editElement,
         changeStyles, changeSettings, changeLayout, filter, exportPng};
 };

@@ -21,13 +21,17 @@ import {SwapOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
 import {analysisLayout} from '../../../utils/analysisGraphPresentation';
 
-const QuickLayoutSwitcher = ({layout, buttonEnable, onClick}) => {
+const QuickLayoutSwitcher = ({layout, defaultLayout, startId, buttonEnable, onClick}) => {
     const {t} = useTranslation();
-    const next = layout?.type === 'radial' ? 'force' : 'radial';
+    const original = defaultLayout ?? analysisLayout('force');
+    const radial = original.type === 'radial' ? original : analysisLayout({layout: 'radial', startId});
+    const returnLayout = original.type === 'radial' ? analysisLayout('force') : original;
+    const next = layout?.type === 'radial' ? returnLayout : radial;
+    const label = next.type === 'radial' ? 'radial' : next.type === 'd3-force' ? 'force' : 'default';
     return (
         <Button disabled={!buttonEnable} icon={<SwapOutlined aria-hidden />}
-            onClick={() => onClick(analysisLayout(next))}>
-            {t(`analysis.canvas.quick_layout_${next}`)}
+            onClick={() => onClick(next)}>
+            {t(`analysis.canvas.quick_layout_${label}`)}
         </Button>
     );
 };

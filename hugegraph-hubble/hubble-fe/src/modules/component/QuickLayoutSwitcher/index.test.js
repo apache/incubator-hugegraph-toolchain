@@ -19,6 +19,8 @@
 import {render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import QuickLayoutSwitcher from '.';
+import {analysisLayout} from '../../../utils/analysisGraphPresentation';
+import {ALGORITHM_NAME, Algorithm_Layout} from '../../../utils/constants';
 
 jest.mock('react-i18next', () => ({useTranslation: () => ({t: key => key})}));
 
@@ -46,4 +48,34 @@ test('does not change layouts while disabled', async () => {
     expect(button).toBeDisabled();
     await userEvent.click(button);
     expect(onClick).not.toHaveBeenCalled();
+});
+
+test.each([ALGORITHM_NAME.K_OUT, ALGORITHM_NAME.K_NEIGHBOR].flatMap(algorithmName =>
+    [0, '0', 900719925474099312345n].map(startId => [algorithmName, startId])))(
+    'restores %s radial focus for typed start vertex %s after force', async (algorithmName, startId) => {
+    const defaultLayout = analysisLayout({layout: Algorithm_Layout[algorithmName], startId});
+    const onClick = jest.fn();
+    const view = render(<QuickLayoutSwitcher buttonEnable layout={defaultLayout} defaultLayout={defaultLayout}
+        startId={startId} onClick={onClick} />);
+    await userEvent.click(screen.getByRole('button', {name: 'analysis.canvas.quick_layout_force'}));
+    expect(onClick).toHaveBeenLastCalledWith({type: 'd3-force'});
+    view.rerender(<QuickLayoutSwitcher buttonEnable layout={onClick.mock.lastCall[0]} defaultLayout={defaultLayout}
+        startId={startId} onClick={onClick} />);
+    await userEvent.click(screen.getByRole('button', {name: 'analysis.canvas.quick_layout_radial'}));
+    expect(onClick).toHaveBeenLastCalledWith(defaultLayout);
+});
+
+test.each([ALGORITHM_NAME.SHORTEST_PATH, ALGORITHM_NAME.SAME_NEIGHBORS,
+    ALGORITHM_NAME.ALLPATHS, ALGORITHM_NAME.CUSTOMIZEDPATHS])(
+    'can return to the existing %s algorithm default after radial', async algorithmName => {
+    const defaultLayout = analysisLayout({layout: Algorithm_Layout[algorithmName]});
+    const onClick = jest.fn();
+    const view = render(<QuickLayoutSwitcher buttonEnable layout={defaultLayout} defaultLayout={defaultLayout}
+        onClick={onClick} />);
+    await userEvent.click(screen.getByRole('button', {name: 'analysis.canvas.quick_layout_radial'}));
+    expect(onClick).toHaveBeenLastCalledWith({type: 'radial'});
+    view.rerender(<QuickLayoutSwitcher buttonEnable layout={{type: 'radial'}} defaultLayout={defaultLayout}
+        onClick={onClick} />);
+    await userEvent.click(screen.getByRole('button', {name: 'analysis.canvas.quick_layout_default'}));
+    expect(onClick).toHaveBeenLastCalledWith(defaultLayout);
 });

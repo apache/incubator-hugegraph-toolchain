@@ -96,7 +96,7 @@ const GraphResult = props => {
 
     const {edgeMeta, vertexMeta} = metaData || {};
     const graphSpaceInfo = useContext(GraphAnalysisContext);
-    const {controller, graphData, currentRawData, clearGraph, styleConfigData, initialData, datasetKey, scopeKey, labelFields, layout, layoutSettings, onReady: onGraphReady,
+    const {controller, graphData, currentRawData, clearGraph, styleConfigData, initialData, datasetKey, scopeKey, labelFields, layout, layoutSettings, defaultLayout, onReady: onGraphReady,
         changeStyles: handleGraphStyleChange, changeLayout: handleLayoutChange,
         changeSettings: handleSettingChange, exportPng: handleExportPng,
         editElement: onEditElementChange, expand: getExpandInfo, filter: handleFilterChange, addElements}
@@ -438,6 +438,7 @@ const GraphResult = props => {
         <div className={`${c.graphResult} ${fitHeight ? c.fitHeight : ''}`}>
             <GraphMenuBar
                 layout={layoutSettings}
+                defaultLayout={defaultLayout}
                 layoutReady={controller?.getSnapshot().status === 'ready'}
                 handleQuickLayoutChange={handleQuickLayoutChange}
                 styleConfigData={styleConfigData}

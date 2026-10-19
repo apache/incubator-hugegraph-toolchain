@@ -24,6 +24,8 @@ import {projectHubbleGraph} from '../../../visualization/hubble/adapter';
 import {useAnalysisGraph} from './useAnalysisGraph';
 import {adaptAnalysisGraph} from '../../../utils/analysisGraphData';
 import * as api from '../../../api';
+import {ALGORITHM_NAME} from '../../../utils/constants';
+import {hubbleRenderId} from '../../../visualization/hubble/adapter';
 
 const mockEmptySnapshot = {status: 'idle', data: {nodes: [], edges: []}};
 jest.mock('../../../visualization/react', () => ({
@@ -664,4 +666,23 @@ test('an adopted controller retains local edits even while a later command is up
     expect(view.result.current.currentRawData().vertices).toEqual([{id: 0, label: 'person', properties: {name: 'edited'}}]);
     act(() => view.result.current.onReady(null));
     expect(view.result.current.initialData).toBe(edited);
+});
+
+test('shares the existing algorithm default and only resets the active layout when its original inputs change', () => {
+    const first = {...initial, algorithmName: ALGORITHM_NAME.K_OUT, options: {startId: 0}};
+    const view = renderHook(props => useAnalysisGraph(props), {initialProps: first});
+    const original = view.result.current.defaultLayout;
+    expect(original).toEqual({type: 'radial', options: {focusNode: hubbleRenderId('node', 0)}});
+    expect(view.result.current.layoutSettings).toEqual(original);
+    act(() => view.result.current.changeLayout({type: 'grid', options: {rows: 3}}));
+    const custom = view.result.current.layoutSettings;
+    view.rerender({...first, options: {startId: 0, unrelated: true}, metaData: {vertexMeta: []}});
+    expect(view.result.current.defaultLayout).toBe(original);
+    expect(view.result.current.layoutSettings).toBe(custom);
+    view.rerender({...first, options: {startId: '0'}});
+    expect(view.result.current.defaultLayout).toEqual({type: 'radial', options: {focusNode: hubbleRenderId('node', '0')}});
+    expect(view.result.current.layoutSettings).toEqual(view.result.current.defaultLayout);
+    view.rerender({...first, algorithmName: ALGORITHM_NAME.CUSTOMIZEDPATHS});
+    expect(view.result.current.defaultLayout).toEqual({type: 'force-atlas2'});
+    expect(view.result.current.layoutSettings).toEqual({type: 'force-atlas2'});
 });

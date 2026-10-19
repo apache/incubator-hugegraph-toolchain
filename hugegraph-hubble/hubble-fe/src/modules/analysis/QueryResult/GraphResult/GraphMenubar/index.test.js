@@ -121,3 +121,19 @@ test.each([['query', QueryMenuBar], ['algorithm', AlgorithmMenuBar]])(
         expect(handleQuickLayoutChange).toHaveBeenCalledTimes(2);
     }
 );
+
+test.each([['query', QueryMenuBar], ['algorithm', AlgorithmMenuBar]])(
+    '%s forwards the algorithm default and raw start vertex to the existing shortcut', async (_kind, Menu) => {
+        useDownloadJson.mockReturnValue({downloadJsonHandler: jest.fn()});
+        const handleQuickLayoutChange = jest.fn();
+        const props = {graphData: {nodes: [{id: 'visible'}], edges: []}, showCanvasInfo: true, layoutReady: true,
+            graphRenderMode: GRAPH_RENDER_MODE.CANVAS2D, defaultLayout: {type: 'columns'}, startId: 0,
+            handleQuickLayoutChange};
+        const view = render(<Menu {...props} layout={{type: 'columns'}} />);
+        await userEvent.click(screen.getByRole('button', {name: 'analysis.canvas.quick_layout_radial'}));
+        expect(handleQuickLayoutChange).toHaveBeenLastCalledWith({type: 'radial', options: {focusNode: 'node:number:0'}});
+        view.rerender(<Menu {...props} layout={{type: 'radial'}} />);
+        await userEvent.click(screen.getByRole('button', {name: 'analysis.canvas.quick_layout_default'}));
+        expect(handleQuickLayoutChange).toHaveBeenLastCalledWith(props.defaultLayout);
+    }
+);

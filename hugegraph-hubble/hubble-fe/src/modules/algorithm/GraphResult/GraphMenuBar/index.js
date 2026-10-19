@@ -45,6 +45,8 @@ const GraphMenuBar = props => {
         styleConfigData,
         graphData,
         layout,
+        defaultLayout,
+        startId,
         layoutReady,
         handleQuickLayoutChange,
         exportData,
@@ -181,7 +183,8 @@ const GraphMenuBar = props => {
 
     const extraContent = [{
         key: 'quick-layout',
-        content: <QuickLayoutSwitcher layout={layout} onClick={handleQuickLayoutChange}
+        content: <QuickLayoutSwitcher layout={layout} defaultLayout={defaultLayout} startId={startId}
+            onClick={handleQuickLayoutChange}
             buttonEnable={buttonEnableForCanvas2D && layoutReady
                 && Boolean(graphData?.nodes?.length || graphData?.edges?.length)} />,
     }];

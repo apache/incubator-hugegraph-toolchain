@@ -341,11 +341,12 @@ test('keeps renderer settings reachable in 3D and switches back through the owne
 
 test('quick layout cancels pending panel edits and uses the existing layout update path', () => {
     const changeLayout = jest.fn();
-    mockModel = {...mockModel, changeLayout, layoutSettings: {type: 'grid'},
+    mockModel = {...mockModel, changeLayout, layoutSettings: {type: 'grid'}, defaultLayout: {type: 'columns'},
         graphData: {nodes: [{id: 'node:alice', data: {raw: {id: 'alice'}}}], edges: []}};
     const initial = {...props(), panelType: PANEL_TYPE.LAYOUT};
     const view = render(<GraphResult {...initial} />);
     expect(mockMenuBar.mock.lastCall[0].layout).toBe(mockModel.layoutSettings);
+    expect(mockMenuBar.mock.lastCall[0].defaultLayout).toBe(mockModel.defaultLayout);
     act(() => mockMenuBar.mock.lastCall[0].handleQuickLayoutChange({type: 'radial'}));
     expect(mockCancelLayout).toHaveBeenCalledTimes(1);
     expect(mockFlushLayout).not.toHaveBeenCalled();
