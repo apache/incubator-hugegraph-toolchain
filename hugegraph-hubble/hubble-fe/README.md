@@ -39,10 +39,17 @@ inputs and output contents match. Frontend source, configuration, lockfile,
 dependency patches and tool versions participate in invalidation. A frontend
 build alone does not validate the backend, distribution or browser workflows.
 
-The browser PNG gate uses pinned Pixelmatch tooling to recognize anti-aliased
-edge samples. These still require nearby graph pixels in the other image;
-missing nodes or edges, solid colors and opacity remain checked. Public DOM
-overlays and fractional screenshot fringes are recorded separately.
+PNG downloads contain the whole graph on an opaque white background with a
+30 CSS pixel margin, including graph content outside the current viewport.
+Manually hidden and filtered elements are not painted. Their retained geometry
+can leave additional blank space; export does not change the current camera.
+
+The independent browser PNG fixture compares fixed world geometry against the
+actual Chrome screenshot at DPR 1 and 2, with no image fitting or rescaling.
+Its strict Pixelmatch checks retain position, color and localized ink coverage
+assertions. The Hubble browser gate separately checks actual downloads and
+camera independence; a whole-graph export and a fitted viewport use different
+scales and cannot be compared as identically sized screenshots.
 
 ## G6 rendering patch
 
@@ -57,7 +64,15 @@ during dependency installation; do not edit
 The patch also refreshes Minimap geometry after layout changes. PNG export copies
 the existing display children into plain groups, preserving transforms, labels,
 markers and opacity without rerunning custom shape constructors and duplicating
-their children.
+their children. It copies live marker appearance and visibility, then lets the
+new path position each arrow from its original transform. Subsequent hiding and
+style changes reach exports without applying the path angle twice.
+
+Whole-graph export uses painted bounds, including boundary strokes and shadows,
+instead of geometric bounds. It encloses fractional bounds in device pixels
+before creating the export canvas, retaining one internal device pixel for an
+empty graph. This change is limited to export and does not affect layout or
+automatic fitting.
 
 The patch updates the published TypeScript, ESM and CommonJS implementations
 together. When upgrading G6, check whether upstream includes the fix, repeat

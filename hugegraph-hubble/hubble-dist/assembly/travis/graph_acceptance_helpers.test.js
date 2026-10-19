@@ -16,6 +16,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const vm = require('node:vm');
 const {NeedsInput, redact, publicHttpUrl, typedId, assertExportMatches, assertFixtureGraph,
   fixtureFromPrefix, pngDimensions, scopePath} = require('./graph_acceptance_helpers');
 
@@ -24,6 +25,32 @@ const raw = {
     {id: '7', label: 'person', properties: {name: '乙'}}],
   edges: [{id: 'edge', source: 7, target: '7', label: 'knows', properties: {weight: .25}}],
 };
+
+test('external screenshot decoding preserves packed RGBA bytes across transfer chunks', async () => {
+  const {decodeScreenshot} = require('./graph_acceptance_helpers');
+  const pixels = Uint8ClampedArray.from({length: 8301 * 4}, (_, index) => index % 256);
+  const input = Buffer.from('external screenshot');
+  const page = {evaluate: async (fn, encoded) => {
+    assert.equal(encoded, input.toString('base64'));
+    return vm.runInNewContext(`(${fn.toString()})(encoded)`, {
+      encoded, Image: class {
+        naturalWidth = 8301;
+        naturalHeight = 1;
+        async decode() {}
+      },
+      document: {createElement: () => ({getContext: () => ({
+        drawImage() {}, getImageData: () => ({data: pixels}),
+      })})},
+      btoa: value => Buffer.from(value, 'binary').toString('base64'),
+    });
+  }};
+  const result = await decodeScreenshot(page, input);
+  assert.equal(result.width, 8301);
+  assert.equal(result.height, 1);
+  assert.deepEqual(result.data, Buffer.from(pixels));
+  await assert.rejects(decodeScreenshot({evaluate: async () => ({width: 2, height: 2, rgba: 'AA=='})}, input),
+    /incomplete RGBA/);
+});
 
 test('node candidates are captured only after the previous real tooltip has disappeared', async () => {
   const events = [];
@@ -201,6 +228,23 @@ test('held-drag evidence requires moved solid nodes and reconnected edge pixels 
     graphPixels({nodeAt: geometry.target, edgeFrom: geometry.point}), geometry), /reconnect/);
   assert.deepEqual(dragTarget(geometry.point, geometry.neighbor, {x: 0, y: 0, width: 500, height: 350}, [], before), geometry.target);
   assert.throws(() => dragTarget({x: 1, y: 1}, {x: 2, y: 2}, {x: 0, y: 0, width: 5, height: 5}), NeedsInput);
+});
+
+test('held-drag color differences remain signed when screenshot bytes are packed', () => {
+  const {assertLiveDragPixels} = require('./graph_acceptance_helpers');
+  const geometry = {point: {x: 80, y: 100}, target: {x: 80, y: 210}, neighbor: {x: 420, y: 100}};
+  const blackEdges = image => {
+    for (let offset = 0; offset < image.data.length; offset += 4) {
+      if (image.data[offset] === 141 && image.data[offset + 1] === 151 && image.data[offset + 2] === 176) {
+        image.data[offset] = image.data[offset + 1] = image.data[offset + 2] = 0;
+      }
+    }
+    return image;
+  };
+  const before = blackEdges(graphPixels()), held = blackEdges(graphPixels({nodeAt: geometry.target}));
+  const expected = assertLiveDragPixels(before, held, geometry);
+  const packed = image => ({...image, data: Buffer.from(image.data)});
+  assert.deepEqual(assertLiveDragPixels(packed(before), packed(held), geometry), expected);
 });
 
 
@@ -544,4 +588,61 @@ test('outward DOM projection masks the Legend first column but preserves interio
     missingEdge.data[offset] = missingEdge.data[offset + 1] = missingEdge.data[offset + 2] = 255;
   }
   assert.throws(() => assertPngMatchesCanvas(actual, missingEdge, [mask]), /localized/);
+});
+
+
+function overallPixels(dpr = 1) {
+  const width = 120 * dpr, height = 100 * dpr;
+  const image = {width, height, data: new Array(width * height * 4).fill(255)};
+  for (let y = 35 * dpr; y < 65 * dpr; y++) for (let x = 35 * dpr; x < 85 * dpr; x++) {
+    const i = (y * width + x) * 4;
+    image.data[i] = 20; image.data[i + 1] = 80; image.data[i + 2] = 200;
+  }
+  return image;
+}
+test('overall PNG checks all alpha pixels, DPR white padding and actual nonempty body', () => {
+  const {assertOverallPng} = require('./graph_acceptance_helpers');
+  for (const dpr of [1, 2]) {
+    const image = overallPixels(dpr), proof = assertOverallPng(image, dpr);
+    assert.equal(proof.contract, 'overall');
+    assert.equal(proof.requiredWhiteBorderPixels, 30 * dpr);
+    const transparent = structuredClone(image); transparent.data[transparent.data.length - 1] = 254;
+    assert.throws(() => assertOverallPng(transparent, dpr), /transparent/);
+    const blank = structuredClone(image); blank.data.fill(255);
+    assert.throws(() => assertOverallPng(blank, dpr), /nonempty/);
+    const wrongMargin = structuredClone(image);
+    wrongMargin.data[((40 * dpr) * image.width + 15 * dpr) * 4] = 0;
+    assert.throws(() => assertOverallPng(wrongMargin, dpr), /border/);
+  }
+});
+test('overall camera proof rejects unperformed pans, remaining graph body and absent downloads', () => {
+  const {assertOffscreenPan, assertOverallPanInvariant, assertOverallPng} = require('./graph_acceptance_helpers');
+  const before = overallPixels(), offscreen = structuredClone(before); offscreen.data.fill(255);
+  const proof = assertOffscreenPan(before, offscreen);
+  assert.equal(proof.remainingRatio, 0);
+  assert.throws(() => assertOffscreenPan(before, before), /offscreen/);
+  assert.throws(() => assertOffscreenPan(offscreen, offscreen), /before input/);
+  const contract = assertOverallPng(before, 1);
+  const artifact = {file: '/actual/download.png', sha256: 'a'.repeat(64),
+    dimensions: {width: before.width, height: before.height}, contract};
+  assert.equal(assertOverallPanInvariant(artifact, artifact, proof).identicalDownloadBytes, true);
+  assert.throws(() => assertOverallPanInvariant(artifact, artifact), /pan pixel proof/);
+  assert.throws(() => assertOverallPanInvariant(artifact, undefined, proof), /actual download/);
+  assert.throws(() => assertOverallPanInvariant(artifact, {...artifact, sha256: 'b'.repeat(64)}, proof), /bytes changed/);
+  assert.throws(() => assertOverallPanInvariant(artifact, {...artifact, dimensions: {width: 40, height: 40}}, proof), /actual download/);
+  assert.throws(() => assertOverallPanInvariant(artifact, artifact,
+    {...proof, afterColoredPixels: -1, remainingRatio: -1 / proof.beforeColoredPixels}), /pan pixel proof/);
+});
+test('overall offscreen proof excludes only public overlays and rejects masking the original body', () => {
+  const {assertOffscreenPan} = require('./graph_acceptance_helpers');
+  const before = overallPixels(), offscreen = structuredClone(before); offscreen.data.fill(255);
+  for (const image of [before, offscreen]) for (let y = 2; y < 10; y++) for (let x = 2; x < 10; x++) {
+    const i = (y * image.width + x) * 4;
+    image.data[i] = 20; image.data[i + 1] = 150; image.data[i + 2] = 20;
+  }
+  assert.throws(() => assertOffscreenPan(before, offscreen), /offscreen/);
+  const overlay = {x: 2, y: 2, width: 8, height: 8};
+  assert.equal(assertOffscreenPan(before, offscreen, [overlay], [overlay]).afterColoredPixels, 0);
+  assert.throws(() => assertOffscreenPan(before, offscreen,
+    [{x: 0, y: 0, width: before.width, height: before.height}], [overlay]), /before input/);
 });

@@ -19,10 +19,10 @@ index 3cd9b303a13c913496103f9b5f852bacbc34864c..cff72695447d75a34483617c9691e21b
          graph.off(GraphEvent.AFTER_TRANSFORM, this.onTransform);
      }
 diff --git a/esm/runtime/canvas.js b/esm/runtime/canvas.js
-index 872fd45dae14a9ff8730bab73562abf6e56839a4..cdb0e3197b1bcafdc987c655348a9e84978bf8d8 100644
+index 872fd45dae14a9ff8730bab73562abf6e56839a4..98ae42e05e6fc18b635399d32cbe9b4d614ee439 100644
 --- a/esm/runtime/canvas.js
 +++ b/esm/runtime/canvas.js
-@@ -18,7 +18,7 @@ var __rest = (this && this.__rest) || function (s, e) {
+@@ -18,11 +18,11 @@ var __rest = (this && this.__rest) || function (s, e) {
          }
      return t;
  };
@@ -31,28 +31,38 @@ index 872fd45dae14a9ff8730bab73562abf6e56839a4..cdb0e3197b1bcafdc987c655348a9e84
  import { Renderer as CanvasRenderer } from '@antv/g-canvas';
  import { Plugin as DragNDropPlugin } from '@antv/g-plugin-dragndrop';
  import { createDOM } from '@antv/util';
-@@ -36,6 +36,28 @@ const MULTI_LAYER_NAME = ['background', 'main', 'label', 'transient'];
+-import { getBBoxSize, getCombinedBBox } from '../utils/bbox';
++import { getCombinedBBox } from '../utils/bbox';
+ import { parsePoint, toPointObject } from '../utils/point';
+ const SINGLE_LAYER_NAME = ['main'];
+ const MULTI_LAYER_NAME = ['background', 'main', 'label', 'transient'];
+@@ -36,6 +36,33 @@ const MULTI_LAYER_NAME = ['background', 'main', 'label', 'transient'];
  function getMainLayerOf(layers) {
      return layers.main;
  }
 +// Export existing display children without rerunning G6 shape constructors.
 +function cloneForExport(source) {
-+    const attributes = Object.assign({}, source.attributes);
-+    if (source.isCustomElement) {
-+        for (const key of Object.keys(attributes)) {
-+            const value = attributes[key];
-+            if (isDisplayObject(value) && !['clipPath', 'offsetPath', 'textPath'].includes(key)) {
-+                attributes[key] = cloneForExport(value);
-+            }
++    const cloneAttribute = (name, value) => {
++        // Templates can be stale after hide/style updates. Keep the live marker's
++        // appearance, but restore its template transform before the new path positions it.
++        if (['markerStart', 'markerMid', 'markerEnd'].includes(name) && isDisplayObject(value)) {
++            const current = Reflect.get(source.parsedStyle, name);
++            if (current === null) return null;
++            const marker = cloneForExport(isDisplayObject(current) ? current : value);
++            marker.setLocalTransform(Reflect.get(source.attributes, name).getLocalTransform());
++            return marker;
 +        }
-+    }
++        return isDisplayObject(value) && !['clipPath', 'offsetPath', 'textPath'].includes(name)
++            ? cloneForExport(value) : value;
++    };
++    const attributes = Object.fromEntries(Object.entries(source.attributes)
++        .map(([name, value]) => [name, cloneAttribute(name, value)]));
 +    const clone = source.isCustomElement
 +        ? new Group({ id: source.id, name: source.name, className: source.className, style: attributes })
-+        : source.cloneNode(false);
++        : source.cloneNode(false, cloneAttribute);
 +    clone.setLocalTransform(source.getLocalTransform());
 +    for (const child of source.children) {
-+        if (!child.style.isMarker)
-+            clone.appendChild(cloneForExport(child));
++        if (!child.style.isMarker) clone.appendChild(cloneForExport(child));
 +    }
 +    return clone;
 +}
@@ -60,7 +70,31 @@ index 872fd45dae14a9ff8730bab73562abf6e56839a4..cdb0e3197b1bcafdc987c655348a9e84
  export class Canvas {
      getConfig() {
          return this.config;
-@@ -214,42 +236,73 @@ export class Canvas {
+@@ -200,10 +227,19 @@ export class Canvas {
+                 [width, height] = this.getSize();
+             }
+             else if (mode === 'overall') {
+-                const bounds = this.getBounds();
+-                const size = getBBoxSize(bounds);
+-                [startX, startY] = bounds.min;
+-                [width, height] = size;
++                // Geometry bounds omit boundary strokes and shadows. Export the complete painted scene.
++                const bounds = getCombinedBBox(Object.values(this.getLayers())
++                    .map((canvas) => canvas.getRoot())
++                    .filter((root) => root.childNodes.length > 0)
++                    .map((root) => root.getRenderBounds()));
++                // Enclose fractional paint bounds in device pixels; retain one pixel for an empty scene.
++                const left = Math.floor(bounds.min[0] * devicePixelRatio);
++                const top = Math.floor(bounds.min[1] * devicePixelRatio);
++                const right = Math.ceil(bounds.max[0] * devicePixelRatio);
++                const bottom = Math.ceil(bounds.max[1] * devicePixelRatio);
++                [startX, startY] = [left / devicePixelRatio, top / devicePixelRatio];
++                [width, height] = [Math.max(1, right - left) / devicePixelRatio,
++                    Math.max(1, bottom - top) / devicePixelRatio];
+             }
+             const container = createDOM('<div id="virtual-image"></div>');
+             const offscreenCanvas = new GCanvas({
+@@ -214,42 +250,73 @@ export class Canvas {
                  container,
                  background: this.extends.config.background,
              });
@@ -168,7 +202,7 @@ index 872fd45dae14a9ff8730bab73562abf6e56839a4..cdb0e3197b1bcafdc987c655348a9e84
          });
      }
      destroy() {
-@@ -313,4 +366,3 @@ function configCanvasDom(layers) {
+@@ -313,4 +380,3 @@ function configCanvasDom(layers) {
          }
      });
  }
@@ -195,31 +229,36 @@ index f46f4b7b13567298bbc94547a4811f954bb01ec8..8755703b5feb55a59055b91f1e740f94
          graph.off(constants_1.GraphEvent.AFTER_TRANSFORM, this.onTransform);
      }
 diff --git a/lib/runtime/canvas.js b/lib/runtime/canvas.js
-index d09773192a298464aca1933220e76d36166531d5..bf2cec641c77c2d204fe843bdf2ee11d1a586f80 100644
+index d09773192a298464aca1933220e76d36166531d5..fe19562349ee8611b67f62b267e2e5bcf8d0d987 100644
 --- a/lib/runtime/canvas.js
 +++ b/lib/runtime/canvas.js
-@@ -39,6 +39,28 @@ const MULTI_LAYER_NAME = ['background', 'main', 'label', 'transient'];
+@@ -39,6 +39,33 @@ const MULTI_LAYER_NAME = ['background', 'main', 'label', 'transient'];
  function getMainLayerOf(layers) {
      return layers.main;
  }
 +// Export existing display children without rerunning G6 shape constructors.
 +function cloneForExport(source) {
-+    const attributes = Object.assign({}, source.attributes);
-+    if (source.isCustomElement) {
-+        for (const key of Object.keys(attributes)) {
-+            const value = attributes[key];
-+            if ((0, g_1.isDisplayObject)(value) && !['clipPath', 'offsetPath', 'textPath'].includes(key)) {
-+                attributes[key] = cloneForExport(value);
-+            }
++    const cloneAttribute = (name, value) => {
++        // Templates can be stale after hide/style updates. Keep the live marker's
++        // appearance, but restore its template transform before the new path positions it.
++        if (['markerStart', 'markerMid', 'markerEnd'].includes(name) && (0, g_1.isDisplayObject)(value)) {
++            const current = Reflect.get(source.parsedStyle, name);
++            if (current === null) return null;
++            const marker = cloneForExport((0, g_1.isDisplayObject)(current) ? current : value);
++            marker.setLocalTransform(Reflect.get(source.attributes, name).getLocalTransform());
++            return marker;
 +        }
-+    }
++        return (0, g_1.isDisplayObject)(value) && !['clipPath', 'offsetPath', 'textPath'].includes(name)
++            ? cloneForExport(value) : value;
++    };
++    const attributes = Object.fromEntries(Object.entries(source.attributes)
++        .map(([name, value]) => [name, cloneAttribute(name, value)]));
 +    const clone = source.isCustomElement
 +        ? new g_1.Group({ id: source.id, name: source.name, className: source.className, style: attributes })
-+        : source.cloneNode(false);
++        : source.cloneNode(false, cloneAttribute);
 +    clone.setLocalTransform(source.getLocalTransform());
 +    for (const child of source.children) {
-+        if (!child.style.isMarker)
-+            clone.appendChild(cloneForExport(child));
++        if (!child.style.isMarker) clone.appendChild(cloneForExport(child));
 +    }
 +    return clone;
 +}
@@ -227,7 +266,31 @@ index d09773192a298464aca1933220e76d36166531d5..bf2cec641c77c2d204fe843bdf2ee11d
  class Canvas {
      getConfig() {
          return this.config;
-@@ -217,42 +239,73 @@ class Canvas {
+@@ -203,10 +230,19 @@ class Canvas {
+                 [width, height] = this.getSize();
+             }
+             else if (mode === 'overall') {
+-                const bounds = this.getBounds();
+-                const size = (0, bbox_1.getBBoxSize)(bounds);
+-                [startX, startY] = bounds.min;
+-                [width, height] = size;
++                // Geometry bounds omit boundary strokes and shadows. Export the complete painted scene.
++                const bounds = (0, bbox_1.getCombinedBBox)(Object.values(this.getLayers())
++                    .map((canvas) => canvas.getRoot())
++                    .filter((root) => root.childNodes.length > 0)
++                    .map((root) => root.getRenderBounds()));
++                // Enclose fractional paint bounds in device pixels; retain one pixel for an empty scene.
++                const left = Math.floor(bounds.min[0] * devicePixelRatio);
++                const top = Math.floor(bounds.min[1] * devicePixelRatio);
++                const right = Math.ceil(bounds.max[0] * devicePixelRatio);
++                const bottom = Math.ceil(bounds.max[1] * devicePixelRatio);
++                [startX, startY] = [left / devicePixelRatio, top / devicePixelRatio];
++                [width, height] = [Math.max(1, right - left) / devicePixelRatio,
++                    Math.max(1, bottom - top) / devicePixelRatio];
+             }
+             const container = (0, util_1.createDOM)('<div id="virtual-image"></div>');
+             const offscreenCanvas = new g_1.Canvas({
+@@ -217,42 +253,73 @@ class Canvas {
                  container,
                  background: this.extends.config.background,
              });
@@ -335,7 +398,7 @@ index d09773192a298464aca1933220e76d36166531d5..bf2cec641c77c2d204fe843bdf2ee11d
          });
      }
      destroy() {
-@@ -317,4 +370,3 @@ function configCanvasDom(layers) {
+@@ -317,4 +384,3 @@ function configCanvasDom(layers) {
          }
      });
  }
@@ -362,37 +425,50 @@ index cc6c92152c2255df8c3c67189a1182f43a7d26c6..ec1ed65d6f864892b3f2be6b4effb7e9
      graph.off(GraphEvent.AFTER_TRANSFORM, this.onTransform);
    }
 diff --git a/src/runtime/canvas.ts b/src/runtime/canvas.ts
-index 56166b67ff6225f7716847b751acb624c7a6f9c7..35df06dba07f8c6dc6d805ed12d03879e5d40fc0 100644
+index 56166b67ff6225f7716847b751acb624c7a6f9c7..794ea879604353ab68ff79e495878c18bf9b33bc 100644
 --- a/src/runtime/canvas.ts
 +++ b/src/runtime/canvas.ts
-@@ -1,5 +1,5 @@
+@@ -1,11 +1,11 @@
  import type { Cursor, DisplayObject, CanvasConfig as GCanvasConfig, IChildNode } from '@antv/g';
 -import { CanvasEvent, Canvas as GCanvas } from '@antv/g';
 +import { CanvasEvent, Canvas as GCanvas, Group, isDisplayObject } from '@antv/g';
  import { Renderer as CanvasRenderer } from '@antv/g-canvas';
  import { Plugin as DragNDropPlugin } from '@antv/g-plugin-dragndrop';
  import { createDOM } from '@antv/util';
-@@ -69,6 +69,27 @@ function getMainLayerOf(layers: Record<CanvasLayer, GCanvas>) {
+ import type { CanvasOptions } from '../spec/canvas';
+ import type { CanvasLayer, Point } from '../types';
+-import { getBBoxSize, getCombinedBBox } from '../utils/bbox';
++import { getCombinedBBox } from '../utils/bbox';
+ import { parsePoint, toPointObject } from '../utils/point';
+ 
+ export interface CanvasConfig
+@@ -69,6 +69,33 @@ function getMainLayerOf(layers: Record<CanvasLayer, GCanvas>) {
    return layers.main;
  }
  
 +// Export existing display children without rerunning G6 shape constructors.
 +function cloneForExport(source: DisplayObject): DisplayObject {
-+  const attributes = { ...source.attributes };
-+  if (source.isCustomElement) {
-+    for (const key of Object.keys(attributes)) {
-+      const value = attributes[key];
-+      if (isDisplayObject(value) && !['clipPath', 'offsetPath', 'textPath'].includes(key)) {
-+        attributes[key] = cloneForExport(value);
-+      }
++  const cloneAttribute = (name: string, value: unknown): unknown => {
++    // Templates can be stale after hide/style updates. Keep the live marker's
++    // appearance, but restore its template transform before the new path positions it.
++    if (['markerStart', 'markerMid', 'markerEnd'].includes(name) && isDisplayObject(value)) {
++      const current = Reflect.get(source.parsedStyle, name);
++      if (current === null) return null;
++      const marker = cloneForExport(isDisplayObject(current) ? current : value);
++      marker.setLocalTransform(Reflect.get(source.attributes, name).getLocalTransform());
++      return marker;
 +    }
-+  }
++    return isDisplayObject(value) && !['clipPath', 'offsetPath', 'textPath'].includes(name)
++      ? cloneForExport(value) : value;
++  };
++  const attributes = Object.fromEntries(Object.entries(source.attributes)
++    .map(([name, value]) => [name, cloneAttribute(name, value)]));
 +  const clone = source.isCustomElement
 +    ? new Group({ id: source.id, name: source.name, className: source.className, style: attributes })
-+    : source.cloneNode(false);
++    : source.cloneNode(false, cloneAttribute);
 +  clone.setLocalTransform(source.getLocalTransform());
-+  for (const child of source.children as DisplayObject[]) {
-+    if (!child.style.isMarker) clone.appendChild(cloneForExport(child));
++  for (const child of source.children) {
++    if (!(child as DisplayObject).style.isMarker) clone.appendChild(cloneForExport(child as DisplayObject));
 +  }
 +  return clone;
 +}
@@ -400,7 +476,31 @@ index 56166b67ff6225f7716847b751acb624c7a6f9c7..35df06dba07f8c6dc6d805ed12d03879
  export class Canvas {
    private extends: {
      config: CanvasConfig;
-@@ -294,48 +315,74 @@ export class Canvas {
+@@ -277,10 +304,19 @@ export class Canvas {
+     if (mode === 'viewport') {
+       [width, height] = this.getSize();
+     } else if (mode === 'overall') {
+-      const bounds = this.getBounds();
+-      const size = getBBoxSize(bounds);
+-      [startX, startY] = bounds.min;
+-      [width, height] = size;
++      // Geometry bounds omit boundary strokes and shadows. Export the complete painted scene.
++      const bounds = getCombinedBBox(Object.values(this.getLayers())
++        .map((canvas) => canvas.getRoot())
++        .filter((root) => root.childNodes.length > 0)
++        .map((root) => root.getRenderBounds()));
++      // Enclose fractional paint bounds in device pixels; retain one pixel for an empty scene.
++      const left = Math.floor(bounds.min[0] * devicePixelRatio);
++      const top = Math.floor(bounds.min[1] * devicePixelRatio);
++      const right = Math.ceil(bounds.max[0] * devicePixelRatio);
++      const bottom = Math.ceil(bounds.max[1] * devicePixelRatio);
++      [startX, startY] = [left / devicePixelRatio, top / devicePixelRatio];
++      [width, height] = [Math.max(1, right - left) / devicePixelRatio,
++        Math.max(1, bottom - top) / devicePixelRatio];
+     }
+ 
+     const container: HTMLElement = createDOM('<div id="virtual-image"></div>');
+@@ -294,48 +330,74 @@ export class Canvas {
        background: this.extends.config.background,
      });
  

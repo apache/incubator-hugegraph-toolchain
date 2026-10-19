@@ -139,6 +139,10 @@ jobs:
           sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list /etc/apt/sources.list.d/microsoft-prod.sources
           pnpm exec playwright install --with-deps chromium
 
+      - name: Real public graph PNG contract
+        working-directory: hugegraph-hubble/hubble-fe
+        run: node scripts/run-png-contract.mjs --output-dir ../target/hubble-png-contract
+
       - name: Install Hubble Java dependencies
         run: |
           # Hubble embeds the ordinary Loader JAR; its standalone shaded archive is unnecessary.
@@ -259,6 +263,8 @@ jobs:
           name: hubble-smoke-java-${{ matrix.JAVA_VERSION }}-${{ matrix.SERVER_BASELINE }}-${{ github.run_attempt }}
           path: |
             hugegraph-hubble/target/hubble-dist-check.json
+            hugegraph-hubble/target/hubble-png-contract/**/*.json
+            hugegraph-hubble/target/hubble-png-contract/**/*.png
             hugegraph-hubble/target/hubble-live-acceptance/**/*.json
             hugegraph-hubble/target/hubble-live-acceptance/**/*.png
             hugegraph-hubble/target/hubble-live-acceptance/**/*.log

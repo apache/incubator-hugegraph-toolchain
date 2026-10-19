@@ -357,7 +357,22 @@ export class G6Runtime implements GraphRuntime {
     }
     async zoomBy(factor: number): Promise<void> { if (this.initialized) await this.graph.zoomBy(factor, false); }
     resize(width: number, height: number): void { this.graph.resize(width, height); }
-    async exportPng(): Promise<string> { return this.graph.toDataURL({type: 'image/png'}); }
+    async exportPng(): Promise<string> {
+        const image = new Image();
+        image.src = await this.graph.toDataURL({type: 'image/png', mode: 'overall'});
+        await image.decode();
+        // Export the whole result on white, independently of the screen's CSS background and camera.
+        const padding = Math.round(30 * (globalThis.devicePixelRatio || 1));
+        const canvas = document.createElement('canvas');
+        canvas.width = image.naturalWidth + padding * 2;
+        canvas.height = image.naturalHeight + padding * 2;
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Unable to create the PNG export canvas');
+        context.fillStyle = '#ffffff';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(image, padding, padding);
+        return canvas.toDataURL('image/png');
+    }
     async history(action: 'undo' | 'redo' | 'clear'): Promise<void> {
         const history = this.getHistory();
         if (!history) return;

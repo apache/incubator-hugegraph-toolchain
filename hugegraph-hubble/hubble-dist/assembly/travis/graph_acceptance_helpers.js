@@ -325,7 +325,7 @@ function assertVisibleGraphStats({viewport, counts, minimaps, canvas}) {
 }
 async function decodeScreenshot(page, bytes) {
   // The source is an external Chrome PNG, never the application's canvas object.
-  return page.evaluate(async encoded => {
+  const image = await page.evaluate(async encoded => {
     const image = new Image();
     image.src = `data:image/png;base64,${encoded}`;
     await image.decode();
@@ -333,9 +333,17 @@ async function decodeScreenshot(page, bytes) {
     canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
     const context = canvas.getContext('2d');
     context.drawImage(image, 0, 0);
-    return {width: canvas.width, height: canvas.height,
-      data: Array.from(context.getImageData(0, 0, canvas.width, canvas.height).data)};
+    const rgba = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    // Packed bytes avoid serializing millions of boxed RGBA numbers through CDP.
+    let binary = '';
+    for (let offset = 0; offset < rgba.length; offset += 8192) {
+      binary += String.fromCharCode(...rgba.subarray(offset, offset + 8192));
+    }
+    return {width: canvas.width, height: canvas.height, rgba: btoa(binary)};
   }, bytes.toString('base64'));
+  const data = Buffer.from(image.rgba, 'base64');
+  assert.equal(data.length, image.width * image.height * 4, 'Decoded screenshot has incomplete RGBA bytes');
+  return {width: image.width, height: image.height, data};
 }
 function screenshotAxes(bounds, image) {
   const ratio = image.pixelRatio;
@@ -384,6 +392,71 @@ function screenshotFringeRects(bounds, image) {
   if (vertical.trailing) rects.push({x: 0, y: image.height - vertical.trailing,
     width: image.width, height: vertical.trailing});
   return rects;
+}
+
+function validatePixels(image) {
+  assert.ok(Number.isInteger(image?.width) && image.width > 0
+    && Number.isInteger(image.height) && image.height > 0
+    && image.data?.length === image.width * image.height * 4, 'Missing decoded external image pixels');
+}
+function coloredBodyPixels(image, excludedRects = []) {
+  validatePixels(image);
+  let count = 0;
+  for (let y = 0; y < image.height; y++) for (let x = 0; x < image.width; x++) {
+    if (excludedRects.some(rect => x >= rect.x && x < rect.x + rect.width
+      && y >= rect.y && y < rect.y + rect.height)) continue;
+    const i = (y * image.width + x) * 4;
+    const red = image.data[i], green = image.data[i + 1], blue = image.data[i + 2];
+    if (image.data[i + 3] > 40 && Math.max(red, green, blue) - Math.min(red, green, blue) > 32
+      && Math.min(red, green, blue) < 245) count++;
+  }
+  return count;
+}
+function assertOverallPng(image, pixelRatio) {
+  validatePixels(image);
+  assert.ok(Number.isFinite(pixelRatio) && pixelRatio > 0, 'Overall PNG requires actual DPR');
+  const padding = Math.round(30 * pixelRatio);
+  assert.ok(image.width > padding * 2 && image.height > padding * 2, 'Overall PNG has no graph body');
+  for (let y = 0; y < image.height; y++) for (let x = 0; x < image.width; x++) {
+    const i = (y * image.width + x) * 4;
+    assert.equal(image.data[i + 3], 255, 'Overall PNG contains transparent pixels');
+    if (x < padding || x >= image.width - padding || y < padding || y >= image.height - padding) {
+      assert.ok(image.data[i] === 255 && image.data[i + 1] === 255 && image.data[i + 2] === 255,
+        'Overall PNG does not preserve the required white 30 CSS pixel border');
+    }
+  }
+  const coloredPixels = coloredBodyPixels(image);
+  assert.ok(coloredPixels > 30, 'Overall PNG has no nonempty colored graph body');
+  return {contract: 'overall', width: image.width, height: image.height, pixelRatio,
+    opaque: true, requiredWhiteBorderPixels: padding, coloredPixels,
+    coverage: 'opaque white border and nonempty body; individual node/edge pixels require the independent strict fixture'};
+}
+function assertOffscreenPan(before, after, excludedBefore = [], excludedAfter = []) {
+  validatePixels(before); validatePixels(after);
+  assert.equal(after.width, before.width, 'Pan changed screenshot width');
+  assert.equal(after.height, before.height, 'Pan changed screenshot height');
+  const beforePixels = coloredBodyPixels(before, excludedBefore), afterPixels = coloredBodyPixels(after, excludedAfter);
+  assert.ok(beforePixels > 30, 'Offscreen pan has no visible colored node body before input');
+  const remainingRatio = afterPixels / beforePixels;
+  assert.ok(remainingRatio <= .01, 'Actual public pan did not move colored graph body offscreen');
+  return {beforeColoredPixels: beforePixels, afterColoredPixels: afterPixels, remainingRatio,
+    maximumRemainingRatio: .01};
+}
+function assertOverallPanInvariant(before, after, panProof) {
+  assert.ok(panProof && Number.isInteger(panProof.beforeColoredPixels) && panProof.beforeColoredPixels > 30
+    && Number.isInteger(panProof.afterColoredPixels) && panProof.afterColoredPixels >= 0
+    && panProof.remainingRatio >= 0 && panProof.remainingRatio <= .01
+    && panProof.afterColoredPixels / panProof.beforeColoredPixels === panProof.remainingRatio,
+    'Overall export lacks actual offscreen pan pixel proof');
+  for (const download of [before, after]) {
+    assert.ok(download?.file && /^[a-f0-9]{64}$/.test(download.sha256)
+      && download.contract?.contract === 'overall' && download.dimensions?.width === download.contract.width
+      && download.dimensions?.height === download.contract.height, 'Overall export lacks a validated actual download');
+  }
+  assert.deepEqual(after.dimensions, before.dimensions, 'Overall PNG dimensions changed after pure pan');
+  assert.equal(after.sha256, before.sha256, 'Overall PNG bytes changed after pure pan');
+  return {contract: 'overall', purePanInvariant: true, identicalDownloadBytes: true, ...panProof,
+    coverage: 'real downloads remain identical after public offscreen pan; per-ID pixel fidelity is a separate strict fixture'};
 }
 
 function loadPixelmatch() {
@@ -547,7 +620,9 @@ function assertLiveDragPixels(before, held, {point, target, neighbor}) {
   const pixel = (image, x, y) => {
     x = Math.round(x); y = Math.round(y);
     assert.ok(x >= 0 && y >= 0 && x < image.width && y < image.height, 'Drag sample lies outside Chrome screenshot');
-    return image.data.slice((y * image.width + x) * 4, (y * image.width + x) * 4 + 3);
+    const offset = (y * image.width + x) * 4;
+    // Return numbers in a regular array: Buffer.map would wrap signed RGB differences.
+    return [image.data[offset], image.data[offset + 1], image.data[offset + 2]];
   };
   const distance = (a, b) => Math.hypot(...a.map((value, index) => value - b[index]));
   const patch = (image, center) => {
@@ -587,7 +662,7 @@ function assertLiveDragPixels(before, held, {point, target, neighbor}) {
   return {fills, edgeBands: bands, mouseReleased: false};
 }
 
-module.exports = {MINIMAP_PAINT_SELECTOR, uniqueDisplayId, gremlinIdLiteral, connectedPair, mergeRawGraph, assertExpandedGraph, assertVisibleGraphStats,
+module.exports = {assertOverallPng, assertOffscreenPan, assertOverallPanInvariant, coloredBodyPixels, MINIMAP_PAINT_SELECTOR, uniqueDisplayId, gremlinIdLiteral, connectedPair, mergeRawGraph, assertExpandedGraph, assertVisibleGraphStats,
   decodeScreenshot, screenshotAxes, screenshotOverlayRect, screenshotFringeRects, assertPngMatchesCanvas, dragTarget, assertLiveDragPixels, NeedsInput, argument, redact, publicHttpUrl, sha256, typedId, canonicalGraph,
   assertExportMatches, assertFixtureGraph, fixtureFromPrefix, loadPlaywright, chromePath,
   businessPayload, scopePath, pngDimensions, pixelEvidence, screenshot, canvasReady, findNode};

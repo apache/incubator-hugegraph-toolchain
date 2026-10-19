@@ -414,3 +414,22 @@ test('failed PNG comparison preserves current geometry and identifies the actual
     /localized.*screenToExport tile 1:1 ratio 0\.\d{4} \(\d+\/\d+\)/);
   assert.deepEqual(JSON.parse(fs.readFileSync(file, 'utf8')), geometry);
 });
+
+
+test('overall download requires an actual successful browser download', async () => {
+  const {saveDownload} = require('./run_ui_graph_acceptance');
+  await assert.rejects(saveDownload(undefined, '/unused'), /Missing actual browser download/);
+  await assert.rejects(saveDownload({saveAs() {}, failure: async () => 'canceled'}, '/unused'), /download failed/);
+});
+test('offscreen camera pan uses a fixed empty public top strip and rejects ink or UI hit paths', () => {
+  const {offscreenPanPath} = require('./run_ui_graph_acceptance');
+  const {screenshotAxes} = require('./graph_acceptance_helpers');
+  const bounds = {x: 20, y: 40, width: 300, height: 200};
+  const image = {width: 300, height: 200, data: new Array(300 * 200 * 4).fill(255)};
+  const capture = {bounds, image, axes: screenshotAxes(bounds, {...image, pixelRatio: 1}), excluded: []};
+  assert.deepEqual(offscreenPanPath(capture), {from: {x: 28, y: 44}, to: {x: 312, y: 44}});
+  assert.throws(() => offscreenPanPath({...capture, excluded: [{x: 80, y: 0, width: 30, height: 30}]}), /public UI/);
+  const i = (4 * 300 + 100) * 4;
+  image.data[i] = image.data[i + 1] = image.data[i + 2] = 0;
+  assert.throws(() => offscreenPanPath(capture), /graph ink/);
+});

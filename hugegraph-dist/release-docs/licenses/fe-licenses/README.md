@@ -47,6 +47,10 @@ Hubble patches `@antv/g6` 5.1.1 through
 The original MIT grant and `Copyright (c) 2018 Alipay.inc` are preserved.
 The patch refreshes minimap shapes after layout and preserves existing display
 children, opacity, visibility and export camera state when producing a PNG.
+Whole-graph PNG bounds also include painted strokes and shadows and enclose
+fractional bounds in device pixels to avoid cutting off boundary ink.
+Arrow markers retain the current painted appearance and visibility while the
+new path positions them from their original transform, preserving later updates.
 It changes minimap and canvas implementations in the upstream `src`, `esm` and
 `lib` trees; it does not change the upstream license.
 

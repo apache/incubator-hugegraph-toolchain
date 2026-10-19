@@ -50,6 +50,7 @@ const mockEngine = {
     getOptions: jest.fn(() => mockOptions),
     setNode: jest.fn(), setEdge: jest.fn(),
     getPluginInstance: jest.fn(() => undefined),
+    toDataURL: jest.fn(async () => 'data:image/png;base64,engine'),
     on: jest.fn((name: string, handler: unknown) => {mockHandlers.set(name, handler);}),
     off: jest.fn(), stopLayout: jest.fn(), destroy: jest.fn(),
 };
@@ -61,6 +62,35 @@ jest.mock('./extensions', () => ({registerExtensions: jest.fn()}));
 const data = (count: number): GraphData => ({nodes: Array.from({length: count}, (_, index) => ({
     id: String(index), data: {raw: {id: index}}, style: {labelText: `Node ${index}`},
 })), edges: []});
+
+test.each([1, 2])('PNG exports the whole graph on white with a 30px margin at DPR %s', async pixelRatio => {
+    const runtime = new G6Runtime(document.createElement('div'));
+    const image = document.createElement('img');
+    const decode = jest.fn(async () => {});
+    Object.defineProperties(image, {
+        naturalWidth: {value: 240}, naturalHeight: {value: 120}, decode: {value: decode},
+    });
+    const context = {fillStyle: '', fillRect: jest.fn(), drawImage: jest.fn()};
+    const imageSpy = jest.spyOn(globalThis, 'Image').mockImplementation(() => image);
+    const contextSpy = jest.spyOn(HTMLCanvasElement.prototype, 'getContext')
+        .mockReturnValue(context as unknown as CanvasRenderingContext2D);
+    const dataSpy = jest.spyOn(HTMLCanvasElement.prototype, 'toDataURL')
+        .mockReturnValue('data:image/png;base64,white-and-padded');
+    const ratio = jest.replaceProperty(globalThis, 'devicePixelRatio', pixelRatio);
+    try {
+        expect(await runtime.exportPng()).toBe('data:image/png;base64,white-and-padded');
+        expect(mockEngine.toDataURL).toHaveBeenCalledWith({type: 'image/png', mode: 'overall'});
+        expect(decode).toHaveBeenCalledTimes(1);
+        expect(context.fillStyle).toBe('#ffffff');
+        expect(context.fillRect).toHaveBeenCalledWith(0, 0, 240 + 60 * pixelRatio, 120 + 60 * pixelRatio);
+        expect(context.drawImage).toHaveBeenCalledWith(image, 30 * pixelRatio, 30 * pixelRatio);
+        expect(dataSpy).toHaveBeenCalledWith('image/png');
+    }
+    finally {
+        ratio.restore(); dataSpy.mockRestore(); contextSpy.mockRestore(); imageSpy.mockRestore();
+        runtime.stop(); runtime.destroy();
+    }
+});
 const nodeStyle = (datum: NodeData) => {
     const mapper = mockOptions.node?.style;
     if (typeof mapper !== 'function') throw new Error('Expected node style mapper');

@@ -24,6 +24,7 @@ const {authenticateUi, logoutUi} = require('./ui_auth');
 const {
   NeedsInput, argument, redact, publicHttpUrl, sha256, typedId, assertExportMatches, assertFixtureGraph,
   uniqueDisplayId, gremlinIdLiteral, connectedPair, assertExpandedGraph, assertVisibleGraphStats,
+  assertOverallPng, assertOffscreenPan, assertOverallPanInvariant,
   decodeScreenshot, screenshotAxes, screenshotOverlayRect, screenshotFringeRects, assertPngMatchesCanvas, dragTarget, assertLiveDragPixels,
   fixtureFromPrefix, loadPlaywright, chromePath, businessPayload, scopePath,
   pngDimensions, pixelEvidence, screenshot, canvasReady, findNode,
@@ -139,50 +140,114 @@ async function exerciseCamera(page, region, directory, prefix, zoomButtons = fal
   return {pan, wheel};
 }
 async function saveDownload(download, file) {
+  assert.ok(download && typeof download.saveAs === 'function', 'Missing actual browser download');
   assert.equal(await download.failure(), null, 'Browser download failed');
   await download.saveAs(file);
   return {file, suggestedFilename: download.suggestedFilename(), sha256: sha256(fs.readFileSync(file))};
 }
-async function exportBusiness(page, region, raw, directory, prefix) {
-  await page.getByRole('button', {name: 'Fit Center', exact: true}).click();
+async function downloadBusiness(page, directory, prefix, kind) {
+  const exportButton = page.getByRole('button').filter({hasText: /^Export$/});
+  assert.equal(await exportButton.count(), 1, 'Expected the actual visible graph Export button');
+  await exportButton.click();
+  const name = kind === 'json' ? 'Export JSON' : 'Export image';
+  await page.getByRole('menuitem', {name, exact: true}).click();
+  const dialog = page.getByRole('dialog', {name, exact: true});
+  await dialog.getByLabel('File Name', {exact: true}).fill(`${prefix}-${kind}`.slice(0, 12));
+  const pending = page.waitForEvent('download');
+  await dialog.getByRole('button', {name: 'OK', exact: true}).click();
+  const download = await saveDownload(await pending, path.join(directory, `${prefix}-export.${kind}`));
+  await dialog.waitFor({state: 'hidden'});
+  return download;
+}
+async function captureGraphBody(page, region, file) {
+  await eventually(page, 'graph is idle before public capture', async () => await region.getAttribute('aria-busy') !== 'true');
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   await blankPointer(page, region);
-  const artifacts = {beforeExport: await canvasReady(page, region, path.join(directory, `${prefix}-before-export.png`))};
-  for (const kind of ['json', 'png']) {
-    const exportButton = page.getByRole('button').filter({hasText: /^Export$/});
-    assert.equal(await exportButton.count(), 1, 'Expected the actual visible graph Export button');
-    await exportButton.click();
-    await page.getByRole('menuitem', {name: kind === 'json' ? 'Export JSON' : 'Export image', exact: true}).click();
-    const dialog = page.getByRole('dialog', {name: kind === 'json' ? 'Export JSON' : 'Export image', exact: true});
-    await dialog.getByLabel('File Name', {exact: true}).fill(`${prefix}-${kind}`.slice(0, 12));
-    const pending = page.waitForEvent('download');
-    await dialog.getByRole('button', {name: 'OK', exact: true}).click();
-    const file = path.join(directory, `${prefix}-export.${kind}`);
-    artifacts[kind] = await saveDownload(await pending, file);
-    await dialog.waitFor({state: 'hidden'});
-    if (kind === 'json') assertExportMatches(JSON.parse(fs.readFileSync(file, 'utf8')), raw);
-    else {
-      const bytes = fs.readFileSync(file);
-      artifacts.png.dimensions = pngDimensions(bytes);
-      artifacts.png.pixels = await pixelEvidence(page, bytes);
-      assert.ok(artifacts.png.pixels.coloredPixels > 30, 'Exported PNG contains no actual graph pixels');
-    }
-  }
-  await blankPointer(page, region);
-  artifacts.canvas = await screenshot(page, region, path.join(directory, `${prefix}-exported-canvas.png`));
+  const capture = await screenshot(page, region, file);
   const bounds = await region.boundingBox();
-  const excluded = await visibleGraphOverlays(page, region);
-  const actual = await decodeScreenshot(page, fs.readFileSync(artifacts.canvas.file));
-  const exported = await decodeScreenshot(page, fs.readFileSync(artifacts.png.file));
+  const image = await decodeScreenshot(page, fs.readFileSync(capture.file));
   const pixelRatio = await page.evaluate(() => window.devicePixelRatio);
-  const image = {width: actual.width, height: actual.height, pixelRatio};
-  const axes = screenshotAxes(bounds, image);
-  const excludedPixels = excluded.map(rect => screenshotOverlayRect(rect, axes));
-  const fringeRects = screenshotFringeRects(bounds, image);
-  artifacts.png.captureGeometry = {bounds, pixelRatio, screenshot: {width: actual.width, height: actual.height},
-    axes, overlays: excluded.map((rect, index) => ({dom: rect, pixels: excludedPixels[index]})), fringeRects};
-  artifacts.png.captureGeometryFile = path.join(directory, `${prefix}-png-geometry.json`);
-  artifacts.png.canvasAgreement = assertPngWithGeometry(actual, exported, artifacts.png.captureGeometry, artifacts.png.captureGeometryFile);
-  return artifacts;
+  const axes = screenshotAxes(bounds, {...image, pixelRatio});
+  const overlays = await visibleGraphOverlays(page, region);
+  const excluded = [...overlays.map(rect => screenshotOverlayRect(rect, axes)),
+    ...screenshotFringeRects(bounds, {...image, pixelRatio})];
+  return {capture, image, bounds, pixelRatio, axes, overlays, excluded};
+}
+function offscreenPanPath(capture) {
+  const {bounds, axes, image, excluded} = capture;
+  assert.ok(bounds.width > 100 && bounds.height > 50, 'Graph is too small for safe offscreen pan');
+  const path = {from: {x: bounds.x + 8, y: bounds.y + 4},
+    to: {x: bounds.x + bounds.width - 8, y: bounds.y + 4}};
+  const strip = screenshotOverlayRect({x: path.from.x - 2, y: path.from.y - 2,
+    width: path.to.x - path.from.x + 4, height: 4}, axes);
+  assert.ok(!excluded.some(rect => strip.x < rect.x + rect.width && strip.x + strip.width > rect.x
+    && strip.y < rect.y + rect.height && strip.y + strip.height > rect.y),
+  'Predeclared top canvas pan path intersects public UI');
+  for (let y = strip.y; y < strip.y + strip.height; y++) for (let x = strip.x; x < strip.x + strip.width; x++) {
+    const i = (y * image.width + x) * 4;
+    const colors = [image.data[i], image.data[i + 1], image.data[i + 2]];
+    assert.ok(Math.max(...colors) - Math.min(...colors) <= 32 && Math.min(...colors) >= 100,
+      'Predeclared top canvas pan path intersects actual graph ink');
+  }
+  return path;
+}
+async function validateOverallDownload(page, download) {
+  const bytes = fs.readFileSync(download.file);
+  download.dimensions = pngDimensions(bytes);
+  download.contract = assertOverallPng(await decodeScreenshot(page, bytes),
+    await page.evaluate(() => window.devicePixelRatio));
+  return download;
+}
+async function overallExportWithPan(page, region, directory, prefix, downloadPng, fit) {
+  const evidence = {contract: 'overall', status: 'running', paths: [],
+    strictPixelFixture: 'Separate mandatory public fixed-fixture Chrome DPR 1/2 gate; these camera checks do not establish per-ID pixel fidelity'};
+  try {
+    await fit();
+    await page.evaluate(() => document.fonts.ready);
+    await fit();
+    const preflight = await captureGraphBody(page, region, path.join(directory, `${prefix}-overall-pan-preflight.png`));
+    const blank = offscreenPanPath(preflight).from;
+    // Clear selection through the actual blank canvas before both compared exports.
+    // Otherwise a canvas drag may also dismiss a previously selected node's style.
+    await page.mouse.click(blank.x, blank.y);
+    const before = await captureGraphBody(page, region, path.join(directory, `${prefix}-overall-before-pan.png`));
+    evidence.before = before.capture;
+    evidence.geometry = {before: {bounds: before.bounds, overlays: before.overlays, axes: before.axes}};
+    evidence.initial = await validateOverallDownload(page, await downloadPng(`${prefix}-before-pan`));
+    // Four fixed full-width drags, each preceded by public screenshot/path safety checks.
+    // No renderer/controller coordinates or private state are inspected.
+    for (let index = 0; index < 4; index++) {
+      const current = index === 0 ? before : await captureGraphBody(page, region,
+        path.join(directory, `${prefix}-pan-${index}.png`));
+      const pan = offscreenPanPath(current);
+      evidence.paths.push(pan);
+      await page.mouse.move(pan.from.x, pan.from.y);
+      await page.mouse.down();
+      try {await page.mouse.move(pan.to.x, pan.to.y, {steps: 24});}
+      finally {await page.mouse.up();}
+    }
+    const after = await captureGraphBody(page, region, path.join(directory, `${prefix}-overall-offscreen.png`));
+    evidence.after = after.capture;
+    evidence.geometry.after = {bounds: after.bounds, overlays: after.overlays, axes: after.axes};
+    evidence.panProof = assertOffscreenPan(before.image, after.image, before.excluded, after.excluded);
+    evidence.panned = await validateOverallDownload(page, await downloadPng(`${prefix}-offscreen`));
+    evidence.invariant = assertOverallPanInvariant(evidence.initial, evidence.panned, evidence.panProof);
+    evidence.status = 'passed';
+    return evidence;
+  }
+  catch (error) {evidence.status = 'failed'; throw error;}
+  finally {
+    try {await fit();}
+    finally {fs.writeFileSync(path.join(directory, `${prefix}-overall-export-evidence.json`), JSON.stringify(evidence, null, 2) + '\n');}
+  }
+}
+async function exportBusiness(page, region, raw, directory, prefix) {
+  const json = await downloadBusiness(page, directory, prefix, 'json');
+  assertExportMatches(JSON.parse(fs.readFileSync(json.file, 'utf8')), raw);
+  const png = await overallExportWithPan(page, region, directory, prefix,
+    name => downloadBusiness(page, directory, name, 'png'),
+    () => page.getByRole('button', {name: 'Fit Center', exact: true}).click());
+  return {json, png};
 }
 async function executeQuery(page, config, fixture, prefix, navigate = true) {
   if (navigate) await page.goto(`${config.hubbleUrl}/gremlin/${encodeURIComponent(fixture.graphspace)}/${encodeURIComponent(fixture.graph)}`);
@@ -448,13 +513,11 @@ async function exampleCheck(page, config) {
   await exerciseCamera(page, main, config.outputDir, 'example');
   await page.getByRole('button', {name: 'Fit view', exact: true}).click();
   await blankPointer(page, main);
-  const beforeExport = await canvasReady(page, main, path.join(config.outputDir, 'example-before-export.png'));
-  const pending = page.waitForEvent('download');
-  await page.getByRole('button', {name: 'Export PNG', exact: true}).click();
-  const png = await saveDownload(await pending, path.join(config.outputDir, 'example-export.png'));
-  png.dimensions = pngDimensions(fs.readFileSync(png.file));
-  png.pixels = await pixelEvidence(page, fs.readFileSync(png.file));
-  assert.ok(png.pixels.coloredPixels > 30, 'Example PNG is blank');
+  const png = await overallExportWithPan(page, main, config.outputDir, 'example', async name => {
+    const pending = page.waitForEvent('download');
+    await page.getByRole('button', {name: 'Export PNG', exact: true}).click();
+    return saveDownload(await pending, path.join(config.outputDir, `${name}-export.png`));
+  }, () => page.getByRole('button', {name: 'Fit view', exact: true}).click());
   assert.equal((await screenshot(page, preview, path.join(config.outputDir, 'example-preview-after.png'))).sha256,
                previewBefore.sha256, 'Interactive commands changed the independent preview');
   assert.equal((await screenshot(page, thumbnail, path.join(config.outputDir, 'example-thumbnail-after.png'))).sha256,
@@ -467,7 +530,7 @@ async function exampleCheck(page, config) {
   await eventually(page, 'empty public status', async () => (await page.getByRole('status').innerText()).includes('0 nodes · 0 edges'));
   assert.equal(await preview.getByRole('alert').count(), 0);
   return {route: config.exampleUrl, dragChangedPosition: true, fixedAcrossLayout: true,
-    history: true, independentInstances: true, emptyDataset: true, beforeExport, png};
+    history: true, independentInstances: true, emptyDataset: true, png};
 }
 
 async function main(configuration = options()) {
@@ -743,4 +806,4 @@ if (require.main === module) {
     });
 }
 module.exports = {ALL_CHECKS, USAGE, options, main, graphContextMenu, closeUiSession, nodeTooltip, executeQuery,
-  selectVisibleScopeOption, collectGraphOverlayRects, assertPngWithGeometry};
+  selectVisibleScopeOption, collectGraphOverlayRects, assertPngWithGeometry, offscreenPanPath, overallExportWithPan, saveDownload};
