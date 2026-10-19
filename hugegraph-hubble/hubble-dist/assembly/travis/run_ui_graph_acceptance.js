@@ -20,7 +20,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const {authenticateUi} = require('./ui_auth');
+const {authenticateUi, logoutUi} = require('./ui_auth');
 const {
   NeedsInput, argument, redact, publicHttpUrl, sha256, assertExportMatches, assertFixtureGraph,
   fixtureFromPrefix, loadPlaywright, chromePath, businessPayload, scopePath,
@@ -79,6 +79,23 @@ async function eventually(page, description, predicate, timeout = 12000) {
   throw new Error(`Timed out: ${description}`);
 }
 function graphRegion(page) { return page.getByRole('region', {name: 'Graph canvas', exact: true}); }
+// The Hubble menu is a sibling of GraphCanvas within its public graph wrapper.
+// Primary navigation elsewhere in the page also has role=menu.
+function graphContextMenu(page) { return graphRegion(page).locator('..').getByRole('menu'); }
+async function closeUiSession(context, browser, hubbleUrl, loginAttempted, report, secrets) {
+  try {
+    if (loginAttempted) {
+      try {
+        await logoutUi(context, hubbleUrl);
+        report.sessionCleanup = {status: 'passed'};
+      }
+      catch (error) {
+        report.sessionCleanup = {status: 'failed', error: redact(error.message, secrets)};
+      }
+    }
+  }
+  finally {await browser.close();}
+}
 async function blankPointer(page, region) {
   const box = await region.boundingBox();
   await page.mouse.move(box.x + 6, box.y + 6);
@@ -274,25 +291,30 @@ async function main(configuration = options()) {
   fs.mkdirSync(path.dirname(config.jsonOutput), {recursive: true});
   const secrets = [config.password];
   const {chromium} = loadPlaywright();
-  const browser = await chromium.launch({headless: true, executablePath: config.executablePath});
-  const context = await browser.newContext({viewport: {width: 1440, height: 900}, deviceScaleFactor: 1,
-    locale: 'en-US', acceptDownloads: true});
-  const page = await context.newPage();
-  page.setDefaultTimeout(20000);
-  await page.addInitScript(() => window.localStorage.setItem('languageType', 'en-US'));
+  // Cooperative interruption must retain this cookie jar until logout verifies 401.
+  let browser;
+  let context;
+  let page;
+  let interrupted = false;
+  const assertRunning = () => {if (interrupted) throw new Error('Acceptance interrupted');};
+  const interrupt = () => {
+    if (interrupted) return;
+    interrupted = true;
+    // Closing only the page interrupts pending DOM waits without disposing request cookies.
+    if (page) void page.close().catch(() => {});
+  };
+  const signals = ['SIGTERM', 'SIGINT', 'SIGHUP'];
+  for (const signal of signals) process.on(signal, interrupt);
   const errors = [];
-  page.on('pageerror', error => errors.push({kind: 'pageerror', message: redact(error.message, secrets)}));
-  page.on('console', message => {
-    if (message.type() === 'error') errors.push({kind: 'console', message: redact(message.text(), secrets)});
-  });
   const report = {hubbleUrl: config.hubbleUrl, requestedChecks: config.requested,
     scope: config.fixture ? {graphspace: config.fixture.graphspace, graph: config.fixture.graph} : null,
-    browser: await browser.version(), viewport: {width: 1440, height: 900, dpr: 1},
+    browser: null, viewport: {width: 1440, height: 900, dpr: 1},
     evidenceModel: 'Real DOM, screenshot pixels, browser input, live public HTTP and downloads; no private React/G6 state',
     checks: [], remainingMatrix: ['Run both real authenticated and anonymous environments',
       'PD/non-PD capabilities, account visibility and connection resolver modes require their actual environments',
       'Rapid concurrent query response ordering and memory/resource release need additional targeted evidence']};
   let authenticated = false;
+  let loginAttempted = false;
   const requireBusiness = () => {
     if (!authenticated) throw new NeedsInput('Actual authentication/capability setup did not pass');
     if (!config.fixture) throw new NeedsInput('Provide --fixture-json or --data-prefix from an existing real Server fixture');
@@ -307,7 +329,9 @@ async function main(configuration = options()) {
     const start = errors.length;
     const result = {name, startedAt: new Date().toISOString(), status: 'failed'};
     try {
+      assertRunning();
       result.evidence = await run();
+      assertRunning();
       assert.deepEqual(errors.slice(start), [], 'Actual browser emitted errors during the check');
       result.status = 'passed';
     }
@@ -322,6 +346,19 @@ async function main(configuration = options()) {
     fs.writeFileSync(config.jsonOutput, JSON.stringify(report, null, 2) + '\n');
   }
   try {
+    browser = await chromium.launch({headless: true, executablePath: config.executablePath,
+      handleSIGTERM: false, handleSIGINT: false, handleSIGHUP: false});
+    assertRunning();
+    context = await browser.newContext({viewport: {width: 1440, height: 900}, deviceScaleFactor: 1,
+      locale: 'en-US', acceptDownloads: true});
+    page = await context.newPage();
+    page.setDefaultTimeout(20000);
+    await page.addInitScript(() => window.localStorage.setItem('languageType', 'en-US'));
+    page.on('pageerror', error => errors.push({kind: 'pageerror', message: redact(error.message, secrets)}));
+    page.on('console', message => {
+      if (message.type() === 'error') errors.push({kind: 'console', message: redact(message.text(), secrets)});
+    });
+    report.browser = await browser.version();
     await check('example', () => exampleCheck(page, config));
     // Authentication is a prerequisite even when --checks selects a business subset.
     const authRequested = config.requested.includes('authentication');
@@ -329,10 +366,17 @@ async function main(configuration = options()) {
       config.requested = [...config.requested, 'authentication'];
     }
     await check('authentication', async () => {
-      const capabilities = await businessPayload(await context.request.get(`${config.hubbleUrl}/api/v1.3/config`), 'config');
+      const capabilities = await businessPayload(await context.request.get(
+        `${config.hubbleUrl}/api/v1.3/config`, {timeout: 5000}), 'config');
+      assertRunning();
       if (capabilities.server_capabilities_verified !== true) throw new NeedsInput('Server capabilities must be verified by the actual Hubble backend');
       const anonymous = capabilities.auth_enabled === false;
-      if (!anonymous) await authenticateUi(context, page, config.hubbleUrl, config.username, config.password);
+      let identity;
+      if (!anonymous) {
+        // Login can set a cookie before a subsequent identity/config check fails.
+        loginAttempted = true;
+        identity = await authenticateUi(context, page, config.hubbleUrl, config.username, config.password, assertRunning);
+      }
       else await page.addInitScript(() => window.sessionStorage.removeItem('user_'));
       await page.goto(`${config.hubbleUrl}/gremlin`);
       if (anonymous) {
@@ -342,7 +386,8 @@ async function main(configuration = options()) {
       }
       authenticated = true;
       report.authentication = {mode: anonymous ? 'anonymous' : 'authenticated',
-        pdEnabled: capabilities.pd_enabled, serverCapabilitiesVerified: true};
+        pdEnabled: capabilities.pd_enabled, serverCapabilitiesVerified: true,
+        ...(identity ? {username: identity.username, role: identity.role} : {})};
       return report.authentication;
     });
     await check('query', async () => {
@@ -445,6 +490,11 @@ async function main(configuration = options()) {
       }
       const previous = await executeQuery(page, config, fixture, 'scope-old');
       const oldCanvas = await previous.region.locator('canvas').first().elementHandle();
+      const node = await findNode(page, previous.region, text => text.includes('Node ID:'),
+        path.join(config.outputDir, 'scope-old-menu-target.png'));
+      await page.mouse.click(node.x, node.y, {button: 'right'});
+      await graphContextMenu(page).waitFor({state: 'visible'});
+      const oldMenu = await graphContextMenu(page).elementHandle();
       if (next.graphspace !== fixture.graphspace) {
         if (!report.authentication.pdEnabled) throw new NeedsInput('Cross-GraphSpace switching needs a real PD fixture');
         await page.getByRole('combobox', {name: 'Current GraphSpace', exact: true}).click();
@@ -454,7 +504,9 @@ async function main(configuration = options()) {
       await page.getByRole('option', {name: next.graphDisplayName || next.graph, exact: true}).click();
       await page.waitForURL(url => url.pathname === `/gremlin/${encodeURIComponent(next.graphspace)}/${encodeURIComponent(next.graph)}`);
       await eventually(page, 'scope switch detaches old canvas', async () => !await oldCanvas.evaluate(element => element.isConnected));
-      assert.equal(await page.getByRole('menu').count(), 0, 'Old context menu survived scope switch');
+      assert.equal(await oldMenu.evaluate(element => element.isConnected), false,
+                   'Old graph context menu survived scope switch');
+      assert.equal(await graphContextMenu(page).count(), 0, 'New graph retained a context menu after scope switch');
       const current = await executeQuery(page, config, next, 'scope-new', false);
       const exclusiveOldIds = fixture.expected.vertexIds.filter(id => !next.expected.vertexIds.includes(id));
       assert.ok(!current.raw.vertices.some(vertex => exclusiveOldIds.includes(vertex.id)), 'Old fixture record survived into new scope');
@@ -465,13 +517,19 @@ async function main(configuration = options()) {
       assert.equal(await current.region.getByRole('alert').count(), 0);
       return {from: {graphspace: fixture.graphspace, graph: fixture.graph},
         to: {graphspace: next.graphspace, graph: next.graph}, oldCanvasDetached: true,
-        publicContextSwitcher: true, exclusiveOldIdsChecked: exclusiveOldIds, exports};
+        publicContextSwitcher: true, oldContextMenuDetached: true, exclusiveOldIdsChecked: exclusiveOldIds, exports};
     });
   }
-  finally {await browser.close();}
-  report.status = report.checks.every(result => result.status === 'passed') ? 'passed'
+  catch (error) {report.startupError = redact(error.message, secrets);}
+  finally {
+    try {if (browser) await closeUiSession(context, browser, config.hubbleUrl, loginAttempted, report, secrets);}
+    finally {for (const signal of signals) process.removeListener(signal, interrupt);}
+  }
+  if (interrupted) report.interrupted = true;
+  report.status = interrupted || report.startupError || report.sessionCleanup?.status === 'failed' ? 'failed'
+    : report.checks.every(result => result.status === 'passed') ? 'passed'
     : report.checks.some(result => result.status === 'failed') ? 'failed' : 'needs input';
-  report.fullRequestedMatrix = ALL_CHECKS.every(name => report.checks.some(result => result.name === name && result.status === 'passed'));
+  report.fullRequestedMatrix = report.status === 'passed' && ALL_CHECKS.every(name => report.checks.some(result => result.name === name && result.status === 'passed'));
   fs.mkdirSync(path.dirname(config.jsonOutput), {recursive: true});
   fs.writeFileSync(config.jsonOutput, JSON.stringify(report, null, 2) + '\n');
   console.log(JSON.stringify({status: report.status, fullRequestedMatrix: report.fullRequestedMatrix,
@@ -495,4 +553,4 @@ if (require.main === module) {
       process.exitCode = 1;
     });
 }
-module.exports = {ALL_CHECKS, USAGE, options, main};
+module.exports = {ALL_CHECKS, USAGE, options, main, graphContextMenu, closeUiSession};
