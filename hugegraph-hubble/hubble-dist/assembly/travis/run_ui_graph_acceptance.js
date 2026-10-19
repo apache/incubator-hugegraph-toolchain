@@ -415,6 +415,11 @@ async function doubleClickExpansion(page, config, fixture, original) {
     pixels, actualNewNeighborTooltip: neighbor.tooltip, exports, statistics};
 }
 
+function dragTargetWithEvidence(point, neighbor, bounds, obstacles, beforePixels, file) {
+  const diagnostics = {};
+  try {return dragTarget(point, neighbor, bounds, obstacles, beforePixels, diagnostics);}
+  finally {fs.writeFileSync(file, JSON.stringify(diagnostics, null, 2) + '\n');}
+}
 async function fixedHistory(page, region, config, prefix, raw) {
   const pair = connectedPair(raw);
   let point, neighbor;
@@ -450,7 +455,8 @@ async function fixedHistory(page, region, config, prefix, raw) {
   const obstacles = await visibleGraphOverlays(page, region);
   const before = await screenshot(page, region, path.join(config.outputDir, `${prefix}-node-drag-before.png`));
   const beforePixels = await decodeScreenshot(page, fs.readFileSync(before.file));
-  const target = dragTarget(point, neighbor, bounds, obstacles, beforePixels);
+  const targetEvidence = path.join(config.outputDir, `${prefix}-drag-target-geometry.json`);
+  const target = dragTargetWithEvidence(point, neighbor, bounds, obstacles, beforePixels, targetEvidence);
   const local = value => ({x: (value.x - bounds.x) * beforePixels.width / bounds.width,
     y: (value.y - bounds.y) * beforePixels.height / bounds.height});
   let held, heldPixels;
@@ -470,7 +476,7 @@ async function fixedHistory(page, region, config, prefix, raw) {
     await details.getByLabel('Close', {exact: true}).click();
     await details.waitFor({state: 'hidden'});
   }
-  const drag = {before, held, heldPixels, edgeId: pair.edge.id,
+  const drag = {before, held, heldPixels, targetEvidence, edgeId: pair.edge.id,
     after: await changedPixels(page, region, before, path.join(config.outputDir, `${prefix}-node-drag-after.png`))};
   await eventually(page, 'real drag completes without runtime alert', async () => await region.getByRole('alert').count() === 0);
   return {selectedTooltip: point.tooltip, selectedDetails, pinnedAfterRedo: true, drag,
@@ -806,4 +812,4 @@ if (require.main === module) {
     });
 }
 module.exports = {ALL_CHECKS, USAGE, options, main, graphContextMenu, closeUiSession, nodeTooltip, executeQuery,
-  selectVisibleScopeOption, collectGraphOverlayRects, assertPngWithGeometry, offscreenPanPath, overallExportWithPan, saveDownload};
+  selectVisibleScopeOption, collectGraphOverlayRects, assertPngWithGeometry, dragTargetWithEvidence, offscreenPanPath, overallExportWithPan, saveDownload};

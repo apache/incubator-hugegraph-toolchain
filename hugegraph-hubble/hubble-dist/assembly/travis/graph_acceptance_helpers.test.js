@@ -350,6 +350,9 @@ test('drag target checks actual before pixels to avoid a same-color third node',
   paintNode({x: 80, y: 310});
   assert.deepEqual(dragTarget(point, neighbor, bounds, [], before), {x: 80, y: 90});
   paintNode({x: 80, y: 90});
+  assert.deepEqual(dragTarget(point, neighbor, bounds, [], before), {x: 80, y: 290});
+  paintNode({x: 80, y: 290});
+  paintNode({x: 80, y: 110});
   assert.throws(() => dragTarget(point, neighbor, bounds, [], before), NeedsInput);
 });
 
@@ -645,4 +648,113 @@ test('overall offscreen proof excludes only public overlays and rejects masking 
   assert.equal(assertOffscreenPan(before, offscreen, [overlay], [overlay]).afterColoredPixels, 0);
   assert.throws(() => assertOffscreenPan(before, offscreen,
     [{x: 0, y: 0, width: before.width, height: before.height}], [overlay]), /before input/);
+});
+
+
+test('drag target retains 110px priority and uses bounded 90px alternatives for the actual narrow viewport', () => {
+  const {dragTarget} = require('./graph_acceptance_helpers');
+  // Public geometry recorded from the real production query canvas. The positive
+  // 110px target intersects edge ink; its negative target misses the 32px margin.
+  const point = {x: 844.289758379247, y: 603}, neighbor = {x: 1084.169234963269, y: 585};
+  const bounds = {x: 332.546875, y: 463, width: 1088.453125, height: 433};
+  const image = {width: 1089, height: 433, data: Buffer.alloc(1089 * 433 * 4, 255)};
+  const length = Math.hypot(neighbor.x - point.x, neighbor.y - point.y);
+  const target = distance => ({x: point.x - (neighbor.y - point.y) / length * distance,
+    y: point.y + (neighbor.x - point.x) / length * distance});
+  // The original screenshot contains 42/81 and 26/81 dark samples at the two
+  // positive targets. Reproduce those occupancies without depending on local files.
+  for (const [distance, ink] of [[110, 42], [90, 26]]) {
+    const blocked = target(distance);
+    const x = Math.round((blocked.x - bounds.x) * image.width / bounds.width);
+    const y = Math.round((blocked.y - bounds.y) * image.height / bounds.height);
+    for (let sample = 0; sample < ink; sample++) {
+      const i = ((y - 4 + Math.floor(sample / 9)) * image.width + x - 4 + sample % 9) * 4;
+      image.data[i] = image.data[i + 1] = image.data[i + 2] = 140;
+    }
+  }
+  const diagnostics = {};
+  assert.deepEqual(dragTarget(point, neighbor, bounds, [], image, diagnostics), target(-90));
+  assert.deepEqual(diagnostics.distances, [110, 90]);
+  assert.deepEqual(diagnostics.candidates.map(candidate => candidate.rejected),
+    [['occupied-target'], ['viewport-margin'], ['occupied-target'], []]);
+  assert.equal(diagnostics.candidates[0].pixels.inkPixels, 42);
+  assert.equal(diagnostics.candidates[2].pixels.inkPixels, 26);
+  assert.equal(diagnostics.candidates[3].accepted, true);
+  const empty = {...image, data: Buffer.alloc(image.data.length, 255)};
+  assert.deepEqual(dragTarget(point, neighbor, bounds, [], empty), target(110));
+});
+test('bounded drag alternatives fail closed when all paths hit public UI or screenshot ink', () => {
+  const {dragTarget} = require('./graph_acceptance_helpers');
+  const point = {x: 80, y: 200}, neighbor = {x: 420, y: 200};
+  const bounds = {x: 0, y: 0, width: 500, height: 350};
+  const image = graphPixels({nodeAt: point});
+  const obstacles = [{x: 40, y: 230, width: 80, height: 10}, {x: 40, y: 150, width: 80, height: 10}];
+  const diagnostics = {};
+  assert.throws(() => dragTarget(point, neighbor, bounds, obstacles, image, diagnostics), NeedsInput);
+  assert.equal(diagnostics.candidates.length, 4);
+  assert.ok(diagnostics.candidates.every(candidate => candidate.rejected.includes('public-overlay')));
+  assert.deepEqual(diagnostics.obstacles, obstacles);
+  assert.match(diagnostics.failure, /no unobstructed/);
+});
+
+
+async function candidatePixels(image) {
+  const vm = require('node:vm');
+  const {pixelEvidence} = require('./graph_acceptance_helpers');
+  // Execute the real detached-browser analysis against synthetic external RGBA;
+  // isolated globals avoid touching a production canvas or another test's realm.
+  const page = {evaluate: callback => vm.runInNewContext(`(${callback.toString()})('synthetic-png')`, {
+    Image: class {naturalWidth = image.width; naturalHeight = image.height; async decode() {}},
+    document: {createElement: () => ({getContext: () => ({drawImage() {}, getImageData: () => ({data: image.data})})})}
+  })};
+  const evidence = await pixelEvidence(page, Buffer.from('synthetic external screenshot'));
+  return JSON.parse(JSON.stringify(evidence));
+}
+function selectedCirclePixels(stroke) {
+  const image = {width: 100, height: 100, data: Buffer.alloc(100 * 100 * 4, 255)};
+  for (let y = 0; y < image.height; y++) for (let x = 0; x < image.width; x++) {
+    const radius = Math.hypot(x - 50, y - 50);
+    if (radius > 23) continue;
+    const rgb = radius <= 20 ? [190, 199, 245] : stroke;
+    const i = (y * image.width + x) * 4;
+    for (let channel = 0; channel < 3; channel++) image.data[i + channel] = rgb[channel];
+  }
+  return image;
+}
+test('node candidates prefer uniform fill cores over equally dense blue or selected orange outlines', async () => {
+  for (const stroke of [[92, 115, 230], [255, 165, 0]]) {
+    const image = selectedCirclePixels(stroke);
+    const evidence = await candidatePixels(image);
+    assert.ok(evidence.coloredPixels > 30);
+    const first = evidence.candidates[0];
+    assert.equal(first.density, 121);
+    // The original scan-order choice has the same maximum density, but mixes
+    // outline pixels into its 11×11 patch. A higher score must beat that tie.
+    let originalDensity = 0, originalUniform = 0;
+    for (let y = 33; y <= 43; y++) for (let x = 39; x <= 49; x++) {
+      const i = (y * image.width + x) * 4, rgb = [...image.data.subarray(i, i + 3)];
+      if (Math.max(...rgb) - Math.min(...rgb) > 32 && Math.min(...rgb) < 245) originalDensity++;
+      if (Math.hypot(...rgb.map((value, channel) => value - [190, 199, 245][channel])) <= 24) originalUniform++;
+    }
+    assert.equal(originalDensity, 121);
+    assert.ok(originalUniform < first.uniformPixels);
+    for (let y = first.y - 5; y <= first.y + 5; y++) for (let x = first.x - 5; x <= first.x + 5; x++) {
+      const i = (y * image.width + x) * 4;
+      assert.deepEqual([...image.data.subarray(i, i + 3)], [190, 199, 245]);
+    }
+  }
+});
+test('candidate centers must themselves satisfy the existing chromatic predicate', async () => {
+  const image = selectedCirclePixels([92, 115, 230]);
+  // Make every other sampled grid point white while retaining a dense colored neighborhood.
+  for (let y = 8; y < 92; y += 12) for (let x = 8; x < 92; x += 12) {
+    const i = (y * image.width + x) * 4;
+    image.data[i] = image.data[i + 1] = image.data[i + 2] = 255;
+  }
+  const evidence = await candidatePixels(image);
+  for (const candidate of evidence.candidates) {
+    const i = (candidate.y * image.width + candidate.x) * 4;
+    const channels = [...image.data.subarray(i, i + 3)];
+    assert.ok(Math.max(...channels) - Math.min(...channels) > 32 && Math.min(...channels) < 245);
+  }
 });

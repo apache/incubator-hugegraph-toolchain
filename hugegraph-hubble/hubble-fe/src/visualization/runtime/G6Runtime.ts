@@ -108,6 +108,7 @@ export class G6Runtime implements GraphRuntime {
                     enable: (event: IPointerEvent) => {
                         if (!this.alive || this.busy || event.targetType !== 'node') return false;
                         this.dragIdle = new Promise(resolve => { this.finishDrag = resolve; });
+                        this.handler({type: 'leave'});
                         return true;
                     },
                     onFinish: () => {
@@ -151,6 +152,7 @@ export class G6Runtime implements GraphRuntime {
                 ['pointerenter', 'hover'], ['pointerleave', 'leave'], ['contextmenu', 'contextMenu']] as const) {
                 const handler = (event: IPointerEvent) => {
                     if (!this.alive) return;
+                    if (type === 'hover' && this.dragIdle) return;
                     if (type === 'contextMenu') event.preventDefault();
                     const id = 'id' in event.target ? String(event.target.id) : undefined;
                     this.handler({type, id, kind, client: {x: event.client.x, y: event.client.y}});

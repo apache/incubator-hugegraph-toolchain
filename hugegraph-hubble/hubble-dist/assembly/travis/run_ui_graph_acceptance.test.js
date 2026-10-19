@@ -433,3 +433,29 @@ test('offscreen camera pan uses a fixed empty public top strip and rejects ink o
   image.data[i] = image.data[i + 1] = image.data[i + 2] = 0;
   assert.throws(() => offscreenPanPath(capture), /graph ink/);
 });
+
+
+test('drag target geometry evidence survives successful selection and fail-closed rejection', t => {
+  const {dragTargetWithEvidence} = require('./run_ui_graph_acceptance');
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'hubble-drag-geometry-test-'));
+  t.after(() => fs.rmSync(directory, {recursive: true, force: true}));
+  const point = {x: 80, y: 200}, neighbor = {x: 420, y: 200};
+  const bounds = {x: 0, y: 0, width: 500, height: 350};
+  const pixels = {width: 500, height: 350, data: Buffer.alloc(500 * 350 * 4, 255)};
+  const file = path.join(directory, 'geometry.json');
+  assert.deepEqual(dragTargetWithEvidence(point, neighbor, bounds, [], pixels, file), {x: 80, y: 310});
+  const passed = JSON.parse(fs.readFileSync(file, 'utf8'));
+  assert.deepEqual(passed.point, point);
+  assert.deepEqual(passed.neighbor, neighbor);
+  assert.equal(passed.candidates[0].accepted, true);
+  const obstacles = [{x: 40, y: 230, width: 80, height: 10}, {x: 40, y: 150, width: 80, height: 10}];
+  assert.throws(() => dragTargetWithEvidence(point, neighbor, bounds, obstacles, pixels, file), helpers.NeedsInput);
+  const failed = JSON.parse(fs.readFileSync(file, 'utf8'));
+  assert.deepEqual(failed.obstacles, obstacles);
+  assert.deepEqual(failed.bounds, bounds);
+  assert.equal(failed.candidates.length, 4);
+  assert.ok(failed.candidates.every(candidate => candidate.rejected.includes('public-overlay')));
+  assert.match(failed.failure, /no unobstructed/);
+  assert.throws(() => dragTargetWithEvidence(point, neighbor, bounds, [], undefined, file), helpers.NeedsInput);
+  assert.equal(JSON.parse(fs.readFileSync(file, 'utf8')).screenshot, null);
+});

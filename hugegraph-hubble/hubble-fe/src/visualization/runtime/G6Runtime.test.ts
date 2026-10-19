@@ -63,6 +63,38 @@ const data = (count: number): GraphData => ({nodes: Array.from({length: count}, 
     id: String(index), data: {raw: {id: index}}, style: {labelText: `Node ${index}`},
 })), edges: []});
 
+test('node dragging dismisses the tooltip and suppresses hover until release', async () => {
+    const runtime = new G6Runtime(document.createElement('div'));
+    const events = jest.fn();
+    runtime.onEvent(events);
+    const enter = mockHandlers.get('node:pointerenter') as (event: unknown) => void;
+    const edgeEnter = mockHandlers.get('edge:pointerenter') as (event: unknown) => void;
+    const event = {target: {id: '0'}, targetType: 'node', client: {x: 20, y: 30}};
+    const drag = (mockOptions.behaviors as Array<{type?: string; enable?: (event: unknown) => boolean;
+        onFinish?: () => void}>).find(item => item.type === 'drag-element')!;
+    try {
+        enter(event);
+        expect(events.mock.calls.at(-1)?.[0].type).toBe('hover');
+        expect(drag.enable!(event)).toBe(true);
+        expect(events.mock.calls.at(-1)?.[0].type).toBe('leave');
+        events.mockClear();
+        let released = false;
+        const idle = runtime.idleInteraction().then(() => { released = true; });
+        enter(event);
+        edgeEnter(event);
+        await Promise.resolve();
+        expect(events).not.toHaveBeenCalled();
+        expect(released).toBe(false);
+        drag.onFinish!();
+        await idle;
+        expect(released).toBe(true);
+        expect(events.mock.calls.at(-1)?.[0].type).toBe('dragEnd');
+        enter(event);
+        expect(events.mock.calls.at(-1)?.[0].type).toBe('hover');
+    }
+    finally { runtime.stop(); runtime.destroy(); }
+});
+
 test.each([1, 2])('PNG exports the whole graph on white with a 30px margin at DPR %s', async pixelRatio => {
     const runtime = new G6Runtime(document.createElement('div'));
     const image = document.createElement('img');

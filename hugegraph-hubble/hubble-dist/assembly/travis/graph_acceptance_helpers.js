@@ -165,10 +165,27 @@ async function pixelEvidence(page, bytes) {
         const left = x - 5, right = x + 6, top = y - 5, bottom = y + 6;
         const density = sum[bottom * stride + right] - sum[top * stride + right]
           - sum[bottom * stride + left] + sum[top * stride + left];
-        if (density >= 28) candidates.push({x, y, density});
+        if (density < 28) continue;
+        const center = (y * width + x) * 4;
+        const red = data[center], green = data[center + 1], blue = data[center + 2];
+        if (!(data[center + 3] > 40 && Math.max(red, green, blue) - Math.min(red, green, blue) > 32
+          && Math.min(red, green, blue) < 245)) continue;
+        // Rank using this before-screenshot patch alone. A dense mixed outline/fill
+        // near a node edge is less reliable than its uniform filled interior.
+        let uniformPixels = 0;
+        for (let py = top; py < bottom; py++) for (let px = left; px < right; px++) {
+          const i = (py * width + px) * 4;
+          const dr = data[i] - red, dg = data[i + 1] - green, db = data[i + 2] - blue;
+          if (data[i + 3] > 40 && Math.max(data[i], data[i + 1], data[i + 2])
+              - Math.min(data[i], data[i + 1], data[i + 2]) > 32
+              && Math.min(data[i], data[i + 1], data[i + 2]) < 245 && dr * dr + dg * dg + db * db <= 24 * 24) {
+            uniformPixels++;
+          }
+        }
+        candidates.push({x, y, density, uniformPixels});
       }
     }
-    candidates.sort((a, b) => b.density - a.density);
+    candidates.sort((a, b) => b.uniformPixels - a.uniformPixels || b.density - a.density);
     const selected = [];
     for (const candidate of candidates) {
       if (selected.every(other => Math.hypot(other.x - candidate.x, other.y - candidate.y) >= 20)) {
@@ -588,32 +605,51 @@ function segmentHitsRect(start, end, rect, padding = 32) {
   }
   return true;
 }
-function dragTarget(point, neighbor, bounds, obstacles = [], beforePixels) {
-  if (!beforePixels) throw new NeedsInput('Real before-drag screenshot pixels are required to select an unoccupied target');
-  const empty = target => {
+function dragTarget(point, neighbor, bounds, obstacles = [], beforePixels, diagnostics = {}) {
+  // Predeclared distances only; never fit a target to held pixels or weaken the
+  // later filled-node/edge-reconnection assertions. Preserve both 110px choices
+  // before trying 90px; the unchanged edge-band checks must still prove movement.
+  Object.assign(diagnostics, {point, neighbor, bounds, obstacles, distances: [110, 90], candidates: [],
+    screenshot: beforePixels ? {width: beforePixels.width, height: beforePixels.height} : null});
+  delete diagnostics.failure;
+  const fail = reason => {diagnostics.failure = reason; throw new NeedsInput(reason);};
+  if (!beforePixels) fail('Real before-drag screenshot pixels are required to select an unoccupied target');
+  const targetPixels = target => {
     const center = {x: Math.round((target.x - bounds.x) * beforePixels.width / bounds.width),
       y: Math.round((target.y - bounds.y) * beforePixels.height / bounds.height)};
     let ink = 0;
     for (let y = -4; y <= 4; y++) for (let x = -4; x <= 4; x++) {
       const px = center.x + x, py = center.y + y;
-      if (px < 0 || py < 0 || px >= beforePixels.width || py >= beforePixels.height) return false;
+      if (px < 0 || py < 0 || px >= beforePixels.width || py >= beforePixels.height) {
+        return {center, outsideScreenshot: true};
+      }
       const offset = (py * beforePixels.width + px) * 4, alpha = beforePixels.data[offset + 3] / 255;
       const color = [0, 1, 2].map(index => beforePixels.data[offset + index] * alpha + 255 * (1 - alpha));
       if (Math.min(...color) < 240) ink++;
     }
     // A few background grid dots are harmless; an existing filled node is not.
-    return ink / 81 <= .15;
+    return {center, inkPixels: ink, sampledPixels: 81, maximumInkRatio: .15, empty: ink / 81 <= .15};
   };
   const length = Math.hypot(neighbor.x - point.x, neighbor.y - point.y);
-  if (length < 130) throw new NeedsInput('Live-drag pixel evidence needs separated real endpoints (at least 130 CSS pixels)');
-  for (const sign of [1, -1]) {
-    const target = {x: point.x - sign * (neighbor.y - point.y) / length * 110,
-      y: point.y + sign * (neighbor.x - point.x) / length * 110};
-    if (target.x > bounds.x + 32 && target.y > bounds.y + 32
-        && target.x < bounds.x + bounds.width - 32 && target.y < bounds.y + bounds.height - 32
-        && !obstacles.some(rect => segmentHitsRect(point, target, rect)) && empty(target)) return target;
+  diagnostics.endpointDistance = length;
+  if (length < 130) fail('Live-drag pixel evidence needs separated real endpoints (at least 130 CSS pixels)');
+  for (const distance of diagnostics.distances) for (const sign of [1, -1]) {
+    const target = {x: point.x - sign * (neighbor.y - point.y) / length * distance,
+      y: point.y + sign * (neighbor.x - point.x) / length * distance};
+    const rejected = [];
+    if (!(target.x > bounds.x + 32 && target.y > bounds.y + 32
+        && target.x < bounds.x + bounds.width - 32 && target.y < bounds.y + bounds.height - 32)) {
+      rejected.push('viewport-margin');
+    }
+    const overlayIndices = obstacles.flatMap((rect, index) => segmentHitsRect(point, target, rect) ? [index] : []);
+    if (overlayIndices.length) rejected.push('public-overlay');
+    const pixels = targetPixels(target);
+    if (pixels.outsideScreenshot) rejected.push('outside-screenshot');
+    else if (!pixels.empty) rejected.push('occupied-target');
+    diagnostics.candidates.push({distance, sign, target, rejected, overlayIndices, pixels, accepted: rejected.length === 0});
+    if (!rejected.length) return target;
   }
-  throw new NeedsInput('Real graph viewport has no unobstructed, unoccupied perpendicular drag target');
+  fail('Real graph viewport has no unobstructed, unoccupied perpendicular drag target');
 }
 function assertLiveDragPixels(before, held, {point, target, neighbor}) {
   assert.equal(held.width, before.width); assert.equal(held.height, before.height);
