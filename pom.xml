@@ -525,6 +525,7 @@
                         <exclude>**/*.lock</exclude>
                         <exclude>**/pnpm-lock.yaml</exclude>
                         <exclude>**/.node-version</exclude>
+                        <exclude>**/hubble-fe/patches/*.patch</exclude>
                         <exclude>**/.prettierrc</exclude>
                         <exclude>**/.stylelintrc</exclude>
                         <exclude>**/check_server_status.feature</exclude>

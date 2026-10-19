@@ -71,6 +71,7 @@ header: # `header` section is configurations for source codes license header.
     - '**/check_server_status.feature'
     - '**/pnpm-lock.yaml'
     - '**/.node-version'
+    - 'hugegraph-hubble/hubble-fe/patches/*.patch'
     - '**/.env'
     - '**/file_with_empty_line'
     - '**/file_without_empty_line'

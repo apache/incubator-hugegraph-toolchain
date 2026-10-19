@@ -1,0 +1,355 @@
+diff --git a/esm/runtime/canvas.js b/esm/runtime/canvas.js
+index 872fd45dae14a9ff8730bab73562abf6e56839a4..d6bd242f3a8a2a9b3de661c1f39363c8a07d8034 100644
+--- a/esm/runtime/canvas.js
++++ b/esm/runtime/canvas.js
+@@ -214,42 +214,73 @@ export class Canvas {
+                 container,
+                 background: this.extends.config.background,
+             });
+-            yield offscreenCanvas.ready;
+-            offscreenCanvas.appendChild(this.getLayer('background').getRoot().cloneNode(true));
+-            offscreenCanvas.appendChild(this.getRoot().cloneNode(true));
+-            // Handle label canvas
+-            const label = this.getLayer('label').getRoot().cloneNode(true);
+-            const originCanvasPosition = offscreenCanvas.viewport2Canvas({ x: 0, y: 0 });
+-            const currentCanvasPosition = this.getCanvasByViewport([0, 0]);
+-            label.translate([
+-                currentCanvasPosition[0] - originCanvasPosition.x,
+-                currentCanvasPosition[1] - originCanvasPosition.y,
+-            ]);
+-            label.scale(1 / this.getCamera().getZoom());
+-            offscreenCanvas.appendChild(label);
+-            offscreenCanvas.appendChild(this.getLayer('transient').getRoot().cloneNode(true));
+-            const camera = this.getCamera();
+-            const offscreenCamera = offscreenCanvas.getCamera();
+-            if (mode === 'viewport') {
+-                offscreenCamera.setZoom(camera.getZoom());
+-                offscreenCamera.setPosition(camera.getPosition());
+-                offscreenCamera.setFocalPoint(camera.getFocalPoint());
++            let cancelled = false;
++            let exportTimeout;
++            let exportImage;
++            const deadline = new Promise((_, reject) => {
++                exportTimeout = setTimeout(() => {
++                    cancelled = true;
++                    reject(new Error('Timed out waiting for the export canvas to render'));
++                }, 10000);
++            });
++            try {
++                yield Promise.race([offscreenCanvas.ready, deadline]);
++                offscreenCanvas.appendChild(this.getLayer('background').getRoot().cloneNode(true));
++                offscreenCanvas.appendChild(this.getRoot().cloneNode(true));
++                // Handle label canvas
++                const label = this.getLayer('label').getRoot().cloneNode(true);
++                const originCanvasPosition = offscreenCanvas.viewport2Canvas({ x: 0, y: 0 });
++                const currentCanvasPosition = this.getCanvasByViewport([0, 0]);
++                label.translate([
++                    currentCanvasPosition[0] - originCanvasPosition.x,
++                    currentCanvasPosition[1] - originCanvasPosition.y,
++                ]);
++                label.scale(1 / this.getCamera().getZoom());
++                offscreenCanvas.appendChild(label);
++                offscreenCanvas.appendChild(this.getLayer('transient').getRoot().cloneNode(true));
++                const camera = this.getCamera();
++                const offscreenCamera = offscreenCanvas.getCamera();
++                if (mode === 'viewport') {
++                    offscreenCamera.setZoom(camera.getZoom());
++                    offscreenCamera.setPosition(camera.getPosition());
++                    offscreenCamera.setFocalPoint(camera.getFocalPoint());
++                }
++                else if (mode === 'overall') {
++                    const [x, y, z] = offscreenCamera.getPosition();
++                    const [fx, fy, fz] = offscreenCamera.getFocalPoint();
++                    offscreenCamera.setPosition([x + startX, y + startY, z]);
++                    offscreenCamera.setFocalPoint([fx + startX, fy + startY, fz]);
++                }
++                const contextService = offscreenCanvas.getContextService();
++                return yield Promise.race([new Promise((resolve, reject) => {
++                    let exporting = false;
++                    const onRender = () => __awaiter(this, void 0, void 0, function* () {
++                        if (exporting || cancelled)
++                            return;
++                        exporting = true;
++                        try {
++                            offscreenCanvas.removeEventListener(CanvasEvent.RERENDER, onRender);
++                            // 等待图片渲染完成 / Wait for the image to render
++                            yield new Promise((r) => setTimeout(r, 300));
++                            if (cancelled)
++                                return;
++                            resolve(yield contextService.toDataURL(restOptions));
++                        }
++                        catch (error) {
++                            reject(error);
++                        }
++                    });
++                    exportImage = onRender;
++                    offscreenCanvas.addEventListener(CanvasEvent.RERENDER, onRender);
++                }), deadline]);
+             }
+-            else if (mode === 'overall') {
+-                const [x, y, z] = offscreenCamera.getPosition();
+-                const [fx, fy, fz] = offscreenCamera.getFocalPoint();
+-                offscreenCamera.setPosition([x + startX, y + startY, z]);
+-                offscreenCamera.setFocalPoint([fx + startX, fy + startY, fz]);
++            finally {
++                cancelled = true;
++                clearTimeout(exportTimeout);
++                if (exportImage)
++                    offscreenCanvas.removeEventListener(CanvasEvent.RERENDER, exportImage);
++                offscreenCanvas.destroy();
+             }
+-            const contextService = offscreenCanvas.getContextService();
+-            return new Promise((resolve) => {
+-                offscreenCanvas.addEventListener(CanvasEvent.RERENDER, () => __awaiter(this, void 0, void 0, function* () {
+-                    // 等待图片渲染完成 / Wait for the image to render
+-                    yield new Promise((r) => setTimeout(r, 300));
+-                    const url = yield contextService.toDataURL(restOptions);
+-                    resolve(url);
+-                }));
+-            });
+         });
+     }
+     destroy() {
+@@ -313,4 +344,3 @@ function configCanvasDom(layers) {
+         }
+     });
+ }
+-//# sourceMappingURL=canvas.js.map
+\ No newline at end of file
+diff --git a/lib/runtime/canvas.js b/lib/runtime/canvas.js
+index d09773192a298464aca1933220e76d36166531d5..4324a7d9f0728232bcff78e933f4655eabbc8959 100644
+--- a/lib/runtime/canvas.js
++++ b/lib/runtime/canvas.js
+@@ -217,42 +217,73 @@ class Canvas {
+                 container,
+                 background: this.extends.config.background,
+             });
+-            yield offscreenCanvas.ready;
+-            offscreenCanvas.appendChild(this.getLayer('background').getRoot().cloneNode(true));
+-            offscreenCanvas.appendChild(this.getRoot().cloneNode(true));
+-            // Handle label canvas
+-            const label = this.getLayer('label').getRoot().cloneNode(true);
+-            const originCanvasPosition = offscreenCanvas.viewport2Canvas({ x: 0, y: 0 });
+-            const currentCanvasPosition = this.getCanvasByViewport([0, 0]);
+-            label.translate([
+-                currentCanvasPosition[0] - originCanvasPosition.x,
+-                currentCanvasPosition[1] - originCanvasPosition.y,
+-            ]);
+-            label.scale(1 / this.getCamera().getZoom());
+-            offscreenCanvas.appendChild(label);
+-            offscreenCanvas.appendChild(this.getLayer('transient').getRoot().cloneNode(true));
+-            const camera = this.getCamera();
+-            const offscreenCamera = offscreenCanvas.getCamera();
+-            if (mode === 'viewport') {
+-                offscreenCamera.setZoom(camera.getZoom());
+-                offscreenCamera.setPosition(camera.getPosition());
+-                offscreenCamera.setFocalPoint(camera.getFocalPoint());
++            let cancelled = false;
++            let exportTimeout;
++            let exportImage;
++            const deadline = new Promise((_, reject) => {
++                exportTimeout = setTimeout(() => {
++                    cancelled = true;
++                    reject(new Error('Timed out waiting for the export canvas to render'));
++                }, 10000);
++            });
++            try {
++                yield Promise.race([offscreenCanvas.ready, deadline]);
++                offscreenCanvas.appendChild(this.getLayer('background').getRoot().cloneNode(true));
++                offscreenCanvas.appendChild(this.getRoot().cloneNode(true));
++                // Handle label canvas
++                const label = this.getLayer('label').getRoot().cloneNode(true);
++                const originCanvasPosition = offscreenCanvas.viewport2Canvas({ x: 0, y: 0 });
++                const currentCanvasPosition = this.getCanvasByViewport([0, 0]);
++                label.translate([
++                    currentCanvasPosition[0] - originCanvasPosition.x,
++                    currentCanvasPosition[1] - originCanvasPosition.y,
++                ]);
++                label.scale(1 / this.getCamera().getZoom());
++                offscreenCanvas.appendChild(label);
++                offscreenCanvas.appendChild(this.getLayer('transient').getRoot().cloneNode(true));
++                const camera = this.getCamera();
++                const offscreenCamera = offscreenCanvas.getCamera();
++                if (mode === 'viewport') {
++                    offscreenCamera.setZoom(camera.getZoom());
++                    offscreenCamera.setPosition(camera.getPosition());
++                    offscreenCamera.setFocalPoint(camera.getFocalPoint());
++                }
++                else if (mode === 'overall') {
++                    const [x, y, z] = offscreenCamera.getPosition();
++                    const [fx, fy, fz] = offscreenCamera.getFocalPoint();
++                    offscreenCamera.setPosition([x + startX, y + startY, z]);
++                    offscreenCamera.setFocalPoint([fx + startX, fy + startY, fz]);
++                }
++                const contextService = offscreenCanvas.getContextService();
++                return yield Promise.race([new Promise((resolve, reject) => {
++                    let exporting = false;
++                    const onRender = () => __awaiter(this, void 0, void 0, function* () {
++                        if (exporting || cancelled)
++                            return;
++                        exporting = true;
++                        try {
++                            offscreenCanvas.removeEventListener(g_1.CanvasEvent.RERENDER, onRender);
++                            // 等待图片渲染完成 / Wait for the image to render
++                            yield new Promise((r) => setTimeout(r, 300));
++                            if (cancelled)
++                                return;
++                            resolve(yield contextService.toDataURL(restOptions));
++                        }
++                        catch (error) {
++                            reject(error);
++                        }
++                    });
++                    exportImage = onRender;
++                    offscreenCanvas.addEventListener(g_1.CanvasEvent.RERENDER, onRender);
++                }), deadline]);
+             }
+-            else if (mode === 'overall') {
+-                const [x, y, z] = offscreenCamera.getPosition();
+-                const [fx, fy, fz] = offscreenCamera.getFocalPoint();
+-                offscreenCamera.setPosition([x + startX, y + startY, z]);
+-                offscreenCamera.setFocalPoint([fx + startX, fy + startY, fz]);
++            finally {
++                cancelled = true;
++                clearTimeout(exportTimeout);
++                if (exportImage)
++                    offscreenCanvas.removeEventListener(g_1.CanvasEvent.RERENDER, exportImage);
++                offscreenCanvas.destroy();
+             }
+-            const contextService = offscreenCanvas.getContextService();
+-            return new Promise((resolve) => {
+-                offscreenCanvas.addEventListener(g_1.CanvasEvent.RERENDER, () => __awaiter(this, void 0, void 0, function* () {
+-                    // 等待图片渲染完成 / Wait for the image to render
+-                    yield new Promise((r) => setTimeout(r, 300));
+-                    const url = yield contextService.toDataURL(restOptions);
+-                    resolve(url);
+-                }));
+-            });
+         });
+     }
+     destroy() {
+@@ -317,4 +348,3 @@ function configCanvasDom(layers) {
+         }
+     });
+ }
+-//# sourceMappingURL=canvas.js.map
+\ No newline at end of file
+diff --git a/src/runtime/canvas.ts b/src/runtime/canvas.ts
+index 56166b67ff6225f7716847b751acb624c7a6f9c7..5b50e2a5f6966f557045ccbe15acbda1db9d7b93 100644
+--- a/src/runtime/canvas.ts
++++ b/src/runtime/canvas.ts
+@@ -294,48 +294,74 @@ export class Canvas {
+       background: this.extends.config.background,
+     });
+ 
+-    await offscreenCanvas.ready;
+-
+-    offscreenCanvas.appendChild(this.getLayer('background').getRoot().cloneNode(true));
+-    offscreenCanvas.appendChild(this.getRoot().cloneNode(true));
+-
+-    // Handle label canvas
+-    const label = this.getLayer('label').getRoot().cloneNode(true);
+-    const originCanvasPosition = offscreenCanvas.viewport2Canvas({ x: 0, y: 0 });
+-    const currentCanvasPosition = this.getCanvasByViewport([0, 0]);
+-    label.translate([
+-      currentCanvasPosition[0] - originCanvasPosition.x,
+-      currentCanvasPosition[1] - originCanvasPosition.y,
+-    ]);
+-    label.scale(1 / this.getCamera().getZoom());
+-    offscreenCanvas.appendChild(label);
+-
+-    offscreenCanvas.appendChild(this.getLayer('transient').getRoot().cloneNode(true));
+-
+-    const camera = this.getCamera();
+-    const offscreenCamera = offscreenCanvas.getCamera();
++    let cancelled = false;
++    let exportTimeout: ReturnType<typeof setTimeout> | undefined;
++    let exportImage: (() => Promise<void>) | undefined;
++    const deadline = new Promise<never>((_, reject) => {
++      exportTimeout = setTimeout(() => {
++        cancelled = true;
++        reject(new Error('Timed out waiting for the export canvas to render'));
++      }, 10000);
++    });
++    try {
++      await Promise.race([offscreenCanvas.ready, deadline]);
++
++      offscreenCanvas.appendChild(this.getLayer('background').getRoot().cloneNode(true));
++      offscreenCanvas.appendChild(this.getRoot().cloneNode(true));
++
++      // Handle label canvas
++      const label = this.getLayer('label').getRoot().cloneNode(true);
++      const originCanvasPosition = offscreenCanvas.viewport2Canvas({ x: 0, y: 0 });
++      const currentCanvasPosition = this.getCanvasByViewport([0, 0]);
++      label.translate([
++        currentCanvasPosition[0] - originCanvasPosition.x,
++        currentCanvasPosition[1] - originCanvasPosition.y,
++      ]);
++      label.scale(1 / this.getCamera().getZoom());
++      offscreenCanvas.appendChild(label);
++
++      offscreenCanvas.appendChild(this.getLayer('transient').getRoot().cloneNode(true));
++
++      const camera = this.getCamera();
++      const offscreenCamera = offscreenCanvas.getCamera();
++
++      if (mode === 'viewport') {
++        offscreenCamera.setZoom(camera.getZoom());
++        offscreenCamera.setPosition(camera.getPosition());
++        offscreenCamera.setFocalPoint(camera.getFocalPoint());
++      } else if (mode === 'overall') {
++        const [x, y, z] = offscreenCamera.getPosition();
++        const [fx, fy, fz] = offscreenCamera.getFocalPoint();
++        offscreenCamera.setPosition([x + startX, y + startY, z]);
++        offscreenCamera.setFocalPoint([fx + startX, fy + startY, fz]);
++      }
+ 
+-    if (mode === 'viewport') {
+-      offscreenCamera.setZoom(camera.getZoom());
+-      offscreenCamera.setPosition(camera.getPosition());
+-      offscreenCamera.setFocalPoint(camera.getFocalPoint());
+-    } else if (mode === 'overall') {
+-      const [x, y, z] = offscreenCamera.getPosition();
+-      const [fx, fy, fz] = offscreenCamera.getFocalPoint();
+-      offscreenCamera.setPosition([x + startX, y + startY, z]);
+-      offscreenCamera.setFocalPoint([fx + startX, fy + startY, fz]);
++      const contextService = offscreenCanvas.getContextService();
++
++      return await Promise.race([new Promise<string>((resolve, reject) => {
++        let exporting = false;
++        const onRender = async () => {
++          if (exporting || cancelled) return;
++          exporting = true;
++          try {
++            offscreenCanvas.removeEventListener(CanvasEvent.RERENDER, onRender);
++            // 等待图片渲染完成 / Wait for the image to render
++            await new Promise((r) => setTimeout(r, 300));
++            if (cancelled) return;
++            resolve(await contextService.toDataURL(restOptions));
++          } catch (error) {
++            reject(error);
++          }
++        };
++        exportImage = onRender;
++        offscreenCanvas.addEventListener(CanvasEvent.RERENDER, onRender);
++      }), deadline]);
++    } finally {
++      cancelled = true;
++      clearTimeout(exportTimeout);
++      if (exportImage) offscreenCanvas.removeEventListener(CanvasEvent.RERENDER, exportImage);
++      offscreenCanvas.destroy();
+     }
+-
+-    const contextService = offscreenCanvas.getContextService();
+-
+-    return new Promise<string>((resolve) => {
+-      offscreenCanvas.addEventListener(CanvasEvent.RERENDER, async () => {
+-        // 等待图片渲染完成 / Wait for the image to render
+-        await new Promise((r) => setTimeout(r, 300));
+-        const url = await contextService.toDataURL(restOptions);
+-        resolve(url);
+-      });
+-    });
+   }
+ 
+   public destroy() {
