@@ -78,8 +78,9 @@ const valueText = (value: unknown): string => {
 const displayLabel = (record: Record<string, unknown>, style: HubbleStyle, edge: boolean): string => {
     const fields = Array.isArray(style.display_fields) && style.display_fields.every(item => typeof item === 'string')
         ? style.display_fields as string[] : ['~id'];
-    // A full edge ID is usually long and unreadable. Preserve it in raw and use the business label by default.
-    const displayFields = edge && fields.length === 1 && fields[0] === '~id' ? ['~label'] : fields;
+    // Legacy Hubble uses ~id for the edge type, including selections combined with properties.
+    // Keep that saved meaning; the full business ID remains in raw for tooltips and export.
+    const displayFields = edge ? fields.map(field => field === '~id' ? '~label' : field) : fields;
     const properties = asRecord(record.properties);
     const symbols = Array.isArray(style.join_symbols) ? style.join_symbols : [];
     return displayFields.map((field, index) => {

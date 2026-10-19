@@ -24,6 +24,10 @@ FROM --platform=$BUILDPLATFORM ${NODE_IMAGE} AS node-runtime
 FROM node-runtime AS frontend
 WORKDIR /frontend
 RUN corepack enable
+# Persist the pinned pnpm download before source-only layers change. The build
+# stage also copies this Corepack directory, so it must not live only in a mount.
+COPY hugegraph-hubble/hubble-fe/package.json /frontend/package.json
+RUN pnpm --version
 COPY hugegraph-hubble/hubble-fe/ /frontend/
 COPY hugegraph-hubble/hubble-dist/assembly/travis/build-frontend.mjs /build-frontend.mjs
 # Cache only downloaded packages. A frozen install validates each source layer;

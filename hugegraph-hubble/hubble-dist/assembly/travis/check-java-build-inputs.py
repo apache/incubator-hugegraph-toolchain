@@ -34,7 +34,11 @@ import sys
 
 OUTPUTS = ("classes", "test-classes", "generated-sources", "generated-test-sources", "maven-status")
 NON_COMPILER_PROPERTIES = {"skipTests", "maven.test.skip", "maven.javadoc.skip", "checkstyle.skip",
-                           "rat.skip", "skipRat", "jacoco.skip", "maven.compiler.showCompilationChanges"}
+                           "rat.skip", "skipRat", "jacoco.skip", "maven.compiler.showCompilationChanges",
+                           "test", "it.test", "skipITs", "groups", "excludedGroups"}
+# Test execution settings do not alter compiler state; model/version properties
+# such as maven.surefire.plugin.version remain part of the identity.
+NON_COMPILER_PREFIXES = ("surefire.", "failsafe.")
 
 
 def digest(file):
@@ -54,7 +58,7 @@ def compiler_arguments(command_line):
             argument += next(arguments, "")
         if argument.startswith("-D"):
             name = argument[2:].split("=", 1)[0]
-            if name not in NON_COMPILER_PROPERTIES:
+            if name not in NON_COMPILER_PROPERTIES and not name.startswith(NON_COMPILER_PREFIXES):
                 result.append(argument)
         elif argument.startswith("-P"):
             result.append(argument)
@@ -131,6 +135,8 @@ def sdk_identity(repository, mode, version):
 
 
 def main():
+    if sys.version_info < (3, 9):
+        raise RuntimeError("Hubble Java build guard requires Python 3.9 or newer")
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("project", "repository", "sdk-mode", "sdk-version", "java-home", "java-version", "classpath"):
         parser.add_argument("--" + name, required=True)

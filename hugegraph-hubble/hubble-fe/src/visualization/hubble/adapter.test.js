@@ -75,6 +75,28 @@ test('handles all schema nodes before validating edges and hides only preview te
     expect(exportHubbleGraph(compact)).toEqual(input);
 });
 
+test('preserves legacy edge type selection when combined with custom properties', () => {
+    const input = fixture();
+    input.edges[0].id = 'long-business-edge-id';
+    const meta = {edgeMeta: [{name: 'knows', style: {
+        display_fields: ['since', '~id'], join_symbols: [' / '],
+    }}]};
+    const before = JSON.stringify(meta);
+    const data = adaptHubbleGraph(input, meta);
+    expect(data.edges[0].style.labelText).toBe('2026 / knows');
+    expect(data.edges[0].data.raw.id).toBe('long-business-edge-id');
+    expect(exportHubbleGraph(data)).toEqual(input);
+    expect(JSON.stringify(meta)).toBe(before);
+});
+
+test('retains explicitly hidden edge labels and explicit type display fields', () => {
+    const input = fixture();
+    const adapt = display_fields => adaptHubbleGraph(input, {edgeMeta: [{name: 'knows',
+        style: {display_fields}}]}).edges[0].style.labelText;
+    expect(adapt([])).toBe('');
+    expect(adapt(['~label', 'since'])).toBe('knows\n2026');
+});
+
 test('adapts edge-only responses against the existing node set and rejects missing endpoints by default', () => {
     const current = adaptHubbleGraph(fixture());
     const partial = {vertices: [], edges: [{id: 'extra', source: '1', target: 1, label: 'knows', properties: {}}]};

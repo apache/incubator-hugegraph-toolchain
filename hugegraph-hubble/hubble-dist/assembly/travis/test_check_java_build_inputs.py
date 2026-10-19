@@ -25,6 +25,7 @@ import tempfile
 import subprocess
 import sys
 import unittest
+from unittest.mock import patch
 
 SCRIPT = Path(__file__).with_name("check-java-build-inputs.py")
 SPEC = importlib.util.spec_from_file_location("java_inputs", SCRIPT)
@@ -108,6 +109,18 @@ class JavaInputTest(unittest.TestCase):
                          ["-Dmaven.compiler.release=17"])
         self.assertEqual(guard.compiler_arguments(
             "compile -DskipTests=false -Dmaven.compiler.showCompilationChanges=true"), [])
+        self.assertEqual(guard.compiler_arguments(
+            "test -D test=OneTest -Dit.test=OtherIT -Dgroups=fast -DexcludedGroups=slow -DskipITs "
+            "-Dsurefire.failIfNoSpecifiedTests=false -Dfailsafe.rerunFailingTestsCount=1 "
+            "-Dmaven.surefire.plugin.version=3.5.6 -Dmaven.compiler.testRelease=17 -Drevision=2"),
+            ["-Dmaven.compiler.testRelease=17", "-Dmaven.surefire.plugin.version=3.5.6", "-Drevision=2"])
+
+    def test_unsupported_python_reports_requirement_before_parsing_or_touching_inputs(self):
+        with patch.object(guard.sys, "version_info", (3, 8, 20)), \
+                patch.object(guard, "sdk_identity") as sdk:
+            with self.assertRaisesRegex(RuntimeError, "requires Python 3.9 or newer"):
+                guard.main()
+        sdk.assert_not_called()
 
     def test_bad_stamp_invalidates_and_symlink_target_is_never_traversed(self):
         target = self.project / "target"
@@ -180,6 +193,41 @@ class SdkIdentityTest(unittest.TestCase):
                                 capture_output=True, text=True)
         self.assertNotEqual(result.returncode, 0)
         self.assertTrue((classes / "Retained.class").is_file())
+
+    def test_guard_cli_retains_classes_for_test_selection_but_invalidates_compiler_and_model_changes(self):
+        repository, _ = self.candidate_fixture()
+        command = [sys.executable, str(SCRIPT), "--project", str(self.project),
+                   "--repository", str(repository), "--sdk-mode", "candidate", "--sdk-version", "1.8.0",
+                   "--java-home", "/jdk17", "--java-version", "17.0.20", "--classpath", str(self.jar)]
+        model = "-Dmaven.compiler.release=17 -Drevision=1 -Punit-test"
+
+        def run(arguments):
+            environment = dict(os.environ, MAVEN_CMD_LINE_ARGS=arguments, MAVEN_OPTS="")
+            result = subprocess.run(command, env=environment, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            return result.stdout
+
+        self.assertIn("invalidated", run(model + " -Dtest=OneTest"))
+        classes = self.project / "target/classes"
+        classes.mkdir()
+        retained = classes / "Retained.class"
+        retained.write_bytes(b"native compiler output")
+        for selection in ("-Dtest=OtherTest", "-D test=ThirdTest -Dit.test=OtherIT",
+                          "-Dsurefire.includes=**/*Test.java -Dfailsafe.failIfNoSpecifiedTests=false",
+                          "-Dgroups=fast -DexcludedGroups=slow -DskipITs"):
+            with self.subTest(selection=selection):
+                self.assertIn("keeping native compiler state", run(model + " " + selection))
+                self.assertEqual(retained.read_bytes(), b"native compiler output")
+        for changed in (model.replace("release=17", "release=21"),
+                        model.replace("revision=1", "revision=2"),
+                        model.replace("-Punit-test", "-Pother"),
+                        model + " -Dmaven.surefire.plugin.version=3.5.7"):
+            with self.subTest(model=changed):
+                run(model)
+                classes.mkdir(exist_ok=True)
+                retained.write_bytes(b"native compiler output")
+                self.assertIn("invalidated", run(changed + " -Dtest=OtherTest"))
+                self.assertFalse(classes.exists())
 
 
 if __name__ == "__main__":

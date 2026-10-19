@@ -51,8 +51,12 @@ Whole-graph PNG bounds also include painted strokes and shadows and enclose
 fractional bounds in device pixels to avoid cutting off boundary ink.
 Arrow markers retain the current painted appearance and visibility while the
 new path positions them from their original transform, preserving later updates.
-It changes minimap and canvas implementations in the upstream `src`, `esm` and
-`lib` trees; it does not change the upstream license.
+It also calls `Shortcut.destroy()` from `DragElement.destroy()` to release window
+keydown, keyup and focus listeners when a graph is destroyed. See the upstream
+5.1.1 [DragElement](https://github.com/antvis/G6/blob/5.1.1/packages/g6/src/behaviors/drag-element.ts)
+and [Shortcut](https://github.com/antvis/G6/blob/5.1.1/packages/g6/src/utils/shortcut.ts)
+implementations. These behavior, minimap and canvas changes are applied to the
+upstream `src`, `esm` and `lib` trees; they do not change the upstream license.
 
 ## Release follow-up: missing upstream texts
 

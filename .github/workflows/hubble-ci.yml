@@ -132,6 +132,11 @@ jobs:
             ../hubble-dist/assembly/travis/run_ui_full_acceptance.test.js
           node --test ../hubble-dist/assembly/travis/build-frontend.test.mjs
 
+      - name: Verify frontend third-party notices
+        run: |
+          python3 hugegraph-dist/release-docs/licenses/fe-licenses/generate.py
+          git diff --exit-code -- hugegraph-dist/release-docs/licenses/fe-licenses
+
       - name: Install Playwright Chromium
         working-directory: hugegraph-hubble/hubble-fe
         run: |

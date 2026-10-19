@@ -406,7 +406,7 @@ Then use a web browser to access `ip:8088` and you can see the `Hubble` page. Yo
 
 ### 2. Clone source code then compile and install
 
-Hubble requires Java 17, Maven 3.9+, Python 3, and stable Node.js 24 at or above
+Hubble requires Java 17, Maven 3.9+, Python 3.9+, and stable Node.js 24 at or above
 the minimum in [`hubble-fe/.node-version`](hubble-fe/.node-version). Install Node
 using your preferred version manager and install Corepack if your distribution
 does not include it, then run `corepack enable`. Corepack selects the pinned pnpm
