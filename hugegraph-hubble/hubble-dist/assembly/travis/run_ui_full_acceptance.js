@@ -30,13 +30,13 @@ function argValue(name, fallback) {
   return fallback;
 }
 
-function run(name, command, args) {
+function run(name, command, args, reportPath) {
   const startedAt = new Date().toISOString();
   const result = childProcess.spawnSync(command, args, {
     cwd: path.resolve(__dirname, '../../../..'),
     encoding: 'utf-8'
   });
-  return {
+  const check = {
     name,
     command: [command, ...args].join(' '),
     startedAt,
@@ -45,6 +45,28 @@ function run(name, command, args) {
     stderr: result.stderr,
     error: result.error ? result.error.message : undefined
   };
+  if (reportPath && check.status === 'passed') {
+    try {
+      const report = JSON.parse(fs.readFileSync(reportPath, 'utf-8'));
+      if (!['passed', 'failed', 'skipped'].includes(report.status)) {
+        throw new Error('Child report did not include a valid status');
+      }
+      check.status = report.status;
+      if (report.reason) {
+        check.reason = report.reason;
+      }
+    } catch (error) {
+      check.status = 'failed';
+      check.error = error.message;
+    }
+  }
+  return check;
+}
+
+function acceptanceStatus(checks) {
+  return checks.every(check => check.status === 'passed' ||
+    (check.name === 'ui-insecure-http-smoke' && check.status === 'skipped'))
+    ? 'passed' : 'failed';
 }
 
 function main() {
@@ -62,6 +84,13 @@ function main() {
   fs.mkdirSync(outputDir, { recursive: true });
 
   const checks = [
+    run('ui-insecure-http-smoke', process.execPath, [
+      path.join(scriptDir, 'run_ui_http_smoke.js'),
+      '--hubble-url', hubbleUrl,
+      '--output-dir', outputDir,
+      '--json-output', path.join(outputDir, 'ui-http-smoke.json'),
+      '--chromium-executable', chromiumExecutable
+    ], path.join(outputDir, 'ui-http-smoke.json')),
     run('ui-browser-smoke', process.execPath, [
       path.join(scriptDir, 'run_ui_browser_smoke.js'),
       '--hubble-url', hubbleUrl,
@@ -84,7 +113,7 @@ function main() {
     connId,
     outputDir,
     checks,
-    status: checks.every((check) => check.status === 'passed') ? 'passed' : 'failed'
+    status: acceptanceStatus(checks)
   };
   fs.writeFileSync(path.resolve(jsonOutput), JSON.stringify(report, null, 2) + '\n');
   console.log(JSON.stringify(report, null, 2));
@@ -93,4 +122,8 @@ function main() {
   }
 }
 
-main();
+if (require.main === module) {
+  main();
+}
+
+module.exports = {acceptanceStatus, run};
