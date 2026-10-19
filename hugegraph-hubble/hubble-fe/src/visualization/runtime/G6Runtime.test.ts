@@ -18,12 +18,14 @@
 import type {Graph as NativeGraph, GraphOptions, GraphData as EngineData, NodeData, EdgeData} from '@antv/g6';
 import {CircularLayout} from '@antv/layout';
 import {G6Runtime} from './G6Runtime';
+import {GraphController} from './GraphController';
 import type {GraphData} from '../model/types';
 import type {GraphLayout} from './types';
 
 let mockZoom = 1;
 let mockOptions: GraphOptions;
 let mockData: {nodes: NodeData[]; edges: EdgeData[]};
+let mockViewport: {width: number; height: number; x: number; y: number};
 const mockHandlers = new Map<string, unknown>();
 const mockEngine = {
     draw: jest.fn(async () => {}),
@@ -45,8 +47,20 @@ const mockEngine = {
         mockData.nodes.push(...(incoming.nodes ?? []));
         mockData.edges.push(...(incoming.edges ?? []));
     }),
-    updateData: jest.fn(),
+    updateData: jest.fn((incoming: EngineData) => {
+        for (const kind of ['nodes', 'edges'] as const) {
+            for (const update of incoming[kind] ?? []) {
+                const index = mockData[kind].findIndex(item => item.id === update.id);
+                if (index >= 0) Object.assign(mockData[kind][index], update);
+            }
+        }
+    }),
     getZoom: jest.fn(() => mockZoom),
+    getSize: jest.fn(() => [mockViewport.width, mockViewport.height]),
+    getCanvasByViewport: jest.fn(([x, y]: number[]) =>
+        [(x - mockViewport.x) / mockZoom, (y - mockViewport.y) / mockZoom]),
+    getViewportByCanvas: jest.fn(([x, y]: number[]) =>
+        [x * mockZoom + mockViewport.x, y * mockZoom + mockViewport.y]),
     getOptions: jest.fn(() => mockOptions),
     setNode: jest.fn(), setEdge: jest.fn(),
     getPluginInstance: jest.fn(() => undefined),
@@ -146,7 +160,10 @@ const nodeState = (state: string, datum: NodeData) => {
     if (typeof mapper !== 'function') throw new Error('Expected state style mapper');
     return mapper.call({} as NativeGraph, datum);
 };
-beforeEach(() => {jest.clearAllMocks(); mockZoom = 1; mockHandlers.clear();});
+beforeEach(() => {
+    jest.clearAllMocks(); mockZoom = 1; mockHandlers.clear();
+    mockViewport = {width: 800, height: 600, x: 0, y: 0};
+});
 
 test.each<{name: string; options: GraphLayout['options']; first: number; last: number}>([
     {name: 'interpolated endpoints', options: {startRadius: 80, endRadius: 160}, first: 80, last: 160},
@@ -436,4 +453,76 @@ test('a failed native first render surfaces the error and retries through the es
     expect(mockEngine.draw).toHaveBeenCalledTimes(1);
     expect(mockEngine.layout).toHaveBeenCalledTimes(1);
     runtime.stop(); runtime.destroy();
+});
+
+test.each([0.5, 2])('remote additions receive distinct visible positions at zoom %s without moving the saved graph', async zoom => {
+    const runtime = new G6Runtime(document.createElement('div'));
+    const controller = new GraphController(runtime);
+    mockZoom = zoom; mockViewport.x = -1200; mockViewport.y = 250;
+    const initial = data(1);
+    initial.nodes[0].style = {x: (400 - mockViewport.x) / zoom, y: (300 - mockViewport.y) / zoom, fill: 'red'};
+    initial.nodes[0].data.fixed = true;
+    await controller.replaceData(initial, {layout: false, fit: false});
+    const before = controller.getSnapshot().data.nodes[0];
+    const viewport = {...mockViewport};
+    const additions = ['one', 'two', 'three'].map(id => ({id, data: {raw: {id}}, style: {size: 40}}));
+    try {
+        await controller.updateElements({nodes: additions.slice(0, 2)});
+        await controller.updateElements({nodes: additions.slice(2)});
+        const actual = controller.getSnapshot().data.nodes;
+        const points = actual.slice(1).map(node => mockEngine.getViewportByCanvas([node.style!.x!, node.style!.y!]));
+        for (const [x, y] of points) {
+            expect(x).toBeGreaterThan(40 * zoom / 2);
+            expect(x).toBeLessThan(viewport.width - 40 * zoom / 2);
+            expect(y).toBeGreaterThan(40 * zoom / 2);
+            expect(y).toBeLessThan(viewport.height - 40 * zoom / 2);
+        }
+        expect(new Set(points.map(point => point.join(','))).size).toBe(3);
+        expect(actual[0]).toEqual(before);
+        expect(mockViewport).toEqual(viewport); expect(mockZoom).toBe(zoom);
+        expect(mockEngine.layout).not.toHaveBeenCalled(); expect(mockEngine.setLayout).not.toHaveBeenCalled();
+        expect(additions.every(node => !('x' in node.style) && !('y' in node.style))).toBe(true);
+    }
+    finally { await controller.dispose(); }
+});
+
+test('new explicit coordinates survive while only missing axes are filled, and edits or edges do not reposition', async () => {
+    const runtime = new G6Runtime(document.createElement('div'));
+    const controller = new GraphController(runtime);
+    mockViewport.x = -1000; mockViewport.y = -700; mockZoom = 2;
+    const initial = data(1); initial.nodes[0].style = {x: 600, y: 500};
+    await controller.replaceData(initial, {layout: false, fit: false});
+    try {
+        await controller.updateElements({nodes: [
+            {id: 'explicit', data: {raw: {}}, style: {x: 0, y: 0}},
+            {id: 'partial', data: {raw: {}}, style: {x: 710}},
+        ]});
+        expect(controller.getSnapshot().data.nodes.find(node => node.id === 'explicit')?.style).toEqual({x: 0, y: 0});
+        const partial = controller.getSnapshot().data.nodes.find(node => node.id === 'partial')!;
+        expect(partial.style?.x).toBe(710);
+        const [, y] = mockEngine.getViewportByCanvas([partial.style!.x!, partial.style!.y!]);
+        expect(y).toBeGreaterThan(0); expect(y).toBeLessThan(mockViewport.height);
+        mockEngine.getSize.mockClear(); mockEngine.getCanvasByViewport.mockClear();
+        const positions = controller.getSnapshot().data.nodes.map(node => [node.id, node.style?.x, node.style?.y]);
+        await controller.updateElements({nodes: [{id: '0', data: {raw: {name: 'edited'}}, style: {fill: 'blue'}}]});
+        await controller.updateElements({edges: [{id: 'link', source: '0', target: 'partial', data: {raw: {}}}]});
+        expect(controller.getSnapshot().data.nodes.map(node => [node.id, node.style?.x, node.style?.y])).toEqual(positions);
+        expect(mockEngine.getSize).not.toHaveBeenCalled(); expect(mockEngine.getCanvasByViewport).not.toHaveBeenCalled();
+        expect(mockEngine.layout).not.toHaveBeenCalled();
+    }
+    finally { await controller.dispose(); }
+});
+
+test('an unavailable viewport or a disposed runtime never generates invalid positions', async () => {
+    const runtime = new G6Runtime(document.createElement('div'));
+    await runtime.replace(data(0), null);
+    mockViewport.width = 0;
+    await runtime.patch(data(1), false);
+    expect(runtime.read().nodes[0].style).toEqual({labelText: 'Node 0'});
+    expect(mockEngine.getCanvasByViewport).not.toHaveBeenCalled();
+    runtime.stop();
+    mockEngine.addData.mockClear(); mockEngine.getSize.mockClear();
+    await runtime.patch(data(2), false);
+    expect(mockEngine.addData).not.toHaveBeenCalled(); expect(mockEngine.getSize).not.toHaveBeenCalled();
+    runtime.destroy();
 });

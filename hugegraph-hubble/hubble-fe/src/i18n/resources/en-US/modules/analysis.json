@@ -439,6 +439,7 @@
       "edit_element": {
         "save_success": "Saved successfully",
         "save_failed": "Save failed",
+        "sync_failed": "Saved on the server, but the graph view could not be updated; run the query again to refresh it",
         "get_edge_property_failed": "Failed to get edge properties",
         "get_vertex_property_failed": "Failed to get vertex properties",
         "type": "Type",

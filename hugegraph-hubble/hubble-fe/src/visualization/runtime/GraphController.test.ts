@@ -723,6 +723,24 @@ test('named filter masks replace atomically without clearing overlapping manual 
     await controller.dispose();
 });
 
+test('visibility sources can be read independently without exposing mutable controller state', async () => {
+    const {runtime} = createRuntime(); const controller = new GraphController(runtime);
+    await controller.replaceData(input());
+    await controller.hide(['a']);
+    await controller.setHiddenIds('filter', ['a', 'b']);
+    const manual = controller.getHiddenIds();
+    const filtered = controller.getHiddenIds('filter');
+    expect(manual).toEqual(['a']);
+    expect(filtered).toEqual(['a', 'b']);
+    manual.push('unrelated'); filtered.length = 0;
+    expect(controller.getHiddenIds()).toEqual(['a']);
+    expect(controller.getHiddenIds('filter')).toEqual(['a', 'b']);
+    await controller.setHiddenIds('filter', []);
+    expect(runtime.read().nodes[0].style?.visibility).toBe('hidden');
+    expect(runtime.read().nodes[1].style?.visibility).toBe('visible');
+    await controller.dispose();
+});
+
 test('named masks survive merge, styles and history, prune absent IDs and clear for new datasets', async () => {
     const {runtime, setData} = createRuntime(); const controller = new GraphController(runtime);
     await controller.replaceData(input());

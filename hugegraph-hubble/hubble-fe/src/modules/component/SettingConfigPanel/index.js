@@ -20,13 +20,13 @@
  * @file  设置表单
  */
 
-import {useContext, useState, useId} from 'react';
+import {useContext, useState, useId, useRef} from 'react';
 import {Form, Select, Switch, Cascader, Slider} from 'antd';
 import {useTranslation} from 'react-i18next';
 import {GraphContext} from '../Context';
 import c from './index.module.scss';
 
-const createFields = (elements, metadata = []) => {
+const createFields = (elements, metadata = [], selectedFields) => {
     const groups = new Map();
     for (const element of elements) {
         const raw = element.data.raw;
@@ -37,8 +37,8 @@ const createFields = (elements, metadata = []) => {
     return {
         options: [...groups].map(([label, keys]) => ({value: label, label,
             children: ['~id', ...keys].map(key => ({value: key, label: key}))})),
-        selected: [...groups.keys()].flatMap(label => (meta.get(label)?.style?.display_fields ?? ['~id'])
-            .map(field => [label, field])),
+        selected: [...groups.keys()].flatMap(label => selectedFields?.get(label)
+            ?? (meta.get(label)?.style?.display_fields ?? ['~id']).map(field => [label, field])),
     };
 };
 const labelText = (element, fields, kind) => {
@@ -52,15 +52,15 @@ const labelText = (element, fields, kind) => {
     return [...keys].map(key => key === '~id' ? kind === 'node' ? raw.id : raw.label : raw.properties?.[key])
         .filter(value => value !== undefined && value !== null).map(String).join('\n');
 };
-const OpenSettings = ({data, metaData, onChange}) => {
+const OpenSettings = ({data, metaData, onChange, selectedFields}) => {
     const {t} = useTranslation();
     const {controller, snapshot, run, showLegend = true, setShowLegend,
         showGrid = true, setShowGrid, showMinimap = true, setShowMinimap} = useContext(GraphContext);
     const [form] = Form.useForm();
     const instanceId = useId();
     const [draft] = useState(() => {
-        const nodes = createFields(data.nodes, metaData?.vertexMeta);
-        const edges = createFields(data.edges, metaData?.edgeMeta);
+        const nodes = createFields(data.nodes, metaData?.vertexMeta, selectedFields.current.node);
+        const edges = createFields(data.edges, metaData?.edgeMeta, selectedFields.current.edge);
         const firstNode = data.nodes[0]?.style;
         const firstEdge = data.edges[0]?.style;
         return {nodes, edges, values: {
@@ -76,6 +76,13 @@ const OpenSettings = ({data, metaData, onChange}) => {
         const key = Object.keys(changed)[0];
         const kind = key.includes('Node') || key.startsWith('node') ? 'node' : 'edge';
         const elements = kind === 'node' ? data.nodes : data.edges;
+        if (key.endsWith('PropertyName')) {
+            const options = kind === 'node' ? draft.nodes.options : draft.edges.options;
+            for (const {value: label} of options) {
+                selectedFields.current[kind].set(label, (values[key] || [])
+                    .filter(path => path[0] === label).map(path => [...path]));
+            }
+        }
         const style = element => {
             if (key.endsWith('Size')) return {labelFontSize: changed[key]};
             if (key === 'nodeLabelPos') return {labelPlacement: changed[key]};
@@ -144,5 +151,11 @@ const OpenSettings = ({data, metaData, onChange}) => {
     );
 };
 
-const SettingConfigPanel = ({open, ...props}) => open ? <OpenSettings {...props} /> : null;
+const SettingConfigPanel = ({open, ...props}) => {
+    // Keep only the user's field choices through panel closure. Options, fonts
+    // and positions are read from the current graph when the panel reopens.
+    // The owner's dataset key resets these choices for a new query result.
+    const selectedFields = useRef({node: new Map(), edge: new Map()});
+    return open ? <OpenSettings {...props} selectedFields={selectedFields} /> : null;
+};
 export default SettingConfigPanel;

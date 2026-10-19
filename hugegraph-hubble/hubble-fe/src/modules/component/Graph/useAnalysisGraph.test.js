@@ -42,6 +42,7 @@ const createController = () => {
     const data = adaptAnalysisGraph(raw);
     return {
         getSnapshot: () => ({status: 'ready', data}),
+        getHiddenIds: () => [],
         mergeData: jest.fn(async () => ({status: 'applied', value: true})),
         updateElements: jest.fn(async () => ({status: 'applied'})),
         applyStyle: jest.fn(async () => ({status: 'applied'})),
@@ -158,8 +159,10 @@ test('the new scope preserves its controller-only changes when switching to the 
     const final = adaptAnalysisGraph({vertices: [{id: 'new', label: 'person'}], edges: []});
     final.nodes[0].style = {x: 31, y: 57, fill: '#f00'};
     final.nodes[0].data.fixed = true;
-    const next = {...createController(), getSnapshot: () => ({status: 'ready', data: final})};
+    const next = {...createController(), getSnapshot: jest.fn(() => ({status: 'ready', data: adaptAnalysisGraph(raw)}))};
     act(() => view.result.current.onReady(next));
+    // Commit the new query before simulating subsequent controller-only edits.
+    next.getSnapshot.mockReturnValue({status: 'ready', data: final});
     act(() => view.result.current.onReady(null));
     expect(view.result.current.initialData).toBe(final);
     expect(view.result.current.currentData()).toBe(final);

@@ -45,8 +45,12 @@ const EditElement = ({show, cancel, drawerInfo, edgeMeta = [], onChange}) => {
     const [propertyMeta, setPropertyMeta] = useState({nullableProps: [], nonNullableProps: [], primaryKeys: []});
     const [form] = Form.useForm();
     const generation = useRef(0);
+    const submitting = useRef(false);
+    const saved = useRef(false);
     useEffect(() => {
         generation.current += 1;
+        submitting.current = false;
+        saved.current = false;
         setEdit(false);
         setPending(false);
         setExpanded(false);
@@ -54,15 +58,19 @@ const EditElement = ({show, cancel, drawerInfo, edgeMeta = [], onChange}) => {
         if (show) form.resetFields();
         return () => { generation.current += 1; };
     }, [graphSpace, graph, renderingId, show, form, controller]);
-    const close = () => {
+    const finishClose = () => {
         generation.current += 1;
         setEdit(false);
+        submitting.current = false;
         setPending(false);
         form.resetFields();
         return cancel?.();
     };
+    const close = () => {
+        if (!submitting.current) return finishClose();
+    };
     const beginEdit = () => run(async () => {
-        if (!show || !renderingId || pending) return;
+        if (!show || !renderingId || pending || saved.current) return;
         const token = generation.current;
         setPending(true);
         try {
@@ -83,8 +91,9 @@ const EditElement = ({show, cancel, drawerInfo, edgeMeta = [], onChange}) => {
         finally { if (token === generation.current) setPending(false); }
     });
     const save = values => run(async () => {
-        if (!show || !renderingId || pending) return;
+        if (!show || !renderingId || pending || submitting.current || saved.current) return;
         const token = generation.current;
+        submitting.current = true;
         setPending(true);
         try {
             const params = {id, label: itemType, properties: values,
@@ -93,16 +102,30 @@ const EditElement = ({show, cancel, drawerInfo, edgeMeta = [], onChange}) => {
             const response = await update(graphSpace, graph, params);
             if (token !== generation.current) return;
             if (response.status === 200) {
-                await onChange?.(isEdge ? 'edges' : 'nodes', renderingId,
-                    {...params, properties: {...properties, ...values}});
+                saved.current = true;
+                let applied = false;
+                try {
+                    const result = await onChange?.(isEdge ? 'edges' : 'nodes', renderingId,
+                        {...params, properties: {...properties, ...values}});
+                    applied = result?.status === 'applied';
+                }
+                catch {
+                    // The server write succeeded; a local draw failure must not invite another PUT.
+                }
                 if (token !== generation.current) return;
-                message.success(t('analysis.canvas.edit_element.save_success'));
-                await close();
+                if (applied) message.success(t('analysis.canvas.edit_element.save_success'));
+                else message.warning(t('analysis.canvas.edit_element.sync_failed'));
+                await finishClose();
             }
             else if (!response.message) message.error(t('analysis.canvas.edit_element.save_failed'));
         }
         catch (error) { if (token === generation.current) throw error; }
-        finally { if (token === generation.current) setPending(false); }
+        finally {
+            if (token === generation.current) {
+                submitting.current = false;
+                setPending(false);
+            }
+        }
     });
     const text = value => value == null ? '' : String(value);
     const typeLabel = t(`analysis.canvas.edit_element.${isEdge ? 'edge' : 'vertex'}`);
@@ -127,12 +150,16 @@ const EditElement = ({show, cancel, drawerInfo, edgeMeta = [], onChange}) => {
     return (
         <Drawer title={t(`analysis.canvas.edit_element.${isEdit ? 'edit_details' : 'data_details'}`)}
             placement="right" open={show} onClose={() => run(close)}
+            closable={{disabled: submitting.current}} mask={{closable: !submitting.current}}
+            keyboard={!submitting.current}
             footer={[
-                <Button type="primary" loading={pending} disabled={!onChange || !renderingId}
+                <Button type="primary" loading={pending} disabled={!onChange || !renderingId || pending || saved.current}
                     onClick={() => isEdit ? form.submit() : beginEdit()} key="save">
                     {t(`analysis.canvas.edit_element.${isEdit ? 'save' : 'edit'}`)}
                 </Button>,
-                <Button onClick={() => run(close)} key="close">{t('analysis.canvas.edit_element.close')}</Button>,
+                <Button onClick={() => run(close)} disabled={submitting.current} key="close">
+                    {t('analysis.canvas.edit_element.close')}
+                </Button>,
             ]}>
             {drawerInfo && <>
                 {field(`${typeLabel} ${t('analysis.canvas.edit_element.type')}`, itemType)}
@@ -161,7 +188,8 @@ const EditElement = ({show, cancel, drawerInfo, edgeMeta = [], onChange}) => {
                 </div>)}
             </>}
             <div className={c.graphNodeInfo}>
-                <Form style={{display: isEdit ? undefined : 'none'}} form={form} onFinish={save} labelAlign="left" labelWrap className={c.editForm}>
+                <Form style={{display: isEdit ? undefined : 'none'}} form={form} onFinish={save}
+                    disabled={pending} labelAlign="left" labelWrap className={c.editForm}>
                     {isEdit && renderProperties(propertyMeta.nullableProps, true)}
                     {isEdit && renderProperties(propertyMeta.nonNullableProps, false)}
                 </Form>

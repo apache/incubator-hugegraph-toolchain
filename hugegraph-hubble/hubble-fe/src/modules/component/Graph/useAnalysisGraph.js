@@ -59,6 +59,7 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
     const generation = useRef(0);
     const alive = useRef(true);
     const pendingRaw = useRef(null);
+    const retainedVisibility = useRef(null);
     const scope = JSON.stringify([graphSpaceInfo.graphSpace, graphSpaceInfo.graph]);
     const liveScope = useRef({key: scope});
     if (liveScope.current.key !== scope) liveScope.current = {key: scope};
@@ -116,6 +117,7 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
             const fresh = previousData.current !== data;
             staleInput.current = fresh ? null : {data};
             stylesRef.current = {};
+            retainedVisibility.current = null;
             // A result arriving with the new scope is valid; an unchanged old input is not.
             const projection = fresh && queryStatus !== GRAPH_STATUS.LOADING ? project(data)
                 : {data: EMPTY_GRAPH, pendingEdges: []};
@@ -134,7 +136,10 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
         if (staleInput.current?.data === data) return;
         staleInput.current = null;
         const fresh = previousData.current !== data;
-        if (fresh) stylesRef.current = {};
+        if (fresh) {
+            stylesRef.current = {};
+            retainedVisibility.current = null;
+        }
         let next;
         if (fresh) {
             const projection = project(data);
@@ -157,14 +162,34 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
         if (!alive.current || liveScope.current !== scopeOwner) return;
         const previous = controllerRef.current;
         if (!value && previous && ownerScope.current === scopeOwner) {
-            // Switching to the independent 3D renderer retains one immutable final snapshot.
-            const saved = previous.getSnapshot().data;
-            setDataset(currentDataset => ({...currentDataset, data: saved, owner: scopeOwner}));
+            if (pendingRaw.current?.owner === scopeOwner && pendingRaw.current.awaitingCommit) {
+                // The fresh query owns the handoff even before its queued canvas replacement.
+                // Its preceding snapshot and masks belong to the old result.
+                retainedVisibility.current = null;
+            }
+            else {
+                // Switching to the independent 3D renderer retains one immutable final snapshot.
+                const saved = previous.getSnapshot().data;
+                retainedVisibility.current = {owner: scopeOwner, key: datasetRef.current.key,
+                    manual: previous.getHiddenIds(), filter: previous.getHiddenIds('filter')};
+                setDataset(currentDataset => ({...currentDataset, data: saved, owner: scopeOwner}));
+            }
         }
         controllerRef.current = value;
         ownerScope.current = value ? scopeOwner : null;
         generation.current++;
         setController(value);
+        // GraphCanvas queues its initial replacement before transferring ownership.
+        // Queue both sources in that same dataset version. Clearing a restored filter
+        // must still leave any independently hidden elements hidden.
+        const retained = retainedVisibility.current;
+        if (value && retained?.owner === scopeOwner && retained.key === datasetRef.current.key
+            && (retained.manual.length || retained.filter.length)) {
+            return Promise.all([
+                ...(retained.manual.length ? [value.hide(retained.manual)] : []),
+                ...(retained.filter.length ? [value.setHiddenIds('filter', retained.filter)] : []),
+            ]);
+        }
     }, [scopeOwner]);
     const run = useCallback(async (operation, propagateError = false) => {
         const token = generation.current;
@@ -287,7 +312,7 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
             {existingNodeIds: new Set(owner.getSnapshot().data.nodes.map(node => node.id))},
             getAnalysisStyles(owner.getSnapshot().data));
         return owner.updateElements(next);
-    }), [convert, run]);
+    }, true), [convert, run]);
     const changeStyles = useCallback(styles => run(async () => {
         const owner = controllerRef.current;
         if (!owner) return;

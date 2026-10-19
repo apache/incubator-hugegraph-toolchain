@@ -290,6 +290,10 @@ export class GraphController {
     }
 
     /** Manual hide state is independent of named masks such as filters. */
+    getHiddenIds(reason?: string): string[] {
+        return [...(this.hiddenReasons.get(reason ?? manualVisibility) ?? [])];
+    }
+
     hide(ids: string[], hidden = true): Promise<UpdateResult<void>> {
         const requested = [...ids];
         return this.command(async context => {

@@ -439,6 +439,7 @@
       "edit_element": {
         "save_success": "保存成功",
         "save_failed": "保存失败",
+        "sync_failed": "数据已保存，但画布更新失败，请重新查询以刷新视图",
         "get_edge_property_failed": "获取边属性失败",
         "get_vertex_property_failed": "获取点属性失败",
         "type": "类型",

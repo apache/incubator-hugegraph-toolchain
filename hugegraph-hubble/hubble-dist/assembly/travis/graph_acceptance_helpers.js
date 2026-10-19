@@ -340,6 +340,34 @@ function assertVisibleGraphStats({viewport, counts, minimaps, canvas}) {
     assert.ok(minimap.x + minimap.width / 2 < canvas.x + canvas.width / 2, 'Minimap moved away from the left side');
   }
 }
+function assertVisibleGraphPanel({name, viewport, graph, panel, control, clips, scrolls}) {
+  const inside = (inner, outer, bounds) => {
+    assert.ok(inner && outer && inner.width > 0 && inner.height > 0,
+      `${name} has no visible ${bounds}`);
+    assert.ok(inner.x >= outer.x - 1 && inner.y >= outer.y - 1
+      && inner.x + inner.width <= outer.x + outer.width + 1
+      && inner.y + inner.height <= outer.y + outer.height + 1,
+      `${name} control is clipped outside ${bounds}`);
+  };
+  inside(control, viewport, 'the viewport');
+  inside(control, graph, 'the graph');
+  inside(control, panel, 'its panel');
+  for (const clip of clips) {
+    if (clip.x) assert.ok(control.x >= clip.rect.x - 1
+      && control.x + control.width <= clip.rect.x + clip.rect.width + 1,
+      `${name} control is horizontally clipped by an ancestor`);
+    if (clip.y) assert.ok(control.y >= clip.rect.y - 1
+      && control.y + control.height <= clip.rect.y + clip.rect.height + 1,
+      `${name} control is vertically clipped by an ancestor`);
+  }
+  assert.ok(scrolls.length > 0, `${name} is missing ancestor scroll evidence`);
+  assert.equal(scrolls[0].beforeTop, 0, 'Graph wrapper was already scrolled before opening panels');
+  assert.equal(scrolls[0].beforeLeft, 0, 'Graph wrapper was already scrolled before opening panels');
+  for (const item of scrolls) {
+    assert.equal(item.top, item.beforeTop, `${name} changed ancestor scrollTop`);
+    assert.equal(item.left, item.beforeLeft, `${name} changed ancestor scrollLeft`);
+  }
+}
 async function decodeScreenshot(page, bytes) {
   // The source is an external Chrome PNG, never the application's canvas object.
   const image = await page.evaluate(async encoded => {
@@ -698,7 +726,7 @@ function assertLiveDragPixels(before, held, {point, target, neighbor}) {
   return {fills, edgeBands: bands, mouseReleased: false};
 }
 
-module.exports = {assertOverallPng, assertOffscreenPan, assertOverallPanInvariant, coloredBodyPixels, MINIMAP_PAINT_SELECTOR, uniqueDisplayId, gremlinIdLiteral, connectedPair, mergeRawGraph, assertExpandedGraph, assertVisibleGraphStats,
+module.exports = {assertOverallPng, assertOffscreenPan, assertOverallPanInvariant, coloredBodyPixels, MINIMAP_PAINT_SELECTOR, uniqueDisplayId, gremlinIdLiteral, connectedPair, mergeRawGraph, assertExpandedGraph, assertVisibleGraphStats, assertVisibleGraphPanel,
   decodeScreenshot, screenshotAxes, screenshotOverlayRect, screenshotFringeRects, assertPngMatchesCanvas, dragTarget, assertLiveDragPixels, NeedsInput, argument, redact, publicHttpUrl, sha256, typedId, canonicalGraph,
   assertExportMatches, assertFixtureGraph, fixtureFromPrefix, loadPlaywright, chromePath,
   businessPayload, scopePath, pngDimensions, pixelEvidence, screenshot, canvasReady, findNode};

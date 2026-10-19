@@ -228,6 +228,7 @@ export class G6Runtime implements GraphRuntime {
             for (const edge of incoming.edges ?? []) {
                 (this.graph.hasEdge(edge.id!) ? update.edges! : add.edges!).push(edge);
             }
+            this.placeNewNodes(add.nodes!);
             this.graph.addData(add);
             this.graph.updateData(update);
             // A manual add can be the first nonempty display after an empty
@@ -235,6 +236,51 @@ export class G6Runtime implements GraphRuntime {
             if (add.nodes!.length) this.firstDataDrawPending = false;
             await this.graph.draw();
         });
+    }
+
+    private placeNewNodes(nodes: EngineNode[]): void {
+        const finite = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
+        const positioned = (node: EngineNode) => finite(node.style?.x) && finite(node.style?.y);
+        const missing = nodes.filter(node => !positioned(node));
+        if (!missing.length) return;
+        const [width, height] = this.graph.getSize();
+        if (!finite(width) || !finite(height) || width <= 0 || height <= 0) return;
+        const diameter = missing.reduce((largest, node) => {
+            const size = node.style?.size;
+            return Math.max(largest, ...(Array.isArray(size) ? size : [size]).filter(finite));
+        }, 36);
+        const zoom = this.graph.getZoom();
+        const spacing = diameter * (finite(zoom) && zoom > 0 ? zoom : 1) + 12;
+        const insetX = Math.min(spacing / 2, width / 2);
+        const insetY = Math.min(spacing / 2, height / 2);
+        // Prefer the visible centre, then nearby free slots. A bounded set keeps placement
+        // linear even for a large expansion, whose subsequent layout owns final positions.
+        const fractions = [0.5, 0.35, 0.65, 0.2, 0.8];
+        const candidates = fractions.flatMap(y => fractions.map(x =>
+            [insetX + (width - insetX * 2) * x, insetY + (height - insetY * 2) * y] as [number, number]));
+        const clearance = candidates.map(() => Infinity);
+        const occupy = (point: ArrayLike<number>) => {
+            if (!finite(point[0]) || !finite(point[1])) return;
+            candidates.forEach(([x, y], index) => {
+                clearance[index] = Math.min(clearance[index], Math.hypot(x - point[0], y - point[1]));
+            });
+        };
+        for (const node of [...this.graph.getNodeData(), ...nodes.filter(positioned)]) {
+            if (positioned(node) && node.style?.visibility !== 'hidden') {
+                occupy(this.graph.getViewportByCanvas([node.style!.x!, node.style!.y!]));
+            }
+        }
+        for (const node of missing) {
+            const free = clearance.findIndex(distance => distance >= spacing);
+            const index = free >= 0 ? free : clearance.reduce((best, distance, current) =>
+                distance > clearance[best] ? current : best, 0);
+            const point = this.graph.getCanvasByViewport(candidates[index]);
+            if (!finite(point[0]) || !finite(point[1])) continue;
+            // Explicit coordinates, including zero and a supplied single axis, stay authoritative.
+            node.style = {...node.style, x: finite(node.style?.x) ? node.style.x : point[0],
+                y: finite(node.style?.y) ? node.style.y : point[1]};
+            occupy(this.graph.getViewportByCanvas([node.style.x!, node.style.y!]));
+        }
     }
 
     layout(layout: GraphLayout): Promise<void> { return this.commit(false, async () => this.runLayout(layout)); }

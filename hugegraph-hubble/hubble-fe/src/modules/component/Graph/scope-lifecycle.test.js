@@ -21,7 +21,8 @@ import Graph from './index';
 import {useAnalysisGraph} from './useAnalysisGraph';
 import {GraphContext} from '../Context';
 import {createGraphController} from '../../../visualization/runtime';
-import {adaptAnalysisGraph} from '../../../utils/analysisGraphData';
+import {GraphController} from '../../../visualization/runtime/GraphController';
+import {adaptAnalysisGraph, toCanvas3DData} from '../../../utils/analysisGraphData';
 import {exportHubbleGraph} from '../../../visualization/hubble/adapter';
 
 jest.mock('../../../visualization/runtime', () => ({createGraphController: jest.fn()}));
@@ -41,7 +42,7 @@ const makeController = () => {
         snapshot = {...snapshot, status: 'ready', data};
         listeners.forEach(listener => listener());
     };
-    return {getSnapshot: () => snapshot, listeners, publish,
+    return {getSnapshot: () => snapshot, getHiddenIds: () => [], listeners, publish,
         subscribe: listener => { listeners.add(listener); return () => listeners.delete(listener); },
         replaceData: jest.fn(async data => { publish(data); return {status: 'applied'}; }),
         resize: jest.fn(async () => ({status: 'applied'})),
@@ -121,4 +122,148 @@ test('StrictMode effect replay establishes a live controller instead of retainin
     view.unmount();
     expect(last.dispose).toHaveBeenCalledTimes(1);
     expect(last.listeners.size).toBe(0);
+});
+
+test.each([false, true])('real controller restores independent masks after 3D (manual overlap: %s)', async manual => {
+    const copy = value => JSON.parse(JSON.stringify(value));
+    createGraphController.mockImplementation(() => {
+        let data = {nodes: [], edges: []};
+        const noop = async () => {};
+        const runtime = {
+            onEvent() {}, idleInteraction: noop,
+            replace: async next => { data = copy(next); },
+            read: () => copy(data),
+            visibility: async (ids, visible) => {
+                [...data.nodes, ...data.edges].forEach(item => {
+                    if (ids.includes(item.id)) item.style = {...item.style, visibility: visible ? 'visible' : 'hidden'};
+                });
+            },
+            states: noop, refreshLabelVisibility: noop, fitView: noop, resize() {},
+            history: noop, historyState: () => ({canUndo: false, canRedo: false}),
+            stop() {}, destroy() {},
+        };
+        const controller = new GraphController(runtime);
+        controllers.push(controller);
+        return controller;
+    });
+    const raw = {vertices: [{id: 'keep', label: 'person'}, {id: 'hidden', label: 'person'}],
+        edges: [{id: 'link', source: 'keep', target: 'hidden', label: 'knows'}]};
+    const filter = {filter: {rules: {vertex: [{op_type: 'id', rule: 'eq', value: 'keep'}], edge: []}, logic: 'and'}};
+    let model;
+    const FilterHost = ({input = raw, mode = '2d', graph = 'one'}) => {
+        model = useAnalysisGraph({data: input, graphSpaceInfo: {graphSpace: 'DEFAULT', graph},
+            queryStatus: 'success'});
+        return mode === '2d' && <Graph key={model.scopeKey} data={model.initialData} datasetKey={model.datasetKey}
+            onReady={model.onReady} layout={model.layout} />;
+    };
+    const hiddenIds = () => [...model.graphData.nodes, ...model.graphData.edges]
+        .filter(item => item.style?.visibility === 'hidden').map(item => item.data.raw.id);
+    const view = render(<FilterHost />);
+    await flush();
+    await act(async () => { await model.filter(filter); });
+    expect(hiddenIds()).toEqual(['hidden', 'link']);
+    if (manual) await act(async () => {
+        await model.controller.hide(['node:string:hidden', 'edge:string:link']);
+    });
+    view.rerender(<FilterHost mode='3d' />);
+    await flush();
+    expect(hiddenIds()).toEqual(['hidden', 'link']);
+    expect(toCanvas3DData(model.graphData).nodes.map(node => node.rawId)).toEqual(['keep']);
+    expect(toCanvas3DData(model.graphData).edges).toEqual([]);
+    view.rerender(<FilterHost />);
+    await flush();
+    expect(controllers).toHaveLength(2);
+    expect(hiddenIds()).toEqual(['hidden', 'link']);
+    await act(async () => { await model.filter(filter); });
+    expect(hiddenIds()).toEqual(['hidden', 'link']);
+    await act(async () => { await model.filter({}); });
+    if (manual) {
+        expect(hiddenIds()).toEqual(['hidden', 'link']);
+        await act(async () => { await model.controller.hide(['node:string:hidden'], false); });
+        expect(hiddenIds()).toEqual(['link']);
+        await act(async () => { await model.controller.hide(['edge:string:link'], false); });
+    }
+    expect(hiddenIds()).toEqual([]);
+    await act(async () => { await model.filter(filter); });
+    expect(hiddenIds()).toEqual(['hidden', 'link']);
+    const newQuery = copy(raw);
+    view.rerender(<FilterHost input={newQuery} />);
+    await flush();
+    expect(hiddenIds()).toEqual([]);
+    await act(async () => { await model.filter(filter); });
+    view.rerender(<FilterHost input={newQuery} mode='3d' />);
+    await flush();
+    expect(hiddenIds()).toEqual(['hidden', 'link']);
+    // A new query while the 2D owner is absent must discard the retained masks.
+    const refreshed = copy(raw);
+    view.rerender(<FilterHost input={refreshed} mode='3d' />);
+    await flush();
+    expect(hiddenIds()).toEqual([]);
+    view.rerender(<FilterHost input={refreshed} />);
+    await flush();
+    expect(hiddenIds()).toEqual([]);
+    await act(async () => { await model.filter(filter); });
+    view.rerender(<FilterHost input={refreshed} mode='3d' />);
+    await flush();
+    const otherScope = copy(raw);
+    view.rerender(<FilterHost input={otherScope} mode='3d' graph='two' />);
+    await flush();
+    expect(hiddenIds()).toEqual([]);
+    view.rerender(<FilterHost input={otherScope} graph='two' />);
+    await flush();
+    expect(hiddenIds()).toEqual([]);
+});
+
+test.each([false, true])('a new query owns the 3D handoff even while its replacement is queued: %s', async hold => {
+    const old = {vertices: [{id: 'shared', label: 'person', properties: {name: 'old'}}], edges: []};
+    const fresh = {vertices: [{id: 'shared', label: 'person', properties: {name: 'new'}}], edges: []};
+    const copy = value => JSON.parse(JSON.stringify(value));
+    let model;
+    let blocked = false;
+    let release;
+    const barrier = new Promise(resolve => { release = resolve; });
+    createGraphController.mockImplementation(() => {
+        let data = {nodes: [], edges: []};
+        const noop = async () => {};
+        const controller = new GraphController({
+            onEvent() {}, idleInteraction: async () => { if (blocked) await barrier; },
+            replace: async next => { data = copy(next); }, read: () => copy(data),
+            visibility: async (ids, visible) => {
+                data.nodes.forEach(node => {
+                    if (ids.includes(node.id)) node.style = {...node.style, visibility: visible ? 'visible' : 'hidden'};
+                });
+            },
+            states: noop, refreshLabelVisibility: noop, fitView: noop, resize() {},
+            history: noop, historyState: () => ({canUndo: false, canRedo: false}),
+            stop: () => release(), destroy() {},
+        });
+        controllers.push(controller);
+        return controller;
+    });
+    const QueryHost = ({input, mode = '2d'}) => {
+        model = useAnalysisGraph({data: input, graphSpaceInfo: {graphSpace: 'DEFAULT', graph: 'one'},
+            queryStatus: 'success'});
+        return mode === '2d' && <Graph data={model.initialData} datasetKey={model.datasetKey}
+            onReady={model.onReady} layout={model.layout} />;
+    };
+    const view = render(<QueryHost input={old} />);
+    await flush();
+    const controller = controllers[0];
+    await act(async () => { await controller.hide(['node:string:shared']); });
+    blocked = hold;
+    view.rerender(<QueryHost input={fresh} />);
+    await flush();
+    expect(model.currentRawData()).toEqual(fresh);
+    expect(controller.getSnapshot().data.nodes[0].data.raw.properties.name).toBe(hold ? 'old' : 'new');
+    view.rerender(<QueryHost input={fresh} mode='3d' />);
+    await flush();
+    try {
+        expect(model.currentRawData()).toEqual(fresh);
+        expect(model.graphData.nodes[0].style?.visibility).not.toBe('hidden');
+        view.rerender(<QueryHost input={fresh} />);
+        await flush();
+        expect(model.currentRawData()).toEqual(fresh);
+        expect(model.graphData.nodes[0].style?.visibility).not.toBe('hidden');
+    }
+    finally { release(); view.unmount(); await Promise.all(controllers.map(owner => owner.dispose())); }
 });
