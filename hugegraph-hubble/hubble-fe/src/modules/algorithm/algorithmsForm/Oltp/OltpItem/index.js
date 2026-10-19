@@ -49,6 +49,7 @@ import SameNeighborsBatch from '../SameNeighborsBatch';
 import Egonet from '../Egonet';
 import Paths from '../Paths';
 import {AlgorithmPersistenceContext} from '../../algorithmFormPersistence';
+import useAlgorithmSubmission from '../../useAlgorithmSubmission';
 
 const {
     K_OUT,
@@ -85,6 +86,8 @@ const OltpItem = props => {
         algorithmName,
         ...args
     } = props;
+
+    args.handleFormSubmit = useAlgorithmSubmission(args.handleFormSubmit);
 
     const renderItem = () => {
         switch (algorithmName) {

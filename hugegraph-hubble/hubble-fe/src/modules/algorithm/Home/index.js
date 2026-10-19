@@ -72,23 +72,34 @@ const AlgorithmHome = () => {
     const executionLogsRequest = useRef(null);
     const favoriteQueriesRequest = useRef(null);
     const graphNumsRequest = useRef(null);
+    const algorithmRequest = useRef(null);
     const graphNumsScope = useMemo(() => ({graphSpace, graph, identityVersion}), [graphSpace, graph, identityVersion]);
     const graphNumsOwner = useRef(null);
     useLayoutEffect(() => {
         graphNumsOwner.current = graphNumsScope;
-        return () => { graphNumsOwner.current = null; };
+        algorithmRequest.current = null;
+        return () => {
+            graphNumsOwner.current = null;
+            algorithmRequest.current = null;
+        };
     }, [graphNumsScope]);
 
     useEffect(() => {
         const resetIdentity = () => {
             graphNumsRequest.current = null;
             graphNumsOwner.current = null;
+            algorithmRequest.current = null;
+            setQueryStatus(STANDBY);
+            setQueryMessage();
+            setQueryResult({});
+            setAsyncTaskResult();
+            setPanelType(CLOSED);
             setGraphNums({vertexCount: -1, edgeCount: -1});
             setIdentityVersion(previous => previous + 1);
         };
         window.addEventListener(USER_CHANGE_EVENT, resetIdentity);
         return () => window.removeEventListener(USER_CHANGE_EVENT, resetIdentity);
-    }, []);
+    }, [CLOSED, STANDBY]);
 
     useEffect(() => () => {
         executionLogsRequest.current = null;
@@ -310,15 +321,26 @@ const AlgorithmHome = () => {
         }
         initQueryResult();
         onResetPage();
-    }, [graph, graphSpace, getMetaData, getPropertykeys, initQueryResult, onResetPage]);
+    }, [graph, graphSpace, identityVersion, getMetaData, getPropertykeys, initQueryResult, onResetPage]);
 
 
     const handleUpdateCurrentAlgorithm = useCallback(value => {
         setAlgorithmOnCanvas(value);
     }, []);
 
+    const beginSubmission = useCallback(applyResult => {
+        if (graphNumsOwner.current !== graphNumsScope) return () => {};
+        const request = Symbol('algorithm-execution');
+        algorithmRequest.current = request;
+        return (...args) => {
+            if (graphNumsOwner.current === graphNumsScope && algorithmRequest.current === request) {
+                applyResult(...args);
+            }
+        };
+    }, [graphNumsScope]);
+
     const handleOltpFormSubmit = useCallback(
-        (status, data, message, options) => {
+        () => beginSubmission((status, data, message, options) => {
             setPanelType(CLOSED);
             setGraphRenderMode(CANVAS2D);
             setAlgorithmMode(OLTP);
@@ -328,24 +350,25 @@ const AlgorithmHome = () => {
             setQueryMessage(message);
             options && setGraphOptions(options);
             getExecutionLogsList();
-        },
-        [CANVAS2D, CLOSED, OLTP, getExecutionLogsList]
+        }),
+        [CANVAS2D, CLOSED, OLTP, beginSubmission, getExecutionLogsList]
     );
 
     const handleOlapFormSubmit = useCallback(
-        (status, data, message) => {
+        () => beginSubmission((status, data, message) => {
             setPanelType(CLOSED);
             setAlgorithmMode(OLAP);
             setQueryResult({});
             setQueryStatus(status);
             setAsyncTaskResult(data);
             setQueryMessage(message || '');
-        },
-        [CLOSED, OLAP]
+        }),
+        [CLOSED, OLAP, beginSubmission]
     );
 
     const resetGraphStatus = useCallback(
         (status, message, data) => {
+            algorithmRequest.current = null;
             setPanelType(CLOSED);
             setAlgorithmMode(OLTP);
             setAlgorithmOnCanvas();
@@ -388,6 +411,7 @@ const AlgorithmHome = () => {
         <>
             <div className={c.algorithmContent}>
                 <AlgorithmFormHome
+                    key={JSON.stringify([graphSpace, graph, identityVersion])}
                     handleOltpFormSubmit={handleOltpFormSubmit}
                     handleOlapFormSubmit={handleOlapFormSubmit}
                     currentAlgorithm={algorithmOnCanvas}

@@ -21,6 +21,7 @@ import AlgorithmHome from './index';
 import GraphAnalysisContext from '../../Context';
 import * as api from '../../../api';
 import {setUser} from '../../../utils/user';
+import {GRAPH_STATUS} from '../../../utils/constants';
 
 jest.mock('../../../api', () => ({
     analysis: {
@@ -34,9 +35,11 @@ jest.mock('../../../api', () => ({
         getMetaPropertyList: jest.fn(),
     },
 }));
-jest.mock('../algorithmsForm/Home', () => props => (
-    <div>algorithm forms edges {props.graphNums.edgeCount}</div>
-));
+const mockAlgorithmFormProps = jest.fn();
+jest.mock('../algorithmsForm/Home', () => props => {
+    mockAlgorithmFormProps(props);
+    return <div>algorithm forms edges {props.graphNums.edgeCount}</div>;
+});
 const mockGraphResultProps = jest.fn();
 jest.mock('../GraphResult/Home', () => props => {
     mockGraphResultProps(props);
@@ -312,4 +315,71 @@ it.each([false, true].flatMap(returnToAlice =>
     });
     expect(screen.getByText(returnToAlice ? 'algorithm result counts 30 31' : 'algorithm result counts 20 21')).toBeInTheDocument();
     view.unmount();
+});
+
+
+// Exercise completion ownership independently of the algorithm's HTTP timing.
+const startAlgorithm = kind => {
+    const handler = mockAlgorithmFormProps.mock.lastCall[0][`handle${kind}FormSubmit`];
+    const receive = handler();
+    receive(GRAPH_STATUS.LOADING);
+    return receive;
+};
+const algorithmResult = () => mockGraphResultProps.mock.lastCall[0];
+
+it('keeps the latest algorithm result when OLTP and OLAP finish in reverse order', async () => {
+    render(countsHomeFor());
+    await screen.findByText('algorithm forms edges 0');
+    let oldOltp;
+    let newOlap;
+    act(() => { oldOltp = startAlgorithm('Oltp'); });
+    act(() => { newOlap = startAlgorithm('Olap'); });
+    act(() => { newOlap(GRAPH_STATUS.SUCCESS, 'current-task'); });
+    expect(algorithmResult().asyncTaskId).toBe('current-task');
+    act(() => { oldOltp(GRAPH_STATUS.SUCCESS, {vertices: [{id: 'stale'}]}); });
+    expect(algorithmResult().asyncTaskId).toBe('current-task');
+    expect(algorithmResult().data).toEqual({});
+    expect(algorithmResult().isQueryMode).toBe(false);
+});
+
+it.each(['graph', 'identity'])('rejects algorithm results and old submitters after a %s change', async change => {
+    const view = render(countsHomeFor());
+    await screen.findByText('algorithm forms edges 0');
+    const oldStart = mockAlgorithmFormProps.mock.lastCall[0].handleOltpFormSubmit;
+    let oldCompletion;
+    act(() => { oldCompletion = startAlgorithm('Oltp'); });
+    if (change === 'graph') view.rerender(countsHomeFor('graph-b'));
+    else act(() => { setUser({id: 'algorithm-reader', user_name: 'algorithm-reader'}); });
+    await act(async () => {});
+    expect(algorithmResult().data).toEqual({});
+    act(() => { oldCompletion(GRAPH_STATUS.SUCCESS, {vertices: [{id: 'old-scope'}]}); });
+    expect(algorithmResult().data).toEqual({});
+    act(() => {
+        const staleCompletion = oldStart();
+        staleCompletion(GRAPH_STATUS.SUCCESS, {vertices: [{id: 'stale-start'}]});
+    });
+    expect(algorithmResult().data).toEqual({});
+    let current;
+    act(() => { current = startAlgorithm('Oltp'); });
+    act(() => { current(GRAPH_STATUS.SUCCESS, {vertices: [{id: 'current'}]}); });
+    expect(algorithmResult().data).toEqual({vertices: [{id: 'current'}]});
+    view.unmount();
+    act(() => { current(GRAPH_STATUS.FAILED, {}, 'late failure'); });
+});
+
+
+it.each(['Oltp', 'Olap'])('keeps a user-cleared or imported result after a pending %s execution finishes', async kind => {
+    render(countsHomeFor());
+    await screen.findByText('algorithm forms edges 0');
+    let pending;
+    act(() => { pending = startAlgorithm(kind); });
+    const imported = {vertices: [{id: 'imported'}], edges: []};
+    act(() => { algorithmResult().resetGraphStatus(GRAPH_STATUS.SUCCESS, undefined, imported); });
+    act(() => { pending(GRAPH_STATUS.SUCCESS, {vertices: [{id: 'obsolete'}]}); });
+    expect(algorithmResult().data).toEqual(imported);
+    act(() => { pending = startAlgorithm(kind); });
+    act(() => { algorithmResult().resetGraphStatus(GRAPH_STATUS.STANDBY, undefined, {}); });
+    act(() => { pending(GRAPH_STATUS.FAILED, {}, 'obsolete failure'); });
+    expect(algorithmResult().data).toEqual({});
+    expect(algorithmResult().queryStatus).toBe(GRAPH_STATUS.STANDBY);
 });

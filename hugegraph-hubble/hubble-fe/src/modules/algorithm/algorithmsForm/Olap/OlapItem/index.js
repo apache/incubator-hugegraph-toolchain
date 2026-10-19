@@ -51,6 +51,7 @@ import {
     useTranslatedConstants,
 } from '../../../../../utils/constants';
 import {AlgorithmPersistenceContext} from '../../algorithmFormPersistence';
+import useAlgorithmSubmission from '../../useAlgorithmSubmission';
 
 
 
@@ -81,6 +82,8 @@ const OlapItem = props => {
         canRunLouvain,
         ...args
     } = props;
+
+    args.handleFormSubmit = useAlgorithmSubmission(args.handleFormSubmit);
 
     const {isVermeer} = useContext(GraphAnalysisContext);
 
