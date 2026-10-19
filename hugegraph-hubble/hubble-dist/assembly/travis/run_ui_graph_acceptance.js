@@ -818,6 +818,9 @@ async function main(configuration = options()) {
         path.join(config.outputDir, 'scope-old-menu-target.png'));
       await page.mouse.click(node.x, node.y, {button: 'right'});
       await graphContextMenu(page).waitFor({state: 'visible'});
+      await graphContextMenu(page).getByRole('menuitem', {name: 'Expand', exact: true}).waitFor({state: 'visible'});
+      assert.equal(await graphContextMenu(page).getByRole('menuitem', {name: 'Add Vertex', exact: true}).count(), 0,
+        'Right-clicking a node opened the blank canvas menu');
       const oldMenu = await graphContextMenu(page).elementHandle();
       if (next.graphspace !== fixture.graphspace) {
         if (!report.authentication.pdEnabled) throw new NeedsInput('Cross-GraphSpace switching needs a real PD fixture');

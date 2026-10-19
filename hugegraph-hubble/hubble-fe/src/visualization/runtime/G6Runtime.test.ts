@@ -90,6 +90,31 @@ test.each(['shiftKey', 'ctrlKey', 'metaKey'] as const)('forwards %s as additive 
     } finally { runtime.stop(); runtime.destroy(); }
 });
 
+test('forwards node and edge context menus through the real runtime and controller with original IDs', async () => {
+    const runtime = new G6Runtime(document.createElement('div'));
+    const onContextMenu = jest.fn();
+    const controller = new GraphController(runtime, {onContextMenu});
+    const graph = data(2);
+    graph.edges = [{id: 'edge-render', source: '0', target: '1', data: {raw: {id: 'business-edge'}}}];
+    await controller.replaceData(graph, {layout: false, fit: false});
+    const preventDefault = jest.fn();
+    const event = {client: {x: 20, y: 30}, preventDefault};
+    try {
+        for (const [kind, id, rawId] of [['node', '0', 0], ['edge', 'edge-render', 'business-edge']] as const) {
+            const handler = mockHandlers.get(`${kind}:contextmenu`) as (event: unknown) => void;
+            handler({...event, target: {id}});
+            expect(onContextMenu).toHaveBeenLastCalledWith({id, kind, data: {raw: {id: rawId}}, client: event.client});
+        }
+        expect(preventDefault).toHaveBeenCalledTimes(2);
+        expect(controller.getSnapshot().selectedIds).toEqual([]);
+        await controller.dispose();
+        const late = mockHandlers.get('node:contextmenu') as (event: unknown) => void;
+        late({...event, target: {id: '0'}});
+        expect(onContextMenu).toHaveBeenCalledTimes(2);
+    }
+    finally { await controller.dispose(); }
+});
+
 test('node dragging dismisses the tooltip and suppresses hover until release', async () => {
     const runtime = new G6Runtime(document.createElement('div'));
     const events = jest.fn();
