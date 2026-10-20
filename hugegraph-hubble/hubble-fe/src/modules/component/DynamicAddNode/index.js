@@ -34,7 +34,7 @@ const DynamicAddNode = props => {
         open,
         onCancel,
         onOK,
-        drawerInfo: vertexLists,
+        drawerInfo: vertexLists = [],
     } = props;
 
     const {t} = useTranslation();
