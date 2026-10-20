@@ -21,6 +21,7 @@
  */
 
 import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
 import {
     useState, useCallback, useContext, useEffect, useMemo, useRef,
 } from 'react';
@@ -60,7 +61,7 @@ const Louvain = props => {
     };
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
     const validationVersion = useRef(0);
 
     const [form] = Form.useForm();
@@ -81,7 +82,7 @@ const Louvain = props => {
             if (!canRun) {
                 return;
             }
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(LOUVAIN);
             const complete = handleFormSubmit(LOADING);
             const args = {...algorithmParams};
@@ -100,10 +101,10 @@ const Louvain = props => {
             else {
                 complete(SUCCESS, data?.task_id, message);
             }
-            setRequiring(false);
+            finishRequiring();
         },
         [FAILED, LOADING, LOUVAIN, SUCCESS, canRun, graph, graphSpace,
-            handleFormSubmit, updateCurrentAlgorithm]
+            beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const onFormFinish = useCallback(

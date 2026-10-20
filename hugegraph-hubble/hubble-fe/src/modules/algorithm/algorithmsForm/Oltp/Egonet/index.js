@@ -21,6 +21,7 @@
  */
 
 import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
 import {useState, useCallback, useContext} from 'react';
 import {Input, Select, Tooltip, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
@@ -55,7 +56,7 @@ const Egonet = props => {
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
     const [stepVisible, setStepVisible] = useState(true);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
     const directionOptions = [
         {label: t('analysis.algorithm.form.direction_options.out'), value: 'OUT'},
         {label: t('analysis.algorithm.form.direction_options.in'), value: 'IN'},
@@ -83,7 +84,7 @@ const Egonet = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(EGONET);
             const complete = handleFormSubmit(LOADING);
             algorithmParams = {...algorithmParams, 'algorithmName': Algorithm_Url[EGONET]};
@@ -97,9 +98,9 @@ const Egonet = props => {
             else {
                 complete(SUCCESS, graph_view || {}, message, {});
             }
-            setRequiring(false);
+            finishRequiring();
         },
-        [graph, graphSpace, handleFormSubmit, updateCurrentAlgorithm]
+        [graph, graphSpace, beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const onFormFinish = useCallback(

@@ -21,6 +21,7 @@
  */
 
 import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
 import {useState, useCallback, useContext} from 'react';
 import {InputNumber} from 'antd';
 import Form from '../../PersistentForm';
@@ -58,7 +59,7 @@ const BetweennessCentrality = props => {
     };
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
 
     const [form] = Form.useForm();
 
@@ -72,7 +73,7 @@ const BetweennessCentrality = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(BETWEENNESS_CENTRALITY);
             const complete = handleFormSubmit(LOADING);
             const {worker, ...args} = algorithmParams;
@@ -90,10 +91,10 @@ const BetweennessCentrality = props => {
             else {
                 complete(SUCCESS, data?.task_id, message);
             }
-            setRequiring(false);
+            finishRequiring();
         },
         [BETWEENNESS_CENTRALITY, FAILED, LOADING, SUCCESS, graph, graphSpace,
-            handleFormSubmit, updateCurrentAlgorithm]
+            beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const onFormFinish = useCallback(

@@ -21,6 +21,7 @@
  */
 
 import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
 import {useState, useCallback, useContext} from 'react';
 import {Input, Select, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
@@ -48,7 +49,7 @@ const Crosspoints = props => {
 
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
 
     const [crosspointsForm] = Form.useForm();
     const directionOptions = [
@@ -59,7 +60,7 @@ const Crosspoints = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(CROSSPOINTS);
             const complete = handleFormSubmit(LOADING);
             algorithmParams = {...algorithmParams, 'algorithmName': Algorithm_Url[CROSSPOINTS]};
@@ -73,9 +74,9 @@ const Crosspoints = props => {
             else {
                 complete(SUCCESS, graph_view || {}, message, {});
             }
-            setRequiring(false);
+            finishRequiring();
         },
-        [graph, graphSpace, handleFormSubmit, updateCurrentAlgorithm]
+        [graph, graphSpace, beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const handleRunning = useCallback(

@@ -21,6 +21,7 @@
  */
 
 import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
 import {useState, useCallback, useContext, useEffect} from 'react';
 import {InputNumber, Input} from 'antd';
 import Form from '../../PersistentForm';
@@ -56,7 +57,7 @@ const SSSPVermeer = props => {
     const {graphSpace, graph, graphStatus} = useContext(GraphAnalysisContext);
 
     const [isEnableRun, setEnableRun] = useState(false);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
     const [form] = Form.useForm();
 
     useEffect(
@@ -77,7 +78,7 @@ const SSSPVermeer = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(SSSP);
             const complete = handleFormSubmit(LOADING);
             const formParams =  {'compute.algorithm': 'sssp', ...algorithmParams};
@@ -90,9 +91,9 @@ const SSSPVermeer = props => {
             else {
                 complete(SUCCESS, data?.task_id, message);
             }
-            setRequiring(false);
+            finishRequiring();
         },
-        [graph, graphSpace, handleFormSubmit, updateCurrentAlgorithm]
+        [graph, graphSpace, beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const onFormFinish = useCallback(

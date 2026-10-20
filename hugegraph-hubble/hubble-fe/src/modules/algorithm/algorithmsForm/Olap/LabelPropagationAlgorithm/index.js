@@ -21,6 +21,7 @@
  */
 
 import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
 import {useState, useCallback, useContext} from 'react';
 import {InputNumber} from 'antd';
 import Form from '../../PersistentForm';
@@ -54,7 +55,7 @@ const LabelPropagationAlgorithm = props => {
     };
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
 
     const [form] = Form.useForm();
 
@@ -68,7 +69,7 @@ const LabelPropagationAlgorithm = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(LABEL_PROPAGATION_ALGORITHM);
             const complete = handleFormSubmit(LOADING);
             const {worker, ...args} = algorithmParams;
@@ -86,10 +87,10 @@ const LabelPropagationAlgorithm = props => {
             else {
                 complete(SUCCESS, data?.task_id, message);
             }
-            setRequiring(false);
+            finishRequiring();
         },
         [FAILED, LABEL_PROPAGATION_ALGORITHM, LOADING, SUCCESS, graph,
-            graphSpace, handleFormSubmit, updateCurrentAlgorithm]
+            graphSpace, beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const onFormFinish = useCallback(

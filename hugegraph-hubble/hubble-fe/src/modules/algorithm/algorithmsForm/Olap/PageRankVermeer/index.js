@@ -21,6 +21,7 @@
  */
 
 import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
 import {useState, useCallback, useContext, useEffect} from 'react';
 import {InputNumber} from 'antd';
 import Form from '../../PersistentForm';
@@ -54,7 +55,7 @@ const PageRankVermeer = props => {
     const {graphSpace, graph, graphStatus} = useContext(GraphAnalysisContext);
 
     const [isEnableRun, setEnableRun] = useState(true);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
     const [form] = Form.useForm();
 
     useEffect(
@@ -74,7 +75,7 @@ const PageRankVermeer = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(PAGE_RANK);
             const complete = handleFormSubmit(LOADING);
             const formParams =  {'compute.algorithm': 'pagerank', ...algorithmParams};
@@ -87,9 +88,9 @@ const PageRankVermeer = props => {
             else {
                 complete(SUCCESS, data?.task_id, message);
             }
-            setRequiring(false);
+            finishRequiring();
         },
-        [graph, graphSpace, handleFormSubmit, updateCurrentAlgorithm]
+        [graph, graphSpace, beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const onFormFinish = useCallback(

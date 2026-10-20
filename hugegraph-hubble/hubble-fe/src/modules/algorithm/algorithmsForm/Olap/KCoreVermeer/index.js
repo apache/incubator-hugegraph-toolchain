@@ -21,6 +21,7 @@
  */
 
 import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
 import {useState, useCallback, useContext, useEffect} from 'react';
 import {InputNumber} from 'antd';
 import Form from '../../PersistentForm';
@@ -63,7 +64,7 @@ const KCoreVermeer = props => {
     const {graphSpace, graph, graphStatus} = useContext(GraphAnalysisContext);
 
     const [isEnableRun, setEnableRun] = useState(true);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
 
     const [form] = Form.useForm();
 
@@ -84,7 +85,7 @@ const KCoreVermeer = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(K_CORE);
             const complete = handleFormSubmit(LOADING);
             const formParams = {'compute.algorithm': 'kcore', ...algorithmParams};
@@ -97,10 +98,10 @@ const KCoreVermeer = props => {
             else {
                 complete(SUCCESS, data?.task_id, message);
             }
-            setRequiring(false);
+            finishRequiring();
         },
         [FAILED, K_CORE, LOADING, SUCCESS, graph, graphSpace,
-            handleFormSubmit, updateCurrentAlgorithm]
+            beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const onFormFinish = useCallback(

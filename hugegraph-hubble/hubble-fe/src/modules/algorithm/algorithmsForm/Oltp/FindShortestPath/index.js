@@ -21,6 +21,7 @@
  */
 
 import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
 import {useState, useCallback, useContext} from 'react';
 import {Input, Select, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
@@ -56,7 +57,7 @@ const FindShortestPath = props => {
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [form] = Form.useForm();
     const [isEnableRun, setEnableRun] = useState(false);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
     const directionOptions = [
         {label: t('analysis.algorithm.form.direction_options.out'), value: 'OUT'},
         {label: t('analysis.algorithm.form.direction_options.in'), value: 'IN'},
@@ -65,7 +66,7 @@ const FindShortestPath = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(FINDSHORTESTPATH);
             const complete = handleFormSubmit(LOADING);
             algorithmParams = {...algorithmParams, 'algorithmName': Algorithm_Url[FINDSHORTESTPATH]};
@@ -79,9 +80,9 @@ const FindShortestPath = props => {
             else {
                 complete(SUCCESS, graph_view || {}, message, {});
             }
-            setRequiring(false);
+            finishRequiring();
         },
-        [graph, graphSpace, handleFormSubmit, updateCurrentAlgorithm]
+        [graph, graphSpace, beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const handleRunning = useCallback(

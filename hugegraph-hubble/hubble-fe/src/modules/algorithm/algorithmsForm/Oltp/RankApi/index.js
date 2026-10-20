@@ -21,6 +21,7 @@
  */
 
 import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
 import {useState, useCallback, useContext} from 'react';
 import {Input, Select, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
@@ -60,7 +61,7 @@ const RankApi = props => {
 
     const [form] = Form.useForm();
     const [isEnableRun, setEnableRun] = useState(false);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const withLabelOptions = [
         {label: t('analysis.algorithm.oltp.rank_api.same_label'), value: 'SAME_LABEL'},
@@ -70,7 +71,7 @@ const RankApi = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(RANK_API);
             const complete = handleFormSubmit(LOADING);
             algorithmParams = {...algorithmParams, 'algorithmName': Algorithm_Url[RANK_API]};
@@ -85,9 +86,9 @@ const RankApi = props => {
                 const options = {rankObj: ranks || {}};
                 complete(SUCCESS, {}, message, options);
             }
-            setRequiring(false);
+            finishRequiring();
         },
-        [graph, graphSpace, handleFormSubmit, updateCurrentAlgorithm]
+        [graph, graphSpace, beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
 

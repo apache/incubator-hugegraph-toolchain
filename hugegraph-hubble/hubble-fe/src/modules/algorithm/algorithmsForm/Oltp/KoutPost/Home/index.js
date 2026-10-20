@@ -21,6 +21,7 @@
  */
 
 import AlgorithmPanel from '../../../AlgorithmPanel';
+import useAlgorithmPending from '../../../useAlgorithmPending';
 import {useState, useCallback, useContext} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Input, Select, InputNumber} from 'antd';
@@ -52,7 +53,7 @@ const KoutPost = props => {
 
     const [form] = Form.useForm();
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
     const [isEnableRun, setEnableRun] = useState(false);
     const algorithmOptions = [
         {label: t('analysis.algorithm.oltp.kout_post.breadth_first'), value: 'breadth_first'},
@@ -61,7 +62,7 @@ const KoutPost = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(KOUT_POST);
             const complete = handleFormSubmit(LOADING);
             algorithmParams = {...algorithmParams, 'algorithmName': Algorithm_Url[KOUT_POST]};
@@ -75,9 +76,9 @@ const KoutPost = props => {
             else {
                 complete(SUCCESS, graph_view || {}, message, {});
             }
-            setRequiring(false);
+            finishRequiring();
         },
-        [graph, graphSpace, handleFormSubmit, updateCurrentAlgorithm]
+        [graph, graphSpace, beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const handleRunning = useCallback(

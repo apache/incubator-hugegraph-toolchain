@@ -21,6 +21,7 @@
  */
 
 import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
 import {useState, useCallback, useContext} from 'react';
 import {Input, Select, Tooltip, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
@@ -52,7 +53,7 @@ const KneighborPost = props => {
 
     const [form] = Form.useForm();
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
     const [isEnableRun, setEnableRun] = useState(false);
     const [stepVisible, setStepVisible] = useState(false);
     const directionOptions = [
@@ -76,7 +77,7 @@ const KneighborPost = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(KNEIGHBOR_POST);
             const complete = handleFormSubmit(LOADING);
             algorithmParams = {...algorithmParams, 'algorithmName': Algorithm_Url[KNEIGHBOR_POST]};
@@ -90,9 +91,9 @@ const KneighborPost = props => {
             else {
                 complete(SUCCESS, graph_view || {}, message, {});
             }
-            setRequiring(false);
+            finishRequiring();
         },
-        [graph, graphSpace, handleFormSubmit, updateCurrentAlgorithm]
+        [graph, graphSpace, beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const formatPropertiesValue = useCallback(

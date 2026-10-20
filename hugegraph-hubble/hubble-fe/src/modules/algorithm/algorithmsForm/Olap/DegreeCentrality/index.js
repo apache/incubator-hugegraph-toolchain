@@ -21,6 +21,7 @@
  */
 
 import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
 import {useState, useCallback, useContext} from 'react';
 import {Input, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
@@ -55,7 +56,7 @@ const DegreeCentrality = props => {
     };
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
 
     const [form] = Form.useForm();
 
@@ -69,7 +70,7 @@ const DegreeCentrality = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(DEGREE_CENTRALIT);
             const complete = handleFormSubmit(LOADING);
             const {worker, ...args} = algorithmParams;
@@ -87,9 +88,9 @@ const DegreeCentrality = props => {
             else {
                 complete(SUCCESS, data?.task_id, message);
             }
-            setRequiring(false);
+            finishRequiring();
         },
-        [DEGREE_CENTRALIT, graph, graphSpace, handleFormSubmit,
+        [DEGREE_CENTRALIT, graph, graphSpace, beginRequiring, handleFormSubmit,
             updateCurrentAlgorithm]
     );
 

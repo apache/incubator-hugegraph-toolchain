@@ -21,6 +21,7 @@
  */
 
 import AlgorithmPanel from '../../../AlgorithmPanel';
+import useAlgorithmPending from '../../../useAlgorithmPending';
 import {useState, useCallback, useContext} from 'react';
 import {Select, InputNumber} from 'antd';
 import Form from '../../../PersistentForm';
@@ -52,7 +53,7 @@ const CustomizedPaths = props => {
 
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
     const [form] = Form.useForm();
     const sortByOptions = [
         {label: t('analysis.algorithm.oltp.customized_paths.sort_none'), value: 'NONE'},
@@ -70,7 +71,7 @@ const CustomizedPaths = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(CUSTOMIZEDPATHS);
             const complete = handleFormSubmit(LOADING);
             algorithmParams = {...algorithmParams, 'algorithmName': Algorithm_Url[CUSTOMIZEDPATHS]};
@@ -86,9 +87,9 @@ const CustomizedPaths = props => {
                 const options = {endPointsId: {startNodes: [...vertexs], endNodes: []}};
                 complete(SUCCESS, graph_view || {}, message, options);
             }
-            setRequiring(false);
+            finishRequiring();
         },
-        [graph, graphSpace, handleFormSubmit, updateCurrentAlgorithm]
+        [graph, graphSpace, beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const onFormFinish = useCallback(

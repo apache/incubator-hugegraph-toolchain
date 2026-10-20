@@ -21,6 +21,7 @@
  */
 
 import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
 import {useState, useCallback, useContext} from 'react';
 import {Input, Select, Tooltip, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
@@ -63,7 +64,7 @@ const JaccardSimilarityPost = props => {
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [stepVisible, setStepVisible] = useState(false);
     const [isEnableRun, setEnableRun] = useState(false);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
     const directionOptions = [
         {label: t('analysis.algorithm.form.direction_options.out'), value: 'OUT'},
         {label: t('analysis.algorithm.form.direction_options.in'), value: 'IN'},
@@ -77,7 +78,7 @@ const JaccardSimilarityPost = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(JACCARD_SIMILARITY_POST);
             const complete = handleFormSubmit(LOADING);
             algorithmParams = {...algorithmParams, 'algorithmName': Algorithm_Url[JACCARD_SIMILARITY_POST]};
@@ -92,9 +93,9 @@ const JaccardSimilarityPost = props => {
                 const options = {rankObj: jaccardsimilarity};
                 complete(SUCCESS, graph_view || {}, message, options);
             }
-            setRequiring(false);
+            finishRequiring();
         },
-        [graph, graphSpace, handleFormSubmit, updateCurrentAlgorithm]
+        [graph, graphSpace, beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const handleRunning = useCallback(

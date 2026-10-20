@@ -21,6 +21,7 @@
  */
 
 import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
 import {useState, useCallback, useContext} from 'react';
 import {Input, Select, Tooltip, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
@@ -64,7 +65,7 @@ const MultiNodesShortestPath = props => {
     const [form] = Form.useForm();
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
     const [stepVisible, setStepVisible] = useState(false);
     const directionOptions = [
         {label: t('analysis.algorithm.form.direction_options.out'), value: 'OUT'},
@@ -79,7 +80,7 @@ const MultiNodesShortestPath = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(MULTINODESSHORTESTPATH);
             const complete = handleFormSubmit(LOADING);
             algorithmParams = {...algorithmParams, 'algorithmName': Algorithm_Url[MULTINODESSHORTESTPATH]};
@@ -95,9 +96,9 @@ const MultiNodesShortestPath = props => {
                 const options = {endPointsId: {startNodes: [...multiVertices], endNodes: []}};
                 complete(SUCCESS, graph_view || {}, message, options);
             }
-            setRequiring(false);
+            finishRequiring();
         },
-        [graph, graphSpace, handleFormSubmit, updateCurrentAlgorithm]
+        [graph, graphSpace, beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const handleRunning = useCallback(

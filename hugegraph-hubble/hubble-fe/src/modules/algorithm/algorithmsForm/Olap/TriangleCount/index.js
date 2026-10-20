@@ -21,6 +21,7 @@
  */
 
 import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
 import {useState, useCallback, useContext} from 'react';
 import {InputNumber} from 'antd';
 import Form from '../../PersistentForm';
@@ -58,7 +59,7 @@ const TriangleCount = props => {
     };
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
     const [form] = Form.useForm();
 
     const handleRunning = useCallback(
@@ -71,7 +72,7 @@ const TriangleCount = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(TRIANGLE_COUNT);
             const complete = handleFormSubmit(LOADING);
             const {worker, limit_edges_in_one_vertex, ...args} = algorithmParams;
@@ -90,9 +91,9 @@ const TriangleCount = props => {
             else {
                 complete(SUCCESS, data?.task_id, message);
             }
-            setRequiring(false);
+            finishRequiring();
         },
-        [graph, graphSpace, handleFormSubmit, updateCurrentAlgorithm]
+        [graph, graphSpace, beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const onFormFinish = useCallback(

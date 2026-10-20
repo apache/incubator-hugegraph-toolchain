@@ -17,19 +17,20 @@
  */
 
 import {useCallback, useRef, useState} from 'react';
-import {act, fireEvent, render, screen} from '@testing-library/react';
+import {act, fireEvent, render, screen, waitFor} from '@testing-library/react';
 import useAlgorithmSubmission from './useAlgorithmSubmission';
 import Paths from './Oltp/Paths';
 import Louvain from './Olap/Louvain';
+import TriangleCountVermeer from './Olap/TriangleCountVermeer';
 import GraphAnalysisContext from '../../Context';
 import * as api from '../../../api';
-import {GRAPH_STATUS} from '../../../utils/constants';
+import {GRAPH_STATUS, GRAPH_LOAD_STATUS} from '../../../utils/constants';
 
 const mockForm = {submit: jest.fn(), validateFields: jest.fn(() => Promise.resolve())};
 
 jest.mock('./PersistentForm', () => {
-    const Form = ({children, onFinish}) => (
-        <form aria-label='algorithm form' onSubmit={event => {
+    const Form = ({children, onFinish, onValuesChange}) => (
+        <form aria-label='algorithm form' onChange={onValuesChange} onSubmit={event => {
             event.preventDefault();
             onFinish({source: 'source', target: 'target'});
         }}>{children}</form>
@@ -38,13 +39,12 @@ jest.mock('./PersistentForm', () => {
     Form.useForm = () => [mockForm];
     return Form;
 });
-jest.mock('./AlgorithmPanel', () => ({children}) => <div>{children}</div>);
-jest.mock('./AlgorithmNameHeader', () => () => null);
+jest.mock('./AlgorithmPanel', () => ({title, children}) => <div>{title}{children}</div>);
 jest.mock('./LimitItem', () => () => null);
 jest.mock('./DirectionItem', () => () => null);
 jest.mock('./Olap/OlapComputerItem', () => () => null);
 jest.mock('../../../api', () => ({
-    analysis: {runOltpInfo: jest.fn(), postOlapInfo: jest.fn()},
+    analysis: {runOltpInfo: jest.fn(), postOlapInfo: jest.fn(), runOlapVermeer: jest.fn()},
 }));
 jest.mock('react-i18next', () => ({
     ...jest.requireActual('react-i18next'),
@@ -134,4 +134,103 @@ test.each([
             ? [GRAPH_STATUS.SUCCESS, {vertices: [{id: 'a'}]}, 'old result', {}]
             : [GRAPH_STATUS.SUCCESS, 'task-a', 'old result'])
         : [GRAPH_STATUS.FAILED, isOltp ? {} : '', 'old result']);
+});
+
+
+test.each([
+    ['OLTP success', Paths, 'runOltpInfo', 200],
+    ['OLTP failure', Paths, 'runOltpInfo', 400],
+    ['OLAP success', Louvain, 'postOlapInfo', 200],
+    ['OLAP failure', Louvain, 'postOlapInfo', 400],
+    ['Vermeer success', TriangleCountVermeer, 'runOlapVermeer', 200],
+    ['Vermeer failure', TriangleCountVermeer, 'runOlapVermeer', 400],
+])('%s keeps the real Run button busy when an earlier request finishes first', async (
+    _name, FormComponent, method, earlyStatus
+) => {
+    let resolveA;
+    let resolveB;
+    api.analysis[method]
+        .mockReturnValueOnce(new Promise(resolve => { resolveA = resolve; }))
+        .mockReturnValueOnce(new Promise(resolve => { resolveB = resolve; }));
+    const begin = () => jest.fn();
+    const FormWithSubmission = () => {
+        const handleFormSubmit = useAlgorithmSubmission(begin);
+        return <FormComponent canRun handleFormSubmit={handleFormSubmit}
+            updateCurrentAlgorithm={jest.fn()} />;
+    };
+    const {container} = render(
+        <GraphAnalysisContext.Provider value={{
+            graphSpace: 'DEFAULT', graph: 'hugegraph', graphStatus: GRAPH_LOAD_STATUS.LOADED,
+        }}>
+            <FormWithSubmission />
+        </GraphAnalysisContext.Provider>
+    );
+    const form = screen.getByRole('form', {name: 'algorithm form'});
+    fireEvent.change(container.querySelector('input'), {target: {value: 'source'}});
+    const runButton = () => container.querySelector('button.ant-btn-primary');
+    await waitFor(() => expect(runButton()).not.toBeDisabled());
+    // Native form submission can overlap even while the Run button is loading.
+    fireEvent.submit(form);
+    fireEvent.submit(form);
+    expect(api.analysis[method]).toHaveBeenCalledTimes(2);
+    expect(runButton()).toHaveClass('ant-btn-loading');
+
+    await act(async () => resolveA({
+        status: earlyStatus, message: 'old result', data: {graph_view: {}, task_id: 'task-a'},
+    }));
+    expect(runButton()).toHaveClass('ant-btn-loading');
+    fireEvent.click(runButton());
+    expect(mockForm.submit).not.toHaveBeenCalled();
+
+    await act(async () => resolveB({
+        status: 200, message: 'new result', data: {graph_view: {}, task_id: 'task-b'},
+    }));
+    expect(runButton()).not.toHaveClass('ant-btn-loading');
+    fireEvent.click(runButton());
+    expect(mockForm.submit).toHaveBeenCalledTimes(1);
+});
+
+
+test.each([
+    ['OLTP', Paths, 'runOltpInfo'],
+    ['OLAP', Louvain, 'postOlapInfo'],
+    ['Vermeer', TriangleCountVermeer, 'runOlapVermeer'],
+])('%s releases the newest request and keeps a later execution busy', async (
+    _name, FormComponent, method
+) => {
+    const resolve = [];
+    api.analysis[method].mockImplementation(() => new Promise(done => resolve.push(done)));
+    const begin = () => jest.fn();
+    const FormWithSubmission = () => {
+        const handleFormSubmit = useAlgorithmSubmission(begin);
+        return <FormComponent canRun handleFormSubmit={handleFormSubmit}
+            updateCurrentAlgorithm={jest.fn()} />;
+    };
+    const {container} = render(
+        <GraphAnalysisContext.Provider value={{
+            graphSpace: 'DEFAULT', graph: 'hugegraph', graphStatus: GRAPH_LOAD_STATUS.LOADED,
+        }}>
+            <FormWithSubmission />
+        </GraphAnalysisContext.Provider>
+    );
+    const form = screen.getByRole('form', {name: 'algorithm form'});
+    fireEvent.change(container.querySelector('input'), {target: {value: 'source'}});
+    const runButton = () => container.querySelector('button.ant-btn-primary');
+    await waitFor(() => expect(runButton()).not.toBeDisabled());
+    fireEvent.submit(form);
+    fireEvent.submit(form);
+    await act(async () => resolve[1]({status: 200, data: {}}));
+    expect(runButton()).not.toHaveClass('ant-btn-loading');
+
+    fireEvent.submit(form);
+    expect(api.analysis[method]).toHaveBeenCalledTimes(3);
+    await act(async () => resolve[0]({status: 200, data: {}}));
+    expect(runButton()).toHaveClass('ant-btn-loading');
+    fireEvent.click(runButton());
+    expect(mockForm.submit).not.toHaveBeenCalled();
+
+    await act(async () => resolve[2]({status: 200, data: {}}));
+    expect(runButton()).not.toHaveClass('ant-btn-loading');
+    fireEvent.click(runButton());
+    expect(mockForm.submit).toHaveBeenCalledTimes(1);
 });
