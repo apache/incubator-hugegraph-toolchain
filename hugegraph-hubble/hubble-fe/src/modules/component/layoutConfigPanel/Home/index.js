@@ -31,10 +31,18 @@ import ConcentricLayoutForm from '../Concentric';
 import DagreLayoutForm from '../Dagre';
 import GridLayoutForm from '../Grid';
 import RadialLayoutForm from '../Radial';
+import forceIcon from '../../../../assets/layout_force.svg';
+import circularIcon from '../../../../assets/layout_circular.svg';
+import concentricIcon from '../../../../assets/layout_concentric.svg';
+import dagreIcon from '../../../../assets/layout_dagre.svg';
+import gridIcon from '../../../../assets/layout_grid.svg';
+import radialIcon from '../../../../assets/layout_radial.svg';
 import c from './index.module.scss';
 
 const forms = {'d3-force': ForceLayoutForm, circular: CircularLayoutForm, concentric: ConcentricLayoutForm,
     dagre: DagreLayoutForm, grid: GridLayoutForm, radial: RadialLayoutForm};
+const icons = {'d3-force': forceIcon, circular: circularIcon, concentric: concentricIcon,
+    dagre: dagreIcon, grid: gridIcon, radial: radialIcon};
 const defaults = (type, count) => ({
     'd3-force': {nodeSize: 30, linkDistance: 100, nodeStrength: 300, preventOverlap: true, nodeSpacing: 24},
     circular: {startRadius: Math.max(120, count * 100 / (2 * Math.PI)),
@@ -66,7 +74,14 @@ const OpenLayout = ({layout, data, onChange, ref}) => {
     const ready = Boolean(controller && snapshot?.status === 'ready');
     const names = {'d3-force': 'force', circular: 'circular', concentric: 'concentric', dagre: 'dagre',
         grid: 'grid', radial: 'radial'};
-    const options = Object.keys(forms).map(value => ({value, label: t(`analysis.canvas.layout_panel.${names[value]}`)}));
+    const options = Object.keys(forms).map(value => ({value, label: (
+        <span className={c.assetsItem}>
+            <span className={c.assetsTitle} aria-hidden="true">
+                <img className={c.changeLayoutTypeSelectIcon} src={icons[value]} alt="" />
+            </span>
+            <span className={c.changeLayoutTypeSelectName}>{t(`analysis.canvas.layout_panel.${names[value]}`)}</span>
+        </span>
+    )}));
     if (!forms[type]) options.push({value: type, label: type});
     const LayoutForm = forms[type];
     const changedType = next => {
@@ -84,7 +99,7 @@ const OpenLayout = ({layout, data, onChange, ref}) => {
     return (
         <div className={c.changeLayout}>
             <div className={c.changeLayoutTitle}>{t('analysis.canvas.layout_panel.title')}</div>
-            <Form disabled={!ready} colon={false}>
+            <Form disabled={!ready} colon={false} className={c.layoutTypeForm}>
                 <Form.Item label={t('analysis.canvas.layout_panel.layout_type')} labelCol={{span: 24}}>
                     <Select value={type} options={options} onChange={changedType}
                         aria-label={t('analysis.canvas.layout_panel.layout_type')} />

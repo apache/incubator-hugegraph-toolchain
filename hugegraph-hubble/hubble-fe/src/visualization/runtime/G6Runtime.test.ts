@@ -16,7 +16,7 @@
  */
 
 import type {Graph as NativeGraph, GraphOptions, GraphData as EngineData, NodeData, EdgeData} from '@antv/g6';
-import {CircularLayout, RadialLayout} from '@antv/layout';
+import {CircularLayout, D3ForceLayout, RadialLayout} from '@antv/layout';
 import {G6Runtime} from './G6Runtime';
 import {GraphController} from './GraphController';
 import type {GraphData} from '../model/types';
@@ -71,6 +71,7 @@ const mockEngine = {
 jest.mock('@antv/g6', () => ({
     Graph: jest.fn((options: GraphOptions) => {mockOptions = options; return mockEngine;}),
     GraphEvent: {AFTER_TRANSFORM: 'aftertransform'},
+    DagreLayout: jest.requireActual('@antv/layout').DagreLayout,
 }));
 jest.mock('./extensions', () => ({registerExtensions: jest.fn()}));
 const data = (count: number): GraphData => ({nodes: Array.from({length: count}, (_, index) => ({
@@ -311,6 +312,69 @@ test.each([false, true])('radial avoids overlaps in the reported example with re
     }
 });
 
+const readableExample = (full: boolean): GraphData => {
+    const graph = data(full ? 20 : 13);
+    const pairs = [[0, 1], [2, 1], [3, 1], [0, 4], [2, 0], [2, 5], [6, 7], [8, 9], [10, 9],
+        [11, 8], [12, 8], [10, 8], ...(full ? [[12, 13], [10, 11], [10, 14], [6, 15], [10, 6],
+            [16, 10], [17, 10], [18, 10], [19, 10]] : [])];
+    graph.edges = pairs.map(([source, target], index) => ({
+        id: `edge-${index}`, source: String(source), target: String(target), data: {raw: {id: index}},
+    }));
+    return graph;
+};
+
+test.each([{full: false, reverse: false}, {full: false, reverse: true},
+    {full: true, reverse: false}, {full: true, reverse: true}])(
+    'default force reduces avoidable crossings (full: $full, reversed: $reverse)', async ({full, reverse}) => {
+    const runtime = new G6Runtime(document.createElement('div'));
+    let algorithm: D3ForceLayout | undefined;
+    try {
+        const graph = readableExample(full);
+        if (reverse) graph.nodes.reverse();
+        await runtime.replace(graph, {type: 'd3-force'});
+        const options = mockEngine.setLayout.mock.calls.at(-1)![0];
+        algorithm = new D3ForceLayout({...options, center: [0, 0],
+            // Same position mapping as G6's native adapter, including the initial positions.
+            node: (node: NodeData) => ({id: node.id, x: node.style?.x, y: node.style?.y})});
+        // Mirrors G6's static iterative layout: start, stop the timer, then tick once.
+        void algorithm.execute(mockData);
+        algorithm.stop(); algorithm.tick(options.iterations);
+        const positions = new Map<string, {x: number; y: number}>();
+        algorithm.forEachNode(node => positions.set(String(node.id), {x: node.x, y: node.y}));
+        const orient = (a: {x: number; y: number}, b: {x: number; y: number}, c: {x: number; y: number}) =>
+            (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+        let crossings = 0;
+        mockData.edges.forEach((edge, index) => {
+            mockData.edges.slice(index + 1).forEach(other => {
+                const ids = [edge.source, edge.target, other.source, other.target];
+                if (new Set(ids).size < 4) return; // Shared endpoints are not crossings.
+                const [a, b, c, d] = ids.map(id => positions.get(id)!);
+                if (orient(a, b, c) * orient(a, b, d) < -1e-7
+                    && orient(c, d, a) * orient(c, d, b) < -1e-7) crossings++;
+            });
+        });
+        expect(crossings).toBe(0);
+        const nodes = [...positions.values()];
+        nodes.forEach((node, index) => nodes.slice(index + 1).forEach(other => {
+            expect(Math.hypot(node.x - other.x, node.y - other.y)).toBeGreaterThanOrEqual(30);
+        }));
+    }
+    finally { algorithm?.stop(); algorithm?.destroy(); runtime.stop(); runtime.destroy(); }
+});
+
+test('force initialization preserves supplied coordinates and fixed nodes', async () => {
+    const runtime = new G6Runtime(document.createElement('div'));
+    const graph = readableExample(false);
+    graph.nodes[0].style = {x: 123, y: 456};
+    graph.nodes[0].data.fixed = true;
+    try {
+        await runtime.replace(graph, {type: 'd3-force'});
+        expect(runtime.read()).toEqual(graph);
+        expect(mockEngine.updateNodeData).not.toHaveBeenCalled();
+    }
+    finally { runtime.stop(); runtime.destroy(); }
+});
+
 test('radial preserves an explicit ring distance and overlap opt-out', async () => {
     const runtime = new G6Runtime(document.createElement('div'));
     try {
@@ -514,7 +578,7 @@ test('first nonempty dataset uses one native pre-layout render; subsequent data 
     expect(mockEngine.setLayout).toHaveBeenLastCalledWith(expect.objectContaining({
         type: 'hubble-pinned-d3-force', preLayout: true, isLayoutInvisibleNodes: true, animation: false, iterations: 300,
         link: {distance: 100}, manyBody: {strength: -250}, collide: {radius: 28},
-        x: {strength: 0.2}, y: {strength: 0.2},
+        x: {strength: 0.05}, y: {strength: 0.05},
     }));
     expect(runtime.read()).toEqual(input);
     await runtime.replace(input, {type: 'd3-force'});

@@ -116,6 +116,60 @@ test('layout is a style batching barrier; a new dataset uses the latest pending 
     await controller.dispose();
 });
 
+test('layout changes fit their final positions only after the layout finishes', async () => {
+    const {runtime} = createRuntime();
+    const controller = new GraphController(runtime);
+    await controller.replaceData(input());
+    runtime.fitView.mockClear();
+    const started = deferred(); const finish = deferred();
+    runtime.layout.mockImplementationOnce(async () => {started.resolve(); await finish.promise;});
+    const update = controller.setLayout({type: 'd3-force'});
+    await started.promise;
+    expect(runtime.fitView).not.toHaveBeenCalled();
+    finish.resolve();
+    await update;
+    expect(runtime.fitView).toHaveBeenCalledTimes(1);
+    expect(controller.getSnapshot().status).toBe('ready');
+    await controller.dispose();
+});
+
+test('a newer layout request prevents the older layout from fitting the camera', async () => {
+    const {runtime} = createRuntime();
+    const controller = new GraphController(runtime);
+    await controller.replaceData(input());
+    runtime.fitView.mockClear();
+    const firstStarted = deferred(); const firstFinish = deferred();
+    const nextStarted = deferred(); const nextFinish = deferred();
+    runtime.layout.mockImplementationOnce(async () => {firstStarted.resolve(); await firstFinish.promise;})
+        .mockImplementationOnce(async () => {nextStarted.resolve(); await nextFinish.promise;});
+    const first = controller.setLayout({type: 'radial'});
+    await firstStarted.promise;
+    const next = controller.setLayout({type: 'd3-force'});
+    firstFinish.resolve();
+    await nextStarted.promise;
+    expect(runtime.fitView).not.toHaveBeenCalled();
+    nextFinish.resolve();
+    await Promise.all([first, next]);
+    expect(runtime.fitView).toHaveBeenCalledTimes(1);
+    await controller.dispose();
+});
+
+test('an obsolete in-flight layout cannot fit the replacement dataset', async () => {
+    const {runtime} = createRuntime();
+    const controller = new GraphController(runtime);
+    await controller.replaceData(input());
+    runtime.fitView.mockClear();
+    const started = deferred(); const finish = deferred();
+    runtime.layout.mockImplementationOnce(async () => {started.resolve(); await finish.promise;});
+    const old = controller.setLayout({type: 'grid'});
+    await started.promise;
+    const replacement = controller.replaceData(input(), {fit: false});
+    finish.resolve();
+    await Promise.all([old, replacement]);
+    expect(runtime.fitView).not.toHaveBeenCalled();
+    await controller.dispose();
+});
+
 test('edge-only expansion is committed and duplicate expansion is a no-op', async () => {
     const {runtime} = createRuntime();
     const controller = new GraphController(runtime);

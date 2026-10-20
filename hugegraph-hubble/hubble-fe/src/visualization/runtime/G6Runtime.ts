@@ -15,7 +15,7 @@
  * under the License.
  */
 
-import {Graph, GraphEvent} from '@antv/g6';
+import {DagreLayout, Graph, GraphEvent} from '@antv/g6';
 import type {Command, EdgeData as EngineEdge, GraphData as EngineData, GraphOptions, History, IPointerEvent,
     NodeData as EngineNode} from '@antv/g6';
 import type {GraphData, GraphEdge, GraphNode, NodeData, GraphStyle} from '../model/types';
@@ -206,7 +206,23 @@ export class G6Runtime implements GraphRuntime {
                 ? labelVisibility(data.nodes.length + data.edges.length, zoom)
                 : {nodeLabels: true, edgeLabels: true};
             this.fontScale = this.semanticZoom ? labelFontScale(zoom) : 1;
-            this.graph.setData(toEngineData(data));
+            const incoming = toEngineData(data);
+            if (layout?.type === 'd3-force' && incoming.edges?.length && incoming.nodes?.length
+                && incoming.nodes.length + incoming.edges.length <= 500
+                && incoming.nodes.every(node => !Number.isFinite(node.style?.x) && !Number.isFinite(node.style?.y))) {
+                // Start a fresh force simulation from topology rather than D3's unrelated
+                // phyllotaxis for common result sizes. Saved coordinates (including pins) remain authoritative.
+                const seed = new DagreLayout({rankdir: 'TB', nodeSize: 48, nodesep: 90, ranksep: 140});
+                try {
+                    await seed.execute({nodes: incoming.nodes, edges: incoming.edges});
+                    const positions = new Map<string, {x: number; y: number}>();
+                    seed.forEachNode(node => positions.set(String(node.id), {x: node.x, y: node.y}));
+                    incoming.nodes.forEach(node => {node.style = {...node.style, ...positions.get(node.id)};});
+                }
+                finally { seed.destroy(); }
+                if (!this.alive) return;
+            }
+            this.graph.setData(incoming);
             // Native pre-layout computes positions before constructing shapes.
             // An empty initial draw must not consume the first real dataset.
             const preLayout = this.firstDataDrawPending && data.nodes.length > 0 && layout && layout.type !== 'columns';
@@ -314,8 +330,8 @@ export class G6Runtime implements GraphRuntime {
                 ? {link: {distance: small ? 180 : 100}, manyBody: {strength: small ? -800 : -250},
                     collide: {radius: small ? 40 : 28}, iterations: 300,
                     // Center only translates the centroid. Axis attraction also
-                    // keeps disconnected nodes from expanding the fit bounds.
-                    x: {strength: 0.2}, y: {strength: 0.2}}
+                    // contains disconnected nodes without pulling separate relationships together.
+                    x: {strength: 0.05}, y: {strength: 0.05}}
                 : layout.type === 'dagre' ? {rankdir: 'LR', ranksep: 100, nodesep: 60}
                 : layout.type === 'circular' ? {nodeSpacing: 0,
                     ...(layout.options?.startRadius === undefined && layout.options?.endRadius === undefined

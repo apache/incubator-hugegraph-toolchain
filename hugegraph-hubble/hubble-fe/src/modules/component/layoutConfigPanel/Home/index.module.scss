@@ -47,18 +47,21 @@
 }
 
 .changeLayoutTypeSelectName {
-    margin-left: 20px;
-    height: 20px;
+    margin-left: 12px;
     line-height: 20px;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .assetsItem {
     display: flex;
     align-items: center;
+    min-width: 0;
     
     .assetsTitle {
         height: 44px;
         width: 44px;
+        flex-shrink: 0;
         background: rgb(234, 238, 252);
         border-radius: 50%;
         display: flex;

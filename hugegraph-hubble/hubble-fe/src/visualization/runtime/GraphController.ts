@@ -269,7 +269,11 @@ export class GraphController {
         const revision = ++this.layoutRevision;
         return this.command(async context => {
             await this.runtime.layout(target);
-            if (context.isCurrent()) { this.appliedLayoutRevision = revision; this.adopt(); }
+            if (!context.isCurrent() || revision !== this.layoutRevision) return;
+            await this.runtime.fitView();
+            if (context.isCurrent() && revision === this.layoutRevision) {
+                this.appliedLayoutRevision = revision; this.adopt();
+            }
         }, this.queue.version, 'layout');
     }
 

@@ -35,7 +35,9 @@ const panel = (onChange, props = {}) => <GraphContext.Provider value={fixture()}
 const label = key => `analysis.canvas.layout_panel.${key}`;
 const selectLayout = async name => {
     fireEvent.mouseDown(screen.getByRole('combobox', {name: label('layout_type')}));
-    fireEvent.click(await screen.findByText(label(name), {selector: '.ant-select-item-option-content'}));
+    fireEvent.click(await screen.findByText(label(name), {
+        selector: '.ant-select-item-option-content .changeLayoutTypeSelectName',
+    }));
 };
 
 test('does not inspect graph data while closed', () => {
@@ -82,6 +84,26 @@ test('offers six canonical layout choices and submits the selected layout', asyn
         })));
     }
     expect(onChange.mock.calls.every(([value]) => value.options && !Object.hasOwn(value, 'pipes'))).toBe(true);
+});
+
+test('shows decorative layout images in the selected value and all six menu choices', async () => {
+    const {container} = render(panel(jest.fn()));
+    const selected = () => container.querySelector('.assetsItem');
+    expect(selected()).toHaveTextContent(label('force'));
+    expect(selected().querySelector('.assetsTitle[aria-hidden="true"] img[alt=""]')).not.toBeNull();
+    fireEvent.mouseDown(screen.getByRole('combobox', {name: label('layout_type')}));
+    const menuNames = ['force', 'circular', 'concentric', 'dagre', 'grid', 'radial'];
+    for (const name of menuNames) {
+        const text = await screen.findByText(label(name), {
+            selector: '.ant-select-item-option-content .changeLayoutTypeSelectName',
+        });
+        expect(text.parentElement.querySelector('.assetsTitle[aria-hidden="true"] img[alt=""]')).not.toBeNull();
+    }
+    fireEvent.click(screen.getByText(label('radial'), {
+        selector: '.ant-select-item-option-content .changeLayoutTypeSelectName',
+    }));
+    expect(selected()).toHaveTextContent(label('radial'));
+    expect(selected().querySelector('.assetsTitle[aria-hidden="true"] img[alt=""]')).not.toBeNull();
 });
 
 test('submits editable force options and cancels pending edits on direct close', async () => {
