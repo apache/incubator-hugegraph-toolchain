@@ -26,6 +26,7 @@ import xml.etree.ElementTree as ET
 
 NS = "{http://maven.apache.org/POM/4.0.0}"
 SOURCE_GOALS = {"jar", "jar-no-fork"}
+TEST_SOURCE_GOALS = {"test-jar", "test-jar-no-fork"}
 
 
 def executions(project, plugin):
@@ -67,8 +68,12 @@ class ReleaseProfileTest(unittest.TestCase):
                     javadocs = [goals for _, goals in executions(project, "maven-javadoc-plugin") if "jar" in goals]
                     self.assertEqual(1, len(javadocs), "javadoc jar producers")
 
-                    if module == "hugegraph-tools":
-                        self.assertIn("test-jar-no-fork", sources[0], "Tools test sources jar")
+                    test_sources = [goals for _, goals in executions(project, "maven-source-plugin")
+                                    if TEST_SOURCE_GOALS & set(goals)]
+                    expected = 1 if module == "hugegraph-tools" else 0
+                    self.assertEqual(expected, len(test_sources), "test source jar producers")
+                    for goals in test_sources:
+                        self.assertEqual(1, len(TEST_SOURCE_GOALS & set(goals)), "test source jar goals")
 
 
 if __name__ == "__main__":
