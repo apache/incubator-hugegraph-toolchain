@@ -208,10 +208,10 @@ export class G6Runtime implements GraphRuntime {
             this.fontScale = this.semanticZoom ? labelFontScale(zoom) : 1;
             const incoming = toEngineData(data);
             if (layout?.type === 'd3-force' && incoming.edges?.length && incoming.nodes?.length
-                && incoming.nodes.length + incoming.edges.length <= 500
+                && incoming.nodes.length <= 50 && incoming.edges.length <= Math.min(50, incoming.nodes.length * 2)
                 && incoming.nodes.every(node => !Number.isFinite(node.style?.x) && !Number.isFinite(node.style?.y))) {
-                // Start a fresh force simulation from topology rather than D3's unrelated
-                // phyllotaxis for common result sizes. Saved coordinates (including pins) remain authoritative.
+                // Dagre ranks synchronously: only seed small, sparse fresh results.
+                // Other results use force directly; supplied coordinates keep their starting positions.
                 const seed = new DagreLayout({rankdir: 'TB', nodeSize: 48, nodesep: 90, ranksep: 140});
                 try {
                     await seed.execute({nodes: incoming.nodes, edges: incoming.edges});

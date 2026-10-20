@@ -16,7 +16,7 @@
  */
 
 import type {Graph as NativeGraph, GraphOptions, GraphData as EngineData, NodeData, EdgeData} from '@antv/g6';
-import {CircularLayout, D3ForceLayout, RadialLayout} from '@antv/layout';
+import {CircularLayout, D3ForceLayout, DagreLayout, RadialLayout} from '@antv/layout';
 import {G6Runtime} from './G6Runtime';
 import {GraphController} from './GraphController';
 import type {GraphData} from '../model/types';
@@ -360,6 +360,34 @@ test.each([{full: false, reverse: false}, {full: false, reverse: true},
         }));
     }
     finally { algorithm?.stop(); algorithm?.destroy(); runtime.stop(); runtime.destroy(); }
+});
+
+test.each([
+    {name: '31-node forward dense result', count: 31, bidirectional: false},
+    {name: '22-node bidirectional dense result', count: 22, bidirectional: true},
+    {name: '10-node dense result below the absolute caps', count: 10, bidirectional: false},
+    {name: 'sparse result above the node cap', count: 51, bidirectional: false, chain: true},
+])('automatic force seeding bypasses $name', async ({count, bidirectional, chain}) => {
+    const graph = data(count);
+    graph.edges = graph.nodes.flatMap((source, sourceIndex) => graph.nodes.flatMap((target, targetIndex) => {
+        const connected = chain ? targetIndex === sourceIndex + 1
+            : bidirectional ? sourceIndex !== targetIndex : sourceIndex < targetIndex;
+        return connected ? [{id: `${source.id}-${target.id}`, source: source.id, target: target.id,
+            data: {raw: {id: `${source.id}-${target.id}`}}}] : [];
+    }));
+    // A bypass must not enter synchronous native ranking at all. Fail immediately
+    // if it does, instead of making this regression test perform the expensive work.
+    const seed = jest.spyOn(DagreLayout.prototype, 'execute')
+        .mockRejectedValue(new Error('automatic seed must be bypassed'));
+    const runtime = new G6Runtime(document.createElement('div'));
+    try {
+        await expect(runtime.replace(graph, {type: 'd3-force'})).resolves.toBeUndefined();
+        expect(seed).not.toHaveBeenCalled();
+        expect(mockEngine.setLayout).toHaveBeenLastCalledWith(expect.objectContaining({type: 'hubble-pinned-d3-force'}));
+        expect(mockEngine.render).toHaveBeenCalledTimes(1);
+        expect(runtime.read()).toEqual(graph);
+    }
+    finally {seed.mockRestore(); runtime.stop(); runtime.destroy();}
 });
 
 test('force initialization preserves supplied coordinates and fixed nodes', async () => {
