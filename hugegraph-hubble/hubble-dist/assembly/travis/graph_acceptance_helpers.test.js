@@ -734,6 +734,54 @@ test('bounded drag alternatives fail closed when all paths hit public UI or scre
   assert.match(diagnostics.failure, /no unobstructed/);
 });
 
+test('live drag chooses the free observed endpoint of the same edge before pinning', () => {
+  const {dragTarget, dragEndpoint} = require('./graph_acceptance_helpers');
+  // Recorded release-1.7 query geometry. IDs are anonymized; the source is next
+  // to the public toolbar, while the opposite endpoint has a clear drag path.
+  const point = {x: 963.3873566513762, y: 507, tooltip: 'Node ID: source'};
+  const neighbor = {x: 975.3772075688073, y: 669, tooltip: 'Node ID: target'};
+  const bounds = {x: 331.921875, y: 463, width: 1089.078125, height: 433};
+  const obstacles = [
+    {x: 343.921875, y: 471, width: 512.21875, height: 28},
+    {x: 330.921875, y: 776, width: 180, height: 120},
+    {x: 331.921875, y: 777, width: 180, height: 120},
+    {x: 331.921875, y: 777.015625, width: 180, height: 119.9375},
+    ...Array.from({length: 10}, (_, index) => ({x: 1071 + 32 * index, y: 472, width: 32, height: 32})),
+    {x: 1321.421875, y: 833.015625, width: 80.578125, height: 43.984375},
+  ];
+  // Recorded source candidate ink counts were 0, 1, 0, 4 /81, all below the
+  // existing occupancy threshold. Empty synthetic pixels isolate the geometry.
+  const pixels = {width: 1090, height: 433, data: Buffer.alloc(1090 * 433 * 4, 255)};
+  const blocked = {};
+  assert.throws(() => dragTarget(point, neighbor, bounds, obstacles, pixels, blocked), NeedsInput);
+  assert.equal(blocked.candidates.length, 4);
+  assert.ok(blocked.candidates.every(candidate => candidate.rejected.includes('public-overlay')));
+  const diagnostics = {};
+  const selected = dragEndpoint(point, neighbor, bounds, obstacles, pixels, diagnostics);
+  assert.equal(selected.point, neighbor);
+  assert.equal(selected.neighbor, point);
+  assert.deepEqual(selected.target, dragTarget(neighbor, point, bounds, obstacles, pixels));
+  assert.deepEqual(diagnostics.attempts[0], blocked);
+  assert.equal(diagnostics.attempts.length, 2);
+  assert.deepEqual(diagnostics.attempts[1].distances, [110, 90]);
+  assert.equal(diagnostics.attempts[1].candidates[0].distance, 110);
+  assert.equal(diagnostics.attempts[1].candidates[0].accepted, true);
+  assert.equal(diagnostics.selectedEndpoint, 1);
+
+  const bothBlocked = {};
+  assert.throws(() => dragEndpoint(point, neighbor, bounds,
+    [...obstacles, {x: neighbor.x - 140, y: neighbor.y - 20, width: 280, height: 40}],
+    pixels, bothBlocked), NeedsInput);
+  assert.equal(bothBlocked.attempts.length, 2);
+  assert.ok(bothBlocked.attempts.every(attempt => attempt.candidates.length === 4
+    && attempt.candidates.every(candidate => candidate.rejected.includes('public-overlay'))));
+  assert.match(bothBlocked.failure, /Neither observed endpoint/);
+
+  const preferred = {};
+  assert.equal(dragEndpoint(neighbor, point, bounds, obstacles, pixels, preferred).point, neighbor);
+  assert.equal(preferred.attempts.length, 1, 'A valid source must not search another endpoint');
+});
+
 
 async function candidatePixels(image) {
   const vm = require('node:vm');

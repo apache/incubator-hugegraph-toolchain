@@ -579,6 +579,24 @@ test('failed density draw can be retried and never certifies a stale visibility 
     runtime.stop(); runtime.destroy();
 });
 
+test('node presentation does not cache coordinates replaced by native pre-layout', async () => {
+    const runtime = new G6Runtime(document.createElement('div'));
+    const input = data(1);
+    input.nodes[0].style = {x: 93.5, y: 33.75, z: 5, fill: '#f00', size: 48, labelText: 'saved node'};
+    try {
+        await runtime.replace(input, {type: 'd3-force'});
+        const mapper = mockOptions.node?.style;
+        if (typeof mapper !== 'function') throw new Error('Expected node style mapper');
+        // G6 caches this callback before native pre-layout; cached geometry would
+        // then override the final positions returned through the data styles.
+        const cached = mapper.call({} as NativeGraph, mockData.nodes[0]);
+        expect(cached).toMatchObject({fill: '#f00', size: 48, labelText: 'saved node'});
+        for (const coordinate of ['x', 'y', 'z']) expect(cached).not.toHaveProperty(coordinate);
+        expect(runtime.read().nodes[0].style).toMatchObject({x: 93.5, y: 33.75, z: 5});
+    }
+    finally {runtime.stop(); runtime.destroy();}
+});
+
 test('automatic transform geometry is not overwritten by stale fields in the default-style callback', async () => {
     const runtime = new G6Runtime(document.createElement('div'));
     const input = {...data(2), edges: [{id: 'edge', source: '0', target: '1', data: {raw: {id: 'edge'}},

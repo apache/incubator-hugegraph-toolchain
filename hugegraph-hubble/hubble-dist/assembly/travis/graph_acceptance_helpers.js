@@ -679,6 +679,23 @@ function dragTarget(point, neighbor, bounds, obstacles = [], beforePixels, diagn
   }
   fail('Real graph viewport has no unobstructed, unoccupied perpendicular drag target');
 }
+function dragEndpoint(point, neighbor, bounds, obstacles, beforePixels, diagnostics = {}) {
+  // Both positions have already been identified by actual public node tooltips.
+  // Keep the same edge and all dragTarget constraints; only its movable end varies.
+  diagnostics.attempts = [];
+  for (const [index, endpoints] of [[point, neighbor], [neighbor, point]].entries()) {
+    const attempt = {};
+    diagnostics.attempts.push(attempt);
+    try {
+      const target = dragTarget(...endpoints, bounds, obstacles, beforePixels, attempt);
+      diagnostics.selectedEndpoint = index;
+      return {point: endpoints[0], neighbor: endpoints[1], target};
+    }
+    catch (error) {if (!(error instanceof NeedsInput)) throw error;}
+  }
+  diagnostics.failure = 'Neither observed endpoint of the real edge has an unobstructed, unoccupied drag target';
+  throw new NeedsInput(diagnostics.failure);
+}
 function assertLiveDragPixels(before, held, {point, target, neighbor}) {
   assert.equal(held.width, before.width); assert.equal(held.height, before.height);
   const pixel = (image, x, y) => {
@@ -727,6 +744,6 @@ function assertLiveDragPixels(before, held, {point, target, neighbor}) {
 }
 
 module.exports = {assertOverallPng, assertOffscreenPan, assertOverallPanInvariant, coloredBodyPixels, MINIMAP_PAINT_SELECTOR, uniqueDisplayId, gremlinIdLiteral, connectedPair, mergeRawGraph, assertExpandedGraph, assertVisibleGraphStats, assertVisibleGraphPanel,
-  decodeScreenshot, screenshotAxes, screenshotOverlayRect, screenshotFringeRects, assertPngMatchesCanvas, dragTarget, assertLiveDragPixels, NeedsInput, argument, redact, publicHttpUrl, sha256, typedId, canonicalGraph,
+  decodeScreenshot, screenshotAxes, screenshotOverlayRect, screenshotFringeRects, assertPngMatchesCanvas, dragTarget, dragEndpoint, assertLiveDragPixels, NeedsInput, argument, redact, publicHttpUrl, sha256, typedId, canonicalGraph,
   assertExportMatches, assertFixtureGraph, fixtureFromPrefix, loadPlaywright, chromePath,
   businessPayload, scopePath, pngDimensions, pixelEvidence, screenshot, canvasReady, findNode};

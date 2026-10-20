@@ -38,6 +38,12 @@ const hasChanges = (command: Command): boolean => Object.values(command.current)
     .some((data: EngineData) => [data.nodes, data.edges, data.combos].some(items => Boolean(items?.length)));
 // G6's default-style callback wins over DrawData. Leave automatic lane/loop
 // geometry to the transform so stale model geometry cannot override its result.
+// G6 caches default presentation before native pre-layout. Coordinates must
+// come from DrawData so that initial seed positions cannot override final layout.
+const nodePresentation = (style: EngineNode['style'] = {}) => {
+    const {x: _x, y: _y, z: _z, ...presentation} = style;
+    return presentation;
+};
 const edgePresentation = (style: EngineEdge['style'] = {}) => {
     const {curveOffset: _curveOffset, loopPlacement: _loopPlacement, loopDist: _loopDist, ...presentation} = style;
     return presentation;
@@ -83,7 +89,7 @@ export class G6Runtime implements GraphRuntime {
                     labelPlacement: 'bottom', labelFill: options.theme === 'dark' ? '#e8e8ec' : '#242938',
                     labelBackground: true, labelBackgroundFill: options.theme === 'dark' ? '#171923' : '#ffffff',
                     labelBackgroundOpacity: 0.85, cursor: preset === 'thumbnail' ? 'pointer' : 'grab',
-                    ...datum.style, ...this.labelTypography(datum.style, 12, [2, 4]),
+                    ...nodePresentation(datum.style), ...this.labelTypography(datum.style, 12, [2, 4]),
                     label: datum.style?.label !== false && this.labels.nodeLabels}),
                 state: {selected: datum => ({halo: false, lineWidth: 3, stroke: '#F59E0B',
                     ...this.labelTypography(datum.style, 12, [2, 4]), label: datum.style?.label !== false}),

@@ -25,7 +25,7 @@ const {
   NeedsInput, argument, redact, publicHttpUrl, sha256, typedId, assertExportMatches, assertFixtureGraph,
   uniqueDisplayId, gremlinIdLiteral, connectedPair, assertExpandedGraph, assertVisibleGraphStats, assertVisibleGraphPanel,
   assertOverallPng, assertOffscreenPan, assertOverallPanInvariant,
-  decodeScreenshot, screenshotAxes, screenshotOverlayRect, screenshotFringeRects, assertPngMatchesCanvas, dragTarget, assertLiveDragPixels,
+  decodeScreenshot, screenshotAxes, screenshotOverlayRect, screenshotFringeRects, assertPngMatchesCanvas, dragTarget, dragEndpoint, assertLiveDragPixels,
   fixtureFromPrefix, loadPlaywright, chromePath, businessPayload, scopePath,
   pngDimensions, pixelEvidence, screenshot, canvasReady, findNode,
 } = require('./graph_acceptance_helpers');
@@ -498,6 +498,17 @@ async function fixedHistory(page, region, config, prefix, raw) {
     await page.getByRole('button', {name: 'Zoom In', exact: true}).click();
     await blankPointer(page, region);
   }
+  await blankPointer(page, region);
+  const endpointEvidence = path.join(config.outputDir, `${prefix}-drag-endpoint-geometry.json`);
+  const endpointScreenshot = await screenshot(page, region,
+    path.join(config.outputDir, `${prefix}-drag-endpoint-before.png`));
+  const endpointPixels = await decodeScreenshot(page, fs.readFileSync(endpointScreenshot.file));
+  const endpointDiagnostics = {};
+  try {
+    ({point, neighbor} = dragEndpoint(point, neighbor, await region.boundingBox(),
+      await visibleGraphOverlays(page, region), endpointPixels, endpointDiagnostics));
+  }
+  finally {fs.writeFileSync(endpointEvidence, JSON.stringify(endpointDiagnostics, null, 2) + '\n');}
   await page.mouse.click(point.x, point.y);
   const details = page.getByRole('dialog', {name: 'Data Details', exact: true});
   await details.waitFor({state: 'visible'});
@@ -541,7 +552,7 @@ async function fixedHistory(page, region, config, prefix, raw) {
     await details.getByLabel('Close', {exact: true}).click();
     await details.waitFor({state: 'hidden'});
   }
-  const drag = {before, held, heldPixels, targetEvidence, edgeId: pair.edge.id,
+  const drag = {before, held, heldPixels, targetEvidence, endpointEvidence, endpointScreenshot, edgeId: pair.edge.id,
     after: await changedPixels(page, region, before, path.join(config.outputDir, `${prefix}-node-drag-after.png`))};
   await eventually(page, 'real drag completes without runtime alert', async () => await region.getByRole('alert').count() === 0);
   return {selectedTooltip: point.tooltip, selectedDetails, pinnedAfterRedo: true, drag,
