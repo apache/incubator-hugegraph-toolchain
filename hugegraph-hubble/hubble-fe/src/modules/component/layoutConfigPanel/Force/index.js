@@ -58,7 +58,7 @@ const ForceLayoutForm = props => {
                 label={t('analysis.canvas.layout_panel.node_strength')}
                 tooltip={t('analysis.canvas.layout_panel.node_strength_tooltip')}
             >
-                <InputNumber aria-label={t('analysis.canvas.layout_panel.node_strength')} style={{width: '100%'}} min={-500} max={500} />
+                <InputNumber aria-label={t('analysis.canvas.layout_panel.node_strength')} style={{width: '100%'}} min={-5000} max={5000} />
             </Form.Item>
             <Form.Item
                 name='preventOverlap'
