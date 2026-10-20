@@ -31,6 +31,7 @@ const Canvas3D = ({onExit, children, ...props}) => {
             <Result
                 status="warning"
                 title={t('analysis.canvas.canvas_3d.unavailable')}
+                subTitle={t('analysis.canvas.canvas_3d.refresh_hint')}
                 extra={<Button onClick={onExit}>{t('analysis.canvas.canvas_3d.back_to_2d')}</Button>}
             />
         </div>

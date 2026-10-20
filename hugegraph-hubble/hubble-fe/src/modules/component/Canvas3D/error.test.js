@@ -47,6 +47,7 @@ test('contains a rejected lazy import and returns to 2D without losing the analy
         render(<RouteErrorBoundary fallback={<div>Analysis route lost</div>}><Analysis /></RouteErrorBoundary>);
 
         expect(await screen.findByRole('alert')).toHaveTextContent('analysis.canvas.canvas_3d.unavailable');
+        expect(screen.getByRole('alert')).toHaveTextContent('analysis.canvas.canvas_3d.refresh_hint');
         expect(screen.getByText('Analysis menu')).toBeInTheDocument();
         expect(screen.getByText('Canvas settings remain available')).toBeInTheDocument();
         expect(screen.queryByText('Analysis route lost')).not.toBeInTheDocument();
