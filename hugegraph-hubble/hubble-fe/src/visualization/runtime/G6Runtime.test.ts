@@ -16,7 +16,7 @@
  */
 
 import type {Graph as NativeGraph, GraphOptions, GraphData as EngineData, NodeData, EdgeData} from '@antv/g6';
-import {CircularLayout} from '@antv/layout';
+import {CircularLayout, RadialLayout} from '@antv/layout';
 import {G6Runtime} from './G6Runtime';
 import {GraphController} from './GraphController';
 import type {GraphData} from '../model/types';
@@ -221,6 +221,107 @@ test.each<{name: string; options: GraphLayout['options']; first: number; last: n
         algorithm?.destroy();
         runtime.stop(); runtime.destroy();
     }
+});
+
+const disconnectedRadialData = (size = 30): GraphData => {
+    const graph = data(20);
+    graph.nodes.forEach(node => {node.style = {...node.style, size};});
+    const pairs = [
+        ...Array.from({length: 8}, (_, index) => [index, index + 1]),
+        [1, 9], [2, 10], [2, 11], [4, 12], [6, 13],
+        [14, 15], [14, 16], [14, 17], [17, 18], [17, 19],
+    ];
+    graph.edges = pairs.map(([source, target], index) => ({
+        id: `edge-${index}`, source: String(source), target: String(target), data: {raw: {id: index}},
+    }));
+    return graph;
+};
+
+test.each<{
+    name: string; size: number; options: NonNullable<GraphLayout['options']>;
+    clearance: number; acrossRings: boolean; unitRadius: number;
+}>([
+    {name: 'ordinary nodes across all rings', size: 30, options: {}, clearance: 30, acrossRings: false, unitRadius: 100},
+    {name: 'larger nodes on different rings', size: 80, options: {strictRadial: true}, clearance: 104, acrossRings: true, unitRadius: 104},
+    {name: 'configured size and spacing on different rings', size: 30,
+        options: {nodeSize: 80, nodeSpacing: 80, strictRadial: true}, clearance: 160, acrossRings: true, unitRadius: 160},
+    {name: 'configured size and spacing arrays on different rings', size: 30,
+        options: {nodeSize: [60, 80], nodeSpacing: [20, 100], strictRadial: true},
+        clearance: 180, acrossRings: true, unitRadius: 180},
+])('radial separates $name in a short canvas', async ({size, options, clearance, acrossRings, unitRadius}) => {
+    const runtime = new G6Runtime(document.createElement('div'));
+    let algorithm: RadialLayout | undefined;
+    const graph = disconnectedRadialData(size);
+    try {
+        await runtime.replace(graph, {type: 'radial', options});
+        expect(mockEngine.setLayout).toHaveBeenLastCalledWith(expect.objectContaining({
+            unitRadius, nodeSize: 'nodeSize' in options ? options.nodeSize : Math.max(48, size),
+        }));
+        algorithm = new RadialLayout({...mockEngine.setLayout.mock.calls.at(-1)![0],
+            width: 800, height: 240, center: [0, 0]});
+        await algorithm.execute(graph);
+        const positions: Array<{x: number; y: number}> = [];
+        algorithm.forEachNode(node => positions.push({x: node.x, y: node.y}));
+        expect(positions).toHaveLength(20);
+        let minimumDistance = Infinity;
+        positions.forEach((node, index) => {
+            positions.slice(index + 1).forEach(other => {
+                if (acrossRings && Math.abs(Math.hypot(node.x, node.y) - Math.hypot(other.x, other.y)) < 0.001) return;
+                minimumDistance = Math.min(minimumDistance, Math.hypot(node.x - other.x, node.y - other.y));
+            });
+        });
+        expect(minimumDistance).toBeGreaterThanOrEqual(clearance - 0.001);
+    }
+    finally {
+        algorithm?.destroy();
+        runtime.stop(); runtime.destroy();
+    }
+});
+
+test.each([false, true])('radial avoids overlaps in the reported example with reverse order %s', async reverse => {
+    const graph = data(20);
+    graph.nodes.forEach(node => {node.style = {...node.style, size: 30};});
+    // Observed 20-node / 21-edge example, anonymized without changing its topology.
+    const pairs = [[0, 1], [2, 1], [3, 1], [0, 4], [2, 0], [2, 5], [6, 7], [8, 9], [10, 9],
+        [11, 8], [12, 8], [10, 8], [12, 13], [10, 11], [10, 14], [6, 15], [10, 6],
+        [16, 10], [17, 10], [18, 10], [19, 10]];
+    graph.edges = pairs.map(([source, target], index) => ({
+        id: `edge-${index}`, source: String(source), target: String(target), data: {raw: {id: index}},
+    }));
+    if (reverse) graph.nodes.reverse();
+    const runtime = new G6Runtime(document.createElement('div'));
+    let algorithm: RadialLayout | undefined;
+    try {
+        await runtime.replace(graph, {type: 'radial'});
+        algorithm = new RadialLayout({...mockEngine.setLayout.mock.calls.at(-1)![0],
+            width: 1500, height: 442, center: [0, 0]});
+        await algorithm.execute(graph);
+        const positions: Array<{x: number; y: number}> = [];
+        algorithm.forEachNode(node => positions.push({x: node.x, y: node.y}));
+        expect(positions).toHaveLength(20);
+        positions.forEach((node, index) => {
+            positions.slice(index + 1).forEach(other => {
+                expect(Math.hypot(node.x - other.x, node.y - other.y)).toBeGreaterThanOrEqual(30);
+            });
+        });
+    }
+    finally {
+        algorithm?.destroy();
+        runtime.stop(); runtime.destroy();
+    }
+});
+
+test('radial preserves an explicit ring distance and overlap opt-out', async () => {
+    const runtime = new G6Runtime(document.createElement('div'));
+    try {
+        await runtime.replace(disconnectedRadialData(80), {
+            type: 'radial', options: {unitRadius: 20, preventOverlap: false, nodeSize: 50, nodeSpacing: 10, strictRadial: true},
+        });
+        expect(mockEngine.setLayout).toHaveBeenLastCalledWith(expect.objectContaining({
+            unitRadius: 20, preventOverlap: false, nodeSize: 50, nodeSpacing: 10, strictRadial: true,
+        }));
+    }
+    finally { runtime.stop(); runtime.destroy(); }
 });
 
 test('dense first draw suppresses labels, while hover/selection retain details without overriding explicit opt-out', async () => {

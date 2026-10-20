@@ -305,6 +305,11 @@ export class G6Runtime implements GraphRuntime {
         }
         else {
             const small = this.graph.getNodeData().length <= 20;
+            const largestSize = (size: unknown) => Math.max(0, ...(Array.isArray(size) ? size : [size])
+                .filter((value): value is number => typeof value === 'number' && Number.isFinite(value)));
+            const radialSize = layout.type === 'radial'
+                ? Math.max(48, ...this.graph.getNodeData().map(node => largestSize(node.style?.size))) : 48;
+            const radialSpacing = layout.options?.nodeSpacing === undefined ? 24 : largestSize(layout.options.nodeSpacing);
             const defaults = layout.type === 'd3-force'
                 ? {link: {distance: small ? 180 : 100}, manyBody: {strength: small ? -800 : -250},
                     collide: {radius: small ? 40 : 28}, iterations: 300,
@@ -316,6 +321,12 @@ export class G6Runtime implements GraphRuntime {
                     ...(layout.options?.startRadius === undefined && layout.options?.endRadius === undefined
                         ? {radius: Math.max(120, this.graph.getNodeData().length * 100 / (2 * Math.PI))} : {})}
                 : layout.type === 'grid' ? {preventOverlap: true, nodeSize: 48, nodeSpacing: 36}
+                // Native radial collision only separates nodes on the same ring. Its automatic
+                // radius can compress different rings below a node diameter in a short canvas.
+                // Allow radial displacement too: strict native ring projection can leave even
+                // ordinary same-ring neighbours intersecting after its collision pass.
+                : layout.type === 'radial' ? {preventOverlap: true, strictRadial: false, nodeSize: radialSize, nodeSpacing: 24,
+                    unitRadius: Math.max(100, Math.max(radialSize, largestSize(layout.options?.nodeSize)) + radialSpacing)}
                 : {preventOverlap: true, nodeSize: 48, nodeSpacing: 24};
             const type = layout.type === 'd3-force' ? 'hubble-pinned-d3-force' : layout.type;
             // Post-layout includes hidden rendered nodes; keep the same layout

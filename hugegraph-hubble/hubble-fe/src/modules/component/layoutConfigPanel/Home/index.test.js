@@ -130,3 +130,15 @@ test('keeps positive grid rows and converts radial raw IDs once at its selector'
         type: 'radial', options: expect.objectContaining({focusNode: hubbleRenderId('node', 90071992547409930000n)}),
     })));
 });
+
+test.each([
+    {name: 'default relaxed rings', options: {}, strict: false},
+    {name: 'saved strict rings', options: {strictRadial: true}, strict: true},
+])('radial keeps $name when editing another option', async ({options, strict}) => {
+    const onChange = jest.fn();
+    render(panel(onChange, {layout: {type: 'radial', options}}));
+    expect(screen.getByRole('switch', {name: label('strict_radial')})).toHaveAttribute('aria-checked', String(strict));
+    fireEvent.change(screen.getByRole('spinbutton', {name: label('link_distance_short')}), {target: {value: '225'}});
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith({type: 'radial',
+        options: expect.objectContaining({strictRadial: strict, linkDistance: 225})}));
+});

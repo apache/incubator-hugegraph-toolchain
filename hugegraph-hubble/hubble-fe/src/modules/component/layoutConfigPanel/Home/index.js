@@ -45,7 +45,7 @@ const defaults = (type, count) => ({
     dagre: {rankdir: 'TB', align: undefined, ranksep: 80, nodesep: 40},
     grid: {},
     radial: {unitRadius: 100, linkDistance: 100, nodeSize: 30, nodeSpacing: 24,
-        preventOverlap: true, strictRadial: true},
+        preventOverlap: true, strictRadial: false},
 }[type] || {});
 const OpenLayout = ({layout, data, onChange, ref}) => {
     const {t} = useTranslation();
