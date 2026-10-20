@@ -7,10 +7,13 @@ inputs:
     default: 'apache/hugegraph'
   ref:
     description: 'Immutable candidate source commit'
-    default: '68855199031d5801edb4fe41b2bacbacffe8fe68'
+    default: '86c05ef9c5d417bd37eab21d4ecd5af82bab17ef'
   expected-commit:
     description: 'Locked candidate source commit'
-    default: '68855199031d5801edb4fe41b2bacbacffe8fe68'
+    default: '86c05ef9c5d417bd37eab21d4ecd5af82bab17ef'
+  fixture-artifact:
+    description: Optional complete SDK and Server artifact from this workflow run
+    default: ''
 
 outputs:
   repository:
@@ -34,6 +37,9 @@ outputs:
   maven-repo:
     description: Isolated Maven repository used by subsequent toolchain builds
     value: ${{ steps.build.outputs.maven-repo }}
+  fixture-directory:
+    description: Verified downloaded fixture for an independent Server start
+    value: ${{ steps.build.outputs.fixture-directory }}
 
 runs:
   using: composite
@@ -45,33 +51,54 @@ runs:
         repository: ${{ inputs.repository }}
         ref: ${{ inputs.ref }}
         expected-commit: ${{ inputs.expected-commit }}
-    - name: Install same-source candidate reactor
+    - name: Download same-run SDK and Server fixture
+      if: inputs.fixture-artifact != ''
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.fixture-artifact }}
+        path: ${{ runner.temp }}/candidate-sdk-fixture
+    - name: Verify reused SDK or install same-source reactor
       id: build
       shell: bash
       env:
         SERVER_COMMIT: ${{ steps.source.outputs.commit_id }}
         SERVER_REPOSITORY: ${{ steps.source.outputs.repository }}
         SERVER_FETCH_REF: ${{ steps.source.outputs.fetch_ref }}
+        SDK_FIXTURE_ARTIFACT: ${{ inputs.fixture-artifact }}
+        FIXTURE_PLATFORM: ${{ runner.os }}-${{ runner.arch }}
       run: |
         set -euo pipefail
-        candidate_repo=$(mktemp -d "$RUNNER_TEMP/hugegraph-candidate-m2.XXXXXX")
-        server_build=$(mktemp -d "$RUNNER_TEMP/hugegraph-candidate-build.XXXXXX")
-        source_dir="$server_build/source"
+        fixture_dir=''
+        if [[ -n "$SDK_FIXTURE_ARTIFACT" ]]; then
+          fixture_dir="$RUNNER_TEMP/candidate-sdk-fixture"
+          FIXTURE_REPOSITORY="$SERVER_REPOSITORY" FIXTURE_COMMIT="$SERVER_COMMIT" \
+            FIXTURE_JAVA=17 FIXTURE_DIR="$fixture_dir" FIXTURE_EXPORT_CANDIDATE_SDK=true \
+            FIXTURE_MODE=verify bash "$GITHUB_WORKSPACE/hugegraph-client/assembly/travis/fixture.sh"
+          candidate_repo="$fixture_dir/sdk"
+          archive="$fixture_dir/server.tar.gz"
+        else
+          candidate_repo=$(mktemp -d "$RUNNER_TEMP/hugegraph-candidate-m2.XXXXXX")
+          server_build=$(mktemp -d "$RUNNER_TEMP/hugegraph-candidate-build.XXXXXX")
+          source_dir="$server_build/source"
+        fi
         if [[ -d "$HOME/.m2/repository" ]]; then
           rsync -a --exclude='/org/apache/hugegraph/' --exclude='/candidate-sdk-manifest.json' \
             "$HOME/.m2/repository/" "$candidate_repo/"
         fi
-        bash "$GITHUB_WORKSPACE/hugegraph-client/assembly/travis/install-candidate-sdk.sh" \
-          "$SERVER_COMMIT" "$source_dir" "$candidate_repo"
+        if [[ -z "$SDK_FIXTURE_ARTIFACT" ]]; then
+          bash "$GITHUB_WORKSPACE/hugegraph-client/assembly/travis/install-candidate-sdk.sh" \
+            "$SERVER_COMMIT" "$source_dir" "$candidate_repo"
+          archives=("$source_dir"/hugegraph-server/apache-hugegraph-*.tar.gz)
+          if [[ ${#archives[@]} -ne 1 || ! -f "${archives[0]}" ]]; then
+            printf 'Expected one candidate server archive, found: %s\n' "${archives[*]}" >&2
+            exit 1
+          fi
+          archive="${archives[0]}"
+        fi
         # Retain downloaded third-party inputs for the existing Maven cache.
         mkdir -p "$HOME/.m2/repository"
         rsync -a --exclude='/org/apache/hugegraph/' --exclude='/candidate-sdk-manifest.json' \
           "$candidate_repo/" "$HOME/.m2/repository/"
-        archives=("$source_dir"/hugegraph-server/apache-hugegraph-*.tar.gz)
-        if [[ ${#archives[@]} -ne 1 || ! -f "${archives[0]}" ]]; then
-          printf 'Expected one candidate server archive, found: %s\n' "${archives[*]}" >&2
-          exit 1
-        fi
         manifest="$candidate_repo/candidate-sdk-manifest.json"
         if [[ ! -s "$manifest" ]]; then
           printf 'Candidate SDK installer did not produce a provenance manifest\n' >&2
@@ -81,11 +108,12 @@ runs:
           python3 "$GITHUB_WORKSPACE/hugegraph-client/assembly/travis/verify_candidate_image_sdk.py" "$candidate_repo" \
           --configure-upstream-env "$GITHUB_ENV"
         manifest_artifact_id=$(python3 -c 'import uuid; print(uuid.uuid4().hex)')
-        archive_sha=$(sha256sum "${archives[0]}" | cut -d ' ' -f 1)
+        archive_sha=$(sha256sum "$archive" | cut -d ' ' -f 1)
         printf 'archive-sha256=%s\nmanifest=%s\n' "$archive_sha" \
           "$manifest" >> "$GITHUB_OUTPUT"
         printf 'manifest-artifact-id=%s\n' "$manifest_artifact_id" >> "$GITHUB_OUTPUT"
-        printf 'archive=%s\nmaven-repo=%s\n' "${archives[0]}" "$candidate_repo" >> "$GITHUB_OUTPUT"
+        printf 'archive=%s\nmaven-repo=%s\nfixture-directory=%s\n' \
+          "$archive" "$candidate_repo" "$fixture_dir" >> "$GITHUB_OUTPUT"
     - name: Retain candidate SDK provenance
       uses: actions/upload-artifact@v7
       with:

@@ -8,7 +8,7 @@ Toolchain builds, tests and applications use Java 17. The released Server 1.7 co
 
 The locked Java 17 Server source uses TinkerPop 3.8.1 and SDK version `1.8.0`. Its Common, PD, gRPC and Store artifacts must come from the
 same source commit; Maven Central artifacts with that version are not interchangeable with the candidate. Candidate CI uses the verified
-`apache/hugegraph` baseline `68855199031d5801edb4fe41b2bacbacffe8fe68`, storing and fetching its complete immutable commit identity. Update the SDK action, verifier,
+`apache/hugegraph` baseline `86c05ef9c5d417bd37eab21d4ecd5af82bab17ef`, storing and fetching its complete immutable commit identity. Update the SDK action, verifier,
 Docker defaults and CI baseline together when advancing that commit; moving master alone must not silently change packaged SDK provenance.
 
 Use an explicit JDK directory and check both Java and Maven. On systems where Java 17 is not registered, a system JDK selector can return another installed version. Checking the generated class version alone does not identify the JVM that built or tested it.

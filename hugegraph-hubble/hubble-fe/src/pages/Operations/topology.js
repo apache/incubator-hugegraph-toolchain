@@ -172,7 +172,7 @@ const formatObservedAt = (value, locale, unavailable) => {
             timeStyle: 'medium',
         }).format(observed);
     }
-    catch (error) {
+    catch {
         return unavailable;
     }
 };

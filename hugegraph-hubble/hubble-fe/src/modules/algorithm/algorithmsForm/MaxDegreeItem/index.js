@@ -20,7 +20,6 @@
  * @file MaxDegreeItem
  */
 
-import React from 'react';
 import {InputNumber} from 'antd';
 import Form from '../PersistentForm';
 import {useTranslation} from 'react-i18next';

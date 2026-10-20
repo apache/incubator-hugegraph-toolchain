@@ -37,6 +37,9 @@ test('opens the shortcut overview with question mark outside editors', () => {
 
     expect(screen.getByText('workbench.shortcuts.title')).toBeInTheDocument();
     expect(screen.getByText('workbench.shortcuts.run_query')).toBeInTheDocument();
+    expect(screen.getByText('workbench.shortcuts.zoom_in_graph')).toBeInTheDocument();
+    expect(screen.getByText('workbench.shortcuts.zoom_out_graph')).toBeInTheDocument();
+    expect(screen.getByText('workbench.shortcuts.fit_graph')).toBeInTheDocument();
 });
 
 test('opens the shortcut overview from the visible topbar trigger', () => {

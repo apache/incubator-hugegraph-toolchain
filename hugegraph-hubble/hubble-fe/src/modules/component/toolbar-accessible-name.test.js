@@ -29,20 +29,16 @@ import {GraphContext} from './Context';
 jest.mock('react-i18next', () => ({
     useTranslation: () => ({t: key => key}),
 }));
-jest.mock('../../utils/graph', () => ({}));
 jest.mock('screenfull', () => ({
     isEnabled: false,
     isFullscreen: false,
 }));
 
-const graph = {
-    on: jest.fn(),
-    off: jest.fn(),
-};
+const value = {controller: null, snapshot: {status: 'idle', data: {nodes: [], edges: []}}};
 
 test('gives every graph toolbar icon button its localized tooltip name', () => {
     render(
-        <GraphContext.Provider value={{graph}}>
+        <GraphContext.Provider value={value}>
             <FitCenter />
             <ZoomGraph />
             <RedoUndo onChange={jest.fn()} />

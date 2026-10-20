@@ -16,6 +16,7 @@
  * under the License.
  */
 
+import {assignBrowserLocation, replaceBrowserLocation} from '../../utils/browserNavigation';
 import {Layout, Avatar, Button, Dropdown, message} from 'antd';
 import {QuestionCircleOutlined, UserOutlined} from '@ant-design/icons';
 import style from './index.module.scss';
@@ -54,7 +55,7 @@ const Topbar = () => {
         clearPersistedAlgorithmFormsForUser();
         user.clearLogin();
         sessionStorage.setItem('redirect', redirect);
-        window.location.href = `/login?redirect=${encodeURIComponent(redirect)}`;
+        assignBrowserLocation(`/login?redirect=${encodeURIComponent(redirect)}`);
     }, [location.hash, location.pathname, location.search]);
 
     useEffect(() => {
@@ -98,7 +99,7 @@ const Topbar = () => {
                     clearPersistedAlgorithmFormsForUser();
                     user.clearLogin();
                     message.success(t('Topbar.exit.success'));
-                    window.location.replace('/login');
+                    replaceBrowserLocation('/login');
                     return;
                 }
                 user.endLogoutTransition();

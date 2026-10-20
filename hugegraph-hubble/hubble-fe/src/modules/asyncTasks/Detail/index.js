@@ -20,7 +20,7 @@
  * @file 任务管理 table页面
  */
 
-import React, {useState, useCallback, useContext, useEffect} from 'react';
+import {useState, useCallback, useContext, useEffect} from 'react';
 import {Link} from 'react-router-dom';
 import {Table, Tag, Spin, message, Button, Typography, Modal} from 'antd';
 import GraphAnalysisContext from '../../Context';
@@ -34,7 +34,7 @@ import {
     Status_Color,
     getTranslatedAsyncTaskConstants,
 } from '../../../utils/constants';
-import {intersection, size} from 'lodash-es';
+import {intersection, size} from 'lodash';
 import {format} from 'date-fns';
 import {useTranslation} from 'react-i18next';
 import {AsyncTaskResultContent} from '../Result';
@@ -79,7 +79,7 @@ const AsyncTaskDetail = props => {
         taskManipulations,
     } = getTranslatedAsyncTaskConstants(t);
 
-    const onSelectChange = (rowKey, selectedRows) => {
+    const onSelectChange = (rowKey, _selectedRows) => {
         setSelectedRowKeys(rowKey);
     };
 
@@ -219,7 +219,7 @@ const AsyncTaskDetail = props => {
             dataIndex: 'task_name',
             width: 220,
             ellipsis: true,
-            render: (task_name, rowData, index) => {
+            render: (task_name, _rowData, _index) => {
                 return (
                     <Text className={c.taskName} ellipsis={{tooltip: task_name}}>
                         {task_name}
@@ -232,14 +232,14 @@ const AsyncTaskDetail = props => {
             dataIndex: 'task_type',
             filters: renderTaskTypeFilters(),
             filterMultiple: false,
-            render: (task_type, rowData, index) => {
+            render: (task_type, _rowData, _index) => {
                 return (<>{taskTypeNames[task_type] || task_type}</>);
             },
         },
         {
             title: t('analysis.async_task.column.create_time'),
             dataIndex: 'task_create',
-            render: (task_create, rowData, index) => {
+            render: (task_create, _rowData, _index) => {
                 const convertedDate = task_create ? format(new Date(task_create), 'yyyy-MM-dd HH:mm:ss') : '--';
                 return (<>{convertedDate}</>);
             },
@@ -247,7 +247,7 @@ const AsyncTaskDetail = props => {
         {
             title: t('analysis.async_task.column.duration'),
             dataIndex: 'task_progress',
-            render: (task_progress, rowData, index) => {
+            render: (task_progress, rowData, _index) => {
                 const {task_update, task_create} = rowData;
                 const duration = formatTimeDuration(task_create, task_update);
                 return <div style={{whiteSpace: 'nowrap'}}>{duration}</div>;
@@ -258,7 +258,7 @@ const AsyncTaskDetail = props => {
             dataIndex: 'task_status',
             filterMultiple: false,
             filters: renderTaskStatusFilters(),
-            render: (task_status, rowData, index) => {
+            render: (task_status, _rowData, _index) => {
                 return (
                     <Tag color={Status_Color[task_status]}>
                         {taskStatusNames[task_status] || task_status}
@@ -269,7 +269,7 @@ const AsyncTaskDetail = props => {
         {
             title: t('analysis.async_task.column.action'),
             dataIndex: 'manipulation',
-            render: (result, rowData, index) => {
+            render: (result, rowData, _index) => {
                 const {'task_status': status, 'task_type': type, id: taskId}  = rowData;
                 const allowCheckResTypeArr = ['gremlin', 'computer-dis', 'cypher'];
                 const isAllowCheckRes = status === SUCCESS && allowCheckResTypeArr.includes(type);

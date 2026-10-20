@@ -20,7 +20,7 @@
  * @file 图分析模块Header，用于初始化当前图上下文和展示分析操作
  */
 
-import React, {useCallback, useEffect, useRef, useState, useContext} from 'react';
+import {useCallback, useEffect, useRef, useState, useContext} from 'react';
 import {Alert, Switch, Button, Tag, message, Tooltip} from 'antd';
 import {SyncOutlined, QuestionCircleOutlined} from '@ant-design/icons';
 import GraphAnalysisContext from '../../Context';
@@ -361,7 +361,7 @@ const TopBar = props => {
             }
             {
                 showNavigationButton && (
-                    <>
+                    <span className={c.metadataNavigation}>
                         <Button
                             size='small'
                             onClick={handleClickNavigate}
@@ -372,11 +372,10 @@ const TopBar = props => {
                         <Tooltip
                             placement="bottom"
                             title={t('analysis.topbar.metadata_tooltip')}
-                            className={c.questionCircleIcon}
                         >
                             <QuestionCircleOutlined />
                         </Tooltip>
-                    </>
+                    </span>
                 )
             }
             {
@@ -399,7 +398,7 @@ const TopBar = props => {
                     className={c.contextError}
                     type='error'
                     showIcon
-                    message={t('analysis.topbar.graph_spaces_failed')}
+                    title={t('analysis.topbar.graph_spaces_failed')}
                     action={(
                         <Button size='small' onClick={getGraphSpaces}>
                             {t('analysis.topbar.retry_graph_spaces')}
@@ -412,7 +411,7 @@ const TopBar = props => {
                     className={c.contextError}
                     type='error'
                     showIcon
-                    message={t('analysis.topbar.graphs_failed')}
+                    title={t('analysis.topbar.graphs_failed')}
                     action={(
                         <Button size='small' onClick={getGraphs}>
                             {t('analysis.topbar.retry_graphs')}

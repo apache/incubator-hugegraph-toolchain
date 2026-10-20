@@ -20,8 +20,7 @@
  * @file Oltp图算法表单列表
  */
 
-import React from 'react';
-import {Collapse} from 'antd';
+import {AlgorithmPanelGroup} from '../AlgorithmPanel';
 import _ from 'lodash';
 import {useTranslation} from 'react-i18next';
 import {
@@ -112,7 +111,7 @@ const OltpFormHome = props => {
                     <div className={c.algorithmGoal}>
                         {t(`analysis.algorithm.group.${group.key}`)}
                     </div>
-                    <Collapse ghost accordion className={c.sideBarCollapse}>
+                    <AlgorithmPanelGroup className={c.sideBarCollapse}>
                         {group.items.map(item => (
                             <OltpItem
                                 key={item}
@@ -123,7 +122,7 @@ const OltpFormHome = props => {
                                 updateCurrentAlgorithm={updateCurrentAlgorithm}
                             />
                         ))}
-                    </Collapse>
+                    </AlgorithmPanelGroup>
                 </div>
             ))}
         </div>

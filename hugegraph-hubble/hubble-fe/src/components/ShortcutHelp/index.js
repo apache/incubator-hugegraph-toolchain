@@ -67,17 +67,14 @@ const ShortcutHelp = () => {
             <Typography.Paragraph type='secondary'>
                 {t('workbench.shortcuts.description')}
             </Typography.Paragraph>
-            <Descriptions column={1} size='small' bordered>
-                <Descriptions.Item label={<kbd>?</kbd>}>
-                    {t('workbench.shortcuts.open_help')}
-                </Descriptions.Item>
-                <Descriptions.Item label={<kbd>Ctrl/⌘ + Enter</kbd>}>
-                    {t('workbench.shortcuts.run_query')}
-                </Descriptions.Item>
-                <Descriptions.Item label={<kbd>F</kbd>}>
-                    {t('workbench.shortcuts.fullscreen_graph')}
-                </Descriptions.Item>
-            </Descriptions>
+            <Descriptions column={1} size='small' bordered items={[
+                {key: 'help', label: <kbd>?</kbd>, children: t('workbench.shortcuts.open_help')},
+                {key: 'query', label: <kbd>Ctrl/⌘ + Enter</kbd>, children: t('workbench.shortcuts.run_query')},
+                {key: 'fullscreen', label: <kbd>F</kbd>, children: t('workbench.shortcuts.fullscreen_graph')},
+                {key: 'zoom-in', label: <kbd>+ / =</kbd>, children: t('workbench.shortcuts.zoom_in_graph')},
+                {key: 'zoom-out', label: <kbd>-</kbd>, children: t('workbench.shortcuts.zoom_out_graph')},
+                {key: 'fit', label: <kbd>0</kbd>, children: t('workbench.shortcuts.fit_graph')},
+            ]} />
         </Modal>
     );
 };

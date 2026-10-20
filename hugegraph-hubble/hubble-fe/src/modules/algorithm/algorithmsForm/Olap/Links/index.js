@@ -20,8 +20,10 @@
  * @file Links算法
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Collapse, InputNumber, Input} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
+import {useState, useCallback, useContext} from 'react';
+import {InputNumber, Input} from 'antd';
 import Form from '../../PersistentForm';
 import {UngroupOutlined} from '@ant-design/icons';
 import GraphAnalysisContext from '../../../../Context';
@@ -41,7 +43,6 @@ const Links = props => {
     const {ALGORITHM_NAME} = useTranslatedConstants();
     const {LINKS} = ALGORITHM_NAME;
     const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
-    // eslint-disable-next-line
     const placeholder='{"start_vertexes":["A","B","C","D","E"],"vertex_end_condition":{"label":"user","property_filter":"$element.age <= 90"},"edge_end_condition":{"label":"pay","property_filter":"double($out.money) >= 4"},"edge_compare_condition":{"label":"pay","property_filter":"$out.money > $in.money"}}';
     const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.links';
 
@@ -59,7 +60,7 @@ const Links = props => {
     };
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
 
     const [form] = Form.useForm();
 
@@ -73,9 +74,9 @@ const Links = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(LINKS);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             const {worker, ...args} = algorithmParams;
             const formParams = {
                 algorithm: 'links',
@@ -86,15 +87,15 @@ const Links = props => {
             const response =  await api.analysis.postOlapInfo(graphSpace, graph, filteredParams);
             const {data, status, message} = response || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, '', message);
+                complete(FAILED, '', message);
             }
             else {
-                handleFormSubmit(SUCCESS, data?.task_id, message);
+                complete(SUCCESS, data?.task_id, message);
             }
-            setRequiring(false);
+            finishRequiring();
         },
         [FAILED, LINKS, LOADING, SUCCESS, graph, graphSpace,
-            handleFormSubmit, updateCurrentAlgorithm]
+            beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const onFormFinish = useCallback(
@@ -117,11 +118,8 @@ const Links = props => {
         [form]
     );
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={info.icon}
                     name={LINKS}
@@ -173,7 +171,7 @@ const Links = props => {
                 </Form.Item>
                 <OlapComputerItem />
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

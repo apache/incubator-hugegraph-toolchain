@@ -105,7 +105,7 @@ it('submits the first step when a legal new task name and required options are s
     const onFormFinish = jest.fn();
     renderForm(onFormFinish);
 
-    await screen.findByText('fixture.csv', {selector: '.ant-select-selection-item'});
+    await screen.findByText('fixture.csv', {selector: '.ant-select-content'});
     const graphSelect = document.querySelector('#base_form_ingestion_option_graph');
     fireEvent.mouseDown(graphSelect);
     fireEvent.click(await screen.findByText('hugegraph', {

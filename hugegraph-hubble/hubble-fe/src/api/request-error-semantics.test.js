@@ -16,6 +16,11 @@
  * under the License.
  */
 
+const browserNavigation = {
+    assignBrowserLocation: jest.fn(),
+    replaceBrowserLocation: jest.fn(),
+};
+
 const loadResponseHandlers = modulePath => {
     jest.resetModules();
 
@@ -61,6 +66,7 @@ const loadResponseHandlers = modulePath => {
         clearLogin,
         isLogoutTransition,
     }));
+    jest.doMock('../utils/browserNavigation', () => browserNavigation);
     jest.doMock('../utils/config', () => ({
         isAuthEnabled,
     }));
@@ -82,14 +88,9 @@ const loadResponseHandlers = modulePath => {
 
 describe.each(['./request'])('%s error semantics', modulePath => {
     beforeEach(() => {
-        delete window.location;
-        window.location = {
-            pathname: '/gremlin/DEFAULT/hugegraph',
-            search: '?x=1',
-            hash: '#result',
-            href: '',
-            replace: jest.fn(),
-        };
+        window.history.replaceState(null, '', '/gremlin/DEFAULT/hugegraph?x=1#result');
+        browserNavigation.assignBrowserLocation.mockClear();
+        browserNavigation.replaceBrowserLocation.mockClear();
     });
 
     afterEach(() => {
@@ -98,6 +99,7 @@ describe.each(['./request'])('%s error semantics', modulePath => {
         jest.dontMock('../i18n');
         jest.dontMock('../utils/user');
         jest.dontMock('../utils/config');
+        jest.dontMock('../utils/browserNavigation');
         localStorage.clear();
         sessionStorage.clear();
     });
@@ -247,7 +249,7 @@ describe.each(['./request'])('%s error semantics', modulePath => {
         expect(clearLogin).toHaveBeenCalledTimes(1);
         expect(sessionStorage.getItem('redirect'))
             .toBe('/gremlin/DEFAULT/hugegraph?x=1#result');
-        expect(window.location.href).toBe(
+        expect(browserNavigation.assignBrowserLocation).toHaveBeenCalledWith(
             '/login?redirect=%2Fgremlin%2FDEFAULT%2Fhugegraph%3Fx%3D1%23result'
         );
         expect(instance.get).not.toHaveBeenCalled();
@@ -274,7 +276,8 @@ describe.each(['./request'])('%s error semantics', modulePath => {
         await expect(reject(error)).rejects.toBe(error);
         expect(clearLogin).not.toHaveBeenCalled();
         expect(sessionStorage.getItem('redirect')).toBeNull();
-        expect(window.location.href).toBe('');
+        expect(browserNavigation.assignBrowserLocation).not.toHaveBeenCalled();
+        expect(browserNavigation.replaceBrowserLocation).not.toHaveBeenCalled();
         expect(messageError).toHaveBeenCalledWith('request.error');
     });
 
@@ -292,7 +295,7 @@ describe.each(['./request'])('%s error semantics', modulePath => {
         expect(clearLogin).toHaveBeenCalledTimes(1);
         expect(sessionStorage.getItem('redirect'))
             .toBe('/gremlin/DEFAULT/hugegraph?x=1#result');
-        expect(window.location.href).toBe(
+        expect(browserNavigation.assignBrowserLocation).toHaveBeenCalledWith(
             '/login?redirect=%2Fgremlin%2FDEFAULT%2Fhugegraph%3Fx%3D1%23result'
         );
         expect(instance.get).not.toHaveBeenCalled();
@@ -317,8 +320,8 @@ describe.each(['./request'])('%s error semantics', modulePath => {
         await expect(resolve(response)).rejects.toBe(response);
         expect(clearLogin).toHaveBeenCalledTimes(1);
         expect(sessionStorage.getItem('redirect')).toBeNull();
-        expect(window.location.replace).toHaveBeenCalledWith('/login');
-        expect(window.location.href).toBe('');
+        expect(browserNavigation.replaceBrowserLocation).toHaveBeenCalledWith('/login');
+        expect(browserNavigation.assignBrowserLocation).not.toHaveBeenCalled();
     });
 
     it('does not restore the previous route when a concurrent status returns HTTP 401',
@@ -340,14 +343,14 @@ describe.each(['./request'])('%s error semantics', modulePath => {
             await expect(reject(error)).rejects.toBe(error);
             expect(clearLogin).toHaveBeenCalledTimes(1);
             expect(sessionStorage.getItem('redirect')).toBeNull();
-            expect(window.location.replace).toHaveBeenCalledWith('/login');
-            expect(window.location.href).toBe('');
+            expect(browserNavigation.replaceBrowserLocation).toHaveBeenCalledWith('/login');
+            expect(browserNavigation.assignBrowserLocation).not.toHaveBeenCalled();
         });
 
     it.each([401, 403])(
         'shows business %s from login without redirecting',
         async status => {
-            window.location.pathname = '/login';
+            window.history.replaceState(null, '', '/login');
             const {resolve, messageError, clearLogin}
                 = loadResponseHandlers(modulePath);
             const response = {
@@ -365,14 +368,15 @@ describe.each(['./request'])('%s error semantics', modulePath => {
             expect(messageError).toHaveBeenCalledWith('用户名或密码不正确');
             expect(clearLogin).not.toHaveBeenCalled();
             expect(sessionStorage.getItem('redirect')).toBeNull();
-            expect(window.location.href).toBe('');
+            expect(browserNavigation.assignBrowserLocation).not.toHaveBeenCalled();
+            expect(browserNavigation.replaceBrowserLocation).not.toHaveBeenCalled();
         }
     );
 
     it.each([401, 403])(
         'shows HTTP %s from login without redirecting',
         async status => {
-            window.location.pathname = '/login';
+            window.history.replaceState(null, '', '/login');
             const {reject, messageError, clearLogin}
                 = loadResponseHandlers(modulePath);
             const error = {
@@ -392,7 +396,8 @@ describe.each(['./request'])('%s error semantics', modulePath => {
             expect(messageError).toHaveBeenCalledWith('用户名或密码不正确');
             expect(clearLogin).not.toHaveBeenCalled();
             expect(sessionStorage.getItem('redirect')).toBeNull();
-            expect(window.location.href).toBe('');
+            expect(browserNavigation.assignBrowserLocation).not.toHaveBeenCalled();
+            expect(browserNavigation.replaceBrowserLocation).not.toHaveBeenCalled();
         }
     );
 
@@ -403,7 +408,7 @@ describe.each(['./request'])('%s error semantics', modulePath => {
         [403, 'a non-JSON body', 'Forbidden'],
     ])('shows one localized fallback for login HTTP %s with %s',
         async (status, description, data) => {
-            window.location.pathname = '/login';
+            window.history.replaceState(null, '', '/login');
             const {reject, messageError, clearLogin}
                = loadResponseHandlers(modulePath);
             const error = {
@@ -431,7 +436,8 @@ describe.each(['./request'])('%s error semantics', modulePath => {
 
         expect(resolve(response)).toBe(response);
         expect(clearLogin).not.toHaveBeenCalled();
-        expect(window.location.href).toBe('');
+        expect(browserNavigation.assignBrowserLocation).not.toHaveBeenCalled();
+        expect(browserNavigation.replaceBrowserLocation).not.toHaveBeenCalled();
     });
 
     it('shows a modal warning for throttled login attempts', () => {

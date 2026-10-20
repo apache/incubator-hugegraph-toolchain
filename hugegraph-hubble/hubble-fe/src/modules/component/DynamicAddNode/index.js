@@ -20,7 +20,7 @@
  * @file  添加节点
  */
 
-import React, {useCallback, useEffect, useState, useContext} from 'react';
+import {useCallback, useEffect, useState, useContext, useRef, useId} from 'react';
 import {Drawer, Select, Input, Button, message, Form, Row, Col} from 'antd';
 import {useTranslation} from 'react-i18next';
 import GraphAnalysisContext from '../../Context';
@@ -34,12 +34,26 @@ const DynamicAddNode = props => {
         open,
         onCancel,
         onOK,
-        drawerInfo: vertexLists,
+        drawerInfo: vertexLists = [],
     } = props;
 
     const {t} = useTranslation();
+    const formId = useId();
     const {graphSpace: currentGraphSpace, graph: currentGraph} = useContext(GraphAnalysisContext);
     const [form] = Form.useForm();
+    const generation = useRef(0);
+    const liveScope = useRef(null);
+    liveScope.current = {currentGraph, currentGraphSpace, open};
+    const [pending, setPending] = useState(false);
+    const submitting = useRef(false);
+    useEffect(() => {
+        generation.current += 1;
+        submitting.current = false;
+        setPending(false);
+        setSelectedVertexLabel(undefined);
+        if (open) form.resetFields();
+        return () => { generation.current += 1; };
+    }, [currentGraph, currentGraphSpace, open, form]);
     const idStrategyMappings = {
         PRIMARY_KEY: t('analysis.canvas.dynamic_add.primary_key_id'),
         AUTOMATIC: t('analysis.canvas.dynamic_add.automatic'),
@@ -78,36 +92,69 @@ const DynamicAddNode = props => {
         [selectedVertexLabel]
     );
 
-    const onDrawerClose = useCallback(
-        () => {
+    const finishClose = useCallback(
+        ({writeCompleted = false} = {}) => {
+            generation.current += 1;
+            // A completed write stays locked until the owner closes/reopens
+            // this drawer, even if applying it to the local canvas failed.
+            if (!writeCompleted) {
+                submitting.current = false;
+                setPending(false);
+            }
             setSelectedVertexLabel();
             form.resetFields();
-            onCancel();
+            return onCancel?.();
         },
         [form, onCancel]
     );
 
-    const onAddNode = useCallback(
-        () => {
-            form.validateFields().then(values => {
-                const params = {
-                    properties: values.properties || {},
-                    ...values,
-                };
-                api.analysis.addGraphNode(currentGraphSpace, currentGraph, params).then(res => {
-                    const {status, data} = res;
-                    if (status === 200) {
-                        message.success(t('analysis.canvas.dynamic_add.add_success'));
-                        onOK(data);
+    const onDrawerClose = useCallback(() => {
+        // Closing a drawer does not undo a submitted server write. Keep its
+        // completion callback attached until success or failure is known.
+        if (!submitting.current) return finishClose();
+    }, [finishClose]);
+
+    const onAddNode = useCallback(async () => {
+        if (!open || submitting.current) return;
+        const token = generation.current;
+        const owner = liveScope.current;
+        const current = () => token === generation.current
+            && Object.keys(owner).every(key => owner[key] === liveScope.current[key]);
+        submitting.current = true;
+        setPending(true);
+        try {
+            const values = await form.validateFields();
+            if (!current()) return;
+            const params = {properties: values.properties || {}, ...values};
+            const response = await api.analysis.addGraphNode(currentGraphSpace, currentGraph, params);
+            if (!current()) return;
+            if (response.status === 200) {
+                try {
+                    const result = await onOK?.(response.data);
+                    if (result && typeof result === 'object' && 'status' in result && result.status !== 'applied') {
+                        throw new Error('Canvas update was not applied');
                     }
-                });
-                setSelectedVertexLabel();
-                form.resetFields();
-                onCancel();
-            }).catch(e => {});
-        },
-        [currentGraph, currentGraphSpace, form, onCancel, onOK, t]
-    );
+                }
+                catch {
+                    if (current()) {
+                        message.warning(t('analysis.canvas.dynamic_add.sync_failed'));
+                        await finishClose({writeCompleted: true});
+                    }
+                    return;
+                }
+                if (!current()) return;
+                message.success(t('analysis.canvas.dynamic_add.add_success'));
+                await finishClose({writeCompleted: true});
+            }
+            else if (!response.message) message.error(t('analysis.canvas.dynamic_add.save_failed'));
+        }
+        catch (error) {
+            if (current() && !error?.errorFields) message.error(t('analysis.canvas.dynamic_add.save_failed'));
+        }
+        finally {
+            if (current()) { submitting.current = false; setPending(false); }
+        }
+    }, [currentGraph, currentGraphSpace, form, finishClose, onOK, open, t]);
 
     const onVertexTypeChange = useCallback(
         value => {
@@ -164,7 +211,7 @@ const DynamicAddNode = props => {
                                 labelCol={{span: 9, offset: 6}}
                                 rules={!isAllowNull
                                     ? [rules.required(t('analysis.canvas.dynamic_add.required'))]
-                                    : ''}
+                                    : []}
                             >
                                 <Input
                                     placeholder={t('analysis.canvas.dynamic_add.property_placeholder')}
@@ -183,12 +230,18 @@ const DynamicAddNode = props => {
             className={c.addNodeDrawer}
             title={t('analysis.canvas.dynamic_add.add_vertex')}
             onClose={onDrawerClose}
+            closable={{disabled: pending}}
+            mask={{closable: !pending}}
+            keyboard={!pending}
             open={open}
             footer={[
                 <Button
                     type="primary"
                     size="medium"
                     onClick={onAddNode}
+                    loading={pending}
+                    disabled={pending}
+                    aria-label={t('analysis.canvas.dynamic_add.add')}
                     key="add"
                 >
                     {t('analysis.canvas.dynamic_add.add')}
@@ -196,6 +249,7 @@ const DynamicAddNode = props => {
                 <Button
                     size="medium"
                     onClick={onDrawerClose}
+                    disabled={pending}
                     key="close"
                 >
                     {t('analysis.canvas.dynamic_add.cancel')}
@@ -203,7 +257,9 @@ const DynamicAddNode = props => {
             ]}
         >
             <Form
+                name={`add-vertex-${formId}`}
                 form={form}
+                disabled={pending}
                 labelAlign='left'
                 labelCol={{span: 6}}
                 colon={false}

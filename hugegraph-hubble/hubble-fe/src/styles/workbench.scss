@@ -179,18 +179,18 @@
     .ant-input,
     .ant-input-affix-wrapper,
     .ant-input-number,
-    .ant-select-selector,
+    .ant-select,
     .ant-picker {
         border-radius: var(--workbench-radius);
     }
 
     .ant-alert,
     .ant-card,
-    .ant-modal-content {
+    .ant-modal-container {
         border-radius: var(--workbench-radius-lg);
     }
 
-    .ant-page-header-heading-title {
+    .hubble-page-header-heading-title {
         color: var(--workbench-color-text);
         font-size: 20px;
         line-height: 1.4;
@@ -254,7 +254,8 @@
         background: rgba(13, 28, 50, 0.34);
     }
 
-    .ant-modal-content {
+    .ant-modal-container {
+        padding: 0;
         overflow: hidden;
         border: 1px solid rgba(216, 222, 233, 0.82);
         border-radius: 12px;
@@ -312,7 +313,7 @@
 
     .ant-input,
     .ant-input-affix-wrapper,
-    .ant-select-selector,
+    .ant-select,
     .ant-picker {
         min-height: 40px;
         border-color: var(--workbench-color-border);
@@ -328,7 +329,7 @@
     .ant-input:hover,
     .ant-input-affix-wrapper:hover,
     .ant-input-number:hover,
-    .ant-select:not(.ant-select-disabled):hover .ant-select-selector,
+    .ant-select:not(.ant-select-disabled):hover,
     .ant-picker:hover {
         border-color: #78a9ec;
     }
@@ -337,7 +338,7 @@
     .ant-input-focused,
     .ant-input-affix-wrapper-focused,
     .ant-input-number-focused,
-    .ant-select-focused:not(.ant-select-disabled) .ant-select-selector,
+    .ant-select-focused:not(.ant-select-disabled),
     .ant-picker-focused {
         border-color: var(--workbench-color-brand);
         box-shadow: var(--workbench-focus-ring) !important;
@@ -347,7 +348,7 @@
         .ant-input,
         .ant-input-affix-wrapper,
         .ant-input-number,
-        .ant-select:not(.ant-select-disabled) .ant-select-selector,
+        .ant-select:not(.ant-select-disabled),
         .ant-picker {
             border-color: #d4380d;
         }
@@ -360,7 +361,7 @@
     .ant-input-disabled,
     .ant-input-affix-wrapper-disabled,
     .ant-input-number-disabled,
-    .ant-select-disabled .ant-select-selector,
+    .ant-select-disabled,
     .ant-picker-disabled {
         border-color: #e2e6ed !important;
         background: #f4f6f9 !important;
@@ -397,32 +398,6 @@
         .ant-select {
             width: 100%;
         }
-    }
-
-    .ant-modal.ant-zoom-enter,
-    .ant-modal.ant-zoom-appear {
-        opacity: 0;
-        transform: translateY(8px) scale(.985);
-    }
-
-    .ant-modal.ant-zoom-enter-active,
-    .ant-modal.ant-zoom-appear-active {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-        transition: opacity 180ms ease-out, transform 180ms ease-out;
-        animation: none;
-    }
-
-    .ant-modal.ant-zoom-leave {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-
-    .ant-modal.ant-zoom-leave-active {
-        opacity: 0;
-        transform: translateY(8px) scale(.985);
-        transition: opacity 140ms ease-in, transform 140ms ease-in;
-        animation: none;
     }
 }
 

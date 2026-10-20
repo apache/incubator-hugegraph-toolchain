@@ -20,8 +20,10 @@
  * @file AllPaths算法
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Input, Collapse, Select, Tooltip, InputNumber} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
+import {useState, useCallback, useContext} from 'react';
+import {Input, Select, Tooltip, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
 import {ClusterOutlined, QuestionCircleOutlined, DownOutlined, RightOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
@@ -58,7 +60,7 @@ const AllPaths = props => {
 
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
     const [stepVisible, setStepVisible] = useState(false);
     const directionOptions = [
         {label: t('analysis.algorithm.form.direction_options.out'), value: 'OUT'},
@@ -80,9 +82,9 @@ const AllPaths = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(ALLPATHS);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             algorithmParams = {...algorithmParams, 'algorithmName': Algorithm_Url[ALLPATHS]};
             const filteredParams = removeNilKeys(algorithmParams);
             const response =  await api.analysis.runOltpInfo(graphSpace, graph, filteredParams);
@@ -90,7 +92,7 @@ const AllPaths = props => {
             const {graph_view, pathnum} = data || {};
             const {vertices} = graph_view || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, {}, message);
+                complete(FAILED, {}, message);
             }
             else {
                 const sourceIds = getNodesFromParams(algorithmParams.sources, vertices);
@@ -99,11 +101,11 @@ const AllPaths = props => {
                     endPointsId: {startNodes: [...sourceIds], endNodes: [...targetIds]},
                     pathNum: pathnum,
                 };
-                handleFormSubmit(SUCCESS, graph_view || {}, message, options);
+                complete(SUCCESS, graph_view || {}, message, options);
             }
-            setRequiring(false);
+            finishRequiring();
         },
-        [graph, graphSpace, handleFormSubmit, updateCurrentAlgorithm]
+        [graph, graphSpace, beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const handleRunning = useCallback(
@@ -207,11 +209,8 @@ const AllPaths = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<ClusterOutlined />}
                     name={ALLPATHS}
@@ -241,7 +240,7 @@ const AllPaths = props => {
                 <CapacityItem />
                 <LimitItem initialValue={10} desc={t('analysis.algorithm.oltp.template_paths.limit')} />
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

@@ -87,6 +87,23 @@ test('keeps unknown and partial source states explicit', async () => {
     expect(screen.getByText(/stale/i)).toBeInTheDocument();
 });
 
+test('loads once per mount and only reloads the snapshot on explicit refresh', async () => {
+    getOverview.mockResolvedValue({
+        status: 'UP', observed_at: 1000, sources: {}, facts: {}, nodes: [],
+    });
+
+    renderOverview();
+    await screen.findByRole('button', {name: 'Refresh'});
+    expect(getOverview).toHaveBeenCalledTimes(1);
+    expect(getOverview).toHaveBeenLastCalledWith(false);
+
+    await userEvent.click(screen.getByRole('button', {name: 'Refresh'}));
+    await waitFor(() => expect(screen.getByRole('button', {name: 'Refresh'}))
+        .not.toHaveClass('ant-btn-loading'));
+    expect(getOverview).toHaveBeenCalledTimes(2);
+    expect(getOverview).toHaveBeenLastCalledWith(true);
+});
+
 test('moves the topology switch to the topbar when its host is available', async () => {
     getOverview.mockResolvedValue({
         status: 'UP', observed_at: 1000, sources: {}, facts: {}, nodes: [],
@@ -591,7 +608,7 @@ test('switches between the topology and an accessible node list', async () => {
     renderOverview();
 
     expect(await screen.findByRole('radio', {name: 'Topology'})).toBeChecked();
-    await userEvent.click(screen.getByRole('radio', {name: 'Node list'}));
+    await userEvent.click(screen.getByRole('radio', {name: 'Node list'}).closest('label'));
 
     expect(screen.getByRole('table', {name: 'Cluster nodes'})).toBeInTheDocument();
     expect(screen.queryByLabelText('Server, PD, and Store service topology'))

@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import {Alert, Button, PageHeader, Radio, Spin, Space} from 'antd';
+import PageHeader from '../../components/PageHeader';
+import {Alert, Button, Radio, Spin, Space} from 'antd';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import ImageView from './ImageView';
 import ListView from './ListView';
@@ -84,7 +85,6 @@ const Meta = () => {
         <>
             <Spin spinning={loading}>
                 <PageHeader
-                    ghost={false}
                     onBack={handlePageBack}
                     title={t('schema.title')}
                     extra={[
@@ -112,19 +112,19 @@ const Meta = () => {
                         active='schema'
                     />
                     {hasIdentityError && (
-                        <Space direction='vertical' style={{width: '100%'}}>
+                        <Space orientation='vertical' style={{width: '100%'}}>
                             {errors.graphspace && (
                                 <Alert
                                     type='error'
                                     showIcon
-                                    message={t('schema.identity.graphspace_unavailable')}
+                                    title={t('schema.identity.graphspace_unavailable')}
                                 />
                             )}
                             {errors.graph && (
                                 <Alert
                                     type='error'
                                     showIcon
-                                    message={t('schema.identity.graph_unavailable')}
+                                    title={t('schema.identity.graph_unavailable')}
                                 />
                             )}
                             <Button onClick={loadIdentity}>

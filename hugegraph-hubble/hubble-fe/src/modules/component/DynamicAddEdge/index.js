@@ -20,7 +20,7 @@
  * @file  添加出入边
  */
 
-import React, {useState, useCallback, useEffect, useContext} from 'react';
+import {useState, useCallback, useEffect, useContext, useRef, useId} from 'react';
 import {Drawer, Input, Button, message, Form, Select, Col, Row} from 'antd';
 import {useTranslation} from 'react-i18next';
 import GraphAnalysisContext from '../../Context';
@@ -40,50 +40,76 @@ const AddEdgeDrawer = props => {
     } =  props;
 
     const {t} = useTranslation();
+    const formId = useId();
     const {graphSpace: currentGraphSpace, graph: currentGraph} = useContext(GraphAnalysisContext);
 
     const [relatedGraphEdges, setRelatedEdges] = useState([]);
     const [edgeProperties, setEdgeProperties] = useState([]);
     const {vertices} = graphData || {};
-    const nodesDataArr = _.cloneDeep(vertices);
+    const nodesDataArr = vertices;
     const {vertexId, vertexLabel} = drawerInfo || {};
 
     const [isShowMore, setShowMore] = useState(false);
-    const [isAddDisabled, setIsAddDisabled] = useState(true);
 
     const [addForm] = Form.useForm();
+    const generation = useRef(0);
+    const liveScope = useRef(null);
+    liveScope.current = {currentGraph, currentGraphSpace, open, vertexId, vertexLabel, isClickNew, isOutEdge};
+    const linksRequest = useRef(0);
+    const propertiesRequest = useRef(0);
+    const [pending, setPending] = useState(false);
+    const submitting = useRef(false);
+    useEffect(() => {
+        generation.current += 1;
+        submitting.current = false;
+        setPending(false);
+        setRelatedEdges([]);
+        setEdgeProperties([]);
+        setShowMore(false);
+        if (open) addForm.resetFields();
+        return () => { generation.current += 1; };
+    }, [addForm, currentGraph, currentGraphSpace, open, vertexId, vertexLabel, isClickNew, isOutEdge]);
 
-    const resetStatus = useCallback(
-        () => {
-            setShowMore(false);
-            setIsAddDisabled(true);
-        },
-        []
-    );
+    const resetStatus = useCallback(() => setShowMore(false), []);
 
-    const onCloseDrawer = useCallback(
-        () => {
-            onCancel();
+    const finishClose = useCallback(
+        ({writeCompleted = false} = {}) => {
+            generation.current += 1;
+            // A completed write stays locked until the owner closes/reopens
+            // this drawer, even if applying it to the local canvas failed.
+            if (!writeCompleted) {
+                submitting.current = false;
+                setPending(false);
+            }
             addForm.resetFields();
             resetStatus();
+            return onCancel?.();
         },
         [addForm, onCancel, resetStatus]
     );
 
-    const getVertexlinks = useCallback(
-        label => {
-            api.analysis.fetchVertexlinks(currentGraphSpace, currentGraph, label)
-                .then(res => {
-                    const {data, status, message: errMsg} = res;
-                    if (status === 200) {
-                        setRelatedEdges(data);
-                    }
-                    if (status !== 200) {
-                        !errMsg && message.error(t('analysis.canvas.dynamic_add.get_edge_type_failed'));
-                    }
-                });
-        }, [currentGraph, currentGraphSpace, t]
-    );
+    const onCloseDrawer = useCallback(() => {
+        // Closing a drawer does not undo a submitted server write. Keep its
+        // completion callback attached until success or failure is known.
+        if (!submitting.current) return finishClose();
+    }, [finishClose]);
+
+    const getVertexlinks = useCallback(async label => {
+        if (!open) return;
+        const token = generation.current;
+        const owner = liveScope.current;
+        const request = ++linksRequest.current;
+        const current = () => token === generation.current && request === linksRequest.current
+            && Object.keys(owner).every(key => owner[key] === liveScope.current[key]);
+        try {
+            const {data, status, message: errMsg} = await api.analysis.fetchVertexlinks(
+                currentGraphSpace, currentGraph, label);
+            if (!current()) return;
+            if (status === 200) setRelatedEdges(data);
+            else if (!errMsg) message.error(t('analysis.canvas.dynamic_add.get_edge_type_failed'));
+        }
+        catch { if (current()) message.error(t('analysis.canvas.dynamic_add.get_edge_type_failed')); }
+    }, [currentGraph, currentGraphSpace, open, t]);
 
     useEffect(
         () => {
@@ -92,21 +118,22 @@ const AddEdgeDrawer = props => {
         [getVertexlinks, isClickNew, open, vertexLabel]
     );
 
-    const getEdgeLabels = useCallback(
-        label => {
-            api.analysis.fetchEdgeLabels(currentGraphSpace, currentGraph, label)
-                .then(res => {
-                    const {data, status, message: errMsg} = res;
-                    if (status === 200) {
-                        const {properties} = data;
-                        setEdgeProperties(properties);
-                    }
-                    else {
-                        !errMsg && message.error(t('analysis.canvas.dynamic_add.get_edge_property_failed'));
-                    }
-                });
-        }, [currentGraph, currentGraphSpace, t]
-    );
+    const getEdgeLabels = useCallback(async label => {
+        if (!open) return;
+        const token = generation.current;
+        const owner = liveScope.current;
+        const request = ++propertiesRequest.current;
+        const current = () => token === generation.current && request === propertiesRequest.current
+            && Object.keys(owner).every(key => owner[key] === liveScope.current[key]);
+        try {
+            const {data, status, message: errMsg} = await api.analysis.fetchEdgeLabels(
+                currentGraphSpace, currentGraph, label);
+            if (!current()) return;
+            if (status === 200) setEdgeProperties(data.properties);
+            else if (!errMsg) message.error(t('analysis.canvas.dynamic_add.get_edge_property_failed'));
+        }
+        catch { if (current()) message.error(t('analysis.canvas.dynamic_add.get_edge_property_failed')); }
+    }, [currentGraph, currentGraphSpace, open, t]);
 
     const onChangeEdgeLabel  = useCallback(
         selectedEdge => {
@@ -130,34 +157,19 @@ const AddEdgeDrawer = props => {
         [addForm, getVertexlinks, isOutEdge, nodesDataArr]
     );
 
-    const getSelectOptions = () => {
-        return relatedGraphEdges.map(value => {
-            return (
-                <Select.Option
-                    key={value}
-                    value={value}
-                >
-                    {value}
-                </Select.Option>
-            );
-        });
-    };
+    const getSelectOptions = () => relatedGraphEdges.map(value => ({value, label: value}));
 
-    const getSelectNodeOptions = () => {
-        return nodesDataArr?.map(item => {
-            return (
-                <Select.Option
-                    key={item.id}
-                    value={item.id}
-                >
-                    {item.id}
-                </Select.Option>
-            );
-        });
-    };
+    const getSelectNodeOptions = () => nodesDataArr?.map(item => ({value: item.id, label: item.id}));
 
     const createEdge = useCallback(
-        value => {
+        async value => {
+            if (!open || submitting.current) return;
+            const token = generation.current;
+            const owner = liveScope.current;
+            const current = () => token === generation.current
+                && Object.keys(owner).every(key => owner[key] === liveScope.current[key]);
+            submitting.current = true;
+            setPending(true);
             let copyObj = _.clone(value);
             delete copyObj.label;
             let source;
@@ -179,40 +191,39 @@ const AddEdgeDrawer = props => {
                 'target': target,
                 'properties': copyObj,
             };
-            api.analysis.addEdge(currentGraphSpace, currentGraph, edgeParams)
-                .then(res => {
-                    const {data, status, message: errMsg} = res;
-                    if (status === 200) {
-                        message.success(t('analysis.canvas.dynamic_add.save_success'));
-                        onOk(data);
+            try {
+                const {data, status, message: errMsg} = await api.analysis.addEdge(
+                    currentGraphSpace, currentGraph, edgeParams);
+                if (!current()) return;
+                if (status === 200) {
+                    try {
+                        const result = await onOk?.(data);
+                        if (result && typeof result === 'object' && 'status' in result && result.status !== 'applied') {
+                            throw new Error('Canvas update was not applied');
+                        }
                     }
-                    else {
-                        !errMsg && message.error(t('analysis.canvas.dynamic_add.save_failed'));
+                    catch {
+                        if (current()) {
+                            message.warning(t('analysis.canvas.dynamic_add.sync_failed'));
+                            await finishClose({writeCompleted: true});
+                        }
+                        return;
                     }
-                });
-        }, [currentGraph, currentGraphSpace, onOk, isClickNew, isOutEdge, vertexId, t]
+                    if (!current()) return;
+                    message.success(t('analysis.canvas.dynamic_add.save_success'));
+                    await finishClose({writeCompleted: true});
+                }
+                else if (!errMsg) message.error(t('analysis.canvas.dynamic_add.save_failed'));
+            }
+            catch { if (current()) message.error(t('analysis.canvas.dynamic_add.save_failed')); }
+            finally {
+                if (current()) { submitting.current = false; setPending(false); }
+            }
+        }, [currentGraph, currentGraphSpace, onOk, isClickNew, isOutEdge, vertexId, t,
+            finishClose, open]
     );
 
-    const onFormFinish = useCallback(
-        value => {
-            createEdge(value);
-            onCloseDrawer();
-        },
-        [createEdge, onCloseDrawer]
-    );
-
-    const onValuesChange = useCallback(
-        () => {
-            addForm.validateFields()
-                .then(() => {
-                    setIsAddDisabled(false);
-                })
-                .catch(() => {
-                    setIsAddDisabled(true);
-                });
-        },
-        [addForm]
-    );
+    const onFormFinish = useCallback(value => createEdge(value), [createEdge]);
 
     const onSaveEdit = useCallback(
         () => {
@@ -285,6 +296,9 @@ const AddEdgeDrawer = props => {
                 : t('analysis.canvas.dynamic_add.add_in_edge')}
             placement="right"
             onClose={onCloseDrawer}
+            closable={{disabled: pending}}
+            mask={{closable: !pending}}
+            keyboard={!pending}
             open={open}
             footer={[
                 <Button
@@ -293,7 +307,9 @@ const AddEdgeDrawer = props => {
                     style={{width: 60}}
                     onClick={onSaveEdit}
                     key="save"
-                    disabled={isAddDisabled}
+                    disabled={pending}
+                    loading={pending}
+                    aria-label={t('analysis.canvas.dynamic_add.add')}
                 >
                     {t('analysis.canvas.dynamic_add.add')}
                 </Button>,
@@ -301,6 +317,7 @@ const AddEdgeDrawer = props => {
                     size="medium"
                     style={{width: 60}}
                     onClick={onCloseDrawer}
+                    disabled={pending}
                     key="close"
                 >
                     {t('analysis.canvas.dynamic_add.cancel')}
@@ -322,12 +339,13 @@ const AddEdgeDrawer = props => {
             }
 
             <Form
+                name={`add-edge-${formId}`}
                 form={addForm}
+                disabled={pending}
                 onFinish={onFormFinish}
                 labelAlign='left'
                 labelCol={{span: 6}}
                 labelWrap
-                onValuesChange={_.debounce(onValuesChange, 300)}
             >
                 {isClickNew && (
                     <Form.Item
@@ -343,9 +361,8 @@ const AddEdgeDrawer = props => {
                                 ? t('analysis.canvas.dynamic_add.select_source')
                                 : t('analysis.canvas.dynamic_add.select_target')}
                             onChange={onChangeNode}
-                        >
-                            {getSelectNodeOptions()}
-                        </Select>
+                            options={getSelectNodeOptions()}
+                        />
                     </Form.Item>)
                 }
                 <Form.Item
@@ -356,9 +373,8 @@ const AddEdgeDrawer = props => {
                     <Select
                         placeholder={t('analysis.canvas.dynamic_add.select_edge_type')}
                         onChange={onChangeEdgeLabel}
-                    >
-                        {getSelectOptions()}
-                    </Select>
+                        options={getSelectOptions()}
+                    />
                 </Form.Item>
                 {(isShowMore && (
                     <>

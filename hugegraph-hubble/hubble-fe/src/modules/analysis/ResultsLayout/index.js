@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import React, {useEffect, useId, useState} from 'react';
+import {useEffect, useId, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import ResizeHandle from '../../../components/ResizeHandle';
 import c from './index.module.scss';

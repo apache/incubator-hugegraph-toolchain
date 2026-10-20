@@ -20,7 +20,6 @@
  * @file 图分析组件 slide组件
  */
 
-import React from 'react';
 import {Slider} from 'antd';
 import c from './index.module.scss';
 

@@ -19,12 +19,30 @@
 .idea
 .vscode
 .codex-task
+.goal-task
 **/.DS_Store
+# Keep local dotenv configuration out of build contexts and intermediate layers.
+**/.env
+**/.env.*
 
 # Build outputs and dependency caches
 **/target
+**/.flattened-pom.xml
 **/node_modules
 **/.cache
+**/.pnpm-store
+**/.yarn/cache
+**/.vite
+**/coverage
+**/build
+**/dist
+
+# Host-installed frontend runtimes and extracted release trees are rebuilt in
+# the image. They must not shadow the container's tools or packaged output.
+hugegraph-hubble/hubble-fe/node
+hugegraph-hubble/hubble-fe/.node
+**/apache-hugegraph-hubble-*
+**/apache-hugegraph-loader-*
 
 # Modules not used by the Hubble image build. Keep the Maven module POMs so
 # the root reactor can still be parsed, and keep release docs used by hubble-dist.

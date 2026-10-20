@@ -20,8 +20,10 @@
  * @file DegreeCentralityVermeer算法
  */
 
-import React, {useState, useCallback, useContext, useEffect} from 'react';
-import {Collapse, InputNumber, Select} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
+import {useState, useCallback, useContext, useEffect} from 'react';
+import {InputNumber, Select} from 'antd';
 import Form from '../../PersistentForm';
 import {ControlOutlined} from '@ant-design/icons';
 import GraphAnalysisContext from '../../../../Context';
@@ -64,7 +66,7 @@ const DegreeCentralityVermeer = props => {
     const {graphSpace, graph, graphStatus} = useContext(GraphAnalysisContext);
 
     const [isEnableRun, setEnableRun] = useState(true);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
 
     const [form] = Form.useForm();
 
@@ -85,22 +87,22 @@ const DegreeCentralityVermeer = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(DEGREE_CENTRALIT);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             const formParams =  {'compute.algorithm': 'degree', ...algorithmParams};
             const filteredParams = removeNilKeys(formParams);
             const response =  await api.analysis.runOlapVermeer(graphSpace, graph, filteredParams);
             const {data, status, message} = response || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, '', message);
+                complete(FAILED, '', message);
             }
             else {
-                handleFormSubmit(SUCCESS, data?.task_id, message);
+                complete(SUCCESS, data?.task_id, message);
             }
-            setRequiring(false);
+            finishRequiring();
         },
-        [DEGREE_CENTRALIT, graph, graphSpace, handleFormSubmit,
+        [DEGREE_CENTRALIT, graph, graphSpace, beginRequiring, handleFormSubmit,
             updateCurrentAlgorithm]
     );
 
@@ -125,11 +127,8 @@ const DegreeCentralityVermeer = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={info.icon}
                     name={DEGREE_CENTRALIT}
@@ -170,7 +169,7 @@ const DegreeCentralityVermeer = props => {
                     <Select allowClear options={directionOptions} />
                 </Form.Item>
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

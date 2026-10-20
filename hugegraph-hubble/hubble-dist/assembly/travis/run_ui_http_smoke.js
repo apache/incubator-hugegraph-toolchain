@@ -21,6 +21,7 @@
 const fs = require('fs');
 const path = require('path');
 const {chromiumExecutablePath, loadPlaywright} = require('./run_ui_browser_smoke');
+const {publicHttpUrl} = require('./graph_acceptance_helpers');
 
 function argValue(name, fallback) {
   const index = process.argv.indexOf(name);
@@ -54,6 +55,7 @@ function insecureHttpTarget(hubbleUrl) {
 }
 
 async function runHttpSmoke(chromium, hubbleUrl, outputDir, executablePath) {
+  publicHttpUrl(hubbleUrl, 'hubbleUrl');
   const target = insecureHttpTarget(hubbleUrl);
   const report = {
     hubbleUrl,
@@ -77,7 +79,7 @@ async function runHttpSmoke(chromium, hubbleUrl, outputDir, executablePath) {
       const response = await page.goto(target.url, {
         waitUntil: 'load', timeout: 30000
       });
-      report.url = page.url();
+      report.url = publicHttpUrl(page.url(), 'redirect URL');
       report.isSecureContext = await page.evaluate(() => window.isSecureContext);
       if (!response || !response.ok()) {
         throw new Error(`Hubble page returned HTTP ${response ? response.status() : 'no response'}`);
@@ -102,7 +104,8 @@ async function runHttpSmoke(chromium, hubbleUrl, outputDir, executablePath) {
 }
 
 async function main() {
-  const hubbleUrl = argValue('--hubble-url', process.env.HUBBLE_URL || 'http://127.0.0.1:8088');
+  const hubbleUrl = publicHttpUrl(argValue('--hubble-url',
+    process.env.HUBBLE_URL || 'http://127.0.0.1:8088'), 'hubbleUrl');
   const outputDir = path.resolve(argValue('--output-dir',
     '.workflow/hubble-v2-issue-694/evidence/ui'));
   const jsonOutput = path.resolve(argValue('--json-output', path.join(outputDir, 'ui-http-smoke.json')));

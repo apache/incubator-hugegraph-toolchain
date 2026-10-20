@@ -80,7 +80,7 @@ export async function copyStatement(content, t) {
         await navigator.clipboard.writeText(content);
         message.success(t('analysis.logs.copy_success'));
     }
-    catch (error) {
+    catch {
         message.error(t('analysis.logs.copy_failed'));
     }
 }
@@ -144,7 +144,7 @@ const ExecuteLog = props => {
     const [favoriteName, setFavoriteName] = useState();
 
     const loadStatements = useCallback(
-        (text, rowData, index) => {
+        (text, rowData, _index) => {
             if (typeof rowData.text === 'string') {
                 onLoadContent(rowData.content, rowData.text);
             }
@@ -236,7 +236,7 @@ const ExecuteLog = props => {
             title: t('analysis.logs.column.content'),
             dataIndex: 'content',
             width: '25%',
-            render: (text, rowData, index) => {
+            render: (text, _rowData, _index) => {
                 return (
                     <Tooltip
                         placement='top'

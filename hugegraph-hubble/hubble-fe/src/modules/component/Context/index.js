@@ -22,12 +22,23 @@
 
 import React from 'react';
 
-const defaultContext = {
-    graph: {},
-    layout: {},
-};
+const GraphContext = React.createContext({
+    controller: null,
+    snapshot: {
+        status: 'idle', data: {nodes: [], edges: []},
+        selectedIds: [], hoveredIds: [], canUndo: false, canRedo: false,
+    },
+    containerRef: {current: null},
+    layout: {type: 'd3-force'},
+    run: async () => undefined,
+    contextTarget: null,
+    setContextTarget: () => {},
+    showLegend: true,
+    setShowLegend: () => {},
+    showGrid: true,
+    setShowGrid: () => {},
+    showMinimap: true,
+    setShowMinimap: () => {},
+});
 
-const GraphContext = React.createContext(defaultContext);
-const ToolBarContext = React.createContext(null);
-
-export {GraphContext, ToolBarContext};
+export {GraphContext};

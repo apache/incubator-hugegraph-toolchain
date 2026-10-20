@@ -41,7 +41,7 @@ beforeEach(() => {
 });
 
 it.each([['en-US', enAnalysis], ['zh-CN', zhAnalysis]])(
-    'offers task progress navigation with a localized submission status (%s)', (locale, resource) => {
+    'offers task progress navigation with a localized submission status (%s)', async (locale, resource) => {
         useTranslation.mockReturnValue({t: translate(resource)});
         const labels = resource.analysis.canvas.task_navigation;
         showTask();
@@ -49,7 +49,7 @@ it.each([['en-US', enAnalysis], ['zh-CN', zhAnalysis]])(
         expect(screen.getByRole('status')).toHaveTextContent(labels.description);
         expect(screen.getByText(labels.task_id)).toBeInTheDocument();
         expect(screen.getByText('1234567890')).toBeInTheDocument();
-        userEvent.click(screen.getByRole('button', {name: labels.view}));
+        await userEvent.click(screen.getByRole('button', {name: labels.view}));
         expect(screen.getByRole('heading', {name: 'Task 1234567890'})).toBeInTheDocument();
     }
 );

@@ -20,7 +20,7 @@
  * @file  导入数据
  */
 
-import React, {useCallback, useContext} from 'react';
+import {useCallback, useContext} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Button, Tooltip, Upload, message} from 'antd';
 import {UploadOutlined} from '@ant-design/icons';

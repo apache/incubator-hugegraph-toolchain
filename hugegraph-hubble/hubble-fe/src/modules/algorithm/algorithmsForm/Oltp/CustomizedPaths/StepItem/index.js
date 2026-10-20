@@ -20,7 +20,7 @@
  * @file CustomizedPaths StepsItems
  */
 
-import React, {useState, useCallback} from 'react';
+import {useState, useCallback} from 'react';
 import {Input, Select, Button, Tooltip, InputNumber} from 'antd';
 import Form from '../../../PersistentForm';
 import {DownOutlined, RightOutlined, PlusOutlined, QuestionCircleOutlined} from '@ant-design/icons';
@@ -128,10 +128,10 @@ const StepItem = () => {
                 name={['steps']}
                 initialValue={[{}]}
             >
-                {(lists, {add, remove}, {errors}) => (
+                {(lists, {add, remove}, {errors: _errors}) => (
                     <>
                         {
-                            lists.map((item, index) => {
+                            lists.map((item, _index) => {
                                 return (
                                     <div key={item.key}>
                                         {stepFormItems(item)}

@@ -19,6 +19,10 @@
 import csv
 import importlib.util
 import io
+import json
+import os
+import subprocess
+import sys
 import tarfile
 import tempfile
 import unittest
@@ -30,6 +34,254 @@ SCRIPT = Path(__file__).with_name("run_live_hubble_smoke.py")
 SPEC = importlib.util.spec_from_file_location("run_live_hubble_smoke", SCRIPT)
 SMOKE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(SMOKE)
+
+
+class UrlValidationTest(unittest.TestCase):
+
+    SENTINEL = "URL_INPUT_SECRET_7aQ"
+    ENCODED = "".join(f"%{ord(char):02x}" for char in SENTINEL)
+
+    @classmethod
+    def invalid_urls(cls):
+        return [
+            f"https://user:{cls.ENCODED}@example.invalid/prefix",
+            f"https://{cls.ENCODED}@example.invalid/prefix",
+            f"https://user%40{cls.ENCODED}/prefix",
+            f"https://example.invalid/prefix?token={cls.ENCODED}",
+            f"https://example.invalid/prefix#{cls.ENCODED}",
+            f"https://example.invalid/prefix\n{cls.SENTINEL}",
+            f"file:///tmp/{cls.SENTINEL}"
+        ]
+
+    def assert_no_secret(self, text):
+        self.assertNotIn(self.SENTINEL, text)
+        self.assertNotIn(self.ENCODED, text)
+
+    @staticmethod
+    def guarded_environment(root):
+        guard = root / "guards"
+        guard.mkdir()
+        marker = root / "forbidden-action.txt"
+        (guard / "sitecustomize.py").write_text(
+            "import os, pathlib, subprocess, tempfile, urllib.request\n"
+            "def forbidden(*args, **kwargs):\n"
+            "    pathlib.Path(os.environ['TEST_ACTION_MARKER']).write_text('attempted')\n"
+            "    raise RuntimeError('Forbidden runtime action')\n"
+            "urllib.request.OpenerDirector.open = forbidden\n"
+            "subprocess.Popen = forbidden\n"
+            "tempfile.mkdtemp = forbidden\n", encoding="utf-8")
+        env = {**os.environ, "PYTHONPATH": str(guard), "PYTHONDONTWRITEBYTECODE": "1",
+               "TEST_ACTION_MARKER": str(marker), "HUBBLE_URL": "http://127.0.0.1:8088",
+               "HUBBLE_SMOKE_SERVER_URL": "http://127.0.0.1:8080"}
+        return env, marker
+
+    def test_public_urls_preserve_origins_and_deployment_prefixes(self):
+        for url in ("http://127.0.0.1:8088", "https://example.invalid/deployment/hubble/",
+                    "http://[::1]:8080/prefix%20name"):
+            self.assertEqual(url, SMOKE.public_http_url(url, "hubbleUrl"))
+
+    def test_invalid_url_diagnostic_is_only_the_field_name(self):
+        urls = self.invalid_urls() + ["https://@example.invalid/", "https://example.invalid/?",
+                                      "https://example.invalid/#", "https:example.invalid",
+                                      "https://example.invalid:bad/", "https://[broken"]
+        for index, url in enumerate(urls):
+            with self.subTest(case=index):
+                with self.assertRaises(ValueError) as error:
+                    SMOKE.public_http_url(url, "serverUrl")
+                self.assertEqual("Invalid serverUrl", str(error.exception))
+                self.assert_no_secret(str(error.exception))
+
+    def test_main_validates_before_runtime_report_http_or_archive_setup(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "existing.json"
+            output.write_text('{"status":"passed"}', encoding="utf-8")
+            with mock.patch("sys.argv", [str(SCRIPT), "unused.tar.gz", "--hubble-url", self.invalid_urls()[0],
+                                         "--json-output", str(output)]), \
+                    mock.patch.object(SMOKE, "require_safe_archive_extraction") as archive, \
+                    mock.patch.object(SMOKE, "request") as request, \
+                    mock.patch.object(SMOKE, "is_healthy") as health, \
+                    mock.patch.object(SMOKE.tempfile, "mkdtemp") as runtime, \
+                    mock.patch.object(SMOKE.subprocess, "Popen") as start, \
+                    mock.patch("sys.stderr", new_callable=io.StringIO) as stderr:
+                with self.assertRaises(SystemExit) as error:
+                    SMOKE.main()
+            self.assertEqual(2, error.exception.code)
+            self.assertEqual("Invalid hubbleUrl\n", stderr.getvalue())
+            for action in (archive, request, health, runtime, start):
+                action.assert_not_called()
+            report = json.loads(output.read_text())
+            self.assertEqual("failed", report["status"])
+            self.assertEqual("url-validation", report["stage"])
+            self.assert_no_secret(output.read_text())
+
+    def test_independent_python_cli_rejects_secrets_before_any_runtime_action(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            env, marker = self.guarded_environment(root)
+            for field in ("hubble", "server"):
+                for index, url in enumerate(self.invalid_urls()):
+                    with self.subTest(field=field, case=index):
+                        output = root / f"{field}-{index}.json"
+                        output.write_text('{"status":"passed"}', encoding="utf-8")
+                        result = subprocess.run([sys.executable, str(SCRIPT), "unused.tar.gz",
+                                                 f"--{field}-url", url, "--json-output", str(output)],
+                                                env=env, capture_output=True, text=True, check=False)
+                        self.assertEqual(2, result.returncode)
+                        self.assertEqual("", result.stdout)
+                        self.assertEqual(f"Invalid {field}Url\n", result.stderr)
+                        report = json.loads(output.read_text())
+                        self.assertEqual("failed", report["status"])
+                        self.assertNotIn("hubble_url", report)
+                        self.assertNotIn("server_url", report)
+                        for text in (result.stdout, result.stderr, output.read_text()):
+                            self.assert_no_secret(text)
+                        self.assertFalse(marker.exists())
+
+    def test_invalid_cli_atomically_replaces_a_real_read_only_old_report(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            env, marker = self.guarded_environment(root)
+            output = root / "read-only.json"
+            output.write_text('{"status":"passed"}', encoding="utf-8")
+            output.chmod(0o444)
+            old_inode = output.stat().st_ino
+            result = subprocess.run([sys.executable, str(SCRIPT), "unused.tar.gz", "--hubble-url",
+                                     self.invalid_urls()[0], "--json-output", str(output)],
+                                    env=env, capture_output=True, text=True, check=False)
+            self.assertEqual(2, result.returncode)
+            self.assertEqual("", result.stdout)
+            self.assertEqual("Invalid hubbleUrl\n", result.stderr)
+            self.assertEqual("failed", json.loads(output.read_text())["status"])
+            self.assertNotEqual(old_inode, output.stat().st_ino)
+            self.assertEqual([], list(root.glob(".read-only.json.*.tmp")))
+            self.assertFalse(marker.exists())
+            self.assert_no_secret(result.stderr + output.read_text())
+
+    def test_real_os_write_failure_removes_stale_success_and_preserves_exit_two(self):
+        try:
+            import resource
+            import signal
+        except ImportError:
+            self.skipTest("POSIX resource limits are required for the OS write-failure case")
+
+        def forbid_file_growth():
+            signal.signal(signal.SIGXFSZ, signal.SIG_IGN)
+            resource.setrlimit(resource.RLIMIT_FSIZE, (0, 0))
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            env, marker = self.guarded_environment(root)
+            evidence = root / self.SENTINEL
+            evidence.mkdir()
+            output = evidence / "read-only.json"
+            output.write_text('{"status":"passed"}', encoding="utf-8")
+            output.chmod(0o444)
+            result = subprocess.run([sys.executable, str(SCRIPT), "unused.tar.gz", "--hubble-url",
+                                     self.invalid_urls()[0], "--json-output", str(output)],
+                                    env=env, preexec_fn=forbid_file_growth,
+                                    capture_output=True, text=True, check=False)
+            self.assertEqual(2, result.returncode)
+            self.assertEqual("", result.stdout)
+            self.assertEqual("Invalid hubbleUrl\nURL validation failure evidence could not be saved\n", result.stderr)
+            self.assertFalse(output.exists())
+            self.assertEqual([], list(evidence.iterdir()))
+            self.assertFalse(marker.exists())
+            self.assert_no_secret(result.stdout + result.stderr)
+
+    def test_unwritable_destination_reports_a_fixed_diagnostic_without_echoing_path(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            env, marker = self.guarded_environment(root)
+            blocker = root / self.SENTINEL
+            blocker.write_text("not a directory", encoding="utf-8")
+            result = subprocess.run([sys.executable, str(SCRIPT), "unused.tar.gz", "--server-url",
+                                     self.invalid_urls()[0], "--json-output", str(blocker / "report.json")],
+                                    env=env, capture_output=True, text=True, check=False)
+            self.assertEqual(2, result.returncode)
+            self.assertEqual("", result.stdout)
+            self.assertEqual("Invalid serverUrl\nURL validation failure evidence could not be saved\n", result.stderr)
+            self.assert_no_secret(result.stdout + result.stderr)
+            self.assertFalse(marker.exists())
+
+    def test_valid_preflight_preserves_existing_evidence_without_runtime_actions(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            env, marker = self.guarded_environment(root)
+            env.update(HUBBLE_URL="https://example.invalid/prefix/hubble/",
+                       HUBBLE_SMOKE_SERVER_URL="https://example.invalid/prefix/server/")
+            output = root / "existing.json"
+            original = '{"status":"passed","historical":true}'
+            output.write_text(original, encoding="utf-8")
+            result = subprocess.run([sys.executable, str(SCRIPT), "unused.tar.gz", "--validate-urls",
+                                     "--json-output", str(output)], env=env, capture_output=True,
+                                    text=True, check=False)
+            self.assertEqual(0, result.returncode)
+            self.assertEqual("", result.stdout + result.stderr)
+            self.assertEqual(original, output.read_text())
+            self.assertFalse(marker.exists())
+
+    def test_shell_preflight_rejects_secrets_and_invalidates_old_success_before_startup(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            env, marker = self.guarded_environment(root)
+            tarball = root / "candidate.tar.gz"
+            tarball.write_bytes(b"not used by preflight")
+            runtime = root / "runtime"
+            runtime.mkdir()
+            node = root / "forbidden-node"
+            node.write_text("#!/bin/sh\nprintf 'attempted' > \"$TEST_ACTION_MARKER\"\nexit 91\n", encoding="utf-8")
+            node.chmod(0o755)
+            env.update(PYTHON=sys.executable, NODE=str(node), TMPDIR=str(runtime))
+            wrapper = SCRIPT.with_name("verify-hubble-issue-694.sh")
+            for field in ("hubble", "server"):
+                for index, url in enumerate(self.invalid_urls()):
+                    with self.subTest(field=field, case=index):
+                        evidence = root / f"evidence-{field}-{index}"
+                        evidence.mkdir()
+                        manifest = evidence / "manifest.json"
+                        manifest.write_text('{"status":"passed"}', encoding="utf-8")
+                        manifest.chmod(0o444)
+                        (evidence / "live-hubble-smoke.json").write_text('{"status":"passed"}', encoding="utf-8")
+                        invocation_env = {**env, "HUBBLE_694_EVIDENCE_DIR": str(evidence)}
+                        server = "http://127.0.0.1:8080"
+                        if field == "hubble":
+                            invocation_env["HUBBLE_URL"] = url
+                        else:
+                            server = url
+                        result = subprocess.run(["bash", str(wrapper), str(tarball), server],
+                                                env=invocation_env, capture_output=True, text=True, check=False)
+                        self.assertEqual(2, result.returncode)
+                        self.assertEqual("", result.stdout)
+                        self.assertEqual(f"Invalid {field}Url\n", result.stderr)
+                        report = json.loads(manifest.read_text())
+                        self.assertEqual("failed", report["status"])
+                        self.assertEqual("url-validation", report["stage"])
+                        self.assertEqual([], list(runtime.iterdir()))
+                        self.assertFalse((evidence / "ui").exists())
+                        self.assertFalse((evidence / "logs").exists())
+                        self.assertFalse(marker.exists())
+                        for text in [result.stdout, result.stderr] + [p.read_text() for p in evidence.glob("*.json")]:
+                            self.assert_no_secret(text)
+
+
+class SchemaWriteEvidenceTest(unittest.TestCase):
+
+    def test_permission_evidence_distinguishes_created_from_conflict(self):
+        for conflicted in (False, True):
+            with self.subTest(conflicted=conflicted):
+                response = None if conflicted else {"status": 200, "data": {}}
+                with mock.patch.object(SMOKE, "ignore_conflict", return_value=response), \
+                        mock.patch.object(SMOKE, "server_json", return_value={"name": "proof_person"}):
+                    checks, _ = SMOKE.create_schema("http://hubble", "http://server", "DEFAULT", "g", "proof")
+                by_name = {check["name"]: check for check in checks}
+                self.assertEqual(0 if conflicted else 3, by_name["hubble-schema-propertykeys"]["created_count"])
+                self.assertEqual(not conflicted, by_name["hubble-schema-vertexlabel"]["created"])
+                self.assertEqual(not conflicted, by_name["hubble-schema-edgelabel"]["created"])
+
+    def test_rejected_business_write_does_not_publish_created_evidence(self):
+        with mock.patch.object(SMOKE, "ignore_conflict", return_value={"status": 403, "message": "denied"}):
+            with self.assertRaises(RuntimeError):
+                SMOKE.create_schema("http://hubble", "http://server", "DEFAULT", "g", "proof")
 
 
 class ArchiveExtractionTest(unittest.TestCase):
@@ -156,6 +408,53 @@ class HubbleReadinessTest(unittest.TestCase):
         self.assertFalse(SMOKE.is_healthy("http://127.0.0.1:8088"))
         request.assert_called_once_with(
             "GET", "http://127.0.0.1:8088/about", timeout=2)
+
+
+class LoginIdentityEvidenceTest(unittest.TestCase):
+
+    def test_identity_mismatch_does_not_disclose_login_response_token(self):
+        token = "LOGIN_RESPONSE_TOKEN_SENTINEL_9x"
+        with mock.patch.object(SMOKE, "request", return_value={
+                "status": 200, "data": {"user_name": "wrong-account", "token": token}}) as request:
+            with self.assertRaisesRegex(RuntimeError, "identity does not match") as error:
+                SMOKE.run_login_checks("http://hubble", "requested", "test-secret")
+        self.assertNotIn(token, str(error.exception))
+        self.assertNotIn("wrong-account", str(error.exception))
+        request.assert_called_once()
+
+
+class BoundaryStatusEvidenceTest(unittest.TestCase):
+
+    def test_hubble_success_requires_integer_envelope_status(self):
+        for response in ["<html>SPA</html>", [], None, {"vertices": []}, {},
+                         {"status": None}, {"status": "200"}, {"status": True}]:
+            with self.subTest(response=response), mock.patch.object(SMOKE, "request", return_value=response):
+                with self.assertRaisesRegex(RuntimeError, "lacks an integer status"):
+                    SMOKE.get_json_status("GET", "http://hubble/api/v1.3/cypher")
+        for status in (200, 400, 503):
+            with mock.patch.object(SMOKE, "request", return_value={"status": status, "data": {}}):
+                self.assertEqual(status, SMOKE.get_json_status("GET", "http://hubble/api/v1.3/cypher"))
+
+    def test_malformed_success_payload_fails_without_echoing_payload(self):
+        sentinel = "BOUNDARY_RESPONSE_SECRET_7x"
+        for error in (SMOKE.json.JSONDecodeError("bad JSON", sentinel, 0),
+                      UnicodeDecodeError("utf8", sentinel.encode(), 0, 1, "invalid")):
+            with mock.patch.object(SMOKE, "request", side_effect=error):
+                with self.assertRaisesRegex(RuntimeError, "not valid JSON") as failure:
+                    SMOKE.get_json_status("GET", "http://hubble/api/v1.3/cypher")
+            self.assertNotIn(sentinel, str(failure.exception))
+
+    def test_transport_failure_cannot_be_promoted_by_body_to_success(self):
+        for code, body in ((503, b'{"status":200}'), (400, b'legacy error'), (401, b'[]')):
+            error = SMOKE.urllib.error.HTTPError("http://hubble", code, "test", {}, io.BytesIO(body))
+            with mock.patch.object(SMOKE, "request", side_effect=error):
+                self.assertEqual(code, SMOKE.get_json_status("GET", "http://hubble/api/v1.3/cypher"))
+
+    def test_direct_server_raw_json_is_not_required_to_have_hubble_envelope(self):
+        raw = {"versions": {"version": "1.7.0"}}
+        with mock.patch.object(SMOKE, "request", return_value=raw) as request:
+            self.assertIs(raw, SMOKE.server_json("GET", "http://server", "/versions"))
+        self.assertEqual(("GET", "http://server/versions", None), request.call_args.args)
 
 
 class AnalysisBoundaryTest(unittest.TestCase):

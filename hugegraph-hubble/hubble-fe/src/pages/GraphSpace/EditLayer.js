@@ -33,7 +33,6 @@ import FormHelpLabel from '../../components/FormHelpLabel';
 import {isAuthEnabled} from '../../utils/config';
 import {getResourceAlias} from '../../utils/displayName';
 
-const {Option} = Select;
 const PAGE_ERROR_CONFIG = {suppressBusinessErrorToast: true};
 // Keep this validation aligned with Server GraphManager.checkNickname().
 const GRAPHSPACE_NICKNAME_PATTERN = new RegExp(
@@ -128,7 +127,7 @@ const EditLayer = ({visible, detail, onCancel, refresh}) => {
     };
 
     const k8sValidator = (_, value) => {
-        let res = /^[a-z][a-z0-9\-]{0,47}$/.test(value);
+        let res = /^[a-z][a-z0-9-]{0,47}$/.test(value);
         if (value && !res) {
             return Promise.reject(t('graphspace.form.k8s_rule'));
         }
@@ -147,7 +146,7 @@ const EditLayer = ({visible, detail, onCancel, refresh}) => {
     };
 
     const userSelect = useMemo(
-        () => userList.map(item => (<Option key={item.id}>{item.user_name}</Option>)),
+        () => userList.map(item => ({value: String(item.id), label: item.user_name})),
         [userList]
     );
 
@@ -196,8 +195,8 @@ const EditLayer = ({visible, detail, onCancel, refresh}) => {
             onOk={onFinish}
             okButtonProps={{disabled: isDisabled && existingAuth === undefined}}
             width={680}
-            destroyOnClose
-            maskClosable={false}
+            destroyOnHidden
+            mask={{closable: false}}
             // forceRender
         >
             <Form
@@ -373,7 +372,7 @@ const EditLayer = ({visible, detail, onCancel, refresh}) => {
                         label={t('graphspace.form.operator_image')}
                         rules={[
                             {
-                                pattern: /^[a-zA-Z0-9\-\.]+\/[a-zA-Z0-9\-_]+\/[a-zA-Z0-9\-_]+(\:[a-z0-9\.]+)*$/,
+                                pattern: /^[a-zA-Z0-9\-.]+\/[a-zA-Z0-9\-_]+\/[a-zA-Z0-9\-_]+(:[a-z0-9.]+)*$/,
                                 message: t('graphspace.form.image_format_error'),
                             },
                         ]}
@@ -388,7 +387,7 @@ const EditLayer = ({visible, detail, onCancel, refresh}) => {
                         extra={t('graphspace.form.image_example')}
                         rules={[
                             {
-                                pattern: /^[a-zA-Z0-9\-\.]+\/[a-zA-Z0-9\-_]+\/[a-zA-Z0-9\-_]+(\:[a-z0-9\.]+)*$/,
+                                pattern: /^[a-zA-Z0-9\-.]+\/[a-zA-Z0-9\-_]+\/[a-zA-Z0-9\-_]+(:[a-z0-9.]+)*$/,
                                 message: t('graphspace.form.image_format_error'),
                             },
                         ]}
@@ -428,9 +427,8 @@ const EditLayer = ({visible, detail, onCancel, refresh}) => {
                         allowClear
                         style={{width: '100%'}}
                         placeholder={t('graphspace.form.admin_placeholder')}
-                    >
-                        {userList.length ? userSelect : null}
-                    </Select>
+                        options={userSelect}
+                    />
                 </Form.Item>
 
                 <Form.Item

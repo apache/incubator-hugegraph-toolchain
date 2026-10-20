@@ -50,7 +50,7 @@ const NodeIdentityCell = ({record, returnState, unavailable, t}) => {
             await navigator.clipboard.writeText(record.id);
             message.success(t('operations.node_id_copied'));
         }
-        catch (error) {
+        catch {
             message.error(t('operations.node_id_copy_failed'));
         }
     }, [record.id, t]);
@@ -278,7 +278,7 @@ const Nodes = () => {
                 <RefreshButton loading={loading} onClick={load} />
             </header>
             {error && (
-                <Alert type='warning' showIcon message={t('operations.load_failed')} />
+                <Alert type='warning' showIcon title={t('operations.load_failed')} />
             )}
             <section className='operations-surface'>
                 <div className='operations-filter-row'>

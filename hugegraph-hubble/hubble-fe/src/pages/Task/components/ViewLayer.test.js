@@ -31,9 +31,6 @@ jest.mock('../../../api', () => ({
     manage: {getTaskDetail: jest.fn()},
 }));
 
-jest.mock('react-json-view', () => ({src}) => (
-    <pre data-testid='raw-task-json'>{JSON.stringify(src)}</pre>
-));
 
 const deferred = () => {
     let resolve;
@@ -96,7 +93,7 @@ test('shows a user summary while keeping raw backend fields collapsed', async ()
 
     render(<ViewLayer visible task_id='7' onCancel={jest.fn()} />);
 
-    expect(await screen.findByText('movie_import')).toBeVisible();
+    await waitFor(() => expect(screen.getByText('movie_import')).toBeVisible());
     expect(screen.getByText('DEFAULT')).toBeVisible();
     expect(screen.getByText('hugegraph')).toBeVisible();
     expect(screen.getByText('task.status.success')).toBeVisible();
@@ -109,13 +106,13 @@ test('shows a user summary while keeping raw backend fields collapsed', async ()
         name: /task\.view\.technical_details/,
     });
     expect(technicalDetails).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.queryByTestId('raw-task-json')).not.toBeInTheDocument();
+    expect(document.querySelector('.json-viewer')).not.toBeInTheDocument();
     expect(screen.queryByText(/SUCCESS/)).not.toBeInTheDocument();
 
     await userEvent.click(technicalDetails);
 
     expect(technicalDetails).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByTestId('raw-task-json')).toBeVisible();
+    expect(document.querySelector('.json-viewer')).toBeVisible();
     expect(screen.getByText(/SUCCESS/)).toBeVisible();
     expect(screen.getByText(/conn_id/)).toBeVisible();
 });
@@ -138,7 +135,7 @@ test('labels missing summary values instead of leaving blank fields', async () =
     render(<ViewLayer visible task_id='8' onCancel={jest.fn()} />);
 
     expect(await screen.findAllByText('task.view.unavailable_value')).toHaveLength(7);
-    expect(screen.getByText('task.status.unknown')).toBeVisible();
+    await waitFor(() => expect(screen.getByText('task.status.unknown')).toBeVisible());
 });
 
 test('shows a valid intermediate JobStatus as running instead of unknown', async () => {
@@ -154,7 +151,7 @@ test('shows a valid intermediate JobStatus as running instead of unknown', async
 
     render(<ViewLayer visible task_id='9' onCancel={jest.fn()} />);
 
-    expect(await screen.findByText('task.status.running')).toBeVisible();
+    await waitFor(() => expect(screen.getByText('task.status.running')).toBeVisible());
     expect(screen.queryByText('task.status.unknown')).not.toBeInTheDocument();
     expect(screen.queryByText('LOADING')).not.toBeInTheDocument();
 });

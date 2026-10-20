@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import {act, fireEvent, render, screen, waitFor} from '@testing-library/react';
+import {act, fireEvent, render, screen, waitFor, within} from '@testing-library/react';
+import {message} from 'antd';
 import EditLayer from './EditLayer';
 import * as api from '../../api';
 
@@ -80,6 +81,10 @@ beforeEach(() => {
         status: 200,
         data: {user_name: 'alice', adminSpaces: []},
     });
+});
+
+afterEach(() => {
+    act(() => message.destroy());
 });
 
 test('creates a non-elevated account when preset API is unavailable',
@@ -504,7 +509,8 @@ test('keeps a specific account creation error visible in the form', async () => 
         '.ant-modal-footer .ant-btn-primary'
     ));
 
-    const alert = await screen.findByRole('alert');
+    const dialog = screen.getByRole('dialog');
+    const alert = await within(dialog).findByRole('alert');
     expect(alert).toHaveTextContent('account.feedback.save_failed');
     expect(alert).toHaveTextContent(
         'Refresh the GraphSpace list and select an existing one.'

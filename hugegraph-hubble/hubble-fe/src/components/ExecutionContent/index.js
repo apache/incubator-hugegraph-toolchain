@@ -20,7 +20,7 @@
  * @file 折叠组件
  */
 
-import React, {useState, useCallback} from 'react';
+import {useState, useCallback} from 'react';
 import Highlighter from 'react-highlight-words';
 
 import {UpOutlined, DownOutlined} from '@ant-design/icons';

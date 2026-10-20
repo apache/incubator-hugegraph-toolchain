@@ -21,7 +21,6 @@ import path from 'path';
 import {fireEvent, render, screen} from '@testing-library/react';
 import {MemoryRouter, useLocation} from 'react-router-dom';
 import GraphCard from './Card';
-import {formatToGraphInData} from '../../utils/formatGraphInData';
 
 const mockT = (key, values) => {
     if (key === 'graph.card.element_counts') {
@@ -37,19 +36,13 @@ jest.mock('react-i18next', () => ({
     useTranslation: () => ({t: mockT}),
 }));
 
-jest.mock('../../components/GraphinView', () => () => <div>graph preview</div>);
-
-jest.mock('../../utils/formatGraphInData', () => ({
-    formatToGraphInData: jest.fn(() => ({nodes: [], edges: []})),
-}));
+jest.mock('../../visualization/react', () => ({GraphCanvas: props => <div>
+    graph preview<output data-testid='preview-contract'>{JSON.stringify(props)}</output>
+</div>}));
 
 jest.mock('../../utils/config', () => ({
     isPdEnabled: () => true,
 }));
-
-beforeEach(() => {
-    formatToGraphInData.mockReturnValue({nodes: [], edges: []});
-});
 
 const LocationProbe = () => <div data-testid='location'>{useLocation().pathname}</div>;
 
@@ -116,10 +109,6 @@ test('uses a compact actionable state when the graph has no schema', () => {
     expect(screen.getByRole('button', {name: 'graph.card.open_schema'}))
         .toBeInTheDocument();
     expect(screen.queryByText('graph preview')).not.toBeInTheDocument();
-    expect(formatToGraphInData).toHaveBeenCalledWith(
-        {vertices: [], edges: []},
-        true
-    );
     expect(screen.getByText(/graph\.col\.create_time/).closest('[role="button"]'))
         .not.toBeInTheDocument();
 });
@@ -163,7 +152,6 @@ test('ships the requested graph creation and schema labels', () => {
 });
 
 test('opens Schema from the graph preview and keeps Gremlin as the footer action', () => {
-    formatToGraphInData.mockReturnValue({nodes: [{id: 'person'}], edges: []});
     render(
         <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
             <GraphCard
@@ -175,7 +163,7 @@ test('opens Schema from the graph preview and keeps Gremlin as the footer action
                     storage: 1024,
                     create_time: '2026-07-12',
                     statistic: {vertex: 12, edge: 8},
-                    schemaview: {vertices: [{name: 'person'}], edges: []},
+                    schemaview: {vertices: [{id: 'person', label: 'person'}], edges: []},
                 }}
                 menus={[]}
             />
@@ -183,6 +171,10 @@ test('opens Schema from the graph preview and keeps Gremlin as the footer action
         </MemoryRouter>
     );
 
+    const preview = JSON.parse(screen.getByTestId('preview-contract').textContent);
+    expect(preview.preset).toBe('thumbnail');
+    expect(preview.layout).toEqual({type: 'dagre', options: {rankdir: 'LR', nodesep: 30, ranksep: 60}});
+    expect(preview.data.nodes[0]).toMatchObject({id: 'node:string:person', data: {raw: {id: 'person', label: 'person'}}});
     const metadata = screen.getByText(/graph\.card\.storage/);
     expect(metadata).toHaveTextContent('graph.col.create_time');
     expect(screen.getByText(/graph\.card\.element_counts/)).toHaveTextContent('12');
@@ -205,8 +197,7 @@ test('opens Schema from the graph preview and keeps Gremlin as the footer action
 test.each(['Enter', ' '])(
     'opens Schema from the named graph preview with the %p key',
     key => {
-        formatToGraphInData.mockReturnValue({nodes: [{id: 'person'}], edges: []});
-        render(
+            render(
             <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
                 <GraphCard
                     item={{
@@ -216,7 +207,7 @@ test.each(['Enter', ' '])(
                         graphspace_nickname: 'Default',
                         storage: 1024,
                         create_time: '2026-07-12',
-                        schemaview: {vertices: [{name: 'person'}], edges: []},
+                        schemaview: {vertices: [{id: 'person', label: 'person'}], edges: []},
                     }}
                     menus={[]}
                 />

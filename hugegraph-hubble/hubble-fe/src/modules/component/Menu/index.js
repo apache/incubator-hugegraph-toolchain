@@ -16,138 +16,77 @@
  * under the License.
  */
 
-import {useContext, useEffect, useCallback} from 'react';
+import {useContext, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {GraphContext} from '../Context';
-import G6 from '@antv/g6';
 
-const Menu = props => {
+const Menu = ({onClickAddNode, onClickAddEdge, onClickExpand, onClickSearch}) => {
     const {t} = useTranslation();
-    const {
-        onClickAddNode,
-        onClickAddEdge,
-        onClickExpand,
-        onClickSearch,
-    } = props;
-
-    const {graph} = useContext(GraphContext);
-
-    const handleFixNode = useCallback(
-        node => {
-            const hasLocked = node.hasLocked();
-            if (hasLocked) {
-                node.unlock();
-                graph.clearItemStates(node, ['customFixed', 'customSelected']);
-                graph.pushStack('unlock', node.getModel(), 'undo');
+    const {controller, snapshot, containerRef, run, contextTarget: target, setContextTarget} = useContext(GraphContext);
+    const menuRef = useRef(null);
+    const [position, setPosition] = useState({left: 0, top: 0});
+    useLayoutEffect(() => {
+        const container = containerRef?.current;
+        const menu = menuRef.current;
+        if (!target || !container || !menu) return;
+        const bounds = container.getBoundingClientRect();
+        setPosition({
+            left: Math.max(0, Math.min((target.client?.x ?? bounds.left) - bounds.left,
+                Math.max(0, bounds.width - menu.offsetWidth))),
+            top: Math.max(0, Math.min((target.client?.y ?? bounds.top) - bounds.top,
+                Math.max(0, bounds.height - menu.offsetHeight))),
+        });
+        menu.querySelector('button')?.focus();
+    }, [target, containerRef]);
+    useEffect(() => {
+        if (!target) return undefined;
+        const dismiss = event => {
+            if (event.type === 'keydown' ? event.key === 'Escape' : !menuRef.current?.contains(event.target)) {
+                setContextTarget(null);
             }
-            else {
-                node.lock();
-                graph?.clearItemStates(node, ['customSelected']);
-                graph?.setItemState(node, 'customFixed', true);
-                graph?.pushStack('lock', node.getModel(), 'undo');
-            }
-        },
-        [graph]
+        };
+        // Dismiss the old menu before G6 emits a new one from pointerdown.
+        document.addEventListener('pointerdown', dismiss, true);
+        document.addEventListener('keydown', dismiss);
+        return () => {
+            document.removeEventListener('pointerdown', dismiss, true);
+            document.removeEventListener('keydown', dismiss);
+        };
+    }, [target, setContextTarget]);
+    if (!target || !controller || snapshot?.status !== 'ready') return null;
+    const actions = [];
+    const add = (key, operation) => actions.push({key, operation});
+    const raw = target.data?.raw;
+    if (target.kind === 'node' && raw) {
+        const info = {vertexId: raw.id, vertexLabel: raw.label};
+        const fixed = snapshot.data.nodes.find(node => node.id === target.id)?.data.fixed;
+        if (onClickExpand) add('expand', () => onClickExpand({vertex_id: raw.id, vertex_label: raw.label}));
+        if (onClickSearch) add('search', () => onClickSearch(info));
+        add(fixed ? 'unfix' : 'fix', () => controller.pin([target.id], !fixed));
+        add('hide', () => controller.hide([target.id], true));
+        if (onClickAddEdge) {
+            add('add_out_edge', () => onClickAddEdge(info, true));
+            add('add_in_edge', () => onClickAddEdge(info, false));
+        }
+    }
+    else if (target.kind === 'edge') add('hide', () => controller.hide([target.id], true));
+    else if (target.kind === 'canvas' && onClickAddNode) add('add_vertex', () => onClickAddNode());
+    if (!actions.length) return null;
+    return (
+        <div ref={menuRef} role="menu" style={{position: 'absolute', ...position, zIndex: 20,
+            minWidth: 150, maxWidth: '100%', maxHeight: '100%', overflow: 'auto', padding: 4,
+            background: '#fff', border: '1px solid #d9d9d9', borderRadius: 4,
+            boxShadow: '0 3px 12px #0002', display: 'flex', flexDirection: 'column'}}>
+            {actions.map(({key, operation}) => (
+                <button key={key} type="button" role="menuitem"
+                    style={{padding: '7px 12px', border: 0, textAlign: 'left', background: 'transparent',
+                        color: '#262626', cursor: 'pointer'}}
+                    onClick={() => { setContextTarget(null); run(operation); }}>
+                    {t(`analysis.canvas.context_menu.${key}`)}
+                </button>
+            ))}
+        </div>
     );
-
-    const handleAddEdge = useCallback(
-        (data, isOut) => {
-            onClickAddEdge(data, isOut);
-        },
-        [onClickAddEdge]
-    );
-
-    const onExecuteQuery = useCallback(
-        async params => {
-            onClickExpand(params);
-        },
-        [onClickExpand]
-    );
-
-    const handleClickSearch = useCallback(
-        value => {
-            onClickSearch(value);
-        },
-        [onClickSearch]
-    );
-
-
-    useEffect(
-        () => {
-            const options = {
-                offsetX: 20,
-                offsetY: -20,
-                itemTypes: ['node', 'canvas'],
-                getContent(evt) {
-                    const {item} = evt;
-                    if (item) {
-                        const hasLocked = item.hasLocked()
-                            ? t('analysis.canvas.context_menu.unfix')
-                            : t('analysis.canvas.context_menu.fix');
-                        return `<ul>
-                            <li data-type='expand'>${t('analysis.canvas.context_menu.expand')}</li>
-                            <li data-type='search'>${t('analysis.canvas.context_menu.search')}</li>
-                            <li data-type='fixed'>${hasLocked}</li>
-                            <li data-type='hide'>${t('analysis.canvas.context_menu.hide')}</li>
-                            <li data-type='addOutEdge'>${t('analysis.canvas.context_menu.add_out_edge')}</li>
-                            <li data-type='addInEdge'>${t('analysis.canvas.context_menu.add_in_edge')}</li>
-                        </ul>`;
-                    }
-                    return `<ul>
-                        <li data-type='add'>${t('analysis.canvas.context_menu.add_vertex')}</li>
-                    </ul>`;
-                },
-                handleMenuClick(target, item) {
-                    const type = target.dataset.type;
-                    if (item) {
-                        const model = item.getModel();
-                        const vertexInfo = {
-                            vertexId: model.id,
-                            vertexLabel: model.itemType,
-                        };
-                        switch (type) {
-                            case 'expand':
-                                onExecuteQuery({vertex_id: model.id, vertex_label: model.itemType});
-                                break;
-                            case 'search':
-                                handleClickSearch(vertexInfo);
-                                break;
-                            case 'fixed':
-                                handleFixNode(item);
-                                break;
-                            case 'hide':
-                                graph.hideItem(item);
-                                break;
-                            case 'addOutEdge':
-                                const addOutEdge = Object.assign({}, vertexInfo);
-                                handleAddEdge(addOutEdge, true);
-                                break;
-                            case 'addInEdge':
-                                const addInEdge = Object.assign({}, vertexInfo);
-                                handleAddEdge(addInEdge, false);
-                                break;
-                        }
-                    }
-                    else {
-                        if (type === 'add') {
-                            onClickAddNode();
-                        }
-                    }
-                },
-            };
-            const menu = new G6.Menu(options);
-            if (graph && !graph.destroyed) {
-                graph.addPlugin(menu);
-            }
-            return () => {
-                if (graph && !graph.destroyed) {
-                    graph.removePlugin(menu);
-                }
-            };
-        },
-        [graph, handleAddEdge, onClickAddNode, handleFixNode, onExecuteQuery, handleClickSearch, t]
-    );
-    return null;
 };
 
 export default Menu;

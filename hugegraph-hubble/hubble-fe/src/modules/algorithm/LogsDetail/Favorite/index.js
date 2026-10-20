@@ -20,7 +20,7 @@
  * @file 图算法 收藏
  */
 
-import React, {useState, useCallback} from 'react';
+import {useState, useCallback} from 'react';
 import {useTranslation} from 'react-i18next';
 import Highlighter from 'react-highlight-words';
 import {Button, Table, Input, Popconfirm, Modal} from 'antd';
@@ -126,7 +126,7 @@ const Favorite = props => {
             title: t('analysis.logs.column.favorite_statement'),
             dataIndex: 'content',
             width: '40%',
-            render(text, rowData) {
+            render(text, _rowData) {
                 return text.split('\n')[1] ? (
                     <ExecutionContent
                         content={text}
@@ -148,7 +148,7 @@ const Favorite = props => {
             title: t('analysis.logs.column.action'),
             dataIndex: 'manipulation',
             width: '20%',
-            render(_, rowData, index) {
+            render(_, rowData, _index) {
                 return (
                     <div className={c.manipulation}>
                         <Popconfirm

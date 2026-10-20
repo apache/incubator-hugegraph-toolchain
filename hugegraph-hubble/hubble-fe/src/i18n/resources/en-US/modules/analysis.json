@@ -148,11 +148,16 @@
       "style": "Style",
       "filter": "Filter",
       "layout": "Layout",
+      "quick_layout_radial": "Use radial layout",
+      "quick_layout_force": "Use force layout",
+      "quick_layout_default": "Restore algorithm default layout",
       "setting": "Settings",
       "new": "New",
       "statistics": "Statistics",
       "mode_2d": "2D Mode",
       "mode_3d": "3D Mode",
+      "render_mode": "Rendering mode",
+      "mode_3d_experimental": "3D (experimental)",
       "import_success": "Imported successfully",
       "number_card": {
         "paths": "Paths",
@@ -223,6 +228,9 @@
         "switch_2d": "No graph data to switch"
       },
       "canvas_3d": {
+        "unavailable": "3D mode could not be loaded or displayed",
+        "refresh_hint": "Return to 2D to continue; refresh the page before trying 3D again",
+        "back_to_2d": "Return to 2D",
         "node": "Node",
         "edge": "Edge",
         "type": "Type",
@@ -404,6 +412,7 @@
         "add_success": "Added successfully",
         "save_success": "Saved successfully",
         "save_failed": "Save failed",
+        "sync_failed": "Saved on the server but not synced to the canvas; run the query again and do not add it again",
         "get_edge_type_failed": "Failed to get edge types",
         "get_edge_property_failed": "Failed to get edge properties",
         "get_vertex_property_failed": "Failed to get vertex properties",
@@ -438,6 +447,7 @@
       "edit_element": {
         "save_success": "Saved successfully",
         "save_failed": "Save failed",
+        "sync_failed": "Saved on the server, but the graph view could not be updated; run the query again to refresh it",
         "get_edge_property_failed": "Failed to get edge properties",
         "get_vertex_property_failed": "Failed to get vertex properties",
         "type": "Type",

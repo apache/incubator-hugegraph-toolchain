@@ -94,6 +94,8 @@ tree.txt
 *.cache
 *.diff
 *.patch
+# Pinned dependency fixes are required for reproducible frontend installs.
+!hugegraph-hubble/hubble-fe/patches/*.patch
 *.tmp
 
 # system ignore

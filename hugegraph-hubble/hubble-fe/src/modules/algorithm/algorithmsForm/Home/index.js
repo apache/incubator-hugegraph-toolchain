@@ -20,7 +20,7 @@
  * @file 算法表单目录Home
  */
 
-import React, {useCallback, useState} from 'react';
+import {useCallback, useState} from 'react';
 import {Button, Empty, Space} from 'antd';
 import OlapFormHome from '../OlapHome';
 import OltpFormHome from '../OltpHome';

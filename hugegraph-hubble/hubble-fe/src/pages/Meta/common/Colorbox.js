@@ -56,19 +56,12 @@ const SelectColorbox = ({value = '', onChange}) => {
     return (
         <Select
             style={{width: 67}}
-            dropdownMatchSelectWidth={false}
-            popupClassName={Style.colorgroup}
+            popupMatchSelectWidth={false}
+            classNames={{popup: {root: Style.colorgroup}}}
             onChange={triggerChange}
             value={value}
-        >
-            {colorSchemas.map(item => {
-                return (
-                    <Select.Option key={item} value={item}>
-                        <Colorbox color={item} />
-                    </Select.Option>
-                );
-            })}
-        </Select>
+            options={colorSchemas.map(item => ({value: item, label: <Colorbox color={item} />}))}
+        />
     );
 };
 

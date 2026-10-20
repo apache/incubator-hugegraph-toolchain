@@ -20,7 +20,7 @@
  * @file  统计Panel Home
  */
 
-import React, {useCallback, useState} from 'react';
+import {useCallback, useState} from 'react';
 import {Radio} from 'antd';
 import {useTranslation} from 'react-i18next';
 import LabelStatistics from '../LabelStatistics';

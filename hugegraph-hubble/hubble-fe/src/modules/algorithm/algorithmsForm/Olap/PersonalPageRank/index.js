@@ -20,8 +20,10 @@
  * @file PersonalPageRank算法
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Input, Collapse, Select, InputNumber} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
+import {useState, useCallback, useContext} from 'react';
+import {Input, Select, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
 import {TeamOutlined} from '@ant-design/icons';
 import GraphAnalysisContext from '../../../../Context';
@@ -58,7 +60,7 @@ const PersonalPageRank = props => {
 
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
 
     const [form] = Form.useForm();
 
@@ -72,9 +74,9 @@ const PersonalPageRank = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(PERSONAL_PAGE_RANK);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             const {worker, ...args} = algorithmParams;
             const formParams = {
                 algorithm: 'ppr',
@@ -85,14 +87,14 @@ const PersonalPageRank = props => {
             const response =  await api.analysis.postOlapInfo(graphSpace, graph, filteredParams);
             const {data, status, message} = response || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, '', message);
+                complete(FAILED, '', message);
             }
             else {
-                handleFormSubmit(SUCCESS, data?.task_id, message);
+                complete(SUCCESS, data?.task_id, message);
             }
-            setRequiring(false);
+            finishRequiring();
         },
-        [graph, graphSpace, handleFormSubmit, updateCurrentAlgorithm]
+        [graph, graphSpace, beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const onFormFinish = useCallback(
@@ -116,11 +118,8 @@ const PersonalPageRank = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={info.icon}
                     name={PERSONAL_PAGE_RANK}
@@ -190,10 +189,11 @@ const PersonalPageRank = props => {
                     <Select
                         placeholder={t(OWNED_TEXT_PATH + '.use_id_fixlength_query')}
                         allowClear
-                    >
-                        <Select.Option value>{t('common.verify.yes')}</Select.Option>
-                        <Select.Option value={false}>{t('common.verify.no')}</Select.Option>
-                    </Select>
+                        options={[
+                            {value: true, label: t('common.verify.yes')},
+                            {value: false, label: t('common.verify.no')},
+                        ]}
+                    />
                 </Form.Item>
                 <Form.Item
                     labelCol={{span: 24}}
@@ -207,7 +207,7 @@ const PersonalPageRank = props => {
                 </Form.Item>
                 <OlapComputerItem />
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

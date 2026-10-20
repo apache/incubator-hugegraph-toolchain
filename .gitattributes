@@ -1,5 +1,11 @@
 * text=auto !eol
 
+# Preserve upstream line endings and trailing spaces in the generated license bundle.
+/hugegraph-dist/release-docs/licenses/fe-licenses/THIRD-PARTY.txt -text whitespace=-blank-at-eol,cr-at-eol
+
+# A unified diff represents empty context lines with a single required space.
+/hugegraph-hubble/hubble-fe/patches/@antv__g6@5.1.1.patch whitespace=-blank-at-eol
+
 # ignored file when package to source.tgz
 .gitattributes export-ignore
 .gitignore export-ignore

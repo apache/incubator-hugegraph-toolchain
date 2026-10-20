@@ -20,8 +20,10 @@
  * @file JaccardSimilarityPost
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Input, Collapse, Select, Tooltip, InputNumber} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
+import {useState, useCallback, useContext} from 'react';
+import {Input, Select, Tooltip, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
 import {CrownOutlined, DownOutlined, RightOutlined, QuestionCircleOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
@@ -62,7 +64,7 @@ const JaccardSimilarityPost = props => {
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [stepVisible, setStepVisible] = useState(false);
     const [isEnableRun, setEnableRun] = useState(false);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
     const directionOptions = [
         {label: t('analysis.algorithm.form.direction_options.out'), value: 'OUT'},
         {label: t('analysis.algorithm.form.direction_options.in'), value: 'IN'},
@@ -76,24 +78,24 @@ const JaccardSimilarityPost = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(JACCARD_SIMILARITY_POST);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             algorithmParams = {...algorithmParams, 'algorithmName': Algorithm_Url[JACCARD_SIMILARITY_POST]};
             const filteredParams = removeNilKeys(algorithmParams);
             const response =  await api.analysis.runOltpInfo(graphSpace, graph, filteredParams);
             const {data, status, message} = response || {};
             const {graph_view, jaccardsimilarity} = data || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, {}, message);
+                complete(FAILED, {}, message);
             }
             else {
                 const options = {rankObj: jaccardsimilarity};
-                handleFormSubmit(SUCCESS, graph_view || {}, message, options);
+                complete(SUCCESS, graph_view || {}, message, options);
             }
-            setRequiring(false);
+            finishRequiring();
         },
-        [graph, graphSpace, handleFormSubmit, updateCurrentAlgorithm]
+        [graph, graphSpace, beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const handleRunning = useCallback(
@@ -112,7 +114,7 @@ const JaccardSimilarityPost = props => {
             const propertiesArr = properties.trim().split('\n') || [];
             const propertiesValue = {};
             for (const item of propertiesArr) {
-                const [key, value] = item?.split('=');
+                const [key, value] = item.split('=');
                 if (key && value) {
                     const valueLength = value.length;
                     if (valueLength > 2 && value[0] === '\'' && value[valueLength - 1] === '\'') {
@@ -227,11 +229,8 @@ const JaccardSimilarityPost = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<CrownOutlined />}
                     name={JACCARD_SIMILARITY_POST}
@@ -280,7 +279,7 @@ const JaccardSimilarityPost = props => {
                 </Form.Item>
                 {stepFormItems}
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

@@ -20,7 +20,7 @@
  * @file StepFormItem封装
  */
 
-import React, {useState, useCallback} from 'react';
+import {useState, useCallback} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Input, Button, Tooltip} from 'antd';
 import Form from '../PersistentForm';
@@ -80,7 +80,7 @@ const StepsItems = props => {
             name={[param, type]}
             initialValue={[{}]}
         >
-            {(lists, {add, remove}, {errors}) => (
+            {(lists, {add, remove}, {errors: _errors}) => (
                 <div className={c.stepsItemsContent}>
                     <KeyboardAction
                         className={c.stepHeader}
@@ -102,7 +102,7 @@ const StepsItems = props => {
                     </KeyboardAction>
                     {
 
-                        lists.map((item, name, index) => {
+                        lists.map((item, name, _index) => {
                             return (
                                 <div key={item.key} className={stepContentClassName} style={{paddingLeft: '20px'}}>
                                     {itemsContent(name, type)}

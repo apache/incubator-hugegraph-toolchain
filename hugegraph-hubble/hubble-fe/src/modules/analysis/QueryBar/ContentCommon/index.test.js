@@ -59,12 +59,16 @@ const renderContent = overrides => {
         setFavoriteCardVisible: jest.fn(),
         ...overrides,
     };
-    render(
+    const view = render(
         <GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
             <ContentCommon {...props} />
         </GraphAnalysisContext.Provider>
     );
-    return props;
+    return {...props, rerender: updates => view.rerender(
+        <GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
+            <ContentCommon {...props} {...updates} />
+        </GraphAnalysisContext.Provider>
+    )};
 };
 
 it('presents mode selection and execution as one action group', () => {
@@ -155,4 +159,62 @@ it('hides asynchronous mode and favorite controls for AI-sourced queries', () =>
     expect(screen.queryByRole('button', {name: 'Switch to Immediate Query'})).not.toBeInTheDocument();
     expect(screen.queryByRole('button', {name: 'analysis.query.favorite'})).not.toBeInTheDocument();
     expect(screen.getByRole('button', {name: 'common.action.clear'})).toBeEnabled();
+});
+
+
+it.each([true, false])('prevents stale-scope clear with an explicit callback: %s', explicit => {
+    const onClear = explicit ? jest.fn() : undefined;
+    const props = renderContent({isGraphReady: false, onClear});
+    const clear = screen.getByRole('button', {name: 'common.action.clear'});
+    expect(clear).toBeDisabled();
+    fireEvent.click(clear);
+    expect(props.setCodeEditorContent).not.toHaveBeenCalled();
+    expect(props.setFavoriteCardVisible).not.toHaveBeenCalled();
+    if (onClear) {
+        expect(onClear).not.toHaveBeenCalled();
+    }
+
+    props.rerender({isGraphReady: true});
+    expect(clear).toBeEnabled();
+    fireEvent.click(clear);
+    if (onClear) {
+        expect(onClear).toHaveBeenCalledTimes(1);
+        expect(props.setCodeEditorContent).not.toHaveBeenCalled();
+    }
+    else {
+        expect(props.setCodeEditorContent).toHaveBeenCalledWith('');
+    }
+    expect(props.setFavoriteCardVisible).toHaveBeenCalledWith(false);
+});
+
+it('blocks opening favorites while the graph scope is not ready', () => {
+    const props = renderContent({isGraphReady: false});
+    const favorite = screen.getByRole('button', {name: 'analysis.query.favorite'});
+    expect(favorite).toBeDisabled();
+    fireEvent.click(favorite);
+    expect(props.setFavoriteCardVisible).not.toHaveBeenCalled();
+    expect(api.analysis.addFavoriate).not.toHaveBeenCalled();
+});
+
+it('blocks a previously opened valid favorite during a graph scope transition', () => {
+    const props = renderContent({favoriteCardVisible: true});
+    fireEvent.change(screen.getByPlaceholderText('analysis.query.favorite_name_placeholder'), {
+        target: {value: 'query_name'},
+    });
+    const submit = screen.getAllByRole('button', {name: 'analysis.query.favorite'})
+        .find(button => button.closest('.ant-popover'));
+    expect(submit).toBeEnabled();
+
+    props.rerender({isGraphReady: false});
+    expect(submit).toBeDisabled();
+    fireEvent.click(submit);
+    expect(api.analysis.addFavoriate).not.toHaveBeenCalled();
+    expect(props.setFavoriteCardVisible).not.toHaveBeenCalled();
+
+    props.rerender({isGraphReady: true});
+    expect(submit).toBeEnabled();
+    fireEvent.click(submit);
+    expect(api.analysis.addFavoriate).toHaveBeenCalledWith('DEFAULT', 'hugegraph', {
+        content: 'g.V()', name: 'query_name', type: 'GREMLIN',
+    });
 });

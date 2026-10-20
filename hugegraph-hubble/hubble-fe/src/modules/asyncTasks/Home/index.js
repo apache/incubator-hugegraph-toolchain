@@ -20,7 +20,7 @@
  * @file 任务管理 首页
  */
 
-import React, {useCallback, useContext, useEffect, useRef, useState} from 'react';
+import {useCallback, useContext, useEffect, useRef, useState} from 'react';
 import GraphAnalysisContext from '../../Context';
 import {useParams} from 'react-router-dom';
 import {Alert, Button, Empty, Input, Space} from 'antd';
@@ -196,7 +196,7 @@ const AsyncTaskHome = () => {
                     <Alert
                         showIcon
                         type='error'
-                        message={t('analysis.async_task.get_failed')}
+                        title={t('analysis.async_task.get_failed')}
                         action={(
                             <Button size='small' onClick={retryList}>
                                 {t('analysis.async_task.retry_list')}

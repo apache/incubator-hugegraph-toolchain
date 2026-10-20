@@ -16,8 +16,8 @@
  * under the License.
  */
 
-import {act, fireEvent, render, screen, waitFor} from '@testing-library/react';
-import {message} from 'antd';
+import {act, fireEvent, render, screen, waitFor, within} from '@testing-library/react';
+import {message, Modal} from 'antd';
 import Task from './index';
 import * as api from '../../api';
 
@@ -101,9 +101,14 @@ beforeAll(() => {
     }));
 });
 
-afterEach(() => {
-    jest.clearAllMocks();
+afterEach(async () => {
     jest.useRealTimers();
+    await act(async () => {
+        Modal.destroyAll();
+        await new Promise(resolve => setTimeout(resolve, 0));
+    });
+    jest.clearAllMocks();
+    jest.restoreAllMocks();
     localStorage.clear();
 });
 
@@ -148,8 +153,14 @@ it('does not publish a demo result after leaving the import page', async () => {
     jest.spyOn(message, 'success').mockImplementation(() => undefined);
 
     const {unmount} = render(<Task />);
-    fireEvent.click(await screen.findByRole('button', {name: 'Build Red Chamber Demo'}));
-    fireEvent.click(await screen.findByRole('button', {name: 'Build demo'}));
+    const buildDemo = await screen.findByRole('button', {name: 'Build Red Chamber Demo'});
+    await act(async () => {
+        fireEvent.click(buildDemo);
+        // Static Modal.confirm schedules its separate React root on the next task.
+        await new Promise(resolve => setTimeout(resolve, 0));
+    });
+    const confirmation = screen.getByRole('dialog');
+    fireEvent.click(within(confirmation).getByRole('button', {name: 'Build demo'}));
     await waitFor(() => expect(api.manage.loadSampleGraph).toHaveBeenCalled());
     unmount();
     await act(async () => resolveDemo({
@@ -280,9 +291,10 @@ it('shows the compact creator column only when task data contains it', async () 
     });
     api.manage.getMetricsTask.mockResolvedValue({status: 200, data: {}});
 
-    render(<Task />);
+    // Commit the initial mocked list response before inspecting accessible columns.
+    await act(async () => render(<Task />));
 
-    expect(await screen.findByRole('columnheader', {name: 'Creator'}))
+    expect(screen.getByRole('columnheader', {name: 'Creator'}))
         .toBeInTheDocument();
     expect(screen.getByText('admin')).toBeInTheDocument();
 });

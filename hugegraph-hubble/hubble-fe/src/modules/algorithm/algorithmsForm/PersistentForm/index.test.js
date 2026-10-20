@@ -206,7 +206,7 @@ test('keeps group_property compatible with its real numeric control and validato
     );
     const groupPropertyPattern = new RegExp(
         '<Form\\.Item(?:(?!<\\/Form\\.Item>)[\\s\\S])*?'
-        + 'name=[\'\"]group_property[\'\"]'
+        + 'name=[\'"]group_property[\'"]'
         + '(?:(?!<\\/Form\\.Item>)[\\s\\S])*?<\\/Form\\.Item>'
     );
     const groupPropertyItem = fusiformSource.match(groupPropertyPattern)?.[0];

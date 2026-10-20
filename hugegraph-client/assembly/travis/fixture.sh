@@ -27,12 +27,21 @@ FIXTURE_DIR=${FIXTURE_DIR:-${RUNNER_TEMP:-${TMPDIR:-/tmp}}/hugegraph-fixture}
 FIXTURE_HELPER=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/manifest.py
 FIXTURE_BUILD_INPUTS=${FIXTURE_BUILD_INPUTS:-$(python3 "$FIXTURE_HELPER" inputs)}
 FIXTURE_PLATFORM=${FIXTURE_PLATFORM:-$(uname -sm)}
+FIXTURE_EXPORT_CANDIDATE_SDK=${FIXTURE_EXPORT_CANDIDATE_SDK:-false}
 if [[ "$FIXTURE_JAVA" == 17 ]]; then
     FIXTURE_BUILD_COMMAND=candidate-sdk-install
 else
     FIXTURE_BUILD_COMMAND="asf-release-$FIXTURE_RELEASE_VERSION"
 fi
 FIXTURE_CONFIG="$FIXTURE_BUILD_COMMAND;schema=2;inputs=$FIXTURE_BUILD_INPUTS;platform=$FIXTURE_PLATFORM"
+if [[ "$FIXTURE_EXPORT_CANDIDATE_SDK" == true ]]; then
+    [[ "$FIXTURE_JAVA" == 17 ]] || { echo 'SDK fixture export requires JDK 17' >&2; exit 1; }
+    sdk_identity=$(python3 "$FIXTURE_HELPER" sdk-identity)
+elif [[ "$FIXTURE_EXPORT_CANDIDATE_SDK" != false ]]; then
+    echo 'Invalid SDK fixture export mode' >&2
+    exit 1
+fi
+export FIXTURE_EXPORT_CANDIDATE_SDK
 export FIXTURE_REPOSITORY FIXTURE_COMMIT FIXTURE_JAVA FIXTURE_CONFIG FIXTURE_DIR FIXTURE_RELEASE_VERSION
 [[ "$FIXTURE_REPOSITORY" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]
 [[ "$FIXTURE_COMMIT" =~ ^[0-9a-f]{40}$ ]]
@@ -53,10 +62,27 @@ fixture_validate_java() {
 
 fixture_verify() { python3 "$FIXTURE_HELPER" verify; }
 fixture_build() {
-    local cache_key cache_dir source_dir archive candidate_repo=''
-    cache_key=$(printf '%s\n' "$FIXTURE_REPOSITORY" "$FIXTURE_COMMIT" "$FIXTURE_JAVA" "$FIXTURE_CONFIG" | shasum -a 256 | cut -d ' ' -f 1)
+    local cache_key cache_dir source_dir archive candidate_repo='' cache_config="$FIXTURE_CONFIG"
+    if [[ "$FIXTURE_EXPORT_CANDIDATE_SDK" == true ]]; then
+        cache_config="$cache_config;sdk-export=1;identity=$sdk_identity"
+    fi
+    cache_key=$(printf '%s\n' "$FIXTURE_REPOSITORY" "$FIXTURE_COMMIT" "$FIXTURE_JAVA" "$cache_config" | shasum -a 256 | cut -d ' ' -f 1)
     cache_dir="${HOME}/hugegraph-fixture-cache/$cache_key"
     mkdir -p "$FIXTURE_DIR"
+    if [[ "$FIXTURE_EXPORT_CANDIDATE_SDK" == true && "${FIXTURE_SDK_CACHE_HIT:-}" == true &&
+          ! -d "$cache_dir" ]]; then
+        echo 'Exact SDK cache hit is missing its expected payload; refusing to rebuild' >&2
+        return 1
+    fi
+    if [[ "$FIXTURE_EXPORT_CANDIDATE_SDK" == true && -e "$cache_dir" ]]; then
+        # An SDK cache hit must prove the entire payload. Never hide a broken hit
+        # behind another source build or accept a Server-only cache as an SDK hit.
+        FIXTURE_DIR="$cache_dir" fixture_verify || return 1
+        cp "$cache_dir/server.tar.gz" "$cache_dir/manifest.json" "$FIXTURE_DIR/"
+        cp -a "$cache_dir/sdk" "$FIXTURE_DIR/"
+        echo 'Reused verified SDK and Server fixture; reactor builds: 0'
+        return
+    fi
     if [[ -f "$cache_dir/server.tar.gz" && ! -L "$cache_dir/server.tar.gz" &&
           -f "$cache_dir/manifest.json" && ! -L "$cache_dir/manifest.json" ]] &&
        cp "$cache_dir"/server.tar.gz "$cache_dir"/manifest.json "$FIXTURE_DIR/"; then
@@ -74,6 +100,11 @@ fixture_build() {
         archive=$(find "$source_dir/hugegraph-server" -maxdepth 1 -name 'apache-hugegraph-*.tar.gz' -print)
         [[ -n "$archive" && -f "$archive" ]]
         cp "$archive" "$FIXTURE_DIR/server.tar.gz"
+        if [[ "$FIXTURE_EXPORT_CANDIDATE_SDK" == true ]]; then
+            mkdir -p "$FIXTURE_DIR/sdk/org/apache"
+            cp -a "$candidate_repo/org/apache/hugegraph" "$FIXTURE_DIR/sdk/org/apache/"
+            cp "$candidate_repo/candidate-sdk-manifest.json" "$FIXTURE_DIR/sdk/"
+        fi
         export FIXTURE_ARCHIVE_NAME=${archive##*/}
     else
         python3 "${FIXTURE_HELPER%/*}/release.py" download
@@ -83,6 +114,9 @@ fixture_build() {
     fixture_verify
     mkdir -p "$cache_dir"
     cp "$FIXTURE_DIR/server.tar.gz" "$FIXTURE_DIR/manifest.json" "$cache_dir/"
+    if [[ "$FIXTURE_EXPORT_CANDIDATE_SDK" == true ]]; then
+        cp -a "$FIXTURE_DIR/sdk" "$cache_dir/"
+    fi
     if [[ -n "${source_dir:-}" ]]; then rm -rf "$source_dir"; fi
     if [[ -n "$candidate_repo" ]]; then rm -rf "$candidate_repo"; fi
 }
@@ -98,6 +132,7 @@ source "${FIXTURE_HELPER%/*}/service-wait.sh"
 case "${FIXTURE_MODE:-standalone}" in
     build) fixture_build ;;
     start) fixture_copy_archive ;;
+    verify) fixture_verify ;;
     standalone) fixture_build; fixture_copy_archive ;;
     *) echo 'Invalid fixture mode' >&2; exit 1 ;;
 esac

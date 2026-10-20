@@ -177,7 +177,8 @@ test('uses one list-mode create button and keeps page size at eleven', async () 
     await screen.findByText('Space A:manage');
     fireEvent.click(screen.getByLabelText('common.label.list_mode'));
 
-    expect(await screen.findByRole('button', {name: 'graphspace.create'})).toBeEnabled();
+    const header = within(screen.getByTestId('graphspace-page-title').closest('header'));
+    expect(await header.findByRole('button', {name: 'graphspace.create'})).toBeEnabled();
     expect(screen.getAllByText('graphspace.create')).toHaveLength(1);
     await waitFor(() => expect(api.manage.getGraphSpaceList).toHaveBeenLastCalledWith(
         expect.objectContaining({page_size: 11}),

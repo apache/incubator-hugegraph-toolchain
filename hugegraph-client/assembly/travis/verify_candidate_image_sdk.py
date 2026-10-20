@@ -27,7 +27,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 REPOSITORY = "apache/hugegraph"
-COMMIT = "68855199031d5801edb4fe41b2bacbacffe8fe68"
+COMMIT = "86c05ef9c5d417bd37eab21d4ecd5af82bab17ef"
 REQUIRED_MODULES = {
     "pom.xml", "hugegraph-commons/pom.xml", "hugegraph-server/pom.xml",
     "hugegraph-pd/pom.xml", "hugegraph-store/pom.xml",

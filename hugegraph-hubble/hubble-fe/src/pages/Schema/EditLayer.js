@@ -165,7 +165,7 @@ const EditLayer = ({
             width={960}
             onOk={onFinish}
             confirmLoading={loading}
-            destroyOnClose
+            destroyOnHidden
         >
             <Form
                 form={form}

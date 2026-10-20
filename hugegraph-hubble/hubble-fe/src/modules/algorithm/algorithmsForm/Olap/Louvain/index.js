@@ -20,10 +20,12 @@
  * @file Louvain算法
  */
 
-import React, {
+import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
+import {
     useState, useCallback, useContext, useEffect, useMemo, useRef,
 } from 'react';
-import {Input, Collapse, InputNumber} from 'antd';
+import {Input, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
 import {HomeOutlined} from '@ant-design/icons';
 import GraphAnalysisContext from '../../../../Context';
@@ -59,7 +61,7 @@ const Louvain = props => {
     };
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
     const validationVersion = useRef(0);
 
     const [form] = Form.useForm();
@@ -80,9 +82,9 @@ const Louvain = props => {
             if (!canRun) {
                 return;
             }
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(LOUVAIN);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             const args = {...algorithmParams};
             delete args.worker;
             const formParams = {
@@ -94,15 +96,15 @@ const Louvain = props => {
             const response =  await api.analysis.postOlapInfo(graphSpace, graph, filteredParams);
             const {data, status, message} = response || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, '', message);
+                complete(FAILED, '', message);
             }
             else {
-                handleFormSubmit(SUCCESS, data?.task_id, message);
+                complete(SUCCESS, data?.task_id, message);
             }
-            setRequiring(false);
+            finishRequiring();
         },
         [FAILED, LOADING, LOUVAIN, SUCCESS, canRun, graph, graphSpace,
-            handleFormSubmit, updateCurrentAlgorithm]
+            beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const onFormFinish = useCallback(
@@ -153,11 +155,8 @@ const Louvain = props => {
     }, [debouncedRunAvailability]);
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={info.icon}
                     name={LOUVAIN}
@@ -211,7 +210,7 @@ const Louvain = props => {
                 </Form.Item>
                 <OlapComputerItem />
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

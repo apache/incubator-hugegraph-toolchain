@@ -20,587 +20,142 @@
  * @file 图分析组件 外观设置弹窗
  */
 
-import React, {useCallback, useEffect, useState} from 'react';
+import {useState} from 'react';
 import {Modal, Form, Select, Divider, Switch} from 'antd';
 import {useTranslation} from 'react-i18next';
-import '@antv/graphin-icons/dist/index.css';
-import _ from 'lodash';
-
+import {cloneDeep} from 'lodash';
 import {InputColorSelect} from '../../../../components/ColorSelect';
 import IconSelect from '../../../../components/IconSelect';
-import icons from '../../../../utils/graph';
-import {iconsMap} from '../../../../utils/constants';
-
+import {resolveIconName} from '../../../../utils/iconNames';
 import c from './index.module.scss';
 
-const FORM_TYPE = {
-    NODES: 'nodes',
-    EDGES: 'edges',
-};
+const numericOptions = values => values.map(value => ({value, label: String(value)}));
+const sizeOptions = numericOptions([20, 25, 30, 35, 40, 45, 50]);
+const lineWidthOptions = numericOptions([0, 0.5, 1, 1.5, 2, 2.5, 3]);
+const strokeWidthOptions = numericOptions([0, 1, 2, 3, 4, 5]);
+const fontSizeOptions = numericOptions([12, 14, 16, 18, 20, 22, 24, 26]);
+const opacityOptions = numericOptions([0, 0.2, 0.4, 0.6, 0.8, 1]);
+const meanSize = size => Array.isArray(size) ? size.reduce((sum, value) => sum + value, 0) / size.length : size;
+const ellipseSize = size => [size + 10, Math.max(0, size - 10)];
 
-const sizeOptions = [
-    {value: 20, label: '20'},
-    {value: 25, label: '25'},
-    {value: 30, label: '30'},
-    {value: 35, label: '35'},
-    {value: 40, label: '40'},
-    {value: 45, label: '45'},
-    {value: 50, label: '50'},
-];
-const lineWidthOptions = [
-    {value: 0.5, label: '0.5'},
-    {value: 1, label: '1'},
-    {value: 1.5, label: '1.5'},
-    {value: 2, label: '2'},
-    {value: 2.5, label: '2.5'},
-    {value: 3, label: '3'},
-];
-const strokeWidthOptions = [
-    {value: 1, label: '1'},
-    {value: 2, label: '2'},
-    {value: 3, label: '3'},
-    {value: 4, label: '4'},
-    {value: 5, label: '5'},
-];
-const fontSizeOptions = [
-    {value: 14, label: '14'},
-    {value: 16, label: '16'},
-    {value: 18, label: '18'},
-    {value: 20, label: '20'},
-    {value: 22, label: '22'},
-    {value: 24, label: '24'},
-    {value: 26, label: '26'},
-];
-const opacityOptions = [
-    {value: 0.2, label: '0.2'},
-    {value: 0.4, label: '0.4'},
-    {value: 0.6, label: '0.6'},
-    {value: 0.8, label: '0.8'},
-    {value: 1.0, label: '1.0'},
-];
-
-const anchorPointsMap = {
-    'circle': null,
-    'diamond': [[0, 0.5], [0.5, 0], [0.5, 1], [1, 0.5]],
-    'ellipse': null,
-    'triangle': [[0.5, 0], [0, 1], [1, 1]],
-    'star': [[0.5, 0], [0, 0.39], [1, 0.39], [0.19, 1], [0.81, 1]],
-};
-
-const offsetMap = {
-    0.5: -0.3,
-    1: -0.5,
-    1.5: -0.7,
-    1.6: -0.7,
-    2: -1.1,
-    2.5: -1.2,
-    3: -1.6,
-};
-
-const ConfigModal = props => {
+const StyleEditor = ({style, onOk, onCancel}) => {
     const {t} = useTranslation();
-    const {
-        style,
-        visible,
-        onOk,
-        onCancel,
-    } = props;
-    const {useForm} = Form;
-    const [nodesForm] = useForm();
-    const [edgesForm] = useForm();
-
-    const [styleConfig, setStyleConfig] = useState({nodes: [], edges: []});
-    const [formType, setFormType] = useState(FORM_TYPE.NODES);
-    const [nodeType, setNodeType] = useState();
-    const [edgeType, setEdgeType] = useState();
-    const isNodeForm = formType === FORM_TYPE.NODES;
-    const isFormDisabled = isNodeForm ? !nodeType : !edgeType;
+    // This component mounts only when the user opens the dialog. Live graph snapshots
+    // must not overwrite a draft while the user is editing it.
+    const [draft, setDraft] = useState(() => cloneDeep(style || {nodes: {}, edges: {}}));
+    const [formType, setFormType] = useState('nodes');
+    const [selected, setSelected] = useState({nodes: undefined, edges: undefined});
+    const nodeForm = formType === 'nodes';
+    const selectedLabel = selected[formType];
+    const current = draft[formType]?.[selectedLabel] || {};
+    const disabled = selectedLabel === undefined;
     const placeholder = t('style_config.select_placeholder');
     const formTypeOptions = [
-        {value: FORM_TYPE.NODES, label: t('style_config.vertex_appearance')},
-        {value: FORM_TYPE.EDGES, label: t('style_config.edge_appearance')},
+        {value: 'nodes', label: t('style_config.vertex_appearance')},
+        {value: 'edges', label: t('style_config.edge_appearance')},
     ];
-    const shapesOptions = [
-        {value: 'circle', label: t('style_config.shape_circle')},
-        {value: 'diamond', label: t('style_config.shape_diamond')},
-        {value: 'triangle', label: t('style_config.shape_triangle')},
-        {value: 'star', label: t('style_config.shape_star')},
-        {value: 'ellipse', label: t('style_config.shape_ellipse')},
-    ];
+    const shapesOptions = ['circle', 'diamond', 'triangle', 'star', 'ellipse'].map(value => ({
+        value, label: t(`style_config.shape_${value}`),
+    }));
     const lineTypeOptions = [
         {value: 'line', label: t('style_config.line_solid')},
         {value: 'dashed', label: t('style_config.line_dashed')},
     ];
-
-    useEffect(
-        () => {
-            style && setStyleConfig(_.cloneDeep(style));
-        },
-        [style]
-    );
-
-    const resetModalForm = useCallback(
-        () => {
-            setStyleConfig(style);
-            setFormType(FORM_TYPE.NODES);
-            setNodeType(undefined);
-            setEdgeType(undefined);
-            nodesForm.resetFields();
-            edgesForm.resetFields();
-        },
-        [edgesForm, nodesForm, style]
-    );
-
-    const handleModalOk = useCallback(
-        () => {
-            onOk(styleConfig);
-            resetModalForm();
-        },
-        [onOk, resetModalForm, styleConfig]
-    );
-
-    const handleCancel = useCallback(
-        () => {
-            onCancel();
-            resetModalForm();
-        },
-        [onCancel, resetModalForm]
-    );
-
-    const handleNodesStyleChange = useCallback(
-        changedValues => {
-            const {[nodeType]: currentNode} = styleConfig.nodes;
-            if ('shape' in changedValues) {
-                currentNode.type = changedValues.shape;
-                currentNode.anchorPoints = anchorPointsMap[changedValues.shape];
-                if (changedValues.shape === 'ellipse') {
-                    const size = currentNode.size || 60;
-                    currentNode.size = [size + 10, size - 10];
-                }
+    const changeStyle = changes => setDraft(previous => {
+        const old = previous[formType]?.[selectedLabel];
+        if (!old) return previous;
+        const next = {...old, style: {...old.style}, labelCfg: {...old.labelCfg, style: {...old.labelCfg?.style}}};
+        if (nodeForm) {
+            next.icon = {...old.icon};
+            if ('shape' in changes) {
+                next.type = changes.shape;
+                const size = meanSize(old.size) ?? 30;
+                next.size = next.type === 'ellipse' ? ellipseSize(size) : size;
             }
-            else if ('size' in changedValues) {
-                const {size} = changedValues;
-                const {icon} = currentNode;
-                currentNode.size = size;
-                if (currentNode.type === 'ellipse') {
-                    currentNode.size = [size + 10, size - 10];
-                }
-                currentNode.icon = {
-                    ...icon,
-                    fontSize: size * 0.6,
-                };
+            if ('size' in changes) {
+                next.size = next.type === 'ellipse' ? ellipseSize(changes.size) : changes.size;
+                next.icon.fontSize = changes.size * 0.6;
             }
-            else if ('strokeColor' in changedValues) {
-                currentNode.style = {
-                    ...currentNode.style,
-                    stroke: changedValues.strokeColor,
-                };
+            for (const [field, key] of [['strokeColor', 'stroke'], ['lineWidth', 'lineWidth'],
+                ['fillColor', 'fill'], ['opacity', 'fillOpacity']]) {
+                if (field in changes) next.style[key] = changes[field];
             }
-            else if ('lineWidth' in changedValues) {
-                currentNode.style = {
-                    ...currentNode.style,
-                    lineWidth: changedValues.lineWidth,
-                };
+            if ('iconShow' in changes) next.icon.show = changes.iconShow;
+            if ('iconType' in changes) {
+                next.icon._iconName = resolveIconName(changes.iconType, '');
+                next.icon.show = Boolean(next.icon._iconName);
             }
-            else if ('fillColor' in changedValues) {
-                const {style} = currentNode;
-                const color = changedValues.fillColor;
-                currentNode.style = {
-                    ...style,
-                    fill: color,
-                };
-                currentNode.stateStyles = {
-                    ...currentNode.stateStyles,
-                    customActive: {
-                        shadowColor: color,
-                        shadowBlur: 10,
-                    },
-                    customSelected: {
-                        shadowColor: color,
-                        shadowBlur: 15,
-                    },
-                    activeByLegend: {
-                        shadowColor: color,
-                        shadowBlur: 10,
-                    },
-                };
-            }
-            else if ('iconType' in changedValues) {
-                const {icon} = currentNode;
-                const iconName = changedValues.iconType;
-                currentNode.icon = {
-                    ...icon,
-                    show: true,
-                    text: icons[iconsMap[iconName]],
-                    fontFamily: 'graphin',
-                    fontSize: 12,
-                    _iconName: iconName,
-                };
-            }
-            else if ('iconColor' in changedValues) {
-                const {icon} = currentNode;
-                const color = changedValues.iconColor;
-                currentNode.icon = {
-                    ...icon,
-                    fill: color,
-                };
-            }
-            else if ('labelSize' in changedValues) {
-                const labelCfg = currentNode.labelCfg;
-                currentNode.labelCfg = {
-                    ...labelCfg,
-                    style: {
-                        ...labelCfg?.style,
-                        fontSize: changedValues.labelSize,
-                    },
-                };
-            }
-            else if ('labelColor' in changedValues) {
-                const labelCfg = currentNode.labelCfg;
-                currentNode.labelCfg = {
-                    ...labelCfg,
-                    style: {
-                        ...labelCfg?.style,
-                        fill: changedValues.labelColor,
-                    },
-                };
-            }
-            else if ('opacity' in changedValues) {
-                currentNode.style = {
-                    ...currentNode.style,
-                    fillOpacity: changedValues.opacity,
-                };
-            }
-            setStyleConfig({...styleConfig});
-        },
-        [nodeType, styleConfig]
-    );
-
-
-    const handleEdgesStyleChange = useCallback(
-        changedValues => {
-            const {[edgeType]: currentEdge} = styleConfig.edges;
-            if ('type' in changedValues) {
-                const lineType = changedValues.type;
-                if (lineType === 'dashed') {
-                    const {style} = currentEdge;
-                    currentEdge.style = {
-                        ...currentEdge.style,
-                        lineDash: [style.lineWidth * 3],
-                    };
-                }
-                else {
-                    currentEdge.style = {
-                        ...currentEdge.style,
-                        lineDash: false,
-                    };
-                }
-            }
-            else if ('width' in changedValues) {
-                const width = changedValues.width;
-                const arrowWidth = width + 5;
-                const d = offsetMap[width];
-                currentEdge.style = {
-                    ...currentEdge.style,
-                    lineWidth: width,
-                    endArrow: {
-                        ...currentEdge.style.endArrow,
-                        d: d,
-                        path: `M 0,0 L ${arrowWidth} ${arrowWidth / 2}  L ${arrowWidth} ${-arrowWidth / 2} Z`,
-                        lineDash: [0, 0],
-                    },
-                };
-            }
-            else if ('color' in changedValues) {
-                const color = changedValues.color;
-                const {endArrow} = currentEdge.style;
-                currentEdge.style = {
-                    ...currentEdge.style,
-                    stroke: color,
-                    endArrow: endArrow && {
-                        ...currentEdge.style.endArrow,
-                        fill: color,
-                    },
-                };
-                currentEdge.stateStyles = {
-                    ...currentEdge.stateStyles,
-                    edgeActive: {
-                        shadowColor: color,
-                        shadowBlur: 10,
-                    },
-                    edgeSelected: {
-                        shadowColor: color,
-                        shadowBlur: 10,
-                    },
-                    activeByLegend: {
-                        shadowColor: color,
-                        shadowBlur: 8,
-                    },
-                    inactiveByLegend: {
-                        opacity: 0.5,
-                    },
-                };
-            }
-            else if ('labelSize' in changedValues) {
-                const labelCfg = currentEdge.labelCfg;
-                currentEdge.labelCfg = {
-                    ...labelCfg,
-                    style: {
-                        ...labelCfg?.style,
-                        fontSize: changedValues.labelSize,
-                    },
-                };
-            }
-            else if ('labelColor' in changedValues) {
-                const labelCfg = currentEdge.labelCfg;
-                currentEdge.labelCfg = {
-                    ...labelCfg,
-                    style: {
-                        ...labelCfg?.style,
-                        fill: changedValues.labelColor,
-                    },
-                };
-            }
-            else if ('edgeAnimation' in changedValues) {
-                const edgeAnimation = changedValues.edgeAnimation;
-                currentEdge.type = edgeAnimation ? 'runningLine' : 'line';
-            }
-            setStyleConfig({...styleConfig});
-        },
-        [edgeType, styleConfig]
-    );
-
-    const hanleFormTypeChange = useCallback(
-        value => {
-            setFormType(value);
-        },
-        []
-    );
-
-    const handleItemTypeChange = useCallback(
-        value => {
-            if (isNodeForm) {
-                setNodeType(value);
-                const {[value]: currentNode = {}} = styleConfig.nodes;
-                const {type, size, style = {}, labelCfg = {}, icon = {}} = currentNode;
-                const {
-                    fill: fillColor,
-                    stroke: strokeColor,
-                    lineWidth,
-                    fillOpacity,
-                } = style;
-                const {
-                    style: labelStyle,
-                } = labelCfg;
-                const {
-                    fontSize: labelSize,
-                    fill: labelColor,
-                } = labelStyle;
-                const {
-                    _iconName: iconName,
-                    fill: iconColor,
-                    show: showIcon,
-                } = icon;
-                let nodeSize;
-                if (_.isArray(size)) {
-                    nodeSize = (size[0] + size [1]) / 2;
-                }
-                else {
-                    nodeSize = size;
-                }
-                nodesForm.setFieldsValue({
-                    shape: type,
-                    size: nodeSize,
-                    strokeColor,
-                    lineWidth,
-                    fillColor,
-                    iconType: showIcon ? iconName : '',
-                    iconColor: showIcon ? iconColor : '',
-                    labelSize,
-                    labelColor,
-                    opacity: fillOpacity,
-                });
-            }
-            else {
-                setEdgeType(value);
-                const {[value]: currentEdge = {}} = styleConfig.edges;
-                const {type: edgeType, style = {}, labelCfg = {}} = currentEdge;
-                const {
-                    lineWidth,
-                    stroke: strokeColor,
-                    lineDash,
-                } = style;
-                const {
-                    style: labelStyle,
-                } = labelCfg;
-                const {
-                    fontSize: labelSize,
-                    fill: labelColor,
-                } = labelStyle;
-                nodesForm.setFieldsValue({
-                    type: lineDash ? 'dashed' : 'line',
-                    width: lineWidth,
-                    color: strokeColor,
-                    labelSize,
-                    labelColor,
-                    edgeAnimation: edgeType === 'runningLine',
-                });
-            }
-        },
-        [isNodeForm, nodesForm, styleConfig.edges, styleConfig.nodes]
-    );
-
-    const renderNodesConfigForm = () => {
-        return (
-            <Form
-                form={nodesForm}
-                labelCol={{span: 6}}
-                wrapperCol={{span: 18}}
-                onValuesChange={handleNodesStyleChange}
-            >
-                <Form.Item name="shape" label={t('style_config.shape')} required>
-                    <Select
-                        options={shapesOptions}
-                        disabled={isFormDisabled}
-                        placeholder={placeholder}
-                    />
-                </Form.Item>
-                <Form.Item name="size" label={t('style_config.size')} required>
-                    <Select
-                        options={sizeOptions}
-                        disabled={isFormDisabled}
-                        placeholder={placeholder}
-                    />
-                </Form.Item>
-                <Form.Item name="strokeColor" label={t('style_config.border_color')} required>
-                    <InputColorSelect disable={isFormDisabled} />
-                </Form.Item>
-                <Form.Item name="lineWidth" label={t('style_config.border_width')} required>
-                    <Select
-                        options={strokeWidthOptions}
-                        disabled={isFormDisabled}
-                        placeholder={placeholder}
-                    />
-                </Form.Item>
-                <Form.Item name="fillColor" label={t('style_config.fill_color')} required>
-                    <InputColorSelect disable={isFormDisabled} />
-                </Form.Item>
-                <Form.Item name="iconType" label={t('style_config.icon_style')}>
-                    <IconSelect disabled={isFormDisabled} />
-                </Form.Item>
-                <Form.Item name="iconColor" label={t('style_config.icon_color')}>
-                    <InputColorSelect disable={isFormDisabled} />
-                </Form.Item>
-                <Form.Item name="labelSize" label={t('style_config.label_size')} required>
-                    <Select
-                        options={fontSizeOptions}
-                        disabled={isFormDisabled}
-                        placeholder={placeholder}
-                    />
-                </Form.Item>
-                <Form.Item name="labelColor" label={t('style_config.label_color')} required>
-                    <InputColorSelect disable={isFormDisabled} />
-                </Form.Item>
-                <Form.Item name="opacity" label={t('style_config.node_opacity')} required>
-                    <Select
-                        options={opacityOptions}
-                        disabled={isFormDisabled}
-                        placeholder={placeholder}
-                    />
-                </Form.Item>
-            </Form>
-        );
+            if ('iconColor' in changes) next.icon.fill = changes.iconColor;
+        }
+        else {
+            if ('type' in changes) next.style.lineDash = changes.type === 'dashed'
+                ? [Math.max(1, (next.style.lineWidth ?? 1) * 3)] : false;
+            if ('width' in changes) next.style.lineWidth = changes.width;
+            if ('color' in changes) next.style.stroke = changes.color;
+            if ('arrow' in changes) next.style.endArrow = changes.arrow;
+        }
+        if ('labelSize' in changes) next.labelCfg.style.fontSize = changes.labelSize;
+        if ('labelColor' in changes) next.labelCfg.style.fill = changes.labelColor;
+        return {...previous, [formType]: {...previous[formType], [selectedLabel]: next}};
+    });
+    const values = nodeForm ? {
+        shape: current.type, size: meanSize(current.size), strokeColor: current.style?.stroke,
+        lineWidth: current.style?.lineWidth, fillColor: current.style?.fill, opacity: current.style?.fillOpacity,
+        iconType: current.icon?._iconName, iconColor: current.icon?.fill, iconShow: current.icon?.show !== false,
+        labelSize: current.labelCfg?.style?.fontSize, labelColor: current.labelCfg?.style?.fill,
+    } : {
+        type: current.style?.lineDash?.length ? 'dashed' : 'line', width: current.style?.lineWidth,
+        color: current.style?.stroke, arrow: Boolean(current.style?.endArrow),
+        labelSize: current.labelCfg?.style?.fontSize, labelColor: current.labelCfg?.style?.fill,
     };
-
-    const renderEdgesConfigForm = () => {
-        return (
-            <Form
-                form={edgesForm}
-                labelCol={{span: 6}}
-                wrapperCol={{span: 18}}
-                onValuesChange={handleEdgesStyleChange}
-            >
-                <Form.Item name="type" label={t('style_config.type')} required>
-                    <Select
-                        options={lineTypeOptions}
-                        disabled={isFormDisabled}
-                        placeholder={placeholder}
-                    />
-                </Form.Item>
-                <Form.Item name="width" label={t('style_config.edge_width')} required>
-                    <Select
-                        options={lineWidthOptions}
-                        disabled={isFormDisabled}
-                        placeholder={placeholder}
-                    />
-                </Form.Item>
-                <Form.Item name="color" label={t('style_config.edge_color')} required>
-                    <InputColorSelect disable={isFormDisabled} />
-                </Form.Item>
-                <Form.Item name="labelSize" label={t('style_config.label_size')} required>
-                    <Select
-                        options={fontSizeOptions}
-                        disabled={isFormDisabled}
-                        placeholder={placeholder}
-                    />
-                </Form.Item>
-                <Form.Item name="labelColor" label={t('style_config.label_color')} required>
-                    <InputColorSelect disable={isFormDisabled} />
-                </Form.Item>
-                <Form.Item
-                    name="edgeAnimation"
-                    label={t('style_config.edge_animation')}
-                    valuePropName="checked"
-                >
-                    <Switch
-                        checkedChildren="ON"
-                        unCheckedChildren="OFF"
-                        disabled={isFormDisabled}
-                    />
-                </Form.Item>
-            </Form>
-        );
-    };
-
-    const types = isNodeForm ? style.nodes : style.edges;
-    const typeOptions = Object.keys(types).map(type => ({value: type, label: type}));
+    const select = options => <Select options={options} disabled={disabled} placeholder={placeholder} />;
+    const color = () => <InputColorSelect disable={disabled} />;
 
     return (
-        <Modal
-            title={t('style_config.title')}
-            open={visible}
-            onOk={handleModalOk}
-            onCancel={handleCancel}
-            width={600}
-            className={c.styleConfigModal}
-            forceRender
-        >
+        <Modal title={t('style_config.title')} open onOk={() => onOk(draft)} onCancel={onCancel}
+            width={600} className={c.styleConfigModal}>
             <div className={c.title}>{t('style_config.basic_properties')}</div>
-            <Form
-                labelCol={{span: 6}}
-                wrapperCol={{span: 18}}
-            >
-                <Form.Item label={t('style_config.appearance_type')} required>
-                    <Select
-                        options={formTypeOptions}
-                        value={formType}
-                        onChange={hanleFormTypeChange}
-                    />
+            <Form labelCol={{span: 6}} wrapperCol={{span: 18}}>
+                <Form.Item label={t('style_config.appearance_type')}>
+                    <Select aria-label={t('style_config.appearance_type')} options={formTypeOptions}
+                        value={formType} onChange={setFormType} />
                 </Form.Item>
-                <Form.Item label={t('style_config.type')} required>
-                    <Select
-                        options={typeOptions}
-                        value={isNodeForm ? nodeType : edgeType}
-                        onChange={handleItemTypeChange}
-                        placeholder={placeholder}
-                    />
+                <Form.Item label={t('style_config.type')}>
+                    <Select aria-label={t('style_config.type')} value={selectedLabel} placeholder={placeholder}
+                        options={Object.keys(draft[formType] || {}).map(value => ({value, label: value}))}
+                        onChange={value => setSelected(previous => ({...previous, [formType]: value}))} />
                 </Form.Item>
             </Form>
             <Divider />
             <div className={c.title}>{t('style_config.appearance_config')}</div>
-            {isNodeForm ? renderNodesConfigForm() : renderEdgesConfigForm()}
+            <Form key={`${formType}:${selectedLabel}`} initialValues={values} onValuesChange={changeStyle}
+                labelCol={{span: 6}} wrapperCol={{span: 18}}>
+                {nodeForm ? <>
+                    <Form.Item name='shape' label={t('style_config.shape')}>{select(shapesOptions)}</Form.Item>
+                    <Form.Item name='size' label={t('style_config.size')}>{select(sizeOptions)}</Form.Item>
+                    <Form.Item name='strokeColor' label={t('style_config.border_color')}>{color()}</Form.Item>
+                    <Form.Item name='lineWidth' label={t('style_config.border_width')}>{select(strokeWidthOptions)}</Form.Item>
+                    <Form.Item name='fillColor' label={t('style_config.fill_color')}>{color()}</Form.Item>
+                    <Form.Item name='iconShow' label={t('style_config.icon')} valuePropName='checked'>
+                        <Switch disabled={disabled} />
+                    </Form.Item>
+                    <Form.Item name='iconType' label={t('style_config.icon_style')}><IconSelect disabled={disabled} /></Form.Item>
+                    <Form.Item name='iconColor' label={t('style_config.icon_color')}>{color()}</Form.Item>
+                    <Form.Item name='opacity' label={t('style_config.node_opacity')}>{select(opacityOptions)}</Form.Item>
+                </> : <>
+                    <Form.Item name='type' label={t('style_config.type')}>{select(lineTypeOptions)}</Form.Item>
+                    <Form.Item name='width' label={t('style_config.edge_width')}>{select(lineWidthOptions)}</Form.Item>
+                    <Form.Item name='color' label={t('style_config.edge_color')}>{color()}</Form.Item>
+                    <Form.Item name='arrow' label={t('style_config.arrow')} valuePropName='checked'>
+                        <Switch disabled={disabled} />
+                    </Form.Item>
+                </>}
+                <Form.Item name='labelSize' label={t('style_config.label_size')}>{select(fontSizeOptions)}</Form.Item>
+                <Form.Item name='labelColor' label={t('style_config.label_color')}>{color()}</Form.Item>
+            </Form>
         </Modal>
     );
 };
 
+const ConfigModal = ({visible, ...props}) => visible ? <StyleEditor {...props} /> : null;
 export default ConfigModal;

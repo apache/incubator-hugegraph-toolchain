@@ -28,6 +28,12 @@ inputs:
   isolate-maven-repo:
     description: Build fixtures without replacing Toolchain Maven dependencies
     default: 'false'
+  export-candidate-sdk:
+    description: Retain the verified candidate SDK with the shared Server fixture
+    default: 'false'
+  local-fixture-dir:
+    description: Already downloaded fixture directory; start mode only
+    default: ''
   travis-dir:
     description: Module service setup directory
     default: hugegraph-loader/assembly/travis
@@ -35,25 +41,54 @@ runs:
   using: composite
   steps:
     - name: Download shared Server fixture
-      if: inputs.mode == 'start'
+      if: inputs.mode == 'start' && inputs.local-fixture-dir == ''
       uses: actions/download-artifact@v4
       with:
         name: ${{ inputs.artifact-name }}
         path: ${{ runner.temp }}/hugegraph-fixture
+    - name: Identify fixture build inputs
+      id: fixture-identity
+      shell: bash
+      env:
+        EXPORT_SDK: ${{ inputs.export-candidate-sdk }}
+        FIXTURE_JAVA_HOME: ${{ inputs.java-home }}
+      run: |
+        set -euo pipefail
+        helper="$GITHUB_WORKSPACE/hugegraph-client/assembly/travis/manifest.py"
+        inputs=$(python3 "$helper" inputs)
+        printf 'inputs=%s\n' "$inputs" >> "$GITHUB_OUTPUT"
+        if [[ "$EXPORT_SDK" == true ]]; then
+          if [[ -n "$FIXTURE_JAVA_HOME" ]]; then
+            export JAVA_HOME="$FIXTURE_JAVA_HOME"
+            export PATH="$JAVA_HOME/bin:$PATH"
+          fi
+          sdk_identity=$(python3 "$helper" sdk-identity)
+          printf 'sdk=%s\n' "$sdk_identity" >> "$GITHUB_OUTPUT"
+        fi
     - name: Restore exact Server fixture cache
-      if: inputs.mode == 'build'
+      if: inputs.mode == 'build' && inputs.export-candidate-sdk != 'true'
       uses: actions/cache@v4
       with:
         path: ~/hugegraph-fixture-cache
-        key: server-fixture-v2-${{ runner.os }}-${{ runner.arch }}-${{ inputs.repository }}-${{ inputs.commit-id }}-release${{ inputs.release-version }}-jdk${{ inputs.java-version }}-${{ hashFiles('.github/actions/setup-hugegraph-server/action.yml', 'hugegraph-client/assembly/travis/fixture.sh', 'hugegraph-client/assembly/travis/manifest.py', 'hugegraph-client/assembly/travis/release.py', '.github/actions/setup-java-env/action.yml', '.github/configs/settings.xml', 'hugegraph-client/assembly/travis/checkout-server.sh', 'hugegraph-client/assembly/travis/install-candidate-sdk.sh', 'hugegraph-client/assembly/travis/start-hugegraph-servers.sh', 'hugegraph-client/assembly/travis/tls-fixture.sh', 'hugegraph-*/assembly/travis/install-hugegraph-from-source.sh', 'hugegraph-hubble/hubble-dist/assembly/travis/download-hugegraph.sh') }}
+        key: server-fixture-v3-${{ runner.os }}-${{ runner.arch }}-${{ inputs.repository }}-${{ inputs.commit-id }}-release${{ inputs.release-version }}-jdk${{ inputs.java-version }}-${{ steps.fixture-identity.outputs.inputs }}
+    - name: Restore exact SDK and Server fixture cache
+      if: inputs.mode == 'build' && inputs.export-candidate-sdk == 'true'
+      id: sdk-cache
+      uses: actions/cache@v4
+      with:
+        path: ~/hugegraph-fixture-cache
+        key: sdk-server-fixture-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.repository }}-${{ inputs.commit-id }}-${{ steps.fixture-identity.outputs.sdk }}
     - name: Prepare fixture or start service
       shell: bash
       env:
         FIXTURE_MODE: ${{ inputs.mode }}
+        FIXTURE_EXPORT_CANDIDATE_SDK: ${{ inputs.export-candidate-sdk }}
+        FIXTURE_SDK_CACHE_HIT: ${{ steps.sdk-cache.outputs.cache-hit }}
+        LOCAL_FIXTURE_DIR: ${{ inputs.local-fixture-dir }}
         FIXTURE_REPOSITORY: ${{ inputs.repository }}
         FIXTURE_COMMIT: ${{ inputs.commit-id }}
         FIXTURE_REF: ${{ inputs.fetch-ref }}
-        FIXTURE_BUILD_INPUTS: ${{ hashFiles('.github/actions/setup-hugegraph-server/action.yml', 'hugegraph-client/assembly/travis/fixture.sh', 'hugegraph-client/assembly/travis/manifest.py', 'hugegraph-client/assembly/travis/release.py', '.github/actions/setup-java-env/action.yml', '.github/configs/settings.xml', 'hugegraph-client/assembly/travis/checkout-server.sh', 'hugegraph-client/assembly/travis/install-candidate-sdk.sh', 'hugegraph-client/assembly/travis/start-hugegraph-servers.sh', 'hugegraph-client/assembly/travis/tls-fixture.sh', 'hugegraph-*/assembly/travis/install-hugegraph-from-source.sh', 'hugegraph-hubble/hubble-dist/assembly/travis/download-hugegraph.sh') }}
+        FIXTURE_BUILD_INPUTS: ${{ steps.fixture-identity.outputs.inputs }}
         FIXTURE_PLATFORM: ${{ runner.os }}-${{ runner.arch }}
         FIXTURE_JAVA: ${{ inputs.java-version }}
         FIXTURE_RELEASE_VERSION: ${{ inputs.release-version }}
@@ -71,6 +106,10 @@ runs:
           [[ -x "$FIXTURE_JAVA_HOME/bin/java" && -x "$FIXTURE_JAVA_HOME/bin/javac" ]]
           export JAVA_HOME="$FIXTURE_JAVA_HOME"
           export PATH="$JAVA_HOME/bin:$PATH"
+        fi
+        if [[ -n "${LOCAL_FIXTURE_DIR:-}" ]]; then
+          [[ "$FIXTURE_MODE" == start && -d "$LOCAL_FIXTURE_DIR" && ! -L "$LOCAL_FIXTURE_DIR" ]]
+          export FIXTURE_DIR="$LOCAL_FIXTURE_DIR"
         fi
         if [[ "$ISOLATE_FIXTURE_REPO" == true && "$FIXTURE_MODE" != start ]]; then
           fixture_repo=$(mktemp -d "$RUNNER_TEMP/hugegraph-fixture-m2.XXXXXX")
@@ -107,5 +146,6 @@ runs:
         path: |
           ${{ runner.temp }}/hugegraph-fixture/server.tar.gz
           ${{ runner.temp }}/hugegraph-fixture/manifest.json
+          ${{ inputs.export-candidate-sdk == 'true' && format('{0}/hugegraph-fixture/sdk', runner.temp) || '' }}
         if-no-files-found: error
         retention-days: 7

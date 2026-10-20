@@ -43,7 +43,7 @@ const blockFor = selector => {
 test('scopes the modal surface contract to the Ant Design portal root', () => {
     const modal = blockFor('.ant-modal-root {');
 
-    expect(modal).toMatch(/\.ant-modal-content\s*\{/);
+    expect(modal).toMatch(/\.ant-modal-container\s*\{/);
     expect(modal).toMatch(/border-radius:\s*(?:10|11|12)px/);
     expect(modal).toContain('.ant-modal-mask');
     expect(modal).toContain('box-shadow:');
@@ -58,14 +58,9 @@ test('scopes the modal surface contract to the Ant Design portal root', () => {
     expect(modal).toContain(':focus');
 });
 
-test('uses a restrained modal entrance and honors reduced motion', () => {
-    const modal = blockFor('.ant-modal-root {');
+test('honors reduced motion for the Ant Design modal', () => {
     const reducedMotion = blockFor('@media (prefers-reduced-motion: reduce) {');
 
-    expect(modal).toContain('opacity: 0');
-    expect(modal).toMatch(/translateY\(8px\)\s+scale\(\.985\)/);
-    expect(modal).toContain('opacity: 1');
-    expect(modal).toContain('translateY(0) scale(1)');
     expect(reducedMotion).toContain('.ant-modal');
     expect(reducedMotion).toContain('transform: none !important');
 });

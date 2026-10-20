@@ -17,6 +17,7 @@
  */
 
 import {render, screen} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import GraphSpaceCard from './Card';
 
 jest.mock('react-i18next', () => ({
@@ -34,37 +35,6 @@ jest.mock('react-router-dom', () => {
     };
 });
 
-jest.mock('antd', () => {
-    const antd = jest.requireActual('antd');
-    const React = require('react');
-
-    return {
-        ...antd,
-        Menu: ({items}) => React.createElement(
-            React.Fragment,
-            null,
-            items.map(({key, label}) => React.createElement(
-                React.Fragment,
-                {key},
-                label
-            ))
-        ),
-        Dropdown: {
-            ...antd.Dropdown,
-            Button: ({children, menu}) => React.createElement(
-                React.Fragment,
-                null,
-                children,
-                menu.items.map(({key, label}) => React.createElement(
-                    React.Fragment,
-                    {key},
-                    label
-                ))
-            ),
-        },
-    };
-});
-
 beforeEach(() => {
     window.matchMedia = jest.fn().mockImplementation(query => ({
         matches: false,
@@ -78,7 +48,7 @@ beforeEach(() => {
     }));
 });
 
-test('does not expose a default GraphSpace mutation action', () => {
+test('does not expose a default GraphSpace mutation action', async () => {
     const handleSetDefault = jest.fn();
     const item = {
         name: 'DEFAULT',
@@ -105,6 +75,8 @@ test('does not expose a default GraphSpace mutation action', () => {
         />
     );
 
+    await userEvent.click(screen.getByRole('button', {name: 'common.action.more'}));
+    await screen.findByText('common.action.schema_manage');
     expect(screen.queryByText('common.action.set_default')).not.toBeInTheDocument();
     expect(handleSetDefault).not.toHaveBeenCalled();
     expect(screen.getByText('graphspace.default_name')).toBeInTheDocument();
@@ -191,7 +163,7 @@ test('keeps a long GraphSpace title accessible without a fixed text width', () =
     expect(screen.getAllByText('graphspace.card.enter').length).toBeGreaterThan(0);
 });
 
-test('keeps public GraphSpace navigation but hides mutation actions for viewers', () => {
+test('keeps public GraphSpace navigation but hides mutation actions for viewers', async () => {
     const item = {
         name: 'public', nickname: 'Public', create_time: '2026-07-10',
         auth: false, max_graph_number: 10, cpu_limit: 2, memory_limit: 4,
@@ -211,12 +183,13 @@ test('keeps public GraphSpace navigation but hides mutation actions for viewers'
     );
 
     expect(screen.getAllByText('graphspace.card.enter').length).toBeGreaterThan(0);
-    expect(screen.getByText('common.action.schema_manage')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', {name: 'common.action.more'}));
+    expect(await screen.findByText('common.action.schema_manage')).toBeInTheDocument();
     expect(screen.queryByText('common.action.edit')).not.toBeInTheDocument();
     expect(screen.queryByText('common.action.delete')).not.toBeInTheDocument();
 });
 
-test('keeps GraphSpace update and delete actions independently gated', () => {
+test('keeps GraphSpace update and delete actions independently gated', async () => {
     const item = {
         name: 'managed', nickname: 'Managed', create_time: '2026-07-10',
         auth: false, max_graph_number: 10, cpu_limit: 2, memory_limit: 4,
@@ -235,6 +208,7 @@ test('keeps GraphSpace update and delete actions independently gated', () => {
         />
     );
 
-    expect(screen.getByText('common.action.edit')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', {name: 'common.action.more'}));
+    expect(await screen.findByText('common.action.edit')).toBeInTheDocument();
     expect(screen.queryByText('common.action.delete')).not.toBeInTheDocument();
 });

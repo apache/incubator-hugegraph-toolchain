@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import {fireEvent, render, screen, waitFor} from '@testing-library/react';
+import {act, fireEvent, render, screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {message} from 'antd';
 import {EditLayer, validateGraphFields, ViewLayer} from './EditLayer';
@@ -45,6 +45,9 @@ jest.mock('../../api', () => ({
 
 beforeEach(() => {
     jest.clearAllMocks();
+    Object.values(api.manage).forEach(mock => mock.mockReset());
+    jest.spyOn(message, 'success');
+    jest.spyOn(message, 'error');
     sessionStorage.setItem('hubble_config_', JSON.stringify({pd_enabled: true}));
     URL.createObjectURL = jest.fn(() => 'blob:schema');
     URL.revokeObjectURL = jest.fn();
@@ -57,6 +60,35 @@ beforeEach(() => {
         removeEventListener: jest.fn(),
     }));
 });
+
+afterEach(() => {
+    act(() => message.destroy());
+    jest.restoreAllMocks();
+});
+
+const clickCurrentOption = async (combobox, label) => {
+    const list = document.getElementById(combobox.getAttribute('aria-controls'));
+    expect(list).toBeInTheDocument();
+    const popup = list.closest('.ant-select-dropdown');
+    expect(popup).toBeInTheDocument();
+    await userEvent.click(await within(popup).findByText(label, {
+        selector: '.ant-select-item-option-content',
+    }));
+};
+
+const expectCreateComplete = async (dialog, onCancel, refresh) => {
+    await waitFor(() => {
+        expect(onCancel).toHaveBeenCalledTimes(1);
+        expect(refresh).toHaveBeenCalledTimes(1);
+        expect(within(dialog).getByRole('button', {name: 'OK'})).not.toHaveClass('ant-btn-loading');
+    });
+};
+
+const deferred = () => {
+    let resolve;
+    const promise = new Promise(onResolve => { resolve = onResolve; });
+    return {promise, resolve};
+};
 
 test('shows schema and downloads the exported Groovy document', async () => {
     api.manage.getGraphSchema.mockResolvedValue({
@@ -168,7 +200,15 @@ test('keeps empty create errors in the form without an unhandled rejection or AP
     await waitFor(() => expect(screen.getByRole('combobox')).toBeEnabled());
     await userEvent.click(screen.getByRole('button', {name: 'OK'}));
 
-    await waitFor(() => expect(screen.getAllByRole('alert').length).toBeGreaterThan(0));
+    await waitFor(() => {
+        const error = screen.getByText('This field is required');
+        const input = screen.getByPlaceholderText('graph.form.name_placeholder');
+        expect(error).toBeVisible();
+        expect(input).toHaveAttribute('aria-invalid', 'true');
+        const descriptions = (input.getAttribute('aria-describedby') || '').split(/\s+/u)
+            .map(id => document.getElementById(id)).filter(Boolean);
+        expect(descriptions.some(element => element.contains(error))).toBe(true);
+    });
     expect(api.manage.addGraph).not.toHaveBeenCalled();
     expect(api.manage.updateGraph).not.toHaveBeenCalled();
     expect(unhandledRejection).not.toHaveBeenCalled();
@@ -217,21 +257,25 @@ test('recognizes only Ant Design field-validation rejection as a form error', as
 test('submits a valid create after field validation passes', async () => {
     api.manage.getSchemaList.mockResolvedValue({status: 200, data: {records: []}});
     api.manage.addGraph.mockResolvedValue({status: 200});
+    const onCancel = jest.fn();
+    const refresh = jest.fn();
     render(
         <EditLayer
             visible
-            onCancel={jest.fn()}
-            refresh={jest.fn()}
+            onCancel={onCancel}
+            refresh={refresh}
             graphspace='DEFAULT'
         />
     );
+    const dialog = await screen.findByRole('dialog');
+    const current = within(dialog);
 
-    await waitFor(() => expect(screen.getByRole('combobox')).toBeEnabled());
+    await waitFor(() => expect(current.getByRole('combobox')).toBeEnabled());
     await userEvent.type(
-        screen.getByPlaceholderText('graph.form.name_placeholder'),
+        current.getByPlaceholderText('graph.form.name_placeholder'),
         'valid_graph'
     );
-    await userEvent.click(screen.getByRole('button', {name: 'OK'}));
+    await userEvent.click(current.getByRole('button', {name: 'OK'}));
 
     await waitFor(() => expect(api.manage.addGraph).toHaveBeenCalledWith(
         'DEFAULT',
@@ -241,6 +285,7 @@ test('submits a valid create after field validation passes', async () => {
             graphspace: 'DEFAULT',
         })
     ));
+    await expectCreateComplete(dialog, onCancel, refresh);
 });
 
 test('submits a valid alias update after field validation passes', async () => {
@@ -365,21 +410,27 @@ test('persists a selected built-in template before creating the graph', async ()
     api.manage.addSchema.mockResolvedValue({status: 200});
     api.manage.addGraph.mockResolvedValue({status: 200});
 
+    const onCancel = jest.fn();
+    const refresh = jest.fn();
     render(
         <EditLayer
             visible
-            onCancel={jest.fn()}
-            refresh={jest.fn()}
+            onCancel={onCancel}
+            refresh={refresh}
             graphspace='DEFAULT'
         />
     );
+    const dialog = await screen.findByRole('dialog');
+    const current = within(dialog);
+    const schema = current.getByRole('combobox', {name: 'graph.form.schema'});
+    const confirm = current.getByRole('button', {name: 'OK'});
 
-    await waitFor(() => expect(screen.getByRole('combobox')).toBeEnabled());
-    await userEvent.type(screen.getByPlaceholderText('graph.form.name_placeholder'), 'people');
-    await userEvent.type(screen.getByPlaceholderText('graph.form.nickname_placeholder'), 'People');
-    await userEvent.click(screen.getByRole('combobox'));
-    await userEvent.click(screen.getByText('schema_template.builtin.people_network'));
-    fireEvent.click(document.querySelector('.ant-modal-footer .ant-btn-primary'));
+    await waitFor(() => expect(schema).toBeEnabled());
+    await userEvent.type(current.getByPlaceholderText('graph.form.name_placeholder'), 'people');
+    await userEvent.type(current.getByPlaceholderText('graph.form.nickname_placeholder'), 'People');
+    await userEvent.click(schema);
+    await clickCurrentOption(schema, 'schema_template.builtin.people_network');
+    fireEvent.click(confirm);
 
     await waitFor(() => expect(api.manage.addSchema).toHaveBeenCalledWith(
         'DEFAULT',
@@ -390,6 +441,7 @@ test('persists a selected built-in template before creating the graph', async ()
         'DEFAULT',
         expect.objectContaining({graph: 'people', schema: 'people_network'})
     ));
+    await expectCreateComplete(dialog, onCancel, refresh);
 });
 
 test('creates a standalone graph before applying its built-in schema', async () => {
@@ -398,24 +450,29 @@ test('creates a standalone graph before applying its built-in schema', async () 
     api.manage.addGraph.mockResolvedValue({status: 200});
     api.manage.addGraphSchema.mockResolvedValue({status: 200});
 
+    const onCancel = jest.fn();
+    const refresh = jest.fn();
     render(
         <EditLayer
             visible
-            onCancel={jest.fn()}
-            refresh={jest.fn()}
+            onCancel={onCancel}
+            refresh={refresh}
             graphspace='DEFAULT'
         />
     );
+    const dialog = await screen.findByRole('dialog');
+    const current = within(dialog);
+    const schema = current.getByRole('combobox', {name: 'graph.form.schema'});
+    const confirm = current.getByRole('button', {name: 'OK'});
 
-    await waitFor(() => expect(screen.getByRole('combobox')).toBeEnabled());
+    await waitFor(() => expect(schema).toBeEnabled());
     expect(api.manage.getSchemaList).not.toHaveBeenCalled();
     await userEvent.type(
-        screen.getByPlaceholderText('graph.form.name_placeholder'),
-        'standalone_people'
+        current.getByPlaceholderText('graph.form.name_placeholder'), 'standalone_people'
     );
-    await userEvent.click(screen.getByRole('combobox'));
-    await userEvent.click(screen.getByText('schema_template.builtin.people_network'));
-    fireEvent.click(document.querySelector('.ant-modal-footer .ant-btn-primary'));
+    await userEvent.click(schema);
+    await clickCurrentOption(schema, 'schema_template.builtin.people_network');
+    fireEvent.click(confirm);
 
     await waitFor(() => expect(api.manage.addGraph).toHaveBeenCalledWith(
         'DEFAULT',
@@ -428,6 +485,7 @@ test('creates a standalone graph before applying its built-in schema', async () 
         {'schema-groovy': expect.stringContaining('graph.schema().vertexLabel("person")')},
         expect.objectContaining({suppressBusinessErrorToast: true})
     ));
+    await expectCreateComplete(dialog, onCancel, refresh);
 });
 
 test('refreshes a created standalone graph when its schema application fails', async () => {
@@ -466,15 +524,25 @@ test('refreshes a created standalone graph when its schema application fails', a
 test('creates without an alias and never copies the graph name into nickname', async () => {
     api.manage.getSchemaList.mockResolvedValue({status: 200, data: {records: []}});
     api.manage.addGraph.mockResolvedValue({status: 200});
+    const onCancel = jest.fn();
+    const refresh = jest.fn();
     render(
-        <EditLayer visible onCancel={jest.fn()} refresh={jest.fn()} graphspace='DEFAULT' />
+        <EditLayer visible onCancel={onCancel} refresh={refresh} graphspace='DEFAULT' />
     );
-    await waitFor(() => expect(screen.getByRole('combobox')).toBeEnabled());
-    await userEvent.type(screen.getByPlaceholderText('graph.form.name_placeholder'), 'movies');
-    fireEvent.click(document.querySelector('.ant-modal-footer .ant-btn-primary'));
+    const dialog = await screen.findByRole('dialog');
+    const current = within(dialog);
+    await waitFor(() => expect(current.getByRole('combobox')).toBeEnabled());
+    await userEvent.type(current.getByPlaceholderText('graph.form.name_placeholder'), 'movies');
+    fireEvent.click(current.getByRole('button', {name: 'OK'}));
 
-    await waitFor(() => expect(api.manage.addGraph).toHaveBeenCalled());
+    await waitFor(() => {
+        expect(api.manage.addGraph).toHaveBeenCalledTimes(1);
+        expect(api.manage.addGraph).toHaveBeenCalledWith(
+            'DEFAULT', expect.objectContaining({graph: 'movies'})
+        );
+    });
     expect(api.manage.addGraph.mock.calls[0][1].nickname).not.toBe('movies');
+    await expectCreateComplete(dialog, onCancel, refresh);
 });
 
 test('keeps an existing graph path name immutable', async () => {
@@ -538,30 +606,39 @@ test('retries graph creation after the built-in template was already persisted',
         .mockResolvedValueOnce({status: 400, message: 'graph id unavailable'})
         .mockResolvedValueOnce({status: 200});
 
+    const onCancel = jest.fn();
+    const refresh = jest.fn();
     render(
         <EditLayer
             visible
-            onCancel={jest.fn()}
-            refresh={jest.fn()}
+            onCancel={onCancel}
+            refresh={refresh}
             graphspace='DEFAULT'
         />
     );
+    const dialog = await screen.findByRole('dialog');
+    const current = within(dialog);
+    const schema = current.getByRole('combobox', {name: 'graph.form.schema'});
+    const confirm = current.getByRole('button', {name: 'OK'});
 
-    await waitFor(() => expect(screen.getByRole('combobox')).toBeEnabled());
-    const graphInput = screen.getByPlaceholderText('graph.form.name_placeholder');
+    await waitFor(() => expect(schema).toBeEnabled());
+    const graphInput = current.getByPlaceholderText('graph.form.name_placeholder');
     await userEvent.type(graphInput, 'people');
-    await userEvent.type(
-        screen.getByPlaceholderText('graph.form.nickname_placeholder'),
-        'People'
-    );
-    await userEvent.click(screen.getByRole('combobox'));
-    await userEvent.click(screen.getByText('schema_template.builtin.people_network'));
-    fireEvent.click(document.querySelector('.ant-modal-footer .ant-btn-primary'));
-    await waitFor(() => expect(api.manage.addGraph).toHaveBeenCalledTimes(1));
+    await userEvent.type(current.getByPlaceholderText('graph.form.nickname_placeholder'), 'People');
+    await userEvent.click(schema);
+    await clickCurrentOption(schema, 'schema_template.builtin.people_network');
+    fireEvent.click(confirm);
+    await waitFor(() => expect(api.manage.addGraph).toHaveBeenNthCalledWith(
+        1, 'DEFAULT', expect.objectContaining({graph: 'people', schema: 'people_network'})
+    ));
+    await waitFor(() => {
+        expect(message.error).toHaveBeenCalledWith('graph id unavailable');
+        expect(confirm).not.toHaveClass('ant-btn-loading');
+    });
 
     await userEvent.clear(graphInput);
     await userEvent.type(graphInput, 'people_retry');
-    fireEvent.click(document.querySelector('.ant-modal-footer .ant-btn-primary'));
+    fireEvent.click(confirm);
 
     await waitFor(() => expect(api.manage.addGraph).toHaveBeenCalledTimes(2));
     expect(api.manage.getSchema).toHaveBeenCalledWith(
@@ -573,6 +650,7 @@ test('retries graph creation after the built-in template was already persisted',
         graph: 'people_retry',
         schema: 'people_network',
     }));
+    await expectCreateComplete(dialog, onCancel, refresh);
 });
 
 test('does not reuse a same-named built-in template with different content', async () => {
@@ -581,24 +659,27 @@ test('does not reuse a same-named built-in template with different content', asy
         data: {records: [{name: 'people_network', schema: 'different schema'}]},
     });
 
+    const onCancel = jest.fn();
+    const refresh = jest.fn();
     render(
         <EditLayer
             visible
-            onCancel={jest.fn()}
-            refresh={jest.fn()}
+            onCancel={onCancel}
+            refresh={refresh}
             graphspace='DEFAULT'
         />
     );
+    const dialog = await screen.findByRole('dialog');
+    const current = within(dialog);
+    const schema = current.getByRole('combobox', {name: 'graph.form.schema'});
+    const confirm = current.getByRole('button', {name: 'OK'});
 
-    await waitFor(() => expect(screen.getByRole('combobox')).toBeEnabled());
-    await userEvent.type(screen.getByPlaceholderText('graph.form.name_placeholder'), 'people');
-    await userEvent.type(
-        screen.getByPlaceholderText('graph.form.nickname_placeholder'),
-        'People'
-    );
-    await userEvent.click(screen.getByRole('combobox'));
-    await userEvent.click(screen.getByText('schema_template.builtin.people_network'));
-    fireEvent.click(document.querySelector('.ant-modal-footer .ant-btn-primary'));
+    await waitFor(() => expect(schema).toBeEnabled());
+    await userEvent.type(current.getByPlaceholderText('graph.form.name_placeholder'), 'people');
+    await userEvent.type(current.getByPlaceholderText('graph.form.nickname_placeholder'), 'People');
+    await userEvent.click(schema);
+    await clickCurrentOption(schema, 'schema_template.builtin.people_network');
+    fireEvent.click(confirm);
 
     expect(await screen.findByText('graph.form.schema_conflict')).toBeInTheDocument();
     expect(api.manage.addGraph).not.toHaveBeenCalled();
@@ -616,92 +697,128 @@ test('does not leak an old graph export failure into the next graph', async () =
     const {rerender} = render(
         <ViewLayer visible onCancel={jest.fn()} graphspace='DEFAULT' graph='graph-a' />
     );
-    await screen.findByText('schema');
-    fireEvent.click(screen.getByRole('button', {name: 'graph.schema_view.export'}));
+    try {
+        await screen.findByText('schema');
+        fireEvent.click(screen.getByRole('button', {name: 'graph.schema_view.export'}));
 
-    rerender(
-        <ViewLayer visible onCancel={jest.fn()} graphspace='DEFAULT' graph='graph-b' />
-    );
-    await waitFor(() => expect(screen.getByRole('button', {
-        name: 'graph.schema_view.export',
-    })).toBeEnabled());
-    rejectOld(new Error('old offline'));
-    await waitFor(() => expect(api.manage.getGraphSchema).toHaveBeenCalledTimes(2));
-    expect(screen.queryByText('graph.schema_view.export_failed')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', {name: 'graph.schema_view.export'}))
-        .not.toHaveClass('ant-btn-loading');
+        rerender(
+            <ViewLayer visible onCancel={jest.fn()} graphspace='DEFAULT' graph='graph-b' />
+        );
+        await waitFor(() => expect(screen.getByRole('button', {
+            name: 'graph.schema_view.export',
+        })).toBeEnabled());
+        rejectOld(new Error('old offline'));
+        await waitFor(() => expect(api.manage.getGraphSchema).toHaveBeenCalledTimes(2));
+        expect(screen.queryByText('graph.schema_view.export_failed')).not.toBeInTheDocument();
+        expect(screen.getByRole('button', {name: 'graph.schema_view.export'}))
+            .not.toHaveClass('ant-btn-loading');
+    }
+    finally {
+        if (rejectOld) {
+            await act(async () => rejectOld(new Error('old offline')));
+        }
+    }
 });
 
 test('creates the graph before importing a selected example dataset', async () => {
     api.manage.getSchemaList.mockResolvedValue({status: 200, data: {records: []}});
-    api.manage.addGraph.mockResolvedValue({status: 200, data: {name: 'demo_hlm'}});
-    api.manage.loadSampleGraph.mockResolvedValue({
-        status: 200, data: {vertices: 14, edges: 15},
-    });
+    const create = deferred();
+    const sample = deferred();
+    api.manage.addGraph.mockReturnValueOnce(create.promise);
+    api.manage.loadSampleGraph.mockReturnValueOnce(sample.promise);
     const onCancel = jest.fn();
+    const refresh = jest.fn();
+    render(<EditLayer visible onCancel={onCancel} refresh={refresh} graphspace='DEFAULT' />);
 
-    render(
-        <EditLayer
-            visible
-            onCancel={onCancel}
-            refresh={jest.fn()}
-            graphspace='DEFAULT'
-        />
-    );
+    try {
+        const dialog = await screen.findByRole('dialog');
+        const current = within(dialog);
+        const schema = current.getByRole('combobox', {name: 'graph.form.schema'});
+        const confirm = current.getByRole('button', {name: 'OK'});
+        await userEvent.type(
+            current.getByPlaceholderText('graph.form.name_placeholder'), 'demo_hlm'
+        );
+        await waitFor(() => expect(schema).toBeEnabled());
+        await userEvent.click(schema);
+        await clickCurrentOption(schema, 'schema_template.builtin.people_network');
+        const sampleChoice = current.getByRole('radio', {name: 'graph.form.sample_hlm'});
+        await userEvent.click(sampleChoice.closest('label'));
+        expect(sampleChoice).toBeChecked();
+        expect(current.queryByText('schema_template.builtin.people_network', {
+            selector: '.ant-select-content',
+        })).not.toBeInTheDocument();
+        fireEvent.click(confirm);
 
-    await userEvent.type(
-        screen.getByPlaceholderText('graph.form.name_placeholder'),
-        'demo_hlm'
-    );
-    await waitFor(() => expect(screen.getByRole('combobox')).toBeEnabled());
-    await userEvent.click(screen.getByRole('combobox'));
-    await userEvent.click(screen.getByText('schema_template.builtin.people_network'));
-    await userEvent.click(screen.getByRole('radio', {
-        name: 'graph.form.sample_hlm',
-    }));
-    fireEvent.click(document.querySelector('.ant-modal-footer .ant-btn-primary'));
-
-    await waitFor(() => expect(api.manage.addGraph).toHaveBeenCalled());
-    expect(api.manage.addGraph).toHaveBeenCalledWith(
-        'DEFAULT',
-        expect.not.objectContaining({schema: 'people_network'})
-    );
-    expect(api.manage.loadSampleGraph).toHaveBeenCalledWith(
-        'DEFAULT',
-        'demo_hlm',
-        'hlm',
-        {suppressBusinessErrorToast: true}
-    );
-    expect(onCancel).toHaveBeenCalled();
+        await waitFor(() => {
+            expect(api.manage.addGraph).toHaveBeenCalledTimes(1);
+            expect(api.manage.addGraph).toHaveBeenCalledWith('DEFAULT', expect.objectContaining({
+                graph: 'demo_hlm', auth: false, graphspace: 'DEFAULT',
+            }));
+        });
+        expect(api.manage.addGraph.mock.calls[0][1]).not.toEqual(
+            expect.objectContaining({schema: 'people_network'})
+        );
+        expect(api.manage.addSchema).not.toHaveBeenCalled();
+        expect(api.manage.loadSampleGraph).not.toHaveBeenCalled();
+        expect(onCancel).not.toHaveBeenCalled();
+        await act(async () => {
+            create.resolve({status: 200, data: {name: 'demo_hlm'}});
+        });
+        await waitFor(() => {
+            expect(api.manage.loadSampleGraph).toHaveBeenCalledTimes(1);
+            expect(api.manage.loadSampleGraph).toHaveBeenCalledWith(
+                'DEFAULT', 'demo_hlm', 'hlm', {suppressBusinessErrorToast: true}
+            );
+        });
+        expect(onCancel).not.toHaveBeenCalled();
+        expect(refresh).not.toHaveBeenCalled();
+        await act(async () => {
+            sample.resolve({status: 200, data: {vertices: 14, edges: 15}});
+        });
+        await expectCreateComplete(dialog, onCancel, refresh);
+    }
+    finally {
+        // Settle controlled responses even when an intermediate assertion fails.
+        await act(async () => {
+            create.resolve({status: 499});
+            sample.resolve({status: 499});
+        });
+    }
 });
 
 test('lets users clear the optional example dataset choice', async () => {
     api.manage.getSchemaList.mockResolvedValue({status: 200, data: {records: []}});
     api.manage.addGraph.mockResolvedValue({status: 200, data: {name: 'empty_graph'}});
     const onCancel = jest.fn();
+    const refresh = jest.fn();
 
     render(
         <EditLayer
             visible
             onCancel={onCancel}
-            refresh={jest.fn()}
+            refresh={refresh}
             graphspace='DEFAULT'
         />
     );
+    const dialog = await screen.findByRole('dialog');
+    const current = within(dialog);
 
     await userEvent.type(
-        screen.getByPlaceholderText('graph.form.name_placeholder'),
+        current.getByPlaceholderText('graph.form.name_placeholder'),
         'empty_graph'
     );
-    await userEvent.click(screen.getByRole('radio', {
+    await userEvent.click(current.getByRole('radio', {
         name: 'graph.form.sample_hlm',
-    }));
-    await userEvent.click(screen.getByRole('radio', {
+    }).closest('label'));
+    await userEvent.click(current.getByRole('radio', {
         name: 'graph.form.sample_none',
-    }));
-    fireEvent.click(document.querySelector('.ant-modal-footer .ant-btn-primary'));
+    }).closest('label'));
+    fireEvent.click(current.getByRole('button', {name: 'OK'}));
 
-    await waitFor(() => expect(api.manage.addGraph).toHaveBeenCalled());
+    await waitFor(() => expect(api.manage.addGraph).toHaveBeenCalledWith(
+        'DEFAULT', expect.objectContaining({graph: 'empty_graph'})
+    ));
+    await expectCreateComplete(dialog, onCancel, refresh);
     expect(api.manage.loadSampleGraph).not.toHaveBeenCalled();
-    expect(onCancel).toHaveBeenCalled();
+
 });

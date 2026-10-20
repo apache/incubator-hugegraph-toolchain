@@ -21,8 +21,14 @@ import {MemoryRouter} from 'react-router-dom';
 import Topbar from './index.ant';
 import * as api from '../../api/index';
 import * as user from '../../utils/user';
+import {assignBrowserLocation, replaceBrowserLocation} from '../../utils/browserNavigation';
 
 const mockUseAuthContext = jest.fn();
+
+jest.mock('../../utils/browserNavigation', () => ({
+    assignBrowserLocation: jest.fn(),
+    replaceBrowserLocation: jest.fn(),
+}));
 
 jest.mock('../../auth/AuthContext', () => ({
     useAuthContext: () => mockUseAuthContext(),
@@ -52,14 +58,12 @@ jest.mock('@ant-design/icons', () => ({
 }));
 
 jest.mock('antd', () => {
-    const React = require('react');
 
-    const Select = ({children, onChange, value}) => (
+    const Select = ({options = [], onChange, value}) => (
         <select value={value} onChange={event => onChange?.(event.target.value)}>
-            {children}
+            {options.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
         </select>
     );
-    Select.Option = ({children, value}) => <option value={value}>{children}</option>;
     const Radio = {
         Group: ({options = [], onChange, value, 'aria-label': ariaLabel}) => (
             <div role='radiogroup' aria-label={ariaLabel}>
@@ -128,11 +132,7 @@ describe('Topbar request errors', () => {
         });
         localStorage.clear();
         sessionStorage.clear();
-        delete window.location;
-        window.location = {
-            href: 'http://localhost/navigation',
-            replace: jest.fn(),
-        };
+        window.history.replaceState(null, '', '/navigation');
         sessionStorage.setItem('user_', JSON.stringify({id: 'admin', user_nickname: 'admin'}));
         mockUseAuthContext.mockReturnValue({context: {role: 'SUPERADMIN'}});
     });
@@ -290,7 +290,7 @@ describe('Topbar request errors', () => {
         fireEvent.click(screen.getByRole('button', {name: 'Topbar.exit.name'}));
 
         await waitFor(() => expect(api.auth.logout).toHaveBeenCalledTimes(1));
-        expect(window.location.replace).toHaveBeenCalledWith('/login');
+        expect(replaceBrowserLocation).toHaveBeenCalledWith('/login');
         view.rerender(
             <MemoryRouter
                 initialEntries={['/graphspace/DEFAULT']}
@@ -300,6 +300,7 @@ describe('Topbar request errors', () => {
             </MemoryRouter>
         );
         expect(sessionStorage.getItem('redirect')).toBeNull();
+        expect(assignBrowserLocation).not.toHaveBeenCalled();
         expect(window.location.href).toBe('http://localhost/navigation');
         expect(user.isLogoutTransition()).toBe(true);
     });
@@ -333,6 +334,7 @@ describe('Topbar request errors', () => {
 
         expect(user.isLogoutTransition()).toBe(true);
         expect(sessionStorage.getItem('redirect')).toBeNull();
+        expect(assignBrowserLocation).not.toHaveBeenCalled();
         expect(window.location.href).toBe('http://localhost/navigation');
     });
 });

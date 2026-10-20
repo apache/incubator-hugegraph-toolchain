@@ -16,6 +16,7 @@
  * under the License.
  */
 
+import {replaceBrowserLocation} from '../../utils/browserNavigation';
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {MemoryRouter} from 'react-router-dom';
@@ -24,6 +25,8 @@ import Login from './index';
 import * as api from '../../api';
 import enPages from '../../i18n/resources/en-US/modules/pages.json';
 import zhPages from '../../i18n/resources/zh-CN/modules/pages.json';
+
+jest.mock('../../utils/browserNavigation', () => ({replaceBrowserLocation: jest.fn()}));
 
 jest.mock('../../api', () => ({
     auth: {
@@ -87,11 +90,7 @@ describe('Login request errors', () => {
             removeEventListener: jest.fn(),
             dispatchEvent: jest.fn(),
         }));
-        delete window.location;
-        window.location = {
-            origin: 'http://localhost',
-            replace: jest.fn(),
-        };
+        window.history.replaceState(null, '', '/login');
     });
 
     it('labels the standalone login page and its credential fields', () => {
@@ -167,7 +166,7 @@ describe('Login request errors', () => {
             });
         });
         expect(localStorage.getItem('user')).toBeNull();
-        expect(window.location.replace).not.toHaveBeenCalled();
+        expect(replaceBrowserLocation).not.toHaveBeenCalled();
     });
 
     it('keeps rejected config requests from escaping after a successful login', async () => {
@@ -189,7 +188,7 @@ describe('Login request errors', () => {
             user_name: 'admin',
         });
         expect(configUtil.setConfig).not.toHaveBeenCalled();
-        expect(window.location.replace).toHaveBeenCalledWith('/navigation');
+        expect(replaceBrowserLocation).toHaveBeenCalledWith('/navigation');
     });
 
     it('restores the full query and hash location after login', async () => {
@@ -206,7 +205,7 @@ describe('Login request errors', () => {
         );
 
         await waitFor(() => {
-            expect(window.location.replace).toHaveBeenCalledWith(
+            expect(replaceBrowserLocation).toHaveBeenCalledWith(
                 '/gremlin/DEFAULT/hugegraph?x=1#result'
             );
         });
@@ -234,7 +233,7 @@ describe('Login request errors', () => {
         await userEvent.type(screen.getByPlaceholderText('login.password'), 'password');
         await userEvent.click(screen.getByRole('button', {name: 'login.submit'}));
 
-        await waitFor(() => expect(window.location.replace)
+        await waitFor(() => expect(replaceBrowserLocation)
             .toHaveBeenCalledWith('/navigation'));
         expect(sessionStorage.getItem('redirect')).toBeNull();
     });

@@ -16,36 +16,26 @@
  * under the License.
  */
 
-/**
- * @file 3D/2D 切换按钮
- */
+/** @file 渲染方式选择（仅设置面板内使用） */
 
-import React from 'react';
 import {useTranslation} from 'react-i18next';
-import {Tooltip, Segmented} from 'antd';
+import {Select} from 'antd';
 import {GRAPH_RENDER_MODE} from '../../../utils/constants';
-import c from './index.module.scss';
 
-const RenderModeSwitcher = props => {
+const RenderModeSwitcher = ({buttonEnable, onClick, value = GRAPH_RENDER_MODE.CANVAS2D}) => {
     const {t} = useTranslation();
-
-    const {buttonEnable, onClick, value, tooltip} = props;
-    const options = [
-        {label: t('analysis.canvas.mode_2d'), value: GRAPH_RENDER_MODE.CANVAS2D},
-        {label: t('analysis.canvas.mode_3d'), value: GRAPH_RENDER_MODE.CANVAS3D},
-    ];
-
     return (
-        <Tooltip placement="bottom" title={!buttonEnable ? tooltip : ''}>
-            <div className={c.threeModeSegment}>
-                <Segmented
-                    disabled={!buttonEnable}
-                    options={options}
-                    onChange={onClick}
-                    value={value}
-                />
-            </div>
-        </Tooltip>
+        <Select
+            aria-label={t('analysis.canvas.render_mode')}
+            style={{width: '100%'}}
+            disabled={!buttonEnable}
+            value={value}
+            options={[
+                {label: t('analysis.canvas.mode_2d'), value: GRAPH_RENDER_MODE.CANVAS2D},
+                {label: t('analysis.canvas.mode_3d_experimental'), value: GRAPH_RENDER_MODE.CANVAS3D},
+            ]}
+            onChange={mode => { if (mode !== value) onClick(mode); }}
+        />
     );
 };
 

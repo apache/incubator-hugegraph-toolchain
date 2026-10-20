@@ -75,7 +75,7 @@ const ModelHistoryInput = ({baseUrl, field = 'model', onChange, onFocus, onBlur,
             filterOption={false}
             virtual={false}
             open={open && options.length > 0 && !inputProps.disabled}
-            onDropdownVisibleChange={setOpen}
+            onOpenChange={setOpen}
             onSearch={handleSearch}
             onChange={handleChange}
             onSelect={handleSelect}

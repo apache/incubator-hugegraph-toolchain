@@ -128,6 +128,15 @@ describe('route guard', () => {
         expect(sessionStorage.getItem('redirect')).toBe('/task/edit?source=direct');
     });
 
+    it('keeps the development-only test route unavailable in the test build', () => {
+        sessionStorage.setItem('user_', JSON.stringify({id: 'admin'}));
+
+        renderRoutes('/test');
+
+        expect(screen.getByText('not found page')).toBeTruthy();
+        expect(screen.queryByText('test page')).toBeNull();
+    });
+
     it('allows authenticated business route visits', () => {
         sessionStorage.setItem('user_', JSON.stringify({id: 'admin', user_nickname: 'admin'}));
 

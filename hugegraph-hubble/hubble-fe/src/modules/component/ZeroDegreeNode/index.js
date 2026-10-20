@@ -20,43 +20,33 @@
  * @file  孤立点检测
  */
 
-import React, {useCallback, useContext, useState} from 'react';
+import {useContext, useMemo} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Button, Tooltip} from 'antd';
 import {UngroupOutlined} from '@ant-design/icons';
 import {GraphContext} from '../Context';
 
-const ZeroDegreeNodeSearch = props => {
+const ZeroDegreeNodeSearch = () => {
     const {t} = useTranslation();
-    const {graph} = useContext(GraphContext);
-
-    const [isolatedNodesMode, setIsolatedNodesMode] = useState(false);
-
-    const handleSearchZeroDegreeNodes = useCallback(
-        () => {
-            graph.getNodes().forEach(item => {
-                const {degree} = graph.getNodeDegree(item, 'all', true);
-                if (degree !== 0) {
-                    if (!isolatedNodesMode) {
-                        graph.hideItem(item, false);
-                    }
-                    else {
-                        graph.showItem(item, false);
-                    }
-                }
-            });
-            graph.refresh();
-            setIsolatedNodesMode(pre => !pre);
-        },
-        [graph, isolatedNodesMode]
-    );
-
+    const {controller, snapshot, run} = useContext(GraphContext);
+    const connectedNodes = useMemo(() => {
+        const endpoints = new Set();
+        snapshot?.data.edges.forEach(edge => {
+            endpoints.add(edge.source);
+            endpoints.add(edge.target);
+        });
+        return snapshot?.data.nodes.filter(node => endpoints.has(node.id)) || [];
+    }, [snapshot?.data]);
+    const isolatedNodesMode = connectedNodes.length > 0
+        && connectedNodes.every(node => node.style?.visibility === 'hidden');
     return (
-        <Tooltip title={t('analysis.canvas.toolbar.isolated_nodes')} placement='bottom'>
+        <Tooltip title={t('analysis.canvas.toolbar.isolated_nodes')} placement="bottom">
             <Button
+                disabled={!controller || snapshot?.status !== 'ready' || connectedNodes.length === 0}
                 type="text"
                 aria-label={t('analysis.canvas.toolbar.isolated_nodes')}
-                onClick={handleSearchZeroDegreeNodes}
+                aria-pressed={isolatedNodesMode}
+                onClick={() => run(() => controller.hide(connectedNodes.map(node => node.id), !isolatedNodesMode))}
                 icon={<UngroupOutlined />}
             />
         </Tooltip>

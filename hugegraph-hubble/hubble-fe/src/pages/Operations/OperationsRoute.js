@@ -39,7 +39,7 @@ const OperationsRoute = ({required, children}) => {
             <Alert
                 type='error'
                 showIcon
-                message={t('operations.load_failed')}
+                title={t('operations.load_failed')}
                 action={(
                     <Button
                         size='small'
@@ -56,7 +56,7 @@ const OperationsRoute = ({required, children}) => {
             <Alert
                 type='warning'
                 showIcon
-                message={t('operations.permission_denied')}
+                title={t('operations.permission_denied')}
                 description={t('operations.permission_required', {capability: required})}
             />
         );

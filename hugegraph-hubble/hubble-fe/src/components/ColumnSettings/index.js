@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import React, {useCallback, useMemo, useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {Button, Checkbox, Popover, Space, Tooltip} from 'antd';
 import {
     DownOutlined,

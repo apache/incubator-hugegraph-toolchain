@@ -114,12 +114,12 @@ const ClearGraphConfirmModal = ({
             cancelButtonProps={{disabled: pending}}
             confirmLoading={pending}
             closable={!pending}
-            maskClosable={!pending}
+            mask={{closable: !pending}}
             keyboard={!pending}
             onCancel={handleCancel}
             onOk={handleConfirm}
         >
-            <Space direction='vertical' size='middle' style={{width: '100%'}}>
+            <Space orientation='vertical' size='middle' style={{width: '100%'}}>
                 <Typography.Text>
                     {t('graph.clear_confirm.graphspace', {graphspace})}
                 </Typography.Text>
@@ -129,10 +129,10 @@ const ClearGraphConfirmModal = ({
                 <Alert
                     type='warning'
                     showIcon
-                    message={t('graph.clear_confirm.scope')}
+                    title={t('graph.clear_confirm.scope')}
                     description={t('graph.clear_confirm.irreversible')}
                 />
-                {error && <Alert type='error' showIcon message={error} />}
+                {error && <Alert type='error' showIcon title={error} />}
                 <Typography.Text>
                     {t('graph.clear_confirm.input_label')}
                 </Typography.Text>
