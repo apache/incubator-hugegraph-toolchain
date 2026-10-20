@@ -20,8 +20,10 @@
  * @file JaccardSimilarityGet算法
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Input, Collapse} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
+import {useState, useCallback, useContext} from 'react';
+import {Input, } from 'antd';
 import Form from '../../PersistentForm';
 import {AppstoreAddOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
@@ -50,30 +52,30 @@ const JaccardSimilarityGet = props => {
 
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
 
     const [crosspointsForm] = Form.useForm();
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(JACCARD_SIMILARITY);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             algorithmParams = {...algorithmParams, 'algorithmName': Algorithm_Url[JACCARD_SIMILARITY]};
             const filteredParams = removeNilKeys(algorithmParams);
             const response =  await api.analysis.runOltpInfo(graphSpace, graph, filteredParams);
             const {data, status, message} = response || {};
             const {graph_view, jaccardsimilarity} = data || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, {}, message);
+                complete(FAILED, {}, message);
             }
             else {
                 const options = {jaccardsimilarity: jaccardsimilarity};
-                handleFormSubmit(SUCCESS, graph_view || {}, message, options);
+                complete(SUCCESS, graph_view || {}, message, options);
             }
-            setRequiring(false);
+            finishRequiring();
         },
-        [graph, graphSpace, handleFormSubmit, updateCurrentAlgorithm]
+        [graph, graphSpace, beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const handleRunning = useCallback(
@@ -105,11 +107,8 @@ const JaccardSimilarityGet = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<AppstoreAddOutlined />}
                     name={JACCARD_SIMILARITY}
@@ -150,7 +149,7 @@ const JaccardSimilarityGet = props => {
                 <LabelItem />
                 <MaxDegreeItem isRequired={false} initialValue={10000} validator={maxDegreeValidator} />
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

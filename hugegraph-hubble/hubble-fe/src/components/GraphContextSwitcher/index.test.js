@@ -33,11 +33,10 @@ jest.mock('react-i18next', () => ({
 }));
 
 jest.mock('antd', () => {
-    const React = require('react');
     const Select = ({
         'aria-description': ariaDescription,
         'aria-label': ariaLabel,
-        children,
+        options = [],
         disabled,
         onChange,
         title,
@@ -54,12 +53,13 @@ jest.mock('antd', () => {
             onChange={event => onChange?.(event.target.value)}
         >
             <option value="" />
-            {children}
+            {options.map(option => (
+                <option key={option.value} value={option.value} title={option.title}>{option.label}</option>
+            ))}
         </select>
     );
-    Select.Option = ({children, value}) => <option value={value}>{children}</option>;
     return {
-        Alert: ({action, message}) => <div role="alert">{message}{action}</div>,
+        Alert: ({action, title}) => <div role="alert">{title}{action}</div>,
         Button: ({children, onClick}) => <button onClick={onClick}>{children}</button>,
         Select,
         Space: ({children}) => <div>{children}</div>,

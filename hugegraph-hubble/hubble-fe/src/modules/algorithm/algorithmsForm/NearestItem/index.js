@@ -20,12 +20,11 @@
  * @file NearestItem
  */
 
-import React from 'react';
 import {Select} from 'antd';
 import Form from '../PersistentForm';
 import {useTranslation} from 'react-i18next';
 
-const NearestItem = props => {
+const NearestItem = _props => {
     const {t} = useTranslation();
     const boolOptions = [
         {label: t('common.verify.yes'), value: true},

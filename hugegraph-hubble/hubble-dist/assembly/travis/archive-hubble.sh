@@ -20,25 +20,6 @@ set -euo pipefail
 # BSD tar otherwise synthesizes AppleDouble files from macOS extended attributes.
 export COPYFILE_DISABLE=1
 
-if [[ $# -ne 2 || ! -d "$1" ]]; then
-    echo "Usage: $0 <release-directory> <output.tar.gz>" >&2
-    exit 1
-fi
-
-release_dir=$1
-archive=$2
-release_name=$(basename "${release_dir}")
-release_parent=$(cd "$(dirname "${release_dir}")" && pwd)
-mkdir -p "$(dirname "${archive}")"
-archive="$(cd "$(dirname "${archive}")" && pwd)/$(basename "${archive}")"
-
-# A release directory may have been run locally. Preserve its databases and
-# other runtime files, but never include them in a distributable archive.
-tar -czf "${archive}" \
-    --exclude='._*' --exclude='*/._*' \
-    --exclude="${release_name}/data" \
-    --exclude="${release_name}/logs" \
-    --exclude="${release_name}/upload-files" \
-    --exclude='*.db' --exclude='*.lock' --exclude='*.log' \
-    --exclude='*.pid' --exclude='*/pid' \
-    -C "${release_parent}" "${release_name}"
+# The helper only reuses generation; Maven still verifies SDK provenance and
+# runs the complete distribution/license audit after every invocation.
+exec python3 "$(dirname "$0")/archive_hubble.py" "$@"

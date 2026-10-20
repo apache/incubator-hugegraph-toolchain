@@ -235,7 +235,7 @@ const EditLayer = ({
                     open={visible}
                     footer={null}
                     width={600}
-                    maskClosable={false}
+                    mask={{closable: false}}
                 >
                     <Spin spinning={loading}>
                         <Form
@@ -297,7 +297,7 @@ const EditLayer = ({
                             <Alert
                                 type='error'
                                 showIcon
-                                message={t('account.feedback.save_failed')}
+                                title={t('account.feedback.save_failed')}
                                 description={mutationError}
                             />
                         )}

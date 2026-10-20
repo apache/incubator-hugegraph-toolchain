@@ -1,0 +1,653 @@
+diff --git a/esm/behaviors/drag-element.js b/esm/behaviors/drag-element.js
+index 21891ec35cfaaf752f0a964e1cfb9ee703c3fa65..b1dcb59dc1446aeeb5314787285e9884db449e27 100644
+--- a/esm/behaviors/drag-element.js
++++ b/esm/behaviors/drag-element.js
+@@ -324,6 +324,7 @@ export class DragElement extends BaseBehavior {
+     destroy() {
+         var _a;
+         this.unbindEvents();
++        this.shortcut.destroy();
+         (_a = this.shadow) === null || _a === void 0 ? void 0 : _a.destroy();
+         super.destroy();
+     }
+diff --git a/esm/plugins/minimap/index.js b/esm/plugins/minimap/index.js
+index 3cd9b303a13c913496103f9b5f852bacbc34864c..cff72695447d75a34483617c9691e21bbf90ed8d 100644
+--- a/esm/plugins/minimap/index.js
++++ b/esm/plugins/minimap/index.js
+@@ -123,6 +123,7 @@ export class Minimap extends BasePlugin {
+         const { graph } = this.context;
+         graph.on(GraphEvent.AFTER_DRAW, this.onDraw);
+         graph.on(GraphEvent.AFTER_RENDER, this.onRender);
++        graph.on(GraphEvent.AFTER_LAYOUT, this.onRender);
+         graph.on(GraphEvent.AFTER_ANIMATE, this.onRender);
+         graph.on(GraphEvent.AFTER_TRANSFORM, this.onTransform);
+     }
+@@ -130,6 +131,7 @@ export class Minimap extends BasePlugin {
+         const { graph } = this.context;
+         graph.off(GraphEvent.AFTER_DRAW, this.onDraw);
+         graph.off(GraphEvent.AFTER_RENDER, this.onRender);
++        graph.off(GraphEvent.AFTER_LAYOUT, this.onRender);
+         graph.off(GraphEvent.AFTER_ANIMATE, this.onRender);
+         graph.off(GraphEvent.AFTER_TRANSFORM, this.onTransform);
+     }
+diff --git a/esm/runtime/canvas.js b/esm/runtime/canvas.js
+index 872fd45dae14a9ff8730bab73562abf6e56839a4..98ae42e05e6fc18b635399d32cbe9b4d614ee439 100644
+--- a/esm/runtime/canvas.js
++++ b/esm/runtime/canvas.js
+@@ -18,11 +18,11 @@ var __rest = (this && this.__rest) || function (s, e) {
+         }
+     return t;
+ };
+-import { CanvasEvent, Canvas as GCanvas } from '@antv/g';
++import { CanvasEvent, Canvas as GCanvas, Group, isDisplayObject } from '@antv/g';
+ import { Renderer as CanvasRenderer } from '@antv/g-canvas';
+ import { Plugin as DragNDropPlugin } from '@antv/g-plugin-dragndrop';
+ import { createDOM } from '@antv/util';
+-import { getBBoxSize, getCombinedBBox } from '../utils/bbox';
++import { getCombinedBBox } from '../utils/bbox';
+ import { parsePoint, toPointObject } from '../utils/point';
+ const SINGLE_LAYER_NAME = ['main'];
+ const MULTI_LAYER_NAME = ['background', 'main', 'label', 'transient'];
+@@ -36,6 +36,33 @@ const MULTI_LAYER_NAME = ['background', 'main', 'label', 'transient'];
+ function getMainLayerOf(layers) {
+     return layers.main;
+ }
++// Export existing display children without rerunning G6 shape constructors.
++function cloneForExport(source) {
++    const cloneAttribute = (name, value) => {
++        // Templates can be stale after hide/style updates. Keep the live marker's
++        // appearance, but restore its template transform before the new path positions it.
++        if (['markerStart', 'markerMid', 'markerEnd'].includes(name) && isDisplayObject(value)) {
++            const current = Reflect.get(source.parsedStyle, name);
++            if (current === null) return null;
++            const marker = cloneForExport(isDisplayObject(current) ? current : value);
++            marker.setLocalTransform(Reflect.get(source.attributes, name).getLocalTransform());
++            return marker;
++        }
++        return isDisplayObject(value) && !['clipPath', 'offsetPath', 'textPath'].includes(name)
++            ? cloneForExport(value) : value;
++    };
++    const attributes = Object.fromEntries(Object.entries(source.attributes)
++        .map(([name, value]) => [name, cloneAttribute(name, value)]));
++    const clone = source.isCustomElement
++        ? new Group({ id: source.id, name: source.name, className: source.className, style: attributes })
++        : source.cloneNode(false, cloneAttribute);
++    clone.setLocalTransform(source.getLocalTransform());
++    for (const child of source.children) {
++        if (!child.style.isMarker) clone.appendChild(cloneForExport(child));
++    }
++    return clone;
++}
++
+ export class Canvas {
+     getConfig() {
+         return this.config;
+@@ -200,10 +227,19 @@ export class Canvas {
+                 [width, height] = this.getSize();
+             }
+             else if (mode === 'overall') {
+-                const bounds = this.getBounds();
+-                const size = getBBoxSize(bounds);
+-                [startX, startY] = bounds.min;
+-                [width, height] = size;
++                // Geometry bounds omit boundary strokes and shadows. Export the complete painted scene.
++                const bounds = getCombinedBBox(Object.values(this.getLayers())
++                    .map((canvas) => canvas.getRoot())
++                    .filter((root) => root.childNodes.length > 0)
++                    .map((root) => root.getRenderBounds()));
++                // Enclose fractional paint bounds in device pixels; retain one pixel for an empty scene.
++                const left = Math.floor(bounds.min[0] * devicePixelRatio);
++                const top = Math.floor(bounds.min[1] * devicePixelRatio);
++                const right = Math.ceil(bounds.max[0] * devicePixelRatio);
++                const bottom = Math.ceil(bounds.max[1] * devicePixelRatio);
++                [startX, startY] = [left / devicePixelRatio, top / devicePixelRatio];
++                [width, height] = [Math.max(1, right - left) / devicePixelRatio,
++                    Math.max(1, bottom - top) / devicePixelRatio];
+             }
+             const container = createDOM('<div id="virtual-image"></div>');
+             const offscreenCanvas = new GCanvas({
+@@ -214,42 +250,73 @@ export class Canvas {
+                 container,
+                 background: this.extends.config.background,
+             });
+-            yield offscreenCanvas.ready;
+-            offscreenCanvas.appendChild(this.getLayer('background').getRoot().cloneNode(true));
+-            offscreenCanvas.appendChild(this.getRoot().cloneNode(true));
+-            // Handle label canvas
+-            const label = this.getLayer('label').getRoot().cloneNode(true);
+-            const originCanvasPosition = offscreenCanvas.viewport2Canvas({ x: 0, y: 0 });
+-            const currentCanvasPosition = this.getCanvasByViewport([0, 0]);
+-            label.translate([
+-                currentCanvasPosition[0] - originCanvasPosition.x,
+-                currentCanvasPosition[1] - originCanvasPosition.y,
+-            ]);
+-            label.scale(1 / this.getCamera().getZoom());
+-            offscreenCanvas.appendChild(label);
+-            offscreenCanvas.appendChild(this.getLayer('transient').getRoot().cloneNode(true));
+-            const camera = this.getCamera();
+-            const offscreenCamera = offscreenCanvas.getCamera();
+-            if (mode === 'viewport') {
+-                offscreenCamera.setZoom(camera.getZoom());
+-                offscreenCamera.setPosition(camera.getPosition());
+-                offscreenCamera.setFocalPoint(camera.getFocalPoint());
++            let cancelled = false;
++            let exportTimeout;
++            let exportImage;
++            const deadline = new Promise((_, reject) => {
++                exportTimeout = setTimeout(() => {
++                    cancelled = true;
++                    reject(new Error('Timed out waiting for the export canvas to render'));
++                }, 10000);
++            });
++            try {
++                yield Promise.race([offscreenCanvas.ready, deadline]);
++                offscreenCanvas.appendChild(cloneForExport(this.getLayer('background').getRoot()));
++                offscreenCanvas.appendChild(cloneForExport(this.getRoot()));
++                // Handle label canvas
++                const label = cloneForExport(this.getLayer('label').getRoot());
++                const originCanvasPosition = offscreenCanvas.viewport2Canvas({ x: 0, y: 0 });
++                const currentCanvasPosition = this.getCanvasByViewport([0, 0]);
++                label.translate([
++                    currentCanvasPosition[0] - originCanvasPosition.x,
++                    currentCanvasPosition[1] - originCanvasPosition.y,
++                ]);
++                label.scale(1 / this.getCamera().getZoom());
++                offscreenCanvas.appendChild(label);
++                offscreenCanvas.appendChild(cloneForExport(this.getLayer('transient').getRoot()));
++                const camera = this.getCamera();
++                const offscreenCamera = offscreenCanvas.getCamera();
++                if (mode === 'viewport') {
++                    offscreenCamera.setZoom(camera.getZoom());
++                    offscreenCamera.setPosition(camera.getPosition());
++                    offscreenCamera.setFocalPoint(camera.getFocalPoint());
++                }
++                else if (mode === 'overall') {
++                    const [x, y, z] = offscreenCamera.getPosition();
++                    const [fx, fy, fz] = offscreenCamera.getFocalPoint();
++                    offscreenCamera.setPosition([x + startX, y + startY, z]);
++                    offscreenCamera.setFocalPoint([fx + startX, fy + startY, fz]);
++                }
++                const contextService = offscreenCanvas.getContextService();
++                return yield Promise.race([new Promise((resolve, reject) => {
++                    let exporting = false;
++                    const onRender = () => __awaiter(this, void 0, void 0, function* () {
++                        if (exporting || cancelled)
++                            return;
++                        exporting = true;
++                        try {
++                            offscreenCanvas.removeEventListener(CanvasEvent.RERENDER, onRender);
++                            // 等待图片渲染完成 / Wait for the image to render
++                            yield new Promise((r) => setTimeout(r, 300));
++                            if (cancelled)
++                                return;
++                            resolve(yield contextService.toDataURL(restOptions));
++                        }
++                        catch (error) {
++                            reject(error);
++                        }
++                    });
++                    exportImage = onRender;
++                    offscreenCanvas.addEventListener(CanvasEvent.RERENDER, onRender);
++                }), deadline]);
+             }
+-            else if (mode === 'overall') {
+-                const [x, y, z] = offscreenCamera.getPosition();
+-                const [fx, fy, fz] = offscreenCamera.getFocalPoint();
+-                offscreenCamera.setPosition([x + startX, y + startY, z]);
+-                offscreenCamera.setFocalPoint([fx + startX, fy + startY, fz]);
++            finally {
++                cancelled = true;
++                clearTimeout(exportTimeout);
++                if (exportImage)
++                    offscreenCanvas.removeEventListener(CanvasEvent.RERENDER, exportImage);
++                offscreenCanvas.destroy();
+             }
+-            const contextService = offscreenCanvas.getContextService();
+-            return new Promise((resolve) => {
+-                offscreenCanvas.addEventListener(CanvasEvent.RERENDER, () => __awaiter(this, void 0, void 0, function* () {
+-                    // 等待图片渲染完成 / Wait for the image to render
+-                    yield new Promise((r) => setTimeout(r, 300));
+-                    const url = yield contextService.toDataURL(restOptions);
+-                    resolve(url);
+-                }));
+-            });
+         });
+     }
+     destroy() {
+@@ -313,4 +380,3 @@ function configCanvasDom(layers) {
+         }
+     });
+ }
+-//# sourceMappingURL=canvas.js.map
+\ No newline at end of file
+diff --git a/lib/behaviors/drag-element.js b/lib/behaviors/drag-element.js
+index ea930386e8fbd432f84c2fe85c2601894801965a..73c421ed9e945f7904869b727fa201528ed5eff8 100644
+--- a/lib/behaviors/drag-element.js
++++ b/lib/behaviors/drag-element.js
+@@ -327,6 +327,7 @@ class DragElement extends base_behavior_1.BaseBehavior {
+     destroy() {
+         var _a;
+         this.unbindEvents();
++        this.shortcut.destroy();
+         (_a = this.shadow) === null || _a === void 0 ? void 0 : _a.destroy();
+         super.destroy();
+     }
+diff --git a/lib/plugins/minimap/index.js b/lib/plugins/minimap/index.js
+index f46f4b7b13567298bbc94547a4811f954bb01ec8..8755703b5feb55a59055b91f1e740f9416cbcf51 100644
+--- a/lib/plugins/minimap/index.js
++++ b/lib/plugins/minimap/index.js
+@@ -126,6 +126,7 @@ class Minimap extends base_plugin_1.BasePlugin {
+         const { graph } = this.context;
+         graph.on(constants_1.GraphEvent.AFTER_DRAW, this.onDraw);
+         graph.on(constants_1.GraphEvent.AFTER_RENDER, this.onRender);
++        graph.on(constants_1.GraphEvent.AFTER_LAYOUT, this.onRender);
+         graph.on(constants_1.GraphEvent.AFTER_ANIMATE, this.onRender);
+         graph.on(constants_1.GraphEvent.AFTER_TRANSFORM, this.onTransform);
+     }
+@@ -133,6 +134,7 @@ class Minimap extends base_plugin_1.BasePlugin {
+         const { graph } = this.context;
+         graph.off(constants_1.GraphEvent.AFTER_DRAW, this.onDraw);
+         graph.off(constants_1.GraphEvent.AFTER_RENDER, this.onRender);
++        graph.off(constants_1.GraphEvent.AFTER_LAYOUT, this.onRender);
+         graph.off(constants_1.GraphEvent.AFTER_ANIMATE, this.onRender);
+         graph.off(constants_1.GraphEvent.AFTER_TRANSFORM, this.onTransform);
+     }
+diff --git a/lib/runtime/canvas.js b/lib/runtime/canvas.js
+index d09773192a298464aca1933220e76d36166531d5..fe19562349ee8611b67f62b267e2e5bcf8d0d987 100644
+--- a/lib/runtime/canvas.js
++++ b/lib/runtime/canvas.js
+@@ -39,6 +39,33 @@ const MULTI_LAYER_NAME = ['background', 'main', 'label', 'transient'];
+ function getMainLayerOf(layers) {
+     return layers.main;
+ }
++// Export existing display children without rerunning G6 shape constructors.
++function cloneForExport(source) {
++    const cloneAttribute = (name, value) => {
++        // Templates can be stale after hide/style updates. Keep the live marker's
++        // appearance, but restore its template transform before the new path positions it.
++        if (['markerStart', 'markerMid', 'markerEnd'].includes(name) && (0, g_1.isDisplayObject)(value)) {
++            const current = Reflect.get(source.parsedStyle, name);
++            if (current === null) return null;
++            const marker = cloneForExport((0, g_1.isDisplayObject)(current) ? current : value);
++            marker.setLocalTransform(Reflect.get(source.attributes, name).getLocalTransform());
++            return marker;
++        }
++        return (0, g_1.isDisplayObject)(value) && !['clipPath', 'offsetPath', 'textPath'].includes(name)
++            ? cloneForExport(value) : value;
++    };
++    const attributes = Object.fromEntries(Object.entries(source.attributes)
++        .map(([name, value]) => [name, cloneAttribute(name, value)]));
++    const clone = source.isCustomElement
++        ? new g_1.Group({ id: source.id, name: source.name, className: source.className, style: attributes })
++        : source.cloneNode(false, cloneAttribute);
++    clone.setLocalTransform(source.getLocalTransform());
++    for (const child of source.children) {
++        if (!child.style.isMarker) clone.appendChild(cloneForExport(child));
++    }
++    return clone;
++}
++
+ class Canvas {
+     getConfig() {
+         return this.config;
+@@ -203,10 +230,19 @@ class Canvas {
+                 [width, height] = this.getSize();
+             }
+             else if (mode === 'overall') {
+-                const bounds = this.getBounds();
+-                const size = (0, bbox_1.getBBoxSize)(bounds);
+-                [startX, startY] = bounds.min;
+-                [width, height] = size;
++                // Geometry bounds omit boundary strokes and shadows. Export the complete painted scene.
++                const bounds = (0, bbox_1.getCombinedBBox)(Object.values(this.getLayers())
++                    .map((canvas) => canvas.getRoot())
++                    .filter((root) => root.childNodes.length > 0)
++                    .map((root) => root.getRenderBounds()));
++                // Enclose fractional paint bounds in device pixels; retain one pixel for an empty scene.
++                const left = Math.floor(bounds.min[0] * devicePixelRatio);
++                const top = Math.floor(bounds.min[1] * devicePixelRatio);
++                const right = Math.ceil(bounds.max[0] * devicePixelRatio);
++                const bottom = Math.ceil(bounds.max[1] * devicePixelRatio);
++                [startX, startY] = [left / devicePixelRatio, top / devicePixelRatio];
++                [width, height] = [Math.max(1, right - left) / devicePixelRatio,
++                    Math.max(1, bottom - top) / devicePixelRatio];
+             }
+             const container = (0, util_1.createDOM)('<div id="virtual-image"></div>');
+             const offscreenCanvas = new g_1.Canvas({
+@@ -217,42 +253,73 @@ class Canvas {
+                 container,
+                 background: this.extends.config.background,
+             });
+-            yield offscreenCanvas.ready;
+-            offscreenCanvas.appendChild(this.getLayer('background').getRoot().cloneNode(true));
+-            offscreenCanvas.appendChild(this.getRoot().cloneNode(true));
+-            // Handle label canvas
+-            const label = this.getLayer('label').getRoot().cloneNode(true);
+-            const originCanvasPosition = offscreenCanvas.viewport2Canvas({ x: 0, y: 0 });
+-            const currentCanvasPosition = this.getCanvasByViewport([0, 0]);
+-            label.translate([
+-                currentCanvasPosition[0] - originCanvasPosition.x,
+-                currentCanvasPosition[1] - originCanvasPosition.y,
+-            ]);
+-            label.scale(1 / this.getCamera().getZoom());
+-            offscreenCanvas.appendChild(label);
+-            offscreenCanvas.appendChild(this.getLayer('transient').getRoot().cloneNode(true));
+-            const camera = this.getCamera();
+-            const offscreenCamera = offscreenCanvas.getCamera();
+-            if (mode === 'viewport') {
+-                offscreenCamera.setZoom(camera.getZoom());
+-                offscreenCamera.setPosition(camera.getPosition());
+-                offscreenCamera.setFocalPoint(camera.getFocalPoint());
++            let cancelled = false;
++            let exportTimeout;
++            let exportImage;
++            const deadline = new Promise((_, reject) => {
++                exportTimeout = setTimeout(() => {
++                    cancelled = true;
++                    reject(new Error('Timed out waiting for the export canvas to render'));
++                }, 10000);
++            });
++            try {
++                yield Promise.race([offscreenCanvas.ready, deadline]);
++                offscreenCanvas.appendChild(cloneForExport(this.getLayer('background').getRoot()));
++                offscreenCanvas.appendChild(cloneForExport(this.getRoot()));
++                // Handle label canvas
++                const label = cloneForExport(this.getLayer('label').getRoot());
++                const originCanvasPosition = offscreenCanvas.viewport2Canvas({ x: 0, y: 0 });
++                const currentCanvasPosition = this.getCanvasByViewport([0, 0]);
++                label.translate([
++                    currentCanvasPosition[0] - originCanvasPosition.x,
++                    currentCanvasPosition[1] - originCanvasPosition.y,
++                ]);
++                label.scale(1 / this.getCamera().getZoom());
++                offscreenCanvas.appendChild(label);
++                offscreenCanvas.appendChild(cloneForExport(this.getLayer('transient').getRoot()));
++                const camera = this.getCamera();
++                const offscreenCamera = offscreenCanvas.getCamera();
++                if (mode === 'viewport') {
++                    offscreenCamera.setZoom(camera.getZoom());
++                    offscreenCamera.setPosition(camera.getPosition());
++                    offscreenCamera.setFocalPoint(camera.getFocalPoint());
++                }
++                else if (mode === 'overall') {
++                    const [x, y, z] = offscreenCamera.getPosition();
++                    const [fx, fy, fz] = offscreenCamera.getFocalPoint();
++                    offscreenCamera.setPosition([x + startX, y + startY, z]);
++                    offscreenCamera.setFocalPoint([fx + startX, fy + startY, fz]);
++                }
++                const contextService = offscreenCanvas.getContextService();
++                return yield Promise.race([new Promise((resolve, reject) => {
++                    let exporting = false;
++                    const onRender = () => __awaiter(this, void 0, void 0, function* () {
++                        if (exporting || cancelled)
++                            return;
++                        exporting = true;
++                        try {
++                            offscreenCanvas.removeEventListener(g_1.CanvasEvent.RERENDER, onRender);
++                            // 等待图片渲染完成 / Wait for the image to render
++                            yield new Promise((r) => setTimeout(r, 300));
++                            if (cancelled)
++                                return;
++                            resolve(yield contextService.toDataURL(restOptions));
++                        }
++                        catch (error) {
++                            reject(error);
++                        }
++                    });
++                    exportImage = onRender;
++                    offscreenCanvas.addEventListener(g_1.CanvasEvent.RERENDER, onRender);
++                }), deadline]);
+             }
+-            else if (mode === 'overall') {
+-                const [x, y, z] = offscreenCamera.getPosition();
+-                const [fx, fy, fz] = offscreenCamera.getFocalPoint();
+-                offscreenCamera.setPosition([x + startX, y + startY, z]);
+-                offscreenCamera.setFocalPoint([fx + startX, fy + startY, fz]);
++            finally {
++                cancelled = true;
++                clearTimeout(exportTimeout);
++                if (exportImage)
++                    offscreenCanvas.removeEventListener(g_1.CanvasEvent.RERENDER, exportImage);
++                offscreenCanvas.destroy();
+             }
+-            const contextService = offscreenCanvas.getContextService();
+-            return new Promise((resolve) => {
+-                offscreenCanvas.addEventListener(g_1.CanvasEvent.RERENDER, () => __awaiter(this, void 0, void 0, function* () {
+-                    // 等待图片渲染完成 / Wait for the image to render
+-                    yield new Promise((r) => setTimeout(r, 300));
+-                    const url = yield contextService.toDataURL(restOptions);
+-                    resolve(url);
+-                }));
+-            });
+         });
+     }
+     destroy() {
+@@ -317,4 +384,3 @@ function configCanvasDom(layers) {
+         }
+     });
+ }
+-//# sourceMappingURL=canvas.js.map
+\ No newline at end of file
+diff --git a/src/behaviors/drag-element.ts b/src/behaviors/drag-element.ts
+index 8ecfa742c75b79c1dab02c2ba1d5a7d34bf9043f..c13eb552f145430ca6e751354758893c3405f0b1 100644
+--- a/src/behaviors/drag-element.ts
++++ b/src/behaviors/drag-element.ts
+@@ -486,6 +486,7 @@ export class DragElement extends BaseBehavior<DragElementOptions> {
+ 
+   public destroy() {
+     this.unbindEvents();
++    this.shortcut.destroy();
+     this.shadow?.destroy();
+     super.destroy();
+   }
+diff --git a/src/plugins/minimap/index.ts b/src/plugins/minimap/index.ts
+index cc6c92152c2255df8c3c67189a1182f43a7d26c6..ec1ed65d6f864892b3f2be6b4effb7e95b012e36 100644
+--- a/src/plugins/minimap/index.ts
++++ b/src/plugins/minimap/index.ts
+@@ -154,6 +154,7 @@ export class Minimap extends BasePlugin<MinimapOptions> {
+     const { graph } = this.context;
+     graph.on(GraphEvent.AFTER_DRAW, this.onDraw);
+     graph.on(GraphEvent.AFTER_RENDER, this.onRender);
++    graph.on(GraphEvent.AFTER_LAYOUT, this.onRender);
+     graph.on(GraphEvent.AFTER_ANIMATE, this.onRender);
+     graph.on(GraphEvent.AFTER_TRANSFORM, this.onTransform);
+   }
+@@ -162,6 +163,7 @@ export class Minimap extends BasePlugin<MinimapOptions> {
+     const { graph } = this.context;
+     graph.off(GraphEvent.AFTER_DRAW, this.onDraw);
+     graph.off(GraphEvent.AFTER_RENDER, this.onRender);
++    graph.off(GraphEvent.AFTER_LAYOUT, this.onRender);
+     graph.off(GraphEvent.AFTER_ANIMATE, this.onRender);
+     graph.off(GraphEvent.AFTER_TRANSFORM, this.onTransform);
+   }
+diff --git a/src/runtime/canvas.ts b/src/runtime/canvas.ts
+index 56166b67ff6225f7716847b751acb624c7a6f9c7..794ea879604353ab68ff79e495878c18bf9b33bc 100644
+--- a/src/runtime/canvas.ts
++++ b/src/runtime/canvas.ts
+@@ -1,11 +1,11 @@
+ import type { Cursor, DisplayObject, CanvasConfig as GCanvasConfig, IChildNode } from '@antv/g';
+-import { CanvasEvent, Canvas as GCanvas } from '@antv/g';
++import { CanvasEvent, Canvas as GCanvas, Group, isDisplayObject } from '@antv/g';
+ import { Renderer as CanvasRenderer } from '@antv/g-canvas';
+ import { Plugin as DragNDropPlugin } from '@antv/g-plugin-dragndrop';
+ import { createDOM } from '@antv/util';
+ import type { CanvasOptions } from '../spec/canvas';
+ import type { CanvasLayer, Point } from '../types';
+-import { getBBoxSize, getCombinedBBox } from '../utils/bbox';
++import { getCombinedBBox } from '../utils/bbox';
+ import { parsePoint, toPointObject } from '../utils/point';
+ 
+ export interface CanvasConfig
+@@ -69,6 +69,33 @@ function getMainLayerOf(layers: Record<CanvasLayer, GCanvas>) {
+   return layers.main;
+ }
+ 
++// Export existing display children without rerunning G6 shape constructors.
++function cloneForExport(source: DisplayObject): DisplayObject {
++  const cloneAttribute = (name: string, value: unknown): unknown => {
++    // Templates can be stale after hide/style updates. Keep the live marker's
++    // appearance, but restore its template transform before the new path positions it.
++    if (['markerStart', 'markerMid', 'markerEnd'].includes(name) && isDisplayObject(value)) {
++      const current = Reflect.get(source.parsedStyle, name);
++      if (current === null) return null;
++      const marker = cloneForExport(isDisplayObject(current) ? current : value);
++      marker.setLocalTransform(Reflect.get(source.attributes, name).getLocalTransform());
++      return marker;
++    }
++    return isDisplayObject(value) && !['clipPath', 'offsetPath', 'textPath'].includes(name)
++      ? cloneForExport(value) : value;
++  };
++  const attributes = Object.fromEntries(Object.entries(source.attributes)
++    .map(([name, value]) => [name, cloneAttribute(name, value)]));
++  const clone = source.isCustomElement
++    ? new Group({ id: source.id, name: source.name, className: source.className, style: attributes })
++    : source.cloneNode(false, cloneAttribute);
++  clone.setLocalTransform(source.getLocalTransform());
++  for (const child of source.children) {
++    if (!(child as DisplayObject).style.isMarker) clone.appendChild(cloneForExport(child as DisplayObject));
++  }
++  return clone;
++}
++
+ export class Canvas {
+   private extends: {
+     config: CanvasConfig;
+@@ -277,10 +304,19 @@ export class Canvas {
+     if (mode === 'viewport') {
+       [width, height] = this.getSize();
+     } else if (mode === 'overall') {
+-      const bounds = this.getBounds();
+-      const size = getBBoxSize(bounds);
+-      [startX, startY] = bounds.min;
+-      [width, height] = size;
++      // Geometry bounds omit boundary strokes and shadows. Export the complete painted scene.
++      const bounds = getCombinedBBox(Object.values(this.getLayers())
++        .map((canvas) => canvas.getRoot())
++        .filter((root) => root.childNodes.length > 0)
++        .map((root) => root.getRenderBounds()));
++      // Enclose fractional paint bounds in device pixels; retain one pixel for an empty scene.
++      const left = Math.floor(bounds.min[0] * devicePixelRatio);
++      const top = Math.floor(bounds.min[1] * devicePixelRatio);
++      const right = Math.ceil(bounds.max[0] * devicePixelRatio);
++      const bottom = Math.ceil(bounds.max[1] * devicePixelRatio);
++      [startX, startY] = [left / devicePixelRatio, top / devicePixelRatio];
++      [width, height] = [Math.max(1, right - left) / devicePixelRatio,
++        Math.max(1, bottom - top) / devicePixelRatio];
+     }
+ 
+     const container: HTMLElement = createDOM('<div id="virtual-image"></div>');
+@@ -294,48 +330,74 @@ export class Canvas {
+       background: this.extends.config.background,
+     });
+ 
+-    await offscreenCanvas.ready;
+-
+-    offscreenCanvas.appendChild(this.getLayer('background').getRoot().cloneNode(true));
+-    offscreenCanvas.appendChild(this.getRoot().cloneNode(true));
+-
+-    // Handle label canvas
+-    const label = this.getLayer('label').getRoot().cloneNode(true);
+-    const originCanvasPosition = offscreenCanvas.viewport2Canvas({ x: 0, y: 0 });
+-    const currentCanvasPosition = this.getCanvasByViewport([0, 0]);
+-    label.translate([
+-      currentCanvasPosition[0] - originCanvasPosition.x,
+-      currentCanvasPosition[1] - originCanvasPosition.y,
+-    ]);
+-    label.scale(1 / this.getCamera().getZoom());
+-    offscreenCanvas.appendChild(label);
+-
+-    offscreenCanvas.appendChild(this.getLayer('transient').getRoot().cloneNode(true));
+-
+-    const camera = this.getCamera();
+-    const offscreenCamera = offscreenCanvas.getCamera();
++    let cancelled = false;
++    let exportTimeout: ReturnType<typeof setTimeout> | undefined;
++    let exportImage: (() => Promise<void>) | undefined;
++    const deadline = new Promise<never>((_, reject) => {
++      exportTimeout = setTimeout(() => {
++        cancelled = true;
++        reject(new Error('Timed out waiting for the export canvas to render'));
++      }, 10000);
++    });
++    try {
++      await Promise.race([offscreenCanvas.ready, deadline]);
++
++      offscreenCanvas.appendChild(cloneForExport(this.getLayer('background').getRoot()));
++      offscreenCanvas.appendChild(cloneForExport(this.getRoot()));
++
++      // Handle label canvas
++      const label = cloneForExport(this.getLayer('label').getRoot());
++      const originCanvasPosition = offscreenCanvas.viewport2Canvas({ x: 0, y: 0 });
++      const currentCanvasPosition = this.getCanvasByViewport([0, 0]);
++      label.translate([
++        currentCanvasPosition[0] - originCanvasPosition.x,
++        currentCanvasPosition[1] - originCanvasPosition.y,
++      ]);
++      label.scale(1 / this.getCamera().getZoom());
++      offscreenCanvas.appendChild(label);
++
++      offscreenCanvas.appendChild(cloneForExport(this.getLayer('transient').getRoot()));
++
++      const camera = this.getCamera();
++      const offscreenCamera = offscreenCanvas.getCamera();
++
++      if (mode === 'viewport') {
++        offscreenCamera.setZoom(camera.getZoom());
++        offscreenCamera.setPosition(camera.getPosition());
++        offscreenCamera.setFocalPoint(camera.getFocalPoint());
++      } else if (mode === 'overall') {
++        const [x, y, z] = offscreenCamera.getPosition();
++        const [fx, fy, fz] = offscreenCamera.getFocalPoint();
++        offscreenCamera.setPosition([x + startX, y + startY, z]);
++        offscreenCamera.setFocalPoint([fx + startX, fy + startY, fz]);
++      }
+ 
+-    if (mode === 'viewport') {
+-      offscreenCamera.setZoom(camera.getZoom());
+-      offscreenCamera.setPosition(camera.getPosition());
+-      offscreenCamera.setFocalPoint(camera.getFocalPoint());
+-    } else if (mode === 'overall') {
+-      const [x, y, z] = offscreenCamera.getPosition();
+-      const [fx, fy, fz] = offscreenCamera.getFocalPoint();
+-      offscreenCamera.setPosition([x + startX, y + startY, z]);
+-      offscreenCamera.setFocalPoint([fx + startX, fy + startY, fz]);
++      const contextService = offscreenCanvas.getContextService();
++
++      return await Promise.race([new Promise<string>((resolve, reject) => {
++        let exporting = false;
++        const onRender = async () => {
++          if (exporting || cancelled) return;
++          exporting = true;
++          try {
++            offscreenCanvas.removeEventListener(CanvasEvent.RERENDER, onRender);
++            // 等待图片渲染完成 / Wait for the image to render
++            await new Promise((r) => setTimeout(r, 300));
++            if (cancelled) return;
++            resolve(await contextService.toDataURL(restOptions));
++          } catch (error) {
++            reject(error);
++          }
++        };
++        exportImage = onRender;
++        offscreenCanvas.addEventListener(CanvasEvent.RERENDER, onRender);
++      }), deadline]);
++    } finally {
++      cancelled = true;
++      clearTimeout(exportTimeout);
++      if (exportImage) offscreenCanvas.removeEventListener(CanvasEvent.RERENDER, exportImage);
++      offscreenCanvas.destroy();
+     }
+-
+-    const contextService = offscreenCanvas.getContextService();
+-
+-    return new Promise<string>((resolve) => {
+-      offscreenCanvas.addEventListener(CanvasEvent.RERENDER, async () => {
+-        // 等待图片渲染完成 / Wait for the image to render
+-        await new Promise((r) => setTimeout(r, 300));
+-        const url = await contextService.toDataURL(restOptions);
+-        resolve(url);
+-      });
+-    });
+   }
+ 
+   public destroy() {

@@ -20,13 +20,12 @@
  * @file CapacityItem
  */
 
-import React from 'react';
 import {InputNumber} from 'antd';
 import Form from '../PersistentForm';
 import {integerValidator} from '../utils';
 import {useTranslation} from 'react-i18next';
 
-const CapacityItem = props => {
+const CapacityItem = _props => {
     const {t} = useTranslation();
     return (
         <Form.Item

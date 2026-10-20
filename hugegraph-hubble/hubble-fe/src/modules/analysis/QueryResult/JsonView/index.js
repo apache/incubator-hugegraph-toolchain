@@ -22,7 +22,7 @@
 
 import React, {useCallback, useMemo} from 'react';
 import {useTranslation} from 'react-i18next';
-import ReactJsonView from 'react-json-view';
+import JsonViewer from '../../../../components/JsonViewer';
 import GraphStatusView from '../../../component/GraphStatusView';
 import TaskNavigateView from '../../../component/TaskNavigateView';
 import {GRAPH_STATUS} from '../../../../utils/constants';
@@ -59,12 +59,8 @@ const JsonView = props => {
                 }
                 return (
                     <div className={c.jsonWrapper}>
-                        <ReactJsonView
-                            src={jsonViewContent}
-                            name={false}
-                            displayObjectSize={false}
-                            displayDataTypes={false}
-                            groupArraysAfterLength={50}
+                        <JsonViewer
+                            value={jsonViewContent}
                         />
                     </div>
                 );

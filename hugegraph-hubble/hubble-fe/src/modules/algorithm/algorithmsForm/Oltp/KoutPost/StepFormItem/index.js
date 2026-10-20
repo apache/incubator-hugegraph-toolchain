@@ -20,7 +20,7 @@
  * @file K-out API(POST，高级版) StepForm
  */
 
-import React, {useState, useCallback} from 'react';
+import {useState, useCallback} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Select, Tooltip, InputNumber} from 'antd';
 import Form from '../../../PersistentForm';

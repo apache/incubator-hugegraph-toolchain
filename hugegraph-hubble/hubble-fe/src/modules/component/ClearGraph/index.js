@@ -20,49 +20,39 @@
  * @file  ClearGraph 清空画布
  */
 
-import React, {useCallback, useContext, useState} from 'react';
+import {useContext, useState, useEffect, useRef} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Button, Tooltip, Modal} from 'antd';
 import {CopyrightOutlined} from '@ant-design/icons';
 import {GraphContext} from '../Context';
 
-const ClearGraph = props => {
+const ClearGraph = ({enable, onChange}) => {
     const {t} = useTranslation();
-    const {enable, onChange} = props;
-    const {graph} = useContext(GraphContext);
+    const {controller, snapshot, run, clearGraph} = useContext(GraphContext);
     const [clearModalVisible, setClearModalVisible] = useState(false);
-
-    const handleClear = useCallback(
-        () => {
-            setClearModalVisible(true);
-        },
-        []
-    );
-
-    const handleClearModalOk = useCallback(
-        () => {
-            graph?.clear();
-            setClearModalVisible(false);
-            onChange();
-        },
-        [graph, onChange]
-    );
-
-    const handleClearModalCancel = useCallback(
-        () => {
-            setClearModalVisible(false);
-        },
-        []
-    );
-
+    const activeController = useRef(null);
+    useEffect(() => {
+        activeController.current = controller;
+        setClearModalVisible(false);
+        return () => { activeController.current = null; };
+    }, [controller]);
+    const ready = Boolean(controller && snapshot?.status === 'ready');
+    const handleClear = async () => {
+        if (!ready) return;
+        const result = clearGraph ? await clearGraph()
+            : await run(() => controller.replaceData({nodes: [], edges: []}, {newDataset: true}));
+        if (activeController.current !== controller || result?.status !== 'applied') return;
+        setClearModalVisible(false);
+        await run(() => onChange?.());
+    };
     return (
         <>
-            <Tooltip title={t('analysis.canvas.toolbar.clear_canvas')} placement='bottom'>
+            <Tooltip title={t('analysis.canvas.toolbar.clear_canvas')} placement="bottom">
                 <Button
-                    disabled={!enable}
+                    disabled={!enable || !ready}
                     type="text"
                     aria-label={t('analysis.canvas.toolbar.clear_canvas')}
-                    onClick={handleClear}
+                    onClick={() => setClearModalVisible(true)}
                     icon={<CopyrightOutlined />}
                 />
             </Tooltip>
@@ -70,8 +60,9 @@ const ClearGraph = props => {
                 width={600}
                 title={t('analysis.canvas.clear_graph.title')}
                 open={clearModalVisible}
-                onOk={handleClearModalOk}
-                onCancel={handleClearModalCancel}
+                onOk={handleClear}
+                onCancel={() => setClearModalVisible(false)}
+                okButtonProps={{disabled: !ready}}
                 okText={t('analysis.canvas.clear_graph.ok')}
                 cancelText={t('analysis.canvas.clear_graph.cancel')}
             >

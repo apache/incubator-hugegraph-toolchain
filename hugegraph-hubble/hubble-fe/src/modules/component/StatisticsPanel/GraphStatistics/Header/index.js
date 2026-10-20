@@ -20,7 +20,6 @@
  * @file  图统计标题头
  */
 
-import React from 'react';
 import {Button, Tooltip} from 'antd';
 import {QuestionCircleOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';

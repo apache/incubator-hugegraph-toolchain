@@ -33,7 +33,7 @@ const ListView = () => {
     return (
         <Tabs
             defaultActiveKey='1'
-            destroyInactiveTabPane
+            destroyOnHidden
             items={[
                 {
                     label: t('schema.tab.property'),

@@ -20,7 +20,7 @@
  * @file  标签统计
  */
 
-import React, {useMemo} from 'react';
+import {useMemo} from 'react';
 import {Tooltip, Collapse} from 'antd';
 import {QuestionCircleOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
@@ -28,7 +28,6 @@ import c from './index.module.scss';
 import BarChartComponent from '../BarChartComponent';
 import _ from 'lodash';
 
-const {Panel} = Collapse;
 
 const LabelStatistics = props => {
 
@@ -76,27 +75,28 @@ const LabelStatistics = props => {
 
     return (
         <div className={c.labelStatistics}>
-            <Collapse defaultActiveKey={['type', 'highestDegree']} ghost>
-                <Panel
-                    header={renderHeader({
+            <Collapse defaultActiveKey={['type', 'highestDegree']} ghost items={[
+                {
+                    key: 'type',
+                    label: renderHeader({
                         name: t('analysis.canvas.statistics_panel.type_count'),
                         description: t('analysis.canvas.statistics_panel.type_count_desc'),
-                    })}
-                    key="type"
-                >
-                    <BarChartComponent data={convertedVertexTypeData} totalData={graphDataNums?.nodesNum} />
-                    <BarChartComponent data={convertedEdgeTypeData} totalData={graphDataNums?.edgesNum} />
-                </Panel>
-                <Panel
-                    header={renderHeader({
+                    }),
+                    children: <>
+                        <BarChartComponent data={convertedVertexTypeData} totalData={graphDataNums?.nodesNum} />
+                        <BarChartComponent data={convertedEdgeTypeData} totalData={graphDataNums?.edgesNum} />
+                    </>,
+                },
+                {
+                    key: 'highestDegree',
+                    label: renderHeader({
                         name: t('analysis.canvas.statistics_panel.degree_top10'),
                         description: t('analysis.canvas.statistics_panel.degree_top10_desc'),
-                    })}
-                    key="highestDegree"
-                >
-                    <BarChartComponent data={convertedHighestDegreeVerticesData} totalData={graphDataNums?.edgesNum} />
-                </Panel>
-            </Collapse>
+                    }),
+                    children: <BarChartComponent
+                        data={convertedHighestDegreeVerticesData} totalData={graphDataNums?.edgesNum} />,
+                },
+            ]} />
         </div>
     );
 };

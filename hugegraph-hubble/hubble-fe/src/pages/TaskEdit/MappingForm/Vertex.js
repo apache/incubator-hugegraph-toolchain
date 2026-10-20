@@ -182,7 +182,7 @@ const VertexForm = ({open, onCancel, sourceField, targetField, vertexList, index
             title={index >= 0 ? t('task.edit.edit_vertex') : t('task.edit.create_vertex')}
             placement="right"
             onClose={onCancel}
-            width={580}
+            size={580}
             open={open}
         >
             <Form

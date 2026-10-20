@@ -122,7 +122,7 @@ const EditLayer = ({visible, onCancel, data, refresh}) => {
             open={visible}
             onOk={onFinish}
             confirmLoading={loading}
-            destroyOnClose
+            destroyOnHidden
         >
             <Form
                 labelCol={{span: 4}}

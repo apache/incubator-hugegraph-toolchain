@@ -16,12 +16,12 @@
  * under the License.
  */
 
-import {InfoCircleOutlined, InfoOutlined} from '@ant-design/icons';
-import {Typography, Dropdown, Row, Col, Space, Progress, Card, Tooltip} from 'antd';
+import {InfoCircleOutlined, InfoOutlined, EllipsisOutlined} from '@ant-design/icons';
+import {Typography, Button, Dropdown, Row, Col, Space, Progress, Card, Tooltip} from 'antd';
 import {Link, useNavigate} from 'react-router-dom';
-import moment from 'moment';
+import dayjs from 'dayjs';
 import style from './index.module.scss';
-import React, {useCallback} from 'react';
+import {useCallback} from 'react';
 import {useTranslation} from 'react-i18next';
 import {getResourceDisplayName} from '../../utils/displayName';
 
@@ -56,7 +56,7 @@ const TitleField = ({item, onClick, onKeyDown}) => {
                 {item.default && (
                     <span className={style.default}>{t('graphspace.card.set_default')}</span>
                 )}
-                {item.create_time ? moment(item.create_time).format('YYYY-MM-DD') : '--'} {t('graphspace.card.created')}
+                {item.create_time ? dayjs(item.create_time).format('YYYY-MM-DD') : '--'} {t('graphspace.card.created')}
             </div>
         </div>
     );
@@ -138,7 +138,15 @@ const GraphSpaceCard = ({
     const statisticDate = item.statistic?.date;
 
     return (
-        <Card
+        <Card styles={{header: {
+                backgroundImage: 'linear-gradient(180deg, '
+                    + 'rgba(51,136,255,0.10) 0%, rgba(51,136,255,0.00) 100%)',
+                borderBottom: 0,
+                minHeight: 93,
+                paddingLeft: 20,
+            }, body: {
+                padding: '0 24px 24px 20px',
+            }}}
             className={style.card}
             title={(
                 <TitleField
@@ -147,23 +155,15 @@ const GraphSpaceCard = ({
                     onKeyDown={handleGotoGraphKeyDown}
                 />
             )}
-            headStyle={{
-                backgroundImage: 'linear-gradient(180deg, '
-                    + 'rgba(51,136,255,0.10) 0%, rgba(51,136,255,0.00) 100%)',
-                borderBottom: 0,
-                minHeight: 93,
-                paddingLeft: 20,
-            }}
-            bodyStyle={{
-                padding: '0 24px 24px 20px',
-            }}
+
+
             extra={(
-                <Dropdown.Button
-                    menu={getMenu(item)}
-                    trigger={['click']}
-                >
-                    <Link to={`/graphspace/${item.name}`}>{t('graphspace.card.enter')}</Link>
-                </Dropdown.Button>
+                <Space.Compact>
+                    <Button href={`/graphspace/${item.name}`}>{t('graphspace.card.enter')}</Button>
+                    <Dropdown menu={getMenu(item)} trigger={['click']}>
+                        <Button icon={<EllipsisOutlined />} aria-label={t('common.action.more')} />
+                    </Dropdown>
+                </Space.Compact>
             )}
             actions={
                 [
@@ -222,7 +222,7 @@ const GraphSpaceCard = ({
                         </ul>
                     </Col>
                     <Col span={8}>
-                        <Space direction='vertical'>
+                        <Space orientation='vertical'>
                             <Progress
                                 type='circle'
                                 width={96}

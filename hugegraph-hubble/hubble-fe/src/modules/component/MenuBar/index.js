@@ -20,7 +20,6 @@
  * @file  MenuBar
  */
 
-import React from 'react';
 import {Space} from 'antd';
 import c from './index.module.scss';
 

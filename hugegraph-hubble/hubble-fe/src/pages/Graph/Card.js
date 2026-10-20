@@ -16,19 +16,22 @@
  * under the License.
  */
 
-import {useCallback} from 'react';
+import {useCallback, useMemo} from 'react';
 import {Button, Card, Dropdown, Space, Typography, Tooltip} from 'antd';
 import {UnorderedListOutlined} from '@ant-design/icons';
 import {Link, useNavigate} from 'react-router-dom';
 import {useTranslation} from 'react-i18next';
-import GraphView from '../../components/GraphinView';
-import moment from 'moment';
+import {GraphCanvas} from '../../visualization/react';
+import dayjs from 'dayjs';
 import _ from 'lodash';
-import {formatToGraphInData} from '../../utils/formatGraphInData';
+import {adaptHubbleSchema} from '../../visualization/hubble/adapter';
 import {isPdEnabled} from '../../utils/config';
 import style from './index.module.scss';
 import {byteConvert} from '../../utils/format';
 import {getResourceDisplayName} from '../../utils/displayName';
+
+const EMPTY_SCHEMA = {vertices: [], edges: []};
+const CARD_LAYOUT = {type: 'dagre', options: {rankdir: 'LR', nodesep: 30, ranksep: 60}};
 
 const TitleField = ({item, onClick, onKeyDown, schemaTypeCounts}) => {
     const {t} = useTranslation();
@@ -44,7 +47,7 @@ const TitleField = ({item, onClick, onKeyDown, schemaTypeCounts}) => {
         ? `${graphspaceName}-${graphName}`
         : graphName;
     const createdAt = item.create_time
-        ? moment(item.create_time).format('YYYY-MM-DD')
+        ? dayjs(item.create_time).format('YYYY-MM-DD')
         : '--';
 
     return (
@@ -76,9 +79,16 @@ const GraphCard = ({item, menus, canMutate = true}) => {
     const {t} = useTranslation();
     const navigate = useNavigate();
     const graphName = getResourceDisplayName(item.name, item.nickname);
-    const schemaView = item.schemaview || {vertices: [], edges: []};
-    const graphinData = formatToGraphInData(schemaView, true);
-    const schemaIsEmpty = graphinData.nodes.length === 0 && graphinData.edges.length === 0;
+    const schemaView = item.schemaview || EMPTY_SCHEMA;
+    const prepared = useMemo(() => {
+        try {
+            return {data: adaptHubbleSchema(schemaView), error: null};
+        }
+        catch (error) {
+            return {data: {nodes: [], edges: []}, error};
+        }
+    }, [schemaView]);
+    const schemaIsEmpty = !prepared.error && prepared.data.nodes.length === 0 && prepared.data.edges.length === 0;
     const hasElementCounts = item.statistic
         && item.statistic.vertex !== null
         && item.statistic.vertex !== undefined
@@ -106,7 +116,9 @@ const GraphCard = ({item, menus, canMutate = true}) => {
     }, [handleGotoSchema]);
 
     return (
-        <Card
+        <Card styles={{header: {
+                paddingLeft: 20,
+            }}}
             className={style.card}
             title={(
                 <TitleField
@@ -119,9 +131,7 @@ const GraphCard = ({item, menus, canMutate = true}) => {
                     }}
                 />
             )}
-            headStyle={{
-                paddingLeft: 20,
-            }}
+
             extra={(
                 <Dropdown
                     menu={{items: menus}}
@@ -151,7 +161,9 @@ const GraphCard = ({item, menus, canMutate = true}) => {
                 </Link>,
             ].filter(Boolean)}
         >
-            {schemaIsEmpty ? (
+            {prepared.error ? (
+                <div role='alert'>{t('schema.image_view.load_failed')}</div>
+            ) : schemaIsEmpty ? (
                 <div className={style.empty_schema}>
                     <strong>{t('graph.card.empty_schema')}</strong>
                     <span>{t('graph.card.empty_schema_help')}</span>
@@ -179,33 +191,13 @@ const GraphCard = ({item, menus, canMutate = true}) => {
                     tabIndex={0}
                     aria-label={t('graph.card.view_schema', {graph: graphName})}
                 >
-                    <GraphView
-                        data={graphinData}
-                        style={{minHeight: '153px'}}
-                        layout={{
-                            type: 'gForce',
-                            // center: [200, 200],
-                            linkDistance: 100,
-                            coulombDisScale: 0.01,
-                        // preventOverlap: true,
-                        // begin: item.schemaview.vertices.length > 1
-                        //     ? [0, 0] : [200, 100],
-                        }}
-                        height={147}
-                        config={{
-                        // minZoom: 0.6,
-                        // maxZoom: 0.6,
-                            fitView: false,
-                            fitCenter: true,
-                        // handleZoomIn: false,
-                        }}
-                        behaviors={{
-                            zoomCanvas: {disabled: true},
-                            dragNode: {disabled: true},
-                            dragCanvas: {disabled: true},
-                            clickSelect: {disabled: true},
-                            hoverable: {disabled: true},
-                        }}
+                    <GraphCanvas
+                        key={JSON.stringify([graphspace, item.name])}
+                        data={prepared.data}
+                        preset='thumbnail'
+                        layout={CARD_LAYOUT}
+                        style={{height: 153}}
+                        aria-label={t('graph.card.view_schema', {graph: graphName})}
                     />
                 </div>
             )}

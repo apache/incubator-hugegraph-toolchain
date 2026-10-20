@@ -20,7 +20,7 @@
  * @file SettingConfig
  */
 
-import React, {useCallback} from 'react';
+import {useCallback} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Button, Tooltip} from 'antd';
 import {SettingOutlined} from '@ant-design/icons';

@@ -16,6 +16,7 @@
  * under the License.
  */
 
+import {useEffect} from 'react';
 import {Navigate, Routes, Route, useParams, useLocation} from 'react-router-dom';
 import Datasource from '../pages/Datasource';
 import Task from '../pages/Task';
@@ -70,12 +71,17 @@ const ProtectedRoute = ({children}) => {
     const authEnabled = typeof isAuthEnabled === 'function'
         ? isAuthEnabled() : true;
 
-    if (!authEnabled || isLoggedIn()) {
+    const shouldRedirect = authEnabled && !isLoggedIn();
+    const redirect = getRedirectTarget(location);
+    useEffect(() => {
+        if (shouldRedirect) {
+            sessionStorage.setItem('redirect', redirect);
+        }
+    }, [redirect, shouldRedirect]);
+
+    if (!shouldRedirect) {
         return children;
     }
-
-    const redirect = getRedirectTarget(location);
-    sessionStorage.setItem('redirect', redirect);
 
     return <Navigate to={`${LOGIN_PATH}?redirect=${encodeURIComponent(redirect)}`} replace />;
 };
@@ -289,7 +295,7 @@ const RouteList = ({element}) => {
             </Route>
 
 
-            {isDevelopmentBuild(process.env.NODE_ENV) && (
+            {isDevelopmentBuild(import.meta.env.MODE) && (
                 <Route path="/test" element={<Test />} />
             )}
         </Routes>

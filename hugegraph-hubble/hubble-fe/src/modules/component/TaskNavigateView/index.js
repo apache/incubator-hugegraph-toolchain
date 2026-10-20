@@ -20,7 +20,7 @@
  * @file TaskNavigateView
  */
 
-import React, {useCallback} from 'react';
+import {useCallback} from 'react';
 import {useTranslation} from 'react-i18next';
 import {useNavigate} from 'react-router-dom';
 import {Button} from 'antd';

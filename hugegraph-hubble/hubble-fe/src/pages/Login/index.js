@@ -16,6 +16,7 @@
  * under the License.
  */
 
+import {replaceBrowserLocation} from '../../utils/browserNavigation';
 import {LockOutlined, UserOutlined} from '@ant-design/icons';
 import {Button, Form, Input, message} from 'antd';
 import BrandLockup from '../../components/BrandLockup';
@@ -30,6 +31,7 @@ import {useTranslation} from 'react-i18next';
 
 const LOGIN_PATH = '/login';
 const DEFAULT_AFTER_LOGIN = '/navigation';
+// eslint-disable-next-line no-control-regex -- Reject control characters in redirect targets.
 const UNSAFE_REDIRECT_RE = /[\x00-\x1F\x7F\\]/;
 const LOGIN_NOTICE_PARAM = 'notice';
 const PASSWORD_CHANGED_NOTICE = 'credential-updated';
@@ -84,7 +86,7 @@ const Login = () => {
         const safeRedirect = getSafeRedirect(queryRedirect);
 
         sessionStorage.removeItem('redirect');
-        window.location.replace(safeRedirect);
+        replaceBrowserLocation(safeRedirect);
     }, [location.search]);
 
     const onFinish = useCallback(async value => {

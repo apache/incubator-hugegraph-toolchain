@@ -20,299 +20,122 @@
  * @file LayoutConfigPanel
  */
 
-import React, {useCallback, useState, useEffect, useMemo} from 'react';
-import {Form, Select, Switch} from 'antd';
+import {useState, useMemo, useEffect, useContext, useImperativeHandle, useRef} from 'react';
+import {Form, Select} from 'antd';
 import {useTranslation} from 'react-i18next';
+import debounce from 'lodash/debounce';
+import {GraphContext} from '../../Context';
 import ForceLayoutForm from '../Force';
 import CircularLayoutForm from '../Circular';
 import ConcentricLayoutForm from '../Concentric';
 import DagreLayoutForm from '../Dagre';
 import GridLayoutForm from '../Grid';
 import RadialLayoutForm from '../Radial';
-import ForceLayoutIcon from '../../../../assets/layout_force.svg';
-import ConcentricLayoutIcon from '../../../../assets/layout_concentric.svg';
-import DagreLayoutIcon from '../../../../assets/layout_dagre.svg';
-import CircularLayoutIcon from '../../../../assets/layout_circular.svg';
-import GridLayoutIcon from '../../../../assets/layout_grid.svg';
-import RadialLayoutIcon from '../../../../assets/layout_radial.svg';
-import {SUPPORTED_LAYOUT_TYPE} from '../../../../utils/constants';
-import classnames from 'classnames';
-import _ from 'lodash';
+import forceIcon from '../../../../assets/layout_force.svg';
+import circularIcon from '../../../../assets/layout_circular.svg';
+import concentricIcon from '../../../../assets/layout_concentric.svg';
+import dagreIcon from '../../../../assets/layout_dagre.svg';
+import gridIcon from '../../../../assets/layout_grid.svg';
+import radialIcon from '../../../../assets/layout_radial.svg';
+import {normalizeLayoutSettings} from '../../../../utils/analysisGraphPresentation';
+import {adaptiveLayoutDefaults} from '../../../../visualization/runtime/layoutDefaults';
 import c from './index.module.scss';
 
-const layoutTypeLabel = (icon, name) => {
-    return (
-        <div className={c.assetsItem}>
-            <div className={c.assetsTitle}>
-                <img className={c.changeLayoutTypeSelectIcon} src={icon} alt='' />
-            </div>
-            <span style={{marginLeft: '18px'}} className={c.changeLayoutTypeSelectName}>{name}</span>
-        </div>
-    );
+const forms = {'d3-force': ForceLayoutForm, circular: CircularLayoutForm, concentric: ConcentricLayoutForm,
+    dagre: DagreLayoutForm, grid: GridLayoutForm, radial: RadialLayoutForm};
+const icons = {'d3-force': forceIcon, circular: circularIcon, concentric: concentricIcon,
+    dagre: dagreIcon, grid: gridIcon, radial: radialIcon};
+const adaptive = type => type === 'd3-force' || type === 'radial';
+const defaults = (type, data, options = {}) => {
+    if (adaptive(type)) {
+        const automatic = adaptiveLayoutDefaults({type, options}, data.nodes);
+        const effective = {...automatic, ...normalizeLayoutSettings({type, options}).options};
+        if (type === 'radial') return effective;
+        // The force form's size describes the collision diameter, not the rendered node size.
+        const collision = effective.collide || automatic.collide;
+        // A supplied partial native collision object uses D3's default radius of 5.
+        return {nodeSize: options.nodeSize ?? (collision.radius ?? 5) * 2 - (options.nodeSpacing ?? 0),
+            nodeSpacing: options.nodeSpacing ?? 0,
+            linkDistance: options.linkDistance ?? effective.link?.distance,
+            nodeStrength: options.nodeStrength ?? Math.abs(effective.manyBody?.strength ?? 0),
+            preventOverlap: options.preventOverlap ?? effective.collide !== false};
+    }
+    const count = data.nodes.length;
+    return ({
+    circular: {startRadius: Math.max(120, count * 100 / (2 * Math.PI)),
+        endRadius: Math.max(120, count * 100 / (2 * Math.PI)), divisions: 1, angleRatio: 1,
+        clockwise: true, ordering: undefined},
+    concentric: {nodeSize: 30, preventOverlap: true, startAngle: 0, nodeSpacing: 24,
+        equidistant: false, clockwise: true},
+    dagre: {rankdir: 'TB', align: undefined, ranksep: 80, nodesep: 40},
+    grid: {},
+    }[type] || {});
 };
-
-const {FORCE, CIRCULAR, CONCENTRIC, DAGRE, CUSTOMGRID, RADIAL} = SUPPORTED_LAYOUT_TYPE;
-const SUPPORTED_LAYOUT_TYPE_ARR = [FORCE, CIRCULAR, CONCENTRIC, DAGRE, CUSTOMGRID, RADIAL];
-
-const initialLayoutValue = {
-    [FORCE]: {
-        nodeSize: 80,
-        linkDistance: 100,
-        nodeStrength: 300,
-        preventOverlap: true,
-        nodeSpacing: 15,
-    },
-    [CIRCULAR]: {
-        startRadius: 200,
-        endRadius: 200,
-        divisions: 1,
-        angleRatio: 1,
-        clockwise: true,
-        ordering: null,
-    },
-    [CONCENTRIC]: {
-        nodeSize: 30,
-        preventOverlap: true,
-        startAngle: 5,
-        nodeSpacing: 70,
-        equidistant: false,
-        clockwise: false,
-    },
-    [DAGRE]: {
-        rankdir: 'TB',
-        align: 'DL',
-        ranksep: 50,
-        nodesep: 50,
-    },
-    [RADIAL]: {
-        unitRadius: 100,
-        linkDistance: 50,
-        nodeSize: 80,
-        focusNode: '',
-        nodeSpacing: 80,
-        preventOverlap: true,
-        strictRadial: true,
-    },
-};
-
-const defaultLayoutValue = {
-    nodeSize: 80,
-    linkDistance: 100,
-    nodeStrength: 300,
-    preventOverlap: true,
-    nodeSpacing: 15,
-};
-
-const LayoutConfigPanel = props => {
-    const {
-        layout,
-        data,
-        onChange,
-        open,
-    } = props;
-
+const OpenLayout = ({layout, data, onChange, ref}) => {
     const {t} = useTranslation();
-    const {useForm} = Form;
-    const [basicInfoForm] = useForm();
-    const [defaultLayout, setDefaultLayout] = useState();
-    const [layoutType, setLayoutType] = useState();
-    const [layoutFormInfo, setLayoutFormInfo] = useState({type: FORCE, ...defaultLayoutValue});
-    const [initialInfo, setInitialInfo] = useState(initialLayoutValue);
-
-    const changeLayoutClassName = classnames(
-        c.changeLayout,
-        {[c.changeLayoutHidden]: !open}
-    );
-
-    const layoutTypeOptions = useMemo(
-        () => [
-            {value: FORCE, label: layoutTypeLabel(ForceLayoutIcon, t('analysis.canvas.layout_panel.force'))},
-            {value: CIRCULAR, label: layoutTypeLabel(CircularLayoutIcon, t('analysis.canvas.layout_panel.circular'))},
-            {
-                value: CONCENTRIC,
-                label: layoutTypeLabel(ConcentricLayoutIcon, t('analysis.canvas.layout_panel.concentric')),
-            },
-            {value: DAGRE, label: layoutTypeLabel(DagreLayoutIcon, t('analysis.canvas.layout_panel.dagre'))},
-            {value: CUSTOMGRID, label: layoutTypeLabel(GridLayoutIcon, t('analysis.canvas.layout_panel.grid'))},
-            {value: RADIAL, label: layoutTypeLabel(RadialLayoutIcon, t('analysis.canvas.layout_panel.radial'))},
-        ],
-        [t]
-    );
-
-    const updateProps = (startRadius, endRadius) => {
-        const props = {
-            startRadius: startRadius,
-            endRadius: endRadius,
-            divisions: 1,
-            angleRatio: 1,
-            clockwise: true,
-            ordering: null,
-        };
-        let newInitialProps = {...initialLayoutValue, 'circular': props};
-        return newInitialProps;
+    const {controller, snapshot, run} = useContext(GraphContext);
+    const [type, setType] = useState(layout?.type || 'd3-force');
+    const draft = useRef({});
+    const currentLayout = useRef(layout);
+    useEffect(() => {currentLayout.current = layout;}, [layout]);
+    const [initial] = useState(() => ({...defaults(type, data, layout?.options), ...layout?.options}));
+    const scheduled = useMemo(() => debounce(value => {
+        draft.current = {};
+        return run(() => onChange({type: value.type, options: {
+            ...(value.type === currentLayout.current?.type ? currentLayout.current.options : {}), ...value.options,
+        }}));
+    }, 100), [onChange, run]);
+    useEffect(() => () => scheduled.cancel(), [scheduled]);
+    useImperativeHandle(ref, () => ({flush: () => scheduled.flush(), cancel: () => scheduled.cancel()}), [scheduled]);
+    const ready = Boolean(controller && snapshot?.status === 'ready');
+    const names = {'d3-force': 'force', circular: 'circular', concentric: 'concentric', dagre: 'dagre',
+        grid: 'grid', radial: 'radial'};
+    const options = Object.keys(forms).map(value => ({value, label: (
+        <span className={c.assetsItem}>
+            <span className={c.assetsTitle} aria-hidden="true">
+                <img className={c.changeLayoutTypeSelectIcon} src={icons[value]} alt="" />
+            </span>
+            <span className={c.changeLayoutTypeSelectName}>{t(`analysis.canvas.layout_panel.${names[value]}`)}</span>
+        </span>
+    )}));
+    if (!forms[type]) options.push({value: type, label: type});
+    const LayoutForm = forms[type];
+    const changedType = next => {
+        scheduled.cancel();
+        setType(next);
+        const options = adaptive(next) ? {} : defaults(next, data);
+        draft.current = {};
+        run(() => onChange({type: next, options}));
     };
-
-    useEffect(
-        () => {
-            const {nodes} = data;
-            const verticesNum = _.size(nodes);
-            let newInitialProps;
-            if (verticesNum <= 20) {
-                newInitialProps = updateProps(200, 200);
-            }
-            else if (verticesNum > 20 && verticesNum <= 50) {
-                newInitialProps = updateProps(402, 402);
-            }
-            else if (verticesNum > 50 && verticesNum <= 100) {
-                newInitialProps = updateProps(606, 622);
-            }
-            else {
-                newInitialProps = updateProps(1000, 1000);
-            }
-            setInitialInfo(newInitialProps);
-        },
-        [data]
-    );
-
-    useEffect(
-        () => {
-            const {type} = layout || {};
-            const showLayoutType = SUPPORTED_LAYOUT_TYPE_ARR.includes(type) ? type : FORCE;
-            layout && setLayoutType(showLayoutType);
-            basicInfoForm.setFieldValue('type', showLayoutType);
-            layout && setDefaultLayout(layout);
-        },
-        [basicInfoForm, layout]
-    );
-
-    const handleLayoutTypeChange = useCallback(
-        value => {
-            const enableLayout = basicInfoForm.getFieldValue('enableLayout');
-            setLayoutType(value);
-            setLayoutFormInfo({...initialInfo[value], type: value});
-            if (enableLayout) {
-                onChange({type: value, ...initialInfo[value]});
-            }
-        },
-        [basicInfoForm, initialInfo, onChange]
-    );
-
-    const onFormValuesChange = useCallback(
-        (changedValues, allValues) => {
-            const {enableLayout, type} = basicInfoForm.getFieldsValue();
-            let layoutInfo;
-            if (type === CUSTOMGRID) {
-                layoutInfo = {type: type, ...changedValues};
-            }
-            else {
-                layoutInfo = {type: type, ...allValues};
-            }
-            setLayoutFormInfo(layoutInfo);
-            if (enableLayout) {
-                onChange(layoutInfo);
-            }
-        },
-        [basicInfoForm, onChange]
-    );
-
-    const handleEnableLayout = useCallback(
-        value => {
-            if (!value) {
-                onChange(defaultLayout, true);
-            }
-            else {
-                onChange(layoutFormInfo);
-            }
-        },
-        [defaultLayout, layoutFormInfo, onChange]
-    );
-
-    const switchLayout = useCallback(
-        () => {
-            const initialValues = initialInfo[layoutType] || defaultLayoutValue;
-            switch (layoutType) {
-                case FORCE:
-                    return (
-                        <ForceLayoutForm
-                            handleFormChange={onFormValuesChange}
-                            initialValues={initialValues}
-                        />
-                    );
-                case CIRCULAR:
-                    return (
-                        <CircularLayoutForm
-                            handleFormChange={onFormValuesChange}
-                            initialValues={initialValues}
-                        />
-                    );
-                case CONCENTRIC:
-                    return (
-                        <ConcentricLayoutForm
-                            handleFormChange={onFormValuesChange}
-                            initialValues={initialValues}
-                        />
-                    );
-                case DAGRE:
-                    return (
-                        <DagreLayoutForm
-                            handleFormChange={onFormValuesChange}
-                            initialValues={initialValues}
-                        />
-                    );
-                case CUSTOMGRID:
-                    return (
-                        <GridLayoutForm
-                            handleFormChange={onFormValuesChange}
-                            initialValues={initialValues}
-                        />
-                    );
-                case RADIAL:
-                    return (
-                        <RadialLayoutForm
-                            handleFormChange={onFormValuesChange}
-                            initialValues={initialValues}
-                        />
-                    );
-            }
-        },
-        [initialInfo, layoutType, onFormValuesChange]
-    );
-
+    const changedOptions = (changed, values) => {
+        // Radial's selector carries rendering IDs, converted from the raw IDs at its boundary.
+        const options = adaptive(type) ? {...changed} : {...values};
+        // Collision controls are one diameter/spacing pair. Resolve their displayed siblings
+        // only when that group is explicitly edited, never for an unrelated link/strength edit.
+        if (type === 'd3-force' && ['nodeSize', 'nodeSpacing', 'preventOverlap'].some(key => key in changed)) {
+            Object.assign(options, {nodeSize: values.nodeSize, nodeSpacing: values.nodeSpacing,
+                preventOverlap: values.preventOverlap});
+        }
+        if (type === 'dagre' && options.align === 'center') options.align = undefined;
+        if (type === 'circular' && options.ordering === 'data') options.ordering = undefined;
+        draft.current = {...draft.current, ...options};
+        scheduled({type, options: draft.current});
+    };
     return (
-        <div className={changeLayoutClassName}>
+        <div className={c.changeLayout}>
             <div className={c.changeLayoutTitle}>{t('analysis.canvas.layout_panel.title')}</div>
-            <Form
-                form={basicInfoForm}
-                colon={false}
-            >
-                <Form.Item
-                    name='enableLayout'
-                    initialValue
-                    label={t('analysis.canvas.layout_panel.enable_layout')}
-                    valuePropName='checked'
-                    labelCol={{span: 20}}
-                    labelAlign='left'
-                    tooltip={t('analysis.canvas.layout_panel.enable_layout_tooltip')}
-                >
-                    <Switch onChange={handleEnableLayout} />
-                </Form.Item>
-                <Form.Item
-                    name='type'
-                    label={t('analysis.canvas.layout_panel.layout_type')}
-                    labelCol={{span: 24}}
-                    className={c.layoutTypeForm}
-                >
-                    <Select
-                        aria-label={t('analysis.canvas.layout_panel.layout_type')}
-                        className={c.layoutSelect}
-                        options={layoutTypeOptions}
-                        onChange={handleLayoutTypeChange}
-                    />
+            <Form disabled={!ready} colon={false} className={c.layoutTypeForm}>
+                <Form.Item label={t('analysis.canvas.layout_panel.layout_type')} labelCol={{span: 24}}>
+                    <Select value={type} options={options} onChange={changedType}
+                        aria-label={t('analysis.canvas.layout_panel.layout_type')} />
                 </Form.Item>
             </Form>
-            {switchLayout()}
+            {LayoutForm && <LayoutForm key={type} initialValues={type === layout?.type ? initial
+                : defaults(type, data)} handleFormChange={changedOptions} data={data} disabled={!ready} />}
         </div>
     );
 };
-
+const LayoutConfigPanel = ({open, ref, ...props}) => {
+    return open ? <OpenLayout key={props.layout?.type} ref={ref} {...props} /> : null;
+};
 export default LayoutConfigPanel;

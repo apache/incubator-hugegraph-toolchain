@@ -24,7 +24,7 @@
         height: var(--analysis-result-height, calc(100vh - 40px));
         width: auto;
         overflow: hidden;
-        background-image: url('/assets/canvas_bg.png');
+        background-image: url('../../../assets/canvas_bg.png');
 
         &:fullscreen {
             width: 100vw;
@@ -75,4 +75,15 @@
             color: #0091ff;
         }
     }
+}
+
+.container {
+    position: relative;
+}
+
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: var(--analysis-result-height, calc(100vh - 40px));
 }

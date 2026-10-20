@@ -20,9 +20,11 @@
  * @file K-out API(POST，高级版)
  */
 
-import React, {useState, useCallback, useContext} from 'react';
+import AlgorithmPanel from '../../../AlgorithmPanel';
+import useAlgorithmPending from '../../../useAlgorithmPending';
+import {useState, useCallback, useContext} from 'react';
 import {useTranslation} from 'react-i18next';
-import {Input, Collapse, Select, InputNumber} from 'antd';
+import {Input, Select, InputNumber} from 'antd';
 import Form from '../../../PersistentForm';
 import {BranchesOutlined} from '@ant-design/icons';
 import * as api from '../../../../../../api';
@@ -51,7 +53,7 @@ const KoutPost = props => {
 
     const [form] = Form.useForm();
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
     const [isEnableRun, setEnableRun] = useState(false);
     const algorithmOptions = [
         {label: t('analysis.algorithm.oltp.kout_post.breadth_first'), value: 'breadth_first'},
@@ -60,23 +62,23 @@ const KoutPost = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(KOUT_POST);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             algorithmParams = {...algorithmParams, 'algorithmName': Algorithm_Url[KOUT_POST]};
             const filteredParams = removeNilKeys(algorithmParams);
             const response =  await api.analysis.runOltpInfo(graphSpace, graph, filteredParams);
             const {data, status, message} = response || {};
             const {graph_view} = data || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, {}, message);
+                complete(FAILED, {}, message);
             }
             else {
-                handleFormSubmit(SUCCESS, graph_view || {}, message, {});
+                complete(SUCCESS, graph_view || {}, message, {});
             }
-            setRequiring(false);
+            finishRequiring();
         },
-        [graph, graphSpace, handleFormSubmit, updateCurrentAlgorithm]
+        [graph, graphSpace, beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const handleRunning = useCallback(
@@ -137,11 +139,8 @@ const KoutPost = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<BranchesOutlined />}
                     name={KOUT_POST}
@@ -213,7 +212,7 @@ const KoutPost = props => {
                 </Form.Item>
                 <StepFormItem />
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

@@ -20,439 +20,165 @@
  * @file  设置表单
  */
 
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
-import {Form, Select, Switch, Cascader} from 'antd';
+import {useContext, useState, useId, useRef} from 'react';
+import {Form, Select, Switch, Cascader, Slider} from 'antd';
 import {useTranslation} from 'react-i18next';
-import SliderComponent from '../../../components/SlideComponent';
-import _ from 'lodash';
-import classnames from 'classnames';
+import {GraphContext} from '../Context';
+import RenderModeSwitcher from '../GraphRenderModeSwitcher';
+import {GRAPH_RENDER_MODE} from '../../../utils/constants';
 import c from './index.module.scss';
 
-const SettingConfigPanel = props => {
-    const {onChange, data, open} = props;
-    const {t} = useTranslation();
-    const {useForm} = Form;
-    const [labelForm, moduleForm] = useForm();
-
-    const defaultDisplayFields = useMemo(
-        () => ({
-            nodes: {label: t('analysis.canvas.setting_panel.node_id'), value: '~id'},
-            edges: {label: t('analysis.canvas.setting_panel.edge_type'), value: '~id'},
-        }),
-        [t]
-    );
-
-    const labelPosition = useMemo(
-        () => [
-            {value: 'center', label: t('analysis.canvas.setting_panel.node_center')},
-            {value: 'bottom', label: t('analysis.canvas.setting_panel.node_bottom')},
-        ],
-        [t]
-    );
-
-    const settingClassName = classnames(
-        c.canvasSetting,
-        {[c.canvasSettingHidden]: !open}
-    );
-
-    const [graphData, setGraphData] = useState();
-
-    const uniqueArr = arr => {
-        const res = [...new Set([...arr.map(item => item.toString())])].map(item => item.split(','));
-        return res;
+const createFields = (elements, metadata = [], selectedFields) => {
+    const groups = new Map();
+    for (const element of elements) {
+        const raw = element.data.raw;
+        if (!groups.has(raw.label)) groups.set(raw.label, new Set());
+        Object.keys(raw.properties || {}).forEach(key => groups.get(raw.label).add(key));
+    }
+    const meta = new Map(metadata.map(entry => [entry.name, entry]));
+    return {
+        options: [...groups].map(([label, keys]) => ({value: label, label,
+            children: ['~id', ...keys].map(key => ({value: key, label: key}))})),
+        selected: [...groups.keys()].flatMap(label => selectedFields?.get(label)
+            ?? (meta.get(label)?.style?.display_fields ?? ['~id']).map(field => [label, field])),
     };
-
-    const transformDataToCascaderValue = useCallback(
-        dataArray => {
-            const defaultValue = [];
-            dataArray.forEach(item => {
-                const {itemType, metaConfig} = item || {};
-                const {display_fields} = metaConfig?.style || {};
-                display_fields?.forEach(item2 => {
-                    const arr = [itemType, item2];
-                    defaultValue.push(arr);
-                });
-            });
-            const value = uniqueArr(defaultValue);
-            return value;
-        },
-        []
-    );
-
-    useEffect(
-        () => {
-            data && setGraphData(_.cloneDeep(data));
-        },
-        [data]
-    );
-
-    useEffect(
-        () => {
-            // 节点标签为空的情况 不需要刷新属性filedValue;
-            const enableNodeLabel = labelForm.getFieldValue('enableNodeLabel');
-            if (enableNodeLabel) {
-                const nodeValue = transformDataToCascaderValue(graphData?.nodes || []);
-                labelForm.setFieldValue('nodeLabelPropertyName', nodeValue);
-            }
-            const enableEdgeLabel = labelForm.getFieldValue('enableEdgeLabel');
-            if (enableEdgeLabel) {
-                const edgeValue = transformDataToCascaderValue(graphData?.edges || []);
-                labelForm.setFieldValue('edgeLabelPropertyName', edgeValue);
-            }
-
-        },
-        [graphData, graphData?.edges, graphData?.nodes, labelForm, transformDataToCascaderValue]
-    );
-
-
-    const getLabelPropertyOptions = useCallback(
-        (data, type) => {
-            const types = [...new Set(data && data.map(item => item.itemType))];
-            const defaultFields = defaultDisplayFields[type];
-            const options = types.map(
-                item => {
-                    const {properties = {}} = _.find(data, {itemType: item}) || {};
-                    return {
-                        label: item,
-                        value: item,
-                        children: [defaultFields].concat(Object.keys(properties).map(item2 => {
-                            return {
-                                value: item2,
-                                label: item2,
-                            };
-                        })),
-                    };
-                }
-            );
-            return options;
-        },
-        [defaultDisplayFields]
-    );
-
-    const onModuleFormChange = useCallback(
-        changedValues => {
-            const [key, value] = Object.entries(changedValues)[0];
-            switch (key) {
-                case 'enableMinimap':
-                    if (value) {
-                        document.getElementsByClassName('g6-minimap')[0].classList.remove('hiddenMiniMap');
-                    }
-                    else {
-                        document.getElementsByClassName('g6-minimap')[0].classList.add('hiddenMiniMap');
-                    }
-                    break;
-                case 'enableLegend':
-                    if (value) {
-                        document.getElementsByClassName('g6-legend-container')[0].classList.remove('hiddenLegend');
-                    }
-                    else {
-                        document.getElementsByClassName('g6-legend-container')[0].classList.add('hiddenLegend');
-                    }
-                    break;
-                case 'enableGrid':
-                    if (value) {
-                        document.getElementById('graph').classList.remove('hiddenGrid');
-                    }
-                    else {
-                        document.getElementById('graph').classList.add('hiddenGrid');
-                    }
-                    break;
-            }
-        },
-        []
-    );
-
-    const disableShowLabel = useCallback(
-        dataArr => {
-            dataArr.map(item => {
-                item.label = [];
-                item.metaConfig.style.display_fields = [];
-            }
-            );
-        },
-        []
-    );
-
-    const processLabeledDataToBreakLine = useCallback(
-        dataArr => {
-            dataArr.map(
-                item => {
-                    const {label} = item;
-                    item.label = label.join('\n');
-                }
-            );
-        },
-        []
-    );
-
-    const processLabeledDataBg = useCallback(
-        dataArr => {
-            dataArr.map(
-                item => {
-                    const {label, labelCfg = {style: {}}} = item || {};
-                    const {style} = labelCfg;
-                    if (label.length === 0) {
-                        item.labelCfg.style = {
-                            fill: style?.fill,
-                            fontSize: style?.fontSize,
-                            background: {
-                                fill: undefined,
-                                padding: [0, 0, 0, 0],
-                                radius: 0,
-                            },
-                        };
-                    }
-                    else {
-                        item.labelCfg.style.background = {
-                            fill: '#ffffff',
-                            padding: [2, 2, 2, 2],
-                            radius: 2,
-                        };
-                    }
-                }
-            );
-        },
-        []
-    );
-
-    const getLabeledData = useCallback(
-        (rawData, labelPropertyName, type) => {
-            disableShowLabel(rawData);
-            labelPropertyName.map(
-                propertyItem => {
-                    // 属性全选的情况设置
-                    if (propertyItem.length === 1) {
-                        const [changedType] = propertyItem;
-                        rawData.map(
-                            dataItem => {
-                                const {properties, id, itemType} = dataItem;
-                                let defaultDisplayInfo = type === 'nodes' ? id : itemType;
-                                if (dataItem.itemType === changedType) {
-                                    dataItem.metaConfig.style.display_fields = ['~id'].concat(Object.keys(properties));
-                                    dataItem.label = [defaultDisplayInfo].concat(Object.values(properties));
-                                }
-                            }
-                        );
-                    }
-                    // 属性未全选的情况设置
-                    else {
-                        const [changedType, propertyKey] = propertyItem;
-                        rawData.map(
-                            dataItem => {
-                                const {properties, id, itemType} = dataItem;
-                                let defaultDisplayInfo = type === 'nodes' ? id : itemType;
-                                if (dataItem.itemType === changedType) {
-                                    if (propertyKey === '~id') {
-                                        dataItem.metaConfig.style.display_fields.push('~id');
-                                        dataItem.label.push(defaultDisplayInfo);
-                                    }
-                                    else {
-                                        dataItem.metaConfig.style.display_fields.push(propertyKey);
-                                        dataItem.label.push(properties[propertyKey]);
-                                    }
-                                }
-                            }
-                        );
-                    }
-                }
-            );
-        },
-        [disableShowLabel]
-    );
-
-    const onLabelFormChange = useCallback(
-        (changedValues, allValues) => {
-            const {enableNodeLabel, nodeLabelPropertyName, enableEdgeLabel, edgeLabelPropertyName} = allValues;
-            switch (Object.keys(changedValues)[0]) {
-                case 'enableNodeLabel':
-                    if (!enableNodeLabel) {
-                        disableShowLabel(graphData.nodes);
-                    }
-                    else {
-                        getLabeledData(graphData.nodes, nodeLabelPropertyName, 'nodes');
-                        processLabeledDataToBreakLine(graphData.nodes);
-                    }
-                    break;
-                case 'nodeLabelPropertyName':
-                    if (enableNodeLabel) {
-                        getLabeledData(graphData.nodes, nodeLabelPropertyName, 'nodes');
-                        processLabeledDataToBreakLine(graphData.nodes);
-                    }
-                    break;
-                case 'nodeLabelPos':
-                    graphData.nodes.map(item => {
-                        item.labelCfg.position = changedValues.nodeLabelPos;
-                    });
-                    break;
-                case 'nodeLabelSize':
-                    graphData.nodes.map(item => {
-                        item.labelCfg.style.fontSize = changedValues.nodeLabelSize;
-                    });
-                    break;
-                case 'enableEdgeLabel':
-                    if (!enableEdgeLabel) {
-                        disableShowLabel(graphData.edges);
-                    }
-                    else {
-                        getLabeledData(graphData.edges, edgeLabelPropertyName, 'edges');
-                        processLabeledDataToBreakLine(graphData.edges);
-                    }
-                    processLabeledDataBg(graphData.edges);
-                    break;
-                case 'edgeLabelPropertyName':
-                    if (enableEdgeLabel) {
-                        getLabeledData(graphData.edges, edgeLabelPropertyName, 'edges');
-                        processLabeledDataToBreakLine(graphData.edges);
-                        processLabeledDataBg(graphData.edges);
-                    }
-                    break;
-                case 'edgeLabelSize':
-                    graphData.edges.map(item => {
-                        item.labelCfg.style.fontSize = changedValues.edgeLabelSize;
-                    });
-                    break;
-                default:
-                    break;
-            }
-            onChange(graphData);
-            setGraphData(graphData);
-        },
-        [disableShowLabel, getLabeledData,
-            graphData, onChange, processLabeledDataBg, processLabeledDataToBreakLine]
-    );
-
-    const cascaderSearch = (inputValue, path) =>
-        path.some(
-            option => (option.label).toLowerCase().indexOf(inputValue.toLowerCase()) > -1
-        );
-
-    const displayRender = useCallback(
-        label => {
-            return (label.join('/'));
-        },
-        []
-    );
-
+};
+const labelText = (element, fields, kind) => {
+    const raw = element.data.raw;
+    const keys = new Set();
+    for (const path of fields || []) {
+        if (path[0] !== raw.label) continue;
+        if (path.length === 1) ['~id', ...Object.keys(raw.properties || {})].forEach(key => keys.add(key));
+        else keys.add(path[1]);
+    }
+    return [...keys].map(key => key === '~id' ? kind === 'node' ? raw.id : raw.label : raw.properties?.[key])
+        .filter(value => value !== undefined && value !== null).map(String).join('\n');
+};
+const RenderSettings = ({renderMode, onRenderModeChange}) => {
+    const {t} = useTranslation();
     return (
-        <div className={settingClassName}>
-            <Form
-                form={labelForm}
-                colon={false}
-                onValuesChange={onLabelFormChange}
-            >
-                <div className={c.canvasSettingTitle}>{t('analysis.canvas.setting_panel.title')}</div>
-                <Form.Item
-                    name='enableNodeLabel'
-                    label={t('analysis.canvas.setting_panel.node_label')}
-                    valuePropName='checked'
-                    labelCol={{span: 20}}
-                    labelAlign='left'
-                    initialValue
-                >
+        <details>
+            <summary>{t('analysis.canvas.render_mode')}</summary>
+            <RenderModeSwitcher buttonEnable value={renderMode} onClick={onRenderModeChange} />
+        </details>
+    );
+};
+
+const OpenSettings = ({data, metaData, onChange, selectedFields, renderMode, onRenderModeChange}) => {
+    const {t} = useTranslation();
+    const {controller, snapshot, run, showLegend = true, setShowLegend,
+        showGrid = true, setShowGrid, showMinimap = true, setShowMinimap} = useContext(GraphContext);
+    const [form] = Form.useForm();
+    const instanceId = useId();
+    const [draft] = useState(() => {
+        const nodes = createFields(data.nodes, metaData?.vertexMeta, selectedFields.current.node);
+        const edges = createFields(data.edges, metaData?.edgeMeta, selectedFields.current.edge);
+        const firstNode = data.nodes[0]?.style;
+        const firstEdge = data.edges[0]?.style;
+        return {nodes, edges, values: {
+            enableNodeLabel: !data.nodes.length || data.nodes.some(node => Boolean(node.style?.labelText)),
+            enableEdgeLabel: !data.edges.length || data.edges.some(edge => Boolean(edge.style?.labelText)),
+            nodeLabelPropertyName: nodes.selected, edgeLabelPropertyName: edges.selected,
+            nodeLabelPos: firstNode?.labelPlacement || 'bottom',
+            nodeLabelSize: firstNode?.labelFontSize ?? 12, edgeLabelSize: firstEdge?.labelFontSize ?? 12,
+        }};
+    });
+    const ready = Boolean(controller && snapshot?.status === 'ready');
+    const changeLabels = (changed, values) => {
+        const key = Object.keys(changed)[0];
+        const kind = key.includes('Node') || key.startsWith('node') ? 'node' : 'edge';
+        const elements = kind === 'node' ? data.nodes : data.edges;
+        if (key.endsWith('PropertyName')) {
+            const options = kind === 'node' ? draft.nodes.options : draft.edges.options;
+            for (const {value: label} of options) {
+                selectedFields.current[kind].set(label, (values[key] || [])
+                    .filter(path => path[0] === label).map(path => [...path]));
+            }
+        }
+        const style = element => {
+            if (key.endsWith('Size')) return {labelFontSize: changed[key]};
+            if (key === 'nodeLabelPos') return {labelPlacement: changed[key]};
+            const enabled = kind === 'node' ? values.enableNodeLabel : values.enableEdgeLabel;
+            const fields = kind === 'node' ? values.nodeLabelPropertyName : values.edgeLabelPropertyName;
+            const text = enabled ? labelText(element, fields, kind) : '';
+            return {labelText: text, ...(kind === 'edge' ? {labelBackground: Boolean(text),
+                labelBackgroundFill: '#fff', labelBackgroundPadding: text ? [2, 2] : 0,
+                labelBackgroundRadius: 2} : {})};
+        };
+        // Emit the last user intent even if an earlier queued patch has not reached props yet.
+        const patches = elements.map(element => ({id: element.id, kind, style: style(element)}));
+        if (patches.length) run(() => onChange?.(patches));
+    };
+    const fieldLabel = key => t(`analysis.canvas.setting_panel.${key}`);
+    return (
+        <div className={c.canvasSetting}>
+            <Form name={instanceId} form={form} initialValues={draft.values} onValuesChange={changeLabels} colon={false} disabled={!ready}>
+                <div className={c.canvasSettingTitle}>{fieldLabel('title')}</div>
+                <Form.Item name="enableNodeLabel" label={fieldLabel('node_label')} valuePropName="checked">
                     <Switch />
                 </Form.Item>
-                <Form.Item
-                    name='nodeLabelPropertyName'
-                    label={t('analysis.canvas.setting_panel.node_label_property')}
-                    labelCol={{span: 24}}
-                >
-                    <Cascader
-                        style={{width: '100%'}}
-                        options={getLabelPropertyOptions(data?.nodes, 'nodes')}
-                        maxTagCount="5"
-                        multiple
-                        displayRender={displayRender}
-                        showSearch={{cascaderSearch}}
-                    />
+                <Form.Item name="nodeLabelPropertyName" label={fieldLabel('node_label_property')} labelCol={{span: 24}}>
+                    <Cascader options={draft.nodes.options.map(group => ({...group,
+                        children: group.children.map(child => child.value === '~id'
+                            ? {...child, label: fieldLabel('node_id')} : child)}))}
+                        multiple maxTagCount={5} showSearch style={{width: '100%'}} />
                 </Form.Item>
-                <Form.Item
-                    name='nodeLabelPos'
-                    label={t('analysis.canvas.setting_panel.node_label_position')}
-                    labelCol={{span: 24}}
-                    initialValue='bottom'
-                >
-                    <Select options={labelPosition} />
+                <Form.Item name="nodeLabelPos" label={fieldLabel('node_label_position')} labelCol={{span: 24}}>
+                    <Select options={['center', 'bottom'].map(value => ({value, label: fieldLabel(`node_${value}`)}))} />
                 </Form.Item>
-                <Form.Item
-                    name='nodeLabelSize'
-                    label={t('analysis.canvas.setting_panel.node_label_size')}
-                    initialValue={12}
-                    labelCol={{span: 24}}
-                >
-                    <SliderComponent />
+                <Form.Item name="nodeLabelSize" label={fieldLabel('node_label_size')} labelCol={{span: 24}}>
+                    <Slider ariaLabelForHandle={fieldLabel('node_label_size')} min={6} max={48} />
                 </Form.Item>
-                <Form.Item
-                    name='enableEdgeLabel'
-                    label={t('analysis.canvas.setting_panel.edge_label')}
-                    valuePropName='checked'
-                    labelCol={{span: 20}}
-                    labelAlign='left'
-                    initialValue
-                >
+                <Form.Item name="enableEdgeLabel" label={fieldLabel('edge_label')} valuePropName="checked">
                     <Switch />
                 </Form.Item>
-                <Form.Item
-                    name='edgeLabelPropertyName'
-                    label={t('analysis.canvas.setting_panel.edge_label_property')}
-                    labelCol={{span: 24}}
-                >
-                    <Cascader
-                        style={{width: '100%'}}
-                        options={getLabelPropertyOptions(data?.edges, 'edges')}
-                        multiple
-                        maxTagCount="5"
-                        displayRender={displayRender}
-                        showSearch={{cascaderSearch}}
-                    />
+                <Form.Item name="edgeLabelPropertyName" label={fieldLabel('edge_label_property')} labelCol={{span: 24}}>
+                    <Cascader options={draft.edges.options.map(group => ({...group,
+                        children: group.children.map(child => child.value === '~id'
+                            ? {...child, label: fieldLabel('edge_type')} : child)}))}
+                        multiple maxTagCount={5} showSearch style={{width: '100%'}} />
                 </Form.Item>
-                <Form.Item
-                    name='edgeLabelSize'
-                    label={t('analysis.canvas.setting_panel.edge_label_size')}
-                    labelCol={{span: 24}}
-                    initialValue={12}
-                >
-                    <SliderComponent />
+                <Form.Item name="edgeLabelSize" label={fieldLabel('edge_label_size')} labelCol={{span: 24}}>
+                    <Slider ariaLabelForHandle={fieldLabel('edge_label_size')} min={6} max={48} />
                 </Form.Item>
             </Form>
-            <Form
-                form={moduleForm}
-                colon={false}
-                onValuesChange={onModuleFormChange}
-            >
-                <div className={c.canvasSettingTitle}>{t('analysis.canvas.setting_panel.components')}</div>
-                <Form.Item
-                    name='enableMinimap'
-                    label={t('analysis.canvas.setting_panel.enable_minimap')}
-                    labelCol={{span: 20}}
-                    labelAlign='left'
-                    valuePropName='checked'
-                    initialValue
-                >
-                    <Switch />
+            <div className={c.canvasSettingTitle}>{fieldLabel('components')}</div>
+            <Form colon={false} disabled={!ready}>
+                <Form.Item label={fieldLabel('enable_minimap')}>
+                    <Switch aria-label={fieldLabel('enable_minimap')} checked={showMinimap} onChange={value => {
+                        run(async () => {
+                            const result = await controller.setMinimap(value);
+                            if (result?.status === 'applied') setShowMinimap?.(value);
+                        });
+                    }} />
                 </Form.Item>
-                <Form.Item
-                    name='enableGrid'
-                    label={t('analysis.canvas.setting_panel.enable_grid')}
-                    labelAlign='left'
-                    labelCol={{span: 20}}
-                    valuePropName='checked'
-                    initialValue
-                >
-                    <Switch />
+                <Form.Item label={fieldLabel('enable_grid')}>
+                    <Switch aria-label={fieldLabel('enable_grid')} checked={showGrid} onChange={setShowGrid} />
                 </Form.Item>
-                <Form.Item
-                    name='enableLegend'
-                    label={t('analysis.canvas.setting_panel.enable_legend')}
-                    labelCol={{span: 20}}
-                    valuePropName='checked'
-                    labelAlign='left'
-                    initialValue
-                >
-                    <Switch />
+                <Form.Item label={fieldLabel('enable_legend')}>
+                    <Switch aria-label={fieldLabel('enable_legend')} checked={showLegend} onChange={setShowLegend} />
                 </Form.Item>
             </Form>
+            {onRenderModeChange && <RenderSettings renderMode={renderMode} onRenderModeChange={onRenderModeChange} />}
         </div>
     );
 };
 
+const SettingConfigPanel = ({open, selectedFields, renderMode = GRAPH_RENDER_MODE.CANVAS2D,
+    onRenderModeChange, ...props}) => {
+    const {t} = useTranslation();
+    // Keep only the user's field choices through panel closure. Options, fonts
+    // and positions are read from the current graph when the panel reopens.
+    // The owner's dataset key resets these choices for a new query result.
+    const localFields = useRef({node: new Map(), edge: new Map()});
+    if (!open) return null;
+    if (renderMode === GRAPH_RENDER_MODE.CANVAS3D) {
+        return <div className={c.canvasSetting}>
+            <div className={c.canvasSettingTitle}>{t('analysis.canvas.setting')}</div>
+            <RenderSettings renderMode={renderMode} onRenderModeChange={onRenderModeChange} />
+        </div>;
+    }
+    return <OpenSettings {...props} selectedFields={selectedFields ?? localFields}
+        renderMode={renderMode} onRenderModeChange={onRenderModeChange} />;
+};
 export default SettingConfigPanel;

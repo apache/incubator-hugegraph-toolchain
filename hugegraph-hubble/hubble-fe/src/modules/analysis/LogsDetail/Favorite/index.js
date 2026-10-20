@@ -20,7 +20,7 @@
  * @file gremlin表格 收藏
  */
 
-import React, {useState, useCallback} from 'react';
+import {useState, useCallback} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Button, Table, Input, Popconfirm, Modal} from 'antd';
 import ExecutionContent from '../../../../components/ExecutionContent';
@@ -103,7 +103,7 @@ const Favorite = props => {
     const [search, setSearch] = useState('');
 
     const loadStatements = useCallback(
-        (content, index) => {
+        (content, _index) => {
             onLoadContent(content);
             const headerTabNode = document.getElementById('queryBar');
             window.scrollTo(0, headerTabNode.offsetTop);
@@ -192,7 +192,7 @@ const Favorite = props => {
             title: t('analysis.logs.column.favorite_statement'),
             dataIndex: 'content',
             width: '40%',
-            render(text, rowData) {
+            render(text, _rowData) {
                 return text.split('\n')[1] ? (
                     <ExecutionContent
                         content={text}

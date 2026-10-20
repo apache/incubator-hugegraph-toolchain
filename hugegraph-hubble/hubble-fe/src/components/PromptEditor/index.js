@@ -31,7 +31,7 @@ const PromptEditor = ({values, defaults, language = DEFAULT_QUERY_LANGUAGE, temp
     const valid = Object.keys(QUERY_LANGUAGES).every(value => draft[value]?.trim()
         && draft[value].length <= MAX_PROMPT_LENGTH);
     const update = useCallback(event => {
-        const value = event.target.value;
+        const value = event.target.value.slice(0, MAX_PROMPT_LENGTH);
         setDraft(previous => ({...previous, [activeLanguage]: value}));
     }, [activeLanguage]);
     const reset = useCallback(() => {

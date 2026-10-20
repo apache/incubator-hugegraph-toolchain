@@ -36,7 +36,7 @@ RUN mkdir -p /opt/candidate-m2 \
     && if [ ! -f /opt/candidate-m2/candidate-sdk-manifest.json ]; then \
          SERVER_REPOSITORY=apache/hugegraph \
          bash /pkg/hugegraph-client/assembly/travis/install-candidate-sdk.sh \
-           68855199031d5801edb4fe41b2bacbacffe8fe68 /opt/candidate-source /opt/candidate-m2; \
+           86c05ef9c5d417bd37eab21d4ecd5af82bab17ef /opt/candidate-source /opt/candidate-m2; \
        fi \
     && python3 /pkg/hugegraph-client/assembly/travis/verify_candidate_image_sdk.py /opt/candidate-m2
 

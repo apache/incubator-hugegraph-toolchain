@@ -49,8 +49,8 @@ beforeEach(() => {
 test('names statistics and layout view controls', () => {
     render(
         <>
-            <StatisticPanel open={false} />
-            <LayoutConfigPanel open={false} layout={{}} data={{}} onChange={jest.fn()} />
+            <StatisticPanel open />
+            <LayoutConfigPanel open layout={{}} data={{nodes: [], edges: []}} onChange={jest.fn()} />
         </>
     );
 

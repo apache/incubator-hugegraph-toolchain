@@ -20,202 +20,54 @@
  * @file  图统计
  */
 
-import React, {useCallback, useContext, useEffect, useMemo, useState} from 'react';
+import {useContext, useMemo} from 'react';
 import {useTranslation} from 'react-i18next';
 import {GraphContext} from '../../../Context';
 import GraphStatisticsHeader from '../Header';
 import BarChartComponent from '../../BarChartComponent';
-import {clearSelectedStates} from '../../../../../utils/handleGraphState';
+import {hubbleRenderId} from '../../../../../visualization/hubble/adapter';
 import c from './index.module.scss';
-import _ from 'lodash';
 
-const GraphStatistics = props => {
-
+const GraphStatistics = ({graphDataNums, statistics = {}}) => {
     const {t} = useTranslation();
-    const {graphDataNums, statistics} =  props;
+    const {controller, snapshot, run} = useContext(GraphContext);
     const {isolated_vertices = [], isolated_edges = []} = statistics;
-
-    const {graph} = useContext(GraphContext);
-
-    const [isHighlightZeroDegreeNodes, setHighlightZeroDegreeNodes] = useState(false);
-    const [isHideZeroDegreeNodes, setHideZeroDegreeNodes] = useState(false);
-    const [isHighlightZeroDegreeEdeges, setHighlightZeroDegreeEdges] = useState(false);
-    const [isHideZeroDegreeEdeges, setHideZeroDegreeEdges] = useState(false);
-    const [isHighlightIncidenceNodes, setHighlightIncidenceNodes] = useState(false);
-    const [isHideIncidenceNodes, setHideIncidenceNodes] = useState(false);
-    const [selectedNode, setSelectedNode] = useState();
-
-    const incidenceNodes = selectedNode?.statistics.incidence_vertices;
-    const isIsolatedVerticesEmpty = _.isEmpty(isolated_vertices);
-    const isIsolatedEdgesEmpty = _.isEmpty(isolated_edges);
-    const isIncidenceNodesEmpty = _.isEmpty(incidenceNodes);
-
-    useEffect(
-        () => {
-            if (!graph) {
-                return undefined;
-            }
-            const handleNodeMouseEnter = evt => {
-                const {id, statistics} = evt.item.getModel();
-                setSelectedNode({id, statistics});
-            };
-            graph.on('node:mouseenter', handleNodeMouseEnter);
-            return () => graph.off('node:mouseenter', handleNodeMouseEnter);
-        },
-        [graph]
-    );
-
-    const highlightZeroDegreeNodes = useCallback(
-        () => {
-            // 清空画布有的其他高亮状态
-            clearSelectedStates(graph);
-            isolated_vertices.forEach(
-                item => {
-                    const node = graph.findById(item);
-                    node && graph.setItemState(node, 'customSelected', !isHighlightZeroDegreeNodes);
-                }
-            );
-            setHighlightZeroDegreeNodes(pre => !pre);
-        },
-        [graph, isHighlightZeroDegreeNodes, isolated_vertices]
-    );
-
-    const hideZeroDegreeNodes = useCallback(
-        () => {
-            isolated_vertices.forEach(
-                item => {
-                    const node = graph.findById(item);
-                    if (node) {
-                        isHideZeroDegreeNodes ? graph.showItem(node, false) : graph.hideItem(node, false);
-                    }
-                }
-            );
-            setHideZeroDegreeNodes(pre => !pre);
-        },
-        [graph, isHideZeroDegreeNodes, isolated_vertices]
-    );
-
-    const highlightZeroDegreeEdges = useCallback(
-        () => {
-            // 清空画布有的其他高亮状态
-            clearSelectedStates(graph);
-            isolated_edges.forEach(
-                item => {
-                    const edge = graph.findById(item);
-                    edge && graph.setItemState(edge, 'edgeActive', !isHighlightZeroDegreeEdeges);
-                }
-            );
-            setHighlightZeroDegreeEdges(pre => !pre);
-        },
-        [graph, isHighlightZeroDegreeEdeges, isolated_edges]
-    );
-
-    const hideZeroDegreeEdges = useCallback(
-        () => {
-            isolated_edges.forEach(
-                item => {
-                    const edge = graph.findById(item);
-                    if (edge) {
-                        const sourceItem = edge.getSource();
-                        const targetItem = edge.getTarget();
-                        if (!isHideZeroDegreeEdeges) {
-                            graph.hideItem(sourceItem, false);
-                            graph.hideItem(targetItem, false);
-                        }
-                        else {
-                            graph.showItem(sourceItem, false);
-                            graph.showItem(targetItem, false);
-                        }
-                    }
-                }
-            );
-            setHideZeroDegreeEdges(pre => !pre);
-        },
-        [graph, isHideZeroDegreeEdeges, isolated_edges]
-    );
-
-    const highlightIncidenceNodes = useCallback(
-        () => {
-            clearSelectedStates(graph);
-            incidenceNodes.forEach(
-                item => {
-                    const node = graph.findById(item);
-                    node && graph.setItemState(node, 'customSelected', !isHighlightIncidenceNodes);
-                }
-            );
-            setHighlightIncidenceNodes(pre => !pre);
-        },
-        [graph, incidenceNodes, isHighlightIncidenceNodes]
-    );
-
-    const hideIncidenceNodes = useCallback(
-        () => {
-            incidenceNodes.forEach(
-                item => {
-                    const node = graph.findById(item);
-                    if (node) {
-                        isHideIncidenceNodes ? graph.showItem(item, false) : graph.hideItem(item, false);
-                    }
-                }
-            );
-            setHideIncidenceNodes(pre => !pre);
-        },
-        [graph, incidenceNodes, isHideIncidenceNodes]
-    );
-
-    const zeroDegreeNodesData = useMemo(
-        () => ([{count: isolated_vertices.length}]),
-        [isolated_vertices]
-    );
-
-    const zeroDegreeEdgesData = useMemo(
-        () => ([{count: isolated_edges.length}]),
-        [isolated_edges]
-    );
-
-    const incidenceData =  useMemo(
-        () => {
-            const {id, statistics} =  selectedNode || {};
-            const {incidence_vertices = []} = statistics || {};
-            return [
-                {
-                    name: id || t('analysis.canvas.statistics_panel.select_node'),
-                    count: incidence_vertices.length,
-                },
-            ];
-        },
-        [selectedNode, t]
-    );
-
+    const elements = useMemo(() => new Map([...(snapshot?.data.nodes || []),
+        ...(snapshot?.data.edges || [])].map(element => [element.id, element])), [snapshot?.data]);
+    const nodeIds = new Set(snapshot?.data.nodes.map(node => node.id));
+    const currentId = [...(snapshot?.selectedIds || []), ...(snapshot?.hoveredIds || [])]
+        .find(id => elements.get(id)?.data.raw.statistics && nodeIds.has(id));
+    const current = elements.get(currentId)?.data.raw;
+    const incidence = current?.statistics?.incidence_vertices || [];
+    const selected = new Set(snapshot?.selectedIds);
+    const ready = Boolean(controller && snapshot?.status === 'ready');
+    const groups = [
+        {key: 'zero_degree_nodes', ids: isolated_vertices, kind: 'node', total: graphDataNums?.nodesNum},
+        {key: 'zero_degree_edges', ids: isolated_edges, kind: 'edge', total: graphDataNums?.edgesNum},
+        {key: 'incidence_nodes', ids: incidence, kind: 'node', total: graphDataNums?.nodesNum,
+            name: current?.id == null ? t('analysis.canvas.statistics_panel.select_node') : String(current.id)},
+    ];
     return (
         <div className={c.graphStatistics}>
-            <GraphStatisticsHeader
-                name={t('analysis.canvas.statistics_panel.zero_degree_nodes')}
-                description={t('analysis.canvas.statistics_panel.zero_degree_nodes_desc')}
-                highlightFunc={highlightZeroDegreeNodes}
-                hideFunc={hideZeroDegreeNodes}
-                highlightFuncDisable={isHideZeroDegreeNodes || isIsolatedVerticesEmpty}
-                hideFuncDisable={isIsolatedVerticesEmpty}
-            />
-            <BarChartComponent data={zeroDegreeNodesData} totalData={graphDataNums?.nodesNum} />
-            <GraphStatisticsHeader
-                name={t('analysis.canvas.statistics_panel.zero_degree_edges')}
-                description={t('analysis.canvas.statistics_panel.zero_degree_edges_desc')}
-                highlightFunc={highlightZeroDegreeEdges}
-                hideFunc={hideZeroDegreeEdges}
-                highlightFuncDisable={isHideZeroDegreeEdeges || isIsolatedEdgesEmpty}
-                hideFuncDisable={isIsolatedEdgesEmpty}
-            />
-            <BarChartComponent data={zeroDegreeEdgesData} totalData={graphDataNums?.edgesNum} />
-            <GraphStatisticsHeader
-                name={t('analysis.canvas.statistics_panel.incidence_nodes')}
-                description={t('analysis.canvas.statistics_panel.incidence_nodes_desc')}
-                highlightFunc={highlightIncidenceNodes}
-                hideFunc={hideIncidenceNodes}
-                highlightFuncDisable={!selectedNode || isHideIncidenceNodes || isIncidenceNodesEmpty}
-                hideFuncDisable={!selectedNode || isIncidenceNodesEmpty}
-            />
-            <BarChartComponent data={incidenceData} totalData={graphDataNums?.nodesNum} />
+            {groups.map(group => {
+                const ids = group.ids.map(id => hubbleRenderId(group.kind, id)).filter(id => elements.has(id));
+                const hidden = ids.length > 0 && ids.every(id => elements.get(id)?.style?.visibility === 'hidden');
+                const active = ids.length > 0 && ids.every(id => selected.has(id));
+                return (
+                    <div key={group.key}>
+                        <GraphStatisticsHeader
+                            name={t(`analysis.canvas.statistics_panel.${group.key}`)}
+                            description={t(`analysis.canvas.statistics_panel.${group.key}_desc`)}
+                            highlightFunc={() => run(() => controller.select(active ? [] : ids))}
+                            hideFunc={() => run(() => controller.hide(ids, !hidden))}
+                            highlightFuncDisable={!ready || hidden || ids.length === 0}
+                            hideFuncDisable={!ready || ids.length === 0}
+                        />
+                        <BarChartComponent data={[{...(group.name ? {name: group.name} : {}),
+                            count: group.ids.length}]} totalData={group.total} />
+                    </div>
+                );
+            })}
         </div>
     );
 };

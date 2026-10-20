@@ -20,22 +20,23 @@
  * @file 切换层次布局组件 Concentric
  */
 
-import React from 'react';
-import {Form, Switch} from 'antd';
+import {useId} from 'react';
+import {Form, Switch, InputNumber} from 'antd';
 import {useTranslation} from 'react-i18next';
-import SliderComponent from '../../../../components/SlideComponent';
-import _ from 'lodash';
 
 const ConcentricLayoutForm = props => {
-    const {handleFormChange, initialValues} = props;
+    const {handleFormChange, initialValues, disabled} = props;
     const {t} = useTranslation();
+    const instanceId = useId();
     const {useForm} = Form;
     const [concentricLayoutForm] = useForm();
 
     return (
         <Form
+            name={instanceId}
             form={concentricLayoutForm}
-            onValuesChange={_.debounce(handleFormChange, 100)}
+            onValuesChange={handleFormChange}
+            disabled={disabled}
             labelCol={{span: 24}}
             initialValues={initialValues}
         >
@@ -44,21 +45,21 @@ const ConcentricLayoutForm = props => {
                 label={t('analysis.canvas.layout_panel.node_size')}
                 tooltip={t('analysis.canvas.layout_panel.node_size_tooltip')}
             >
-                <SliderComponent min={1} max={100} />
+                <InputNumber aria-label={t('analysis.canvas.layout_panel.node_size')} style={{width: '100%'}} min={1} max={100} />
             </Form.Item>
             <Form.Item
                 name='sweep'
                 label={t('analysis.canvas.layout_panel.sweep')}
                 tooltip={t('analysis.canvas.layout_panel.sweep_tooltip')}
             >
-                <SliderComponent />
+                <InputNumber aria-label={t('analysis.canvas.layout_panel.sweep')} style={{width: '100%'}} />
             </Form.Item>
             <Form.Item
                 name='startAngle'
                 label={t('analysis.canvas.layout_panel.start_angle')}
                 tooltip={t('analysis.canvas.layout_panel.start_angle_tooltip')}
             >
-                <SliderComponent />
+                <InputNumber aria-label={t('analysis.canvas.layout_panel.start_angle')} style={{width: '100%'}} />
             </Form.Item>
             <Form.Item
                 name='preventOverlap'
@@ -67,14 +68,14 @@ const ConcentricLayoutForm = props => {
                 labelCol={{span: 20}}
                 labelAlign='left'
             >
-                <Switch />
+                <Switch aria-label={t('analysis.canvas.layout_panel.prevent_overlap')} />
             </Form.Item>
             <Form.Item
                 name='nodeSpacing'
                 label={t('analysis.canvas.layout_panel.node_spacing')}
                 tooltip={t('analysis.canvas.layout_panel.node_spacing_tooltip')}
             >
-                <SliderComponent min={0} max={1000} />
+                <InputNumber aria-label={t('analysis.canvas.layout_panel.node_spacing')} style={{width: '100%'}} min={0} max={1000} />
             </Form.Item>
             <Form.Item
                 name='equidistant'
@@ -83,7 +84,7 @@ const ConcentricLayoutForm = props => {
                 labelCol={{span: 20}}
                 labelAlign='left'
             >
-                <Switch />
+                <Switch aria-label={t('analysis.canvas.layout_panel.equidistant')} />
             </Form.Item>
             <Form.Item
                 name='clockwise'
@@ -92,7 +93,7 @@ const ConcentricLayoutForm = props => {
                 labelCol={{span: 20}}
                 labelAlign='left'
             >
-                <Switch />
+                <Switch aria-label={t('analysis.canvas.layout_panel.clockwise')} />
             </Form.Item>
         </Form>
     );

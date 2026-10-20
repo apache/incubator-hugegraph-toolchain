@@ -27,10 +27,6 @@ jest.mock('../../../api/index', () => ({
         abortAsyncTask: jest.fn(),
     },
 }));
-jest.mock('lodash-es', () => ({
-    intersection: (left, right) => left.filter(value => right.includes(value)),
-    size: value => value.length,
-}));
 jest.mock('../Result', () => ({
     AsyncTaskResultContent: ({taskId}) => (
         <div data-testid="inline-result">result {taskId}</div>

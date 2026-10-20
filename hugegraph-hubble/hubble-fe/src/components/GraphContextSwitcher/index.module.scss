@@ -42,47 +42,32 @@
 .graph {
   min-width: 88px;
   max-width: 100%;
-  color: rgba(255, 255, 255, 0.92);
 
-  :global(.ant-select-selector) {
-    color: inherit !important;
+  & {
     background: rgba(255, 255, 255, 0.05) !important;
     border-color: transparent !important;
     border-radius: 6px !important;
     box-shadow: none !important;
   }
 
-  :global(.ant-select-selection-item) {
-    overflow: hidden;
-    color: inherit !important;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  :global(.ant-select-arrow), :global(.ant-select-selection-placeholder) {
-    color: rgba(255, 255, 255, 0.64);
-  }
-
-  &:not(:global(.ant-select-disabled)):hover :global(.ant-select-selector) {
+  &:not(:global(.ant-select-disabled)):hover {
     background: rgba(255, 255, 255, 0.09) !important;
     border-color: rgba(255, 255, 255, 0.26) !important;
   }
 
-  &:focus-within :global(.ant-select-selector) {
+  &:focus-within {
     border-color: #69b1ff !important;
     box-shadow: 0 0 0 2px rgba(105, 177, 255, 0.28) !important;
   }
 
   &:global(.ant-select-disabled) {
-    color: rgba(255, 255, 255, 0.72);
-
-    :global(.ant-select-selector) {
+    & {
       background: transparent !important;
       border-color: transparent !important;
       cursor: default;
     }
 
-    :global(.ant-select-arrow) {
+    :global(.ant-select-suffix) {
       visibility: hidden;
     }
   }

@@ -87,7 +87,7 @@ const toGraphSchemaGroovy = schema => {
                 decodedSchema = parsed;
             }
         }
-        catch (error) {
+        catch {
             // The Server will return a precise validation error for malformed content.
         }
     }

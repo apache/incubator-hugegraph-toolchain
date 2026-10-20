@@ -20,7 +20,6 @@
  * @file LimitItem
  */
 
-import React from 'react';
 import {InputNumber} from 'antd';
 import Form from '../PersistentForm';
 import {limitValidator} from '../utils';

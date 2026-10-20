@@ -20,7 +20,7 @@
  * @file  Panel操作按钮
  */
 
-import React, {useCallback} from 'react';
+import {useCallback} from 'react';
 import {DoubleRightOutlined} from '@ant-design/icons';
 import c from './index.module.scss';
 import classnames from 'classnames';

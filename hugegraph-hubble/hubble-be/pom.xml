@@ -34,6 +34,9 @@
         <final.name>${release.name}-${project.version}</final.name>
         <java.version>17</java.version>
         <skip.dump>true</skip.dump>
+        <java.inputs.script>
+            ${project.basedir}/../hubble-dist/assembly/travis/check-java-build-inputs.py
+        </java.inputs.script>
         <argLine></argLine>
         <app.host>localhost</app.host>
         <app.port>36320</app.port>
@@ -377,6 +380,41 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>${exec-maven-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>check-external-java-inputs</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>python3</executable>
+                            <classpathScope>test</classpathScope>
+                            <arguments>
+                                <argument>${java.inputs.script}</argument>
+                                <argument>--project</argument>
+                                <argument>${project.basedir}</argument>
+                                <argument>--repository</argument>
+                                <argument>${settings.localRepository}</argument>
+                                <argument>--sdk-mode</argument>
+                                <argument>${sdk.validation.mode}</argument>
+                                <argument>--sdk-version</argument>
+                                <argument>${hugegraph.version}</argument>
+                                <argument>--java-home</argument>
+                                <argument>${java.home}</argument>
+                                <argument>--java-version</argument>
+                                <argument>${java.runtime.version}</argument>
+                                <argument>--classpath</argument>
+                                <classpath/>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>

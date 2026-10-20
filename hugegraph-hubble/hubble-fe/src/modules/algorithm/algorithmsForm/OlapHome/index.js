@@ -20,8 +20,9 @@
  * @file Olap图算法表单列表
  */
 
-import React, {useContext, useEffect, useState} from 'react';
-import {Alert, Collapse, Tooltip} from 'antd';
+import {AlgorithmPanelGroup} from '../AlgorithmPanel';
+import {useContext, useEffect, useState} from 'react';
+import {Alert, Tooltip} from 'antd';
 import * as api from '../../../../api';
 import GraphAnalysisContext from '../../../Context';
 import _ from 'lodash';
@@ -181,7 +182,7 @@ const OlapFormHome = props => {
                         <Alert
                             showIcon
                             type={shouldDisableForm ? 'warning' : 'info'}
-                            message={t(capabilityTitle)}
+                            title={t(capabilityTitle)}
                             description={t(capabilityDescription)}
                         />
                     )}
@@ -192,7 +193,7 @@ const OlapFormHome = props => {
                     <div className={c.algorithmGoal}>
                         {t(`analysis.algorithm.group.${group.key}`)}
                     </div>
-                    <Collapse ghost accordion className={c.sideBarCollapse}>
+                    <AlgorithmPanelGroup className={c.sideBarCollapse}>
                         {group.items.map(item => (
                             <OlapItem
                                 key={item}
@@ -204,7 +205,7 @@ const OlapFormHome = props => {
                                 canRunLouvain={canRunLouvain}
                             />
                         ))}
-                    </Collapse>
+                    </AlgorithmPanelGroup>
                 </div>
             ))}
         </div>

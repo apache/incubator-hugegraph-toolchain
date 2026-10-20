@@ -16,7 +16,8 @@
  */
 
 import {useCallback, useState} from 'react';
-import {act, fireEvent, render, screen, waitFor} from '@testing-library/react';
+import {message} from 'antd';
+import {act, fireEvent, render, screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import EditLayer from './EditLayer';
 
@@ -34,6 +35,9 @@ jest.mock('../../api', () => ({
 
 beforeEach(() => {
     jest.clearAllMocks();
+    Object.values(jest.requireMock('../../api').manage).forEach(mock => mock.mockReset());
+    jest.spyOn(message, 'success').mockImplementation(() => undefined);
+    jest.spyOn(message, 'error').mockImplementation(() => undefined);
     const api = jest.requireMock('../../api');
     api.manage.addDatasource.mockResolvedValue({status: 200});
     window.matchMedia = jest.fn().mockImplementation(query => ({
@@ -42,6 +46,20 @@ beforeEach(() => {
         addListener: jest.fn(),
         removeListener: jest.fn(),
     }));
+});
+
+const pendingResponses = new Set();
+
+afterEach(async () => {
+    try {
+        await act(async () => {
+            pendingResponses.forEach(resolve => resolve({status: 499}));
+            pendingResponses.clear();
+        });
+    }
+    finally {
+        jest.restoreAllMocks();
+    }
 });
 
 const ReopenableEditLayer = ({refresh = jest.fn()}) => {
@@ -63,37 +81,61 @@ const ReopenableEditLayer = ({refresh = jest.fn()}) => {
     );
 };
 
-const selectTemplate = async label => {
-    const template = screen.getAllByRole('combobox')[0];
+const clickCurrentOption = async (combobox, label) => {
+    const list = document.getElementById(combobox.getAttribute('aria-controls'));
+    expect(list).toBeInTheDocument();
+    const popup = list.closest('.ant-select-dropdown');
+    expect(popup).toBeInTheDocument();
+    await userEvent.click(await within(popup).findByText(label, {
+        selector: '.ant-select-item-option-content',
+    }));
+};
+
+const selectTemplate = async (label, dialog = screen.getByRole('dialog')) => {
+    // The template Form.Item has no name/htmlFor; use its initial order within this modal.
+    const template = within(dialog).getAllByRole('combobox')[0];
     await userEvent.click(template);
-    await userEvent.click(await screen.findByText(label));
+    await clickCurrentOption(template, label);
+    await waitFor(() => expect(within(dialog).getByText(label, {
+        selector: '.ant-select-content',
+    })).toBeInTheDocument());
+    return dialog;
 };
 
 const deferred = () => {
     let resolve;
     let reject;
     const promise = new Promise((onResolve, onReject) => {
-        resolve = onResolve;
-        reject = onReject;
+        resolve = value => {
+            pendingResponses.delete(resolve);
+            onResolve(value);
+        };
+        reject = error => {
+            pendingResponses.delete(resolve);
+            onReject(error);
+        };
     });
+    pendingResponses.add(resolve);
     return {promise, resolve, reject};
 };
 
-const expectFreshForm = () => {
-    expect(screen.getByPlaceholderText('datasource.form.name_placeholder')).toHaveValue('');
-    expect(screen.queryByText('FILE', {selector: '.ant-select-selection-item'}))
+const expectFreshForm = dialog => {
+    const form = within(dialog);
+    expect(form.getByPlaceholderText('datasource.form.name_placeholder')).toHaveValue('');
+    expect(form.queryByText('FILE', {selector: '.ant-select-content'}))
         .not.toBeInTheDocument();
-    expect(screen.queryByText('JDBC', {selector: '.ant-select-selection-item'}))
+    expect(form.queryByText('JDBC', {selector: '.ant-select-content'}))
         .not.toBeInTheDocument();
-    expect(screen.queryByText('datasource.form.templates.local_csv', {
-        selector: '.ant-select-selection-item',
+    expect(form.queryByText('datasource.form.templates.local_csv', {
+        selector: '.ant-select-content',
     })).not.toBeInTheDocument();
-    expect(screen.queryByText('datasource.form.templates.jdbc_mysql', {
-        selector: '.ant-select-selection-item',
+    expect(form.queryByText('datasource.form.templates.jdbc_mysql', {
+        selector: '.ant-select-content',
     })).not.toBeInTheDocument();
-    expect(screen.queryByText('datasource.form.config_info')).not.toBeInTheDocument();
+    expect(form.queryByText('datasource.form.config_info')).not.toBeInTheDocument();
 };
 
+// Real AntD Select interactions exceed 5s on CI; keep the inner waitFor deadlines.
 test('clears the selected template label after a manual source-type change', async () => {
     render(
         <EditLayer
@@ -104,42 +146,48 @@ test('clears the selected template label after a manual source-type change', asy
         />
     );
 
-    const [template, type] = screen.getAllByRole('combobox');
-    await userEvent.click(template);
-    await userEvent.click(await screen.findByText('datasource.form.templates.local_csv'));
-    expect(screen.getByText('datasource.form.templates.local_csv', {
-        selector: '.ant-select-selection-item',
-    })).toBeInTheDocument();
+    const dialog = await screen.findByRole('dialog');
+    const type = within(dialog).getByRole('combobox', {name: /^datasource\.form\.type/u});
+    await selectTemplate('datasource.form.templates.local_csv', dialog);
 
     fireEvent.mouseDown(type);
-    await userEvent.click(await screen.findByText('JDBC'));
+    await clickCurrentOption(type, 'JDBC');
+    await waitFor(() => {
+        expect(within(dialog).queryByText('datasource.form.templates.local_csv', {
+            selector: '.ant-select-content',
+        })).not.toBeInTheDocument();
+        expect(within(dialog).getByText('JDBC', {selector: '.ant-select-content'}))
+            .toBeInTheDocument();
+        expect(within(dialog).getByPlaceholderText('datasource.form.url_placeholder'))
+            .toBeInTheDocument();
+    });
+}, 10000);
 
-    await waitFor(() => expect(screen.queryByText(
-        'datasource.form.templates.local_csv',
-        {selector: '.ant-select-selection-item'}
-    )).not.toBeInTheDocument());
-    expect(screen.getByText('JDBC', {selector: '.ant-select-selection-item'}))
-        .toBeInTheDocument();
-});
-
+// This flow includes real template selection, modal closure, and reopening.
 test('clears template, type, and hidden config after cancel and reopen', async () => {
     render(<ReopenableEditLayer />);
-    await selectTemplate('datasource.form.templates.local_csv');
-    expect(screen.getByPlaceholderText('datasource.form.name_placeholder'))
+    const dialog = await screen.findByRole('dialog');
+    await selectTemplate('datasource.form.templates.local_csv', dialog);
+    expect(within(dialog).getByPlaceholderText('datasource.form.name_placeholder'))
         .toHaveValue('local_csv_example');
 
-    await userEvent.click(screen.getByRole('button', {name: 'Cancel'}));
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    await userEvent.click(screen.getByRole('button', {name: 'reopen datasource'}));
+    const footer = dialog.querySelector('.ant-modal-footer');
+    await userEvent.click(within(footer).getByRole('button', {name: 'Cancel'}));
+    await waitFor(() => expect(dialog).not.toBeInTheDocument());
+    await userEvent.click(screen.getByRole('button', {
+        name: 'reopen datasource',
+    }));
+    const reopened = await screen.findByRole('dialog');
+    expect(reopened).not.toBe(dialog);
+    await waitFor(() => expectFreshForm(reopened));
+}, 10000);
 
-    expectFreshForm();
-});
-
+// Multi-step real AntD flows need a bounded CI budget; waitFor deadlines stay unchanged.
 test('clears template, type, and hidden config after successful create and reopen', async () => {
     const refresh = jest.fn();
     const api = jest.requireMock('../../api');
     render(<ReopenableEditLayer refresh={refresh} />);
-    await selectTemplate('datasource.form.templates.jdbc_mysql');
+    const dialog = await selectTemplate('datasource.form.templates.jdbc_mysql');
     fireEvent.change(screen.getByPlaceholderText('datasource.form.url_placeholder'), {
         target: {value: 'jdbc:mysql://127.0.0.1:3306/example'},
     });
@@ -149,12 +197,12 @@ test('clears template, type, and hidden config after successful create and reope
 
     await userEvent.click(screen.getByRole('button', {name: 'OK'}));
     await waitFor(() => expect(api.manage.addDatasource).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    await waitFor(() => expect(dialog).not.toBeInTheDocument());
     expect(refresh).toHaveBeenCalledTimes(1);
 
     await userEvent.click(screen.getByRole('button', {name: 'reopen datasource'}));
-    expectFreshForm();
-});
+    await waitFor(() => expectFreshForm(screen.getByRole('dialog')));
+}, 10000);
 
 test('ignores a create response from a closed modal session', async () => {
     const api = jest.requireMock('../../api');
@@ -167,7 +215,7 @@ test('ignores a create response from a closed modal session', async () => {
         .mockReturnValueOnce(second.promise);
     render(<ReopenableEditLayer refresh={refresh} />);
 
-    await selectTemplate('datasource.form.templates.jdbc_mysql');
+    const firstDialog = await selectTemplate('datasource.form.templates.jdbc_mysql');
     fireEvent.change(screen.getByPlaceholderText('datasource.form.url_placeholder'), {
         target: {value: 'jdbc:mysql://127.0.0.1:3306/first'},
     });
@@ -178,7 +226,7 @@ test('ignores a create response from a closed modal session', async () => {
     await waitFor(() => expect(api.manage.addDatasource).toHaveBeenCalledTimes(1));
 
     await userEvent.click(screen.getByRole('button', {name: 'Cancel'}));
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    await waitFor(() => expect(firstDialog).not.toBeInTheDocument());
     await userEvent.click(screen.getByRole('button', {name: 'reopen datasource'}));
     await selectTemplate('datasource.form.templates.jdbc_mysql');
     fireEvent.change(screen.getByPlaceholderText('datasource.form.url_placeholder'), {
@@ -193,11 +241,13 @@ test('ignores a create response from a closed modal session', async () => {
     await act(async () => first.resolve({status: 200}));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(refresh).not.toHaveBeenCalled();
+    expect(message.success).not.toHaveBeenCalled();
 
     await act(async () => second.resolve({status: 200}));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(refresh).toHaveBeenCalledTimes(1);
-});
+    expect(message.success).toHaveBeenCalledTimes(1);
+}, 20000); // Two complete real modal/form sessions, including async closure and reopening.
 
 test('ignores a create response after prop-driven modal closure', async () => {
     const api = jest.requireMock('../../api');
@@ -224,4 +274,4 @@ test('ignores a create response after prop-driven modal closure', async () => {
 
     expect(refresh).not.toHaveBeenCalled();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-});
+}, 10000);

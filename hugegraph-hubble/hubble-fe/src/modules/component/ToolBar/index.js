@@ -20,58 +20,14 @@
  * @file  ToolBar
  */
 
-import React, {useContext, useState, useEffect} from 'react';
-import G6 from '@antv/g6';
-import {GraphContext, ToolBarContext} from '../Context';
-import c from './index.module.scss';
+import React from 'react';
 import classnames from 'classnames';
+import c from './index.module.scss';
 
-const ToolBar = props => {
-    const {extra, hasPadding} = props;
-    const context = useContext(GraphContext);
-    const {graph} = context;
-
-    const [toolBarContext, setToolBarContetx] = useState();
-
-    const toolBarClassname = classnames(
-        c.toolBarTop,
-        {[c.toolBarWithPadding]: hasPadding}
-    );
-
-    useEffect(
-        () => {
-            const toolBarOptions = {
-                getContent: () => {
-                    return '<div />';
-                },
-            };
-            const toolBarInstance = new G6.ToolBar(toolBarOptions);
-            graph?.addPlugin(toolBarInstance);
-            setToolBarContetx(toolBarInstance);
-        },
-        [graph]
-    );
-
-    return (
-        <ToolBarContext.Provider value={toolBarContext}>
-            <div className={toolBarClassname}>
-                {extra && (
-                    <>
-                        {extra.map(
-                            item => {
-                                const {key, content} = item;
-                                return (
-                                    <a key={key}>
-                                        {content}
-                                    </a>
-                                );
-                            }
-                        )}
-                    </>
-                )}
-            </div>
-        </ToolBarContext.Provider>
-    );
-};
+const ToolBar = ({extra = [], hasPadding}) => (
+    <div className={classnames(c.toolBarTop, {[c.toolBarWithPadding]: hasPadding})}>
+        {extra.map(({key, content}) => <React.Fragment key={key}>{content}</React.Fragment>)}
+    </div>
+);
 
 export default ToolBar;

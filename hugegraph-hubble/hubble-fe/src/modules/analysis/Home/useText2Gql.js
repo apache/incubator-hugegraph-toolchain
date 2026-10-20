@@ -59,7 +59,7 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
     const [elapsedSeconds, setElapsedSeconds] = useState(0);
     const [generationDurationMs, setGenerationDurationMs] = useState(null);
     const startedAt = useRef(0);
-    const phaseStartedAt = useRef(0);
+    const [modelSlow, setModelSlow] = useState(false);
     const [error, setError] = useState('');
     const [errorType, setErrorType] = useState('error');
     const [errorStage, setErrorStage] = useState('');
@@ -96,6 +96,15 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
         }, 1000);
         return () => clearInterval(timer);
     }, [pending]);
+
+    useEffect(() => {
+        setModelSlow(false);
+        if (!pending || !['waiting', 'repair_waiting'].includes(phase)) {
+            return undefined;
+        }
+        const timer = setTimeout(() => setModelSlow(true), 15000);
+        return () => clearTimeout(timer);
+    }, [pending, phase]);
 
     useEffect(() => {
         if (supportsQueryLanguage(language, cypherEnabled)) {
@@ -258,7 +267,6 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
         setElapsedSeconds(0);
         setPending(true);
         const enterPhase = value => {
-            phaseStartedAt.current = Date.now();
             setPhase(value);
         };
         setError('');
@@ -429,8 +437,7 @@ export default function useText2Gql({scope, active, ready, execute, clearResult,
 
     return {
         config, updateConfig, question, setQuestion, pending, repairing, phase, elapsedSeconds, generationDurationMs,
-        modelSlow: pending && ['waiting', 'repair_waiting'].includes(phase)
-            && Date.now() - phaseStartedAt.current >= 15000,
+        modelSlow: pending && ['waiting', 'repair_waiting'].includes(phase) && modelSlow,
         error, errorType, errorStage,
         source, changeSource, sharedConfig, language, changeLanguage,
         generate: options => run(undefined, question.trim(), options),

@@ -31,9 +31,9 @@
         z-index: 1;
     }
 
-    :global(.ant-tabs-content-holder),
-    :global(.ant-tabs-content),
-    :global(.ant-tabs-tabpane) {
+    :global(.ant-tabs-body-holder),
+    :global(.ant-tabs-body),
+    :global(.ant-tabs-content) {
         min-width: 0;
         max-width: 100%;
     }
@@ -95,7 +95,7 @@
         }
     }
 
-    :global(.ant-tabs-left > .ant-tabs-content-holder > .ant-tabs-content > .ant-tabs-tabpane) {
+    > :global(.ant-tabs-left > .ant-tabs-body-holder > .ant-tabs-body > .ant-tabs-content) {
         padding-left: 0;
     }
 
@@ -178,15 +178,17 @@
         overflow: visible;
     }
 
+    // Each Ant Design Tabs body wrapper must inherit the bounded result height.
+    // Otherwise the graph and its toolbar grow beyond the clipped result slot.
     > :global(.ant-tabs),
-    :global(.ant-tabs-content-holder),
-    :global(.ant-tabs-content),
-    :global(.ant-tabs-tabpane) {
+    > :global(.ant-tabs > .ant-tabs-body-holder),
+    > :global(.ant-tabs > .ant-tabs-body-holder > .ant-tabs-body),
+    > :global(.ant-tabs > .ant-tabs-body-holder > .ant-tabs-body > .ant-tabs-content) {
         height: 100%;
         min-height: 0;
     }
 
-    :global(.ant-tabs-tabpane) {
+    > :global(.ant-tabs > .ant-tabs-body-holder > .ant-tabs-body > .ant-tabs-content) {
         overflow: hidden;
     }
 }

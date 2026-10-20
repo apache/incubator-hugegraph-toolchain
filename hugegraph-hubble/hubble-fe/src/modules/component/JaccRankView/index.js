@@ -16,7 +16,6 @@
  * under the License.
  */
 
-import React from 'react';
 import c from './index.module.scss';
 
 const JaccRankView = props => {

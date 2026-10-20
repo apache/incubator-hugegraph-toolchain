@@ -155,7 +155,7 @@ const EditEdgeLayer = ({visible, onCancle, graphspace, graph, refresh, name, pro
             }
 
             addEdge(values);
-        }).catch(e => {
+        }).catch(_e => {
             return;
         });
     }, [form, name, updateEdge, addEdge]);
@@ -206,13 +206,13 @@ const EditEdgeLayer = ({visible, onCancle, graphspace, graph, refresh, name, pro
             confirmLoading={loading}
             okButtonProps={{disabled: spinning || detailError}}
             width={600}
-            destroyOnClose
+            destroyOnHidden
         >
             {detailError && (
                 <Alert
                     type='error'
                     showIcon
-                    message={t('schema.edge.detail_failed')}
+                    title={t('schema.edge.detail_failed')}
                     action={<Button size='small' onClick={loadDetail}>{t('schema.retry')}</Button>}
                 />
             )}
@@ -289,20 +289,16 @@ const EditEdgeLayer = ({visible, onCancle, graphspace, graph, refresh, name, pro
                                                 aria-label={t('schema.edge.form.arrow_style')}
                                                 style={{width: 66}}
                                                 size="medium"
-                                            >
-                                                {edgeShapeSchemas.map(item => {
+                                             options={edgeShapeSchemas.map(item => {
                                                     return (
-                                                        <Select.Option key={item.blackicon} value={item.flag}>
-                                                            <img
+                                                        {value: item.flag, label: <img
                                                                 src={item.blackicon}
                                                                 alt={t(item.flag
                                                                     ? 'schema.edge.form.with_arrow'
                                                                     : 'schema.edge.form.without_arrow')}
-                                                            />
-                                                        </Select.Option>
+                                                            />}
                                                     );
-                                                })}
-                                            </Select>
+                                                })} />
                                         </Form.Item>
                                     </Col>
                                     <Col>
@@ -370,7 +366,6 @@ const EditEdgeLayer = ({visible, onCancle, graphspace, graph, refresh, name, pro
                                 rules={[rules.required()]}
                             >
                                 <Select
-                                    // eslint-disable-next-line max-len
                                     options={selectedPropertyList.filter(item => !item.nullable).concat(defaultDisplayFields)}
                                     mode='multiple'
                                 />

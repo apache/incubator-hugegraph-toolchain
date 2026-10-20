@@ -104,7 +104,8 @@ class RuntimeTests(unittest.TestCase):
         self.assertNotEqual(self.run_script(self.action/'fixture.sh', env=env).returncode, 0)
     def test_composite_step_isolates_fixture_jdk_from_caller(self):
         action = (HERE / 'action.yml').read_text()
-        block = action.split('      run: |\n', 1)[1].split('    - name:', 1)[0]
+        block = action.split('    - name: Prepare fixture or start service\n', 1)[1]
+        block = block.split('      run: |\n', 1)[1].split('    - name:', 1)[0]
         step = self.dir / 'action-step.sh'
         step.write_text('\n'.join(line[8:] for line in block.splitlines()) + '\n')
         jdk11 = self.dir / 'jdk11'

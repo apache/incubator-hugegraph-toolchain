@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import {render, screen} from '@testing-library/react';
+import {render, screen, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Account from './index';
 import * as api from '../../api';
@@ -296,8 +296,10 @@ test('preserves every GraphSpace when managing an account membership', async () 
 
     render(<Account />);
 
-    expect(await screen.findByText('analyst')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', {name: 'account.action.more'}));
+    const account = await screen.findByText('analyst');
+    expect(account).toBeInTheDocument();
+    const row = within(account.closest('tr'));
+    await userEvent.click(row.getByRole('button', {name: 'account.action.more'}));
     await userEvent.click(screen.getByText('account.action.manage_membership'));
 
     expect(await screen.findByTestId('pending-account'))

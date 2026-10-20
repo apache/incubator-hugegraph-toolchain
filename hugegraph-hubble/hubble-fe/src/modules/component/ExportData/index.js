@@ -20,7 +20,7 @@
  * @file  导出画布和数据
  */
 
-import React, {useState, useCallback} from 'react';
+import {useState, useCallback} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Button, Tooltip, Dropdown, Modal, Form, Input} from 'antd';
 import {DownloadOutlined} from '@ant-design/icons';

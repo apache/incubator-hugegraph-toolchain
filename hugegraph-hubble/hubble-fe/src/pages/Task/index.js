@@ -16,11 +16,11 @@
  * under the License.
  */
 
+import PageHeader from '../../components/PageHeader';
 import {
     Button,
     Row,
     Col,
-    PageHeader,
     Input,
     Modal,
     Table,
@@ -202,6 +202,7 @@ const Task = () => {
     const [refresh, setRefresh] = useState(false);
     const [detail, setDetail] = useState({});
     const [pagination, setPagination] = useState({pageSize: 10, current: 1});
+    const {current: page} = pagination;
     const [metricsData, setMetricsData] = useState({});
     const [loading, setLoading] = useState(false);
     const [listLoading, setListLoading] = useState(true);
@@ -475,7 +476,7 @@ const Task = () => {
         setListLoading(true);
         api.manage.getTaskList({
             query: searchName,
-            page_no: pagination.current,
+            page_no: page,
         }).then(res => {
             if (listRequest.current !== token) {
                 return;
@@ -512,8 +513,7 @@ const Task = () => {
                 listRequest.current = null;
             }
         };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [searchName, refresh, listRetryToken, listPollToken, pagination.current]);
+    }, [searchName, refresh, listRetryToken, listPollToken, page]);
 
     useEffect(() => {
         const token = Symbol('task-metrics');
@@ -552,7 +552,6 @@ const Task = () => {
                 metricsRequest.current = null;
             }
         };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [refresh, metricsRetryToken, metricsPollToken]);
 
     useEffect(() => {
@@ -571,7 +570,6 @@ const Task = () => {
     return (
         <>
             <PageHeader
-                ghost={false}
                 onBack={false}
                 title={t('task.title')}
             >
@@ -592,7 +590,7 @@ const Task = () => {
                 <Alert
                     showIcon
                     type='info'
-                    message={t('task.demo.title')}
+                    title={t('task.demo.title')}
                     description={demoTarget.graph
                         ? t('task.demo.target', {
                             graphspace: demoTarget.graphspace,
@@ -633,7 +631,7 @@ const Task = () => {
                     <Alert
                         showIcon
                         type='error'
-                        message={t('task.metrics_failed')}
+                        title={t('task.metrics_failed')}
                         action={(
                             <Button size='small' onClick={retryMetrics}>
                                 {t('task.retry_metrics')}
@@ -645,7 +643,7 @@ const Task = () => {
                     <Alert
                         showIcon
                         type='error'
-                        message={t('task.load_failed')}
+                        title={t('task.load_failed')}
                         action={(
                             <Button size='small' onClick={retryList}>
                                 {t('task.retry')}

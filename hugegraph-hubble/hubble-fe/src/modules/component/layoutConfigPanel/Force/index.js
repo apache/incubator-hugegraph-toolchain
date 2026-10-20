@@ -20,22 +20,23 @@
  * @file 切换力导布局组件 force
  */
 
-import React from 'react';
-import {Form, Switch} from 'antd';
+import {useId} from 'react';
+import {Form, Switch, InputNumber} from 'antd';
 import {useTranslation} from 'react-i18next';
-import SliderComponent from '../../../../components/SlideComponent';
-import _ from 'lodash';
 
 const ForceLayoutForm = props => {
-    const {handleFormChange, initialValues} = props;
+    const {handleFormChange, initialValues, disabled} = props;
     const {t} = useTranslation();
+    const instanceId = useId();
     const {useForm} = Form;
     const [forceLayoutForm] = useForm();
 
     return (
         <Form
+            name={instanceId}
             form={forceLayoutForm}
-            onValuesChange={_.debounce(handleFormChange, 100)}
+            onValuesChange={handleFormChange}
+            disabled={disabled}
             initialValues={initialValues}
             labelCol={{span: 24}}
         >
@@ -44,20 +45,20 @@ const ForceLayoutForm = props => {
                 label={t('analysis.canvas.layout_panel.node_size')}
                 tooltip={t('analysis.canvas.layout_panel.node_size_tooltip')}
             >
-                <SliderComponent />
+                <InputNumber aria-label={t('analysis.canvas.layout_panel.node_size')} min={1} style={{width: '100%'}} />
             </Form.Item>
             <Form.Item
                 name='linkDistance'
                 label={t('analysis.canvas.layout_panel.link_distance')}
             >
-                <SliderComponent max={1000} />
+                <InputNumber aria-label={t('analysis.canvas.layout_panel.link_distance')} min={0} style={{width: '100%'}} max={1000} />
             </Form.Item>
             <Form.Item
                 name='nodeStrength'
                 label={t('analysis.canvas.layout_panel.node_strength')}
                 tooltip={t('analysis.canvas.layout_panel.node_strength_tooltip')}
             >
-                <SliderComponent min={-500} max={500} />
+                <InputNumber aria-label={t('analysis.canvas.layout_panel.node_strength')} style={{width: '100%'}} min={-5000} max={5000} />
             </Form.Item>
             <Form.Item
                 name='preventOverlap'
@@ -66,14 +67,14 @@ const ForceLayoutForm = props => {
                 labelCol={{span: 20}}
                 labelAlign='left'
             >
-                <Switch />
+                <Switch aria-label={t('analysis.canvas.layout_panel.prevent_overlap')} />
             </Form.Item>
             <Form.Item
                 name='nodeSpacing'
                 label={t('analysis.canvas.layout_panel.node_spacing')}
                 tooltip={t('analysis.canvas.layout_panel.node_spacing_tooltip')}
             >
-                <SliderComponent />
+                <InputNumber aria-label={t('analysis.canvas.layout_panel.node_spacing')} min={0} style={{width: '100%'}} />
             </Form.Item>
         </Form>
     );

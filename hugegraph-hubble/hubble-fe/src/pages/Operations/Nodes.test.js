@@ -21,7 +21,7 @@ import {message} from 'antd';
 import {MemoryRouter, useLocation, useNavigate} from 'react-router-dom';
 import Nodes from './Nodes';
 import {getNodes} from '../../api/operations';
-import '../../i18n';
+import i18n from '../../i18n';
 import enPages from '../../i18n/resources/en-US/modules/pages.json';
 import zhPages from '../../i18n/resources/zh-CN/modules/pages.json';
 
@@ -195,6 +195,17 @@ test('ships the clear-filters action in Chinese and English', () => {
     expect(enPages.operations.clear_filters).toBe('Clear filters');
 });
 
+test.each([
+    [0, '0 nodes', '0 个节点'],
+    [1, '1 node', '1 个节点'],
+    [2, '2 nodes', '2 个节点'],
+])('pluralizes the %i-node count in both languages', (count, english, chinese) => {
+    for (const key of ['result_count', 'node_count']) {
+        expect(i18n.t(`operations.${key}`, {lng: 'en-US', count})).toBe(english);
+        expect(i18n.t(`operations.${key}`, {lng: 'zh-CN', count})).toBe(chinese);
+    }
+});
+
 test('shows stale observation metadata and exposes real detail links', async () => {
     getNodes.mockResolvedValue({
         items: [
@@ -211,33 +222,47 @@ test('shows stale observation metadata and exposes real detail links', async () 
         </MemoryRouter>
     );
 
-    expect(await screen.findByRole('link', {name: /Server A/})).toHaveAttribute(
+    const detailLink = await screen.findByLabelText('View details for Server A');
+    expect(detailLink).toHaveRole('link');
+    expect(detailLink).toHaveAccessibleName(/Server A/);
+    expect(detailLink).toBeVisible();
+    expect(detailLink).toHaveAttribute(
         'href', '/operations/nodes/server-safe'
     );
+    const table = within(screen.getByRole('table'));
+    const refresh = screen.getByLabelText('Refresh');
     expect(screen.getByText(/Stale/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Observed/i).length).toBeGreaterThan(0);
-    expect(screen.getByRole('combobox', {name: /node type/i})).toBeInTheDocument();
-    fireEvent.mouseDown(screen.getByRole('combobox', {name: /node status/i}));
+    const type = screen.getByLabelText(/node type/i);
+    expect(type).toHaveRole('combobox');
+    expect(type).toBeVisible();
+    const status = screen.getByLabelText(/node status/i);
+    expect(status).toHaveRole('combobox');
+    expect(status).toBeVisible();
+    fireEvent.mouseDown(status);
     expect(await screen.findByRole('option', {name: 'Attention'})).toBeInTheDocument();
     expect(screen.queryByRole('option', {name: 'DEGRADED'})).not.toBeInTheDocument();
-    expect(screen.getByRole('textbox', {name: /search node/i})).toBeInTheDocument();
+    const search = screen.getByLabelText(/search node/i);
+    expect(search).toHaveRole('textbox');
+    expect(search).toBeVisible();
     expect(screen.getByText('Browse, filter and inspect every discovered service node'))
         .toBeInTheDocument();
     expect(screen.getByText('1 node')).toBeInTheDocument();
     expect(screen.getByLabelText('SERVER icon')).toBeInTheDocument();
     expect(screen.getByText('Node ID: server-safe')).toBeInTheDocument();
-    expect(screen.getByRole('cell', {name: 'Server'})).toBeInTheDocument();
-    expect(screen.getByRole('button', {name: 'Refresh'})).toHaveClass(
+    expect(table.getByRole('cell', {name: 'Server'})).toBeInTheDocument();
+    expect(refresh).toHaveRole('button');
+    expect(refresh).toBeVisible();
+    expect(refresh).toHaveClass(
         'operations-refresh-button', 'ant-btn-text', 'ant-btn-circle'
     );
-    expect(screen.getByRole('button', {name: 'Refresh'})).toHaveTextContent('');
+    expect(refresh).toHaveTextContent('');
 
-    fireEvent.click(screen.getByRole('columnheader', {name: 'Type'}));
+    fireEvent.click(table.getByRole('columnheader', {name: 'Type'}));
     await waitFor(() => expect(getNodes).toHaveBeenLastCalledWith(
         expect.objectContaining({sort: 'type', order: 'asc'})
     ));
-    await waitFor(() => expect(screen.getByRole('button', {name: /Refresh/}))
-        .not.toHaveClass('ant-btn-loading'));
+    await waitFor(() => expect(refresh).not.toHaveClass('ant-btn-loading'));
 });
 
 test('explains unavailable Store metrics in the node list', async () => {
@@ -266,8 +291,10 @@ test('explains unavailable Store metrics in the node list', async () => {
         </MemoryRouter>
     );
 
-    expect(await screen.findByRole('img', {name: /Store metrics origin is not trusted/}))
-        .toBeInTheDocument();
+    const reason = await screen.findByLabelText(/Store metrics origin is not trusted/);
+    expect(reason).toHaveRole('img');
+    expect(reason).toHaveAccessibleName(/Store metrics origin is not trusted/);
+    expect(reason).toBeVisible();
     expect(screen.queryByText('Stale')).not.toBeInTheDocument();
 });
 

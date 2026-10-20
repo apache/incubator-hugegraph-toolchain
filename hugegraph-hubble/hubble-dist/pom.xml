@@ -36,8 +36,7 @@
         <assembly.static.dir>${assembly.dir}/static</assembly.static.dir>
         <release.docs.dir>${repo.root.dir}/hugegraph-dist/release-docs</release.docs.dir>
         <hubble-fe.dir>${project.basedir}/../hubble-fe</hubble-fe.dir>
-        <build.node.version>v18.20.8</build.node.version>
-        <build.yarn.version>v1.22.21</build.yarn.version>
+        <hubble.frontend.mode>production</hubble.frontend.mode>
     </properties>
 
     <dependencies>
@@ -84,49 +83,27 @@
                     </execution>
                 </executions>
             </plugin>
+            <!-- Compile/test of the Java reactor never installs or builds the UI.
+                 Node and pnpm are pinned by hubble-fe; the shared entry point
+                 validates every input and output before reusing a UI build. -->
             <plugin>
-                <groupId>com.github.eirslett</groupId>
-                <artifactId>frontend-maven-plugin</artifactId>
-                <version>1.14.2</version>
-
-                <configuration>
-                    <installDirectory>${hubble-fe.dir}</installDirectory>
-                    <workingDirectory>${hubble-fe.dir}</workingDirectory>
-                </configuration>
-
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>${exec-maven-plugin.version}</version>
                 <executions>
                     <execution>
-                        <id>install node and yarn</id>
+                        <id>build-hubble-frontend</id>
+                        <phase>prepare-package</phase>
                         <goals>
-                            <goal>install-node-and-yarn</goal>
+                            <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <nodeVersion>${build.node.version}</nodeVersion>
-                            <yarnVersion>${build.yarn.version}</yarnVersion>
-                        </configuration>
-                    </execution>
-
-                    <execution>
-                        <id>yarn install</id>
-                        <goals>
-                            <goal>yarn</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>install --frozen-lockfile --network-timeout 600000 --prefer-offline --ignore-engines</arguments>
-                        </configuration>
-                    </execution>
-
-                    <execution>
-                        <id>yarn build</id>
-                        <goals>
-                            <goal>yarn</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>build</arguments>
-                            <environmentVariables>
-                                <CI>true</CI>
-                                <NODE_OPTIONS>--max-old-space-size=4096</NODE_OPTIONS>
-                            </environmentVariables>
+                            <executable>node</executable>
+                            <arguments>
+                                <argument>${assembly.dir}/travis/build-frontend.mjs</argument>
+                                <argument>--mode</argument>
+                                <argument>${hubble.frontend.mode}</argument>
+                            </arguments>
                         </configuration>
                     </execution>
                 </executions>
@@ -135,30 +112,41 @@
                 <artifactId>maven-antrun-plugin</artifactId>
                 <executions>
                     <execution>
+                        <id>clear-old-distribution-outputs</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <!-- Rebuild generated product paths so removed files cannot survive
+                                     an incremental package. Keep databases/logs/uploads intact. -->
+                                <delete dir="${top.level.dir}/${final.name}/bin"/>
+                                <delete dir="${top.level.dir}/${final.name}/conf"/>
+                                <delete dir="${top.level.dir}/${final.name}/lib"/>
+                                <delete dir="${top.level.dir}/${final.name}/ui"/>
+                                <delete dir="${top.level.dir}/${final.name}/licenses"/>
+                                <delete file="${top.level.dir}/${final.name}/LICENSE"/>
+                                <delete file="${top.level.dir}/${final.name}/NOTICE"/>
+                                <delete file="${top.level.dir}/${final.name}/README.md"/>
+                                <delete file="${top.level.dir}/${final.name}/candidate-sdk-manifest.json"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>archive-and-audit-hubble</id>
                         <phase>package</phase>
                         <goals>
                             <goal>run</goal>
                         </goals>
                         <configuration>
-                            <tasks>
-                                <!-- TODO: change to assembly plugin in future  -->
-                                <echo file="${top.level.dir}/dist.sh">
-                                    cd ${hubble-fe.dir} || exit 1
-                                    export CI=true
-
-                                    cd ${top.level.dir} &amp;&amp; pwd
-                                    rm -rf ${final.name}/ui
-                                    cp -r ${hubble-fe.dir}/build ${final.name}/ui
-                                    find ${final.name}/ui -name "*.map" -type f -delete
-
-                                    bash ${assembly.dir}/travis/archive-hubble.sh \
-                                         ${final.name} ${top.level.dir}/target/${final.name}.tar.gz || exit 1
-                                    bash ${assembly.dir}/travis/check-hubble-dist.sh \
-                                         ${top.level.dir}/target/${final.name}.tar.gz || exit 1
-                                    echo -n "${final.name} tar.gz available at: "
-                                    echo "${top.level.dir}/target/${final.name}.tar.gz"
-                                    rm -f ${top.level.dir}/dist.sh
-                                </echo>
+                            <target>
+                                <delete dir="${top.level.dir}/${final.name}/ui"/>
+                                <copy todir="${top.level.dir}/${final.name}/ui">
+                                    <fileset dir="${hubble-fe.dir}/build">
+                                        <exclude name="**/*.map"/>
+                                    </fileset>
+                                </copy>
                                 <exec executable="python3" failonerror="true">
                                     <arg value="${repo.root.dir}/hugegraph-client/assembly/travis/verify_candidate_image_sdk.py"/>
                                     <arg value="${settings.localRepository}"/>
@@ -171,10 +159,16 @@
                                     <arg value="--module"/>
                                     <arg value="hubble"/>
                                 </exec>
-                                <exec executable="${shell-executable}" dir="${top.level.dir}" failonerror="true">
-                                    <arg line="./dist.sh" />
+                                <exec executable="bash" failonerror="true">
+                                    <arg value="${assembly.dir}/travis/archive-hubble.sh"/>
+                                    <arg value="${top.level.dir}/${final.name}"/>
+                                    <arg value="${top.level.dir}/target/${final.name}.tar.gz"/>
                                 </exec>
-                            </tasks>
+                                <exec executable="bash" failonerror="true">
+                                    <arg value="${assembly.dir}/travis/check-hubble-dist.sh"/>
+                                    <arg value="${top.level.dir}/target/${final.name}.tar.gz"/>
+                                </exec>
+                            </target>
                         </configuration>
                     </execution>
                 </executions>

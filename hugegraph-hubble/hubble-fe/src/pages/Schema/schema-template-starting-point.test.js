@@ -20,6 +20,7 @@ import userEvent from '@testing-library/user-event';
 import {message} from 'antd';
 import EditLayer, {BUILTIN_SCHEMA_TEMPLATES} from './EditLayer';
 import * as api from '../../api/index';
+import * as rules from '../../utils/rules';
 
 jest.mock('../../api/index', () => ({
     manage: {
@@ -39,6 +40,10 @@ jest.mock('react-i18next', () => ({
 jest.mock('../../components/CodeEditor', () => props => (
     <textarea
         aria-label='schema-code-editor'
+        id={props.id}
+        aria-invalid={props['aria-invalid']}
+        aria-describedby={props['aria-describedby']}
+        aria-required={props['aria-required']}
         value={props.value || ''}
         placeholder={props.placeholder}
         onChange={event => props.onChange?.(event.target.value)}
@@ -57,6 +62,18 @@ beforeAll(() => {
 beforeEach(() => {
     jest.clearAllMocks();
 });
+
+const expectVisibleFieldError = async (field, message) => {
+    await waitFor(() => expect(field).toHaveAttribute('aria-invalid', 'true'));
+    await waitFor(() => {
+        const descriptions = (field.getAttribute('aria-describedby') || '').split(/\s+/)
+            .map(id => document.getElementById(id)).filter(Boolean);
+        const error = descriptions.find(element => element.textContent.includes(message));
+        expect(error).toBeDefined();
+        expect(error).toBeVisible();
+        expect(error).toHaveTextContent(message);
+    });
+};
 
 test('offers built-in starting points in create mode and fills an empty draft', async () => {
     render(
@@ -153,7 +170,9 @@ test('keeps empty-field errors in the form without rejecting or calling the API'
 
     await userEvent.click(screen.getByRole('button', {name: 'OK'}));
 
-    await waitFor(() => expect(screen.getAllByRole('alert').length).toBeGreaterThan(0));
+    await expectVisibleFieldError(screen.getByPlaceholderText('schema_template.form.name_placeholder'),
+        rules.required().message);
+    await expectVisibleFieldError(screen.getByLabelText('schema-code-editor'), rules.required().message);
     expect(api.manage.addSchema).not.toHaveBeenCalled();
     expect(api.manage.updateSchema).not.toHaveBeenCalled();
     expect(unhandledRejection).not.toHaveBeenCalled();
@@ -182,7 +201,9 @@ test('keeps invalid-name errors in the form without calling the API', async () =
     );
     await userEvent.click(screen.getByRole('button', {name: 'OK'}));
 
-    await waitFor(() => expect(screen.getAllByRole('alert').length).toBeGreaterThan(0));
+    await expectVisibleFieldError(screen.getByPlaceholderText('schema_template.form.name_placeholder'),
+        await rules.isName().validator(null, 'INVALID-NAME').catch(error => error));
+    expect(screen.getByLabelText('schema-code-editor')).not.toHaveAttribute('aria-invalid', 'true');
     expect(api.manage.addSchema).not.toHaveBeenCalled();
     expect(api.manage.updateSchema).not.toHaveBeenCalled();
 });

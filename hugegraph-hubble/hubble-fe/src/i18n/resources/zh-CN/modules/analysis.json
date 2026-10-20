@@ -148,11 +148,16 @@
       "style": "外观设置",
       "filter": "筛选",
       "layout": "布局方式",
+      "quick_layout_radial": "切换到径向布局",
+      "quick_layout_force": "切换到力导布局",
+      "quick_layout_default": "恢复算法默认布局",
       "setting": "设置",
       "new": "新建",
       "statistics": "统计",
       "mode_2d": "2D 模式",
       "mode_3d": "3D 模式",
+      "render_mode": "渲染方式",
+      "mode_3d_experimental": "3D（实验性）",
       "import_success": "导入成功",
       "number_card": {
         "paths": "路径",
@@ -223,6 +228,9 @@
         "switch_2d": "暂无可切换的图数据"
       },
       "canvas_3d": {
+        "unavailable": "3D 模式暂时无法加载或显示",
+        "refresh_hint": "可返回 2D 继续操作；再次尝试 3D 前请刷新页面",
+        "back_to_2d": "返回 2D",
         "node": "节点",
         "edge": "边",
         "type": "类型",
@@ -404,6 +412,7 @@
         "add_success": "添加成功",
         "save_success": "保存成功",
         "save_failed": "保存失败",
+        "sync_failed": "服务端已保存，画布同步失败，请重新查询，勿重复添加",
         "get_edge_type_failed": "获取边类型失败",
         "get_edge_property_failed": "获取边属性失败",
         "get_vertex_property_failed": "获取点属性失败",
@@ -438,6 +447,7 @@
       "edit_element": {
         "save_success": "保存成功",
         "save_failed": "保存失败",
+        "sync_failed": "数据已保存，但画布更新失败，请重新查询以刷新视图",
         "get_edge_property_failed": "获取边属性失败",
         "get_vertex_property_failed": "获取点属性失败",
         "type": "类型",

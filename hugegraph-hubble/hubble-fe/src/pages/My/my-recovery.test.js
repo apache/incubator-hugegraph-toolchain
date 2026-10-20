@@ -16,6 +16,7 @@
  * under the License.
  */
 
+import {replaceBrowserLocation} from '../../utils/browserNavigation';
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import My from './index';
@@ -26,6 +27,8 @@ import {
 } from '../../modules/algorithm/algorithmsForm/algorithmFormPersistence';
 
 let mockAuthContext = null;
+
+jest.mock('../../utils/browserNavigation', () => ({replaceBrowserLocation: jest.fn()}));
 
 jest.mock('react-i18next', () => ({
     useTranslation: () => ({t: key => key}),
@@ -74,8 +77,7 @@ beforeEach(() => {
         removeListener: jest.fn(),
     }));
     sessionStorage.clear();
-    delete window.location;
-    window.location = {replace: jest.fn()};
+    window.history.replaceState(null, '', '/my');
     api.auth.status.mockResolvedValue({status: 200, data: {level: 'ADMIN'}});
 });
 
@@ -249,7 +251,7 @@ test('stops password submit loading when form validation rejects', async () => {
     await waitFor(() => expect(confirm).not.toHaveClass('ant-btn-loading'));
     expect(api.auth.updatePwd).not.toHaveBeenCalled();
     expect(user.clearLogin).not.toHaveBeenCalled();
-    expect(window.location.replace).not.toHaveBeenCalled();
+    expect(replaceBrowserLocation).not.toHaveBeenCalled();
     expect(screen.getByPlaceholderText('my.edit.new_password_placeholder')).toBeInTheDocument();
 });
 
@@ -266,7 +268,7 @@ test('stops password submit loading when the request rejects', async () => {
     await waitFor(() => expect(confirm).not.toHaveClass('ant-btn-loading'));
     expect(screen.getByPlaceholderText('my.edit.new_password_placeholder')).toBeInTheDocument();
     expect(user.clearLogin).not.toHaveBeenCalled();
-    expect(window.location.replace).not.toHaveBeenCalled();
+    expect(replaceBrowserLocation).not.toHaveBeenCalled();
 });
 
 test('stops password submit loading and preserves the form on a non-200 response', async () => {
@@ -282,7 +284,7 @@ test('stops password submit loading and preserves the form on a non-200 response
     await waitFor(() => expect(confirm).not.toHaveClass('ant-btn-loading'));
     expect(screen.getByPlaceholderText('my.edit.old_password_placeholder')).toHaveValue('old-pass');
     expect(user.clearLogin).not.toHaveBeenCalled();
-    expect(window.location.replace).not.toHaveBeenCalled();
+    expect(replaceBrowserLocation).not.toHaveBeenCalled();
 });
 
 test('clears local auth and redirects only after the password update succeeds', async () => {
@@ -306,6 +308,6 @@ test('clears local auth and redirects only after the password update succeeds', 
     expect(clearPersistedAlgorithmFormsForUser).toHaveBeenCalledTimes(1);
     expect(sessionStorage.getItem('redirect')).toBeNull();
     expect(sessionStorage.getItem('hubble.login_notice')).toBeNull();
-    expect(window.location.replace)
+    expect(replaceBrowserLocation)
         .toHaveBeenCalledWith('/login?notice=credential-updated');
 });

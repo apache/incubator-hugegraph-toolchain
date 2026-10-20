@@ -99,11 +99,11 @@ test('requires exact graph-name confirmation for graph clear', async () => {
     const confirm = screen.getByRole('button', {name: 'Clear graph'});
     expect(confirm).toBeDisabled();
 
-    userEvent.type(input, 'wrong');
+    await userEvent.type(input, 'wrong');
     expect(confirm).toBeDisabled();
 
-    userEvent.clear(input);
-    userEvent.type(input, 'hugegraph');
+    await userEvent.clear(input);
+    await userEvent.type(input, 'hugegraph');
     expect(confirm).toBeEnabled();
 });
 
@@ -121,8 +121,8 @@ test('calls onSuccess only after a successful clear response', async () => {
     const onSuccess = jest.fn();
     renderModal({onConfirm, onSuccess});
 
-    userEvent.type(screen.getByPlaceholderText('Graph name'), 'hugegraph');
-    userEvent.click(screen.getByRole('button', {name: 'Clear graph'}));
+    await userEvent.type(screen.getByPlaceholderText('Graph name'), 'hugegraph');
+    await userEvent.click(screen.getByRole('button', {name: 'Clear graph'}));
 
     await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1));
     expect(onConfirm).toHaveBeenCalledTimes(1);
@@ -133,8 +133,8 @@ test('treats an empty resolved response as a successful clear', async () => {
     const onSuccess = jest.fn();
     renderModal({onConfirm, onSuccess});
 
-    userEvent.type(screen.getByPlaceholderText('Graph name'), 'hugegraph');
-    userEvent.click(screen.getByRole('button', {name: 'Clear graph'}));
+    await userEvent.type(screen.getByPlaceholderText('Graph name'), 'hugegraph');
+    await userEvent.click(screen.getByRole('button', {name: 'Clear graph'}));
 
     await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1));
     expect(screen.queryByText('Clear failed')).not.toBeInTheDocument();
@@ -146,8 +146,8 @@ test('keeps the dialog and confirmation input after an unsuccessful response', a
     renderModal({onConfirm, onSuccess});
 
     const input = screen.getByPlaceholderText('Graph name');
-    userEvent.type(input, 'hugegraph');
-    userEvent.click(screen.getByRole('button', {name: 'Clear graph'}));
+    await userEvent.type(input, 'hugegraph');
+    await userEvent.click(screen.getByRole('button', {name: 'Clear graph'}));
 
     expect(await screen.findByText('boom')).toBeInTheDocument();
     expect(input).toHaveValue('hugegraph');
@@ -163,8 +163,8 @@ test('keeps the dialog usable after a rejected request', async () => {
     renderModal({onConfirm, onSuccess});
 
     const input = screen.getByPlaceholderText('Graph name');
-    userEvent.type(input, 'hugegraph');
-    userEvent.click(screen.getByRole('button', {name: 'Clear graph'}));
+    await userEvent.type(input, 'hugegraph');
+    await userEvent.click(screen.getByRole('button', {name: 'Clear graph'}));
 
     expect(await screen.findByText('network')).toBeInTheDocument();
     expect(input).toHaveValue('hugegraph');
@@ -180,8 +180,8 @@ test('prefers a rejected backend response message over the generic error', async
     const onConfirm = jest.fn().mockRejectedValue(requestError);
     renderModal({onConfirm});
 
-    userEvent.type(screen.getByPlaceholderText('Graph name'), 'hugegraph');
-    userEvent.click(screen.getByRole('button', {name: 'Clear graph'}));
+    await userEvent.type(screen.getByPlaceholderText('Graph name'), 'hugegraph');
+    await userEvent.click(screen.getByRole('button', {name: 'Clear graph'}));
 
     expect(await screen.findByText('backend refused clear')).toBeInTheDocument();
     expect(screen.queryByText('Request failed with status code 500'))
@@ -192,8 +192,8 @@ test('resets confirmation and errors when opened for a new graph', async () => {
     const onConfirm = jest.fn().mockResolvedValue({status: 500, message: 'boom'});
     const {rerender, props} = renderModal({onConfirm});
 
-    userEvent.type(screen.getByPlaceholderText('Graph name'), 'hugegraph');
-    userEvent.click(screen.getByRole('button', {name: 'Clear graph'}));
+    await userEvent.type(screen.getByPlaceholderText('Graph name'), 'hugegraph');
+    await userEvent.click(screen.getByRole('button', {name: 'Clear graph'}));
     expect(await screen.findByText('boom')).toBeInTheDocument();
 
     rerender(<ClearGraphConfirmModal {...props} graph='new-graph' />);
@@ -209,7 +209,7 @@ test('guards duplicate submit and disables cancellation while a request is pendi
     const onSuccess = jest.fn();
     renderModal({onConfirm, onSuccess});
 
-    userEvent.type(screen.getByPlaceholderText('Graph name'), 'hugegraph');
+    await userEvent.type(screen.getByPlaceholderText('Graph name'), 'hugegraph');
     const confirm = screen.getByRole('button', {name: 'Clear graph'});
     act(() => {
         confirm.click();
@@ -236,8 +236,8 @@ test('ignores stale failure and finally after reopening for a newer graph reques
         onSuccess,
     });
 
-    userEvent.type(screen.getByPlaceholderText('Graph name'), 'graph-a');
-    userEvent.click(screen.getByRole('button', {name: 'Clear graph'}));
+    await userEvent.type(screen.getByPlaceholderText('Graph name'), 'graph-a');
+    await userEvent.click(screen.getByRole('button', {name: 'Clear graph'}));
     expect(onConfirmA).toHaveBeenCalledTimes(1);
 
     rerender(<ClearGraphConfirmModal {...props} open={false} graph='graph-a' />);
@@ -249,8 +249,8 @@ test('ignores stale failure and finally after reopening for a newer graph reques
             onConfirm={onConfirmB}
         />
     );
-    userEvent.type(screen.getByPlaceholderText('Graph name'), 'graph-b');
-    userEvent.click(screen.getByRole('button', {name: 'Clear graph'}));
+    await userEvent.type(screen.getByPlaceholderText('Graph name'), 'graph-b');
+    await userEvent.click(screen.getByRole('button', {name: 'Clear graph'}));
     expect(onConfirmB).toHaveBeenCalledTimes(1);
 
     await act(async () => requestA.resolve({status: 500, message: 'stale boom'}));
@@ -274,8 +274,8 @@ test('ignores stale success after reopening for a newer graph', async () => {
         onSuccess,
     });
 
-    userEvent.type(screen.getByPlaceholderText('Graph name'), 'graph-a');
-    userEvent.click(screen.getByRole('button', {name: 'Clear graph'}));
+    await userEvent.type(screen.getByPlaceholderText('Graph name'), 'graph-a');
+    await userEvent.click(screen.getByRole('button', {name: 'Clear graph'}));
 
     rerender(<ClearGraphConfirmModal {...props} open={false} graph='graph-a' />);
     rerender(<ClearGraphConfirmModal {...props} open graph='graph-b' />);

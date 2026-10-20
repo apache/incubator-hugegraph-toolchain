@@ -20,13 +20,14 @@
  * @file 图算法 Home
  */
 
-import React, {useCallback, useState, useEffect, useContext, useRef} from 'react';
+import {useCallback, useState, useEffect, useContext, useRef, useMemo, useLayoutEffect} from 'react';
 import AlgorithmFormHome from '../algorithmsForm/Home';
 import GraphResult from '../GraphResult/Home';
 import LogsDetail from '../LogsDetail/Home';
 import GraphAnalysisContext from '../../Context';
 import {GRAPH_STATUS, PANEL_TYPE, GRAPH_RENDER_MODE, useTranslatedConstants} from '../../../utils/constants';
 import * as api from '../../../api';
+import {USER_CHANGE_EVENT} from '../../../utils/user';
 import _ from 'lodash';
 import c from './index.module.scss';
 
@@ -44,9 +45,10 @@ const AlgorithmHome = () => {
 
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
 
-    const [metaData, setMetaData] = useState();
-    const [propertyKeysRecords, setPropertyKeysRecords] = useState();
+    const [metaDataState, setMetaDataState] = useState();
+    const [propertyKeysState, setPropertyKeysState] = useState();
     const [graphNums, setGraphNums] = useState({vertexCount: -1, edgeCount: -1});
+    const [identityVersion, setIdentityVersion] = useState(0);
     const [algorithmMode, setAlgorithmMode] = useState();
     const [queryStatus, setQueryStatus] = useState(STANDBY);
     const [queryMessage, setQueryMessage] = useState();
@@ -70,6 +72,44 @@ const AlgorithmHome = () => {
     const executionLogsRequest = useRef(null);
     const favoriteQueriesRequest = useRef(null);
     const graphNumsRequest = useRef(null);
+    const algorithmRequest = useRef(null);
+    const graphNumsScope = useMemo(() => ({graphSpace, graph, identityVersion}), [graphSpace, graph, identityVersion]);
+    const metaData = metaDataState?.owner === graphNumsScope ? metaDataState.data : undefined;
+    const propertyKeysRecords = propertyKeysState?.owner === graphNumsScope ? propertyKeysState.records : undefined;
+    const metaDataRequest = useRef(null);
+    const propertyKeysRequest = useRef(null);
+    const graphNumsOwner = useRef(null);
+    useLayoutEffect(() => {
+        graphNumsOwner.current = graphNumsScope;
+        metaDataRequest.current = null;
+        propertyKeysRequest.current = null;
+        algorithmRequest.current = null;
+        return () => {
+            graphNumsOwner.current = null;
+            metaDataRequest.current = null;
+            propertyKeysRequest.current = null;
+            algorithmRequest.current = null;
+        };
+    }, [graphNumsScope]);
+
+    useEffect(() => {
+        const resetIdentity = () => {
+            graphNumsRequest.current = null;
+            graphNumsOwner.current = null;
+            metaDataRequest.current = null;
+            propertyKeysRequest.current = null;
+            algorithmRequest.current = null;
+            setQueryStatus(STANDBY);
+            setQueryMessage();
+            setQueryResult({});
+            setAsyncTaskResult();
+            setPanelType(CLOSED);
+            setGraphNums({vertexCount: -1, edgeCount: -1});
+            setIdentityVersion(previous => previous + 1);
+        };
+        window.addEventListener(USER_CHANGE_EVENT, resetIdentity);
+        return () => window.removeEventListener(USER_CHANGE_EVENT, resetIdentity);
+    }, [CLOSED, STANDBY]);
 
     useEffect(() => () => {
         executionLogsRequest.current = null;
@@ -89,48 +129,79 @@ const AlgorithmHome = () => {
 
     const getMetaData = useCallback(
         async () => {
-            let edgeMeta;
-            let vertexMeta;
-            const edgeMetaResponse = await api.manage.getMetaEdgeList(graphSpace, graph, {page_size: -1});
-            if (edgeMetaResponse.status === 200) {
-                edgeMeta = edgeMetaResponse.data.records;
+            if (graphNumsOwner.current !== graphNumsScope || !graphSpace || !graph) return;
+            const request = Symbol('schema-metadata');
+            metaDataRequest.current = request;
+            const isCurrent = () => graphNumsOwner.current === graphNumsScope && metaDataRequest.current === request;
+            try {
+                const edgeResponse = await api.manage.getMetaEdgeList(graphSpace, graph, {page_size: -1});
+                if (!isCurrent()) return;
+                const vertexResponse = await api.manage.getMetaVertexList(graphSpace, graph, {page_size: -1});
+                if (!isCurrent()) return;
+                setMetaDataState({
+                    owner: graphNumsScope,
+                    data: {
+                        edgeMeta: edgeResponse?.status === 200 ? edgeResponse.data?.records : undefined,
+                        vertexMeta: vertexResponse?.status === 200 ? vertexResponse.data?.records : undefined,
+                    },
+                });
+            } catch {
+                if (isCurrent()) setMetaDataState();
             }
-            const vertexMetaResponse = await api.manage.getMetaVertexList(graphSpace, graph, {page_size: -1});
-            if (vertexMetaResponse.status === 200) {
-                vertexMeta = vertexMetaResponse.data.records;
-            }
-            setMetaData({edgeMeta, vertexMeta});
         },
-        [graph, graphSpace]
+        [graph, graphSpace, graphNumsScope]
     );
 
     const getPropertykeys = useCallback(
         async () => {
-            const response = await api.manage.getMetaPropertyList(graphSpace, graph, {page_size: -1});
-            if (response.status === 200) {
-                setPropertyKeysRecords(response?.data?.records ?? []);
+            if (graphNumsOwner.current !== graphNumsScope || !graphSpace || !graph) return;
+            const request = Symbol('schema-property-keys');
+            propertyKeysRequest.current = request;
+            const isCurrent = () => graphNumsOwner.current === graphNumsScope && propertyKeysRequest.current === request;
+            try {
+                const response = await api.manage.getMetaPropertyList(graphSpace, graph, {page_size: -1});
+                if (!isCurrent()) return;
+                setPropertyKeysState(response?.status === 200 ? {
+                    owner: graphNumsScope,
+                    records: response.data?.records ?? [],
+                } : undefined);
+            } catch {
+                if (isCurrent()) setPropertyKeysState();
             }
         },
-        [graph, graphSpace]
+        [graph, graphSpace, graphNumsScope]
     );
 
     const getGraphNumsInfo = useCallback(
         async () => {
+            if (graphNumsOwner.current !== graphNumsScope || !graphSpace || !graph) return {status: 'disposed'};
             const request = Symbol('algorithm-graph-counts');
             graphNumsRequest.current = request;
-            setGraphNums({vertexCount: -1, edgeCount: -1});
-            const response = await api.analysis.getGraphData(graphSpace, graph);
-            if (graphNumsRequest.current !== request) {
-                return;
+            let response;
+            try {
+                response = await api.analysis.getGraphData(graphSpace, graph);
+            } catch {
+                response = null;
             }
-            const {status, data} = response || {};
-            if (status === 200) {
-                const {vertexcount, edgecount} = data || {};
-                setGraphNums({vertexCount: vertexcount, edgeCount: edgecount});
+            if (graphNumsOwner.current !== graphNumsScope || graphNumsRequest.current !== request) {
+                return {status: 'superseded'};
             }
+            if (response?.status !== 200) {
+                setGraphNums({vertexCount: null, edgeCount: null});
+                return {status: 'unavailable'};
+            }
+            const {vertexcount, edgecount} = response.data || {};
+            setGraphNums({vertexCount: vertexcount, edgeCount: edgecount});
+            return {status: 'refreshed'};
         },
-        [graph, graphSpace]
+        [graph, graphSpace, graphNumsScope]
     );
+
+    useEffect(() => {
+        graphNumsRequest.current = null;
+        setGraphNums({vertexCount: -1, edgeCount: -1});
+        void getGraphNumsInfo();
+    }, [getGraphNumsInfo]);
 
     const getFavoriteQueriesList = useCallback(
         async () => {
@@ -165,6 +236,7 @@ const AlgorithmHome = () => {
                     throw new Error('algorithm favorites unavailable');
                 }
                 setFavoriteQueriesData({
+                    page: pageFavorite,
                     records: data?.records ?? [],
                     total: data?.total ?? 0,
                 });
@@ -251,6 +323,7 @@ const AlgorithmHome = () => {
     useEffect(
         () => {
             if (pageFavorite > 1
+                && favoriteQueriesData.page === pageFavorite
                 && !favoriteQueriesLoading
                 && !favoriteQueriesError
                 && Array.isArray(favoriteQueriesData.records)
@@ -262,15 +335,6 @@ const AlgorithmHome = () => {
             pageFavorite, pageSize]
     );
 
-    const resetGraphInfo = useCallback(
-        () => {
-            getMetaData();
-            getPropertykeys();
-            getGraphNumsInfo();
-        },
-        [getGraphNumsInfo, getMetaData, getPropertykeys]
-    );
-
     const onResetPage = useCallback(
         () => {
             setExecutePage(defaultPageParams.page);
@@ -280,19 +344,31 @@ const AlgorithmHome = () => {
 
     useEffect(() => {
         if (graphSpace && graph) {
-            resetGraphInfo();
+            getMetaData();
+            getPropertykeys();
         }
         initQueryResult();
         onResetPage();
-    }, [graph, graphSpace, initQueryResult, onResetPage, resetGraphInfo]);
+    }, [graph, graphSpace, identityVersion, getMetaData, getPropertykeys, initQueryResult, onResetPage]);
 
 
     const handleUpdateCurrentAlgorithm = useCallback(value => {
         setAlgorithmOnCanvas(value);
     }, []);
 
+    const beginSubmission = useCallback(applyResult => {
+        if (graphNumsOwner.current !== graphNumsScope) return () => {};
+        const request = Symbol('algorithm-execution');
+        algorithmRequest.current = request;
+        return (...args) => {
+            if (graphNumsOwner.current === graphNumsScope && algorithmRequest.current === request) {
+                applyResult(...args);
+            }
+        };
+    }, [graphNumsScope]);
+
     const handleOltpFormSubmit = useCallback(
-        (status, data, message, options) => {
+        () => beginSubmission((status, data, message, options) => {
             setPanelType(CLOSED);
             setGraphRenderMode(CANVAS2D);
             setAlgorithmMode(OLTP);
@@ -302,24 +378,25 @@ const AlgorithmHome = () => {
             setQueryMessage(message);
             options && setGraphOptions(options);
             getExecutionLogsList();
-        },
-        [CANVAS2D, CLOSED, OLTP, getExecutionLogsList]
+        }),
+        [CANVAS2D, CLOSED, OLTP, beginSubmission, getExecutionLogsList]
     );
 
     const handleOlapFormSubmit = useCallback(
-        (status, data, message) => {
+        () => beginSubmission((status, data, message) => {
             setPanelType(CLOSED);
             setAlgorithmMode(OLAP);
             setQueryResult({});
             setQueryStatus(status);
             setAsyncTaskResult(data);
             setQueryMessage(message || '');
-        },
-        [CLOSED, OLAP]
+        }),
+        [CLOSED, OLAP, beginSubmission]
     );
 
     const resetGraphStatus = useCallback(
         (status, message, data) => {
+            algorithmRequest.current = null;
             setPanelType(CLOSED);
             setAlgorithmMode(OLTP);
             setAlgorithmOnCanvas();
@@ -362,6 +439,7 @@ const AlgorithmHome = () => {
         <>
             <div className={c.algorithmContent}>
                 <AlgorithmFormHome
+                    key={JSON.stringify([graphSpace, graph, identityVersion])}
                     handleOltpFormSubmit={handleOltpFormSubmit}
                     handleOlapFormSubmit={handleOlapFormSubmit}
                     currentAlgorithm={algorithmOnCanvas}
@@ -382,6 +460,7 @@ const AlgorithmHome = () => {
                     algorithm={algorithmOnCanvas}
                     panelType={panelType}
                     graphNums={graphNums}
+                    onRefreshGraphNums={getGraphNumsInfo}
                     propertyKeysRecords={propertyKeysRecords}
                     updatePanelType={updatePanelType}
                     resetGraphStatus={resetGraphStatus}

@@ -20,15 +20,14 @@
  * @file 图分析组件 层次布局
  */
 
-import React, {useMemo} from 'react';
-import {Form, Select} from 'antd';
+import {useMemo, useId} from 'react';
+import {Form, Select, InputNumber} from 'antd';
 import {useTranslation} from 'react-i18next';
-import SliderComponent from '../../../../components/SlideComponent';
-import _ from 'lodash';
 
 const DagreLayoutForm = props => {
-    const {handleFormChange, initialValues} = props;
+    const {handleFormChange, initialValues, disabled} = props;
     const {t} = useTranslation();
+    const instanceId = useId();
     const {useForm} = Form;
     const [dagreLayoutForm] = useForm();
     const rankdirOptions = useMemo(
@@ -42,7 +41,7 @@ const DagreLayoutForm = props => {
     );
     const alignOptions = useMemo(
         () => [
-            {value: null, label: t('analysis.canvas.layout_panel.align_center')},
+            {value: 'center', label: t('analysis.canvas.layout_panel.align_center')},
             {value: 'UL', label: t('analysis.canvas.layout_panel.align_ul')},
             {value: 'UR', label: t('analysis.canvas.layout_panel.align_ur')},
             {value: 'DL', label: t('analysis.canvas.layout_panel.align_dl')},
@@ -53,8 +52,10 @@ const DagreLayoutForm = props => {
 
     return (
         <Form
+            name={instanceId}
             form={dagreLayoutForm}
-            onValuesChange={_.debounce(handleFormChange, 100)}
+            onValuesChange={handleFormChange}
+            disabled={disabled}
             initialValues={initialValues}
             labelCol={{span: 24}}
         >
@@ -63,28 +64,28 @@ const DagreLayoutForm = props => {
                 label={t('analysis.canvas.layout_panel.rankdir')}
                 tooltip={t('analysis.canvas.layout_panel.rankdir_tooltip')}
             >
-                <Select options={rankdirOptions} />
+                <Select aria-label={t('analysis.canvas.layout_panel.rankdir')} options={rankdirOptions} />
             </Form.Item>
             <Form.Item
                 name='align'
                 label={t('analysis.canvas.layout_panel.align')}
                 tooltip={t('analysis.canvas.layout_panel.align_tooltip')}
             >
-                <Select options={alignOptions} />
+                <Select aria-label={t('analysis.canvas.layout_panel.align')} options={alignOptions} />
             </Form.Item>
             <Form.Item
                 name='ranksep'
                 label={t('analysis.canvas.layout_panel.ranksep')}
                 tooltip={t('analysis.canvas.layout_panel.ranksep_tooltip')}
             >
-                <SliderComponent max={1000} />
+                <InputNumber aria-label={t('analysis.canvas.layout_panel.ranksep')} min={0} style={{width: '100%'}} max={1000} />
             </Form.Item>
             <Form.Item
                 name='nodesep'
                 label={t('analysis.canvas.layout_panel.nodesep')}
                 tooltip={t('analysis.canvas.layout_panel.nodesep_tooltip')}
             >
-                <SliderComponent max={1000} />
+                <InputNumber aria-label={t('analysis.canvas.layout_panel.nodesep')} min={0} style={{width: '100%'}} max={1000} />
             </Form.Item>
         </Form>
     );

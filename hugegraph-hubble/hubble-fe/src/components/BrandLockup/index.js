@@ -15,7 +15,6 @@
  * under the License.
  */
 
-import PropTypes from 'prop-types';
 import Mark from '../../assets/hugegraph-mark.svg';
 import style from './index.module.scss';
 
@@ -25,10 +24,5 @@ const BrandLockup = ({className = '', compact = false}) => (
         <span className={style.wordmark} aria-hidden='true'>HugeGraph</span>
     </span>
 );
-
-BrandLockup.propTypes = {
-    className: PropTypes.string,
-    compact: PropTypes.bool,
-};
 
 export default BrandLockup;

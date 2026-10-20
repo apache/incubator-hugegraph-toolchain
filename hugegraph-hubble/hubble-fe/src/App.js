@@ -17,7 +17,6 @@
  */
 
 import Route from './routes';
-import 'antd/dist/antd.css';
 import './App.scss';
 import './App.css';
 import './styles/workbench.scss';

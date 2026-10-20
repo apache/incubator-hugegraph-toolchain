@@ -59,16 +59,15 @@ if [[ ! -f "${tarball}" ]]; then
     exit 1
 fi
 
-if ! command -v jar >/dev/null 2>&1; then
-    echo "jar is required to inspect bundled JARs; select a JDK through PATH" >&2
+if ! command -v python3 >/dev/null 2>&1; then
+    echo "python3 is required to inspect bundled JARs" >&2
     exit 1
 fi
 
 tmp_list=$(mktemp)
 tmp_dir=$(mktemp -d)
 native_list=$(mktemp)
-jar_entries=$(mktemp)
-trap 'rm -f "${tmp_list}" "${native_list}" "${jar_entries}"; rm -rf "${tmp_dir}"' EXIT
+trap 'rm -f "${tmp_list}" "${native_list}"; rm -rf "${tmp_dir}"' EXIT
 
 tar -tzf "${tarball}" > "${tmp_list}"
 
@@ -212,18 +211,40 @@ if [[ "${fe_license_count}" -eq 0 ]]; then
     exit 1
 fi
 
-while IFS= read -r jar_path; do
-    local_jar="${tmp_dir}/${jar_path}"
-    if ! jar tf "${local_jar}" > "${jar_entries}"; then
-        echo "Unable to inspect packaged JAR: ${jar_path}" >&2
-        exit 1
-    fi
-    if grep -qE "\\.(so|dylib|dll|jnilib)$" "${jar_entries}"; then
-        echo "${jar_path}" >> "${native_list}"
-    fi
-done < <(grep -E "^${root}/lib/[^/]+\\.jar$" "${tmp_list}")
+# Read every central directory in one process instead of starting a JVM per JAR.
+# Like `jar tf`, this inventories entries; payload integrity/provenance checks
+# remain the responsibility of the candidate SDK verifier and release sidecars.
+native_jar_count=$(python3 - "${tmp_dir}" "${tmp_list}" "${root}" "${native_list}" <<'PYTHON'
+import pathlib
+import sys
+import zipfile
 
-native_jar_count=$(wc -l < "${native_list}" | tr -d ' ')
+extract_dir, entries_path, root, native_path = sys.argv[1:]
+prefix = root + "/lib/"
+native_jars = []
+with open(entries_path, encoding="utf-8") as entries:
+    for line in entries:
+        path = line.rstrip("\n")
+        if not path.startswith(prefix):
+            continue
+        filename = path[len(prefix):]
+        if "/" in filename or not filename.endswith(".jar"):
+            continue
+        try:
+            with zipfile.ZipFile(pathlib.Path(extract_dir) / path) as jar:
+                if any(entry.filename.endswith((".so", ".dylib", ".dll", ".jnilib"))
+                       for entry in jar.infolist()):
+                    native_jars.append(path)
+        except (OSError, zipfile.BadZipFile, UnicodeError, ValueError) as error:
+            print(f"Unable to inspect packaged JAR: {path}: {error}", file=sys.stderr)
+            sys.exit(1)
+with open(native_path, "w", encoding="utf-8") as native_file:
+    for path in native_jars:
+        native_file.write(path + "\n")
+print(len(native_jars))
+PYTHON
+)
+
 checksum_status="not_checked"
 signature_status="not_checked"
 
