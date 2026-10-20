@@ -229,7 +229,7 @@
       },
       "canvas_3d": {
         "unavailable": "3D mode could not be loaded or displayed",
-        "refresh_hint": "You can return to 2D to continue. Refresh the page before trying 3D again.",
+        "refresh_hint": "Return to 2D to continue; refresh the page before trying 3D again",
         "back_to_2d": "Return to 2D",
         "node": "Node",
         "edge": "Edge",

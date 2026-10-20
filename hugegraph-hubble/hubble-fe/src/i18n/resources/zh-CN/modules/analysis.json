@@ -229,7 +229,7 @@
       },
       "canvas_3d": {
         "unavailable": "3D 模式暂时无法加载或显示",
-        "refresh_hint": "你可以返回 2D 继续操作。如需再次尝试 3D，请先刷新页面。",
+        "refresh_hint": "可返回 2D 继续操作；再次尝试 3D 前请刷新页面",
         "back_to_2d": "返回 2D",
         "node": "节点",
         "edge": "边",
