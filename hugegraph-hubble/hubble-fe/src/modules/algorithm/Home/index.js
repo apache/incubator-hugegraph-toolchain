@@ -45,8 +45,8 @@ const AlgorithmHome = () => {
 
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
 
-    const [metaData, setMetaData] = useState();
-    const [propertyKeysRecords, setPropertyKeysRecords] = useState();
+    const [metaDataState, setMetaDataState] = useState();
+    const [propertyKeysState, setPropertyKeysState] = useState();
     const [graphNums, setGraphNums] = useState({vertexCount: -1, edgeCount: -1});
     const [identityVersion, setIdentityVersion] = useState(0);
     const [algorithmMode, setAlgorithmMode] = useState();
@@ -74,12 +74,20 @@ const AlgorithmHome = () => {
     const graphNumsRequest = useRef(null);
     const algorithmRequest = useRef(null);
     const graphNumsScope = useMemo(() => ({graphSpace, graph, identityVersion}), [graphSpace, graph, identityVersion]);
+    const metaData = metaDataState?.owner === graphNumsScope ? metaDataState.data : undefined;
+    const propertyKeysRecords = propertyKeysState?.owner === graphNumsScope ? propertyKeysState.records : undefined;
+    const metaDataRequest = useRef(null);
+    const propertyKeysRequest = useRef(null);
     const graphNumsOwner = useRef(null);
     useLayoutEffect(() => {
         graphNumsOwner.current = graphNumsScope;
+        metaDataRequest.current = null;
+        propertyKeysRequest.current = null;
         algorithmRequest.current = null;
         return () => {
             graphNumsOwner.current = null;
+            metaDataRequest.current = null;
+            propertyKeysRequest.current = null;
             algorithmRequest.current = null;
         };
     }, [graphNumsScope]);
@@ -88,6 +96,8 @@ const AlgorithmHome = () => {
         const resetIdentity = () => {
             graphNumsRequest.current = null;
             graphNumsOwner.current = null;
+            metaDataRequest.current = null;
+            propertyKeysRequest.current = null;
             algorithmRequest.current = null;
             setQueryStatus(STANDBY);
             setQueryMessage();
@@ -119,29 +129,47 @@ const AlgorithmHome = () => {
 
     const getMetaData = useCallback(
         async () => {
-            let edgeMeta;
-            let vertexMeta;
-            const edgeMetaResponse = await api.manage.getMetaEdgeList(graphSpace, graph, {page_size: -1});
-            if (edgeMetaResponse.status === 200) {
-                edgeMeta = edgeMetaResponse.data.records;
+            if (graphNumsOwner.current !== graphNumsScope || !graphSpace || !graph) return;
+            const request = Symbol('schema-metadata');
+            metaDataRequest.current = request;
+            const isCurrent = () => graphNumsOwner.current === graphNumsScope && metaDataRequest.current === request;
+            try {
+                const edgeResponse = await api.manage.getMetaEdgeList(graphSpace, graph, {page_size: -1});
+                if (!isCurrent()) return;
+                const vertexResponse = await api.manage.getMetaVertexList(graphSpace, graph, {page_size: -1});
+                if (!isCurrent()) return;
+                setMetaDataState({
+                    owner: graphNumsScope,
+                    data: {
+                        edgeMeta: edgeResponse?.status === 200 ? edgeResponse.data?.records : undefined,
+                        vertexMeta: vertexResponse?.status === 200 ? vertexResponse.data?.records : undefined,
+                    },
+                });
+            } catch {
+                if (isCurrent()) setMetaDataState();
             }
-            const vertexMetaResponse = await api.manage.getMetaVertexList(graphSpace, graph, {page_size: -1});
-            if (vertexMetaResponse.status === 200) {
-                vertexMeta = vertexMetaResponse.data.records;
-            }
-            setMetaData({edgeMeta, vertexMeta});
         },
-        [graph, graphSpace]
+        [graph, graphSpace, graphNumsScope]
     );
 
     const getPropertykeys = useCallback(
         async () => {
-            const response = await api.manage.getMetaPropertyList(graphSpace, graph, {page_size: -1});
-            if (response.status === 200) {
-                setPropertyKeysRecords(response?.data?.records ?? []);
+            if (graphNumsOwner.current !== graphNumsScope || !graphSpace || !graph) return;
+            const request = Symbol('schema-property-keys');
+            propertyKeysRequest.current = request;
+            const isCurrent = () => graphNumsOwner.current === graphNumsScope && propertyKeysRequest.current === request;
+            try {
+                const response = await api.manage.getMetaPropertyList(graphSpace, graph, {page_size: -1});
+                if (!isCurrent()) return;
+                setPropertyKeysState(response?.status === 200 ? {
+                    owner: graphNumsScope,
+                    records: response.data?.records ?? [],
+                } : undefined);
+            } catch {
+                if (isCurrent()) setPropertyKeysState();
             }
         },
-        [graph, graphSpace]
+        [graph, graphSpace, graphNumsScope]
     );
 
     const getGraphNumsInfo = useCallback(

@@ -1730,3 +1730,65 @@ it.each([false, true].flatMap(returnToAlice =>
     expect(screen.getByText(returnToAlice ? 'graph counts 30 31' : 'graph counts 20 21')).toBeInTheDocument();
     view.unmount();
 });
+
+
+const schemaList = name => ({status: 200, data: {records: [{name}]}});
+const currentSchema = name => ({edgeMeta: [{name: `${name}-edge`}], vertexMeta: [{name: `${name}-vertex`}]});
+
+it.each([
+    ['graph', 'edge'], ['graph', 'vertex'],
+    ['return-to-a', 'edge'], ['return-to-a', 'vertex'], ['identity', 'vertex'],
+])('keeps Schema inputs owned after %s changes with late %s metadata', async (change, held) => {
+    const oldMetadata = pendingResponse();
+    const oldKeys = pendingResponse();
+    api.manage.getMetaEdgeList
+        .mockReturnValueOnce(held === 'edge' ? oldMetadata.promise : Promise.resolve(schemaList('old-edge')))
+        .mockResolvedValueOnce(schemaList('b-edge'))
+        .mockResolvedValue(schemaList('a2-edge'));
+    if (held === 'vertex') api.manage.getMetaVertexList.mockReturnValueOnce(oldMetadata.promise);
+    api.manage.getMetaVertexList.mockResolvedValueOnce(schemaList('b-vertex'));
+    if (change === 'return-to-a') api.manage.getMetaVertexList.mockResolvedValueOnce(schemaList('a2-vertex'));
+    api.manage.getMetaVertexList.mockResolvedValue(schemaList('old-vertex'));
+    api.manage.getMetaPropertyList
+        .mockReturnValueOnce(oldKeys.promise)
+        .mockResolvedValueOnce(schemaList('b-key'))
+        .mockResolvedValue(schemaList('a2-key'));
+    const view = render(countsHomeFor());
+    await act(async () => {});
+    if (change === 'identity') act(() => setUser({id: 'schema-reader', user_name: 'schema-reader'}));
+    else view.rerender(countsHomeFor('graph-b'));
+    await waitFor(() => expect(mockQueryResultProps.mock.lastCall[0].metaData).toEqual(currentSchema('b')));
+    expect(mockQueryResultProps.mock.lastCall[0].propertyKeysRecords).toEqual([{name: 'b-key'}]);
+    let expected = 'b';
+    if (change === 'return-to-a') {
+        view.rerender(countsHomeFor());
+        await waitFor(() => expect(mockQueryResultProps.mock.lastCall[0].metaData).toEqual(currentSchema('a2')));
+        expect(mockQueryResultProps.mock.lastCall[0].propertyKeysRecords).toEqual([{name: 'a2-key'}]);
+        expected = 'a2';
+    }
+    await act(async () => {
+        oldMetadata.resolve(schemaList(`old-${held}`));
+        oldKeys.resolve(schemaList('old-key'));
+    });
+    expect(mockQueryResultProps.mock.lastCall[0].metaData).toEqual(currentSchema(expected));
+    expect(mockQueryResultProps.mock.lastCall[0].propertyKeysRecords).toEqual([{name: `${expected}-key`}]);
+    view.unmount();
+});
+
+it('hides confirmed old Schema inputs as soon as the selected graph changes', async () => {
+    api.manage.getMetaEdgeList.mockResolvedValue(schemaList('a-edge'));
+    api.manage.getMetaVertexList.mockResolvedValue(schemaList('a-vertex'));
+    api.manage.getMetaPropertyList.mockResolvedValue(schemaList('a-key'));
+    const view = render(countsHomeFor());
+    await waitFor(() => expect(mockQueryResultProps.mock.lastCall[0].metaData).toEqual(currentSchema('a')));
+    const pending = pendingResponse();
+    api.manage.getMetaEdgeList.mockReturnValueOnce(pending.promise);
+    api.manage.getMetaPropertyList.mockReturnValueOnce(pending.promise);
+    view.rerender(countsHomeFor('graph-b'));
+    expect(mockQueryResultProps.mock.lastCall[0].metaData).toBeUndefined();
+    expect(mockQueryResultProps.mock.lastCall[0].propertyKeysRecords).toBeUndefined();
+    view.unmount();
+    const vertexCalls = api.manage.getMetaVertexList.mock.calls.length;
+    await act(async () => pending.resolve(schemaList('disposed')));
+    expect(api.manage.getMetaVertexList).toHaveBeenCalledTimes(vertexCalls);
+});

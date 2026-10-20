@@ -89,8 +89,8 @@ const AnalysisHome = ({toolbarExtra}) => {
     const [isQueryMode, setQueryMode] = useState(true);
     const [queryResult, setQueryResult] = useState();
     const [asyncTaskResult, setAsyncTaskResult] = useState();
-    const [metaData, setMetaData] = useState();
-    const [propertyKeysRecords, setPropertyKeysRecords] = useState();
+    const [metaDataState, setMetaDataState] = useState();
+    const [propertyKeysState, setPropertyKeysState] = useState();
     const [graphNums, setGraphNums] = useState({vertexCount: -1, edgeCount: -1});
     const [executeMode, setExecuteMode] = useState(QUERY);
     const [queryLanguage, setQueryLanguage] = useState(DEFAULT_QUERY_LANGUAGE);
@@ -119,10 +119,20 @@ const AnalysisHome = ({toolbarExtra}) => {
     const executionTimer = useRef(null);
     const graphNumsRequest = useRef(null);
     const graphNumsScope = useMemo(() => ({graphSpace, graph, identityVersion}), [graphSpace, graph, identityVersion]);
+    const metaData = metaDataState?.owner === graphNumsScope ? metaDataState.data : undefined;
+    const propertyKeysRecords = propertyKeysState?.owner === graphNumsScope ? propertyKeysState.records : undefined;
+    const metaDataRequest = useRef(null);
+    const propertyKeysRequest = useRef(null);
     const graphNumsOwner = useRef(null);
     useLayoutEffect(() => {
         graphNumsOwner.current = graphNumsScope;
-        return () => { graphNumsOwner.current = null; };
+        metaDataRequest.current = null;
+        propertyKeysRequest.current = null;
+        return () => {
+            graphNumsOwner.current = null;
+            metaDataRequest.current = null;
+            propertyKeysRequest.current = null;
+        };
     }, [graphNumsScope]);
     const executionInFlight = useRef(null);
     const executionLogsRequest = useRef(null);
@@ -274,30 +284,47 @@ const AnalysisHome = ({toolbarExtra}) => {
 
     const getMetaData = useCallback(
         async () => {
-            let edgeMeta;
-            let vertexMeta;
-            const edgeMetaResponse = await api.manage.getMetaEdgeList(graphSpace, graph, {page_size: -1});
-            if (edgeMetaResponse.status === 200) {
-                edgeMeta = edgeMetaResponse.data.records;
+            if (graphNumsOwner.current !== graphNumsScope || !graphSpace || !graph) return;
+            const request = Symbol('schema-metadata');
+            metaDataRequest.current = request;
+            const isCurrent = () => graphNumsOwner.current === graphNumsScope && metaDataRequest.current === request;
+            try {
+                const edgeResponse = await api.manage.getMetaEdgeList(graphSpace, graph, {page_size: -1});
+                if (!isCurrent()) return;
+                const vertexResponse = await api.manage.getMetaVertexList(graphSpace, graph, {page_size: -1});
+                if (!isCurrent()) return;
+                setMetaDataState({
+                    owner: graphNumsScope,
+                    data: {
+                        edgeMeta: edgeResponse?.status === 200 ? edgeResponse.data?.records : undefined,
+                        vertexMeta: vertexResponse?.status === 200 ? vertexResponse.data?.records : undefined,
+                    },
+                });
+            } catch {
+                if (isCurrent()) setMetaDataState();
             }
-            const vertexMetaResponse = await api.manage.getMetaVertexList(graphSpace, graph, {page_size: -1});
-            if (vertexMetaResponse.status === 200) {
-                vertexMeta = vertexMetaResponse.data.records;
-            }
-            setMetaData({edgeMeta, vertexMeta});
         },
-        [graph, graphSpace]
+        [graph, graphSpace, graphNumsScope]
     );
 
     const getPropertykeys = useCallback(
         async () => {
-            const response = await api.manage.getMetaPropertyList(graphSpace, graph, {page_size: -1});
-            if (response.status === 200) {
-                const propertykeysRecords = response?.data?.records ?? [];
-                setPropertyKeysRecords(propertykeysRecords);
+            if (graphNumsOwner.current !== graphNumsScope || !graphSpace || !graph) return;
+            const request = Symbol('schema-property-keys');
+            propertyKeysRequest.current = request;
+            const isCurrent = () => graphNumsOwner.current === graphNumsScope && propertyKeysRequest.current === request;
+            try {
+                const response = await api.manage.getMetaPropertyList(graphSpace, graph, {page_size: -1});
+                if (!isCurrent()) return;
+                setPropertyKeysState(response?.status === 200 ? {
+                    owner: graphNumsScope,
+                    records: response.data?.records ?? [],
+                } : undefined);
+            } catch {
+                if (isCurrent()) setPropertyKeysState();
             }
         },
-        [graph, graphSpace]
+        [graph, graphSpace, graphNumsScope]
     );
 
     const getGraphNumsInfo = useCallback(
@@ -368,19 +395,22 @@ const AnalysisHome = ({toolbarExtra}) => {
     );
 
     useEffect(() => {
+        if (graphSpace && graph) {
+            void getMetaData();
+            void getPropertykeys();
+        }
+    }, [graph, graphSpace, getMetaData, getPropertykeys]);
+
+    useEffect(() => {
         queryRequest.current = null;
         executionInFlight.current = null;
         setQueryLanguage(DEFAULT_QUERY_LANGUAGE);
         languageDrafts.current = {};
         setEditorSource('manual');
         setCodeEditorContent(restoreQuery(graphSpace, graph, GREMLIN));
-        if (graphSpace && graph) {
-            getMetaData();
-            getPropertykeys();
-        }
         initQueryResult();
         onResetPage();
-    }, [graph, graphSpace, getMetaData, getPropertykeys, initQueryResult, onResetPage]);
+    }, [graph, graphSpace, initQueryResult, onResetPage]);
 
     const onExecuteModeChange = useCallback(
         mode => {
@@ -573,6 +603,8 @@ const AnalysisHome = ({toolbarExtra}) => {
             queryRequest.current = null;
             graphNumsRequest.current = null;
             graphNumsOwner.current = null;
+            metaDataRequest.current = null;
+            propertyKeysRequest.current = null;
             setGraphNums({vertexCount: -1, edgeCount: -1});
             executionInFlight.current = null;
             executionLogsRequest.current = null;
