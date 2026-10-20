@@ -20,7 +20,7 @@
  * @file 图分析画布 Home
  */
 
-import {useCallback, useLayoutEffect, useState, useContext, useMemo, useRef} from 'react';
+import {useCallback, useEffect, useLayoutEffect, useState, useContext, useMemo, useRef} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Button} from 'antd';
 import GraphAnalysisContext from '../../../../Context';
@@ -48,6 +48,7 @@ import {shouldKeepGraphCanvas} from '../../../../component/Graph/data';
 import {getQueryResultStandbyMessage} from '../../Home/utils';
 import c from './index.module.scss';
 import _ from 'lodash';
+import {USER_CHANGE_EVENT} from '../../../../../utils/user';
 
 const {STANDBY, LOADING, SUCCESS, FAILED, UPLOAD_FAILED} = GRAPH_STATUS;
 const {CLOSED, LAYOUT, SETTING, STATISTICS} = PANEL_TYPE;
@@ -123,6 +124,25 @@ const GraphResult = props => {
     const [searchVertex, setSearchVertex] = useState({});
     const showCanvasInfo =  (_.size(data.vertices) !== 0 || _.size(data.edges) !== 0) && queryStatus === SUCCESS;
 
+    const resetTargetDrawers = useCallback(() => {
+        setShowEditElement(false);
+        setEditElementInfo();
+        setShowAddNodeDrawer(false);
+        setShowAddEdgeDrawer(false);
+        setAddEdgeDrawerInfo({});
+        setIsClickNew(false);
+        setOutEdge(false);
+        setSearchVisible(false);
+        setSearchVertex({});
+    }, []);
+    useLayoutEffect(() => {
+        resetTargetDrawers();
+    }, [graphSpaceInfo.graphSpace, graphSpaceInfo.graph, resetTargetDrawers]);
+    useEffect(() => {
+        window.addEventListener(USER_CHANGE_EVENT, resetTargetDrawers);
+        return () => window.removeEventListener(USER_CHANGE_EVENT, resetTargetDrawers);
+    }, [resetTargetDrawers]);
+
     const layoutPanelRef = useRef(null);
     const handleQuickLayoutChange = useCallback(selection => {
         layoutPanelRef.current?.cancel();
@@ -170,16 +190,16 @@ const GraphResult = props => {
         return result ?? {status: 'disposed'};
     }, [addElements, onRefreshGraphNums]);
 
-    const toggleAddNodeDrawer = useCallback(
+    const closeAddNodeDrawer = useCallback(
         () => {
-            setShowAddNodeDrawer(pre => !pre);
+            setShowAddNodeDrawer(false);
         },
         []
     );
 
-    const toggleAddEdgeDrawer = useCallback(
+    const closeAddEdgeDrawer = useCallback(
         () => {
-            setShowAddEdgeDrawer(pre => !pre);
+            setShowAddEdgeDrawer(false);
         },
         []
     );
@@ -294,12 +314,12 @@ const GraphResult = props => {
             <DynamicAddNode
                 open={showAddNodeDrawer}
                 onOK={handleAddElements}
-                onCancel={toggleAddNodeDrawer}
+                onCancel={closeAddNodeDrawer}
                 drawerInfo={vertexMeta}
             />
             <DynamicAddEdge
                 open={showAddEdgeDrawer}
-                onCancel={toggleAddEdgeDrawer}
+                onCancel={closeAddEdgeDrawer}
                 onOk={handleAddElements}
                 graphData={addEdgeData}
                 drawerInfo={addEdgeDrawerInfo}

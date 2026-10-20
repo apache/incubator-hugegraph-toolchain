@@ -18,6 +18,7 @@
 
 import {act, fireEvent, render, screen} from '@testing-library/react';
 import GraphResult from './index';
+import {USER_CHANGE_EVENT} from '../../../../utils/user';
 import GraphAnalysisContext from '../../../Context';
 import {GRAPH_STATUS, GRAPH_RENDER_MODE, PANEL_TYPE} from '../../../../utils/constants';
 
@@ -309,3 +310,28 @@ test('quick layout cancels pending panel edits and uses the existing layout upda
     expect(mockLayoutPanel.mock.lastCall[0].layout).toBe(mockModel.layoutSettings);
     expect(initial.updatePanelType).not.toHaveBeenCalled();
 });
+
+
+test.each(['node', 'edge'].flatMap(kind => ['graph', 'account'].map(change => [kind, change])))(
+    'keeps late %s drawer closes idempotent after a %s change', (kind, change) => {
+        const initial = countedGraphProps();
+        const scene = graph => <GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph}}>
+            <GraphResult {...initial} />
+        </GraphAnalysisContext.Provider>;
+        const view = render(scene('A'));
+        const drawer = kind === 'node' ? mockNodeDrawer : mockEdgeDrawer;
+        act(() => {
+            const menu = mockMenuBar.mock.lastCall[0];
+            if (kind === 'node') menu.handleClickNewAddNode();
+            else menu.handleClickNewAddEdge(true);
+        });
+        expect(drawer.mock.lastCall[0].open).toBe(true);
+        const lateClose = drawer.mock.lastCall[0].onCancel;
+        if (change === 'graph') view.rerender(scene('B'));
+        else act(() => window.dispatchEvent(new Event(USER_CHANGE_EVENT)));
+        expect(drawer.mock.lastCall[0].open).toBe(false);
+        // A completed write may still deliver its old close callback.
+        act(() => lateClose());
+        expect(drawer.mock.lastCall[0].open).toBe(false);
+    }
+);
