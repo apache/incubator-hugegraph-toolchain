@@ -83,7 +83,7 @@ const AllPaths = props => {
         async algorithmParams => {
             setRequiring(true);
             updateCurrentAlgorithm(ALLPATHS);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             algorithmParams = {...algorithmParams, 'algorithmName': Algorithm_Url[ALLPATHS]};
             const filteredParams = removeNilKeys(algorithmParams);
             const response =  await api.analysis.runOltpInfo(graphSpace, graph, filteredParams);
@@ -91,7 +91,7 @@ const AllPaths = props => {
             const {graph_view, pathnum} = data || {};
             const {vertices} = graph_view || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, {}, message);
+                complete(FAILED, {}, message);
             }
             else {
                 const sourceIds = getNodesFromParams(algorithmParams.sources, vertices);
@@ -100,7 +100,7 @@ const AllPaths = props => {
                     endPointsId: {startNodes: [...sourceIds], endNodes: [...targetIds]},
                     pathNum: pathnum,
                 };
-                handleFormSubmit(SUCCESS, graph_view || {}, message, options);
+                complete(SUCCESS, graph_view || {}, message, options);
             }
             setRequiring(false);
         },

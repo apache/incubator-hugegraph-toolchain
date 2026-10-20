@@ -72,18 +72,18 @@ const RankApi = props => {
         async algorithmParams => {
             setRequiring(true);
             updateCurrentAlgorithm(RANK_API);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             algorithmParams = {...algorithmParams, 'algorithmName': Algorithm_Url[RANK_API]};
             const filteredParams = removeNilKeys(algorithmParams);
             const response =  await api.analysis.runOltpInfo(graphSpace, graph, filteredParams);
             const {data, status, message} = response || {};
             const {ranks} = data || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, {}, message);
+                complete(FAILED, {}, message);
             }
             else {
                 const options = {rankObj: ranks || {}};
-                handleFormSubmit(SUCCESS, {}, message, options);
+                complete(SUCCESS, {}, message, options);
             }
             setRequiring(false);
         },

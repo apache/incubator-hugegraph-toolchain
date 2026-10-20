@@ -61,19 +61,19 @@ const ShortestPath = props => {
         async algorithmParams => {
             setRequiring(true);
             updateCurrentAlgorithm(SHORTEST_PATH);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             algorithmParams = {...algorithmParams, 'algorithmName': Algorithm_Url[SHORTEST_PATH]};
             const filteredParams = removeNilKeys(algorithmParams);
             const response =  await api.analysis.runOltpInfo(graphSpace, graph, filteredParams);
             const {data, status, message} = response || {};
             const {graph_view} = data || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, {}, message);
+                complete(FAILED, {}, message);
             }
             else {
                 const {source, target} = algorithmParams;
                 const options = {endPointsId: {startNodes: [source], endNodes: [target]}};
-                handleFormSubmit(SUCCESS, graph_view || {}, message, options);
+                complete(SUCCESS, graph_view || {}, message, options);
             }
             setRequiring(false);
         },

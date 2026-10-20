@@ -63,17 +63,17 @@ const KoutPost = props => {
         async algorithmParams => {
             setRequiring(true);
             updateCurrentAlgorithm(KOUT_POST);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             algorithmParams = {...algorithmParams, 'algorithmName': Algorithm_Url[KOUT_POST]};
             const filteredParams = removeNilKeys(algorithmParams);
             const response =  await api.analysis.runOltpInfo(graphSpace, graph, filteredParams);
             const {data, status, message} = response || {};
             const {graph_view} = data || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, {}, message);
+                complete(FAILED, {}, message);
             }
             else {
-                handleFormSubmit(SUCCESS, graph_view || {}, message, {});
+                complete(SUCCESS, graph_view || {}, message, {});
             }
             setRequiring(false);
         },

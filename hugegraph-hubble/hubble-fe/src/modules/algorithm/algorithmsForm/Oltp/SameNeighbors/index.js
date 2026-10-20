@@ -60,19 +60,19 @@ const SameNeighbors = props => {
         async algorithmParams => {
             setRequiring(true);
             updateCurrentAlgorithm(SAME_NEIGHBORS);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             algorithmParams = {...algorithmParams, 'algorithmName': Algorithm_Url[SAME_NEIGHBORS]};
             const filteredParams = removeNilKeys(algorithmParams);
             const response =  await api.analysis.runOltpInfo(graphSpace, graph, filteredParams);
             const {data, status, message} = response || {};
             const {graph_view} = data || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, {}, message);
+                complete(FAILED, {}, message);
             }
             else {
                 const {vertex, other} = algorithmParams;
                 const options = {endPointsId: {startNodes: [vertex], endNodes: [other]}};
-                handleFormSubmit(SUCCESS, graph_view || {}, message, options);
+                complete(SUCCESS, graph_view || {}, message, options);
             }
             setRequiring(false);
         },

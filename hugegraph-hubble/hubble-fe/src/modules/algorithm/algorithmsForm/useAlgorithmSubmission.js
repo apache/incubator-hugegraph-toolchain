@@ -16,16 +16,13 @@
  * under the License.
  */
 
-import {useMemo} from 'react';
-import {GRAPH_STATUS} from '../../../utils/constants';
+import {useCallback} from 'react';
 
-// Each form keeps the completion that belongs to its own in-flight execution.
+// Async callers retain the completion returned for their own execution.
 export default function useAlgorithmSubmission(beginSubmission) {
-    return useMemo(() => {
-        let complete;
-        return (status, ...args) => {
-            if (status === GRAPH_STATUS.LOADING) complete = beginSubmission();
-            complete?.(status, ...args);
-        };
+    return useCallback((status, ...args) => {
+        const complete = beginSubmission();
+        complete?.(status, ...args);
+        return complete;
     }, [beginSubmission]);
 }

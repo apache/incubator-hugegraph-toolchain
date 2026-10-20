@@ -82,16 +82,16 @@ const BetweennessCentralityVermeer = props => {
         async algorithmParams => {
             setRequiring(true);
             updateCurrentAlgorithm(BETWEENNESS_CENTRALITY);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             const formParams =  {'compute.algorithm': 'betweenness_centrality', ...algorithmParams};
             const filteredParams = removeNilKeys(formParams);
             const response =  await api.analysis.runOlapVermeer(graphSpace, graph, filteredParams);
             const {data, status, message} = response || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, '', message);
+                complete(FAILED, '', message);
             }
             else {
-                handleFormSubmit(SUCCESS, data?.task_id, message);
+                complete(SUCCESS, data?.task_id, message);
             }
             setRequiring(false);
         },

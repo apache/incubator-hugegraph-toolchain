@@ -80,18 +80,18 @@ const NeighborRankApi = props => {
         async algorithmParams => {
             setRequiring(true);
             updateCurrentAlgorithm(NEIGHBOR_RANK_API);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             algorithmParams = {...algorithmParams, 'algorithmName': Algorithm_Url[NEIGHBOR_RANK_API]};
             const filteredParams = removeNilKeys(algorithmParams);
             const response =  await api.analysis.runOltpInfo(graphSpace, graph, filteredParams);
             const {data, status, message} = response || {};
             const {graph_view, rankslist} = data || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, {}, message);
+                complete(FAILED, {}, message);
             }
             else {
                 const options = {rankArray: rankslist || []};
-                handleFormSubmit(SUCCESS, graph_view || {}, message, options);
+                complete(SUCCESS, graph_view || {}, message, options);
             }
             setRequiring(false);
         },

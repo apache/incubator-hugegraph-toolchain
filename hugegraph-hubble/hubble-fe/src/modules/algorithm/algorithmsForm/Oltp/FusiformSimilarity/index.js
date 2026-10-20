@@ -59,17 +59,17 @@ const FusiformSimilarity = props => {
         async algorithmParams => {
             setRequiring(true);
             updateCurrentAlgorithm(FUSIFORM_SIMILARITY);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             algorithmParams = {...algorithmParams, 'algorithmName': Algorithm_Url[FUSIFORM_SIMILARITY]};
             const filteredParams = removeNilKeys(algorithmParams);
             const response =  await api.analysis.runOltpInfo(graphSpace, graph, filteredParams);
             const {data, status, message} = response || {};
             const {graph_view} = data || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, {}, message);
+                complete(FAILED, {}, message);
             }
             else {
-                handleFormSubmit(SUCCESS, graph_view || {}, message, {});
+                complete(SUCCESS, graph_view || {}, message, {});
             }
             setRequiring(false);
         },

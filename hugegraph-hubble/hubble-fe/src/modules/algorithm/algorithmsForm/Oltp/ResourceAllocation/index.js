@@ -56,18 +56,18 @@ const ResourceAllocation = props => {
         async algorithmParams => {
             setRequiring(true);
             updateCurrentAlgorithm(RESOURCE_ALLOCATION);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             algorithmParams = {...algorithmParams, 'algorithmName': Algorithm_Url[RESOURCE_ALLOCATION]};
             const filteredParams = removeNilKeys(algorithmParams);
             const response =  await api.analysis.runOltpInfo(graphSpace, graph, filteredParams);
             const {data, status, message} = response || {};
             const {resource_allocation} = data || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, {}, message);
+                complete(FAILED, {}, message);
             }
             else {
                 const options = {jaccardsimilarity: resource_allocation};
-                handleFormSubmit(SUCCESS, {}, message, options);
+                complete(SUCCESS, {}, message, options);
             }
             setRequiring(false);
         },

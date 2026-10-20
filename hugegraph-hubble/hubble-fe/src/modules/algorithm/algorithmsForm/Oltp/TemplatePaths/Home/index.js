@@ -61,7 +61,7 @@ const TemplatePaths = props => {
         async algorithmParams => {
             setRequiring(true);
             updateCurrentAlgorithm(TEMPLATEPATHS);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             algorithmParams = {...algorithmParams, 'algorithmName': Algorithm_Url[TEMPLATEPATHS]};
             const filteredParams = removeNilKeys(algorithmParams);
             const response =  await api.analysis.runOltpInfo(graphSpace, graph, filteredParams);
@@ -69,13 +69,13 @@ const TemplatePaths = props => {
             const {graph_view} = data || {};
             const {vertices} = graph_view || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, {}, message);
+                complete(FAILED, {}, message);
             }
             else {
                 const sources = getNodesFromParams(algorithmParams.sources, vertices);
                 const targets = getNodesFromParams(algorithmParams.targets, vertices);
                 const options = {endPointsId: {startNodes: [...sources, ...targets], endNodes: []}};
-                handleFormSubmit(SUCCESS, graph_view || {}, message, options);
+                complete(SUCCESS, graph_view || {}, message, options);
             }
             setRequiring(false);
         },

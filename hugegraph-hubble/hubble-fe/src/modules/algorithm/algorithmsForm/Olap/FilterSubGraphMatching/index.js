@@ -76,7 +76,7 @@ const FilterSubGraphMatching = props => {
         async algorithmParams => {
             setRequiring(true);
             updateCurrentAlgorithm(FILTER_SUBGRAPH_MATCHING);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             const {worker, ...args} = algorithmParams;
             const formParams = {
                 algorithm: 'subgraph-match',
@@ -87,10 +87,10 @@ const FilterSubGraphMatching = props => {
             const response =  await api.analysis.postOlapInfo(graphSpace, graph, filteredParams);
             const {data, status, message} = response || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, '', message);
+                complete(FAILED, '', message);
             }
             else {
-                handleFormSubmit(SUCCESS, data?.task_id, message);
+                complete(SUCCESS, data?.task_id, message);
             }
             setRequiring(false);
         },

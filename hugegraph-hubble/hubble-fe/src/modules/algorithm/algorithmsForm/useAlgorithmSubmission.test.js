@@ -26,10 +26,10 @@ it('keeps each form completion through loading and terminal callbacks', () => {
     const begin = jest.fn().mockReturnValueOnce(first).mockReturnValueOnce(second);
     const formA = renderHook(() => useAlgorithmSubmission(begin));
     const formB = renderHook(() => useAlgorithmSubmission(begin));
-    formA.result.current(GRAPH_STATUS.LOADING);
-    formB.result.current(GRAPH_STATUS.LOADING);
-    formB.result.current(GRAPH_STATUS.SUCCESS, {vertices: [{id: 'b'}]}, '', {layout: 'radial'});
-    formA.result.current(GRAPH_STATUS.FAILED, {}, 'old failure');
+    const completeA = formA.result.current(GRAPH_STATUS.LOADING);
+    const completeB = formB.result.current(GRAPH_STATUS.LOADING);
+    completeB(GRAPH_STATUS.SUCCESS, {vertices: [{id: 'b'}]}, '', {layout: 'radial'});
+    completeA(GRAPH_STATUS.FAILED, {}, 'old failure');
     expect(begin).toHaveBeenCalledTimes(2);
     expect(first.mock.calls).toEqual([[GRAPH_STATUS.LOADING], [GRAPH_STATUS.FAILED, {}, 'old failure']]);
     expect(second.mock.calls).toEqual([
@@ -39,3 +39,31 @@ it('keeps each form completion through loading and terminal callbacks', () => {
     formB.result.current(GRAPH_STATUS.LOADING);
     expect(begin).toHaveBeenCalledTimes(3);
 });
+
+
+test.each([GRAPH_STATUS.SUCCESS, GRAPH_STATUS.FAILED])(
+    'returns a separate completion for overlapping submissions on one mounted hook (%s)',
+    lateStatus => {
+        const first = jest.fn();
+        const second = jest.fn();
+        const begin = jest.fn().mockReturnValueOnce(first).mockReturnValueOnce(second);
+        const form = renderHook(() => useAlgorithmSubmission(begin));
+        const completeA = form.result.current(GRAPH_STATUS.LOADING);
+        const completeB = form.result.current(GRAPH_STATUS.LOADING);
+
+        expect(completeA).toEqual(expect.any(Function));
+        expect(completeB).toEqual(expect.any(Function));
+        completeB(GRAPH_STATUS.SUCCESS, {vertices: [{id: 'b'}]}, 'new result');
+        completeA(lateStatus, {vertices: [{id: 'a'}]}, 'old result');
+
+        expect(begin).toHaveBeenCalledTimes(2);
+        expect(first.mock.calls).toEqual([
+            [GRAPH_STATUS.LOADING],
+            [lateStatus, {vertices: [{id: 'a'}]}, 'old result'],
+        ]);
+        expect(second.mock.calls).toEqual([
+            [GRAPH_STATUS.LOADING],
+            [GRAPH_STATUS.SUCCESS, {vertices: [{id: 'b'}]}, 'new result'],
+        ]);
+    }
+);

@@ -73,7 +73,7 @@ const TriangleCount = props => {
         async algorithmParams => {
             setRequiring(true);
             updateCurrentAlgorithm(TRIANGLE_COUNT);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             const {worker, limit_edges_in_one_vertex, ...args} = algorithmParams;
             const formParams = {
                 algorithm: 'triangle-count',
@@ -85,10 +85,10 @@ const TriangleCount = props => {
             const response =  await api.analysis.postOlapInfo(graphSpace, graph, filteredParams);
             const {data, status, message} = response || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, '', message);
+                complete(FAILED, '', message);
             }
             else {
-                handleFormSubmit(SUCCESS, data?.task_id, message);
+                complete(SUCCESS, data?.task_id, message);
             }
             setRequiring(false);
         },
