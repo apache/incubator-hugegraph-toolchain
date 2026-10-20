@@ -20,7 +20,7 @@
  * @file  FixNode 固定节点
  */
 
-import React, {useCallback, useContext, useState, useEffect} from 'react';
+import {useContext} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Button, Tooltip} from 'antd';
 import {PushpinOutlined} from '@ant-design/icons';
@@ -28,62 +28,19 @@ import {GraphContext} from '../Context';
 
 const FixNode = () => {
     const {t} = useTranslation();
-    const {graph} = useContext(GraphContext);
-    const [fixState, setFixState] = useState(false);
-    const [selectedNode, setSelectedNode] = useState();
-
-
-    useEffect(() => {
-        if (!graph) {
-            return undefined;
-        }
-        const handleNodeClick = evt => {
-            const {item} = evt;
-            setFixState(true);
-            setSelectedNode(item);
-        };
-        const clearSelection = () => {
-            setSelectedNode();
-            setFixState(false);
-        };
-
-        graph.on('node:click', handleNodeClick);
-        graph.on('edge:click', clearSelection);
-        graph.on('canvas:click', clearSelection);
-        return () => {
-            graph.off('node:click', handleNodeClick);
-            graph.off('edge:click', clearSelection);
-            graph.off('canvas:click', clearSelection);
-        };
-    },
-    [graph]);
-
-    const handleFixNode = useCallback(
-        () => {
-            const node = selectedNode || undefined;
-            const hasLocked = node.hasLocked();
-            if (hasLocked) {
-                node.unlock();
-                graph.clearItemStates(node, ['customFixed', 'customSelected']);
-                graph.pushStack('unlock', node.getModel(), 'undo');
-            }
-            else {
-                node.lock();
-                graph?.clearItemStates(node, ['customSelected']);
-                graph?.setItemState(node, 'customFixed', true);
-                graph?.pushStack('lock', node.getModel(), 'undo');
-            }
-        },
-        [graph, selectedNode]
-    );
-
+    const {controller, snapshot, run} = useContext(GraphContext);
+    const selected = new Set(snapshot?.selectedIds);
+    const nodes = snapshot?.data.nodes.filter(node => selected.has(node.id)) || [];
+    const fixed = nodes.length > 0 && nodes.every(node => node.data.fixed);
+    const ready = Boolean(controller && snapshot?.status === 'ready');
     return (
-        <Tooltip title={t('analysis.canvas.toolbar.fix_node')} placement='bottom'>
+        <Tooltip title={t('analysis.canvas.toolbar.fix_node')} placement="bottom">
             <Button
-                disabled={!fixState}
+                disabled={!ready || nodes.length === 0}
                 type="text"
                 aria-label={t('analysis.canvas.toolbar.fix_node')}
-                onClick={handleFixNode}
+                aria-pressed={fixed}
+                onClick={() => run(() => controller.pin(nodes.map(node => node.id), !fixed))}
                 icon={<PushpinOutlined />}
             />
         </Tooltip>

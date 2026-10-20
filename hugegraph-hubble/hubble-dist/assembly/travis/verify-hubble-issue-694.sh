@@ -39,7 +39,15 @@ if [[ ! -f "${tarball}" ]]; then
     exit 1
 fi
 
+# The shared Python guard runs before runtime setup or successful evidence writes.
+# Pass URLs in the environment; invalid input emits only a fixed field diagnostic
+# and replaces an existing success manifest with a sanitized validation failure.
+HUBBLE_URL="${hubble_url}" HUBBLE_SMOKE_SERVER_URL="${server_url}" \
+"${python_bin}" "${script_dir}/run_live_hubble_smoke.py" "${tarball}" \
+    --validate-urls --json-output "${evidence_dir}/manifest.json"
+
 mkdir -p "${evidence_dir}/ui"
+rm -f "${evidence_dir}/manifest.json"
 runtime_work=$(mktemp -d "${TMPDIR:-/tmp}/hubble-694-runtime-XXXXXX")
 cleanup() {
     hubble_home=$(find "${runtime_work}" -maxdepth 1 -type d \
@@ -61,9 +69,9 @@ cleanup() {
 }
 trap cleanup EXIT
 
+HUBBLE_USERNAME="${username}" HUBBLE_PASSWORD="${password}" \
+HUBBLE_URL="${hubble_url}" HUBBLE_SMOKE_SERVER_URL="${server_url}" \
 "${python_bin}" "${script_dir}/run_live_hubble_smoke.py" "${tarball}" \
-    --server-url "${server_url}" \
-    --hubble-url "${hubble_url}" \
     --graph "${graph_name}" \
     --graphspace "${graphspace}" \
     --loader-flow \
@@ -73,22 +81,48 @@ trap cleanup EXIT
     --leave-running \
     --json-output "${evidence_dir}/live-hubble-smoke.json"
 
-HUBBLE_USERNAME="${username}" HUBBLE_PASSWORD="${password}" \
+rm -f "${evidence_dir}/ui-full-acceptance.json"
+ui_exit=0
+if HUBBLE_USERNAME="${username}" HUBBLE_PASSWORD="${password}" \
+HUBBLE_URL="${hubble_url}" \
 "${node_bin}" "${script_dir}/run_ui_full_acceptance.js" \
-    --hubble-url "${hubble_url}" \
+    --graphspace "${graphspace}" \
+    --graph "${graph_name}" \
+    --live-report "${evidence_dir}/live-hubble-smoke.json" \
     --output-dir "${evidence_dir}/ui" \
-    --json-output "${evidence_dir}/ui-full-acceptance.json"
+    --json-output "${evidence_dir}/ui-full-acceptance.json"; then
+    :
+else
+    ui_exit=$?
+fi
 
-cat > "${evidence_dir}/manifest.json" <<JSON
-{
-  "status": "passed",
-  "hubbleUrl": "${hubble_url}",
-  "serverUrl": "${server_url}",
-  "graphspace": "${graphspace}",
-  "graph": "${graph_name}",
-  "runtime": "${evidence_dir}/live-hubble-smoke.json",
-  "ui": "${evidence_dir}/ui-full-acceptance.json"
-}
-JSON
+"${node_bin}" - "${evidence_dir}" "${ui_exit}" "${script_dir}/run_ui_full_acceptance.js" <<'JS'
+const fs = require('node:fs');
+const path = require('node:path');
+const {acceptanceSummary} = require(process.argv[4]);
+const directory = process.argv[2];
+const runtime = JSON.parse(fs.readFileSync(path.join(directory, 'live-hubble-smoke.json'), 'utf8'));
+const uiExit = Number(process.argv[3]);
+let ui;
+try { ui = JSON.parse(fs.readFileSync(path.join(directory, 'ui-full-acceptance.json'), 'utf8')); }
+catch { ui = {status: 'failed', error: 'UI acceptance did not write a valid current report'}; }
+if (!ui || typeof ui !== 'object' || Array.isArray(ui)) ui = {status: 'failed'};
+const status = runtime.status !== 'passed' || !['passed', 'failed', 'needs input'].includes(ui.status)
+  || (uiExit !== 0 && ui.status === 'passed') ? 'failed' : ui.status;
+const graphRequestedChecks = Array.isArray(ui.graphRequestedChecks) ? ui.graphRequestedChecks : [];
+fs.writeFileSync(path.join(directory, 'manifest.json'), JSON.stringify({
+  status,
+  hubbleUrl: runtime.hubble_url, serverUrl: runtime.server_url,
+  graphspace: runtime.graphspace, graph: runtime.graph,
+  graphRequestedChecks,
+  ...acceptanceSummary(status, ui.graphChecksComplete === true, graphRequestedChecks),
+  runtime: path.join(directory, 'live-hubble-smoke.json'), ui: path.join(directory, 'ui-full-acceptance.json')
+}, null, 2) + '\n');
+if (uiExit === 0 && status !== 'passed') process.exitCode = 1;
+JS
 
-echo "Hubble issue #694 smoke passed; evidence: ${evidence_dir}"
+if [[ "${ui_exit}" -ne 0 ]]; then
+    exit "${ui_exit}"
+fi
+
+echo "Hubble issue #694 requested smoke checks passed; evidence: ${evidence_dir}"

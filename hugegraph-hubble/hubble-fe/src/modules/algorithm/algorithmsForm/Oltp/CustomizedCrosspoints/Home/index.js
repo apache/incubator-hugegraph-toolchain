@@ -20,8 +20,10 @@
  * @file CustomizedCrosspoints算法
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Collapse, InputNumber} from 'antd';
+import AlgorithmPanel from '../../../AlgorithmPanel';
+import useAlgorithmPending from '../../../useAlgorithmPending';
+import {useState, useCallback, useContext} from 'react';
+import {InputNumber} from 'antd';
 import Form from '../../../PersistentForm';
 import {NodeIndexOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
@@ -51,7 +53,7 @@ const CustomizedCrosspoints = props => {
 
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
 
     const [form] = Form.useForm();
 
@@ -65,26 +67,26 @@ const CustomizedCrosspoints = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(CUSTOMIZED_CROSSPOINTS);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             algorithmParams = {...algorithmParams, 'algorithmName': Algorithm_Url[CUSTOMIZED_CROSSPOINTS]};
             const filteredParams = removeNilKeys(algorithmParams);
             const response =  await api.analysis.runOltpInfo(graphSpace, graph, filteredParams);
             const {data, status, message} = response || {};
             const {graph_view} = data || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, {}, message);
+                complete(FAILED, {}, message);
             }
             else {
                 const graphNode = graph_view.vertices;
                 const newVertexs = getNodesFromParams(algorithmParams.sources, graphNode);
                 const options = {endPointsId: {startNodes: [...newVertexs], endNodes: []}};
-                handleFormSubmit(SUCCESS, graph_view || {}, message, options);
+                complete(SUCCESS, graph_view || {}, message, options);
             }
-            setRequiring(false);
+            finishRequiring();
         },
-        [graph, graphSpace, handleFormSubmit, updateCurrentAlgorithm]
+        [graph, graphSpace, beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const onFormFinish = useCallback(
@@ -120,11 +122,8 @@ const CustomizedCrosspoints = props => {
 
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<NodeIndexOutlined />}
                     name={CUSTOMIZED_CROSSPOINTS}
@@ -167,7 +166,7 @@ const CustomizedCrosspoints = props => {
                     <InputNumber />
                 </Form.Item>
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

@@ -20,453 +20,179 @@
  * @file  点边属性编辑
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Drawer, Input, Button, message, Form, Row, Col, Tag} from 'antd';
+import {useState, useContext, useEffect, useRef} from 'react';
+import {Drawer, Input, Button, message, Form, Tag} from 'antd';
 import {UpOutlined, DownOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
 import {GraphContext} from '../Context';
 import GraphAnalysisContext from '../../Context';
-import {EDGE_TYPE, EDGELABEL_TYPE} from '../../../utils/constants';
+import {EDGELABEL_TYPE} from '../../../utils/constants';
 import * as api from '../../../api/index';
-import _ from 'lodash';
 import c from './index.module.scss';
-import classnames from 'classnames';
 import KeyboardAction from '../../../components/KeyboardAction';
 
-const SELECTED_TYPE = {EDGE: 'EDGE', VERTEX: 'VERTEX'};
-
-const EditElement = props => {
-    const {
-        show,
-        cancel,
-        drawerInfo,
-        edgeMeta,
-        onChange,
-    } =  props;
-
+const EditElement = ({show, cancel, drawerInfo, edgeMeta = [], onChange}) => {
     const {t} = useTranslation();
-    const {graph} = useContext(GraphContext);
-    const {graphSpace: currentGraphSpace, graph: currentGraph} = useContext(GraphAnalysisContext);
-    const {type, id, itemType, properties, metaConfig} = drawerInfo || {};
-    const {edgelabel_type, parent_label} = metaConfig || {};
-    const {children} = _.find(edgeMeta, {name: parent_label}) || {};
-
-    const elementType = EDGE_TYPE.includes(type) ? SELECTED_TYPE.EDGE : SELECTED_TYPE.VERTEX;
-    const elementTypeLabel = elementType === SELECTED_TYPE.EDGE
-        ? t('analysis.canvas.edit_element.edge')
-        : t('analysis.canvas.edit_element.vertex');
-    const showEdgeLabelExpand =  elementType === SELECTED_TYPE.EDGE && !_.isEmpty(children);
-
-    const [vertexNullableProps, setVertexNullableProps] = useState();
-    const [vertexNonNullableProps, setVertexNonNullableProps] = useState();
-    const [vertexPrimaryKeys, setVertexPrimaryKeys] = useState();
-    const [edgeNullableProps, setEdgeNullableProps] = useState();
-    const [edgeNonNullableProps, setEdgeNonNullableProps] = useState();
-    const [isExpandEdgeLabelType, setExpandEdgeLabelType] = useState(false);
-    const [isEdit, setSwitchEdit] = useState(false);
-
-    const [editForm] = Form.useForm();
-    const graphInfoItemClassName = classnames(
-        c.detailItem,
-        {[c.disabled]: isEdit}
-    );
-
-    const handleDrawerClose = useCallback(
-        () => {
-            editForm.resetFields();
-            setSwitchEdit(cancel);
-        },
-        [cancel, editForm]
-    );
-
-    const updateEdgePropertReq = useCallback(
-        value => {
-            const edgeParams = {
-                id: id,
-                label: itemType,
-                properties: value,
-                source: drawerInfo?.source,
-                target: drawerInfo?.target,
-            };
-            api.analysis.updateEdgeProperties(currentGraphSpace, currentGraph, edgeParams)
-                .then(res => {
-                    const {status, message: errMsg} = res;
-                    if (status === 200) {
-                        message.success(t('analysis.canvas.edit_element.save_success'));
-                        const edgeItem  = graph.findById(id);
-                        graph.updateItem(edgeItem, edgeParams, false);
-                        onChange('edges', edgeItem, edgeParams);
-                    }
-                    else {
-                        !errMsg && message.error(t('analysis.canvas.edit_element.save_failed'));
-                    }
-                });
-        },
-        [currentGraph, currentGraphSpace, drawerInfo?.source, drawerInfo?.target, graph, id, itemType, onChange, t]
-    );
-
-    const updateVertexPropertReq = useCallback(
-        value => {
-            const vertexParams = {
-                id: id,
-                label: itemType,
-                properties: value,
-            };
-            api.analysis.updateVertexProperties(currentGraphSpace, currentGraph, vertexParams)
-                .then(res => {
-                    const {status, message: errMsg} = res;
-                    if (status === 200) {
-                        message.success(t('analysis.canvas.edit_element.save_success'));
-                        const nodeItem  = graph.findById(id);
-                        const vertexModel = Object.assign({}, vertexParams, {label: id});
-                        graph.updateItem(nodeItem, vertexModel, false);
-                        const itemProperties = Object.assign({}, vertexParams.properties,
-                            {[vertexPrimaryKeys]: properties[vertexPrimaryKeys]});
-                        const itemParams =  Object.assign({}, vertexParams, {properties: itemProperties});
-                        onChange('nodes', nodeItem, itemParams);
-                    }
-                    else {
-                        !errMsg && message.error(t('analysis.canvas.edit_element.save_failed'));
-                    }
-                });
-        },
-        [currentGraph, currentGraphSpace, graph, id, itemType, onChange, properties, t, vertexPrimaryKeys]
-    );
-
-    const onFormFinish = useCallback(
-        value => {
-            if (elementType === SELECTED_TYPE.EDGE) {
-                updateEdgePropertReq(value);
-            }
-            else {
-                updateVertexPropertReq(value);
-            }
-            isEdit && handleDrawerClose();
-        },
-        [elementType, isEdit, handleDrawerClose, updateEdgePropertReq, updateVertexPropertReq]
-    );
-
-    const handleChangeVisible = useCallback(() => {
-        setExpandEdgeLabelType(pre => !pre);
-    }, [setExpandEdgeLabelType]);
-
-    const renderDrawer = () => {
-        const propertyMap = Object.entries(properties);
-        return (
-            <>
-                <div className={c.fields}>
-                    <div> {elementTypeLabel} {t('analysis.canvas.edit_element.type')}:</div>
-                    <div>{itemType}</div>
-                </div>
-                {edgelabel_type === EDGELABEL_TYPE.SUB && (
-                    <>
-                        <div className={c.fields}>
-                            <div> {t('analysis.canvas.edit_element.edge_relation')}:</div>
-                            <KeyboardAction
-                                onAction={handleChangeVisible}
-                                aria-expanded={isExpandEdgeLabelType}
-                            >
-                                {showEdgeLabelExpand && (isExpandEdgeLabelType ? <UpOutlined /> : <DownOutlined />)}
-                                {parent_label}
-                                <Tag color='blue' style={{marginLeft: '10px'}}>
-                                    {t('analysis.canvas.edit_element.parent_edge')}
-                                </Tag>
-                            </KeyboardAction>
-                        </div>
-                        <div className={c.fieldWithoutName}>
-                            {isExpandEdgeLabelType && children?.map(item =>
-                                (
-                                    <div key={item}>{item}
-                                        <Tag color='gold' style={{marginLeft: '10px'}}>
-                                            {t('analysis.canvas.edit_element.child_edge')}
-                                        </Tag>
-                                    </div>
-                                ))}
-                        </div>
-                    </>
-                )}
-                <div className={c.fields}>
-                    <div> {elementTypeLabel} {t('analysis.canvas.edit_element.id')}:</div>
-                    <div>{id} </div>
-                </div>
-                {elementType === SELECTED_TYPE.EDGE && (
-                    <>
-                        <div className={c.fields}>
-                            <div>{t('analysis.canvas.edit_element.source')}</div>
-                            <div>{drawerInfo.source} </div>
-                        </div>
-                        <div className={c.fields}>
-                            <div>{t('analysis.canvas.edit_element.target')}</div>
-                            <div>{drawerInfo.target} </div>
-                        </div>
-                    </>
-                )}
-                {propertyMap.map(item => {
-                    const [key, value] = item;
-                    let labelText;
-                    if (elementType === SELECTED_TYPE.VERTEX) {
-                        labelText = vertexPrimaryKeys?.includes(key)
-                            ? `${key}(${t('analysis.canvas.edit_element.primary_key')})`
-                            : key;
-                    }
-                    else {
-                        labelText = key;
-                    }
-                    return (
-                        <div className={c.fields} key={_.uniqueId()}>
-                            <div>{labelText}:</div>
-                            <div>{value?.toString()}</div>
-                        </div>
-                    );
-                })}
-            </>
-        );
+    const {controller, run} = useContext(GraphContext);
+    const {graphSpace, graph} = useContext(GraphAnalysisContext);
+    const {kind, renderingId, id, itemType, properties = {}, metaConfig = {}} = drawerInfo || {};
+    const isEdge = kind === 'edge';
+    const {edgelabel_type, parent_label} = metaConfig;
+    const children = edgeMeta.find(entry => entry.name === parent_label)?.children || [];
+    const [isExpanded, setExpanded] = useState(false);
+    const [isEdit, setEdit] = useState(false);
+    const [pending, setPending] = useState(false);
+    const [propertyMeta, setPropertyMeta] = useState({nullableProps: [], nonNullableProps: [], primaryKeys: []});
+    const [form] = Form.useForm();
+    const generation = useRef(0);
+    const submitting = useRef(false);
+    const saved = useRef(false);
+    useEffect(() => {
+        generation.current += 1;
+        submitting.current = false;
+        saved.current = false;
+        setEdit(false);
+        setPending(false);
+        setExpanded(false);
+        setPropertyMeta({nullableProps: [], nonNullableProps: [], primaryKeys: []});
+        if (show) form.resetFields();
+        return () => { generation.current += 1; };
+    }, [graphSpace, graph, renderingId, show, form, controller]);
+    const finishClose = () => {
+        generation.current += 1;
+        setEdit(false);
+        submitting.current = false;
+        setPending(false);
+        form.resetFields();
+        return cancel?.();
     };
-
-    const fetchEdgePropertReq = useCallback(
-        async () => {
-            const response = await api.analysis.getEdgeProperties(currentGraphSpace, currentGraph, itemType);
-            const {
-                message: edgePropertiessMessage,
-                data,
-                status,
-            } = response;
-            if (status === 200) {
-                const {nullableProps, nonNullableProps} = data;
-                setEdgeNonNullableProps(nonNullableProps);
-                setEdgeNullableProps(nullableProps);
-            }
-            if (status !== 200 && !edgePropertiessMessage) {
-                message.error(t('analysis.canvas.edit_element.get_edge_property_failed'));
-            }
-        },
-        [currentGraph, currentGraphSpace, itemType, t]
-    );
-
-
-    const fetchVertexPropertReq = useCallback(
-        async () => {
-            const response = await api.analysis.getVertexProperties(currentGraphSpace, currentGraph, itemType);
-            const {
-                message: vertexPropertiessMessage,
-                data,
-                status,
-            } = response;
-            if (status === 200) {
-                const {nullableProps, nonNullableProps, primaryKeys} = data;
-                setVertexPrimaryKeys(primaryKeys);
-                setVertexNullableProps(nullableProps);
-                setVertexNonNullableProps(nonNullableProps);
-            }
-            if (status !== 200 && !vertexPropertiessMessage) {
-                message.error(t('analysis.canvas.edit_element.get_vertex_property_failed'));
-            }
-        },
-        [currentGraph, currentGraphSpace, itemType, t]
-    );
-
-    const getVertexorEdgeProperties = useCallback(
-        () => {
-            if (elementType === SELECTED_TYPE.EDGE) {
-                fetchEdgePropertReq();
-            }
-            else {
-                fetchVertexPropertReq();
-            }
-        },
-        [fetchEdgePropertReq, fetchVertexPropertReq, elementType]
-    );
-
-    const onSaveEdit = useCallback(
-        async () => {
-            if (isEdit) {
-                editForm.submit();
-            }
-            else {
-                setSwitchEdit(true);
-                getVertexorEdgeProperties();
-            }
-        },
-        [editForm, getVertexorEdgeProperties, isEdit]
-    );
-
-    const renderItem = (propsArr, isRequired) => {
-        return Object.entries(properties)
-            .map(([key, value]) => {
-                let itemDom;
-                if (propsArr.includes(key)) {
-                    if (elementType === SELECTED_TYPE.VERTEX && vertexPrimaryKeys?.includes(key)) {
-                        itemDom = (
-                            <Row className={graphInfoItemClassName} key={key}>
-                                <Col span={9}>{key}({t('analysis.canvas.edit_element.primary_key')}):</Col>
-                                <Col>{value?.toString()}</Col>
-                            </Row>
-                        );
-                    }
-                    else {
-                        editForm.setFieldValue(key, value);
-                        itemDom = (
-                            <Form.Item
-                                key={key}
-                                label={key}
-                                colon
-                                name={key}
-                                rules={[{required: isRequired, message: t('analysis.canvas.edit_element.required')}]}
-                                labelCol={{span: 9}}
-                            >
-                                <Input
-                                    placeholder={t('analysis.canvas.edit_element.property_placeholder')}
-                                    maxLength={40}
-                                />
-                            </Form.Item>
-                        );
-                    }
-                    return itemDom;
-                }
-            });
+    const close = () => {
+        if (!submitting.current) return finishClose();
     };
-
-    const getIntersection  = (obj, arr) => {
-        return _.intersection(Object.keys(obj), arr);
-    };
-
-    const renderForm = (arr, isAllowNull) => {
-        if (_.size(arr) > 0 && !_.isEmpty(getIntersection(properties, arr))) {
-            return (
-                <>
-                    <div style={{margin: '8px 0'}}>
-                        {isAllowNull
-                            ? t('analysis.canvas.edit_element.nullable_property')
-                            : t('analysis.canvas.edit_element.non_nullable_property')}:
-                    </div>
-                    {renderItem(arr, !isAllowNull)}
-                </>
-            );
+    const beginEdit = () => run(async () => {
+        if (!show || !renderingId || pending || saved.current) return;
+        const token = generation.current;
+        setPending(true);
+        try {
+            const fetch = isEdge ? api.analysis.getEdgeProperties : api.analysis.getVertexProperties;
+            const response = await fetch(graphSpace, graph, itemType);
+            if (token !== generation.current) return;
+            if (response.status === 200) {
+                const {nullableProps = [], nonNullableProps = [], primaryKeys = []} = response.data || {};
+                setPropertyMeta({nullableProps, nonNullableProps, primaryKeys});
+                form.setFieldsValue(properties);
+                setEdit(true);
+            }
+            else if (!response.message) {
+                message.error(t(`analysis.canvas.edit_element.get_${isEdge ? 'edge' : 'vertex'}_property_failed`));
+            }
         }
-    };
-
-    const renderEditForm = () => {
+        catch (error) { if (token === generation.current) throw error; }
+        finally { if (token === generation.current) setPending(false); }
+    });
+    const save = values => run(async () => {
+        if (!show || !renderingId || pending || submitting.current || saved.current) return;
+        const token = generation.current;
+        submitting.current = true;
+        setPending(true);
+        try {
+            const params = {id, label: itemType, properties: values,
+                ...(isEdge ? {source: drawerInfo.source, target: drawerInfo.target} : {})};
+            const update = isEdge ? api.analysis.updateEdgeProperties : api.analysis.updateVertexProperties;
+            const response = await update(graphSpace, graph, params);
+            if (token !== generation.current) return;
+            if (response.status === 200) {
+                saved.current = true;
+                let applied = false;
+                try {
+                    const result = await onChange?.(isEdge ? 'edges' : 'nodes', renderingId,
+                        {...params, properties: {...properties, ...values}});
+                    applied = result?.status === 'applied';
+                }
+                catch {
+                    // The server write succeeded; a local draw failure must not invite another PUT.
+                }
+                if (token !== generation.current) return;
+                if (applied) message.success(t('analysis.canvas.edit_element.save_success'));
+                else message.warning(t('analysis.canvas.edit_element.sync_failed'));
+                await finishClose();
+            }
+            else if (!response.message) message.error(t('analysis.canvas.edit_element.save_failed'));
+        }
+        catch (error) { if (token === generation.current) throw error; }
+        finally {
+            if (token === generation.current) {
+                submitting.current = false;
+                setPending(false);
+            }
+        }
+    });
+    const text = value => value == null ? '' : String(value);
+    const typeLabel = t(`analysis.canvas.edit_element.${isEdge ? 'edge' : 'vertex'}`);
+    const field = (label, value) => <div className={c.fields}><div>{label}:</div><div>{text(value)}</div></div>;
+    const renderProperties = (names, nullable) => {
+        const keys = names.filter(key => Object.hasOwn(properties, key));
+        if (!keys.length) return null;
         return (
-            <>
-                {elementType === SELECTED_TYPE.VERTEX && (
-                    <>
-                        {renderForm(vertexNullableProps, true)}
-                        {renderForm(vertexNonNullableProps, false)}
-                    </>
-                )}
-                {elementType === SELECTED_TYPE.EDGE && (
-                    <>
-                        {renderForm(edgeNullableProps, true)}
-                        {renderForm(edgeNonNullableProps, false)}
-                    </>
-                )}
-            </>
+            <div>
+                <div style={{margin: '8px 0'}}>
+                    {t(`analysis.canvas.edit_element.${nullable ? 'nullable_property' : 'non_nullable_property'}`)}:
+                </div>
+                {keys.map(key => !isEdge && propertyMeta.primaryKeys.includes(key)
+                    ? <div key={key}>{key}({t('analysis.canvas.edit_element.primary_key')}): {text(properties[key])}</div>
+                    : <Form.Item key={key} name={key} label={key} labelCol={{span: 9}}
+                        rules={[{required: !nullable, message: t('analysis.canvas.edit_element.required')}]}>
+                        <Input maxLength={40} placeholder={t('analysis.canvas.edit_element.property_placeholder')} />
+                    </Form.Item>)}
+            </div>
         );
     };
-
     return (
-        <Drawer
-            title={isEdit
-                ? t('analysis.canvas.edit_element.edit_details')
-                : t('analysis.canvas.edit_element.data_details')}
-            placement="right"
-            onClose={handleDrawerClose}
-            open={show}
+        <Drawer title={t(`analysis.canvas.edit_element.${isEdit ? 'edit_details' : 'data_details'}`)}
+            placement="right" open={show} onClose={() => run(close)}
+            closable={{disabled: submitting.current}} mask={{closable: !submitting.current}}
+            keyboard={!submitting.current}
             footer={[
-                <Button
-                    type="primary"
-                    size="medium"
-                    style={{width: 60}}
-                    onClick={onSaveEdit}
-                    key="save"
-                >
-                    {isEdit
-                        ? t('analysis.canvas.edit_element.save')
-                        : t('analysis.canvas.edit_element.edit')}
+                <Button type="primary" loading={pending} disabled={!onChange || !renderingId || pending || saved.current}
+                    onClick={() => isEdit ? form.submit() : beginEdit()} key="save">
+                    {t(`analysis.canvas.edit_element.${isEdit ? 'save' : 'edit'}`)}
                 </Button>,
-                <Button
-                    size="medium"
-                    style={{width: 60}}
-                    onClick={handleDrawerClose}
-                    key="close"
-                >
+                <Button onClick={() => run(close)} disabled={submitting.current} key="close">
                     {t('analysis.canvas.edit_element.close')}
                 </Button>,
-            ]}
-        >
-            {!_.isEmpty(drawerInfo) && !isEdit && renderDrawer()}
+            ]}>
+            {drawerInfo && <>
+                {field(`${typeLabel} ${t('analysis.canvas.edit_element.type')}`, itemType)}
+                {edgelabel_type === EDGELABEL_TYPE.SUB && <>
+                    <div className={c.fields}>
+                        <div>{t('analysis.canvas.edit_element.edge_relation')}:</div>
+                        <KeyboardAction onAction={() => setExpanded(value => !value)} aria-expanded={isExpanded}>
+                            {children.length > 0 && (isExpanded ? <UpOutlined /> : <DownOutlined />)}
+                            {parent_label}
+                            <Tag color="blue">{t('analysis.canvas.edit_element.parent_edge')}</Tag>
+                        </KeyboardAction>
+                    </div>
+                    {isExpanded && <div className={c.fieldWithoutName}>
+                        {children.map(child => <div key={child}>{child}
+                            <Tag color="gold">{t('analysis.canvas.edit_element.child_edge')}</Tag>
+                        </div>)}
+                    </div>}
+                </>}
+                {field(`${typeLabel} ${t('analysis.canvas.edit_element.id')}`, id)}
+                {isEdge && <>
+                    {field(t('analysis.canvas.edit_element.source'), drawerInfo.source)}
+                    {field(t('analysis.canvas.edit_element.target'), drawerInfo.target)}
+                </>}
+                {!isEdit && Object.entries(properties).map(([key, value]) => <div key={key}>
+                    {field(key, value)}
+                </div>)}
+            </>}
             <div className={c.graphNodeInfo}>
-                {isEdit && (
-                    <>
-                        {elementType === SELECTED_TYPE.EDGE ? (
-                            <>
-                                <Row className={graphInfoItemClassName}>
-                                    <Col span={9}>{t('analysis.canvas.edit_element.edge_type')}:</Col>
-                                    <Col>{itemType}</Col>
-                                </Row>
-                                {edgelabel_type === EDGELABEL_TYPE.SUB && (
-                                    <Row className={graphInfoItemClassName}>
-                                        <Col span={9}>{t('analysis.canvas.edit_element.edge_relation')}:</Col>
-                                        <Col>{showEdgeLabelExpand && <UpOutlined />}</Col>
-                                        <Col>
-                                            <span>{parent_label}
-                                                <Tag color='blue' style={{marginLeft: '10px'}}>
-                                                    {t('analysis.canvas.edit_element.parent_edge')}
-                                                </Tag>
-                                            </span>
-                                        </Col>
-                                    </Row>
-                                )
-                                }
-                                {children?.map(item => (
-                                    <Row key={item} className={graphInfoItemClassName}>
-                                        <Col offset={9}>{item}
-                                            <Tag color={'gold'} style={{marginLeft: '10px'}}>
-                                                {t('analysis.canvas.edit_element.child_edge')}
-                                            </Tag>
-                                        </Col>
-                                    </Row>
-                                ))}
-                                <Row className={graphInfoItemClassName}>
-                                    <Col span={9}>{t('analysis.canvas.edit_element.edge_id')}:</Col>
-                                    <Col>{id}</Col>
-                                </Row>
-                                <Row className={graphInfoItemClassName}>
-                                    <Col span={9}>{t('analysis.canvas.edit_element.source')}:</Col>
-                                    <Col>{drawerInfo.source}</Col>
-                                </Row>
-                                <Row className={graphInfoItemClassName}>
-                                    <Col span={9}>{t('analysis.canvas.edit_element.target')}:</Col>
-                                    <Col>{drawerInfo.target}</Col>
-                                </Row>
-                            </>
-                        ) : (
-                            <>
-                                <Row className={graphInfoItemClassName}>
-                                    <Col span={9}>{t('analysis.canvas.edit_element.vertex_type')}:</Col>
-                                    <Col>{itemType}</Col>
-                                </Row>
-                                <Row className={graphInfoItemClassName}>
-                                    <Col span={9}>{t('analysis.canvas.edit_element.vertex_id')}:</Col>
-                                    <Col>{id}</Col>
-                                </Row>
-                            </>
-                        )}
-                    </>
-                )}
-                {isEdit && (
-                    <>
-                        <Form
-                            className={c.editForm}
-                            form={editForm}
-                            onFinish={onFormFinish}
-                            labelAlign='left'
-                            labelWrap
-                        >
-                            {renderEditForm()}
-                        </Form>
-                    </>)
-                }
+                <Form style={{display: isEdit ? undefined : 'none'}} form={form} onFinish={save}
+                    disabled={pending} labelAlign="left" labelWrap className={c.editForm}>
+                    {isEdit && renderProperties(propertyMeta.nullableProps, true)}
+                    {isEdit && renderProperties(propertyMeta.nonNullableProps, false)}
+                </Form>
             </div>
         </Drawer>
     );

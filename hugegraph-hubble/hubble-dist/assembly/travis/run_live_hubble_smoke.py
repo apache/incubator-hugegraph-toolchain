@@ -42,6 +42,54 @@ OPENER = urllib.request.build_opener(
 SERVER_TOKEN = None
 
 
+def public_http_url(value, field):
+    # Parse errors may include user input; only the fixed field name is diagnostic.
+    def invalid():
+        raise ValueError(f"Invalid {field}") from None
+
+    if (not isinstance(value, str) or not re.match(r"^https?://", value, re.I) or
+            re.search(r"[\x00-\x20\x7f]", value) or "?" in value or "#" in value):
+        invalid()
+    try:
+        parsed = urllib.parse.urlsplit(value)
+        parsed.port  # Validate malformed/out-of-range ports before any HTTP.
+    except ValueError:
+        invalid()
+    if (parsed.scheme not in ("http", "https") or not parsed.hostname or
+            parsed.username or parsed.password or
+            "@" in urllib.parse.unquote(parsed.netloc)):
+        invalid()
+    return value
+
+
+def write_url_validation_failure(output, error):
+    temporary = None
+    try:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        descriptor, name = tempfile.mkstemp(prefix="." + output.name + ".", suffix=".tmp", dir=output.parent)
+        temporary = Path(name)
+        with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+            json.dump({"status": "failed", "stage": "url-validation", "error": error,
+                       "checks": []}, stream, indent=2)
+            stream.write("\n")
+        # Replacing the directory entry also invalidates a read-only old inode.
+        temporary.replace(output)
+        temporary = None
+        return True
+    except OSError:
+        try:
+            output.unlink(missing_ok=True)
+        except OSError:
+            pass
+        return False
+    finally:
+        if temporary is not None:
+            try:
+                temporary.unlink(missing_ok=True)
+            except OSError:
+                pass
+
+
 def request(method, url, body=None, headers=None, timeout=10):
     data = None
     merged_headers = {"Accept-Encoding": "identity", **(headers or {})}
@@ -223,7 +271,7 @@ def run_login_checks(hubble_url, username, password):
     user_name = (user.get("user_name") or user.get("name") or
                  user.get("id") or "")
     if str(user_name) != username:
-        raise RuntimeError(f"Unexpected login user: {user}")
+        raise RuntimeError("Hubble login identity does not match the requested account")
     checks.append({"name": "hubble-login", "status": "passed",
                    "user": username})
 
@@ -278,18 +326,20 @@ def run_server_checks(hubble_url, server_url, graph_space, graph_name):
 
 
 def get_json_status(method, url, body=None):
+    # Only Hubble's Cypher/OLAP boundary probes call this helper. Their successful
+    # HTTP responses use ResponseAdvisor's status envelope; direct Server JSON
+    # continues through request/server_json without this restriction.
     try:
         response = request(method, url, body)
-        if isinstance(response, dict):
-            return response.get("status", 200)
-        return 200
     except urllib.error.HTTPError as exc:
-        try:
-            payload = exc.read().decode("utf-8")
-            response = json.loads(payload)
-            return response.get("status", exc.code)
-        except (UnicodeDecodeError, json.JSONDecodeError):
-            return exc.code
+        # A transport failure cannot become success because of an untrusted body.
+        return exc.code
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        raise RuntimeError("Hubble boundary response is not valid JSON") from None
+    if (not isinstance(response, dict) or
+            type(response.get("status")) is not int):
+        raise RuntimeError("Hubble boundary response lacks an integer status")
+    return response["status"]
 
 
 def run_analysis_boundary_checks(hubble_url, graph_space, graph_name):
@@ -351,6 +401,7 @@ def create_schema(hubble_url, server_url, graph_space, graph_name, prefix):
     el_knows = f"{prefix}_knows"
 
     checks = []
+    created_propertykeys = 0
     for name, data_type in ((pk_id, "TEXT"), (pk_name, "TEXT"),
                             (pk_rank, "INT")):
         body = {"name": name, "data_type": data_type, "cardinality": "SINGLE"}
@@ -359,7 +410,9 @@ def create_schema(hubble_url, server_url, graph_space, graph_name, prefix):
         )
         if response is not None:
             unwrap(response, f"create property key {name}")
-    checks.append({"name": "hubble-schema-propertykeys", "status": "passed"})
+            created_propertykeys += 1
+    checks.append({"name": "hubble-schema-propertykeys", "status": "passed",
+                   "created_count": created_propertykeys})
 
     vertex_body = {
         "name": vl_person,
@@ -380,7 +433,7 @@ def create_schema(hubble_url, server_url, graph_space, graph_name, prefix):
     if response is not None:
         unwrap(response, f"create vertex label {vl_person}")
     checks.append({"name": "hubble-schema-vertexlabel", "status": "passed",
-                   "label": vl_person})
+                   "label": vl_person, "created": response is not None})
 
     edge_body = {
         "name": el_knows,
@@ -400,7 +453,7 @@ def create_schema(hubble_url, server_url, graph_space, graph_name, prefix):
     if response is not None:
         unwrap(response, f"create edge label {el_knows}")
     checks.append({"name": "hubble-schema-edgelabel", "status": "passed",
-                   "label": el_knows})
+                   "label": el_knows, "created": response is not None})
 
     direct = server_json("GET", server_url,
                          f"/graphs/{graph_name}/schema/vertexlabels/{vl_person}")
@@ -845,13 +898,16 @@ def log_tail(path):
 def main():
     parser = argparse.ArgumentParser(description="Run live Hubble issue #694 smoke")
     parser.add_argument("tarball", type=Path)
-    parser.add_argument("--server-url", default="http://127.0.0.1:8080")
+    parser.add_argument("--server-url", default=os.environ.get("HUBBLE_SMOKE_SERVER_URL",
+                                                              "http://127.0.0.1:8080"))
     parser.add_argument("--hubble-url", default=os.environ.get("HUBBLE_URL",
                                                               "http://127.0.0.1:8088"))
     parser.add_argument("--graph", default=os.environ.get("HUGEGRAPH_GRAPH", "hugegraph"))
     parser.add_argument("--work-dir", type=Path)
     parser.add_argument("--keep-work-dir", action="store_true")
     parser.add_argument("--skip-start", action="store_true")
+    parser.add_argument("--validate-urls", action="store_true",
+                        help="Validate environment/argument URLs without starting or contacting services")
     parser.add_argument("--foreground-start", action="store_true")
     parser.add_argument("--leave-running", action="store_true")
     parser.add_argument("--bind-host")
@@ -868,14 +924,25 @@ def main():
                                                             "pa"))
     args = parser.parse_args()
 
+    try:
+        hubble_url = public_http_url(args.hubble_url, "hubbleUrl").rstrip("/")
+        server_url = public_http_url(args.server_url, "serverUrl").rstrip("/")
+    except ValueError as exc:
+        # Invalidate old success evidence with a sanitized failure. URL values are
+        # never added to this report, including in the shell's preflight mode.
+        diagnostic = f"{exc}\n"
+        if args.json_output and not write_url_validation_failure(args.json_output, str(exc)):
+            diagnostic += "URL validation failure evidence could not be saved\n"
+        parser.exit(2, diagnostic)
+    if args.validate_urls:
+        return
+
     if not args.skip_start:
         try:
             require_safe_archive_extraction()
         except RuntimeError as exc:
             parser.error(str(exc))
 
-    hubble_url = args.hubble_url.rstrip("/")
-    server_url = args.server_url.rstrip("/")
     work_dir = args.work_dir or Path(tempfile.mkdtemp(prefix="hubble-694-live-"))
     created_work_dir = args.work_dir is None
     hubble_home = None
@@ -888,6 +955,7 @@ def main():
         "hubble_url": hubble_url,
         "server_url": server_url,
         "graph": args.graph,
+        "graphspace": args.graphspace,
         "checks": [],
         "status": "failed"
     }

@@ -27,7 +27,7 @@ import {
     Tree,
     Popconfirm,
 } from 'antd';
-import {PlusOutlined, MinusSquareOutlined} from '@ant-design/icons';
+import {PlusOutlined, MinusSquareOutlined, RightOutlined} from '@ant-design/icons';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import * as api from '../../../api';
@@ -129,7 +129,7 @@ const FieldForm = ({visible, prev, datasourceID}) => {
 
     const handleInputData = useCallback(e => {
         const value = e.target.value;
-        if (/[^a-zA-Z0-9\-\_]/.test(value)) {
+        if (/[^a-zA-Z0-9\-_]/.test(value)) {
             setStatus('error');
         }
         else {
@@ -140,7 +140,7 @@ const FieldForm = ({visible, prev, datasourceID}) => {
     }, []);
 
     const generateTree = useCallback((treeNodes = [], checkedKeys = []) =>
-        treeNodes.map(({children, ...props}) => ({
+        treeNodes.map(({children: _children, ...props}) => ({
             ...props,
             title: <FieldTitle
                 fieldKey={props.key}
@@ -158,23 +158,23 @@ const FieldForm = ({visible, prev, datasourceID}) => {
             direction === 'left'
             && (
                 <div style={{margin: 5}}>
-                    <Input
-                        value={inputData}
-                        addonAfter={(
-                            <Button
-                                type='text'
-                                size='small'
-                                aria-label={t('task.edit.add_field')}
-                                title={t('task.edit.add_field')}
-                                icon={<PlusOutlined />}
-                                disabled={!inputData || status === 'error'}
-                                onClick={addField}
-                            />
-                        )}
-                        placeholder={t('task.edit.add_field_placeholder')}
-                        onChange={handleInputData}
-                        status={status}
-                    />
+                    <Space.Compact style={{width: '100%'}}>
+                        <Input
+                            value={inputData}
+                            placeholder={t('task.edit.add_field_placeholder')}
+                            onChange={handleInputData}
+                            status={status}
+                        />
+                        <Button
+                            type='text'
+                            size='small'
+                            aria-label={t('task.edit.add_field')}
+                            title={t('task.edit.add_field')}
+                            icon={<PlusOutlined />}
+                            disabled={!inputData || status === 'error'}
+                            onClick={addField}
+                        />
+                    </Space.Compact>
                 </div>
             )
         );
@@ -200,6 +200,7 @@ const FieldForm = ({visible, prev, datasourceID}) => {
         }
 
         let active = true;
+        fieldForm.resetFields();
         setSourceData([]);
         setTargetKeys([]);
         fieldForm.setFieldsValue({target_keys: []});
@@ -233,14 +234,14 @@ const FieldForm = ({visible, prev, datasourceID}) => {
                 <Alert
                     showIcon
                     type='info'
-                    message={t('task.edit.fields_help_title')}
+                    title={t('task.edit.fields_help_title')}
                     description={t('task.edit.fields_help')}
                 />
                 {loadError && (
                     <Alert
                         showIcon
                         type='error'
-                        message={t('task.edit.load_fields_failed')}
+                        title={t('task.edit.load_fields_failed')}
                         action={(
                             <Button size='small' onClick={retryFields}>
                                 {t('task.edit.retry_fields')}
@@ -255,13 +256,15 @@ const FieldForm = ({visible, prev, datasourceID}) => {
                             t('task.edit.source_available_fields'),
                             t('task.edit.selected_fields'),
                         ]}
-                        listStyle={{width: 400, height: 400}}
+                        styles={{section: {width: 400, height: 400}}}
                         render={renderField}
                         targetKeys={targetKeys}
                         status={transferStatus}
                         onChange={setKey}
                         footer={footer}
                         oneWay
+                        actions={[<Button key='select' type='primary' size='small' icon={<RightOutlined />}
+                            aria-label={t('task.edit.select_source_fields')} />]}
                     >
                         {({direction, onItemSelect, selectedKeys}) => {
                             if (direction === 'left') {
@@ -282,7 +285,7 @@ const FieldForm = ({visible, prev, datasourceID}) => {
                         <Alert
                             showIcon
                             type='error'
-                            message={t('task.edit.select_source_fields')}
+                            title={t('task.edit.select_source_fields')}
                         />
                     </div>
                 )}

@@ -20,8 +20,10 @@
  * @file NeighborRankApi
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Input, Collapse, Select, InputNumber, Button, Tooltip} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
+import {useState, useCallback, useContext} from 'react';
+import {Input, Select, InputNumber, Button, Tooltip} from 'antd';
 import Form from '../../PersistentForm';
 import {ScheduleOutlined, DownOutlined, RightOutlined, PlusOutlined, QuestionCircleOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
@@ -54,7 +56,7 @@ const NeighborRankApi = props => {
     const [form] = Form.useForm();
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
     const [stepVisible, setStepVisible] = useState(false);
     const directionOptions = [
         {label: t('analysis.algorithm.form.direction_options.out'), value: 'OUT'},
@@ -77,24 +79,24 @@ const NeighborRankApi = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(NEIGHBOR_RANK_API);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             algorithmParams = {...algorithmParams, 'algorithmName': Algorithm_Url[NEIGHBOR_RANK_API]};
             const filteredParams = removeNilKeys(algorithmParams);
             const response =  await api.analysis.runOltpInfo(graphSpace, graph, filteredParams);
             const {data, status, message} = response || {};
             const {graph_view, rankslist} = data || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, {}, message);
+                complete(FAILED, {}, message);
             }
             else {
                 const options = {rankArray: rankslist || []};
-                handleFormSubmit(SUCCESS, graph_view || {}, message, options);
+                complete(SUCCESS, graph_view || {}, message, options);
             }
-            setRequiring(false);
+            finishRequiring();
         },
-        [graph, graphSpace, handleFormSubmit, updateCurrentAlgorithm]
+        [graph, graphSpace, beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const onFormFinish = useCallback(
@@ -185,10 +187,10 @@ const NeighborRankApi = props => {
                 name={['steps']}
                 initialValue={[{}]}
             >
-                {(lists, {add, remove}, {errors}) => (
+                {(lists, {add, remove}, {errors: _errors}) => (
                     <>
                         {
-                            lists.map((item, index) => {
+                            lists.map((item, _index) => {
                                 return (
                                     <div key={item.key}>
                                         {stepFormItems(item)}
@@ -251,11 +253,8 @@ const NeighborRankApi = props => {
     };
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<ScheduleOutlined />}
                     name={NEIGHBOR_RANK_API}
@@ -305,7 +304,7 @@ const NeighborRankApi = props => {
                 </Form.Item>
                 {renderSteps()}
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

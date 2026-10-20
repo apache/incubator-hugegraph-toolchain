@@ -159,7 +159,7 @@ const EditVertexLayer = ({visible, onCancle, graphspace, graph, refresh, name, p
             }
 
             addVertex(values);
-        }).catch(e => {});
+        }).catch(_e => {});
     }, [form, name, addVertex, updateVertex]);
 
     useEffect(() => {
@@ -193,13 +193,13 @@ const EditVertexLayer = ({visible, onCancle, graphspace, graph, refresh, name, p
             onOk={onFinish}
             confirmLoading={loading}
             okButtonProps={{disabled: spinning || detailError}}
-            destroyOnClose
+            destroyOnHidden
         >
             {detailError && (
                 <Alert
                     type='error'
                     showIcon
-                    message={t('schema.vertex.detail_failed')}
+                    title={t('schema.vertex.detail_failed')}
                     action={<Button size='small' onClick={loadDetail}>{t('schema.retry')}</Button>}
                 />
             )}

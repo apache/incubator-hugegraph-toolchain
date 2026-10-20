@@ -19,7 +19,7 @@ Start from one workspace for graph discovery, import, query, account management,
 
 Run Gremlin queries and inspect their graph, table, or JSON results without leaving the workbench.
 
-![Hubble GQL traversal and graph visualization](docs/images/showcase/gql-traversal.jpg)
+![Hubble GQL traversal and graph visualization](docs/images/g6/query.png)
 
 ### Natural-language graph queries (Text2GQL)
 
@@ -286,12 +286,39 @@ do not repair a database that is still unavailable.
 
 ## Local development feedback loop
 
-Run the frontend with third-party source-map noise disabled:
+Run the Vite frontend with the Node version in `hubble-fe/.node-version` and the
+`packageManager` version in `hubble-fe/package.json`:
 
 ```bash
 cd hubble-fe
-yarn dev
+corepack enable
+pnpm install --frozen-lockfile
+pnpm dev
 ```
+
+<details>
+<summary>Optional experiment: share dependency directories across worktrees</summary>
+
+The default pnpm layout already reuses package files through its shared store,
+while each worktree has its own `node_modules/.pnpm` directory structure.
+pnpm's experimental **global virtual store** (`virtualStoreType: global`)
+also shares that structure, reducing repeated installation work for many local
+worktrees. Hubble leaves this option **disabled by default**; no project or
+global pnpm setting needs to change for the development commands above.
+
+Use this experiment only for trusted local worktrees. Shared package edits can
+affect other worktrees, and some tools need pnpm's ESM resolution hooks rather
+than a directly launched `node` process. Keep mutable outputs such as `build/`,
+`.cache` and Vite caches separate. Reported directory sizes do not establish
+physical disk savings because the default layout already shares package data.
+Keep normal distribution builds and CI on the validated default layout.
+
+See pnpm's [global virtual store guide](https://pnpm.io/global-virtual-store)
+for benefits and limitations, and the
+[`virtualStoreType` configuration reference](https://pnpm.io/settings/node-modules#virtualstoretype)
+for opt-in configuration details.
+
+</details>
 
 Run the backend incrementally with Java 17 and the Maven daemon:
 
@@ -403,26 +430,12 @@ Then use a web browser to access `ip:8088` and you can see the `Hubble` page. Yo
 
 ### 2. Clone source code then compile and install
 
-> Note: Compiling Hubble requires the user's local environment to have Node.js V18.20.8 and yarn installed.
-
-```bash
-apt install curl build-essential
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
-source ~/.bashrc
-nvm install 18.20.8
-```
-
-Then, verify that the installed Node.js version is 18.20.8.
-
-```bash
-node -v
-```
-
-install `yarn` by the command below:
-
-```bash
-npm install -g yarn
-```
+Hubble requires Java 17, Maven 3.9+, Python 3.9+, and stable Node.js 24 at or above
+the minimum in [`hubble-fe/.node-version`](hubble-fe/.node-version). Install Node
+using your preferred version manager and install Corepack if your distribution
+does not include it, then run `corepack enable`. Corepack selects the pinned pnpm
+version from `hubble-fe/package.json`. Later Node 24 patch/minor releases are
+supported; Node 25 and prerelease builds require a separate compatibility upgrade.
 
 Download the toolchain source code.
 
@@ -435,8 +448,14 @@ For the Java 17 candidate, prepare the locked SDK using the [bootstrap instructi
 ```bash
 cd hugegraph-toolchain
 python3 -m pip install -r hugegraph-hubble/hubble-dist/assembly/travis/requirements.txt
-mvn -Dmaven.repo.local="$candidate_dir/m2" -Dsdk.validation.mode=candidate install -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp
-(cd hugegraph-hubble && mvn -Dmaven.repo.local="$candidate_dir/m2" -Dsdk.validation.mode=candidate package -Dmaven.javadoc.skip=true -DskipTests -ntp)
+MAVEN_OPTS='-Xmx3g -XX:MaxMetaspaceSize=768m' \
+  mvn -Dmaven.repo.local="$candidate_dir/m2" -Dsdk.validation.mode=candidate install \
+    -pl hugegraph-client,hugegraph-loader -am -Dloader.distribution.skip=true \
+    -Dmaven.javadoc.skip=true -DskipTests -ntp
+(cd hugegraph-hubble && \
+  MAVEN_OPTS='-Xmx2g -XX:MaxMetaspaceSize=768m' \
+    mvn -Dmaven.repo.local="$candidate_dir/m2" -Dsdk.validation.mode=candidate package \
+      -Dmaven.javadoc.skip=true -DskipTests -ntp)
 cd hugegraph-hubble/apache-hugegraph-hubble-*
 ```
 
@@ -445,6 +464,73 @@ Run `hubble`
 ```bash
 bin/start-hubble.sh -d
 ```
+
+### Build reuse and resource limits
+
+The frontend has one production build, `pnpm run build` (i18n, TypeScript, Vite).
+`pnpm run build:diagnostic` runs the same checks and adds source maps. Normal
+release builds do not create maps only to discard them during packaging.
+Diagnostic source maps remain in `hubble-fe/build`; distribution packaging
+excludes them from `ui/` so the release archive still passes its source-map audit.
+
+Maven runs the shared frontend entry point at `prepare-package`; Java `compile`
+and `test` do not install packages or compile the UI. The same entry point can
+be used directly from `hugegraph-hubble`:
+
+```bash
+node hubble-dist/assembly/travis/build-frontend.mjs
+# Rebuild even when every cached input and output still matches:
+node hubble-dist/assembly/travis/build-frontend.mjs --force
+# Explicit diagnostic output (or: mvn package -Dhubble.frontend.mode=diagnostic):
+node hubble-dist/assembly/travis/build-frontend.mjs --mode diagnostic
+```
+
+An input change triggers a frozen pnpm install and rebuild. Reuse requires the
+hashes of frontend sources, assets, configuration, lockfile, Node/pnpm versions,
+build mode and relevant build environment to match, as well as the complete
+output file names and contents. Missing, extra or changed files invalidate the
+cache. `.cache/frontend-build.json` stores hashes, not environment values.
+Deleting `hubble-fe/.cache` or `hubble-fe/build` forces a rebuild. Concurrent
+frontend helper runs fail explicitly; after verifying that no build process remains, remove
+`.cache/frontend-build.lock` if an interrupted process left it behind.
+
+CI caches pnpm's download store instead of `node_modules`, pins the OS,
+architecture and tool versions in its cache key, and always validates changed
+builds with a frozen lockfile. It builds the UI once, runs lint and frontend
+tests, then Maven verifies and reuses that output. All backend tests and release
+SDK, license and archive audits still run. An incremental package rebuilds the
+generated distribution paths (`bin`, `conf`, `lib`, `ui`, `licenses` and release
+metadata) so removed files cannot survive. Keep deployment configuration edits
+in a separate runtime directory; generated configuration is replaced at package
+time. Runtime databases, logs and uploads are retained and excluded from the
+archive.
+
+`-Dloader.distribution.skip=true` is only for installing the Client/Loader JARs
+that Hubble consumes. It omits Loader's unrelated shaded JAR and standalone
+archive; normal Loader builds keep producing and auditing their release. Java
+uses Maven's normal incremental compiler for source/resource changes. A small
+external-input guard validates the SDK and fingerprints resolved classpath bytes,
+JDK and compiler/POM settings. If those inputs change before Maven starts, it
+invalidates only compiler classes, generated sources and status; ordinary source
+edits remain under Maven's incremental checks. This also prevents a same-version
+SDK or annotation-processor replacement from silently reusing old classes. Do not reuse a broad Maven cache over a candidate SDK:
+keep the same-source isolated repository and its manifest verification.
+
+For Hubble module builds, use this heap budget after installing the Java prerequisites:
+
+```bash
+export MAVEN_OPTS='-Xmx2g -XX:MaxMetaspaceSize=768m'
+export NODE_OPTIONS='--max-old-space-size=4096'
+```
+
+The Client/Loader and candidate SDK reactors keep their separate 3 GiB budget;
+the Hubble module measurements do not establish their memory requirements.
+These are per-process heap limits, not total memory guarantees. Avoid running
+multiple full Maven/Node builds concurrently on a memory-constrained machine.
+Docker separates frontend and backend compilation layers and uses a pnpm store
+cache mount; frontend edits do not rebuild Java dependencies, and backend edits
+do not rebuild the frontend. The final assembly still verifies the selected
+SDK and audits the complete distribution.
 
 ### 3. User docker image (Convenient for Test/Dev)
 
@@ -462,6 +548,68 @@ Then we should follow the [hubble workflow doc](https://hugegraph.apache.org/doc
 > 1. The docker image of hugegraph-hubble is a convenience release, but not **official distribution** artifacts. You can find more details from [ASF Release Distribution Policy](https://infra.apache.org/release-distribution.html#dockerhub).
 > 
 > 2. Recommand to use `release tag`(like `1.0.0`) for the stable version. Use `latest` tag to experience the newest functions in development.
+
+## Browser acceptance
+
+Query and algorithm canvases, Schema views and graph-card previews share the G6 5.1.1
+visualization module. The screenshots show a running Hubble and Server with a
+small authenticated test dataset: [query](docs/images/g6/query.png),
+[algorithm](docs/images/g6/algorithm.png), [Schema](docs/images/g6/schema.png) and
+[graph cards](docs/images/g6/cards.png). These examples do not replace the
+separate scale, anonymous, GraphSpace and permission checks below.
+Additional running-UI checks show [visible settings panels](docs/images/g6/query-settings.png)
+and [new vertices in the current viewport](docs/images/g6/query-new-vertex.png).
+
+The distribution gate starts the packaged Hubble against an existing real Server,
+loads an isolated three-node/two-edge fixture, then runs route/i18n smoke and real
+G6 canvas checks. Supply `HUBBLE_USERNAME` and `HUBBLE_PASSWORD` through the
+process environment for the actual account; credentials are not command arguments.
+Run from `hugegraph-hubble`:
+
+```bash
+hubble-dist/assembly/travis/verify-hubble-issue-694.sh \
+  target/apache-hugegraph-hubble-*.tar.gz http://127.0.0.1:8080
+```
+
+By default the graph gate requests the independent example, authentication,
+query, Schema, graph cards, algorithm and scope-switch checks. The existing
+Server dataset and permissions must be real. The gate reuses the Loader report's
+prefix and exact graph/GraphSpace/account. It infers writable Schema only when
+that run actually created both labels; an existing-label conflict or old report
+cannot prove permission. Supply `HUBBLE_GRAPH_FIXTURE` with an explicit existing
+dataset contract when reusing data, testing read-only permissions, or switching
+to a second scope. See the fixture fields in
+[`run_ui_graph_acceptance.js --help`](hubble-dist/assembly/travis/run_ui_graph_acceptance.js).
+
+The standalone CI fixture has one graph and explicitly selects
+`HUBBLE_GRAPH_CHECKS=example,authentication,query,schema,cards,algorithm`.
+The wrapper report and manifest distinguish `requestedSmokeStatus` from
+`overallAcceptanceStatus`. Passing smoke reports `overallAcceptanceStatus: incomplete`
+and `fullRequestedMatrix: false`; `graphChecksComplete` records whether all seven
+graph checks passed. Even those seven checks do not prove the authenticated/anonymous,
+PD/GraphSpace, connection, permission, concurrency and resource matrices. This
+workflow supplies no independent required jobs for those remaining matrices.
+Missing required fixtures or
+capabilities produce `needs input` and exit 2; assertion/runtime failures exit 1.
+The wrapper propagates these states and never replaces the graph gate with a
+route smoke. Evidence is written under `target/hubble-live-acceptance` in CI;
+set `HUBBLE_694_EVIDENCE_DIR` to choose a local destination.
+
+For an already running deployment, use `run_ui_full_acceptance.js` with
+`--hubble-url`, `--graphspace`, `--graph` and `--graph-fixture`. A direct
+`--data-prefix` is also supported, but cannot by itself establish Schema write
+permission or a second scope. `--graph-checks` explicitly narrows the requested
+checks and remains visible in the aggregate report. Screenshots, public HTTP
+responses, real input and PNG/JSON downloads substantiate the graph checks;
+the orchestration tests only validate gate wiring and status propagation:
+
+```bash
+node --test hubble-dist/assembly/travis/ui_auth.test.js \
+  hubble-dist/assembly/travis/graph_acceptance_helpers.test.js \
+  hubble-dist/assembly/travis/run_ui_graph_acceptance.test.js \
+  hubble-dist/assembly/travis/run_ui_full_acceptance.test.js
+python3 hubble-dist/assembly/travis/test_run_live_hubble_smoke.py
+```
 
 ## Doc
 

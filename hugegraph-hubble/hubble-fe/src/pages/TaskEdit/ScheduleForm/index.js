@@ -57,7 +57,7 @@ const ScheduleForm = ({prev, visible, datasource, loading}) => {
                 <Alert
                     showIcon
                     type='info'
-                    message={t('task.edit.schedule_help_title')}
+                    title={t('task.edit.schedule_help_title')}
                     description={t('task.edit.schedule_help')}
                 />
                 <Form.Item

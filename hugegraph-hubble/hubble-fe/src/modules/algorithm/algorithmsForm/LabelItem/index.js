@@ -20,12 +20,11 @@
  * @file LabelItem
  */
 
-import React from 'react';
 import {Input} from 'antd';
 import Form from '../PersistentForm';
 import {useTranslation} from 'react-i18next';
 
-const LabelItem = props => {
+const LabelItem = _props => {
     const {t} = useTranslation();
     return (
         <Form.Item

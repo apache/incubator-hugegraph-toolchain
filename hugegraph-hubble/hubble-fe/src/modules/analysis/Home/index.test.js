@@ -81,33 +81,38 @@ jest.mock('../QueryBar/Home', () => props => (
         <button onClick={() => props.text2gql.setQuestion('New question')}>Edit question</button>
     </div>
 ));
-jest.mock('../QueryResult/Home', () => ({
-    queryResult,
-    queryProgress,
-    asyncTaskResult,
-    isQueryMode,
-    queryStatus,
-    queryMessage,
-    graphRenderMode,
-    onGraphRenderModeChange,
-    metaData,
-    propertyKeysRecords,
-    graphNums,
-}) => (
-    <div>
-        query result {queryStatus} {queryMessage}
-        <output data-testid='query-result'>{JSON.stringify(queryResult)}</output>
-        <span data-testid='query-status'>{queryStatus}</span>
-        <output data-testid='result-mode'>{isQueryMode ? 'query' : 'task'}</output>
-        <output data-testid='query-progress'>{queryProgress?.phase || ''}</output>
-        <output data-testid='async-task'>{!isQueryMode ? asyncTaskResult ?? '' : ''}</output>
-        <span>render mode {graphRenderMode}</span>
-        <span>metadata ready {String(Boolean(metaData))}</span>
-        <span>properties ready {String(Boolean(propertyKeysRecords))}</span>
-        <span>graph counts {graphNums.vertexCount} {graphNums.edgeCount}</span>
-        <button onClick={() => onGraphRenderModeChange('3D模式')}>Use 3D</button>
-    </div>
-));
+const mockQueryResultProps = jest.fn();
+jest.mock('../QueryResult/Home', () => props => {
+    mockQueryResultProps(props);
+    const {
+        queryResult,
+        queryProgress,
+        asyncTaskResult,
+        isQueryMode,
+        queryStatus,
+        queryMessage,
+        graphRenderMode,
+        onGraphRenderModeChange,
+        metaData,
+        propertyKeysRecords,
+        graphNums,
+    } = props;
+    return (
+        <div>
+            query result {queryStatus} {queryMessage}
+            <output data-testid='query-result'>{JSON.stringify(queryResult)}</output>
+            <span data-testid='query-status'>{queryStatus}</span>
+            <output data-testid='result-mode'>{isQueryMode ? 'query' : 'task'}</output>
+            <output data-testid='query-progress'>{queryProgress?.phase || ''}</output>
+            <output data-testid='async-task'>{!isQueryMode ? asyncTaskResult ?? '' : ''}</output>
+            <span>render mode {graphRenderMode}</span>
+            <span>metadata ready {String(Boolean(metaData))}</span>
+            <span>properties ready {String(Boolean(propertyKeysRecords))}</span>
+            <span>graph counts {String(graphNums.vertexCount)} {String(graphNums.edgeCount)}</span>
+            <button onClick={() => onGraphRenderModeChange('3D模式')}>Use 3D</button>
+        </div>
+    );
+});
 jest.mock('../LogsDetail/Home', () => props => (
     <div>
         query history
@@ -1354,9 +1359,12 @@ it.each([false, true])('keeps a failed history fallback until retry or user edit
         fireEvent.click(screen.getByRole('button', {name: 'Edit query'}));
     }
     fireEvent.click(screen.getByRole('button', {name: 'Retry records'}));
-    await waitFor(() => expect(screen.getByText('execution loading false')).toBeInTheDocument());
-    expect(screen.getByTestId('query-content')).toHaveTextContent(edited ? 'g.E().limit(3)' : 'retry record');
-    expect(screen.getByTestId('source-question').textContent).toBe(edited ? '' : 'retry question');
+    await waitFor(() => {
+        expect(screen.getByRole('button', {name: 'Load history statement'})).toBeEnabled();
+        expect(screen.getByText('execution loading false')).toBeInTheDocument();
+        expect(screen.getByTestId('query-content')).toHaveTextContent(edited ? 'g.E().limit(3)' : 'retry record');
+        expect(screen.getByTestId('source-question').textContent).toBe(edited ? '' : 'retry question');
+    });
 });
 
 
@@ -1586,4 +1594,201 @@ it.each([
     expect(api.analysis.getCypherExecutionQuery).not.toHaveBeenCalled();
     expect(api.analysis.getExecutionTask).not.toHaveBeenCalled();
     expect(api.analysis.getCypherTask).not.toHaveBeenCalled();
+});
+
+const countsHomeFor = (graph = 'graph-a', graphSpace = 'DEFAULT') => (
+    <GraphAnalysisContext.Provider value={{graphSpace, graph}}>
+        <AnalysisHome />
+    </GraphAnalysisContext.Provider>
+);
+
+it('refreshes server graph totals through the callback passed to the result without resetting confirmed counts', async () => {
+    api.analysis.getGraphData.mockResolvedValue({status: 200, data: {vertexcount: 7, edgecount: 9}});
+    render(countsHomeFor());
+    expect(await screen.findByText('graph counts 7 9')).toBeInTheDocument();
+    const initialCalls = api.analysis.getGraphData.mock.calls.length;
+    const onRefreshGraphNums = mockQueryResultProps.mock.lastCall[0].onRefreshGraphNums;
+    api.analysis.getGraphData.mockResolvedValueOnce({status: 200, data: {vertexcount: 7, edgecount: 9}});
+    await act(async () => onRefreshGraphNums());
+    expect(api.analysis.getGraphData).toHaveBeenCalledTimes(initialCalls + 1);
+    expect(api.analysis.getGraphData).toHaveBeenLastCalledWith('DEFAULT', 'graph-a');
+    expect(screen.getByText('graph counts 7 9')).toBeInTheDocument();
+    api.analysis.getGraphData.mockResolvedValueOnce({status: 200, data: {vertexcount: 8, edgecount: 12}});
+    await act(async () => onRefreshGraphNums());
+    expect(screen.getByText('graph counts 8 12')).toBeInTheDocument();
+    api.analysis.getGraphData.mockRejectedValueOnce(new Error('statistics unavailable'));
+    await act(async () => { await expect(onRefreshGraphNums()).resolves.toEqual({status: 'unavailable'}); });
+    expect(screen.getByText('graph counts null null')).toBeInTheDocument();
+});
+
+it.each(['graph', 'space', 'return-to-a'].flatMap(change =>
+    ['success', 'http-error', 'network-error'].map(outcome => [change, outcome])))('rejects stale count-refresh callbacks after a %s change with late %s responses', async (change, outcome) => {
+    api.analysis.getGraphData.mockResolvedValue({status: 200, data: {vertexcount: 7, edgecount: 9}});
+    const view = render(countsHomeFor());
+    expect(await screen.findByText('graph counts 7 9')).toBeInTheDocument();
+    const staleRefresh = mockQueryResultProps.mock.lastCall[0].onRefreshGraphNums;
+    let resolveOld;
+    let rejectOld;
+    api.analysis.getGraphData.mockImplementationOnce(() => new Promise((resolve, reject) => {
+        resolveOld = resolve;
+        rejectOld = reject;
+    }));
+    act(() => { void staleRefresh(); });
+    api.analysis.getGraphData.mockResolvedValue({status: 200, data: {vertexcount: 20, edgecount: 21}});
+    view.rerender(countsHomeFor(change === 'space' ? 'graph-a' : 'graph-b', change === 'space' ? 'OTHER' : 'DEFAULT'));
+    expect(await screen.findByText('graph counts 20 21')).toBeInTheDocument();
+    if (change === 'return-to-a') {
+        api.analysis.getGraphData.mockResolvedValue({status: 200, data: {vertexcount: 30, edgecount: 31}});
+        view.rerender(countsHomeFor());
+        expect(await screen.findByText('graph counts 30 31')).toBeInTheDocument();
+    }
+    const calls = api.analysis.getGraphData.mock.calls.length;
+    await act(async () => staleRefresh());
+    expect(api.analysis.getGraphData).toHaveBeenCalledTimes(calls);
+    await act(async () => {
+        if (outcome === 'network-error') rejectOld(new Error('old scope unavailable'));
+        else resolveOld({status: outcome === 'success' ? 200 : 503, data: {vertexcount: 100, edgecount: 101}});
+    });
+    expect(screen.getByText(change === 'return-to-a' ? 'graph counts 30 31' : 'graph counts 20 21')).toBeInTheDocument();
+    const currentRefresh = mockQueryResultProps.mock.lastCall[0].onRefreshGraphNums;
+    view.unmount();
+    await currentRefresh();
+    expect(api.analysis.getGraphData).toHaveBeenCalledTimes(calls);
+});
+
+it.each(['http-error', 'network-error'])('marks current graph totals unavailable after a %s refresh and recovers on retry', async outcome => {
+    api.analysis.getGraphData.mockResolvedValue({status: 200, data: {vertexcount: 7, edgecount: 9}});
+    render(countsHomeFor());
+    expect(await screen.findByText('graph counts 7 9')).toBeInTheDocument();
+    const onRefreshGraphNums = mockQueryResultProps.mock.lastCall[0].onRefreshGraphNums;
+    if (outcome === 'http-error') api.analysis.getGraphData.mockResolvedValueOnce({status: 503});
+    else api.analysis.getGraphData.mockRejectedValueOnce(new Error('statistics unavailable'));
+    await act(async () => { await expect(onRefreshGraphNums()).resolves.toEqual({status: 'unavailable'}); });
+    expect(screen.getByText('graph counts null null')).toBeInTheDocument();
+    await act(async () => { await expect(onRefreshGraphNums()).resolves.toEqual({status: 'refreshed'}); });
+    expect(screen.getByText('graph counts 7 9')).toBeInTheDocument();
+});
+
+it('does not let a failed older same-graph refresh invalidate a newer successful total', async () => {
+    api.analysis.getGraphData.mockResolvedValue({status: 200, data: {vertexcount: 7, edgecount: 9}});
+    render(countsHomeFor());
+    expect(await screen.findByText('graph counts 7 9')).toBeInTheDocument();
+    const onRefreshGraphNums = mockQueryResultProps.mock.lastCall[0].onRefreshGraphNums;
+    let rejectOld;
+    api.analysis.getGraphData.mockImplementationOnce(() => new Promise((resolve, reject) => { rejectOld = reject; }));
+    act(() => { void onRefreshGraphNums(); });
+    api.analysis.getGraphData.mockResolvedValueOnce({status: 200, data: {vertexcount: 20, edgecount: 21}});
+    await act(async () => onRefreshGraphNums());
+    await act(async () => rejectOld(new Error('older statistics failed')));
+    expect(screen.getByText('graph counts 20 21')).toBeInTheDocument();
+});
+
+it.each([false, true].flatMap(returnToAlice =>
+    ['success', 'http-error', 'network-error'].map(outcome => [returnToAlice, outcome])))('isolates graph counts across setUser on the mounted graph (return to Alice: %s, old response: %s)', async (returnToAlice, outcome) => {
+    setUser({id: 'alice', user_name: 'alice'});
+    api.analysis.getGraphData.mockResolvedValue({status: 200, data: {vertexcount: 7, edgecount: 9}});
+    const view = render(countsHomeFor());
+    expect(await screen.findByText('graph counts 7 9')).toBeInTheDocument();
+    const staleRefresh = mockQueryResultProps.mock.lastCall[0].onRefreshGraphNums;
+    let resolveOld;
+    let rejectOld;
+    api.analysis.getGraphData.mockImplementationOnce(() => new Promise((resolve, reject) => {
+        resolveOld = resolve;
+        rejectOld = reject;
+    }));
+    act(() => { void staleRefresh(); });
+    const beforeIdentityChange = api.analysis.getGraphData.mock.calls.length;
+    let resolveCurrent;
+    api.analysis.getGraphData.mockImplementationOnce(() => new Promise(resolve => { resolveCurrent = resolve; }));
+    let immediateOldRefresh;
+    let synchronousCalls;
+    await act(async () => {
+        setUser({id: 'bob', user_name: 'bob'});
+        // This invocation runs before React commits the new identity epoch.
+        immediateOldRefresh = staleRefresh();
+        synchronousCalls = api.analysis.getGraphData.mock.calls.length;
+        await expect(immediateOldRefresh).resolves.toEqual({status: 'disposed'});
+    });
+    expect(synchronousCalls).toBe(beforeIdentityChange);
+    expect(api.analysis.getGraphData).toHaveBeenCalledTimes(beforeIdentityChange + 1);
+    expect(api.analysis.getGraphData).toHaveBeenLastCalledWith('DEFAULT', 'graph-a');
+    expect(screen.getByText('graph counts -1 -1')).toBeInTheDocument();
+    await act(async () => resolveCurrent({status: 200, data: {vertexcount: 20, edgecount: 21}}));
+    expect(screen.getByText('graph counts 20 21')).toBeInTheDocument();
+    if (returnToAlice) {
+        api.analysis.getGraphData.mockResolvedValue({status: 200, data: {vertexcount: 30, edgecount: 31}});
+        await act(async () => setUser({id: 'alice', user_name: 'alice'}));
+        expect(screen.getByText('graph counts 30 31')).toBeInTheDocument();
+    }
+    const calls = api.analysis.getGraphData.mock.calls.length;
+    await act(async () => { await expect(staleRefresh()).resolves.toEqual({status: 'disposed'}); });
+    expect(api.analysis.getGraphData).toHaveBeenCalledTimes(calls);
+    await act(async () => {
+        if (outcome === 'network-error') rejectOld(new Error('old account count failure'));
+        else resolveOld({status: outcome === 'success' ? 200 : 503, data: {vertexcount: 100, edgecount: 101}});
+    });
+    expect(screen.getByText(returnToAlice ? 'graph counts 30 31' : 'graph counts 20 21')).toBeInTheDocument();
+    view.unmount();
+});
+
+
+const schemaList = name => ({status: 200, data: {records: [{name}]}});
+const currentSchema = name => ({edgeMeta: [{name: `${name}-edge`}], vertexMeta: [{name: `${name}-vertex`}]});
+
+it.each([
+    ['graph', 'edge'], ['graph', 'vertex'],
+    ['return-to-a', 'edge'], ['return-to-a', 'vertex'], ['identity', 'vertex'],
+])('keeps Schema inputs owned after %s changes with late %s metadata', async (change, held) => {
+    const oldMetadata = pendingResponse();
+    const oldKeys = pendingResponse();
+    api.manage.getMetaEdgeList
+        .mockReturnValueOnce(held === 'edge' ? oldMetadata.promise : Promise.resolve(schemaList('old-edge')))
+        .mockResolvedValueOnce(schemaList('b-edge'))
+        .mockResolvedValue(schemaList('a2-edge'));
+    if (held === 'vertex') api.manage.getMetaVertexList.mockReturnValueOnce(oldMetadata.promise);
+    api.manage.getMetaVertexList.mockResolvedValueOnce(schemaList('b-vertex'));
+    if (change === 'return-to-a') api.manage.getMetaVertexList.mockResolvedValueOnce(schemaList('a2-vertex'));
+    api.manage.getMetaVertexList.mockResolvedValue(schemaList('old-vertex'));
+    api.manage.getMetaPropertyList
+        .mockReturnValueOnce(oldKeys.promise)
+        .mockResolvedValueOnce(schemaList('b-key'))
+        .mockResolvedValue(schemaList('a2-key'));
+    const view = render(countsHomeFor());
+    await act(async () => {});
+    if (change === 'identity') act(() => setUser({id: 'schema-reader', user_name: 'schema-reader'}));
+    else view.rerender(countsHomeFor('graph-b'));
+    await waitFor(() => expect(mockQueryResultProps.mock.lastCall[0].metaData).toEqual(currentSchema('b')));
+    expect(mockQueryResultProps.mock.lastCall[0].propertyKeysRecords).toEqual([{name: 'b-key'}]);
+    let expected = 'b';
+    if (change === 'return-to-a') {
+        view.rerender(countsHomeFor());
+        await waitFor(() => expect(mockQueryResultProps.mock.lastCall[0].metaData).toEqual(currentSchema('a2')));
+        expect(mockQueryResultProps.mock.lastCall[0].propertyKeysRecords).toEqual([{name: 'a2-key'}]);
+        expected = 'a2';
+    }
+    await act(async () => {
+        oldMetadata.resolve(schemaList(`old-${held}`));
+        oldKeys.resolve(schemaList('old-key'));
+    });
+    expect(mockQueryResultProps.mock.lastCall[0].metaData).toEqual(currentSchema(expected));
+    expect(mockQueryResultProps.mock.lastCall[0].propertyKeysRecords).toEqual([{name: `${expected}-key`}]);
+    view.unmount();
+});
+
+it('hides confirmed old Schema inputs as soon as the selected graph changes', async () => {
+    api.manage.getMetaEdgeList.mockResolvedValue(schemaList('a-edge'));
+    api.manage.getMetaVertexList.mockResolvedValue(schemaList('a-vertex'));
+    api.manage.getMetaPropertyList.mockResolvedValue(schemaList('a-key'));
+    const view = render(countsHomeFor());
+    await waitFor(() => expect(mockQueryResultProps.mock.lastCall[0].metaData).toEqual(currentSchema('a')));
+    const pending = pendingResponse();
+    api.manage.getMetaEdgeList.mockReturnValueOnce(pending.promise);
+    api.manage.getMetaPropertyList.mockReturnValueOnce(pending.promise);
+    view.rerender(countsHomeFor('graph-b'));
+    expect(mockQueryResultProps.mock.lastCall[0].metaData).toBeUndefined();
+    expect(mockQueryResultProps.mock.lastCall[0].propertyKeysRecords).toBeUndefined();
+    view.unmount();
+    const vertexCalls = api.manage.getMetaVertexList.mock.calls.length;
+    await act(async () => pending.resolve(schemaList('disposed')));
+    expect(api.manage.getMetaVertexList).toHaveBeenCalledTimes(vertexCalls);
 });

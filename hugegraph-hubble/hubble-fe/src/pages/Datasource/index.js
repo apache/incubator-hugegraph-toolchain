@@ -16,8 +16,9 @@
  * under the License.
  */
 
+import PageHeader from '../../components/PageHeader';
 import {
-    Alert, Button, Empty, Row, Col, PageHeader, Input, Modal, Table, Space, Spin, Tag,
+    Alert, Button, Empty, Row, Col, Input, Modal, Table, Space, Spin, Tag,
     message,
 } from 'antd';
 import {LinkOutlined} from '@ant-design/icons';
@@ -39,6 +40,7 @@ const Datasource = () => {
     const [refresh, setRefresh] = useState(false);
     const [query, setQuery] = useState('');
     const [pagination, setPagination] = useState({pageSize: 10, current: 1});
+    const {current: page} = pagination;
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState(false);
     const [reloadToken, setReloadToken] = useState(0);
@@ -163,7 +165,7 @@ const Datasource = () => {
         setLoadError(false);
         api.manage.getDatasourceList({
             query,
-            page_no: pagination.current,
+            page_no: page,
         }).then(res => {
             if (listRequest.current !== token) {
                 return;
@@ -191,13 +193,11 @@ const Datasource = () => {
                 listRequest.current = null;
             }
         };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [refresh, reloadToken, query, pagination.current]);
+    }, [refresh, reloadToken, query, page]);
 
     return (
         <>
             <PageHeader
-                ghost={false}
                 onBack={false}
                 title={t('datasource.title')}
             >
@@ -224,7 +224,7 @@ const Datasource = () => {
                     <Alert
                         showIcon
                         type='error'
-                        message={t('datasource.load_failed')}
+                        title={t('datasource.load_failed')}
                         action={(
                             <Button size='small' onClick={retryList}>
                                 {t('datasource.retry')}

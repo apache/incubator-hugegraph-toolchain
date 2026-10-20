@@ -38,12 +38,9 @@ const directionOptions = [
 ];
 
 const FormList = ({properties, map, field, t}) => {
-    const [ruleType, setRuleType] = useState('');
+    const [propertyKey, setPropertyKey] = useState('');
+    const ruleType = map[propertyKey] ?? '';
     const isBooleanRule = ruleType?.toLowerCase() === 'boolean';
-
-    const handleKey = useCallback(value => {
-        setRuleType(map[value]);
-    }, [map]);
 
     const getValueForm = () => {
         const type = ruleType?.toLowerCase();
@@ -87,7 +84,7 @@ const FormList = ({properties, map, field, t}) => {
                     rules={[{required: true}]}
                 >
                     <Select
-                        onChange={handleKey}
+                        onChange={setPropertyKey}
                         options={properties.map(item => ({label: item.name, value: item.name}))}
                     />
                 </Form.Item>
@@ -142,7 +139,7 @@ const Search = ({
     open,
     vertexLabel,
     vertexId,
-    propertykeys,
+    propertykeys = [],
     onChange,
 }) => {
 

@@ -20,8 +20,10 @@
  * @file CustomizedPaths
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Collapse, Select, InputNumber} from 'antd';
+import AlgorithmPanel from '../../../AlgorithmPanel';
+import useAlgorithmPending from '../../../useAlgorithmPending';
+import {useState, useCallback, useContext} from 'react';
+import {Select, InputNumber} from 'antd';
 import Form from '../../../PersistentForm';
 import {ProfileOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
@@ -51,7 +53,7 @@ const CustomizedPaths = props => {
 
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
     const [form] = Form.useForm();
     const sortByOptions = [
         {label: t('analysis.algorithm.oltp.customized_paths.sort_none'), value: 'NONE'},
@@ -69,25 +71,25 @@ const CustomizedPaths = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(CUSTOMIZEDPATHS);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             algorithmParams = {...algorithmParams, 'algorithmName': Algorithm_Url[CUSTOMIZEDPATHS]};
             const filteredParams = removeNilKeys(algorithmParams);
             const response =  await api.analysis.runOltpInfo(graphSpace, graph, filteredParams);
             const {data, status, message} = response || {};
             const {graph_view} = data || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, {}, message);
+                complete(FAILED, {}, message);
             }
             else {
                 const vertexs = getNodesFromParams(algorithmParams.sources, algorithmParams.vertices);
                 const options = {endPointsId: {startNodes: [...vertexs], endNodes: []}};
-                handleFormSubmit(SUCCESS, graph_view || {}, message, options);
+                complete(SUCCESS, graph_view || {}, message, options);
             }
-            setRequiring(false);
+            finishRequiring();
         },
-        [graph, graphSpace, handleFormSubmit, updateCurrentAlgorithm]
+        [graph, graphSpace, beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const onFormFinish = useCallback(
@@ -128,11 +130,8 @@ const CustomizedPaths = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<ProfileOutlined />}
                     name={CUSTOMIZEDPATHS}
@@ -192,7 +191,7 @@ const CustomizedPaths = props => {
                     <InputNumber />
                 </Form.Item>
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

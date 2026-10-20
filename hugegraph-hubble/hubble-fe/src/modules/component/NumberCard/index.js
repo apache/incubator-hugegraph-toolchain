@@ -20,7 +20,6 @@
  * @file  画布数据统计
  */
 
-import React from 'react';
 import c from './index.module.scss';
 import classnames from 'classnames';
 import {useTranslation} from 'react-i18next';

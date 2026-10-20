@@ -24,7 +24,7 @@
         padding: 5px;
     }
 
-    :global(.ant-collapse >.ant-collapse-item >.ant-collapse-content >.ant-collapse-content-box) {
+    :global(.ant-collapse >.ant-collapse-item >.ant-collapse-panel >.ant-collapse-body) {
         padding: 5px;
     }
 }

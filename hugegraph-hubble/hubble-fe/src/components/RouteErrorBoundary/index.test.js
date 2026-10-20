@@ -63,6 +63,17 @@ describe('RouteErrorBoundary', () => {
         expect(boundaryCalls[0].join(' ')).toContain('[REDACTED]');
     });
 
+    test('uses a local fallback when provided without changing the route default', () => {
+        render(
+            <RouteErrorBoundary fallback={<button>Return to the canvas</button>}>
+                <ThrowingRoute />
+            </RouteErrorBoundary>
+        );
+
+        expect(screen.getByRole('button', {name: 'Return to the canvas'})).toBeInTheDocument();
+        expect(screen.queryByRole('button', {name: 'Reload page'})).not.toBeInTheDocument();
+    });
+
     test('renders the fallback in Chinese', async () => {
         await i18n.changeLanguage('zh-CN');
 

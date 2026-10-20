@@ -34,24 +34,38 @@ async function payload(response, name) {
   return body.data;
 }
 
-async function authenticateUi(context, page, hubbleUrl, username, password) {
+async function authenticateUi(context, page, hubbleUrl, username, password, assertRunning = () => {}) {
   const baseUrl = hubbleUrl.replace(/\/$/, '');
+  assertRunning();
   const user = await payload(await context.request.post(
     `${baseUrl}/api/v1.3/auth/login`,
-    {data: {user_name: username, user_password: password}}
+    {data: {user_name: username, user_password: password}, timeout: 5000}
   ), 'login');
+  assertRunning();
   const status = await payload(await context.request.get(
-    `${baseUrl}/api/v1.3/auth/status`
+    `${baseUrl}/api/v1.3/auth/status`, {timeout: 5000}
   ), 'auth status');
+  assertRunning();
   if (!status || !status.level) {
     throw new Error('auth status response did not include level');
   }
-  if (!user || !user.user_name) {
-    throw new Error('login response did not include user_name');
+  if (!user || user.user_name !== username) {
+    throw new Error('login response did not match requested username');
+  }
+  const authContext = await payload(await context.request.get(
+    `${baseUrl}/api/v1.3/auth/context`, {timeout: 5000}
+  ), 'auth context');
+  assertRunning();
+  if (!authContext || authContext.username !== username) {
+    throw new Error('auth context did not match requested username');
+  }
+  if (!['SUPERADMIN', 'SPACEADMIN', 'USER'].includes(authContext.role)) {
+    throw new Error('auth context did not include a supported authenticated role');
   }
   const config = await payload(await context.request.get(
-    `${baseUrl}/api/v1.3/config`
+    `${baseUrl}/api/v1.3/config`, {timeout: 5000}
   ), 'config');
+  assertRunning();
   if (!config || typeof config.pd_enabled !== 'boolean') {
     throw new Error('config response did not include pd_enabled');
   }
@@ -59,7 +73,25 @@ async function authenticateUi(context, page, hubbleUrl, username, password) {
     window.sessionStorage.setItem('user_', JSON.stringify(session.user));
     window.sessionStorage.setItem('hubble_config_', JSON.stringify(session.config));
   }, {user, config});
-  return {user, level: status.level, pdEnabled: config.pd_enabled};
+  assertRunning();
+  return {user, level: status.level, pdEnabled: config.pd_enabled,
+    username: authContext.username, role: authContext.role};
 }
 
-module.exports = {authenticateUi};
+// Keep the browser cookie jar intact: clearing local cookies first would hide a
+// server session that logout failed to invalidate.
+async function logoutUi(context, hubbleUrl) {
+  const baseUrl = hubbleUrl.replace(/\/$/, '');
+  await payload(await context.request.get(`${baseUrl}/api/v1.3/auth/logout`, {timeout: 5000}), 'logout');
+  const response = await context.request.get(`${baseUrl}/api/v1.3/auth/status`, {timeout: 5000});
+  if (response.status() === 401) return;
+  if (response.status() === 200) {
+    let body;
+    try {body = await response.json();}
+    catch {throw new Error('Logout verification returned unreadable JSON');}
+    if (body?.status === 401) return;
+  }
+  throw new Error('Logout did not invalidate the actual browser session');
+}
+
+module.exports = {authenticateUi, logoutUi};

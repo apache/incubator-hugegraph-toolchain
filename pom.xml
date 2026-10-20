@@ -499,6 +499,9 @@
                 <artifactId>apache-rat-plugin</artifactId>
                 <configuration>
                     <excludes>
+                        <!-- Local task runtimes and evidence are not project sources. -->
+                        <exclude>**/.codex-task/**</exclude>
+                        <exclude>**/.goal-task/**</exclude>
                         <exclude>**/*.versionsBackup</exclude>
                         <exclude>**/*.log</exclude>
                         <exclude>**/*.txt</exclude>
@@ -520,6 +523,9 @@
                         <!-- FE-Hubble -->
                         <exclude>**/*.json</exclude>
                         <exclude>**/*.lock</exclude>
+                        <exclude>**/pnpm-lock.yaml</exclude>
+                        <exclude>**/.node-version</exclude>
+                        <exclude>**/hubble-fe/patches/*.patch</exclude>
                         <exclude>**/.prettierrc</exclude>
                         <exclude>**/.stylelintrc</exclude>
                         <exclude>**/check_server_status.feature</exclude>
@@ -598,6 +604,8 @@
                         <!-- Note that maven submodule directories and many non-source file patterns are excluded by default -->
                         <!-- see https://github.com/ec4j/editorconfig-linters/blob/master/editorconfig-lint-api/src/main/java/org/ec4j/lint/api/Constants.java#L37 -->
                         <!-- You can exclude further files from processing: -->
+                        <exclude>**/.codex-task/**</exclude>
+                        <exclude>**/.goal-task/**</exclude>
                         <exclude>**/*.txt</exclude>
                         <exclude>**/.flattened-pom.xml</exclude>
                         <exclude>**/node_modules/**/*</exclude>

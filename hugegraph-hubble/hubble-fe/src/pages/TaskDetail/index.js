@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import {Alert, Button, PageHeader, Spin, Table, Tooltip} from 'antd';
+import PageHeader from '../../components/PageHeader';
+import {Alert, Button, Spin, Table, Tooltip} from 'antd';
 import {useState, useEffect, useCallback, useRef} from 'react';
 import {useTranslation} from 'react-i18next';
 import {useNavigate, useParams} from 'react-router-dom';
@@ -163,7 +164,6 @@ const TaskDetail = () => {
     return (
         <>
             <PageHeader
-                ghost={false}
                 onBack={handleBack}
                 title={t('task.detail.title')}
             />
@@ -175,7 +175,7 @@ const TaskDetail = () => {
                     <Alert
                         showIcon
                         type='error'
-                        message={t('task.detail.load_failed')}
+                        title={t('task.detail.load_failed')}
                         action={(
                             <Button size='small' onClick={retry}>
                                 {t('task.detail.retry')}

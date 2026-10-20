@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {Button, Layout, Menu, Tooltip} from 'antd';
 import {
     HomeOutlined,
@@ -33,6 +33,11 @@ import {Link, useLocation} from 'react-router-dom';
 import {isAuthEnabled, isPdEnabled} from '../../utils/config';
 import {getGraphspacePath} from '../../utils/productMode';
 import {getPreparationSchemaPath} from '../../utils/dataPreparationNavigation';
+import {
+    extractWorkbenchGraphContext,
+    readWorkbenchGraphContext,
+    resolveWorkbenchGraphContext,
+} from '../../utils/workbenchGraphContext';
 import {getSidebarMenuKey} from '../../utils/sidebarNavigation';
 import {useTranslation} from 'react-i18next';
 import {useOperationsCapabilities} from '../../pages/Operations/capabilities';
@@ -42,6 +47,14 @@ const OPEN_SECTIONS = ['navigation', 'prepare', 'query', 'support'];
 
 const items = (t, pathname, capabilities = []) => {
     const pdMode = isPdEnabled();
+    const context = resolveWorkbenchGraphContext({
+        pdEnabled: pdMode,
+        routeContext: extractWorkbenchGraphContext(pathname),
+        storedContext: readWorkbenchGraphContext(),
+    });
+    const analysisPath = module => context.graphspace && context.graph
+        ? `/${module}/${encodeURIComponent(context.graphspace)}/${encodeURIComponent(context.graph)}`
+        : `/${module}`;
     const MY = {label: <Link to='/profile'>{t('home.my')}</Link>, key: 'my'};
     const ACCOUNT = {label: <Link to='/account'>{t('home.account')}</Link>, key: 'account'};
 
@@ -90,15 +103,15 @@ const items = (t, pathname, capabilities = []) => {
             icon: <DatabaseOutlined />,
             children: [
                 {
-                    label: <Link to='/gremlin'>{t('analysis.query.name')}</Link>,
+                    label: <Link to={analysisPath('gremlin')}>{t('analysis.query.name')}</Link>,
                     key: 'gremlin',
                 },
                 {
-                    label: <Link to='/algorithms'>{t('analysis.algorithm.name')}</Link>,
+                    label: <Link to={analysisPath('algorithms')}>{t('analysis.algorithm.name')}</Link>,
                     key: 'algorithms',
                 },
                 {
-                    label: <Link to='/asyncTasks'>{t('analysis.async_task.name')}</Link>,
+                    label: <Link to={analysisPath('asyncTasks')}>{t('analysis.async_task.name')}</Link>,
                     key: 'asyncTasks',
                 },
             ],

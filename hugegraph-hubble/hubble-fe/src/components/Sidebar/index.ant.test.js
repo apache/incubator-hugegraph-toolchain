@@ -21,6 +21,7 @@ import {MemoryRouter} from 'react-router-dom';
 import Sidebar from './index.ant';
 import i18n from '../../i18n';
 import {useOperationsCapabilities} from '../../pages/Operations/capabilities';
+import {writeWorkbenchGraphContext} from '../../utils/workbenchGraphContext';
 
 jest.mock('../../pages/Operations/capabilities');
 
@@ -468,4 +469,26 @@ test.each([
         </MemoryRouter>
     ));
     expect(Boolean(screen.queryByRole('link', {name: '模型设置'}))).toBe(allowed);
+});
+
+
+it.each([
+    [false, '/gremlin/DEFAULT/second', {graphspace: 'DEFAULT', graph: 'stored'}, '/DEFAULT/second'],
+    [true, '/graphspace/team%20space/graph/graph%2Ftwo/meta', {}, '/team%20space/graph%2Ftwo'],
+    [true, '/navigation', {graphspace: 'team', graph: 'stored'}, '/team/stored'],
+])('keeps the selected graph in analysis links (PD %s, route %s)', async (pdEnabled, route, stored, suffix) => {
+    sessionStorage.setItem('hubble_config_', JSON.stringify({pd_enabled: pdEnabled}));
+    writeWorkbenchGraphContext(localStorage, stored);
+    render(<MemoryRouter initialEntries={[route]}><Sidebar /></MemoryRouter>);
+    for (const [module, key] of [['gremlin', 'analysis.query.name'], ['algorithms', 'analysis.algorithm.name'],
+        ['asyncTasks', 'analysis.async_task.name']]) {
+        expect(await screen.findByRole('link', {name: i18n.t(key), exact: true}))
+            .toHaveAttribute('href', `/${module}${suffix}`);
+    }
+});
+
+it('keeps unscoped analysis links when no graph has been selected', async () => {
+    render(<MemoryRouter initialEntries={['/navigation']}><Sidebar /></MemoryRouter>);
+    expect(await screen.findByRole('link', {name: i18n.t('analysis.algorithm.name'), exact: true}))
+        .toHaveAttribute('href', '/algorithms');
 });

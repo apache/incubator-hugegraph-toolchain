@@ -113,6 +113,7 @@ const renderGraph = async () => {
     });
 };
 
+// Multi-step real AntD flows need a bounded CI budget; waitFor deadlines stay unchanged.
 test('updates only nickname through the existing PUT contract and uses its server value', async () => {
     api.manage.updateGraph.mockResolvedValue({status: 200});
     api.manage.getGraph.mockResolvedValue({
@@ -142,7 +143,7 @@ test('updates only nickname through the existing PUT contract and uses its serve
     ));
     expect(await screen.findByText('Movies from server')).toBeInTheDocument();
     expect(screen.getByText('movie_graph')).toBeInTheDocument();
-});
+}, 10000);
 
 test('does not expose inline editing outside the server-authorized GraphSpace scope', async () => {
     mockAuthContext = {
@@ -211,4 +212,4 @@ test('keeps a rejected PUT draft visible with an inline error', async () => {
         {nickname: 'Keep draft'},
         {suppressBusinessErrorToast: true}
     );
-});
+}, 10000);

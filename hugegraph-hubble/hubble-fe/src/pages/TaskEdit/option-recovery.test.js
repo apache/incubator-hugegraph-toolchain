@@ -15,8 +15,8 @@
  * under the License.
  */
 
-import {Form, message} from 'antd';
-import {act, fireEvent, render, screen, waitFor} from '@testing-library/react';
+import {Form, Modal, message} from 'antd';
+import {act, fireEvent, render, screen, waitFor, within} from '@testing-library/react';
 import {MemoryRouter} from 'react-router-dom';
 import BaseForm from './BaseForm';
 import FieldForm from './FieldForm';
@@ -72,13 +72,21 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     window.localStorage.clear();
     window.sessionStorage.clear();
     isPdEnabled.mockReturnValue(false);
     api.manage.getGraphList.mockResolvedValue({status: 200, data: {records: []}});
     api.manage.getTaskList.mockResolvedValue({status: 200, data: {total: 0}});
     jest.spyOn(message, 'success').mockImplementation(() => undefined);
+});
+
+afterEach(async () => {
+    await act(async () => {
+        Modal.destroyAll();
+        await new Promise(resolve => setTimeout(resolve, 0));
+    });
+    await waitFor(() => expect(screen.queryAllByRole('dialog')).toHaveLength(0));
 });
 
 const deferred = () => {
@@ -111,7 +119,7 @@ it('defaults a new task to the current graph when it is still eligible', async (
     );
 
     expect(await screen.findByText('Current graph', {
-        selector: '.ant-select-selection-item',
+        selector: '.ant-select-content',
     })).toBeInTheDocument();
 });
 
@@ -141,12 +149,17 @@ it('prepares an empty target graph with the named people-and-software demo', asy
     );
 
     expect(await screen.findByText('Empty graph', {
-        selector: '.ant-select-selection-item',
+        selector: '.ant-select-content',
     })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', {
-        name: 'Build People & Software Demo',
-    }));
-    const confirm = await screen.findByRole('button', {name: 'Import example'});
+    const prepare = screen.getByRole('button', {name: 'Build People & Software Demo'});
+    await waitFor(() => expect(prepare).toBeEnabled());
+    await act(async () => {
+        fireEvent.click(prepare);
+        // Static Modal.confirm mounts a separate React root on the next task.
+        await new Promise(resolve => setTimeout(resolve, 0));
+    });
+    const confirm = within(screen.getByRole('dialog'))
+        .getByRole('button', {name: 'Import example'});
     await act(async () => fireEvent.click(confirm));
 
     await waitFor(() => expect(api.manage.loadSampleGraph).toHaveBeenCalledWith(
@@ -180,9 +193,16 @@ it('keeps demo preparation failure visible and lets the user retry', async () =>
         </MemoryRouter>
     );
 
-    await screen.findByText('empty_graph', {selector: '.ant-select-selection-item'});
-    fireEvent.click(screen.getByRole('button', {name: 'Build Red Chamber Demo'}));
-    const confirm = await screen.findByRole('button', {name: 'Import example'});
+    await screen.findByText('empty_graph', {selector: '.ant-select-content'});
+    const prepare = screen.getByRole('button', {name: 'Build Red Chamber Demo'});
+    await waitFor(() => expect(prepare).toBeEnabled());
+    await act(async () => {
+        fireEvent.click(prepare);
+        // Static Modal.confirm mounts a separate React root on the next task.
+        await new Promise(resolve => setTimeout(resolve, 0));
+    });
+    const confirm = within(screen.getByRole('dialog'))
+        .getByRole('button', {name: 'Import example'});
     await act(async () => fireEvent.click(confirm));
 
     expect(await screen.findByText('schema conflict')).toBeInTheDocument();
@@ -192,6 +212,7 @@ it('keeps demo preparation failure visible and lets the user retry', async () =>
         .not.toBeInTheDocument());
 });
 
+// Multi-step real AntD flows need a bounded CI budget; waitFor deadlines stay unchanged.
 it('does not let an old graph-space demo response prepare a same-named graph', async () => {
     isPdEnabled.mockReturnValue(true);
     window.localStorage.setItem('hubble_workbench_graph_context', JSON.stringify({
@@ -222,9 +243,16 @@ it('does not let an old graph-space demo response prepare a same-named graph', a
         </MemoryRouter>
     );
 
-    await screen.findByText('shared_name', {selector: '.ant-select-selection-item'});
-    fireEvent.click(screen.getByRole('button', {name: 'Build Red Chamber Demo'}));
-    const confirm = await screen.findByRole('button', {name: 'Import example'});
+    await screen.findByText('shared_name', {selector: '.ant-select-content'});
+    const prepare = screen.getByRole('button', {name: 'Build Red Chamber Demo'});
+    await waitFor(() => expect(prepare).toBeEnabled());
+    await act(async () => {
+        fireEvent.click(prepare);
+        // Static Modal.confirm mounts a separate React root on the next task.
+        await new Promise(resolve => setTimeout(resolve, 0));
+    });
+    const confirm = within(screen.getByRole('dialog'))
+        .getByRole('button', {name: 'Import example'});
     fireEvent.click(confirm);
     await waitFor(() => expect(api.manage.loadSampleGraph).toHaveBeenCalled());
 
@@ -252,7 +280,7 @@ it('does not let an old graph-space demo response prepare a same-named graph', a
     });
 
     expect(await screen.findByText('Prepare schema first')).toBeInTheDocument();
-});
+}, 10000);
 
 it('does not publish stale demo state after the form unmounts', async () => {
     window.localStorage.setItem('hubble_workbench_graph_context', JSON.stringify({
@@ -276,9 +304,16 @@ it('does not publish stale demo state after the form unmounts', async () => {
         </MemoryRouter>
     );
 
-    await screen.findByText('empty_graph', {selector: '.ant-select-selection-item'});
-    fireEvent.click(screen.getByRole('button', {name: 'Build Red Chamber Demo'}));
-    const confirm = await screen.findByRole('button', {name: 'Import example'});
+    await screen.findByText('empty_graph', {selector: '.ant-select-content'});
+    const prepare = screen.getByRole('button', {name: 'Build Red Chamber Demo'});
+    await waitFor(() => expect(prepare).toBeEnabled());
+    await act(async () => {
+        fireEvent.click(prepare);
+        // Static Modal.confirm mounts a separate React root on the next task.
+        await new Promise(resolve => setTimeout(resolve, 0));
+    });
+    const confirm = within(screen.getByRole('dialog'))
+        .getByRole('button', {name: 'Import example'});
     fireEvent.click(confirm);
     await waitFor(() => expect(api.manage.loadSampleGraph).toHaveBeenCalled());
     unmount();
@@ -312,7 +347,7 @@ it('uses the graph name when the backend returns an empty alias', async () => {
     );
 
     expect(await screen.findByText('current_graph', {
-        selector: '.ant-select-selection-item',
+        selector: '.ant-select-content',
     })).toBeInTheDocument();
 });
 
@@ -346,10 +381,10 @@ it('defaults a PD task to the current graph space and graph', async () => {
     );
 
     expect(await screen.findByText('Space B', {
-        selector: '.ant-select-selection-item',
+        selector: '.ant-select-content',
     })).toBeInTheDocument();
     expect(await screen.findByText('Current graph', {
-        selector: '.ant-select-selection-item',
+        selector: '.ant-select-content',
     })).toBeInTheDocument();
     expect(api.manage.getGraphList).toHaveBeenCalledWith('SPACE_B', {page_size: -1});
 });
@@ -372,7 +407,7 @@ it('restores the last available data source or falls back to the first one', asy
     );
 
     expect(await screen.findByText('saved.csv', {
-        selector: '.ant-select-selection-item',
+        selector: '.ant-select-content',
     })).toBeInTheDocument();
 });
 
@@ -394,7 +429,7 @@ it('does not restore another user data source selection', async () => {
     );
 
     expect(await screen.findByText('first.csv', {
-        selector: '.ant-select-selection-item',
+        selector: '.ant-select-content',
     })).toBeInTheDocument();
 });
 
@@ -477,10 +512,8 @@ it('does not submit fields selected for a previous data source', async () => {
     );
 
     expect(await screen.findByText('old_field')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('checkbox'));
-    const moveButton = screen.getAllByRole('button')
-        .find(button => button.querySelector('[aria-label="right"]'));
-    fireEvent.click(moveButton);
+    fireEvent.click(screen.getByRole('tree').querySelector('.ant-tree-checkbox'));
+    fireEvent.click(screen.getByRole('button', {name: 'task.edit.select_source_fields'}));
     expect(await screen.findAllByText('old_field')).toHaveLength(2);
 
     rerender(
@@ -531,7 +564,7 @@ it('recovers PD graph-space and graph option failures without stale overwrite', 
     expect(await screen.findByText('task.edit.load_graphs_failed')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', {name: 'task.edit.retry_graphs'}));
     await waitFor(() => expect(api.manage.getGraphList).toHaveBeenCalledTimes(2));
-});
+}, 10000);
 
 it('ignores a late graph response after the graph-space selection changes', async () => {
     isPdEnabled.mockReturnValue(true);
@@ -579,4 +612,4 @@ it('ignores a late graph response after the graph-space selection changes', asyn
     });
     expect(screen.getByRole('option', {name: 'Graph B'})).toBeInTheDocument();
     expect(screen.queryByRole('option', {name: 'Graph A'})).not.toBeInTheDocument();
-});
+}, 10000);

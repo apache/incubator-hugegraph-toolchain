@@ -20,7 +20,6 @@
  * @file 图分析组件 算法标题
  */
 
-import React from 'react';
 import Highlighter from 'react-highlight-words';
 import {Typography, Tooltip, Button} from 'antd';
 import c from './index.module.scss';

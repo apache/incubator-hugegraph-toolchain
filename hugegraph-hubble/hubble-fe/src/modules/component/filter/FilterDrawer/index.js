@@ -24,7 +24,7 @@ import GraphAnalysisContext from '../../../Context';
 import * as api from '../../../../api';
 import style from './index.module.scss';
 
-const Filter = ({open, onCancel, dataSource, onChange}) => {
+const Filter = ({open, onCancel, dataSource: _dataSource, onChange}) => {
 
     const {t} = useTranslation();
     const {graphSpace: currentGraphSpace, graph: currentGraph} = useContext(GraphAnalysisContext);
@@ -71,7 +71,7 @@ const Filter = ({open, onCancel, dataSource, onChange}) => {
                 await forms[formName].validateFields().catch(setFlagFalse);
             }
         }
-        // const data = filterData(dataSource, rules, logic);
+        // const data = filterData(dataSource: _dataSource, rules, logic);
         // setQueryResultGraphFilter(data);
         if (flag === true) {
             onChange?.call(null, {rules, logic});
@@ -119,7 +119,7 @@ const Filter = ({open, onCancel, dataSource, onChange}) => {
                         />
                     </Form.Item>
                 </Form>
-                {list.map((item, index) => {
+                {list.map((item, _index) => {
                     return (
                         <Card key={item.id} className={style.card}>
                             <FilterForm

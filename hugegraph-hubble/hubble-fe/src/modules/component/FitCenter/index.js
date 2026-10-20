@@ -20,33 +20,22 @@
  * @file  FitCenter 自适应
  */
 
-import React, {useCallback, useContext} from 'react';
+import {useContext} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Button, Tooltip} from 'antd';
 import {OneToOneOutlined} from '@ant-design/icons';
 import {GraphContext} from '../Context';
-import {fitView} from '../../../utils/graph';
 
 const FitCenter = () => {
     const {t} = useTranslation();
-    const {graph} = useContext(GraphContext);
-
-    const handleFitCenter = useCallback(
-        () => {
-            if (graph) {
-                graph.fitCenter();
-                fitView(graph);
-            }
-        },
-        [graph]
-    );
-
+    const {controller, snapshot, run} = useContext(GraphContext);
     return (
-        <Tooltip title={t('analysis.canvas.toolbar.fit_center')} placement='bottom'>
+        <Tooltip title={`${t('analysis.canvas.toolbar.fit_center')} (0)`} placement="bottom">
             <Button
+                disabled={!controller || snapshot?.status !== 'ready'}
                 type="text"
                 aria-label={t('analysis.canvas.toolbar.fit_center')}
-                onClick={handleFitCenter}
+                onClick={() => run(() => controller.fitView())}
                 icon={<OneToOneOutlined />}
             />
         </Tooltip>

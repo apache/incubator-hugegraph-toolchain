@@ -45,6 +45,9 @@ class RouteErrorBoundary extends React.Component {
 
     render() {
         if (this.state.failed) {
+            if (this.props.fallback) {
+                return this.props.fallback;
+            }
             return (
                 <Result
                     status='error'

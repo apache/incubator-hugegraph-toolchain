@@ -24,6 +24,7 @@ import {
     waitFor,
     within,
 } from '@testing-library/react';
+import {message} from 'antd';
 import SpaceAccess, {loadAllPages, rolesPreset} from './SpaceAccess';
 import * as api from '../../api';
 
@@ -251,6 +252,10 @@ beforeEach(() => {
         addListener: jest.fn(),
         removeListener: jest.fn(),
     }));
+});
+
+afterEach(() => {
+    act(() => message.destroy());
 });
 
 test('uses only path-scoped APIs for a space administrator', async () => {
@@ -621,6 +626,7 @@ test('does not describe an unrelated bad request as a missing account', async ()
     )).not.toBeInTheDocument();
 });
 
+// Multi-step real AntD flows need a bounded CI budget; waitFor deadlines stay unchanged.
 test('ignores an older account lookup after the ID changes', async () => {
     const older = deferred();
     const current = deferred();
@@ -673,7 +679,7 @@ test('ignores an older account lookup after the ID changes', async () => {
         expect.anything(),
         expect.any(Object)
     );
-});
+}, 10000);
 
 test('requires an explicit replacement for legacy custom access', async () => {
     setResponses({
@@ -691,7 +697,8 @@ test('requires an explicit replacement for legacy custom access', async () => {
         name: 'common.action.edit',
     }));
 
-    expect(screen.getByRole('alert')).toHaveTextContent(
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByRole('alert')).toHaveTextContent(
         'account.space_access.member.custom_title'
     );
     expect(screen.getByRole('button', {

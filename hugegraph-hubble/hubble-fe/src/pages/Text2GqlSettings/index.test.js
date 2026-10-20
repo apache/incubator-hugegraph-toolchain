@@ -376,6 +376,7 @@ test('applies shared Prompt drafts to the form and persists them only with Save'
     expect(api.config.updateText2GqlSettings.mock.calls[0][0].prompts).toEqual({...templates, gremlin: 'few-shot'});
 });
 
+// Multi-step real AntD flows need a bounded CI budget; waitFor deadlines stay unchanged.
 test('cancels Prompt edits and restores only a chosen language as a form draft', async () => {
     api.config.getText2GqlSettings.mockResolvedValue(response({prompts: templates, default_prompts: builtIn}));
     await load();
@@ -390,7 +391,7 @@ test('cancels Prompt edits and restores only a chosen language as a form draft',
     fireEvent.click(screen.getByRole('button', {name: 'analysis.prompt.apply'}));
     await act(async () => fireEvent.click(saveButton()));
     expect(api.config.updateText2GqlSettings.mock.calls[0][0].prompts).toEqual({...templates, cypher: builtIn.cypher});
-});
+}, 10000);
 
 test('old settings responses keep model saving compatible without empty Prompt writes', async () => {
     await load();

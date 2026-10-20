@@ -20,7 +20,7 @@
  * @file  Echart 占比柱状图
  */
 
-import React, {useEffect, useMemo, useRef} from 'react';
+import {useEffect, useMemo, useRef} from 'react';
 import * as echarts from 'echarts/core';
 import {DatasetComponent, GridComponent} from 'echarts/components';
 import {CanvasRenderer, SVGRenderer} from 'echarts/renderers';

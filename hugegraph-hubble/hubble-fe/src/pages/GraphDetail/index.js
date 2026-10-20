@@ -16,8 +16,9 @@
  * under the License.
  */
 
+import PageHeader from '../../components/PageHeader';
 import {
-    Alert, PageHeader, Row, Col, Button, Spin, message, Space, Table,
+    Alert, Row, Col, Button, Spin, message, Space, Table,
     Card, Empty, Statistic, Tag,
 } from 'antd';
 import {
@@ -96,7 +97,7 @@ const GraphDetail = () => {
             }
             setPageDataRoute(routeKey);
         }
-        catch (error) {
+        catch {
             if (pageRequest.current !== token) {
                 return;
             }
@@ -136,7 +137,7 @@ const GraphDetail = () => {
             setStatistic({});
             setStatisticsDataRoute(routeKey);
         }
-        catch (error) {
+        catch {
             if (statisticsRequest.current !== token) {
                 return;
             }
@@ -169,7 +170,7 @@ const GraphDetail = () => {
             message.success(t('graph.detail.update_success'));
             await loadStatistics();
         }
-        catch (error) {
+        catch {
             if (updateRequest.current === token
                 && currentRoute.current === requestedRoute) {
                 message.error(t('graph.detail.update_failed'));
@@ -214,7 +215,6 @@ const GraphDetail = () => {
             {!pageLoading && isPageDataCurrent && (
                 <>
                     <PageHeader
-                        ghost={false}
                         onBack={handleBack}
                         title={t('graph.detail.title')}
                         extra={[
@@ -240,7 +240,7 @@ const GraphDetail = () => {
                             <Alert
                                 type='error'
                                 showIcon
-                                message={t('graph.detail.unavailable')}
+                                title={t('graph.detail.unavailable')}
                                 action={(
                                     <Space>
                                         <Button
@@ -292,7 +292,7 @@ const GraphDetail = () => {
                                         className={style.inlineAlert}
                                         type='warning'
                                         showIcon
-                                        message={t('graph.detail.statistics_unavailable')}
+                                        title={t('graph.detail.statistics_unavailable')}
                                         action={(
                                             <Button
                                                 size='small'

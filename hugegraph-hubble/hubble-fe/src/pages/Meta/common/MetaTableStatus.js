@@ -28,7 +28,7 @@ const MetaTableStatus = ({error, onRetry}) => {
         <Alert
             type='error'
             showIcon
-            message={t('schema.list_failed')}
+            title={t('schema.list_failed')}
             action={(
                 <Button size='small' onClick={onRetry}>
                     {t('schema.retry')}

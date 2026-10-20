@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Alert, Button, Input, Select, Tooltip} from 'antd';
 import {SettingOutlined, SwapOutlined} from '@ant-design/icons';
@@ -156,7 +156,7 @@ const QueryBar = props => {
         window.addEventListener('resize', updateBounds);
         return () => window.removeEventListener('resize', updateBounds);
     }, []);
-    const commonActionProps = {...props, isEmptyQuery, isExecuting: busy || !languageEnabled,
+    const commonActionProps = {...props, isGraphReady, isEmptyQuery, isExecuting: busy || !languageEnabled,
         favoriteCardVisible, setFavoriteCardVisible, allowAsync: true, allowFavorite: !aiSource, onClear};
 
     return (
@@ -174,15 +174,17 @@ const QueryBar = props => {
                         ? t('analysis.query.switch_to', {name: QUERY_LANGUAGES[nextLanguage].label})
                         : t('analysis.query.cypher_unavailable')}
                 >
-                    <Button
-                        size='small'
-                        icon={<SwapOutlined aria-hidden='true' />}
-                        aria-label={`${t('analysis.query.query_language')}: ${dialect.label}`}
-                        disabled={!nextLanguage}
-                        onClick={toggleLanguage}
-                    >
-                        {dialect.label}
-                    </Button>
+                    <span tabIndex={!nextLanguage ? 0 : undefined}>
+                        <Button
+                            size='small'
+                            icon={<SwapOutlined aria-hidden='true' />}
+                            aria-label={`${t('analysis.query.query_language')}: ${dialect.label}`}
+                            disabled={!nextLanguage}
+                            onClick={toggleLanguage}
+                        >
+                            {dialect.label}
+                        </Button>
+                    </span>
                 </Tooltip>
                 <div className={c.queryActions}>
                     <SecondaryActions {...commonActionProps} />
@@ -198,7 +200,7 @@ const QueryBar = props => {
                         )}
                     </summary>
                     {configPrompt && missingCustomConfig && (
-                        <Alert showIcon type='warning' message={t('analysis.query.complete_model_config')} />
+                        <Alert showIcon type='warning' title={t('analysis.query.complete_model_config')} />
                     )}
                     <div className={c.modelConfig}>
                         <div className={c.modelField}>
@@ -279,7 +281,7 @@ const QueryBar = props => {
                 className={c.queryError}
                 showIcon
                 type={text2gql.errorType || 'error'}
-                message={text2gql.error}
+                title={text2gql.error}
                 action={source === 'custom' && customAvailable && text2gql.errorStage === 'generation'
                     && text2gql.errorType !== 'info' && (
                     <Button size='small' onClick={inspectModelSettings}>
@@ -378,7 +380,7 @@ const QueryBar = props => {
                                 lang={language}
                                 lineWrapping
                                 ariaLabel={t(`analysis.query.${language}_editor`)}
-                                readOnly={Boolean(text2gql?.pending)}
+                                readOnly={!isGraphReady || Boolean(text2gql?.pending)}
                                 placeholder={t(`analysis.query.${language}_placeholder`)}
                             />
                         </div>

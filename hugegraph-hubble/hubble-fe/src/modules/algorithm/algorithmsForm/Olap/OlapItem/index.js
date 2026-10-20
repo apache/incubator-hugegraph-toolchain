@@ -20,7 +20,7 @@
  * @file OLAP算法item
  */
 
-import React, {useContext} from 'react';
+import {useContext} from 'react';
 import GraphAnalysisContext from '../../../../Context';
 import PageRank from '../PageRank';
 import PageRankVermeer from '../PageRankVermeer';
@@ -51,6 +51,7 @@ import {
     useTranslatedConstants,
 } from '../../../../../utils/constants';
 import {AlgorithmPersistenceContext} from '../../algorithmFormPersistence';
+import useAlgorithmSubmission from '../../useAlgorithmSubmission';
 
 
 
@@ -81,6 +82,8 @@ const OlapItem = props => {
         canRunLouvain,
         ...args
     } = props;
+
+    args.handleFormSubmit = useAlgorithmSubmission(args.handleFormSubmit);
 
     const {isVermeer} = useContext(GraphAnalysisContext);
 

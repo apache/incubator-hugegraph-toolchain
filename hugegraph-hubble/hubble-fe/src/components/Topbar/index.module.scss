@@ -70,13 +70,13 @@ div.nav {
   color: #fff;
   cursor: pointer;
 
-  :global(.ant-select-selector) {
+  :global(.ant-select) {
     border-color: rgba(255, 255, 255, 0.24) !important;
     background: rgba(255, 255, 255, 0.08) !important;
     color: #fff;
   }
 
-  :global(.ant-select-arrow) {
+  :global(.ant-select-suffix) {
     color: rgba(255, 255, 255, 0.72);
   }
 }
@@ -136,6 +136,15 @@ div.nav {
       background: #f2f7ff;
       color: #164b7a;
     }
+  }
+
+  :global(.ant-radio-group.ant-radio-group-solid) > :global(.ant-radio-button-wrapper) {
+    margin-inline: 0;
+    border-inline-start: 0;
+    border-start-start-radius: 999px;
+    border-start-end-radius: 999px;
+    border-end-start-radius: 999px;
+    border-end-end-radius: 999px;
   }
 }
 

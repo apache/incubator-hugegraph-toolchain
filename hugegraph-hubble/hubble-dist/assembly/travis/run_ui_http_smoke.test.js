@@ -19,6 +19,10 @@
 
 const assert = require('node:assert/strict');
 const test = require('node:test');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const {spawnSync} = require('node:child_process');
 const {insecureHttpTarget, runHttpSmoke} = require('./run_ui_http_smoke');
 
 test('exercises loopback services through an insecure HTTP name', () => {
@@ -51,4 +55,28 @@ test('reports HTTPS as untested instead of silently treating it as insecure HTTP
 
 test('rejects unsupported target protocols', () => {
   assert.throws(() => insecureHttpTarget('file:///tmp/index.html'), /requires an HTTP or HTTPS/);
+});
+
+test('rejects sensitive HTTP and HTTPS targets before browser or report creation', async () => {
+  for (const target of ['http://user:private-value@example.org/',
+    'https://user:private-value@example.org/', 'http://example.org/?token=private-value',
+    'https://example.org/?token=private-value', 'http://example.org/#private-value']) {
+    await assert.rejects(runHttpSmoke(undefined, target, '/unused'), error =>
+      error.message === 'Invalid hubbleUrl');
+  }
+});
+
+test('standalone CLI rejects sensitive URLs without persisting or printing their values', t => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'hubble-http-safe-'));
+  t.after(() => fs.rmSync(directory, {recursive: true, force: true}));
+  const report = path.join(directory, 'report.json');
+  for (const target of ['http://user:private-value@example.org/',
+    'https://example.org/?token=private-value']) {
+    const result = spawnSync(process.execPath, [path.join(__dirname, 'run_ui_http_smoke.js'),
+      '--hubble-url', target, '--output-dir', directory, '--json-output', report], {encoding: 'utf8'});
+    assert.equal(result.status, 1);
+    assert.equal(result.stdout, '');
+    assert.equal(result.stderr.trim(), 'Invalid hubbleUrl');
+    assert.equal(fs.existsSync(report), false);
+  }
 });

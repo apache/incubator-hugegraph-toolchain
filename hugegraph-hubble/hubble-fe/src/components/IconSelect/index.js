@@ -16,17 +16,79 @@
  * under the License.
  */
 
-import React, {useEffect, useMemo, useState} from 'react';
-import * as AntIcon from '@ant-design/icons';
+import {useMemo, useState} from 'react';
+import {
+    UserOutlined,
+    UsergroupAddOutlined,
+    IdcardOutlined,
+    VerifiedOutlined,
+    UserSwitchOutlined,
+    PropertySafetyOutlined,
+    TransactionOutlined,
+    InsuranceOutlined,
+    ShoppingOutlined,
+    CloudSyncOutlined,
+    HomeOutlined,
+    BankOutlined,
+    ShopOutlined,
+    ReadOutlined,
+    MedicineBoxOutlined,
+    CommentOutlined,
+    ChromeOutlined,
+    DribbbleOutlined,
+    SlackOutlined,
+    MailOutlined,
+    LaptopOutlined,
+    PhoneOutlined,
+    WhatsAppOutlined,
+    AlertOutlined,
+    DashboardOutlined,
+    SettingOutlined,
+    StarOutlined,
+    TrademarkOutlined,
+    SoundOutlined,
+    LockOutlined,
+} from '@ant-design/icons';
 import {Popover, Input} from 'antd';
 import classnames from 'classnames';
 
-import {iconsMap} from '../../utils/constants';
+import {iconNames, resolveIconName} from '../../utils/iconNames';
 
 import c from './index.module.scss';
 import {useTranslation} from 'react-i18next';
 
-const DEFAULT_ICON = 'UserOutlined';
+const iconComponents = {
+    UserOutlined,
+    UsergroupAddOutlined,
+    IdcardOutlined,
+    VerifiedOutlined,
+    UserSwitchOutlined,
+    PropertySafetyOutlined,
+    TransactionOutlined,
+    InsuranceOutlined,
+    ShoppingOutlined,
+    CloudSyncOutlined,
+    HomeOutlined,
+    BankOutlined,
+    ShopOutlined,
+    ReadOutlined,
+    MedicineBoxOutlined,
+    CommentOutlined,
+    ChromeOutlined,
+    DribbbleOutlined,
+    SlackOutlined,
+    MailOutlined,
+    LaptopOutlined,
+    PhoneOutlined,
+    WhatsAppOutlined,
+    AlertOutlined,
+    DashboardOutlined,
+    SettingOutlined,
+    StarOutlined,
+    TrademarkOutlined,
+    SoundOutlined,
+    LockOutlined,
+};
 
 const IconSelect = props => {
     const {
@@ -35,23 +97,17 @@ const IconSelect = props => {
         disabled,
     } = props;
     const {t} = useTranslation();
-    const [icon, setIcon] = useState();
-
-    useEffect(
-        () => {
-            value && setIcon(value);
-        },
-        [value]
-    );
+    const [selectedIcon, setSelectedIcon] = useState();
+    const icon = Object.prototype.hasOwnProperty.call(props, 'value') ? value : selectedIcon;
 
     const handleClickIconCallbacks = useMemo(
         () => {
-            const icons = Object.keys(iconsMap);
+            const icons = Object.keys(iconNames);
             const callbacks = {};
             for (const item of icons) {
                 callbacks[item] = () => {
-                    setIcon(item);
-                    onChange(item);
+                    setSelectedIcon(item);
+                    onChange?.(item);
                 };
             }
             return callbacks;
@@ -60,21 +116,24 @@ const IconSelect = props => {
     );
 
     const renderIcons = () => {
-        const icons = Object.keys(iconsMap);
+        const icons = Object.keys(iconNames);
         return icons.map(item => {
-            const Icon = AntIcon[item];
+            const Icon = iconComponents[item];
             const iconClassName = classnames(
                 c.icon,
-                {[c.iconSelected]: item === icon}
+                {[c.iconSelected]: item === resolveIconName(icon)}
             );
             return (
-                <div
+                <button
+                    type='button'
+                    aria-label={iconNames[item].trim()}
+                    aria-pressed={item === resolveIconName(icon)}
                     key={item}
                     className={iconClassName}
                     onClick={handleClickIconCallbacks[item]}
                 >
                     <Icon />
-                </div>
+                </button>
             );
         });
     };
@@ -88,7 +147,7 @@ const IconSelect = props => {
         );
     }
 
-    const CurrentIcon = AntIcon[icon || DEFAULT_ICON];
+    const CurrentIcon = iconComponents[resolveIconName(icon)];
     return (
         <Popover
             trigger={['click']}
@@ -97,7 +156,8 @@ const IconSelect = props => {
         >
             <Input
                 placeholder={t('selector.placeholder')}
-                value={icon}
+                value={icon || ''}
+                readOnly
                 suffix={<CurrentIcon />}
             />
         </Popover>

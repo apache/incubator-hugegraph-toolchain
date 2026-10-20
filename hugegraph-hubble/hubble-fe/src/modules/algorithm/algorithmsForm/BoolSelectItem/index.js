@@ -16,7 +16,6 @@
  * under the License.
  */
 
-import React from 'react';
 
 import {Select} from 'antd';
 import Form from '../PersistentForm';

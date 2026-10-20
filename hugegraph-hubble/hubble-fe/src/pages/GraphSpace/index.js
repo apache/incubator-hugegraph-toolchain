@@ -16,6 +16,7 @@
  * under the License.
  */
 
+import PageHeader from '../../components/PageHeader';
 import {
     Alert,
     Card,
@@ -23,7 +24,6 @@ import {
     Space,
     Row,
     Col,
-    PageHeader,
     Button,
     Input,
     Radio,
@@ -183,14 +183,12 @@ const GraphSpace = () => {
         {
             title: t('graphspace.col.graph_service'),
             dataIndex: 'cpu_limit',
-            // eslint-disable-next-line max-len
             render: (_, row) => `${showText(row.cpu_limit, t('graphspace.unit.cpu'), t('graphspace.unit.unlimited'))}/${showText(row.memory_limit, t('graphspace.unit.memory'), t('graphspace.unit.unlimited'))}/${row.oltp_namespace}`,
             ellipsis: true,
         },
         {
             title: t('graphspace.col.compute_task'),
             dataIndex: 'task',
-            // eslint-disable-next-line max-len
             render: (_, row) => `${showText(row.compute_cpu_limit, t('graphspace.unit.cpu'), t('graphspace.unit.unlimited'))}/${showText(row.compute_memory_limit, t('graphspace.unit.memory'), t('graphspace.unit.unlimited'))}/${row.olap_namespace}`,
             ellipsis: true,
         },
@@ -274,7 +272,7 @@ const GraphSpace = () => {
             }
             setListError(true);
         }
-        catch (error) {
+        catch {
             if (listRequest.current === token) {
                 setListError(true);
             }
@@ -296,7 +294,6 @@ const GraphSpace = () => {
     return (
         <>
             <PageHeader
-                ghost={false}
                 onBack={false}
                 title={
                     <span data-testid='graphspace-page-title'>
@@ -352,7 +349,7 @@ const GraphSpace = () => {
                     <Alert
                         type='error'
                         showIcon
-                        message={t('graphspace.load.unavailable')}
+                        title={t('graphspace.load.unavailable')}
                         action={(
                             <Button size='small' onClick={loadGraphspaces}>
                                 {t('graphspace.load.retry')}

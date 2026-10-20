@@ -55,67 +55,30 @@ jest.mock('../../auth/graphspaceAccess', () => ({
     useGraphspaceAccess: () => ({canWrite: mockCanWrite}),
 }));
 
-jest.mock('../../components/GraphinView', () => props => {
+// Mock the public React port; schema adaptation and business rendering remain real.
+jest.mock('../../visualization/react', () => ({GraphCanvas: props => {
     const node = props.data.nodes?.[0];
     const edge = props.data.edges?.[0];
-    return (
-        <div data-testid='graph-view'>
-            <output data-testid='graph-presentation'>
-                {JSON.stringify({
-                    node: node?.style,
-                    edge: edge?.style,
-                    linkDistance: props.layout?.linkDistance,
-                })}
-            </output>
-            <button
-                data-testid='schema-node-single-click'
-                onClick={() => props.onClick?.(
-                    node?.id,
-                    'node',
-                    node?.data
-                )}
-            />
-            <button
-                data-testid='schema-node-double-click'
-                onDoubleClick={() => props.onDoubleClick?.(
-                    node?.id,
-                    'node',
-                    node?.data
-                )}
-            />
-            {node && props.nodeTooltip?.({model: node})}
-            {edge && props.edgeTooltip?.({model: edge})}
-        </div>
-    );
-});
-jest.mock('../../utils/formatGraphInData', () => ({
-    formatToGraphInData: data => ({
-        nodes: data.vertices.map(vertex => ({
-            id: vertex.id,
-            style: {
-                label: {value: vertex.label},
-                keyshape: {fill: vertex['~style'].color},
-                icon: {fontSize: 12},
-            },
-            data: vertex,
-        })),
-        edges: data.edges.map(edge => ({
-            source: edge.source,
-            target: edge.target,
-            style: {
-                label: {value: edge.label},
-                keyshape: {stroke: edge['~style'].color},
-            },
-            data: edge,
-        })),
-    }),
-}));
+    const event = (item, kind) => ({id: item?.id, kind, data: item?.data});
+    return <div data-testid='graph-view'>
+        <output data-testid='graph-presentation'>{JSON.stringify({
+            node: node?.style, edge: edge?.style, layout: props.layout, preset: props.preset,
+        })}</output>
+        <button data-testid='schema-node-single-click'
+            onClick={() => props.onClick?.(event(node, 'node'))} />
+        <button data-testid='schema-node-double-click'
+            onDoubleClick={() => props.onDoubleClick?.(event(node, 'node'))} />
+        {node && props.tooltip?.(event(node, 'node'))}
+        {edge && props.tooltip?.(event(edge, 'edge'))}
+    </div>;
+}}));
 jest.mock('./Property/EditLayer', () => ({EditPropertyLayer: ({visible}) => (
     <output data-testid='property-edit-layer'>{visible ? 'open' : 'closed'}</output>
 )}));
-jest.mock('./Vertex/EditLayer', () => ({EditVertexLayer: ({visible, name}) => (
+jest.mock('./Vertex/EditLayer', () => ({EditVertexLayer: ({visible, name, refresh}) => <>
     <output data-testid='vertex-edit-layer'>{visible ? name : 'closed'}</output>
-)}));
+    {visible && <button onClick={refresh}>complete vertex edit</button>}
+</>}));
 jest.mock('./Edge/EditLayer', () => ({EditEdgeLayer: () => null}));
 jest.mock('./Property', () => () => null);
 
@@ -482,11 +445,11 @@ test('enlarges labels, nodes, edges and layout only for schemas below ten vertic
     render(<ImageView />);
 
     const smallPresentation = await waitForPresentation('person');
-    expect(smallPresentation.node.keyshape.size).toBe(72);
-    expect(smallPresentation.node.label.fontSize).toBe(18);
-    expect(smallPresentation.edge.label.fontSize).toBe(16);
-    expect(smallPresentation.edge.keyshape.lineWidth).toBe(2.5);
-    expect(smallPresentation.linkDistance).toBe(240);
+    expect(smallPresentation.node.size).toBe(72);
+    expect(smallPresentation.node.labelFontSize).toBe(18);
+    expect(smallPresentation.edge.labelFontSize).toBe(16);
+    expect(smallPresentation.edge.lineWidth).toBe(2.5);
+    expect(smallPresentation.layout.options.ranksep).toBe(240);
 });
 
 test('keeps the current graph scale for schemas with ten or more vertices', async () => {
@@ -497,9 +460,9 @@ test('keeps the current graph scale for schemas with ten or more vertices', asyn
     render(<ImageView />);
 
     const presentation = await waitForPresentation('v-0');
-    expect(presentation.node.keyshape.size).toBeUndefined();
-    expect(presentation.node.label.fontSize).toBeUndefined();
-    expect(presentation.linkDistance).toBe(150);
+    expect(presentation.node.size).toBe(30);
+    expect(presentation.node.labelFontSize).toBe(12);
+    expect(presentation.layout.options.ranksep).toBe(150);
 });
 
 test('shows applicable schema fields in vertex and edge hover details', async () => {
@@ -581,4 +544,44 @@ test('links safely to the official HugeGraph SchemaLabel documentation', async (
     );
     expect(docs).toHaveAttribute('target', '_blank');
     expect(docs).toHaveAttribute('rel', 'noopener noreferrer');
+});
+
+
+test('keeps the same graph canvas and raw data while a schema refresh is pending', async () => {
+    loadSchema({vertices: [schemaVertex('person')]});
+    render(<ImageView />);
+    await waitForPresentation('person');
+    const canvas = screen.getByTestId('graph-view');
+    let resolveView;
+    api.manage.getGraphView.mockReturnValueOnce(new Promise(resolve => {resolveView = resolve;}));
+    fireEvent.doubleClick(screen.getByTestId('schema-node-double-click'));
+    fireEvent.click(screen.getByRole('button', {name: 'complete vertex edit'}));
+    await waitFor(() => expect(api.manage.getGraphView).toHaveBeenCalledTimes(2));
+    expect(screen.getByTestId('graph-view')).toBe(canvas);
+    expect(screen.getByTestId('graph-presentation')).toHaveTextContent('person');
+    await act(async () => resolveView({status: 200, data: {vertices: [schemaVertex('software')], edges: []}}));
+    await waitForPresentation('software');
+    expect(screen.getByTestId('graph-view')).toBe(canvas);
+});
+
+test('clears the previous graph context immediately and ignores a superseded schema response', async () => {
+    loadSchema({vertices: [schemaVertex('person')]});
+    const {rerender} = render(<ImageView />);
+    await waitForPresentation('person');
+    const previousCanvas = screen.getByTestId('graph-view');
+    let resolveOld;
+    api.manage.getGraphView.mockReturnValueOnce(new Promise(resolve => {resolveOld = resolve;}));
+    fireEvent.doubleClick(screen.getByTestId('schema-node-double-click'));
+    fireEvent.click(screen.getByRole('button', {name: 'complete vertex edit'}));
+    let resolveNew;
+    api.manage.getGraphView.mockReturnValueOnce(new Promise(resolve => {resolveNew = resolve;}));
+    mockRouteParams = {graphspace: 'space-b', graph: 'graph-b'};
+    rerender(<ImageView />);
+    expect(screen.getByTestId('graph-view')).not.toBe(previousCanvas);
+    expect(screen.getByTestId('graph-presentation')).not.toHaveTextContent('person');
+    await act(async () => resolveNew({status: 200, data: {vertices: [schemaVertex('software')], edges: []}}));
+    await waitForPresentation('software');
+    await act(async () => resolveOld({status: 200, data: {vertices: [schemaVertex('stale')], edges: []}}));
+    expect(screen.getByTestId('graph-presentation')).toHaveTextContent('software');
+    expect(screen.getByTestId('graph-presentation')).not.toHaveTextContent('stale');
 });

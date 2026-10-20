@@ -20,8 +20,10 @@
  * @file WeaklyConnectedComponentVermeer算法
  */
 
-import React, {useState, useCallback, useContext, useEffect} from 'react';
-import {Collapse, InputNumber} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
+import {useState, useCallback, useContext, useEffect} from 'react';
+import {InputNumber} from 'antd';
 import Form from '../../PersistentForm';
 import GraphAnalysisContext from '../../../../Context';
 import AlgorithmNameHeader from '../../AlgorithmNameHeader';
@@ -55,7 +57,7 @@ const WeaklyConnectedComponentVermeer = props => {
     const {graphSpace, graph, graphStatus} = useContext(GraphAnalysisContext);
 
     const [isEnableRun, setEnableRun] = useState(true);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
 
     const [form] = Form.useForm();
 
@@ -76,22 +78,22 @@ const WeaklyConnectedComponentVermeer = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(WEAKLY_CONNECTED_COMPONENT);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             const formParams = {'compute.algorithm': 'wcc', ...algorithmParams};
             const filteredParams = removeNilKeys(formParams);
             const response =  await api.analysis.runOlapVermeer(graphSpace, graph, filteredParams);
             const {data, status, message} = response || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, '', message);
+                complete(FAILED, '', message);
             }
             else {
-                handleFormSubmit(SUCCESS, data?.task_id, message);
+                complete(SUCCESS, data?.task_id, message);
             }
-            setRequiring(false);
+            finishRequiring();
         },
-        [graph, graphSpace, handleFormSubmit, updateCurrentAlgorithm]
+        [graph, graphSpace, beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const onFormFinish = useCallback(
@@ -116,11 +118,8 @@ const WeaklyConnectedComponentVermeer = props => {
 
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={info.icon}
                     name={WEAKLY_CONNECTED_COMPONENT}
@@ -162,7 +161,7 @@ const WeaklyConnectedComponentVermeer = props => {
                     <InputNumber />
                 </Form.Item>
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

@@ -20,35 +20,23 @@
  * @file  网格布局
  */
 
-import React, {useCallback} from 'react';
+import {useId} from 'react';
 import {Form, InputNumber} from 'antd';
 import {useTranslation} from 'react-i18next';
-import _ from 'lodash';
 
 const GridForm = props => {
-    const {handleFormChange, initialValues} = props;
+    const {handleFormChange, initialValues, disabled} = props;
     const {t} = useTranslation();
+    const instanceId = useId();
     const {useForm} = Form;
     const [form] = useForm();
 
-    const onRowsChange = useCallback(
-        () => {
-            form.resetFields(['cols']);
-        },
-        [form]
-    );
-
-    const onColsChange = useCallback(
-        () => {
-            form.resetFields(['rows']);
-        },
-        [form]
-    );
-
     return (
         <Form
+            name={instanceId}
             form={form}
-            onValuesChange={_.debounce(handleFormChange, 100)}
+            onValuesChange={handleFormChange}
+            disabled={disabled}
             initialValues={initialValues}
             labelCol={{span: 24}}
         >
@@ -57,14 +45,14 @@ const GridForm = props => {
                 label={t('analysis.canvas.layout_panel.rows')}
                 tooltip={t('analysis.canvas.layout_panel.rows_tooltip')}
             >
-                <InputNumber onChange={onRowsChange} min={1} style={{width: '100%'}} />
+                <InputNumber aria-label={t('analysis.canvas.layout_panel.rows')} min={1} style={{width: '100%'}} />
             </Form.Item>
             <Form.Item
                 name='cols'
                 label={t('analysis.canvas.layout_panel.cols')}
                 tooltip={t('analysis.canvas.layout_panel.cols_tooltip')}
             >
-                <InputNumber onChange={onColsChange} min={1} style={{width: '100%'}} />
+                <InputNumber aria-label={t('analysis.canvas.layout_panel.cols')} min={1} style={{width: '100%'}} />
             </Form.Item>
         </Form>
     );

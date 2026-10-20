@@ -51,7 +51,7 @@ const getMetaEdgeList = (graphspace, graph) => {
     return request.get(`/graphspaces/${graphspace}/graphs/${graph}/schema/edgelabels`);
 };
 
-const getMetaVertexList = (graphspace, graph, params) => {
+const getMetaVertexList = (graphspace, graph, _params) => {
     return request.get(`/graphspaces/${graphspace}/graphs/${graph}/schema/vertexlabels`);
 };
 

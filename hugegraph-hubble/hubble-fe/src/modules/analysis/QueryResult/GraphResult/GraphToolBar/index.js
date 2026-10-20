@@ -20,7 +20,7 @@
  * @file  GraphToolBar
  */
 
-import React, {useState, useCallback} from 'react';
+import {useState, useCallback} from 'react';
 import ToolBar from '../../../../component/ToolBar';
 import ZeroDegreeNodeSearch from '../../../../component/ZeroDegreeNode';
 import RedoUndo from '../../../../component/RedoUndo';
@@ -36,7 +36,6 @@ const {CLOSED} = PANEL_TYPE;
 
 const GraphToolBar = props => {
     const {
-        handleRedoUndoChange,
         handleClearGraph,
         panelType,
         updatePanelType,
@@ -56,7 +55,7 @@ const GraphToolBar = props => {
         {key: '1', content: (<ZeroDegreeNodeSearch />)},
         {key: '2', content: (<RefreshGraph />)},
         {key: '3', content: (<FixNode />)},
-        {key: '45', content: (<RedoUndo onChange={handleRedoUndoChange} />)},
+        {key: '45', content: (<RedoUndo />)},
         {key: '6', content: (<ClearGraph enable={!isFullScreen} onChange={handleClearGraph} />)},
         {key: '7', content: (<FitCenter />)},
         {key: '89', content: (<ZoomGraph />)},

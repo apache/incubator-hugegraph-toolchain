@@ -16,12 +16,19 @@
  * under the License.
  */
 
-import moment from 'moment';
+import dayjs from 'dayjs';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import isBetween from 'dayjs/plugin/isBetween';
+
+dayjs.extend(isSameOrAfter);
+dayjs.extend(isSameOrBefore);
+dayjs.extend(isBetween);
 
 // 适用 number, date, text
 const checkEq = (left, right, type) => {
     if (type === 'DATE') {
-        return moment(left).isSame(right.format('YYYY-MM-DD'));
+        return dayjs(left).isSame(right.format('YYYY-MM-DD'));
     }
 
     if (type === 'INT') {
@@ -33,7 +40,7 @@ const checkEq = (left, right, type) => {
 
 const checkNeq = (left, right, type) => {
     if (type === 'DATE') {
-        return !moment(left).isSame(right.format('YYYY-MM-DD'));
+        return !dayjs(left).isSame(right.format('YYYY-MM-DD'));
     }
 
     if (type === 'INT') {
@@ -45,7 +52,7 @@ const checkNeq = (left, right, type) => {
 
 const checkGt = (left, right, type) => {
     if (type === 'DATE') {
-        return moment(left).isAfter(right.format('YYYY-MM-DD'));
+        return dayjs(left).isAfter(right.format('YYYY-MM-DD'));
     }
 
     if (type === 'INT') {
@@ -57,7 +64,7 @@ const checkGt = (left, right, type) => {
 
 const checkGte = (left, right, type) => {
     if (type === 'DATE') {
-        return moment(left).isSameOrAfter(right.format('YYYY-MM-DD'));
+        return dayjs(left).isSameOrAfter(right.format('YYYY-MM-DD'));
     }
 
     if (type === 'INT') {
@@ -69,7 +76,7 @@ const checkGte = (left, right, type) => {
 
 const checkLt = (left, right, type) => {
     if (type === 'DATE') {
-        return moment(left).isBefore(right.format('YYYY-MM-DD'));
+        return dayjs(left).isBefore(right.format('YYYY-MM-DD'));
     }
 
     if (type === 'INT') {
@@ -81,7 +88,7 @@ const checkLt = (left, right, type) => {
 
 const checkLte = (left, right, type) => {
     if (type === 'DATE') {
-        return moment(left).isSameOrBefore(right.format('YYYY-MM-DD'));
+        return dayjs(left).isSameOrBefore(right.format('YYYY-MM-DD'));
     }
 
     if (type === 'INT') {
@@ -93,7 +100,7 @@ const checkLte = (left, right, type) => {
 
 const checkLtlt = (left, right, type) => {
     if (type === 'DATE') {
-        return moment(left).isBetween(right[0].format('YYYY-MM-DD'), right[1].format('YYYY-MM-DD'), null, '()');
+        return dayjs(left).isBetween(right[0].format('YYYY-MM-DD'), right[1].format('YYYY-MM-DD'), null, '()');
     }
 
     if (type === 'INT') {
@@ -105,7 +112,7 @@ const checkLtlt = (left, right, type) => {
 
 const checkLtelt = (left, right, type) => {
     if (type === 'DATE') {
-        return moment(left).isBetween(right[0].format('YYYY-MM-DD'), right[1].format('YYYY-MM-DD'), null, '[)');
+        return dayjs(left).isBetween(right[0].format('YYYY-MM-DD'), right[1].format('YYYY-MM-DD'), null, '[)');
     }
 
     if (type === 'INT') {
@@ -117,7 +124,7 @@ const checkLtelt = (left, right, type) => {
 
 const checkLtelte = (left, right, type) => {
     if (type === 'DATE') {
-        return moment(left).isBetween(right[0].format('YYYY-MM-DD'), right[1].format('YYYY-MM-DD'), null, '[]');
+        return dayjs(left).isBetween(right[0].format('YYYY-MM-DD'), right[1].format('YYYY-MM-DD'), null, '[]');
     }
 
     if (type === 'INT') {
@@ -129,7 +136,7 @@ const checkLtelte = (left, right, type) => {
 
 const checkLtlte = (left, right, type) => {
     if (type === 'DATE') {
-        return moment(left).isBetween(right[0].format('YYYY-MM-DD'), right[1].format('YYYY-MM-DD'), null, '(]');
+        return dayjs(left).isBetween(right[0].format('YYYY-MM-DD'), right[1].format('YYYY-MM-DD'), null, '(]');
     }
 
     if (type === 'INT') {

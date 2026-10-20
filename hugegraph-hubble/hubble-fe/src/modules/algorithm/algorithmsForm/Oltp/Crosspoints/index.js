@@ -20,8 +20,10 @@
  * @file Crosspoints算法
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Input, Collapse, Select, InputNumber} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
+import {useState, useCallback, useContext} from 'react';
+import {Input, Select, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
 import AlgorithmNameHeader from '../../AlgorithmNameHeader';
 import {ProjectOutlined} from '@ant-design/icons';
@@ -47,7 +49,7 @@ const Crosspoints = props => {
 
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
 
     const [crosspointsForm] = Form.useForm();
     const directionOptions = [
@@ -58,23 +60,23 @@ const Crosspoints = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(CROSSPOINTS);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             algorithmParams = {...algorithmParams, 'algorithmName': Algorithm_Url[CROSSPOINTS]};
             const filteredParams = removeNilKeys(algorithmParams);
             const response =  await api.analysis.runOltpInfo(graphSpace, graph, filteredParams);
             const {data, status, message} = response || {};
             const {graph_view} = data || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, {}, message);
+                complete(FAILED, {}, message);
             }
             else {
-                handleFormSubmit(SUCCESS, graph_view || {}, message, {});
+                complete(SUCCESS, graph_view || {}, message, {});
             }
-            setRequiring(false);
+            finishRequiring();
         },
-        [graph, graphSpace, handleFormSubmit, updateCurrentAlgorithm]
+        [graph, graphSpace, beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const handleRunning = useCallback(
@@ -106,11 +108,8 @@ const Crosspoints = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<ProjectOutlined />}
                     name={CROSSPOINTS}
@@ -203,7 +202,7 @@ const Crosspoints = props => {
                     <InputNumber />
                 </Form.Item>
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

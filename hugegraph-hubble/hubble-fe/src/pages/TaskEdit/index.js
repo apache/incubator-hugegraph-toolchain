@@ -16,8 +16,8 @@
  * under the License.
  */
 
+import PageHeader from '../../components/PageHeader';
 import {
-    PageHeader,
     Form,
     Steps,
     message,
@@ -293,7 +293,6 @@ const TaskEdit = () => {
     return (
         <>
             <PageHeader
-                ghost={false}
                 onBack={false}
                 title={t('task.title')}
             />
@@ -305,7 +304,7 @@ const TaskEdit = () => {
                     <Alert
                         showIcon
                         type='error'
-                        message={t(`task.edit.${baseError}_failed`)}
+                        title={t(`task.edit.${baseError}_failed`)}
                         action={(
                             <Button size='small' onClick={retryBase} loading={baseLoading}>
                                 {t('task.edit.retry_context')}
@@ -317,17 +316,21 @@ const TaskEdit = () => {
                     <Alert
                         showIcon
                         type='error'
-                        message={t('task.edit.submit_failed')}
+                        title={t('task.edit.submit_failed')}
                         description={typeof submitError === 'string'
                             ? submitError : undefined}
                     />
                 )}
-                <Steps labelPlacement='vertical' current={current}>
-                    <Steps.Step key="1" title={t('task.edit.step_basic')} />
-                    <Steps.Step key="2" title={t('task.edit.step_source_fields')} />
-                    <Steps.Step key="3" title={t('task.edit.step_mapping_fields')} />
-                    <Steps.Step key="4" title={t('task.edit.step_schedule')} />
-                </Steps>
+                <Steps
+                    titlePlacement='vertical'
+                    current={current}
+                    items={[
+                        {key: '1', title: t('task.edit.step_basic')},
+                        {key: '2', title: t('task.edit.step_source_fields')},
+                        {key: '3', title: t('task.edit.step_mapping_fields')},
+                        {key: '4', title: t('task.edit.step_schedule')},
+                    ]}
+                />
                 <br />
 
                 <div className={Style.form}>

@@ -20,7 +20,7 @@
  * @file 图算法表格 Home
  */
 
-import React, {useCallback, useContext} from 'react';
+import {useCallback, useContext} from 'react';
 import {useTranslation} from 'react-i18next';
 import GraphAnalysisContext from '../../../Context';
 import {Alert, Button, Tabs, message} from 'antd';
@@ -147,7 +147,7 @@ const LogsDetail = props => {
                         <Alert
                             showIcon
                             type='error'
-                            message={t('analysis.logs.execution_load_failed')}
+                            title={t('analysis.logs.execution_load_failed')}
                             action={(
                                 <Button size='small' onClick={onRetryExecutionLogs}>
                                     {t('analysis.logs.retry_execution')}
@@ -176,7 +176,7 @@ const LogsDetail = props => {
                         <Alert
                             showIcon
                             type='error'
-                            message={t('analysis.logs.favorite_load_failed')}
+                            title={t('analysis.logs.favorite_load_failed')}
                             action={(
                                 <Button size='small' onClick={onRetryFavoriteQueries}>
                                     {t('analysis.logs.retry_favorites')}

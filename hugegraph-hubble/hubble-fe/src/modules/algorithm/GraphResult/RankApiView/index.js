@@ -20,7 +20,6 @@
  * @file  RankApi算法展示
  */
 
-import React from 'react';
 import {useTranslation} from 'react-i18next';
 import {GRAPH_STATUS} from '../../../../utils/constants';
 import JaccRankView from '../../../component/JaccRankView';

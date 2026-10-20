@@ -118,7 +118,7 @@ const TableView = props => {
                                 className={c.largeResultNotice}
                                 showIcon
                                 type="info"
-                                message={t('analysis.query_result.large_table_title', {
+                                title={t('analysis.query_result.large_table_title', {
                                     count: queryResultTable.rows.length,
                                 })}
                                 description={t('analysis.query_result.large_table_description')}

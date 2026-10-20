@@ -40,6 +40,7 @@
     <properties>
         <!-- Keep late JaCoCo argLine evaluation valid when its agent is disabled. -->
         <argLine/>
+        <loader.distribution.skip>false</loader.distribution.skip>
         <release.name>${project.artifactId}</release.name>
         <final.name>apache-${release.name}-${project.version}</final.name>
         <assembly.dir>${project.basedir}/assembly</assembly.dir>
@@ -713,6 +714,7 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <skip>${loader.distribution.skip}</skip>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <finalName>${final.name}-shaded</finalName>
                             <!-- CDC references Guava31; keep Flink 2.2's Guava33 dependency intact. -->
@@ -749,6 +751,7 @@
                             <goal>single</goal>
                         </goals>
                         <configuration>
+                            <skipAssembly>${loader.distribution.skip}</skipAssembly>
                             <attach>false</attach>
                             <appendAssemblyId>false</appendAssemblyId>
                             <outputDirectory>${project.basedir}</outputDirectory>
@@ -767,6 +770,7 @@
                             <goal>run</goal>
                         </goals>
                         <configuration>
+                            <skip>${loader.distribution.skip}</skip>
                             <target>
                                 <exec executable="python3" failonerror="true">
                                     <arg value="${project.basedir}/../hugegraph-client/assembly/travis/verify_candidate_image_sdk.py"/>

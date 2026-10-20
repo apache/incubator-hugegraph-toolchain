@@ -20,9 +20,11 @@
  * @file TemplatePaths
  */
 
-import React, {useState, useCallback, useContext} from 'react';
+import AlgorithmPanel from '../../../AlgorithmPanel';
+import useAlgorithmPending from '../../../useAlgorithmPending';
+import {useState, useCallback, useContext} from 'react';
 import {useTranslation} from 'react-i18next';
-import {Collapse, InputNumber} from 'antd';
+import {InputNumber} from 'antd';
 import Form from '../../../PersistentForm';
 import {ReconciliationOutlined} from '@ant-design/icons';
 import GraphAnalysisContext from '../../../../../Context';
@@ -51,16 +53,16 @@ const TemplatePaths = props => {
     } = props;
 
     const [isEnableRun, setEnableRun] = useState(false);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
 
     const [form] = Form.useForm();
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(TEMPLATEPATHS);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             algorithmParams = {...algorithmParams, 'algorithmName': Algorithm_Url[TEMPLATEPATHS]};
             const filteredParams = removeNilKeys(algorithmParams);
             const response =  await api.analysis.runOltpInfo(graphSpace, graph, filteredParams);
@@ -68,17 +70,17 @@ const TemplatePaths = props => {
             const {graph_view} = data || {};
             const {vertices} = graph_view || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, {}, message);
+                complete(FAILED, {}, message);
             }
             else {
                 const sources = getNodesFromParams(algorithmParams.sources, vertices);
                 const targets = getNodesFromParams(algorithmParams.targets, vertices);
                 const options = {endPointsId: {startNodes: [...sources, ...targets], endNodes: []}};
-                handleFormSubmit(SUCCESS, graph_view || {}, message, options);
+                complete(SUCCESS, graph_view || {}, message, options);
             }
-            setRequiring(false);
+            finishRequiring();
         },
-        [graph, graphSpace, handleFormSubmit, updateCurrentAlgorithm]
+        [graph, graphSpace, beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const handleRunning = useCallback(
@@ -129,11 +131,8 @@ const TemplatePaths = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<ReconciliationOutlined />}
                     name={TEMPLATEPATHS}
@@ -187,7 +186,7 @@ const TemplatePaths = props => {
                     <InputNumber />
                 </Form.Item>
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

@@ -20,8 +20,10 @@
  * @file K-neighbor API(POST，高级版)
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Input, Collapse, Select, Tooltip, InputNumber} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
+import {useState, useCallback, useContext} from 'react';
+import {Input, Select, Tooltip, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
 import {DownOutlined, RightOutlined, DeleteRowOutlined, QuestionCircleOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
@@ -51,7 +53,7 @@ const KneighborPost = props => {
 
     const [form] = Form.useForm();
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
     const [isEnableRun, setEnableRun] = useState(false);
     const [stepVisible, setStepVisible] = useState(false);
     const directionOptions = [
@@ -75,23 +77,23 @@ const KneighborPost = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(KNEIGHBOR_POST);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             algorithmParams = {...algorithmParams, 'algorithmName': Algorithm_Url[KNEIGHBOR_POST]};
             const filteredParams = removeNilKeys(algorithmParams);
             const response =  await api.analysis.runOltpInfo(graphSpace, graph, filteredParams);
             const {data, status, message} = response || {};
             const {graph_view} = data || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, {}, message);
+                complete(FAILED, {}, message);
             }
             else {
-                handleFormSubmit(SUCCESS, graph_view || {}, message, {});
+                complete(SUCCESS, graph_view || {}, message, {});
             }
-            setRequiring(false);
+            finishRequiring();
         },
-        [graph, graphSpace, handleFormSubmit, updateCurrentAlgorithm]
+        [graph, graphSpace, beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const formatPropertiesValue = useCallback(
@@ -102,7 +104,7 @@ const KneighborPost = props => {
             const propertiesArr = properties.trim().split('\n') || [];
             const propertiesValue = {};
             for (const item of propertiesArr) {
-                const [key, value] = item?.split('=');
+                const [key, value] = item.split('=');
                 if (key && value) {
                     const valueLength = value.length;
                     if (valueLength > 2 && value[0] === '\'' && value[valueLength - 1] === '\'') {
@@ -239,11 +241,8 @@ const KneighborPost = props => {
     };
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<DeleteRowOutlined />}
                     name={KNEIGHBOR_POST}
@@ -293,7 +292,7 @@ const KneighborPost = props => {
                 </Form.Item>
                 {stepFormItems()}
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

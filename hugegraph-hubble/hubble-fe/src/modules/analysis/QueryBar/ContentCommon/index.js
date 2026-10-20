@@ -20,7 +20,7 @@
  * @file Gremlin query actions
  */
 
-import React, {useCallback, useContext, useState} from 'react';
+import {useCallback, useContext, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Button, Tooltip, Popover, message, Space} from 'antd';
 import {ClockCircleOutlined, ThunderboltOutlined} from '@ant-design/icons';
@@ -52,6 +52,7 @@ const SecondaryActions = props => {
         shortcutHint,
         onClear: clearQuery,
         allowFavorite = true,
+        isGraphReady = true,
     } = props;
     const context = useContext(GraphAnalysisContext);
     const [favoriteName, setFavoriteName] = useState();
@@ -60,6 +61,9 @@ const SecondaryActions = props => {
 
     const onClear = useCallback(
         () => {
+            if (!isGraphReady) {
+                return;
+            }
             if (clearQuery) {
                 clearQuery();
             }
@@ -68,20 +72,26 @@ const SecondaryActions = props => {
             }
             setFavoriteCardVisible(false);
         },
-        [clearQuery, setCodeEditorContent, setFavoriteCardVisible]
+        [clearQuery, isGraphReady, setCodeEditorContent, setFavoriteCardVisible]
     );
 
     const onFavoriteCard = useCallback(
         () => {
+            if (!isGraphReady) {
+                return;
+            }
             setFavoriteCardVisible(true);
             setDisabledFavorite(true);
             setFavoriteName('');
         },
-        [setFavoriteCardVisible]
+        [isGraphReady, setFavoriteCardVisible]
     );
 
     const saveFavoriteList = useCallback(
         () => {
+            if (!isGraphReady) {
+                return;
+            }
             const {graphSpace, graph} = context;
             const params = {
                 content: codeEditorContent,
@@ -100,15 +110,18 @@ const SecondaryActions = props => {
                     }
                 });
         },
-        [activeTab, codeEditorContent, context, favoriteName, onRefresh, t]
+        [activeTab, codeEditorContent, context, favoriteName, isGraphReady, onRefresh, t]
     );
 
     const onOkFavorite = useCallback(
         () => {
+            if (!isGraphReady) {
+                return;
+            }
             saveFavoriteList();
             setFavoriteCardVisible(false);
         },
-        [saveFavoriteList, setFavoriteCardVisible]
+        [isGraphReady, saveFavoriteList, setFavoriteCardVisible]
     );
 
     const onHideFavorite = useCallback(
@@ -135,7 +148,7 @@ const SecondaryActions = props => {
                 onChange={onChangeFavoriteName}
             />
             <Space style={{marginTop: '24px'}}>
-                <Button type='primary' onClick={onOkFavorite} disabled={disabledFavorite}>
+                <Button type='primary' onClick={onOkFavorite} disabled={!isGraphReady || disabledFavorite}>
                     {t('analysis.query.favorite')}
                 </Button>
                 <Button onClick={onHideFavorite}>{t('common.action.cancel')}</Button>
@@ -145,14 +158,14 @@ const SecondaryActions = props => {
 
     return (
         <div className={c.secondaryActions}>
-            <Button className={c.btn} onClick={onClear} size='small'>
+            <Button className={c.btn} onClick={onClear} disabled={!isGraphReady} size='small'>
                 {t('common.action.clear')}
             </Button>
             {allowFavorite && (
-                <Popover
+                <Popover classNames={{root: c.favoriteModel}}
                     placement='bottom'
                     trigger='click'
-                    overlayClassName={c.favoriteModel}
+
                     title={t('analysis.query.favorite_statement')}
                     content={favoriteContent}
                     open={favoriteCardVisible}
@@ -160,7 +173,7 @@ const SecondaryActions = props => {
                     <Tooltip placement='bottom' title={isEmptyQuery ? emptyDesc : ''}>
                         <Button
                             className={c.btn}
-                            disabled={isEmptyQuery}
+                            disabled={!isGraphReady || isEmptyQuery}
                             onClick={onFavoriteCard}
                             size='small'
                         >

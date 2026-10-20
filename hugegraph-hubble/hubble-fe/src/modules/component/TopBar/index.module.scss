@@ -19,15 +19,28 @@
 .pageHeader {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
+    row-gap: 8px;
 
-    .olapSwitchButton { 
+    .metadataNavigation {
+      display: inline-flex;
+      align-items: center;
+      flex-shrink: 0;
+      gap: 8px;
+      margin-inline-end: 16px;
+    }
+
+    .olapSwitchButton {
+      display: inline-flex;
+      align-items: center;
       margin-left: auto;
+      white-space: nowrap;
     }
 
     .olapSwitchTitle {
       margin-right: 20px;
     }
-  
+
     .graphStatus {
       margin-left: 5px;
       margin-right: 10px;
@@ -39,10 +52,6 @@
 
     .vermeerInfo{
       margin-right: 18px;
-    }
-    
-    .questionCircleIcon{
-      margin-left: 10px;
     }
 
     .contextError {
@@ -62,11 +71,11 @@
 :global(.graphAnalysisHeader) {
   padding: 12px 24px;
 
-  :global(.ant-page-header-heading) {
+  :global(.hubble-page-header-heading) {
     align-items: center;
   }
 
-  :global(.ant-page-header-heading-extra) {
+  :global(.hubble-page-header-heading-extra) {
     min-width: 0;
     margin: 0 0 0 24px;
   }
@@ -74,13 +83,13 @@
 
 @media (max-width: 1366px) {
   :global(.graphAnalysisHeader) {
-    :global(.ant-page-header-heading) {
+    :global(.hubble-page-header-heading) {
       align-items: flex-start;
       flex-wrap: wrap;
       gap: 8px 16px;
     }
 
-    :global(.ant-page-header-heading-extra) {
+    :global(.hubble-page-header-heading-extra) {
       width: 100%;
       margin-left: 0;
     }
@@ -96,12 +105,12 @@
         height: 22px;
         font-size: 12px;
     }
-  
-   :global(.ant-page-header) {     
+
+   :global(.hubble-page-header) {
       padding: 2px 24px;
     }
-  
-    :global(.ant-page-header-content) {
+
+    :global(.hubble-page-header-content) {
       padding-top: 0;
       display: flex;
       align-items: center;
@@ -109,16 +118,16 @@
   }
 
   .currentGraphSelect {
-    width: 180px !important; 
-  
+    width: 180px !important;
+
     .graphOptions{
         display: flex;
-  
+
         .graphName{
             margin-right: 20px;
             min-width: 60px;
         }
-    
+
         .graphStatus{
             margin-left: auto;
         }

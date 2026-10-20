@@ -180,7 +180,7 @@ const EdgeForm = ({open, index, onCancel, sourceField, targetField, edgeList}) =
             title={index >= 0 ? t('task.edit.edit_edge') : t('task.edit.create_edge')}
             placement="right"
             onClose={onCancel}
-            width={580}
+            size={580}
             open={open}
         >
             <Form

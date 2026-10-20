@@ -53,3 +53,54 @@
         overflow: auto;
     }
 }
+
+.content {
+    position: relative;
+}
+
+.retainedQueryProgress {
+    position: absolute;
+    top: 60px;
+    left: 16px;
+    z-index: 3;
+    width: min(520px, calc(100% - 32px));
+    padding: 10px 12px;
+    border: 1px solid #b6ccf6;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 2px 8px #0001;
+    color: #343434;
+    font-size: 13px;
+
+    > [role='status'] {
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+
+    .queryProgress {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 4px 12px;
+        align-items: center;
+        text-align: left;
+
+        > span {
+            grid-column: 1;
+            grid-row: 1;
+        }
+
+        > button {
+            grid-column: 2;
+            grid-row: 1 / span 3;
+        }
+
+        > p {
+            grid-column: 1;
+            font-size: 12px;
+        }
+    }
+}
+
+.progressWithPanel {
+    width: min(520px, calc(100% - 282px));
+}

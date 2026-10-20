@@ -41,6 +41,9 @@
             <directory>${assembly.static.dir}</directory>
             <outputDirectory>/</outputDirectory>
             <filtered>false</filtered>
+            <excludes>
+                <exclude>bin/**</exclude>
+            </excludes>
         </fileSet>
         <fileSet>
             <directory>${top.level.dir}</directory>

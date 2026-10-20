@@ -20,8 +20,10 @@
  * @file FilteredRingsDetection算法
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Collapse, InputNumber, Input} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
+import {useState, useCallback, useContext} from 'react';
+import {InputNumber, Input} from 'antd';
 import Form from '../../PersistentForm';
 import {SafetyCertificateOutlined} from '@ant-design/icons';
 import GraphAnalysisContext from '../../../../Context';
@@ -60,7 +62,7 @@ const FilteredRingsDetection = props => {
     };
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
 
     const [form] = Form.useForm();
 
@@ -74,9 +76,9 @@ const FilteredRingsDetection = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(FILTERED_RINGS_DETECTION);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             const {worker, ...args} = algorithmParams;
             const formParams = {
                 algorithm: 'rings-with-filter',
@@ -87,14 +89,14 @@ const FilteredRingsDetection = props => {
             const response =  await api.analysis.postOlapInfo(graphSpace, graph, filteredParams);
             const {data, status, message} = response || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, '', message);
+                complete(FAILED, '', message);
             }
             else {
-                handleFormSubmit(SUCCESS, data?.task_id, message);
+                complete(SUCCESS, data?.task_id, message);
             }
-            setRequiring(false);
+            finishRequiring();
         },
-        [FILTERED_RINGS_DETECTION, graph, graphSpace, handleFormSubmit,
+        [FILTERED_RINGS_DETECTION, graph, graphSpace, beginRequiring, handleFormSubmit,
             updateCurrentAlgorithm]
     );
 
@@ -119,11 +121,8 @@ const FilteredRingsDetection = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={info.icon}
                     name={FILTERED_RINGS_DETECTION}
@@ -192,7 +191,7 @@ const FilteredRingsDetection = props => {
                 </Form.Item>
                 <OlapComputerItem />
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

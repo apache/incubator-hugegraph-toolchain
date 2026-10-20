@@ -235,9 +235,9 @@ const MappingForm = ({prev,
             <Alert
                 showIcon
                 type='info'
-                message={t('task.edit.mapping_help_title')}
+                title={t('task.edit.mapping_help_title')}
                 description={(
-                    <Space direction='vertical' size={2}>
+                    <Space orientation='vertical' size={2}>
                         <Typography.Text>{t('task.edit.mapping_help')}</Typography.Text>
                         <Typography.Text strong>
                             {t('task.edit.mapping_example_title')}
@@ -261,7 +261,7 @@ const MappingForm = ({prev,
                 <Alert
                     showIcon
                     type='error'
-                    message={t('task.edit.mapping_meta_failed')}
+                    title={t('task.edit.mapping_meta_failed')}
                     action={(
                         <Button size='small' onClick={retryMeta}>
                             {t('task.edit.mapping_meta_retry')}

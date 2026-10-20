@@ -20,8 +20,10 @@
  * @file Rank API
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Input, Collapse, Select, InputNumber} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
+import {useState, useCallback, useContext} from 'react';
+import {Input, Select, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
 import {DeleteColumnOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
@@ -59,7 +61,7 @@ const RankApi = props => {
 
     const [form] = Form.useForm();
     const [isEnableRun, setEnableRun] = useState(false);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const withLabelOptions = [
         {label: t('analysis.algorithm.oltp.rank_api.same_label'), value: 'SAME_LABEL'},
@@ -69,24 +71,24 @@ const RankApi = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(RANK_API);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             algorithmParams = {...algorithmParams, 'algorithmName': Algorithm_Url[RANK_API]};
             const filteredParams = removeNilKeys(algorithmParams);
             const response =  await api.analysis.runOltpInfo(graphSpace, graph, filteredParams);
             const {data, status, message} = response || {};
             const {ranks} = data || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, {}, message);
+                complete(FAILED, {}, message);
             }
             else {
                 const options = {rankObj: ranks || {}};
-                handleFormSubmit(SUCCESS, {}, message, options);
+                complete(SUCCESS, {}, message, options);
             }
-            setRequiring(false);
+            finishRequiring();
         },
-        [graph, graphSpace, handleFormSubmit, updateCurrentAlgorithm]
+        [graph, graphSpace, beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
 
@@ -119,11 +121,8 @@ const RankApi = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<DeleteColumnOutlined />}
                     name={RANK_API}
@@ -213,7 +212,7 @@ const RankApi = props => {
                     <Select options={withLabelOptions} allowClear />
                 </Form.Item>
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

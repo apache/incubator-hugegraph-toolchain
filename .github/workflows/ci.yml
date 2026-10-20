@@ -109,8 +109,8 @@ jobs:
         uses: ./.github/actions/get-hugegraph-commit
         with:
           repository: apache/hugegraph
-          ref: 68855199031d5801edb4fe41b2bacbacffe8fe68
-          expected-commit: 68855199031d5801edb4fe41b2bacbacffe8fe68
+          ref: 86c05ef9c5d417bd37eab21d4ecd5af82bab17ef
+          expected-commit: 86c05ef9c5d417bd37eab21d4ecd5af82bab17ef
       - name: Record external test inputs
         if: ${{ !cancelled() && steps.scope.outcome == 'success' }}
         id: select
@@ -243,6 +243,7 @@ jobs:
           commit-id: ${{ needs.plan.outputs.current-commit }}
           fetch-ref: ${{ needs.plan.outputs.current-ref }}
           java-version: '17'
+          export-candidate-sdk: ${{ needs.plan.outputs.hubble == 'true' }}
 
   client:
     permissions:
@@ -312,6 +313,7 @@ jobs:
     with:
       server-baselines: ${{ needs.plan.outputs.server-baselines }}
       current-artifact-name: ${{ needs.current-fixture.outputs.artifact }}
+      reuse-candidate-sdk: true
       current-commit: ${{ needs.plan.outputs.current-commit }}
       current-repository: ${{ needs.plan.outputs.current-repository }}
       current-ref: ${{ needs.plan.outputs.current-ref }}

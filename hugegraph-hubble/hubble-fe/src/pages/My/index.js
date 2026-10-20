@@ -16,7 +16,9 @@
  * under the License.
  */
 
-import {Alert, Avatar, PageHeader, Button, Form, Input, Space, Tag, message, Spin} from 'antd';
+import {replaceBrowserLocation} from '../../utils/browserNavigation';
+import PageHeader from '../../components/PageHeader';
+import {Alert, Avatar, Button, Form, Input, Space, Tag, message, Spin} from 'antd';
 import {EditOutlined, LockOutlined, UserOutlined} from '@ant-design/icons';
 import {useEffect, useRef, useState, useCallback} from 'react';
 import {useTranslation} from 'react-i18next';
@@ -86,13 +88,13 @@ const My = () => {
                 sessionStorage.removeItem('redirect');
                 clearPersistedAlgorithmFormsForUser();
                 user.clearLogin();
-                window.location.replace(PASSWORD_CHANGED_LOGIN_PATH);
+                replaceBrowserLocation(PASSWORD_CHANGED_LOGIN_PATH);
                 return;
             }
 
             message.error(res.message);
         }
-        catch (error) {
+        catch {
             // Validation errors render inline; request errors are owned by the API layer.
         }
         finally {
@@ -149,7 +151,7 @@ const My = () => {
             }
             setProfileError(true);
         }
-        catch (error) {
+        catch {
             if (profileRequest.current === token) {
                 setProfileError(true);
             }
@@ -171,7 +173,6 @@ const My = () => {
     return (
         <>
             <PageHeader
-                ghost={false}
                 onBack={false}
                 title={t('my.title')}
             />
@@ -181,7 +182,7 @@ const My = () => {
                     <Alert
                         type='error'
                         showIcon
-                        message={t('my.load.unavailable')}
+                        title={t('my.load.unavailable')}
                         action={(
                             <Button size='small' onClick={loadProfile}>
                                 {t('my.load.retry')}

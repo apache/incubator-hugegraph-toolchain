@@ -33,16 +33,23 @@ import {
 import style from './index.module.scss';
 import {getResourceDisplayName} from '../../utils/displayName';
 
-const {Option} = Select;
 const GRAPHSPACE_LIST_PARAMS = {all: true};
 const GRAPH_LIST_PARAMS = {page_no: 1, page_size: -1};
 const INLINE_ERROR_CONFIG = {suppressBusinessErrorToast: true};
 const SELECT_MIN_WIDTH = 112;
 const SELECT_MAX_WIDTH = 240;
 
+const headerSelectStyles = ({props}) => {
+    const color = props.disabled
+        ? 'rgba(255, 255, 255, 0.72)'
+        : 'rgba(255, 255, 255, 0.92)';
+    const secondary = 'rgba(255, 255, 255, 0.64)';
+    return {root: {color}, input: {color}, suffix: {color: secondary}, placeholder: {color: secondary}};
+};
+
 const getSelectWidth = label => {
     const textWidth = Array.from(label ?? '').reduce(
-        (width, character) => width + (/[^\x00-\xff]/.test(character) ? 14 : 8),
+        (width, character) => width + (character.codePointAt(0) > 255 ? 14 : 8),
         48
     );
     return Math.min(SELECT_MAX_WIDTH, Math.max(SELECT_MIN_WIDTH, textWidth));
@@ -304,18 +311,14 @@ const GraphContextSwitcher = () => {
                     title={selectedGraphspaceLabel}
                     value={context.graphspace}
                     style={{width: getSelectWidth(selectedGraphspaceLabel)}}
-                >
-                    {graphspaceOptions.map(item => {
+                    styles={headerSelectStyles}
+                    options={graphspaceOptions.map(item => {
                         const displayName = item.name === DEFAULT_GRAPHSPACE
                             ? DEFAULT_GRAPHSPACE
                             : getResourceDisplayName(item.name, item.nickname);
-                        return (
-                            <Option key={item.name} value={item.name} title={displayName}>
-                                {displayName}
-                            </Option>
-                        );
+                        return {value: item.name, title: displayName, label: displayName};
                     })}
-                </Select>
+                />
                 <span className={style.separator}>/</span>
                 <Select
                     aria-description={selectedGraphLabel}
@@ -328,13 +331,11 @@ const GraphContextSwitcher = () => {
                     title={selectedGraphLabel}
                     value={context.graph}
                     style={{width: getSelectWidth(selectedGraphLabel)}}
-                >
-                    {graphs.map(item => (
-                        <Option key={item.name} value={item.name}>
-                            {getResourceDisplayName(item.name, item.nickname)}
-                        </Option>
-                    ))}
-                </Select>
+                    styles={headerSelectStyles}
+                    options={graphs.map(item => ({
+                        value: item.name, label: getResourceDisplayName(item.name, item.nickname),
+                    }))}
+                />
             </Space>
             {(errors.graphspaces || errors.graphs) && (
                 <div className={style.errorStack}>
@@ -343,7 +344,7 @@ const GraphContextSwitcher = () => {
                             className={style.error}
                             type="error"
                             showIcon
-                            message={t(errors.graphspaces === 'forbidden'
+                            title={t(errors.graphspaces === 'forbidden'
                                 ? 'workbench.context.graphspaces_forbidden'
                                 : 'workbench.context.graphspaces_load_failed')}
                             action={errors.graphspaces !== 'forbidden' && (
@@ -358,7 +359,7 @@ const GraphContextSwitcher = () => {
                             className={style.error}
                             type="error"
                             showIcon
-                            message={t(errors.graphs === 'forbidden'
+                            title={t(errors.graphs === 'forbidden'
                                 ? 'workbench.context.graphs_forbidden'
                                 : 'workbench.context.graphs_load_failed')}
                             action={errors.graphs !== 'forbidden' && (

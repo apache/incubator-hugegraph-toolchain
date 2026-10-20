@@ -20,8 +20,10 @@
  * @file Rays算法
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Input, Collapse, Select, InputNumber} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
+import {useState, useCallback, useContext} from 'react';
+import {Input, Select, InputNumber} from 'antd';
 import Form from '../../PersistentForm';
 import {NodeExpandOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
@@ -46,7 +48,7 @@ const Rays = props => {
     } = props;
 
     const [isEnableRun, setEnableRun] = useState(false);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
 
     const [form] = Form.useForm();
@@ -58,24 +60,24 @@ const Rays = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(RAYS);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             algorithmParams = {...algorithmParams, 'algorithmName': Algorithm_Url[RAYS]};
             const filteredParams = removeNilKeys(algorithmParams);
             const response =  await api.analysis.runOltpInfo(graphSpace, graph, filteredParams);
             const {data, status, message} = response || {};
             const {graph_view} = data || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, {}, message);
+                complete(FAILED, {}, message);
             }
             else {
                 const options = {endPointsId: {startNodes: [algorithmParams.source], endNodes: []}};
-                handleFormSubmit(SUCCESS, graph_view || {}, message, options);
+                complete(SUCCESS, graph_view || {}, message, options);
             }
-            setRequiring(false);
+            finishRequiring();
         },
-        [graph, graphSpace, handleFormSubmit, updateCurrentAlgorithm]
+        [graph, graphSpace, beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const handleRunning = useCallback(
@@ -107,11 +109,8 @@ const Rays = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={<NodeExpandOutlined />}
                     name={RAYS}
@@ -196,7 +195,7 @@ const Rays = props => {
                     <InputNumber />
                 </Form.Item>
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

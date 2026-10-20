@@ -19,7 +19,7 @@
 /**
  * @file 图分析画布 Home
  */
-import React, {useCallback, useEffect, useState, useContext, useMemo, useRef} from 'react';
+import {useCallback, useEffect, useLayoutEffect, useState, useContext, useMemo, useRef} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Empty, Space} from 'antd';
 import {Link} from 'react-router-dom';
@@ -28,7 +28,6 @@ import Graph from '../../../component/Graph';
 import Legend from '../../../component/Legend';
 import MiniMap from '../../../component/MiniMap';
 import GraphMenuBar from '../GraphMenuBar';
-import Tooltip from '../../../component/Tooltip';
 import GraphToolBar from '../GraphToolBar';
 import Menu from '../../../component/Menu';
 import NumberCard from '../../../component/NumberCard';
@@ -46,23 +45,22 @@ import JaccView from '../JaccView';
 import GraphStatusView from '../../../component/GraphStatusView';
 import TaskNavigateView from '../../../component/TaskNavigateView';
 import Canvas3D from '../../../component/Canvas3D';
-import {filterData} from '../../../../utils/filter';
-import {formatToGraphData, formatToOptionedGraphData, formatToStyleData,
-    formatToDownloadData, updateGraphDataStyle, formatToLegendData} from '../../../../utils/formatGraphResultData';
-import {fetchExpandInfo, handleAddGraphNode, handleAddGraphEdge, handleExpandGraph} from '../utils';
-import {mapLayoutNameToLayoutDetails} from '../../../../utils/graph';
 import {
-    GRAPH_STATUS, PANEL_TYPE, GRAPH_RENDER_MODE, ALGORITHM_NAME, Algorithm_Layout,
+    GRAPH_STATUS, PANEL_TYPE, GRAPH_RENDER_MODE, ALGORITHM_NAME,
     getAlgorithmDisplayName, getCanonicalAlgorithmName,
 } from '../../../../utils/constants';
 import c from './index.module.scss';
 import _ from 'lodash';
-import {disableChangeDataRelayout} from '../../../component/Graph/data';
+import {USER_CHANGE_EVENT} from '../../../../utils/user';
+
+import {useAnalysisGraph} from '../../../component/Graph/useAnalysisGraph';
+import {toCanvas3DData, toElementDetails} from '../../../../utils/analysisGraphData';
+const EMPTY_DATA = {vertices: [], edges: []};
 
 const GraphResult = props => {
     const {t} = useTranslation();
     const {
-        data = {vertexs: [], edges: []},
+        data = EMPTY_DATA,
         metaData,
         options,
         asyncTaskId,
@@ -74,6 +72,7 @@ const GraphResult = props => {
         panelType,
         updatePanelType,
         graphNums,
+        onRefreshGraphNums,
         propertyKeysRecords,
         graphRenderMode,
         onGraphRenderModeChange,
@@ -94,18 +93,32 @@ const GraphResult = props => {
 
 
     const graphSpaceInfo = useContext(GraphAnalysisContext);
+    const {controller, graphData, currentRawData, clearGraph, styleConfigData, initialData, datasetKey, scopeKey, labelFields, layout, layoutSettings, defaultLayout, onReady: onGraphReady,
+        changeStyles: handleGraphStyleChange, changeLayout: handleLayoutChange,
+        changeSettings: handleSettingChange, exportPng: handleExportPng,
+        editElement: onEditElementChange, expand: getExpandInfo, filter: handleFilterChange, addElements}
+        = useAnalysisGraph({data, metaData, graphSpaceInfo, queryStatus, options, algorithmName: canonicalAlgorithmName});
+    const data3D = useMemo(() => graphRenderMode === CANVAS2D ? null : toCanvas3DData(graphData, metaData),
+        [CANVAS2D, graphData, graphRenderMode, metaData]);
+    const handleClickGraphElement = useCallback(event => {
+        setEditElementInfo(toElementDetails(event, metaData));
+        setShowEditElement(true);
+    }, [metaData]);
+
     const {edgeMeta, vertexMeta} = metaData || {};
     const hasGraphData = Number(graphNums?.vertexCount) > 0
         || Number(graphNums?.edgeCount) > 0;
-    const hasKnownEmptyCounts = Number(graphNums?.vertexCount) === 0
+    const hasKnownEmptyCounts = graphNums?.vertexCount !== null && graphNums?.edgeCount !== null
+        && Number(graphNums?.vertexCount) === 0
         && Number(graphNums?.edgeCount) === 0;
     const hasKnownEmptySchema = Array.isArray(vertexMeta) && Array.isArray(edgeMeta)
         && vertexMeta.length === 0 && edgeMeta.length === 0;
     const isEmptyGraph = !hasGraphData && (hasKnownEmptyCounts || hasKnownEmptySchema);
-    const [graphData, setGraphData] = useState({nodes: [], edges: []});
-    const [styleConfigData, setStyleConfigData] = useState({nodes: {}, edges: {}});
     const [showAddNodeDrawer, setShowAddNodeDrawer] = useState(false);
     const [showAddEdgeDrawer, setShowAddEdgeDrawer] = useState(false);
+    const addEdgeData = useMemo(() => showAddEdgeDrawer && graphRenderMode === CANVAS2D
+        ? {vertices: graphData.nodes.map(node => node.data.raw)} : null,
+    [CANVAS2D, graphData, graphRenderMode, showAddEdgeDrawer]);
     const [isClickNew, setIsClickNew] = useState(false);
     const [searchVisible, setSearchVisible] = useState(false);
     const [searchVertex, setSearchVertex] = useState({});
@@ -113,37 +126,37 @@ const GraphResult = props => {
     const [isOutEdge, setOutEdge] = useState(false);
     const [showEditElement, setShowEditElement] = useState(false);
     const [editElementInfo, setEditElementInfo] = useState();
-    const [graph, setGraph] = useState();
-    const [graphAllInfo, setGraphAllInfo] = useState();
-    const excuteStyleChangeCount = useRef(0);
     const {jaccardsimilarity, rankObj, rankArray} = options || {};
     const showCanvasInfo =  (_.size(data.vertices) !== 0 || _.size(data.edges) !== 0) && queryStatus === SUCCESS;
-    const layoutInfo = useMemo(
-        () => mapLayoutNameToLayoutDetails({
-            layout: Algorithm_Layout[canonicalAlgorithmName],
-            startId: options?.startId,
-        }),
-        [canonicalAlgorithmName, options?.startId]
-    );
 
-    const onGraphRender = useCallback(graph => {
-        setGraph(graph);
+    const resetTargetDrawers = useCallback(() => {
+        setShowEditElement(false);
+        setEditElementInfo();
+        setShowAddNodeDrawer(false);
+        setShowAddEdgeDrawer(false);
+        setAddEdgeDrawerInfo({});
+        setIsClickNew(false);
+        setOutEdge(false);
+        setSearchVisible(false);
+        setSearchVertex({});
     }, []);
-
+    useLayoutEffect(() => {
+        resetTargetDrawers();
+    }, [graphSpaceInfo.graphSpace, graphSpaceInfo.graph, resetTargetDrawers]);
     useEffect(() => {
-        setGraphAllInfo(graphNums);
-    }, [graphNums]);
+        window.addEventListener(USER_CHANGE_EVENT, resetTargetDrawers);
+        return () => window.removeEventListener(USER_CHANGE_EVENT, resetTargetDrawers);
+    }, [resetTargetDrawers]);
 
-    useEffect(
-        () => {
-            const rawGraphData = formatToGraphData(data, metaData, {});
-            const finalGraphData = formatToOptionedGraphData(rawGraphData, options, canonicalAlgorithmName);
-            const styleConfigData = formatToStyleData(rawGraphData);
-            setGraphData(finalGraphData);
-            setStyleConfigData(styleConfigData);
-        },
-        [canonicalAlgorithmName, data, metaData, options]
-    );
+    const layoutPanelRef = useRef(null);
+    const handleQuickLayoutChange = useCallback(selection => {
+        layoutPanelRef.current?.cancel();
+        handleLayoutChange(selection);
+    }, [handleLayoutChange]);
+    const handleUpdatePanel = useCallback(type => {
+        if (panelType === LAYOUT) layoutPanelRef.current?.flush();
+        updatePanelType(type);
+    }, [LAYOUT, panelType, updatePanelType]);
 
     const handleUpdateStatus = useCallback(
         (status, message, result) => {
@@ -152,89 +165,10 @@ const GraphResult = props => {
         [resetGraphStatus]
     );
 
-    const handleExportPng = useCallback(
-        fileName => {
-            graph.downloadFullImage(fileName, 'image/png', {backgroundColor: '#FFF', padding: 30});
-        },
-        [graph]
-    );
-
-    const handleGraphStyleChange = useCallback(
-        styleConfigData => {
-            try {
-                const styledData = updateGraphDataStyle(graphData, styleConfigData);
-                const newGraphData = formatToOptionedGraphData(styledData, options, canonicalAlgorithmName);
-                graph.changeData(_.cloneDeep(newGraphData), true);
-                graph.getNodes().forEach(item => {
-                    graph.refreshItem(item);
-                    if (item.hasLocked()) {
-                        graph.setItemState(item, 'customFixed', true);
-                    }
-                });
-                setGraphData({...styledData});
-                setStyleConfigData(styleConfigData);
-            }
-            catch (err) {
-                if (excuteStyleChangeCount.current > 2) {
-                    throw new Error(err);
-                }
-                else {
-                    excuteStyleChangeCount.current++;
-                    handleGraphStyleChange(styleConfigData);
-                }
-            }
-        },
-        [canonicalAlgorithmName, graph, graphData, options]
-    );
-
-    const handleRefreshExcuteCount = useCallback(() => {
-        excuteStyleChangeCount.current = 0;
-    }, []);
-
-    const handleFilterChange = useCallback(
-        values => {
-            const {filter} = values;
-            const newData = filterData(props.data, filter.rules, filter.logic);
-            const newRawGraphData = formatToGraphData(newData || {}, metaData, styleConfigData);
-            const newGraphData = formatToOptionedGraphData(newRawGraphData, options, canonicalAlgorithmName);
-            graph.changeData(newGraphData, true);
-            graph.refresh();
-            setGraphData(newGraphData);
-            setStyleConfigData(formatToStyleData(newRawGraphData));
-        },
-        [canonicalAlgorithmName, graph, metaData, options, props.data, styleConfigData]
-    );
-
     const handleTogglePanel = useCallback(
         type => {
-            if (panelType === type) {
-                updatePanelType(CLOSED);
-            }
-            else {
-                updatePanelType(type);
-            }
-        }, [CLOSED, panelType, updatePanelType]
-    );
-
-    const handleLayoutChange = useCallback(
-        layout => {
-            graph.destroyLayout();
-            graph.updateLayout(
-                disableChangeDataRelayout(layout),
-                'center',
-                undefined,
-                false
-            );
-        },
-        [graph]
-    );
-
-    const handleSettingChange = useCallback(
-        changedData => {
-            graph.changeData(_.cloneDeep(changedData), false);
-            graph.refresh();
-            setGraphData({...changedData});
-        }, [graph]
+            handleUpdatePanel(panelType === type ? CLOSED : type);
+        }, [CLOSED, handleUpdatePanel, panelType]
     );
 
     const handleClickNewAddNode = useCallback(
@@ -249,97 +183,41 @@ const GraphResult = props => {
             setOutEdge(isOut);
         }, []);
 
-    const handleClickGraphNode = useCallback(
-        value => {
-            setShowEditElement(true);
-            setEditElementInfo(value.getModel());
-        }, []);
+    const handledbClickNode = useCallback(event => {
+        if (event.kind === 'node') return getExpandInfo({vertex_id: event.data.raw.id, vertex_label: event.data.raw.label});
+    }, [getExpandInfo]);
 
-    const handleExpand = useCallback(
-        (newData, graphInstance) => {
-            const newGraphData = handleExpandGraph(newData, metaData,
-                styleConfigData, options, canonicalAlgorithmName, graphInstance);
-            setGraphData(newGraphData);
-            setStyleConfigData(formatToStyleData(newGraphData));
-        }, [canonicalAlgorithmName, metaData, options, styleConfigData]);
+    const handleAddElements = useCallback(async raw => {
+        // The drawer has already saved on the server. Counts refresh even if
+        // canvas application fails. The parent marks unavailable counts;
+        // refresh failures must not change the write/apply outcome.
+        void Promise.resolve().then(() => onRefreshGraphNums?.()).catch(() => {});
+        const result = await addElements(raw);
+        return result ?? {status: 'disposed'};
+    }, [addElements, onRefreshGraphNums]);
 
-    const getExpandInfo = useCallback(
-        async (params, graphInstance) => {
-            const searchResultRaw = await fetchExpandInfo(params, graphInstance, graphSpaceInfo);
-            handleExpand(searchResultRaw, graphInstance);
-        }, [graphSpaceInfo, handleExpand]);
-
-    const handleClickGraphEdge = useCallback(
-        value => {
-            const drawerInfo = value.getModel();
-            setShowEditElement(true);
-            setEditElementInfo(drawerInfo);
+    const closeAddNodeDrawer = useCallback(
+        () => {
+            setShowAddNodeDrawer(false);
         }, []
     );
 
-    const handledbClickNode = useCallback(
-        (node, graphInstance) => {
-            const model = node.getModel();
-            const params = {vertex_id: model.id, vertex_label: model.itemType};
-            getExpandInfo(params, graphInstance);
-        },
-        [getExpandInfo]
-    );
-
-    const handleAddNode = useCallback(
-        data => {
-            const newItem = handleAddGraphNode(data, metaData, styleConfigData, graph);
-            const {nodes, edges} = graphData;
-            setGraphData({edges, nodes: [...nodes, newItem]});
-            setGraphAllInfo({...graphAllInfo, vertexCount: Number(graphAllInfo.vertexCount) + 1});
-        },
-        [graph, graphAllInfo, graphData, metaData, styleConfigData]
-    );
-
-    const handleAddEdge = useCallback(
-        data => {
-            const newGraphData = handleAddGraphEdge(data, metaData, graphData, styleConfigData, graph);
-            setGraphData(newGraphData);
-            setGraphAllInfo({...graphAllInfo, edgeCount: Number(graphAllInfo.edgeCount) + 1});
-        },
-        [graph, graphAllInfo, graphData, metaData, styleConfigData]
-    );
-
-    const toggleAddNodeDrawer = useCallback(
+    const closeAddEdgeDrawer = useCallback(
         () => {
-            setShowAddNodeDrawer(pre => !pre);
-        }, []
-    );
-
-    const toggleAddEdgeDrawer = useCallback(
-        () => {
-            setShowAddEdgeDrawer(pre => !pre);
+            setShowAddEdgeDrawer(false);
         }, []
     );
 
     const handleClosePanel = useCallback(
         () => {
-            updatePanelType(CLOSED);
+            handleUpdatePanel(CLOSED);
         },
-        [CLOSED, updatePanelType]
-    );
-
-    const handleRedoUndoChange = useCallback(
-        (type, values) => {
-            let changedData;
-            if (type === 'changedata') {
-                changedData = values;
-            }
-            else {
-                changedData = graph.cfg.data;
-            }
-            setGraphData({...changedData});
-        },
-        [graph]
+        [CLOSED, handleUpdatePanel]
     );
 
     const handleClearGraph = useCallback(
         () => {
+            layoutPanelRef.current?.cancel();
             resetGraphStatus && resetGraphStatus(STANDBY, undefined, {});
             updatePanelType(CLOSED);
         },
@@ -360,12 +238,7 @@ const GraphResult = props => {
         []
     );
 
-    const handleClickMenuExpand = useCallback(
-        params => {
-            getExpandInfo(params, graph);
-        },
-        [getExpandInfo, graph]
-    );
+    const handleClickMenuExpand = useCallback(params => getExpandInfo(params), [getExpandInfo]);
 
     const handleSearch = useCallback(
         vertex => {
@@ -382,23 +255,6 @@ const GraphResult = props => {
         []
     );
 
-    const onEditElementChange = useCallback(
-        (type, item, itemData) => {
-            const {id} = item.getModel();
-            const updatedInfo = graphData[type].map(
-                item => {
-                    if (item.id === id) {
-                        return {...item, ...itemData};
-                    }
-                    return item;
-                }
-            );
-            const updatedGraphData = {...graphData, [type]: updatedInfo};
-            setGraphData(updatedGraphData);
-        },
-        [graphData]
-    );
-
     const handleCloseSearch = useCallback(
         () => {
             setSearchVisible(false);
@@ -406,29 +262,26 @@ const GraphResult = props => {
         []
     );
 
-    const handleChangeSearch = useCallback(
-        params => {
-            getExpandInfo(params, graph);
-            handleCloseSearch();
-        },
-        [getExpandInfo, graph, handleCloseSearch]
-    );
+    const handleChangeSearch = useCallback(params => {
+        getExpandInfo(params);
+        handleCloseSearch();
+    }, [getExpandInfo, handleCloseSearch]);
     const renderCanvas2D = () => (
         <Graph
-            data={graphData}
-            layout={{layout: Algorithm_Layout[canonicalAlgorithmName], startId: options.startId}}
-            onGraphRender={onGraphRender}
-            onNodeClick={handleClickGraphNode}
-            onEdgeClick={handleClickGraphEdge}
-            onNodedbClick={handledbClickNode}
+            clearGraph={clearGraph}
+            key={scopeKey}
+            data={initialData}
+            datasetKey={datasetKey}
+            layout={layout}
+            onReady={onGraphReady}
+            onClick={handleClickGraphElement}
+            onDoubleClick={handledbClickNode}
         >
             <MiniMap />
-            <Tooltip />
             <GraphToolBar
-                handleRedoUndoChange={handleRedoUndoChange}
                 handleClearGraph={handleClearGraph}
                 panelType={panelType}
-                updatePanelType={updatePanelType}
+                updatePanelType={handleUpdatePanel}
             />
             <Menu
                 onClickAddNode={handleClickAddNode}
@@ -436,31 +289,37 @@ const GraphResult = props => {
                 onClickExpand={handleClickMenuExpand}
                 onClickSearch={handleSearch}
             />
-            <Legend data={formatToLegendData(graphData)} />
+            <Legend />
             <DynamicAddNode
                 open={showAddNodeDrawer}
-                onOK={handleAddNode}
-                onCancel={toggleAddNodeDrawer}
+                onOK={handleAddElements}
+                onCancel={closeAddNodeDrawer}
                 drawerInfo={vertexMeta}
             />
             <DynamicAddEdge
                 open={showAddEdgeDrawer}
-                onCancel={toggleAddEdgeDrawer}
-                onOk={handleAddEdge}
-                graphData={formatToDownloadData(graphData)}
+                onCancel={closeAddEdgeDrawer}
+                onOk={handleAddElements}
+                graphData={addEdgeData}
                 drawerInfo={addEdgeDrawerInfo}
                 isClickNew={isClickNew}
                 isOutEdge={isOutEdge}
             />
             <PanelControlButton show={panelType !== CLOSED} onClick={handleClosePanel} />
             <LayoutConfigPanel
-                layout={layoutInfo}
+                ref={layoutPanelRef}
+                layout={layoutSettings}
                 data={graphData}
                 onChange={handleLayoutChange}
                 open={panelType === LAYOUT}
             />
             <SettingConfigPanel
-                data={_.cloneDeep(graphData)}
+                key={datasetKey}
+                selectedFields={labelFields}
+                renderMode={graphRenderMode}
+                onRenderModeChange={handleSwitchRenderMode}
+                data={graphData}
+                metaData={metaData}
                 onChange={handleSettingChange}
                 open={panelType === SETTING}
             />
@@ -486,7 +345,13 @@ const GraphResult = props => {
         </Graph>
     );
 
-    const renderCanvas3D = () => (<Canvas3D data={graphData} />);
+    const renderCanvas3D = () => (
+        <Canvas3D data={data3D} onExit={() => handleSwitchRenderMode(CANVAS2D)}>
+            <SettingConfigPanel open={panelType === SETTING} renderMode={graphRenderMode}
+                onRenderModeChange={handleSwitchRenderMode} />
+            <PanelControlButton show={panelType === SETTING} onClick={() => updatePanelType(CLOSED)} />
+        </Canvas3D>
+    );
 
     const statusMessage = useMemo(() => ({
         [STANDBY]: t('analysis.query_result.no_data'),
@@ -520,6 +385,9 @@ const GraphResult = props => {
                     </Space>
                 </Empty>
             );
+        }
+        if (queryStatus === LOADING && graphData.nodes.length + graphData.edges.length > 0) {
+            return graphRenderMode === CANVAS2D ? renderCanvas2D() : renderCanvas3D();
         }
         if (queryStatus === SUCCESS) {
             if (!isQueryMode) {
@@ -558,6 +426,7 @@ const GraphResult = props => {
 
     const handleSwitchRenderMode = useCallback(
         value => {
+            layoutPanelRef.current?.cancel();
             onGraphRenderModeChange(value);
             updatePanelType(CLOSED);
         },
@@ -567,8 +436,14 @@ const GraphResult = props => {
     return (
         <div className={c.graphResult}>
             <GraphMenuBar
+                layout={layoutSettings}
+                defaultLayout={defaultLayout}
+                startId={options?.startId}
+                layoutReady={controller?.getSnapshot().status === 'ready'}
+                handleQuickLayoutChange={handleQuickLayoutChange}
                 styleConfigData={styleConfigData}
                 graphData={graphData}
+                exportData={currentRawData}
                 handleImportData={handleUpdateStatus}
                 handleExportPng={handleExportPng}
                 handleGraphStyleChange={handleGraphStyleChange}
@@ -576,8 +451,6 @@ const GraphResult = props => {
                 handleTogglePanel={handleTogglePanel}
                 handleClickNewAddNode={handleClickNewAddNode}
                 handleClickNewAddEdge={handleClickNewAddEdge}
-                handleSwitchRenderMode={handleSwitchRenderMode}
-                refreshExcuteCount={handleRefreshExcuteCount}
                 showCanvasInfo={showCanvasInfo}
                 graphRenderMode={graphRenderMode}
             />
@@ -587,8 +460,8 @@ const GraphResult = props => {
                 data={{
                     currentGraphNodesNum: graphData.nodes.length,
                     currentGraphEdgesNum: graphData.edges.length,
-                    allGraphNodesNum: graphAllInfo?.vertexCount,
-                    allGraphEdgesNum: graphAllInfo?.edgeCount,
+                    allGraphNodesNum: graphNums?.vertexCount,
+                    allGraphEdgesNum: graphNums?.edgeCount,
                 }}
             />
         </div>

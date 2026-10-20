@@ -16,9 +16,9 @@
  * under the License.
  */
 
+import PageHeader from '../../components/PageHeader';
 import {
     Alert,
-    PageHeader,
     Button,
     Dropdown,
     Space,
@@ -316,7 +316,7 @@ const GlobalAccounts = ({
             }
             setListError(true);
         }
-        catch (error) {
+        catch {
             if (listRequest.current === token) {
                 setListError(true);
             }
@@ -341,7 +341,7 @@ const GlobalAccounts = ({
                 <Alert
                     type='error'
                     showIcon
-                    message={t('account.load.unavailable')}
+                    title={t('account.load.unavailable')}
                     action={(
                         <Button size='small' onClick={loadAccounts}>
                             {t('account.load.retry')}
@@ -414,7 +414,7 @@ const Account = () => {
         [refreshPermissions]
     );
 
-    let content = null;
+    let content;
     if (canReadGlobalAccounts && canReadScopedAccess) {
         content = (
             <Tabs
@@ -460,7 +460,7 @@ const Account = () => {
             <Alert
                 type='warning'
                 showIcon
-                message={t('account.permission_changed')}
+                title={t('account.permission_changed')}
                 description={t('account.permission_changed_description')}
                 action={(
                     <Button
@@ -476,7 +476,7 @@ const Account = () => {
 
     return (
         <>
-            <PageHeader ghost={false} onBack={false} title={t('account.title')} />
+            <PageHeader onBack={false} title={t('account.title')} />
             <div className='container'>{content}</div>
         </>
     );

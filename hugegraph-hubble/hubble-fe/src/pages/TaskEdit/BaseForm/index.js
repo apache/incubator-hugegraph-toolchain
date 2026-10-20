@@ -342,14 +342,14 @@ const BaseForm = ({cancel, visible, loading}) => {
                 <Alert
                     showIcon
                     type='info'
-                    message={t('task.edit.workflow_title')}
+                    title={t('task.edit.workflow_title')}
                     description={t('task.edit.workflow_description')}
                 />
                 {datasourceError && (
                     <Alert
                         showIcon
                         type='error'
-                        message={t('task.edit.load_datasources_failed')}
+                        title={t('task.edit.load_datasources_failed')}
                         action={(
                             <Button size='small' onClick={retryDatasources}>
                                 {t('task.edit.retry_datasources')}
@@ -361,7 +361,7 @@ const BaseForm = ({cancel, visible, loading}) => {
                     <Alert
                         showIcon
                         type='error'
-                        message={t('task.edit.load_graphspaces_failed')}
+                        title={t('task.edit.load_graphspaces_failed')}
                         action={(
                             <Button size='small' onClick={retryGraphspaces}>
                                 {t('task.edit.retry_graphspaces')}
@@ -373,7 +373,7 @@ const BaseForm = ({cancel, visible, loading}) => {
                     <Alert
                         showIcon
                         type='error'
-                        message={t('task.edit.load_graphs_failed')}
+                        title={t('task.edit.load_graphs_failed')}
                         action={(
                             <Button size='small' onClick={retryGraphs}>
                                 {t('task.edit.retry_graphs')}
@@ -476,7 +476,7 @@ const BaseForm = ({cancel, visible, loading}) => {
                 <Alert
                     showIcon
                     type='info'
-                    message={t('task.edit.demo_title')}
+                    title={t('task.edit.demo_title')}
                     description={selectedGraph
                         ? t('task.edit.demo_target', {
                             graphspace: selectedGraphspace,
@@ -513,7 +513,7 @@ const BaseForm = ({cancel, visible, loading}) => {
                     <Alert
                         showIcon
                         type='error'
-                        message={t('task.edit.demo_failed')}
+                        title={t('task.edit.demo_failed')}
                         description={demoError}
                         action={(
                             <Button size='small' onClick={retryDemo} loading={Boolean(demoLoading)}>

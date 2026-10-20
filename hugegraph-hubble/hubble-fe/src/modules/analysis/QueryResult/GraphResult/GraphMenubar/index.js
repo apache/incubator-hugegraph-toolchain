@@ -20,9 +20,10 @@
  * @file  GraphMenuBar(图分析)
  */
 
-import React, {useCallback} from 'react';
+import {useCallback} from 'react';
 import {useTranslation} from 'react-i18next';
 import MenuBar from '../../../../component/MenuBar';
+import QuickLayoutSwitcher from '../../../../component/QuickLayoutSwitcher';
 import ImportData from '../../../../component/ImportData';
 import ExportData from '../../../../component/ExportData';
 import StyleConfig from '../../../../component/styleConfig/Home';
@@ -31,9 +32,8 @@ import LayoutConfig from '../../../../component/LayoutConfig';
 import SettingConfig from '../../../../component/SettingConfig';
 import NewConfig from '../../../../component/NewConfig';
 import Statistics from '../../../../component/Statistics';
-import RenderModeSwitcher from '../../../../component/GraphRenderModeSwitcher';
 import {PANEL_TYPE, GRAPH_RENDER_MODE} from '../../../../../utils/constants';
-import {formatToDownloadData} from '../../../../../utils/formatGraphResultData';
+import {exportHubbleGraph} from '../../../../../visualization/hubble/adapter';
 import useDownloadJson from '../../../../../customHook/useDownloadJson';
 
 const {LAYOUT, SETTING, STATISTICS} = PANEL_TYPE;
@@ -44,6 +44,12 @@ const GraphMenuBar = props => {
     const {
         styleConfigData,
         graphData,
+        layout,
+        defaultLayout,
+        startId,
+        layoutReady,
+        handleQuickLayoutChange,
+        exportData,
         handleImportData,
         handleExportPng,
         handleGraphStyleChange,
@@ -51,8 +57,6 @@ const GraphMenuBar = props => {
         handleTogglePanel,
         handleClickNewAddNode,
         handleClickNewAddEdge,
-        handleSwitchRenderMode,
-        refreshExcuteCount,
         showCanvasInfo,
         graphRenderMode,
     } = props;
@@ -65,9 +69,9 @@ const GraphMenuBar = props => {
 
     const handleExportJson = useCallback(
         fileName => {
-            downloadJsonHandler(fileName, formatToDownloadData(graphData));
+            downloadJsonHandler(fileName, exportData ? exportData() : exportHubbleGraph(graphData));
         },
-        [downloadJsonHandler, graphData]
+        [downloadJsonHandler, exportData, graphData]
     );
 
     const handleLayoutPanel = useCallback(
@@ -114,7 +118,6 @@ const GraphMenuBar = props => {
                     styleConfig={styleConfigData}
                     onChange={handleGraphStyleChange}
                     buttonEnable={buttonEnableForCanvas2D}
-                    refreshExcuteCount={refreshExcuteCount}
                     tooltip={isCanvas2D
                         ? t('analysis.canvas.tooltip.style_2d')
                         : t('analysis.canvas.tooltip.style_3d')}
@@ -149,11 +152,9 @@ const GraphMenuBar = props => {
             key: 6,
             content: (
                 <SettingConfig
-                    buttonEnable={buttonEnableForCanvas2D}
+                    buttonEnable={showCanvasInfo}
                     onClick={handleSettingPanel}
-                    tooltip={isCanvas2D
-                        ? t('analysis.canvas.tooltip.setting_2d')
-                        : t('analysis.canvas.tooltip.setting_3d')}
+                    tooltip={t('analysis.canvas.tooltip.setting_2d')}
                 />
             ),
         },
@@ -183,20 +184,13 @@ const GraphMenuBar = props => {
         },
     ];
 
-    const extraContent = [
-        {
-            key: 1,
-            content: (
-                <RenderModeSwitcher
-                    onClick={handleSwitchRenderMode}
-                    buttonEnable={showCanvasInfo}
-                    value={graphRenderMode}
-                    tooltip={t('analysis.canvas.tooltip.switch_2d')}
-                />
-            ),
-        },
-    ];
-
+    const extraContent = [{
+        key: 'quick-layout',
+        content: <QuickLayoutSwitcher layout={layout} defaultLayout={defaultLayout} startId={startId}
+            onClick={handleQuickLayoutChange}
+            buttonEnable={buttonEnableForCanvas2D && layoutReady
+                && Boolean(graphData?.nodes?.length || graphData?.edges?.length)} />,
+    }];
     return (
         <MenuBar content={menubarContent} extra={extraContent} />
     );

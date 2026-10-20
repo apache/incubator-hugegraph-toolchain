@@ -20,8 +20,7 @@
  * @file 图分析画布 Home
  */
 
-import React, {useCallback, useEffect, useLayoutEffect, useState, useContext, useMemo, useRef} from 'react';
-import ResizeObserver from 'resize-observer-polyfill';
+import {useCallback, useEffect, useLayoutEffect, useState, useContext, useMemo, useRef} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Button} from 'antd';
 import GraphAnalysisContext from '../../../../Context';
@@ -36,7 +35,6 @@ import SettingConfigPanel from '../../../../component/SettingConfigPanel';
 import PanelControlButton from '../../../../component/ClosePanelButton';
 import Canvas3D from '../../../../component/Canvas3D';
 import StatisticPanel from '../../../../component/StatisticsPanel/Home';
-import Tooltip from '../../../../component/Tooltip';
 import MiniMap from '../../../../component/MiniMap';
 import NumberCard from '../../../../component/NumberCard';
 import GraphStatusView from '../../../../component/GraphStatusView';
@@ -45,30 +43,25 @@ import EditElement from '../../../../component/EditElement';
 import GraphToolBar from '../GraphToolBar';
 import GraphMenuBar from '../GraphMenubar';
 import {GRAPH_STATUS, PANEL_TYPE, GRAPH_RENDER_MODE} from '../../../../../utils/constants';
-import {formatToGraphData, formatToLegendData, formatToDownloadData,
-    formatToStyleData, updateGraphDataStyle} from '../../../../../utils/formatGraphResultData';
-import {mapLayoutNameToLayoutDetails} from '../../../../../utils/graph';
-import {
-    disableChangeDataRelayout,
-    shouldKeepGraphCanvas,
-} from '../../../../component/Graph/data';
-import {nextResultRevision} from './data';
+
+import {shouldKeepGraphCanvas} from '../../../../component/Graph/data';
 import {getQueryResultStandbyMessage} from '../../Home/utils';
-import {fetchExpandInfo, handleAddGraphNode, handleAddGraphEdge, handleExpandGraph} from '../utils';
-import {filterData} from '../../../../../utils/filter';
 import c from './index.module.scss';
 import _ from 'lodash';
+import {USER_CHANGE_EVENT} from '../../../../../utils/user';
 
 const {STANDBY, LOADING, SUCCESS, FAILED, UPLOAD_FAILED} = GRAPH_STATUS;
 const {CLOSED, LAYOUT, SETTING, STATISTICS} = PANEL_TYPE;
 const {CANVAS2D} = GRAPH_RENDER_MODE;
 
-const layoutInfo = mapLayoutNameToLayoutDetails('force');
+import {useAnalysisGraph} from '../../../../component/Graph/useAnalysisGraph';
+import {toCanvas3DData, toElementDetails} from '../../../../../utils/analysisGraphData';
+const EMPTY_DATA = {vertices: [], edges: []};
 
 const GraphResult = props => {
     const {t} = useTranslation();
     const {
-        data = {vertexs: [], edges: []},
+        data = EMPTY_DATA,
         fitHeight = false,
         metaData,
         isQueryMode,
@@ -81,11 +74,10 @@ const GraphResult = props => {
         updatePanelType,
         propertyKeysRecords,
         graphNums,
+        onRefreshGraphNums,
         graphRenderMode,
         onGraphRenderModeChange,
     } = props;
-
-    const excuteStyleChangeCount = useRef(0);
     const contentRef = useRef(null);
 
     useLayoutEffect(() => {
@@ -105,91 +97,61 @@ const GraphResult = props => {
 
     const {edgeMeta, vertexMeta} = metaData || {};
     const graphSpaceInfo = useContext(GraphAnalysisContext);
+    const {controller, graphData, currentRawData, clearGraph, styleConfigData, initialData, datasetKey, scopeKey, labelFields, layout, layoutSettings, defaultLayout, onReady: onGraphReady,
+        changeStyles: handleGraphStyleChange, changeLayout: handleLayoutChange,
+        changeSettings: handleSettingChange, exportPng: handleExportPng,
+        editElement: onEditElementChange, expand: getExpandInfo, filter: handleFilterChange, addElements}
+        = useAnalysisGraph({data, metaData, graphSpaceInfo, queryStatus});
+    const data3D = useMemo(() => graphRenderMode === CANVAS2D ? null : toCanvas3DData(graphData, metaData),
+        [graphData, graphRenderMode, metaData]);
+    const handleClickGraphElement = useCallback(event => {
+        setEditElementInfo(toElementDetails(event, metaData));
+        setShowEditElement(true);
+    }, [metaData]);
 
-    const [graphData, setGraphData] = useState({nodes: [], edges: []});
-    const [resultRevision, setResultRevision] = useState(0);
-    const queryResultRef = useRef(data);
-    const [legendData, setLegendData] = useState();
-    const [styleConfigData, setStyleConfigData] = useState({nodes: {}, edges: {}});
+
     const [showEditElement, setShowEditElement] = useState(false);
     const [showAddNodeDrawer, setShowAddNodeDrawer] = useState(false);
     const [showAddEdgeDrawer, setShowAddEdgeDrawer] = useState(false);
+    const addEdgeData = useMemo(() => showAddEdgeDrawer && graphRenderMode === CANVAS2D
+        ? {vertices: graphData.nodes.map(node => node.data.raw)} : null,
+    [graphData, graphRenderMode, showAddEdgeDrawer]);
     const [editElementInfo, setEditElementInfo] = useState();
     const [isClickNew, setIsClickNew] = useState(false);
     const [addEdgeDrawerInfo, setAddEdgeDrawerInfo]  = useState({});
     const [isOutEdge, setOutEdge] = useState(false);
     const [searchVisible, setSearchVisible] = useState(false);
     const [searchVertex, setSearchVertex] = useState({});
-    const [graphAllInfo, setGraphAllInfo] = useState();
-    const [graph, setGraph] = useState();
     const showCanvasInfo =  (_.size(data.vertices) !== 0 || _.size(data.edges) !== 0) && queryStatus === SUCCESS;
-    const defaultLayout = useMemo(
-        () => ({layout: 'force', nodeCount: graphData.nodes.length}),
-        [graphData.nodes.length]
-    );
 
-    useEffect(
-        () => {
-            const graphData = formatToGraphData(data, metaData, {});
-            setGraphData(graphData);
-            setResultRevision(revision => nextResultRevision(
-                queryResultRef.current,
-                data,
-                revision
-            ));
-            queryResultRef.current = data;
-        },
-        [data, metaData]
-    );
+    const resetTargetDrawers = useCallback(() => {
+        setShowEditElement(false);
+        setEditElementInfo();
+        setShowAddNodeDrawer(false);
+        setShowAddEdgeDrawer(false);
+        setAddEdgeDrawerInfo({});
+        setIsClickNew(false);
+        setOutEdge(false);
+        setSearchVisible(false);
+        setSearchVertex({});
+    }, []);
+    useLayoutEffect(() => {
+        resetTargetDrawers();
+    }, [graphSpaceInfo.graphSpace, graphSpaceInfo.graph, resetTargetDrawers]);
+    useEffect(() => {
+        window.addEventListener(USER_CHANGE_EVENT, resetTargetDrawers);
+        return () => window.removeEventListener(USER_CHANGE_EVENT, resetTargetDrawers);
+    }, [resetTargetDrawers]);
 
-    useEffect(
-        () => {
-            setGraphAllInfo(graphNums);
-        },
-        [graphNums]
-    );
-
-    useEffect(
-        () => {
-            const legendData = formatToLegendData(graphData);
-            setLegendData(legendData);
-        },
-        [graphData]
-    );
-
-    useEffect(
-        () => {
-            const styleConfigData = formatToStyleData(graphData);
-            setStyleConfigData(styleConfigData);
-        },
-        [graphData]
-    );
-
-    const handleGraphStyleChange = useCallback(
-        styleConfigData => {
-            try {
-                const styledData = updateGraphDataStyle(graphData, styleConfigData);
-                graph.changeData(_.cloneDeep(styledData), true);
-                graph.getNodes().forEach(item => {
-                    graph.refreshItem(item);
-                    if (item.hasLocked()) {
-                        graph.setItemState(item, 'customFixed', true);
-                    }
-                });
-                setGraphData({...styledData});
-            }
-            catch (err) {
-                if (excuteStyleChangeCount.current > 2) {
-                    throw new Error(err);
-                }
-                else {
-                    excuteStyleChangeCount.current++;
-                    handleGraphStyleChange(styleConfigData);
-                }
-            }
-        },
-        [graph, graphData]
-    );
+    const layoutPanelRef = useRef(null);
+    const handleQuickLayoutChange = useCallback(selection => {
+        layoutPanelRef.current?.cancel();
+        handleLayoutChange(selection);
+    }, [handleLayoutChange]);
+    const handleUpdatePanel = useCallback(type => {
+        if (panelType === LAYOUT) layoutPanelRef.current?.flush();
+        updatePanelType(type);
+    }, [panelType, updatePanelType]);
 
     const handleUpdateStatus = useCallback(
         (status, message, result) => {
@@ -203,93 +165,41 @@ const GraphResult = props => {
         [resetGraphStatus]
     );
 
-    const handleLayoutChange = useCallback(
-        layout => {
-            graph.destroyLayout();
-            graph.updateLayout(
-                disableChangeDataRelayout(layout),
-                'center',
-                undefined,
-                false
-            );
-        },
-        [graph]
-    );
-
-    const handleSettingChange = useCallback(
-        changedData => {
-            graph.changeData(_.cloneDeep(changedData), false);
-            graph.refresh();
-            setGraphData({...changedData});
-        },
-        [graph]
-    );
-
     const handleClosePanel = useCallback(
         () => {
-            updatePanelType(CLOSED);
+            handleUpdatePanel(CLOSED);
         },
-        [updatePanelType]
-    );
-
-    const handleExportPng = useCallback(
-        fileName => {
-            graph.downloadFullImage(fileName, 'image/png', {backgroundColor: '#FFF', padding: 30});
-        },
-        [graph]
-    );
-
-    const handleRedoUndoChange = useCallback(
-        (type, values) => {
-            let changedData;
-            if (type === 'changedata') {
-                changedData = values;
-            }
-            else {
-                changedData = graph.cfg.data;
-            }
-            setGraphData({...changedData});
-        },
-        [graph]
+        [handleUpdatePanel]
     );
 
     const handleClearGraph = useCallback(
         () => {
+            layoutPanelRef.current?.cancel();
             resetGraphStatus && resetGraphStatus(STANDBY, undefined, {});
             updatePanelType(CLOSED);
         },
         [resetGraphStatus, updatePanelType]
     );
 
-    const handleAddNode = useCallback(
-        data => {
-            const newItem = handleAddGraphNode(data, metaData, styleConfigData, graph);
-            const {nodes, edges} = graphData;
-            setGraphData({edges, nodes: [...nodes, newItem]});
-            setGraphAllInfo({...graphAllInfo, vertexCount: Number(graphAllInfo.vertexCount) + 1});
-        },
-        [graph, graphAllInfo, graphData, metaData, styleConfigData]
-    );
+    const handleAddElements = useCallback(async raw => {
+        // The drawer has already saved on the server. Counts refresh even if
+        // canvas application fails. The parent marks unavailable counts;
+        // refresh failures must not change the write/apply outcome.
+        void Promise.resolve().then(() => onRefreshGraphNums?.()).catch(() => {});
+        const result = await addElements(raw);
+        return result ?? {status: 'disposed'};
+    }, [addElements, onRefreshGraphNums]);
 
-    const handleAddEdge = useCallback(
-        data => {
-            const newGraphData = handleAddGraphEdge(data, metaData, graphData, styleConfigData, graph);
-            setGraphData(newGraphData);
-            setGraphAllInfo({...graphAllInfo, edgeCount: Number(graphAllInfo.edgeCount) + 1});
-        },
-        [graph, graphAllInfo, graphData, metaData, styleConfigData]
-    );
-
-    const toggleAddNodeDrawer = useCallback(
+    const closeAddNodeDrawer = useCallback(
         () => {
-            setShowAddNodeDrawer(pre => !pre);
+            setShowAddNodeDrawer(false);
         },
         []
     );
 
-    const toggleAddEdgeDrawer = useCallback(
+    const closeAddEdgeDrawer = useCallback(
         () => {
-            setShowAddEdgeDrawer(pre => !pre);
+            setShowAddEdgeDrawer(false);
         },
         []
     );
@@ -328,6 +238,7 @@ const GraphResult = props => {
 
     const handleSwitchRenderMode = useCallback(
         value => {
+            layoutPanelRef.current?.cancel();
             onGraphRenderModeChange(value);
             updatePanelType(CLOSED);
 
@@ -335,83 +246,11 @@ const GraphResult = props => {
         [onGraphRenderModeChange, updatePanelType]
     );
 
-    const handleFilterChange = useCallback(
-        values => {
-            const {filter} = values;
-            const newData = filterData(props.data, filter.rules, filter.logic);
-            const newGraphData = formatToGraphData(newData || {}, metaData, styleConfigData);
-            graph.changeData(newGraphData, true);
-            graph.refresh();
-            setGraphData(newGraphData);
-        },
-        [graph, metaData, props.data, styleConfigData]
-    );
-
-    const handleRefreshExcuteCount = useCallback(
-        () => {
-            excuteStyleChangeCount.current = 0;
-        },
-        []
-    );
-
-    const onGraphRender = useCallback(
-        graph => {
-            setGraph(graph);
-        },
-        []
-    );
-
     const onCloseEditElement = useCallback(
         () => {
             setShowEditElement(false);
         },
         []
-    );
-
-    const handleClickGraphNode = useCallback(
-        value => {
-            const drawerInfo = value.getModel();
-            setShowEditElement(true);
-            setEditElementInfo(drawerInfo);
-        },
-        []
-    );
-
-    const handleClickGraphEdge = useCallback(
-        value => {
-            const drawerInfo = value.getModel();
-            setShowEditElement(true);
-            setEditElementInfo(drawerInfo);
-        },
-        []
-    );
-
-    const onEditElementChange = useCallback(
-        (type, item, itemData) => {
-            const {id} = item.getModel();
-            const updatedInfo = graphData[type].map(
-                item => {
-                    if (item.id === id) {
-                        return {...item, ...itemData};
-                    }
-                    return item;
-                }
-            );
-            const updatedGraphData = {
-                ...graphData,
-                [type]: updatedInfo,
-            };
-            setGraphData(updatedGraphData);
-        },
-        [graphData]
-    );
-
-    const handleExpand = useCallback(
-        (newData, graphInstance) => {
-            const newGraphData = handleExpandGraph(newData, metaData, styleConfigData, graphInstance);
-            setGraphData(newGraphData);
-        },
-        [metaData, styleConfigData]
     );
 
     const handleSearch = useCallback(
@@ -429,61 +268,36 @@ const GraphResult = props => {
         []
     );
 
-    const getExpandInfo = useCallback(
-        async (params, graphInstance) => {
-            const searchResultRaw = await fetchExpandInfo(params, graphInstance, graphSpaceInfo);
-            handleExpand(searchResultRaw, graphInstance);
-        },
-        [graphSpaceInfo, handleExpand]
-    );
+    const handleChangeSearch = useCallback(params => {
+        getExpandInfo(params);
+        handleCloseSearch();
+    }, [getExpandInfo, handleCloseSearch]);
 
-    const handleChangeSearch = useCallback(
-        params => {
-            getExpandInfo(params, graph);
-            handleCloseSearch();
-        },
-        [getExpandInfo, graph, handleCloseSearch]
-    );
+    const handledbClickNode = useCallback(event => {
+        if (event.kind === 'node') return getExpandInfo({vertex_id: event.data.raw.id, vertex_label: event.data.raw.label});
+    }, [getExpandInfo]);
 
-    const handledbClickNode = useCallback(
-        (node, graphInstance) => {
-            const model = node.getModel();
-            const params = {vertex_id: model.id, vertex_label: model.itemType};
-            getExpandInfo(params, graphInstance);
-        },
-        [getExpandInfo]
-    );
-
-    const handleClickMenuExpand = useCallback(
-        params => {
-            getExpandInfo(params, graph);
-        },
-        [getExpandInfo, graph]
-    );
+    const handleClickMenuExpand = useCallback(params => getExpandInfo(params), [getExpandInfo]);
 
     const handleTogglePanel = useCallback(
         type => {
-            if (panelType === type) {
-                updatePanelType(CLOSED);
-            }
-            else {
-                updatePanelType(type);
-            }
-        }, [panelType, updatePanelType]
+            handleUpdatePanel(panelType === type ? CLOSED : type);
+        }, [handleUpdatePanel, panelType]
     );
 
     const renderCanvas2D = () => (
         <Graph
-            data={graphData}
-            fitViewOnResize={!fitHeight}
-            layout={defaultLayout}
-            layoutRevision={resultRevision}
-            onGraphRender={onGraphRender}
-            onNodeClick={handleClickGraphNode}
-            onEdgeClick={handleClickGraphEdge}
-            onNodedbClick={handledbClickNode}
+            clearGraph={clearGraph}
+            key={scopeKey}
+            data={initialData}
+            datasetKey={datasetKey}
+            layout={layout}
+            onReady={onGraphReady}
+            onClick={handleClickGraphElement}
+            onDoubleClick={handledbClickNode}
         >
-            <Legend data={legendData} />
+            {renderRetainedProgress()}
+            <Legend />
             <Menu
                 onClickAddNode={handleClickAddNode}
                 onClickAddEdge={handleClickAddEdge}
@@ -499,28 +313,34 @@ const GraphResult = props => {
             />
             <DynamicAddNode
                 open={showAddNodeDrawer}
-                onOK={handleAddNode}
-                onCancel={toggleAddNodeDrawer}
+                onOK={handleAddElements}
+                onCancel={closeAddNodeDrawer}
                 drawerInfo={vertexMeta}
             />
             <DynamicAddEdge
                 open={showAddEdgeDrawer}
-                onCancel={toggleAddEdgeDrawer}
-                onOk={handleAddEdge}
-                graphData={formatToDownloadData(graphData)}
+                onCancel={closeAddEdgeDrawer}
+                onOk={handleAddElements}
+                graphData={addEdgeData}
                 drawerInfo={addEdgeDrawerInfo}
                 isClickNew={isClickNew}
                 isOutEdge={isOutEdge}
             />
             <PanelControlButton show={panelType !== CLOSED} onClick={handleClosePanel} />
             <LayoutConfigPanel
-                layout={layoutInfo}
+                ref={layoutPanelRef}
+                layout={layoutSettings}
                 data={graphData}
                 onChange={handleLayoutChange}
                 open={panelType === LAYOUT}
             />
             <SettingConfigPanel
-                data={_.cloneDeep(graphData)}
+                key={datasetKey}
+                selectedFields={labelFields}
+                renderMode={graphRenderMode}
+                onRenderModeChange={handleSwitchRenderMode}
+                data={graphData}
+                metaData={metaData}
                 onChange={handleSettingChange}
                 open={panelType === SETTING}
             />
@@ -532,12 +352,10 @@ const GraphResult = props => {
                 {...searchVertex}
             />
             <GraphToolBar
-                handleRedoUndoChange={handleRedoUndoChange}
                 handleClearGraph={handleClearGraph}
                 panelType={panelType}
-                updatePanelType={updatePanelType}
+                updatePanelType={handleUpdatePanel}
             />
-            <Tooltip />
             <MiniMap />
             <StatisticPanel
                 open={panelType === STATISTICS}
@@ -547,28 +365,42 @@ const GraphResult = props => {
         </Graph>
     );
 
-    const renderCanvas3D = () => (<Canvas3D data={graphData} />);
+    const renderCanvas3D = () => (
+        <Canvas3D data={data3D} onExit={() => handleSwitchRenderMode(CANVAS2D)}>
+            <SettingConfigPanel open={panelType === SETTING} renderMode={graphRenderMode}
+                onRenderModeChange={handleSwitchRenderMode} />
+            <PanelControlButton show={panelType === SETTING} onClick={() => updatePanelType(CLOSED)} />
+        </Canvas3D>
+    );
 
+    // A terminal error wins over any progress object delivered by an older request.
+    const activeProgress = isQueryMode && queryStatus !== FAILED && queryStatus !== UPLOAD_FAILED
+        ? queryProgress : undefined;
+    const hasGraphData = graphData.nodes.length + graphData.edges.length > 0;
+    const renderQueryProgress = () => (
+        <div className={c.queryProgress}>
+            <span aria-live="off">
+                {t('analysis.query.elapsed_seconds', {seconds: activeProgress.elapsedSeconds})}
+            </span>
+            <p>{t(activeProgress.phase === 'execution' ? 'analysis.query.execution_timeout_hint'
+                : 'analysis.query.model_timeout_hint')}</p>
+            {activeProgress.modelSlow && <p role="status">{t('analysis.query.model_slow')}</p>}
+            <Button onClick={activeProgress.cancel}>{t('analysis.query.cancel_generation')}</Button>
+        </div>
+    );
+    const renderRetainedProgress = () => activeProgress && hasGraphData ? (
+        <aside className={`${c.retainedQueryProgress} ${panelType !== CLOSED ? c.progressWithPanel : ''}`}
+            role="region" aria-label={t('analysis.query_result.loading')}>
+            <div role="status">{t(`analysis.query.phase_${activeProgress.phase || 'waiting'}`)}</div>
+            {renderQueryProgress()}
+        </aside>
+    ) : null;
     const renderGraphView = () => {
-        if (queryProgress) {
-            return (
-                <GraphStatusView
-                    status={LOADING}
-                    message={t(`analysis.query.phase_${queryProgress.phase || 'waiting'}`)}
-                    details={(
-                        <div className={c.queryProgress}>
-                            <span aria-live='off'>
-                                {t('analysis.query.elapsed_seconds', {seconds: queryProgress.elapsedSeconds})}
-                            </span>
-                            <p>{t(queryProgress.phase === 'execution' ? 'analysis.query.execution_timeout_hint'
-                                : 'analysis.query.model_timeout_hint')}
-                            </p>
-                            {queryProgress.modelSlow && <p role='status'>{t('analysis.query.model_slow')}</p>}
-                            <Button onClick={queryProgress.cancel}>{t('analysis.query.cancel_generation')}</Button>
-                        </div>
-                    )}
-                />
-            );
+        if (activeProgress) {
+            if (hasGraphData) return graphRenderMode === CANVAS2D ? renderCanvas2D() : renderCanvas3D();
+            return <GraphStatusView status={LOADING}
+                message={t(`analysis.query.phase_${activeProgress.phase || 'waiting'}`)}
+                details={renderQueryProgress()} />;
         }
         switch (queryStatus) {
             case STANDBY:
@@ -625,8 +457,13 @@ const GraphResult = props => {
     return (
         <div className={`${c.graphResult} ${fitHeight ? c.fitHeight : ''}`}>
             <GraphMenuBar
+                layout={layoutSettings}
+                defaultLayout={defaultLayout}
+                layoutReady={controller?.getSnapshot().status === 'ready'}
+                handleQuickLayoutChange={handleQuickLayoutChange}
                 styleConfigData={styleConfigData}
                 graphData={graphData}
+                exportData={currentRawData}
                 handleImportData={handleUpdateStatus}
                 handleExportPng={handleExportPng}
                 handleGraphStyleChange={handleGraphStyleChange}
@@ -634,21 +471,20 @@ const GraphResult = props => {
                 handleTogglePanel={handleTogglePanel}
                 handleClickNewAddNode={handleClickNewAddNode}
                 handleClickNewAddEdge={handleClickNewAddEdge}
-                handleSwitchRenderMode={handleSwitchRenderMode}
-                refreshExcuteCount={handleRefreshExcuteCount}
                 showCanvasInfo={showCanvasInfo}
                 graphRenderMode={graphRenderMode}
             />
             <div ref={contentRef} className={c.content}>
                 {renderGraphView()}
+                {graphRenderMode !== CANVAS2D && renderRetainedProgress()}
             </div>
             <NumberCard
                 hasPadding={panelType !== CLOSED}
                 data={{
                     currentGraphNodesNum: graphData.nodes.length,
                     currentGraphEdgesNum: graphData.edges.length,
-                    allGraphNodesNum: graphAllInfo?.vertexCount,
-                    allGraphEdgesNum: graphAllInfo?.edgeCount,
+                    allGraphNodesNum: graphNums?.vertexCount,
+                    allGraphEdgesNum: graphNums?.edgeCount,
                 }}
             />
         </div>

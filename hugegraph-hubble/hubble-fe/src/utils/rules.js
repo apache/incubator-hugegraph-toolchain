@@ -86,7 +86,7 @@ const isName = () => ({
 // Chinese characters, letters, underscore
 const isCNName = () => ({
     validator(_, value) {
-        let res = /[^\u4E00-\u9FA5\uFE30-\uFFA0\_a-zA-Z]+/.test(value);
+        let res = /[^\u4E00-\u9FA5\uFE30-\uFFA0_a-zA-Z]+/.test(value);
         if (res) {
             return Promise.reject(validationMessage('cn_name_rule'));
         }
@@ -98,7 +98,7 @@ const isCNName = () => ({
 // Chinese characters, letters, numbers, underscore
 const isPropertyName = msg => ({
     validator(_, value) {
-        let res = /[^\u4E00-\u9FA5\uFE30-\uFFA0\_a-zA-Z0-9]+/.test(value);
+        let res = /[^\u4E00-\u9FA5\uFE30-\uFFA0_a-zA-Z0-9]+/.test(value);
         if (res) {
             return Promise.reject(
                 typeof msg === 'string' ? msg : validationMessage('property_name_rule')
@@ -112,7 +112,7 @@ const isPropertyName = msg => ({
 // Chinese characters, letters, numbers, underscore
 const isNoramlName = msg => ({
     validator(_, value) {
-        let res = /^[\u4E00-\u9FA5\uFE30-\uFFA0\_a-zA-Z0-9_]{1,48}$/.test(value);
+        let res = /^[\u4E00-\u9FA5\uFE30-\uFFA0_a-zA-Z0-9_]{1,48}$/.test(value);
         if (!res) {
             return Promise.reject(
                 typeof msg === 'string' ? msg : validationMessage('normal_name_rule')
@@ -144,7 +144,7 @@ const isJDBC = msg => ({
 // account name
 const isAccountName = msg => ({
     validator(_, value) {
-        let res = /^[\u4E00-\u9FA5\uFE30-\uFFA0\_a-zA-Z0-9_]{1,16}$/.test(value);
+        let res = /^[\u4E00-\u9FA5\uFE30-\uFFA0_a-zA-Z0-9_]{1,16}$/.test(value);
         let res1 = /^_.*/.test(value);
         let res2 = /.*_$/.test(value);
 

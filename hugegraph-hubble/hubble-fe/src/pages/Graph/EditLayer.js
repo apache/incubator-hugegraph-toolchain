@@ -123,7 +123,7 @@ const EditLayer = ({
                 await confirmBuiltinTemplate(name, expectedSchema);
                 return;
             }
-            throw new Error(errorMessage(error) || t('graph.form.schema_create_failed'));
+            throw new Error(errorMessage(error) || t('graph.form.schema_create_failed'), {cause: error});
         }
 
         if (result.status === 200) {
@@ -323,11 +323,11 @@ const EditLayer = ({
             open={visible}
             onCancel={onCancel}
             title={graph ? t('graph.form.title_edit') : t('graph.form.title_create')}
-            destroyOnClose
+            destroyOnHidden
             width={600}
             onOk={onFinish}
             confirmLoading={loading}
-            maskClosable={false}
+            mask={{closable: false}}
         >
             <Form
                 form={form}
@@ -357,7 +357,7 @@ const EditLayer = ({
                             <Alert
                                 type='error'
                                 showIcon
-                                message={t('graph.form.schema_load_failed')}
+                                title={t('graph.form.schema_load_failed')}
                                 description={t('graph.form.schema_optional_hint')}
                                 action={(
                                     <Button size='small' onClick={loadSchemaTemplates}>
@@ -493,13 +493,13 @@ const ViewLayer = ({visible, onCancel, graphspace, graph}) => {
             width={600}
             onOk={onCancel}
             footer={null}
-            maskClosable={false}
+            mask={{closable: false}}
         >
             {loadError && (
                 <Alert
                     type='error'
                     showIcon
-                    message={t('graph.schema_view.load_failed')}
+                    title={t('graph.schema_view.load_failed')}
                     action={(
                         <Button size='small' onClick={loadSchema}>
                             {t('graph.schema_view.retry')}
@@ -511,7 +511,7 @@ const ViewLayer = ({visible, onCancel, graphspace, graph}) => {
                 <Alert
                     type='error'
                     showIcon
-                    message={t('graph.schema_view.export_failed')}
+                    title={t('graph.schema_view.export_failed')}
                 />
             )}
             <Spin spinning={loading}>
@@ -598,9 +598,9 @@ const CloneLayer = ({open, onCancel, refresh, graphspace, graph}) => {
             title={t('graph.clone.title')}
             width={600}
             onOk={handleClone}
-            maskClosable={false}
+            mask={{closable: false}}
             confirmLoading={loading}
-            destroyOnClose
+            destroyOnHidden
         >
             <Form
                 form={form}

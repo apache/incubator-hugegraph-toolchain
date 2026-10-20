@@ -312,7 +312,7 @@ const Text2GqlSettingsForm = () => {
                 </div>
                 <p>{t('analysis.model_settings.description')}</p>
             </header>
-            {feedback && <Alert showIcon type={feedback.type} message={feedback.message} />}
+            {feedback && <Alert showIcon type={feedback.type} title={feedback.message} />}
             {loading ? <Spin /> : !settings ? (
                 <Button onClick={reload}>{t('analysis.model_settings.retry')}</Button>
             ) : (

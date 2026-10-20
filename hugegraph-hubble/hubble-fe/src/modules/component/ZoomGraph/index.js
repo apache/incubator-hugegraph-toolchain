@@ -20,45 +20,33 @@
  * @file  ZoomGraph 放大缩小
  */
 
-import React, {useCallback, useContext} from 'react';
+import {useContext} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Button, Tooltip} from 'antd';
 import {ZoomOutOutlined, ZoomInOutlined} from '@ant-design/icons';
-import {ToolBarContext} from '../Context';
+import {GraphContext} from '../Context';
 
 const ZoomGraph = () => {
     const {t} = useTranslation();
-    const toolBarInstance = useContext(ToolBarContext);
-
-    const handleZoomIn = useCallback(
-        () => {
-            toolBarInstance.zoomIn();
-        },
-        [toolBarInstance]
-    );
-
-    const handleZoomOut = useCallback(
-        () => {
-            toolBarInstance.zoomOut();
-        },
-        [toolBarInstance]
-    );
-
+    const {controller, snapshot, run} = useContext(GraphContext);
+    const ready = Boolean(controller && snapshot?.status === 'ready');
     return (
         <>
-            <Tooltip title={t('analysis.canvas.toolbar.zoom_out')} placement='bottom'>
+            <Tooltip title={`${t('analysis.canvas.toolbar.zoom_out')} (-)`} placement="bottom">
                 <Button
+                    disabled={!ready}
                     type="text"
                     aria-label={t('analysis.canvas.toolbar.zoom_out')}
-                    onClick={handleZoomIn}
+                    onClick={() => run(() => controller.zoomBy(0.8))}
                     icon={<ZoomOutOutlined />}
                 />
             </Tooltip>
-            <Tooltip title={t('analysis.canvas.toolbar.zoom_in')} placement='bottom'>
+            <Tooltip title={`${t('analysis.canvas.toolbar.zoom_in')} (+ / =)`} placement="bottom">
                 <Button
+                    disabled={!ready}
                     type="text"
                     aria-label={t('analysis.canvas.toolbar.zoom_in')}
-                    onClick={handleZoomOut}
+                    onClick={() => run(() => controller.zoomBy(1.25))}
                     icon={<ZoomInOutlined />}
                 />
             </Tooltip>

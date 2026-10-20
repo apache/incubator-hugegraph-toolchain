@@ -20,7 +20,7 @@
  * @file Gremlin语法分析 查询结果
  */
 
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Alert, Button, Tabs} from 'antd';
 import JsonView from '../JsonView';
@@ -150,7 +150,7 @@ const QueryResult = props => {
             <Alert
                 showIcon
                 type="success"
-                message={hasPreviewContent(preview.content)
+                title={hasPreviewContent(preview.content)
                     ? t('analysis.query_result.non_graph_title')
                     : t('analysis.query_result.empty_success')}
                 description={hasPreviewContent(preview.content) ? (
@@ -177,7 +177,7 @@ const QueryResult = props => {
             <Alert
                 showIcon
                 type="warning"
-                message={t('analysis.query_result.graph_limit_title')}
+                title={t('analysis.query_result.graph_limit_title')}
                 description={t('analysis.query_result.graph_limit_description', {
                     nodes: graphLimit.nodeCount,
                     edges: graphLimit.edgeCount,
@@ -205,7 +205,7 @@ const QueryResult = props => {
             style={height !== undefined ? {height, '--analysis-result-height': `${height}px`} : undefined}
         >
             <Tabs
-                tabPosition="left"
+                tabPlacement="left"
                 className={c.queryResultTabs}
                 activeKey={queryProgress ? 1 : activeView}
                 onChange={setActiveView}

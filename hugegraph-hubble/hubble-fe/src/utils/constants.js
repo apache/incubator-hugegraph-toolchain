@@ -43,38 +43,7 @@ export const colors = [
     '#e048ae',
 ];
 
-export const iconsMap = {
-    UserOutlined: 'user',
-    UsergroupAddOutlined: 'add user',
-    IdcardOutlined: 'id card',
-    VerifiedOutlined: 'verified',
-    UserSwitchOutlined: 'switch user',
-    PropertySafetyOutlined: 'property safety',
-    TransactionOutlined: 'transaction',
-    InsuranceOutlined: 'insurance ',
-    ShoppingOutlined: 'shopping',
-    CloudSyncOutlined: 'cloud-sync',
-    HomeOutlined: 'home',
-    BankOutlined: 'bank',
-    ShopOutlined: 'shop',
-    ReadOutlined: 'read',
-    MedicineBoxOutlined: 'medicinebox',
-    CommentOutlined: 'comment',
-    ChromeOutlined: 'chrome',
-    DribbbleOutlined: 'dribbble',
-    SlackOutlined: 'slack',
-    MailOutlined: 'mail',
-    LaptopOutlined: 'laptop',
-    PhoneOutlined: 'phone',
-    WhatsAppOutlined: 'whatsapp',
-    AlertOutlined: 'alert',
-    DashboardOutlined: 'dashboard',
-    SettingOutlined: 'setting',
-    StarOutlined: 'star',
-    TrademarkOutlined: 'trademark',
-    SoundOutlined: 'sound',
-    LockOutlined: 'lock',
-};
+export {iconNames as iconsMap} from './iconNames';
 
 export const GREMLIN_EXECUTES_MODE = {
     QUERY: 'query',

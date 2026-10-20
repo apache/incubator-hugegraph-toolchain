@@ -20,8 +20,10 @@
  * @file ClusterCoefficient算法
  */
 
-import React, {useState, useCallback, useContext} from 'react';
-import {Collapse, InputNumber} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
+import {useState, useCallback, useContext} from 'react';
+import {InputNumber} from 'antd';
 import Form from '../../PersistentForm';
 import {WalletOutlined} from '@ant-design/icons';
 import GraphAnalysisContext from '../../../../Context';
@@ -55,7 +57,7 @@ const ClusterCoefficient = props => {
     };
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
 
     const [form] = Form.useForm();
 
@@ -69,9 +71,9 @@ const ClusterCoefficient = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(CLUSTER_COEFFICIENT);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             const {worker, ...args} = algorithmParams;
             const formParams = {
                 algorithm: 'clustering-coefficient',
@@ -82,15 +84,15 @@ const ClusterCoefficient = props => {
             const response =  await api.analysis.postOlapInfo(graphSpace, graph, filteredParams);
             const {data, status, message} = response || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, '', message);
+                complete(FAILED, '', message);
             }
             else {
-                handleFormSubmit(SUCCESS, data?.task_id, message);
+                complete(SUCCESS, data?.task_id, message);
             }
-            setRequiring(false);
+            finishRequiring();
         },
         [CLUSTER_COEFFICIENT, FAILED, LOADING, SUCCESS, graph, graphSpace,
-            handleFormSubmit, updateCurrentAlgorithm]
+            beginRequiring, handleFormSubmit, updateCurrentAlgorithm]
     );
 
     const onFormFinish = useCallback(
@@ -114,11 +116,8 @@ const ClusterCoefficient = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={info.icon}
                     name={CLUSTER_COEFFICIENT}
@@ -158,7 +157,7 @@ const ClusterCoefficient = props => {
                 </Form.Item>
                 <OlapComputerItem />
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

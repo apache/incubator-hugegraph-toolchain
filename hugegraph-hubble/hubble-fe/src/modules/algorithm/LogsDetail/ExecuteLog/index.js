@@ -20,7 +20,7 @@
  * @file 图算法 执行记录
  */
 
-import React, {useState, useCallback} from 'react';
+import {useState, useCallback} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Button, Table, Space, Tag, Popconfirm} from 'antd';
 import ExecutionContent from '../../../../components/ExecutionContent';
@@ -91,7 +91,7 @@ const ExecuteLog = props => {
             updateAddCollection(content);
         }, [updateAddCollection]);
 
-    const favoriteContent = rowData => (
+    const favoriteContent = _rowData => (
         <>
             <div style={{marginBottom: '16px'}}>
                 {t('analysis.logs.favorite_statement')}
@@ -131,7 +131,7 @@ const ExecuteLog = props => {
             title: t('analysis.logs.column.content'),
             dataIndex: 'content',
             width: '30%',
-            render: (text, rowData, index) => {
+            render: (text, _rowData, _index) => {
                 return text.split('\n')[1] ? <ExecutionContent content={text} highlightText="" />
                     : <div className={c.breakWord}>{text}</div>;
             },
@@ -159,7 +159,7 @@ const ExecuteLog = props => {
             title: t('analysis.logs.column.action'),
             dataIndex: 'manipulation',
             width: '15%',
-            render: (text, rowData, index) => {
+            render: (text, rowData, _index) => {
                 return (
                     <div className={c.manipulation}>
                         <Popconfirm

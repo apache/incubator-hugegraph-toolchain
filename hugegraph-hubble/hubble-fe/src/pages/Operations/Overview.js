@@ -60,6 +60,7 @@ const Overview = () => {
     const location = useLocation();
     const [searchParams, setSearchParams] = useSearchParams();
     const [data, setData] = useState(null);
+    const dataRef = useRef(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState(null);
@@ -69,11 +70,12 @@ const Overview = () => {
 
     const load = useCallback(async refresh => {
         const request = ++requestSequence.current;
-        data ? setRefreshing(true) : setLoading(true);
+        dataRef.current ? setRefreshing(true) : setLoading(true);
         setError(null);
         try {
             const response = await getOverview(refresh);
             if (request === requestSequence.current) {
+                dataRef.current = response;
                 setData(response);
             }
         }
@@ -82,6 +84,7 @@ const Overview = () => {
                 return;
             }
             if ([401, 403].includes(requestError?.status)) {
+                dataRef.current = null;
                 setData(null);
             }
             setError(requestError);
@@ -92,13 +95,14 @@ const Overview = () => {
                 setRefreshing(false);
             }
         }
-    }, [data]);
+    }, []);
 
     useEffect(() => {
         load(false);
-        // The first request must not restart when the snapshot changes.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+        return () => {
+            requestSequence.current += 1;
+        };
+    }, [load]);
 
     useEffect(() => {
         let cancelled = false;
@@ -171,7 +175,7 @@ const Overview = () => {
                 <Alert
                     type='error'
                     showIcon
-                    message={t('operations.load_failed')}
+                    title={t('operations.load_failed')}
                     action={(
                         <Button size='small' onClick={refresh}>
                             {t('common.action.retry')}
@@ -372,7 +376,7 @@ const Overview = () => {
                             <Alert
                                 type='warning'
                                 showIcon
-                                message={t('operations.refresh_failed')}
+                                title={t('operations.refresh_failed')}
                             />
                         )}
                         <TopbarPageContextSlot>
@@ -494,7 +498,7 @@ const Overview = () => {
                                     className='operations-source-attention'
                                     type='warning'
                                     showIcon
-                                    message={t('operations.cluster_attention')}
+                                    title={t('operations.cluster_attention')}
                                     description={t(
                                         `operations.reason_${clusterReason}`,
                                         {
@@ -518,7 +522,7 @@ const Overview = () => {
                                         key={source.name}
                                         type='warning'
                                         showIcon
-                                        message={t('operations.source_attention', {
+                                        title={t('operations.source_attention', {
                                             source: displayNodeType(type),
                                         })}
                                         description={t(
@@ -561,7 +565,7 @@ const Overview = () => {
                 <Alert
                     type='info'
                     showIcon
-                    message={t('operations.health_only')}
+                    title={t('operations.health_only')}
                     description={t('operations.health_only_description')}
                 />
             )}

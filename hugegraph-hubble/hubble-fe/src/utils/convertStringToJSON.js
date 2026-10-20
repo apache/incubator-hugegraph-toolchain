@@ -25,7 +25,7 @@ export default function convertStringToJSON(text) {
     try {
         context = JSON.parse(text);
     }
-    catch (e) {
+    catch {
         return null;
     }
 

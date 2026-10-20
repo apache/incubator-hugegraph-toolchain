@@ -20,8 +20,10 @@
  * @file BetweennessCentralityVermeer算法
  */
 
-import React, {useState, useCallback, useContext, useEffect} from 'react';
-import {Collapse, InputNumber, Select} from 'antd';
+import AlgorithmPanel from '../../AlgorithmPanel';
+import useAlgorithmPending from '../../useAlgorithmPending';
+import {useState, useCallback, useContext, useEffect} from 'react';
+import {InputNumber, Select} from 'antd';
 import Form from '../../PersistentForm';
 import {ControlOutlined} from '@ant-design/icons';
 import GraphAnalysisContext from '../../../../Context';
@@ -58,7 +60,7 @@ const BetweennessCentralityVermeer = props => {
     ];
     const {graphSpace, graph, graphStatus} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(true);
-    const [isRequiring, setRequiring] = useState(false);
+    const [isRequiring, beginRequiring] = useAlgorithmPending();
 
     useEffect(
         () => {
@@ -79,22 +81,22 @@ const BetweennessCentralityVermeer = props => {
 
     const handleSubmit = useCallback(
         async algorithmParams => {
-            setRequiring(true);
+            const finishRequiring = beginRequiring();
             updateCurrentAlgorithm(BETWEENNESS_CENTRALITY);
-            handleFormSubmit(LOADING);
+            const complete = handleFormSubmit(LOADING);
             const formParams =  {'compute.algorithm': 'betweenness_centrality', ...algorithmParams};
             const filteredParams = removeNilKeys(formParams);
             const response =  await api.analysis.runOlapVermeer(graphSpace, graph, filteredParams);
             const {data, status, message} = response || {};
             if (status !== 200) {
-                handleFormSubmit(FAILED, '', message);
+                complete(FAILED, '', message);
             }
             else {
-                handleFormSubmit(SUCCESS, data?.task_id, message);
+                complete(SUCCESS, data?.task_id, message);
             }
-            setRequiring(false);
+            finishRequiring();
         },
-        [BETWEENNESS_CENTRALITY, graph, graphSpace, handleFormSubmit,
+        [BETWEENNESS_CENTRALITY, graph, graphSpace, beginRequiring, handleFormSubmit,
             updateCurrentAlgorithm]
     );
 
@@ -119,11 +121,8 @@ const BetweennessCentralityVermeer = props => {
     );
 
     return (
-        <Collapse.Panel
-            isActive={props.isActive}
-            onItemClick={props.onItemClick}
-            panelKey={props.panelKey}
-            header={
+        <AlgorithmPanel
+            title={
                 <AlgorithmNameHeader
                     icon={info.icon}
                     name={BETWEENNESS_CENTRALITY}
@@ -173,7 +172,7 @@ const BetweennessCentralityVermeer = props => {
                     <Select allowClear options={boolOptions} />
                 </Form.Item>
             </Form>
-        </Collapse.Panel>
+        </AlgorithmPanel>
     );
 };
 

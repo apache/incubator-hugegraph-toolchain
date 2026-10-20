@@ -20,79 +20,55 @@
  * @file  FullScreen 全屏
  */
 
-import React, {useCallback, useContext, useEffect} from 'react';
+import {useCallback, useContext, useEffect} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Button, Tooltip} from 'antd';
 import {CompressOutlined} from '@ant-design/icons';
 import screenfull from 'screenfull';
 import {GraphContext} from '../Context';
 
-const FullScreen = props => {
+const FullScreen = ({onChange}) => {
     const {t} = useTranslation();
-    const {onChange} = props;
-    const {graph} = useContext(GraphContext);
-    const handleFullScreenState = useCallback(
-        () => {
-            onChange();
-        },
-        [onChange]
-    );
-
-    useEffect(
-        () => {
-            document.addEventListener('fullscreenchange', handleFullScreenState, false);
-            return () => {
-                document.removeEventListener('fullscreenchange', handleFullScreenState, false);
-            };
-        },
-        [handleFullScreenState]
-    );
-
-    const handleFullScreen = useCallback(
-        () => {
-            const container = graph?.getContainer?.();
-            if (screenfull.isEnabled) {
-                if (screenfull.isFullscreen) {
-                    screenfull.exit();
-                }
-                else {
-                    screenfull.request(container);
-                }
-            }
-        },
-        [graph]
-    );
-
-    useEffect(
-        () => {
-            const container = graph?.getContainer?.();
-            if (!container) {
-                return undefined;
-            }
-            const handleShortcut = event => {
-                const target = event.target;
-                if (event.key?.toLowerCase() !== 'f' || event.metaKey || event.ctrlKey
-                    || event.altKey || event.isComposing
-                    || target.closest?.('input, textarea, select, button, [contenteditable="true"]')) {
-                    return;
-                }
-                event.preventDefault();
-                handleFullScreen();
-            };
-            container.addEventListener('keydown', handleShortcut);
-            return () => container.removeEventListener('keydown', handleShortcut);
-        },
-        [graph, handleFullScreen]
-    );
-
-    const shortcutLabel = t('analysis.canvas.toolbar.full_screen_shortcut');
-
+    const {controller, snapshot, containerRef, run} = useContext(GraphContext);
+    const ready = Boolean(controller && snapshot?.status === 'ready');
+    useEffect(() => {
+        const container = containerRef?.current;
+        if (!container) return undefined;
+        let wasFullscreen = screenfull.element === container;
+        const handleChange = () => {
+            const isFullscreen = screenfull.element === container;
+            if (wasFullscreen || isFullscreen) run(() => onChange?.());
+            wasFullscreen = isFullscreen;
+        };
+        document.addEventListener('fullscreenchange', handleChange);
+        return () => document.removeEventListener('fullscreenchange', handleChange);
+    }, [containerRef, controller, onChange, run]);
+    const toggleFullscreen = useCallback(() => {
+        const container = containerRef?.current;
+        if (!ready || !container || !screenfull.isEnabled) return;
+        run(() => screenfull.element === container ? screenfull.exit() : screenfull.request(container));
+    }, [containerRef, ready, run]);
+    useEffect(() => {
+        const container = containerRef?.current;
+        if (!container || !ready) return undefined;
+        const handleShortcut = event => {
+            if (event.key?.toLowerCase() !== 'f' || event.metaKey || event.ctrlKey
+                || event.altKey || event.isComposing
+                || event.target.closest?.('input, textarea, select, button, [contenteditable]')) return;
+            event.preventDefault();
+            toggleFullscreen();
+        };
+        container.addEventListener('keydown', handleShortcut);
+        return () => container.removeEventListener('keydown', handleShortcut);
+    }, [containerRef, ready, toggleFullscreen]);
+    const label = t('analysis.canvas.toolbar.full_screen_shortcut');
     return (
-        <Tooltip title={shortcutLabel} placement='bottom'>
+        <Tooltip title={label} placement="bottom">
             <Button
+                disabled={!ready || !screenfull.isEnabled}
                 type="text"
-                aria-label={shortcutLabel}
-                onClick={handleFullScreen}
+                aria-label={label}
+                onClick={toggleFullscreen}
                 icon={<CompressOutlined />}
             />
         </Tooltip>

@@ -19,9 +19,9 @@
 import {autocompletion, closeBrackets} from '@codemirror/autocomplete';
 import {syntaxHighlighting, HighlightStyle} from '@codemirror/language';
 import {basicSetup, EditorView} from 'codemirror';
-import React, {useRef, useEffect} from 'react';
+import {useRef, useEffect} from 'react';
 import {placeholder as cmplaceholder} from '@codemirror/view';
-import {Annotation, Transaction} from '@codemirror/state';
+import {Annotation, Compartment, Transaction} from '@codemirror/state';
 import syntaxConfig from './syntax';
 import {tags} from '@lezer/highlight';
 import {useTranslation} from 'react-i18next';
@@ -35,6 +35,10 @@ const CodeEditor = ({
     lang = 'gremlin',
     readOnly = false,
     ariaLabel,
+    id,
+    'aria-invalid': ariaInvalid,
+    'aria-describedby': ariaDescribedBy,
+    'aria-required': ariaRequired,
     minHeight,
     lineWrapping = false,
     metaEnterNewline = false,
@@ -43,6 +47,12 @@ const CodeEditor = ({
     const {t} = useTranslation();
     const editor = useRef();
     const cm = useRef();
+    const formAccessibility = useRef(new Compartment());
+    const formAttributes = useRef({});
+    formAttributes.current = Object.fromEntries([['id', id], ['aria-invalid', ariaInvalid],
+        ['aria-describedby', ariaDescribedBy], ['aria-required', ariaRequired]]
+        .filter(([, value]) => value !== undefined && value !== null)
+        .map(([key, value]) => [key, String(value)]));
     const currentValue = useRef(value ?? '');
     currentValue.current = value ?? '';
     const onChangeRef = useRef(onChange);
@@ -95,6 +105,7 @@ const CodeEditor = ({
                     })
                     : [],
                 basicSetup,
+                formAccessibility.current.of(EditorView.contentAttributes.of(formAttributes.current)),
                 lineWrapping ? EditorView.lineWrapping : [],
                 readOnly ? [] : closeBrackets(),
                 readOnly ? [] : autocompletion({override: [myCompletions]}),
@@ -151,6 +162,12 @@ const CodeEditor = ({
         };
     }, [ariaLabel, lang, lineWrapping, metaEnterNewline, minHeight, readOnly,
         resolvedPlaceholder]);
+
+    useEffect(() => {
+        cm.current.dispatch({effects: formAccessibility.current.reconfigure(
+            EditorView.contentAttributes.of(formAttributes.current)
+        )});
+    }, [id, ariaInvalid, ariaDescribedBy, ariaRequired]);
 
     useEffect(() => {
         if (value != null && cm.current.state.doc && value !== cm.current.state.doc.toString()) {
