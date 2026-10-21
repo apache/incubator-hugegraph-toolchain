@@ -380,7 +380,9 @@
                             <artifactId>maven-gpg-plugin</artifactId>
                             <executions>
                                 <execution>
-                                    <id>sign-artifacts</id>
+                                    <!-- Same id as the Apache parent's execution, so the two merge
+                                         and each artifact is signed once -->
+                                    <id>sign-release-artifacts</id>
                                     <phase>verify</phase>
                                     <goals>
                                         <goal>sign</goal>
