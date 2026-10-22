@@ -25,13 +25,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.Set;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.hash.Hashing;
 import org.apache.hugegraph.config.HugeConfig;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.exception.ForbiddenException;
+import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.options.HubbleOptions;
 import org.apache.hugegraph.service.auth.AuthModeService;
 import org.apache.hugegraph.structure.Task;
@@ -145,7 +146,11 @@ public class DirectVermeerService {
         // token in Vermeer task parameters for asynchronous output.
         params.put("output.type", "local");
         params.put("output.need_query", "1");
-        params.put("output.file_path", "./data/hubble/" + UUID.randomUUID());
+        // Native compute is exclusive and LocalWriter truncates its part files.
+        // Reuse one safe basename per graph instead of retaining files per run.
+        String output = Hashing.sha256().hashString(json(List.of(
+                client.getGraphSpaceName(), client.getGraphName())), StandardCharsets.UTF_8).toString();
+        params.put("output.file_path", "./data/hubble/" + output);
         return this.submit(client, "compute", params);
     }
 
@@ -162,7 +167,13 @@ public class DirectVermeerService {
         Map<String, Object> raw = this.scopedTask(client, id);
         Task task = this.convert(raw);
         if (includeResult && task.success() && "compute".equals(raw.get("task_type"))) {
-            Map<String, Object> values = this.results(client, id, 0, 1000);
+            Map<String, Object> values;
+            try {
+                values = this.resultValues(id, 0, 1000);
+            } catch (ExternalException e) {
+                // Query values expire independently of persisted task history.
+                return task;
+            }
             Map<String, Object> data = new HashMap<>(task.asMap());
             data.put(Task.P.RESULT, json(values));
             return this.mapper.convertValue(data, Task.class);
@@ -175,6 +186,10 @@ public class DirectVermeerService {
         this.scopedTask(client, id);
         E.checkArgument(cursor >= 0 && limit > 0 && limit <= 10000,
                         "Invalid result cursor or limit");
+        return this.resultValues(id, cursor, limit);
+    }
+
+    private Map<String, Object> resultValues(int id, int cursor, int limit) {
         Map<String, Object> result = new HashMap<>(this.backend.request(
                 "GET", "tasks/value/" + nativeId(id) +
                 "?cursor=" + cursor + "&limit=" + (limit + 1), null));
@@ -219,9 +234,10 @@ public class DirectVermeerService {
 
     public void deleteGraphIfPresent(HugeClient client) {
         // Source deletion must not depend on interactive compute availability.
-        // Keep the same authorization before using the shared service identity.
-        authorize(client);
+        // If no copy exists, leave source deletion to Server's original rights.
+        // Presence is private; unloading still requires the direct authorization.
         if (this.graph(client.getGraphSpaceName(), client.getGraphName()).containsKey("graph")) {
+            authorize(client);
             this.unloadGraph(client);
         }
     }

@@ -94,6 +94,77 @@ public class DirectVermeerServiceTest {
     }
 
     @Test
+    public void testComputeReusesSafeOutputFilesPerGraph() {
+        VermeerClient backend = Mockito.mock(VermeerClient.class);
+        Mockito.when(backend.request(Mockito.eq("POST"), Mockito.eq("tasks/create"), Mockito.anyMap()))
+               .thenReturn(Map.of("task", Map.of("id", 12)));
+        DirectVermeerService direct = service(backend);
+        HugeClient client = graphClient();
+        direct.compute(client, Map.of("compute.algorithm", "pagerank"));
+        direct.compute(client, Map.of("compute.algorithm", "degree"));
+        Mockito.when(client.getGraphSpaceName()).thenReturn("OTHER");
+        direct.compute(client, Map.of("compute.algorithm", "pagerank"));
+        Mockito.when(client.getGraphName()).thenReturn("../../escape/graph");
+        direct.compute(client, Map.of("compute.algorithm", "pagerank"));
+        ArgumentCaptor<Map> bodies = ArgumentCaptor.forClass(Map.class);
+        Mockito.verify(backend, Mockito.times(4)).request(
+                Mockito.eq("POST"), Mockito.eq("tasks/create"), bodies.capture());
+        List<String> paths = bodies.getAllValues().stream().map(body -> {
+            Map<?, ?> params = (Map<?, ?>) body.get("params");
+            return (String) params.get("output.file_path");
+        }).toList();
+        Assert.assertEquals(paths.get(0), paths.get(1));
+        Assert.assertNotEquals(paths.get(0), paths.get(2));
+        Assert.assertNotEquals(paths.get(2), paths.get(3));
+        paths.forEach(path -> Assert.assertTrue(path.matches("\\./data/hubble/[0-9a-f]{64}")));
+    }
+
+    @Test
+    public void testExpiredQueryValuesKeepTaskMetadataButExplicitReadsFail() {
+        VermeerClient backend = Mockito.mock(VermeerClient.class);
+        Mockito.when(backend.request("GET", "task/12", null)).thenReturn(Map.of("task", Map.of(
+                "id", 12, "graph_name", "DEFAULT-graph-with-dash",
+                "task_type", "compute", "status", "complete")));
+        Mockito.when(backend.request("GET", "tasks/value/12?cursor=0&limit=1001", null))
+               .thenThrow(new ExternalException("Query values expired"));
+        DirectVermeerService direct = service(backend);
+        HugeClient client = graphClient();
+        AsyncTaskService tasks = new AsyncTaskService();
+        ReflectionTestUtils.setField(tasks, "vermeer", direct);
+        Task task = tasks.get(client, -12);
+        Assert.assertEquals(-12L, task.id());
+        Assert.assertEquals("success", task.status());
+        Assert.assertNull(task.result());
+        List<Task> listed = tasks.list(client, List.of(-12L));
+        Assert.assertEquals(1, listed.size());
+        Assert.assertEquals("success", listed.get(0).status());
+        Assert.assertNull(listed.get(0).result());
+        expect(ExternalException.class, () -> direct.results(client, -12, 0, 1000));
+    }
+
+    @Test
+    public void testTaskMetadataScopeAndNonResultFailuresStillPropagate() {
+        VermeerClient backend = Mockito.mock(VermeerClient.class);
+        Mockito.when(backend.request("GET", "task/12", null))
+               .thenThrow(new ExternalException("Task metadata unavailable"));
+        DirectVermeerService direct = service(backend);
+        HugeClient client = graphClient();
+        expect(ExternalException.class, () -> direct.task(client, -12, true));
+        Mockito.doReturn(Map.of("task", Map.of("id", 12, "graph_name", "other-graph",
+                                               "task_type", "compute", "status", "complete")))
+               .when(backend).request("GET", "task/12", null);
+        expect(ForbiddenException.class, () -> direct.task(client, -12, true));
+        Mockito.verify(backend, Mockito.never()).request(
+                Mockito.eq("GET"), Mockito.startsWith("tasks/value/"), Mockito.isNull());
+        Mockito.doReturn(Map.of("task", Map.of("id", 12, "graph_name", "DEFAULT-graph-with-dash",
+                                               "task_type", "compute", "status", "complete")))
+               .when(backend).request("GET", "task/12", null);
+        Mockito.when(backend.request("GET", "tasks/value/12?cursor=0&limit=1001", null))
+               .thenThrow(new IllegalStateException("Unexpected result contract"));
+        expect(IllegalStateException.class, () -> direct.task(client, -12, true));
+    }
+
+    @Test
     public void testRestrictedReaderCannotAccessUnfilteredStoreData() {
         VermeerClient backend = Mockito.mock(VermeerClient.class);
         DirectVermeerService service = service(backend);

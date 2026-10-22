@@ -91,9 +91,10 @@ positive. Server task IDs retain their original meaning. All direct task and
 result operations check the selected graph. Because raw Store scans bypass
 Server's per-label permissions, authenticated direct access requires a HugeGraph
 super administrator; anonymous mode follows the Server's anonymous graph access.
-With direct integration configured, source graph deletion first checks and removes
-its Vermeer copy under the same administrator requirement. Missing permission or
-failed cleanup stops source deletion, even when compute capability is unavailable.
+With direct integration configured, source graph deletion first checks for a
+Vermeer copy. Removing an existing copy requires the same administrator permission;
+missing permission or failed cleanup stops source deletion even when compute is
+unavailable. Graphs without a copy retain Server's original deletion permissions.
 
 The Hubble direct adapter supports the nine algorithms shown by its Vermeer
 forms. Results are queried through the task API and are not written back to
@@ -101,6 +102,9 @@ HugeGraph properties. The task result view returns up to 1000 values with a
 cursor; additional pages are available at Hubble's
 `GET /api/v1.3/graphspaces/{space}/graphs/{graph}/async-tasks/{negative-id}/values?cursor=N&limit=1000`.
 Hubble provides next/previous controls for these result pages. Native Vermeer does not expose task-history deletion, so Hubble disables that action for direct tasks.
+Query values are temporary; successful task history remains readable after their
+cache expires. Local output uses a safe per-graph basename and truncates its part
+files on repeated computations, rather than accumulating files for every run.
 
 PD, Store and Server use the metadata cluster name `hg`. Both Vermeer processes
 read PD's shared secret from `VERMEER_PD_PASSWORD_FILE` or `pd_password_file`,
@@ -156,7 +160,7 @@ not create accounts or change permissions.
 
 Recorded verification uses the rebuilt local services, with no mocked API
 responses: all nine supported algorithms returned six vertex values; Chrome
-verified anonymous/admin/observer flows and a delayed Worker load. The final complete Hubble backend suite passed 874 tests, including the direct
+verified anonymous/admin/observer flows and a delayed Worker load. The final complete Hubble backend suite passed 879 tests, including the direct
 Vermeer permission and task regressions. The focused
 frontend suites, lint, i18n, TypeScript and production build passed. The separate
 Go regression includes deterministic storage-initialization failure and retry.

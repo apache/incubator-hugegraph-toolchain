@@ -116,8 +116,9 @@ public class GraphsVermeerDeletionTest {
         Mockito.when(this.client.auth().isSuperAdmin()).thenReturn(false);
         expect(ForbiddenException.class,
                 () -> this.controller.delete("DEFAULT", "graph_a", CONFIRM));
+        Mockito.verify(this.backend).request("GET", "graphs", null);
         Mockito.verify(this.backend, Mockito.never()).request(
-                Mockito.anyString(), Mockito.anyString(), Mockito.any());
+                Mockito.eq("DELETE"), Mockito.anyString(), Mockito.isNull());
         Mockito.verifyNoInteractions(this.graphs, this.history, this.collections, this.jobs);
     }
 
@@ -131,7 +132,8 @@ public class GraphsVermeerDeletionTest {
     }
 
     @Test
-    public void testMissingMaterializationAllowsSourceDeletion() {
+    public void testMissingMaterializationPreservesSpaceAdministratorDeletion() {
+        Mockito.when(this.client.auth().isSuperAdmin()).thenReturn(false);
         Mockito.when(this.backend.request("GET", "graphs", null)).thenReturn(Map.of("graphs", List.of()));
         this.controller.delete("DEFAULT", "graph_a", CONFIRM);
         Mockito.verify(this.backend, Mockito.never()).request(

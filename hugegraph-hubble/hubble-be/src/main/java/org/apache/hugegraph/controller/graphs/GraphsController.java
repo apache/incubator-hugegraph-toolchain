@@ -94,9 +94,8 @@ public class GraphsController extends BaseController {
             try {
                 graphinfos = HubbleUtil.uncheckedCast(
                         vermeerService.graphs(client).get("graphs"));
-            } catch (ServerException e) {
-                log.info("Failed to connect to the Vermeer service",
-                         e.cause());
+            } catch (ServerException | ExternalException e) {
+                log.info("Failed to connect to the Vermeer service");
                 graphinfos = null;
             }
             if (graphinfos == null || graphinfos.size() == 0) {
@@ -136,11 +135,10 @@ public class GraphsController extends BaseController {
                 graphInfo = HubbleUtil.uncheckedCast(
                         vermeerService.graph(client, graphspace, graph)
                               .get("graph"));
-            } catch (ServerException e) {
+            } catch (ServerException | ExternalException e) {
                 // if dashboard enables vermeer but server sets wrong vermeer 
                 // address, return null
-                log.info("Failed to connect to the Vermeer service",
-                         e.cause());
+                log.info("Failed to connect to the Vermeer service");
                 return ImmutableMap.of();
             }
 
