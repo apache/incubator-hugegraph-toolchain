@@ -657,3 +657,15 @@ test('renders leader, capacity and attention facts in the visual hierarchy', asy
     expect(within(attention).getByRole('columnheader', {name: 'Action'}))
         .toBeInTheDocument();
 });
+
+
+test('links source alerts to dedicated diagnostics even when discovery returned no nodes', async () => {
+    getOverview.mockResolvedValue({status: 'DEGRADED', sources: {stores: {
+        status: 'UNKNOWN', availability: 'UNAVAILABLE', reason: 'response_too_large',
+    }}, nodes: [], facts: {}});
+    renderOverview();
+    const link = await screen.findByRole('link', {name: 'Inspect Store source'});
+    expect(link).toHaveAttribute('href',
+        '/operations/nodes?type=STORE&source=stores#operations-source-diagnostics');
+    expect(screen.getByText(/metrics or discovery response exceeded/)).toBeInTheDocument();
+});

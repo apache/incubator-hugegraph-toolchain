@@ -62,7 +62,8 @@ const selectAttentionSources = (sources = {}) => {
     }
     return Object.entries(sources)
         .filter(([, source]) => {
-            if (!source || source.availability === 'UNSUPPORTED') {
+            if (!source || source.availability === 'UNSUPPORTED'
+                && !['DOWN', 'DEGRADED'].includes(source.status)) {
                 return false;
             }
             return source.status && source.status !== 'UP'

@@ -459,6 +459,68 @@ trusted Store scheme, hostname or literal address, and port; discovery cannot
 add origins to this allowlist. HTTPS origins keep their configured hostname for
 TLS SNI and certificate hostname verification.
 
+### Cluster source diagnostics
+
+Cluster Overview distinguishes node reachability from collection quality. A
+Store source with failed or partial collection shows an amber attention status,
+even when its last topology status remains `UP`. **Inspect Store source** opens
+source diagnostics on the Nodes page, including when discovery returned no
+nodes. The panel shows the failed request path, HTTP status when reported,
+response size and limit, last observation and success, freshness, and affected
+nodes or metric groups. A streamed response stopped at the limit is labeled
+**At least**, since its complete size is unknown. **Refresh** requests a new
+snapshot so operators can retry collection and confirm recovery.
+
+Chrome interaction checks on 2026-10-22 used the running frontend with mocked
+Hubble API responses in authenticated administrator and anonymous modes. Both
+checks covered the overview-to-empty-Nodes diagnostic link, response evidence,
+refresh recovery, unchanged PD `UP` status, generated `Server` names and custom
+names, GraphSpace visibility and context switching, and account visibility only
+in authenticated mode. These fixtures do not verify live Server/PD/Store
+connectivity, authentication enforcement, or the connection resolver. Browser
+screenshots: authenticated [source health](docs/assets/operations-source-health-authenticated.png)
+and [source diagnostics](docs/assets/operations-source-diagnostics-authenticated.png);
+anonymous [source health](docs/assets/operations-source-health-anonymous.png)
+and [source diagnostics](docs/assets/operations-source-diagnostics-anonymous.png).
+
+### Health contracts
+
+Operations health keeps node reachability separate from collection and data
+health. A Server backend response containing an embedded `exception` is marked
+unavailable with the fixed reason `backend_metrics_failed`; the response exposes
+only a failed-graph count, never exception messages or graph names. PD cluster
+health also considers `dataState` (`PState_Warn`, `PState_Offline`, and
+`PState_Fault`); the original `state` and `dataState` remain visible in the source
+details. A data fault degrades the cluster view without marking the PD process
+down. Older responses without `dataState` retain their existing behavior.
+
+PD JVM metrics are attached to a node only when the configured PD URL matches
+its advertised origin and base path after normalizing scheme, hostname, and
+default port. A scheme-less advertised `host:port` uses the configured protocol.
+Existing node IDs remain unchanged; DNS aliases and ambiguous
+matches are not inferred. An unmatched URL reports `pd_metrics_unmapped` instead
+of assigning metrics to the leader. Store target discovery prefers
+`/v1/prom/targets/store`; only HTTP 404 or 405 falls back to
+`/v1/prom/targets-all`. Authentication, timeout, malformed-response, and server
+errors remain visible rather than triggering broad discovery.
+
+These checks do not probe PD `/v1/ready` or Store `/-/state`. Registration and
+metrics availability do not prove read/write readiness. Regression tests use
+mocked clients and local HTTP fixtures; production readiness and cross-version
+live deployment coverage remain separate validation work.
+
+Chrome checks on 2026-10-22 exercised the running frontend in administrator
+login and anonymous modes using mocked Hubble API responses. In both modes,
+`PState_Fault` produced an amber PD source while the PD node remained `UP`, and
+the source details displayed `Cluster_OK` and `PState_Fault`. A Server backend
+failure displayed the current diagnostic count **3** even when its retained
+metrics contained **0**, with the retained metric group marked stale. The same
+checks exercised GraphSpace context switching and confirmed that account entry
+points appeared only in authenticated mode. These fixtures do not validate live
+Server/PD/Store connectivity, authentication enforcement, or the connection
+resolver. Screenshots: [PD data health in anonymous mode](docs/assets/operations-pd-data-health-anonymous.png)
+and [Server backend health after administrator login](docs/assets/operations-server-backend-health-authenticated.png).
+
 ## Functional Modules Overview
 
 ```mermaid

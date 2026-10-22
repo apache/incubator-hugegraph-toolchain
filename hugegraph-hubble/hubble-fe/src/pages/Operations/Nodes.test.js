@@ -467,3 +467,84 @@ test('renders a Store leader-shard count without an explicit node role', async (
         .closest('.operations-node-identity-cell');
     expect(within(identity).getByText('3 leader shards')).toBeInTheDocument();
 });
+
+
+test('opens source diagnostics from an alert without needing a node result', async () => {
+    getNodes.mockResolvedValue({items: [], total: 0, sources: {stores: {
+        status: 'UP', availability: 'PARTIAL', reason: 'response_too_large',
+        diagnostics: {request_path: '/v1/stores', max_response_bytes: 1048576},
+    }}});
+    render(<MemoryRouter initialEntries={[
+        '/operations/nodes?type=STORE&source=stores#operations-source-diagnostics',
+    ]}><Nodes /></MemoryRouter>);
+    const panel = await screen.findByRole('region', {name: 'Source diagnostics'});
+    await waitFor(() => expect(within(panel).getByText('/v1/stores')).toBeInTheDocument());
+    await waitFor(() => expect(panel).toHaveFocus());
+});
+
+test('hides source diagnostics after an initial load failure and shows a received healthy source on retry', async () => {
+    getNodes.mockRejectedValueOnce(new Error('network unavailable')).mockResolvedValueOnce({
+        items: [], total: 0, sources: {stores: {status: 'UP', availability: 'AVAILABLE', fresh: true}},
+    });
+    render(<MemoryRouter initialEntries={[
+        '/operations/nodes?type=STORE&source=stores#operations-source-diagnostics',
+    ]}><Nodes /></MemoryRouter>);
+    await screen.findByText('Unable to load current cluster data');
+    expect(screen.queryByRole('region', {name: 'Source diagnostics'})).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', {name: 'Refresh'}));
+    expect(await screen.findByText('Source collection has recovered')).toBeInTheDocument();
+});
+
+test('uses compact snapshot diagnostics independently of the filtered node table', async () => {
+    getNodes.mockResolvedValue({items: [], total: 0, sources: {stores: {
+        status: 'UP', availability: 'PARTIAL', reason: 'upstream_rejected',
+    }}, diagnostic_nodes: [{id: 'store-failing', type: 'STORE', name: 'Store outside filters',
+        status: 'UP', metric_statuses: {system: {availability: 'UNAVAILABLE',
+            reason: 'upstream_rejected', diagnostics: {request_path: '/metrics/system', http_status: 503}}},
+    }]});
+    render(<MemoryRouter initialEntries={[
+        '/operations/nodes?type=STORE&source=stores&status=DOWN&query=no-match&page=3',
+    ]}><Nodes /></MemoryRouter>);
+
+    expect(await screen.findByText(/Store outside filters · system/)).toBeInTheDocument();
+    expect(screen.getByText('/metrics/system')).toBeInTheDocument();
+    expect(screen.getByText('503')).toBeInTheDocument();
+    expect(screen.getByText('Affected metrics across this snapshot')).toBeInTheDocument();
+    expect(document.querySelector('.operations-nodes-table')).not.toHaveTextContent('Store outside filters');
+    expect(getNodes).toHaveBeenCalledTimes(1);
+});
+
+test('keeps current-page diagnostic wording when an older backend omits snapshot diagnostics', async () => {
+    getNodes.mockResolvedValue({items: [{id: 'store-old', type: 'STORE', name: 'Store on page',
+        status: 'UP', metric_statuses: {system: {availability: 'MALFORMED', reason: 'malformed_response'}},
+    }], total: 1, sources: {stores: {status: 'UP', availability: 'PARTIAL'}}});
+    render(<MemoryRouter initialEntries={['/operations/nodes?type=STORE&source=stores']}>
+        <Nodes />
+    </MemoryRouter>);
+
+    expect(await screen.findByText(/Store on page · system/)).toBeInTheDocument();
+    expect(screen.getByText('Affected metrics on this page')).toBeInTheDocument();
+    expect(screen.queryByText('Affected metrics across this snapshot')).not.toBeInTheDocument();
+});
+
+test('preserves reported custom Server names and renders concise generated Server names', async () => {
+    getNodes.mockResolvedValue({items: [
+        {id: 'server-a', type: 'SERVER', name: 'Server 7eb71715c010', status: 'UP'},
+        {id: 'server-b', type: 'SERVER', name: 'HugeGraph Server custom-name', status: 'UP'},
+    ], total: 2});
+    render(<MemoryRouter><Nodes /></MemoryRouter>);
+    expect(await screen.findByRole('link', {name: /Server 7eb71715c010/})).toBeInTheDocument();
+    expect(screen.getByRole('link', {name: /HugeGraph Server custom-name/})).toBeInTheDocument();
+});
+
+test('explicit refresh bypasses the cached snapshot and retries source collection', async () => {
+    getNodes.mockResolvedValue({items: [], total: 0, sources: {}, observed_at: 1000, stale: false});
+    render(<MemoryRouter><Nodes /></MemoryRouter>);
+    const refresh = await screen.findByRole('button', {name: 'Refresh'});
+    await waitFor(() => expect(refresh).not.toHaveClass('ant-btn-loading'));
+    expect(getNodes).toHaveBeenCalledTimes(1);
+    expect(getNodes.mock.calls[0][0]).not.toHaveProperty('refresh');
+    fireEvent.click(refresh);
+    await waitFor(() => expect(getNodes).toHaveBeenCalledTimes(2));
+    expect(getNodes).toHaveBeenLastCalledWith(expect.objectContaining({refresh: true}));
+});

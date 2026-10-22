@@ -94,8 +94,17 @@ public class OperationsPayloadParser {
                                  cluster.get("dataSize"));
         this.putCapacityFacts(facts, storeNodes.values());
         String clusterState = this.text(cluster, "state");
-        return new Topology(this.clusterStatus(clusterState),
-                            this.clusterReason(clusterState), nodes, facts);
+        String dataState = this.text(cluster, "dataState");
+        String status = this.clusterStatus(clusterState);
+        String reason = this.clusterReason(clusterState);
+        String dataStatus = this.dataStatus(dataState);
+        if (dataState != null && severity(dataStatus) >= severity(status) &&
+            !"UP".equals(dataStatus)) {
+            status = dataStatus;
+            reason = this.dataReason(dataState);
+        }
+        return new Topology(status, reason, nodes, facts,
+                            clusterState, dataState);
     }
 
     public Map<String, String> parseStoreHosts(String storesPayload) {
@@ -289,6 +298,56 @@ public class OperationsPayloadParser {
                                this.health(this.text(pd, "state")),
                                observedAt,
                                Collections.emptyMap()));
+    }
+
+    String pdMetricNodeId(String clusterPayload, String configuredBase) {
+        String configured = canonicalPdEndpoint(configuredBase, null);
+        if (configured == null) {
+            return null;
+        }
+        JsonNode cluster = this.data(clusterPayload, "pd_cluster");
+        List<JsonNode> members = new ArrayList<>();
+        this.requiredArray(cluster, "pdList", "pd_cluster").forEach(members::add);
+        JsonNode leader = cluster.get("pdLeader");
+        if (leader != null && leader.isObject()) {
+            members.add(leader);
+        }
+        String scheme = URI.create(configuredBase).getScheme();
+        String matchedId = null;
+        for (JsonNode member : members) {
+            String endpoint = canonicalPdEndpoint(this.text(member, "restUrl"), scheme);
+            if (configured.equals(endpoint)) {
+                String id = this.pdId(member);
+                if (matchedId != null && !matchedId.equals(id)) {
+                    return null;
+                }
+                matchedId = id;
+            }
+        }
+        return matchedId;
+    }
+
+    private static String canonicalPdEndpoint(String address, String configuredScheme) {
+        if (address == null) {
+            return null;
+        }
+        try {
+            String endpoint = configuredScheme != null && !address.contains("://") ?
+                              configuredScheme + "://" + address : address;
+            URI target = URI.create(endpoint).normalize();
+            if (target.getRawQuery() != null) {
+                return null;
+            }
+            String path = target.getRawPath();
+            if (path == null) {
+                path = "";
+            } else if (path.endsWith("/")) {
+                path = path.substring(0, path.length() - 1);
+            }
+            return OperationsHttpClient.origin(target) + path;
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     private String pdId(JsonNode pd) {
@@ -566,6 +625,46 @@ public class OperationsPayloadParser {
     private void requireObject(JsonNode value, String source) {
         if (value == null || !value.isObject()) {
             throw new MalformedUpstreamException(source);
+        }
+    }
+
+    private static int severity(String status) {
+        switch (status) {
+            case "DOWN":
+                return 3;
+            case "DEGRADED":
+                return 2;
+            case "UNKNOWN":
+                return 1;
+            default:
+                return 0;
+        }
+    }
+
+    private String dataStatus(String state) {
+        if (state == null) {
+            return "UP";
+        }
+        switch (state.toUpperCase(Locale.ROOT)) {
+            case "PSTATE_NORMAL":
+                return "UP";
+            case "PSTATE_FAULT":
+                return "DOWN";
+            default:
+                return "DEGRADED";
+        }
+    }
+
+    private String dataReason(String state) {
+        switch (state.toUpperCase(Locale.ROOT)) {
+            case "PSTATE_WARN":
+                return "data_warn";
+            case "PSTATE_OFFLINE":
+                return "data_offline";
+            case "PSTATE_FAULT":
+                return "data_fault";
+            default:
+                return "data_state_unknown";
         }
     }
 

@@ -31,6 +31,7 @@ import {
 import {Button, Tooltip} from 'antd';
 import {Link} from 'react-router-dom';
 import {useTranslation} from 'react-i18next';
+import {sourceHealthStatus} from './sourceHealth';
 import {
     formatObservedAge,
     formatObservedAt,
@@ -61,13 +62,6 @@ const NODE_TYPE_LABELS = {
 
 const displayNodeType = type => NODE_TYPE_LABELS[type] ?? type ?? '—';
 
-const displayTopologyNodeName = node => {
-    if (node?.type !== 'SERVER') {
-        return node?.name;
-    }
-    return node.name?.replace(/^HugeGraph Server\b/, 'Server');
-};
-
 const displayHealthStatus = (status, t) => (
     status === 'DEGRADED' ? t('operations.status_degraded') : status
 );
@@ -75,10 +69,10 @@ const displayHealthStatus = (status, t) => (
 const sourceHealthSummary = (source, t) => {
     const status = source.status ?? 'UNKNOWN';
     const availability = source.availability ?? 'UNSUPPORTED';
-    if (availability === 'UNSUPPORTED') {
+    if (availability === 'UNSUPPORTED' && !['DOWN', 'DEGRADED'].includes(status)) {
         return t('operations.source_health_not_applicable');
     }
-    if (status === 'UP' && availability === 'AVAILABLE') {
+    if (sourceHealthStatus(source) === 'UP') {
         return t('operations.source_health_normal');
     }
     if (status === 'DOWN' || ['UNAVAILABLE', 'MALFORMED'].includes(availability)) {
@@ -136,6 +130,7 @@ const SourceStrip = ({sources = {}, detailed = false,
         >
             {sourceNames.map(name => {
                 const source = sources[name] ?? {};
+                const healthStatus = sourceHealthStatus(source);
                 const lastObservedAt = source.stale
                     ? source.last_success_at ?? source.observed_at
                     : source.observed_at ?? source.last_success_at;
@@ -155,12 +150,19 @@ const SourceStrip = ({sources = {}, detailed = false,
                     defaultValue: source.availability ?? 'UNSUPPORTED',
                 });
                 const healthSummary = sourceHealthSummary(source, t);
+                const clusterHealthDetails = [
+                    source.cluster_state
+                        ? `${t('operations.source_cluster_state')}: ${source.cluster_state}` : null,
+                    source.data_state
+                        ? `${t('operations.source_data_state')}: ${source.data_state}` : null,
+                ].filter(Boolean).join(' · ');
                 const sourceDetails = [
                     healthSummary,
                     `${t('operations.source_topology_status')}: ${
                         displayHealthStatus(source.status ?? 'UNKNOWN', t)
                     }`,
                     `${t('operations.source_collection_status')}: ${availability}`,
+                    clusterHealthDetails,
                     observed
                         ? `${t('operations.last_observed')}: ${observed}` : null,
                     source.stale ? t('operations.stale') : null,
@@ -169,7 +171,7 @@ const SourceStrip = ({sources = {}, detailed = false,
                 const sourceLabel = displayNodeType(name === 'stores'
                     ? 'STORE' : name.toUpperCase());
                 const sourceSummary = `${sourceLabel} ${
-                    displayHealthStatus(source.status ?? 'UNKNOWN', t)
+                    displayHealthStatus(healthStatus, t)
                 } · ${sourceDetails}`;
                 return (
                     <Tooltip key={name} title={detailed ? null : sourceDetails}>
@@ -180,7 +182,7 @@ const SourceStrip = ({sources = {}, detailed = false,
                         >
                             <strong>{sourceLabel}</strong>
                             <HealthStatus
-                                status={source.status}
+                                status={healthStatus}
                                 reason={detailed ? source.reason : undefined}
                             />
                             {!detailed && (
@@ -202,6 +204,7 @@ const SourceStrip = ({sources = {}, detailed = false,
                                     {` · ${t('operations.source_collection_status')}: ${
                                         availability
                                     }`}
+                                    {clusterHealthDetails ? ` · ${clusterHealthDetails}` : ''}
                                     {observed
                                         ? ` · ${t('operations.last_observed')}: ${
                                             observed
@@ -272,7 +275,7 @@ const nodeRoleLabel = (node, t) => {
 
 const TierNode = ({node, returnState}) => {
     const {t} = useTranslation();
-    const name = displayTopologyNodeName(node);
+    const name = node.name;
     return (
         <Link
             className={[

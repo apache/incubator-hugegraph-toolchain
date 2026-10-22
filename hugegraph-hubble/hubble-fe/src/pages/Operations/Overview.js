@@ -53,6 +53,7 @@ import {
 } from './topology';
 import {TopbarPageContextSlot} from '../../components/Topbar/PageContextSlot';
 import {operationsReturnState} from './navigation';
+import {DIAGNOSTICS_ID} from './SourceDiagnostics';
 import './operations.scss';
 
 const Overview = () => {
@@ -534,8 +535,8 @@ const Overview = () => {
                                             }
                                         )}
                                         action={(
-                                            <Link to={`/operations/nodes?type=${type}`}>
-                                                {t('operations.view_source_nodes', {
+                                            <Link to={`/operations/nodes?type=${type}&source=${source.name}#${DIAGNOSTICS_ID}`}>
+                                                {t('operations.view_source_diagnostics', {
                                                     source: displayNodeType(type),
                                                 })}
                                             </Link>

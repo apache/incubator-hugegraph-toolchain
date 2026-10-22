@@ -31,8 +31,9 @@ import {
     SourceStrip,
     TierIcon,
 } from './components';
-import {formatMetricValue, formatObservedAt} from './topology';
+import {formatMetricValue, formatObservedAt, selectAttentionSources} from './topology';
 import {operationsReturnTo} from './navigation';
+import SourceDiagnostics from './SourceDiagnostics';
 import './operations.scss';
 
 const GROUPS_BY_TYPE = {
@@ -334,8 +335,12 @@ const SystemMetricContent = ({values = {}}) => {
 
 const MetricGroup = ({group, name, values, status = {}, emptyMessage}) => {
     const {t, i18n} = useTranslation();
-    const entries = values && typeof values === 'object' && !Array.isArray(values)
-        ? Object.entries(values) : [];
+    const metricValues = values && typeof values === 'object' && !Array.isArray(values)
+        ? values : {};
+    const failedGraphs = status.diagnostics?.failed_graphs;
+    const entries = Object.entries(group === 'backend'
+        && Number.isSafeInteger(failedGraphs) && failedGraphs >= 0
+        ? {...metricValues, failed_graphs: failedGraphs} : metricValues);
     const visibleEntries = entries.filter(([key]) =>
         !HIDDEN_METRIC_KEYS[group]?.has(key)
     );
@@ -576,6 +581,10 @@ const NodeDetail = () => {
                 sourceNames={pdMode ? undefined : ['server']}
                 detailed
             />
+            {selectAttentionSources({[SOURCE_BY_TYPE[node.type]]: source}).length > 0 && (
+                <SourceDiagnostics sources={data?.sources}
+                    sourceName={SOURCE_BY_TYPE[node.type]} nodes={[node]} />
+            )}
             <section
                 className='operations-surface operations-node-summary'
                 aria-labelledby='operations-node-summary-heading'
