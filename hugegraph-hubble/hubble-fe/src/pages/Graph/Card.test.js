@@ -273,6 +273,8 @@ test('renders core graph actions before schema and snapshot statistics complete'
     expect(screen.getByRole('link', {name: 'graph.card.query_graph'})).toHaveAttribute('href', '/gremlin/space/g');
     expect(screen.getByText('graph.card.schema_loading', {selector: 'span'})).toBeInTheDocument();
     expect(screen.queryByText('graph.card.empty_schema')).not.toBeInTheDocument();
+    expect(api.manage.getGraphView).toHaveBeenLastCalledWith('space', 'g', {suppressBusinessErrorToast: true});
+    expect(api.analysis.getGraphData).toHaveBeenLastCalledWith('space', 'g', {suppressBusinessErrorToast: true});
     await act(async () => {
         resolveSnapshot({status: 200, data: {vertexcount: null, edgecount: null}});
     });

@@ -152,7 +152,7 @@ it.each(['button', 'shortcut'])(
         await screen.findByText('/gremlin/DEFAULT/java17_legacy17_ui');
         expect(api.analysis.getExecutionQuery).not.toHaveBeenCalled();
         await waitFor(() => expect(api.analysis.getGraphData)
-            .toHaveBeenCalledWith('DEFAULT', 'java17_legacy17_ui'));
+            .toHaveBeenCalledWith('DEFAULT', 'java17_legacy17_ui', {suppressBusinessErrorToast: true}));
         await waitFor(() => expect(run()).toBeEnabled());
         await act(async () => {
             fireEvent.click(run());
@@ -225,7 +225,7 @@ it('executes the ready dropdown graph while the previous graph query is pending'
     await act(async () => fireEvent.click(graphOption));
     await screen.findByText('/gremlin/DEFAULT/java17_legacy17_ui');
     await waitFor(() => expect(api.analysis.getGraphData)
-        .toHaveBeenCalledWith('DEFAULT', 'java17_legacy17_ui'));
+        .toHaveBeenCalledWith('DEFAULT', 'java17_legacy17_ui', {suppressBusinessErrorToast: true}));
     await waitFor(() => expect(run()).toBeEnabled());
     await act(async () => fireEvent.click(run()));
     expect(api.analysis.getExecutionQuery).toHaveBeenCalledTimes(2);

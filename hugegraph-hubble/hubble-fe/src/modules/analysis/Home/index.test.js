@@ -1603,15 +1603,16 @@ const countsHomeFor = (graph = 'graph-a', graphSpace = 'DEFAULT') => (
 );
 
 it('refreshes server graph totals through the callback passed to the result without resetting confirmed counts', async () => {
-    api.analysis.getGraphData.mockResolvedValue({status: 200, data: {vertexcount: 7, edgecount: 9}});
+    api.analysis.getGraphData.mockResolvedValue({status: 200, data: {vertexcount: 7, edgecount: 9, approximate: true, scan_limit: 100000}});
     render(countsHomeFor());
     expect(await screen.findByText('graph counts 7 9')).toBeInTheDocument();
+    expect(mockQueryResultProps.mock.lastCall[0].graphNums).toMatchObject({approximate: true, scan_limit: 100000});
     const initialCalls = api.analysis.getGraphData.mock.calls.length;
     const onRefreshGraphNums = mockQueryResultProps.mock.lastCall[0].onRefreshGraphNums;
     api.analysis.getGraphData.mockResolvedValueOnce({status: 200, data: {vertexcount: 7, edgecount: 9}});
     await act(async () => onRefreshGraphNums());
     expect(api.analysis.getGraphData).toHaveBeenCalledTimes(initialCalls + 1);
-    expect(api.analysis.getGraphData).toHaveBeenLastCalledWith('DEFAULT', 'graph-a');
+    expect(api.analysis.getGraphData).toHaveBeenLastCalledWith('DEFAULT', 'graph-a', {suppressBusinessErrorToast: true});
     expect(screen.getByText('graph counts 7 9')).toBeInTheDocument();
     api.analysis.getGraphData.mockResolvedValueOnce({status: 200, data: {vertexcount: 8, edgecount: 12}});
     await act(async () => onRefreshGraphNums());
@@ -1711,7 +1712,7 @@ it.each([false, true].flatMap(returnToAlice =>
     });
     expect(synchronousCalls).toBe(beforeIdentityChange);
     expect(api.analysis.getGraphData).toHaveBeenCalledTimes(beforeIdentityChange + 1);
-    expect(api.analysis.getGraphData).toHaveBeenLastCalledWith('DEFAULT', 'graph-a');
+    expect(api.analysis.getGraphData).toHaveBeenLastCalledWith('DEFAULT', 'graph-a', {suppressBusinessErrorToast: true});
     expect(screen.getByText('graph counts -1 -1')).toBeInTheDocument();
     await act(async () => resolveCurrent({status: 200, data: {vertexcount: 20, edgecount: 21}}));
     expect(screen.getByText('graph counts 20 21')).toBeInTheDocument();

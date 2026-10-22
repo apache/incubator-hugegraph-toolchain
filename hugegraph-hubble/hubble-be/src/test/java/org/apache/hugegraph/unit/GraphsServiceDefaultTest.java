@@ -45,9 +45,11 @@ import org.apache.hugegraph.service.graphs.GraphsService;
 import org.apache.hugegraph.service.auth.AuthModeService;
 import org.apache.hugegraph.service.query.QueryService;
 import org.apache.hugegraph.service.HugeClientPoolService;
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneOffset;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import com.google.common.base.Ticker;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import org.apache.hugegraph.service.schema.SchemaService;
 import org.apache.hugegraph.structure.gremlin.ResultSet;
 
@@ -296,14 +298,23 @@ public class GraphsServiceDefaultTest {
     }
 
     @Test
-    public void testExplicitStatisticsAreBoundedAndCachedForFiveMinutes() {
+    public void testExplicitStatisticsAreBoundedAndCachedForThirtyMinutes() {
         QueryService query = Mockito.mock(QueryService.class);
         HugeClientPoolService pool = Mockito.mock(HugeClientPoolService.class);
         Mockito.when(pool.statisticsContext(this.client)).thenReturn("server-a-user-a");
         ReflectionTestUtils.setField(this.service, "queryService", query);
         ReflectionTestUtils.setField(this.service, "clientPool", pool);
-        ReflectionTestUtils.setField(this.service, "statisticsClock",
-                                     Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
+        AtomicLong now = new AtomicLong();
+        Cache<String, GraphStatisticsEntity> cache = CacheBuilder.newBuilder()
+                .maximumSize(1024)
+                .expireAfterWrite(30, TimeUnit.MINUTES)
+                .ticker(new Ticker() {
+                    @Override
+                    public long read() {
+                        return now.get();
+                    }
+                }).build();
+        ReflectionTestUtils.setField(this.service, "boundedStatistics", cache);
         ResultSet vertices = Mockito.mock(ResultSet.class);
         ResultSet edges = Mockito.mock(ResultSet.class);
         Mockito.when(vertices.data()).thenReturn(Collections.singletonList(
@@ -326,8 +337,7 @@ public class GraphsServiceDefaultTest {
         Mockito.verify(query, Mockito.times(2))
                .executeQueryCount(Mockito.eq(this.client), Mockito.anyString());
         Mockito.verify(this.client, Mockito.never()).graph();
-        ReflectionTestUtils.setField(this.service, "statisticsClock",
-                                     Clock.fixed(Instant.ofEpochSecond(299), ZoneOffset.UTC));
+        now.set(TimeUnit.SECONDS.toNanos(1799));
         Map<String, Object> overview = this.service.evCount(this.client, "space", "graph");
         Assert.assertEquals(100000L, overview.get("vertex"));
         Assert.assertEquals(90000L, overview.get("edge"));
@@ -337,8 +347,9 @@ public class GraphsServiceDefaultTest {
         Mockito.verify(query, Mockito.times(2))
                .executeQueryCount(Mockito.eq(this.client), Mockito.anyString());
 
-        ReflectionTestUtils.setField(this.service, "statisticsClock",
-                                     Clock.fixed(Instant.ofEpochSecond(301), ZoneOffset.UTC));
+        now.set(TimeUnit.SECONDS.toNanos(1801));
+        cache.cleanUp();
+        Assert.assertEquals(0L, cache.size());
         this.service.getStatistics(this.client, "space", "graph");
         Mockito.verify(query, Mockito.times(4))
                .executeQueryCount(Mockito.eq(this.client), Mockito.anyString());
@@ -349,6 +360,24 @@ public class GraphsServiceDefaultTest {
         this.service.getStatistics(this.client, "space", "graph");
         Mockito.verify(query, Mockito.times(8))
                .executeQueryCount(Mockito.eq(this.client), Mockito.anyString());
+    }
+
+    @Test
+    public void testStatisticsCacheEvictsOldIdentitiesAtCapacity() {
+        GraphsService service = Mockito.spy(this.service);
+        HugeClientPoolService pool = Mockito.mock(HugeClientPoolService.class);
+        ReflectionTestUtils.setField(service, "clientPool", pool);
+        Mockito.doReturn(GraphStatisticsEntity.emptyEntity()).when(service)
+               .collectBoundedStatistics(this.client);
+        for (int identity = 0; identity < 1025; identity++) {
+            Mockito.when(pool.statisticsContext(this.client)).thenReturn("identity-" + identity);
+            service.getStatistics(this.client, "space", "graph");
+        }
+        Cache<?, ?> cache = (Cache<?, ?>) ReflectionTestUtils.getField(service, "boundedStatistics");
+        cache.cleanUp();
+        Assert.assertTrue(cache.size() <= 1024L);
+        Map<?, ?> asyncStatistics = (Map<?, ?>) ReflectionTestUtils.getField(service, "graphStatistics");
+        Assert.assertTrue(asyncStatistics.isEmpty());
     }
 
     @Test

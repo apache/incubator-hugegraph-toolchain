@@ -230,7 +230,7 @@ public class GraphsController extends BaseController {
     public GraphStatisticsEntity getStatistics(
             @PathVariable("graphspace") String graphspace,
             @PathVariable("graph") String graph) {
-        HugeClient client = this.authClient(graphspace, graph);
+        HugeClient client = this.authGremlinClient(graphspace, graph);
         GraphStatisticsEntity result =
                 graphsService.getStatistics(client, graphspace,
                                             graph);

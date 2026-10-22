@@ -98,8 +98,9 @@ const getText2GqlConfig = (graphspace, graph, config = {}) => {
         {...config, suppressBusinessErrorToast: true});
 };
 
-const getGraphData = (graphspace, graph) => {
-    return request.get(`/graphspaces/${graphspace}/graphs/${graph}/gremlin-query`);
+const getGraphData = (graphspace, graph, config) => {
+    const url = `/graphspaces/${graphspace}/graphs/${graph}/gremlin-query`;
+    return config ? request.get(url, config) : request.get(url);
 };
 
 const putExecutionQuery = (graphspace, graph, params) => {

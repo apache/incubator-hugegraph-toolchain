@@ -197,12 +197,12 @@ test.each(['node', 'edge'])('returns %s write-apply failures to the drawer witho
         addElements: jest.fn().mockRejectedValue(error)};
     render(<GraphResult data={{vertices: [{id: 'existing', label: 'person'}], edges: []}} isQueryMode
         queryStatus={GRAPH_STATUS.SUCCESS} panelType={PANEL_TYPE.CLOSED}
-        graphNums={{vertexCount: 7, edgeCount: 9}} onRefreshGraphNums={onRefreshGraphNums}
+        graphNums={{vertexCount: 7, edgeCount: 9, approximate: true, scan_limit: 100000}} onRefreshGraphNums={onRefreshGraphNums}
         graphRenderMode={GRAPH_RENDER_MODE.CANVAS2D} updatePanelType={jest.fn()} />);
     const callback = kind === 'node' ? mockNodeDrawer.mock.lastCall[0].onOK : mockEdgeDrawer.mock.lastCall[0].onOk;
     await act(async () => { await expect(callback({vertices: [{id: 'saved'}], edges: [{id: 'saved-edge'}]})).rejects.toBe(error); });
     expect(onRefreshGraphNums).toHaveBeenCalledTimes(1);
-    expect(mockCounts.mock.lastCall[0].data).toMatchObject({allGraphNodesNum: 7, allGraphEdgesNum: 9});
+    expect(mockCounts.mock.lastCall[0].data).toMatchObject({allGraphNodesNum: 7, allGraphEdgesNum: 9, approximate: true, scan_limit: 100000});
 });
 
 test.each(['applied', 'superseded', 'disposed', undefined])('preserves %s write-apply outcome while refreshing server totals independently', async status => {

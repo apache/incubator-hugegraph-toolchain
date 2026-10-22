@@ -90,16 +90,16 @@ const GraphCard = ({item, menus, canMutate = true}) => {
     useEffect(() => {
         let active = true;
         if (!item.schemaview) {
-            api.manage.getGraphView(graphspace, item.name).then(res => {
+            api.manage.getGraphView(graphspace, item.name, {suppressBusinessErrorToast: true}).then(res => {
                 if (active) setSchema({key, data: res.status === 200 ? res.data : null, loaded: true});
             }).catch(() => {
                 if (active) setSchema({key, data: null, loaded: true});
             });
         }
         if (item.statistic?.vertex == null || item.statistic?.edge == null) {
-            api.analysis.getGraphData(graphspace, item.name).then(res => {
+            api.analysis.getGraphData(graphspace, item.name, {suppressBusinessErrorToast: true}).then(res => {
                 if (active) setSnapshot({key, data: res.status === 200 ? {
-                    vertex: res.data?.vertexcount, edge: res.data?.edgecount,
+                    ...res.data, vertex: res.data?.vertexcount, edge: res.data?.edgecount,
                 } : null});
             }).catch(() => {
                 if (active) setSnapshot({key, data: null});

@@ -82,7 +82,7 @@ public class GremlinQueryController extends GremlinController {
     public Map<String, Object> execute(@PathVariable("graphspace") String graphSpace,
                                        @PathVariable("graph") String graph) {
 
-        HugeClient client = this.authClient(graphSpace, graph);
+        HugeClient client = this.authGremlinClient(graphSpace, graph);
         Map<String, Object> recorded = this.graphsService.evCount(client, graphSpace, graph);
         Map<String, Object> graphCount = new HashMap<>();
         graphCount.put("vertexcount", recordedCount(recorded.get("vertex")));

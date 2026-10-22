@@ -121,7 +121,7 @@ const GraphDetail = () => {
             // statistics are requested explicitly and never block core metadata.
             const res = full
                 ? await api.manage.getGraphStatistic(graphspace, graph, inlineErrorConfig)
-                : await api.analysis.getGraphData(graphspace, graph);
+                : await api.analysis.getGraphData(graphspace, graph, inlineErrorConfig);
             if (statisticsRequest.current !== token) {
                 return;
             }

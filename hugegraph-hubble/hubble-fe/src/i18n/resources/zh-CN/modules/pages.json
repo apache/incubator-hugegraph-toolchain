@@ -340,8 +340,8 @@
       "prepare_data": "准备数据",
       "not_collected": "未统计",
       "collect_statistics": "统计点边",
-      "snapshot_hint": "已有统计快照，可能为近似值，并非实时精确总量",
-      "bounded_statistics_hint": "最多扫描 {{limit}} 个点和 {{limit}} 条边，统计可能为近似值"
+      "snapshot_hint": "已有统计快照，可能为近似值，并非实时精确总量，可复用30分钟缓存",
+      "bounded_statistics_hint": "最多扫描 {{limit}} 个点和 {{limit}} 条边，统计可能为近似值，可复用30分钟缓存"
     },
     "card": {
       "more_actions": "{{graph}} 的更多操作",

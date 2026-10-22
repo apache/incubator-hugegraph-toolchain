@@ -340,8 +340,8 @@
       "prepare_data": "Prepare data",
       "not_collected": "Not collected",
       "collect_statistics": "Collect statistics",
-      "snapshot_hint": "Recorded snapshot; counts may be approximate and are not real-time totals",
-      "bounded_statistics_hint": "Counts use at most {{limit}} vertices and {{limit}} edges and may be approximate"
+      "snapshot_hint": "Recorded snapshot; counts may be approximate and are not real-time totals; cached statistics may be reused for 30 minutes",
+      "bounded_statistics_hint": "Counts use at most {{limit}} vertices and {{limit}} edges and may be approximate; cached statistics may be reused for 30 minutes"
     },
     "card": {
       "more_actions": "More actions for {{graph}}",

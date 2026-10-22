@@ -111,3 +111,10 @@ test.each([
         {...config, suppressBusinessErrorToast: true});
     expect(request.get).not.toHaveBeenCalled();
 });
+
+
+test('lets deferred statistics own business error feedback', () => {
+    const config = {suppressBusinessErrorToast: true};
+    analysis.getGraphData('DEFAULT', 'g', config);
+    expect(request.get).toHaveBeenCalledWith('/graphspaces/DEFAULT/graphs/g/gremlin-query', config);
+});

@@ -19,6 +19,8 @@
 package org.apache.hugegraph.service.graphs;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import lombok.extern.log4j.Log4j2;
@@ -70,7 +72,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.concurrent.ConcurrentHashMap;
-import java.time.Clock;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -108,8 +109,6 @@ public class GraphsService {
     private static final String GRAPH_STORAGE = "v1/graph/%s/%s/g";
     private static final String RUNNING_TASKS = "running_tasks";
     private static final String STATISTICS = "statistics";
-    private static final String STATISTICS_UPDATED_AT = "statistics_updated_at";
-    private static final long STATISTICS_TTL = TimeUnit.MINUTES.toMillis(5);
     private static final String GREMLIN_STATISTICS_VERTEX =
             "g.V().limit(100000).groupCount().by(label)";
     private static final String GREMLIN_STATISTICS_EDGE =
@@ -120,7 +119,10 @@ public class GraphsService {
 
     private final ConcurrentHashMap<String, Map<String, Object>> graphStatistics =
             new ConcurrentHashMap<>();
-    private Clock statisticsClock = Clock.systemUTC();
+    private Cache<String, GraphStatisticsEntity> boundedStatistics = CacheBuilder.newBuilder()
+            .maximumSize(1024)
+            .expireAfterWrite(30, TimeUnit.MINUTES)
+            .build();
 
     public Map<String, Object> get(HugeClient client, String graphSpace,
                                    String graph,
@@ -489,26 +491,14 @@ public class GraphsService {
             // Unregistered clients have no stable target/identity partition.
             return this.collectBoundedStatistics(client);
         }
-        Map<String, Object> cached = this.graphStatistics.compute(key, (ignored, previous) -> {
-            if (this.freshStatistics(previous)) {
-                return previous;
-            }
-            GraphStatisticsEntity result = this.collectBoundedStatistics(client);
-            return Map.of(STATISTICS, result,
-                          STATISTICS_UPDATED_AT, this.statisticsClock.millis());
-        });
-        return (GraphStatisticsEntity) cached.get(STATISTICS);
+        return this.boundedStatistics.asMap().computeIfAbsent(
+                key, ignored -> this.collectBoundedStatistics(client));
     }
 
     private String statisticsKey(HugeClient client, String graphSpace, String graph) {
         String context = this.clientPool.statisticsContext(client);
         return context == null ? null : "bounded:" + context + ":" +
                JsonUtil.toJson(java.util.Arrays.asList(graphSpace, graph));
-    }
-
-    private boolean freshStatistics(Map<String, Object> cached) {
-        return cached != null && this.statisticsClock.millis() -
-               (Long) cached.get(STATISTICS_UPDATED_AT) < STATISTICS_TTL;
     }
 
     public void postStatistics(RestClient pdClient,
@@ -800,9 +790,8 @@ public class GraphsService {
                                        String graph) {
         Map<String, Object> res = new HashMap<>();
         String key = this.statisticsKey(client, graphSpace, graph);
-        Map<String, Object> cached = key == null ? null : this.graphStatistics.get(key);
-        if (this.freshStatistics(cached)) {
-            GraphStatisticsEntity statistics = (GraphStatisticsEntity) cached.get(STATISTICS);
+        GraphStatisticsEntity statistics = key == null ? null : this.boundedStatistics.getIfPresent(key);
+        if (statistics != null) {
             res.put("date", statistics.getUpdateTime().substring(0, 10).replace("-", ""));
             res.put("vertex", Long.valueOf(statistics.getVertexCount()));
             res.put("edge", Long.valueOf(statistics.getEdgeCount()));
