@@ -16,7 +16,7 @@
 - [x] **测试与构建**：后端单元测试、前端相关测试、正式前端构建；验证代码风格。
 - [x] **本地对比**：1000 空间、50 图；64 B / 8 KiB 属性、12000 点边；记录请求数、P50/P95、响应字节及剩余限制。
 - [x] **Chrome 验证**：匿名模式、登录/账号路径降级、空间/图切换、默认上限、大查询引导、截断与属性只读提示，保留截图；另建隔离 PD 认证夹具，真实管理员/普通成员登录、查询、权限可见性、注销均通过。
-- [x] **代码 PR**：列表 [#78](https://github.com/hugegraph/hugegraph-toolchain/pull/78)、查询/大属性预览 [#79](https://github.com/hugegraph/hugegraph-toolchain/pull/79)、Server 缓冲区 [#327](https://github.com/hugegraph/hugegraph/pull/327)；[实测报告 #80](https://github.com/hugegraph/hugegraph-toolchain/pull/80)。
+- [x] **上游代码 PR**：列表 [#832](https://github.com/apache/hugegraph-toolchain/pull/832)、查询/大属性预览 [#833](https://github.com/apache/hugegraph-toolchain/pull/833)、Server 缓冲区 [#3390](https://github.com/apache/hugegraph/pull/3390)；[实测报告 #835](https://github.com/apache/hugegraph-toolchain/pull/835)。原组织仓库编号分别为#78、#79、#327和#80。
 
 集成验证已通过后端服务/Controller/查询回归、前端查询/选择器/TopBar/布局测试及生产构建。审查和实测进一步推动修复了局部 limit 误判、预览上游未限量、截断标记遗漏、力导向固定迭代和旧 TopBar 隐式全量统计。普通只读预览在上游限制为 1001 条，保留 1 条用于判断是否截断；最终最多交付 1000 条。详见优化对比和原始记录。
 
@@ -41,7 +41,7 @@
 
 - [ ] 统计长期方案：评估PD提供近似值、OLAP定期更新及已有快照消费；本轮只完成默认不扫描、手动有界统计及短缓存，不新建定时统计系统。
 - [ ] Server 提供经过授权的空间精简列表：当前匿名/普通用户逐空间详情调用若仍存在，应如实报告，不通过 admin-only 接口绕过。
-- [ ] Cypher 的默认结果上限与同步预览：本轮只为 Gremlin 增加 default300/preview 契约；Cypher 仅共享图视图上限及常见大 LIMIT 前端提示，不宣称无界 Cypher 已有完整保护。
+- [x] Cypher 的默认结果上限与同步预览：可识别的只读语句在最终RETURN输出侧默认300行，大字面量LIMIT封顶1001行用于截断提示，并复用属性投影及三视图管线。SDK仍先完整物化单个属性，未知脚本交由Server，不宣称通用执行时间或字节硬限制；详见[后续验收](VALIDATION.md#执行前限制与复现脚本复核)。
 - [ ] 客户端版本探测合并和 PD 发现缓存：先测独立占比，再决定实现。
 - [x] 布局参数调整：CPU profile 确认同步迭代热点，默认迭代随规模降到 50–300，显式配置保持不变；不引入 Worker。
 - [x] Server 额外修复：共享缓冲区改为几何扩容，136 项 Struct 测试通过。相同大属性异步任务在同一 16 MiB 上限处失败的耗时由 126.471 秒降为 1.600 秒；没有提高结果大小上限。

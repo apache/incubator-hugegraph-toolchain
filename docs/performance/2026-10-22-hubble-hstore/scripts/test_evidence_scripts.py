@@ -449,6 +449,38 @@ class ReproductionCliTest(unittest.TestCase):
             incomplete = {key: value for key, value in valid.items() if key != 'requested_url'}
             self.assertEqual(BROWSER.browser_exit_code([incomplete]), 2)
 
+    def test_async_submission_requires_matching_nonempty_task_id(self):
+        for task_id in [1, '138']:
+            valid = {'stage': 'async_submission', 'http_status': 200, 'task_id': task_id,
+                     'response': {'status': 200, 'data': {'task_id': task_id}}, 'errors': []}
+            self.assertEqual(BROWSER.browser_exit_code([valid]), 0)
+            payloads = [None, [], {}, {'data': {'task_id': task_id}},
+                        {'status': 400, 'data': {'task_id': task_id}},
+                        {'status': 200}, {'status': 200, 'data': None},
+                        {'status': 200, 'data': []}, {'status': 200, 'data': {}}]
+            payloads.extend({'status': 200, 'data': {'task_id': value}}
+                            for value in [None, '', '  ', [], {}, True, False, 0, -1, 1.5])
+            for payload in payloads:
+                with self.subTest(task_id=task_id, payload=payload):
+                    self.assertEqual(BROWSER.browser_exit_code([{**valid, 'response': payload}]), 2)
+            for changed in [{'http_status': 503}, {'task_id': None}, {'task_id': ''}, {'task_id': True},
+                            {'task_id': 'different'}, {'errors': ['broken']}]:
+                with self.subTest(changed=changed):
+                    self.assertEqual(BROWSER.browser_exit_code([{**valid, **changed}]), 2)
+            for field in ['http_status', 'response', 'task_id']:
+                with self.subTest(missing=field):
+                    self.assertEqual(BROWSER.browser_exit_code([
+                        {key: value for key, value in valid.items() if key != field}]), 2)
+
+    def test_archived_followup_manifest_matches_all_artifacts(self):
+        root = SCRIPTS.parent / 'comparison' / 'final-followup'
+        manifest = json.loads((root / 'manifest.json').read_text())
+        for item in manifest['files']:
+            with self.subTest(file=item['file']):
+                data = (root / item['file']).read_bytes()
+                self.assertEqual(len(data), item['bytes'])
+                self.assertEqual(hashlib.sha256(data).hexdigest(), item['sha256'])
+
     def test_default_notice_requires_both_complete_clauses_and_exact_limit(self):
         for text in ['No result limit was set. This query defaults to at most 300 results.',
                      'No result limit was set; This query defaults to at most 300 results']:

@@ -89,6 +89,18 @@ def anonymous_route_redirected(record):
         return False
 
 
+def async_submission_task_id(http_status, payload):
+    """A successful submission must identify the task actually created."""
+    assert http_status == 200 and isinstance(payload, dict) and payload.get('status') == 200, \
+        'Async submission returned an HTTP or application error'
+    data = payload.get('data')
+    assert isinstance(data, dict), 'Async submission did not return task data'
+    task_id = data.get('task_id')
+    assert (isinstance(task_id, str) and task_id.strip()) or (type(task_id) is int and task_id > 0), \
+        'Async submission did not return a nonempty task ID'
+    return task_id
+
+
 def browser_exit_code(records):
     """A saved diagnostic must never silently turn a failed run into success."""
     for record in records:
@@ -101,6 +113,13 @@ def browser_exit_code(records):
             return 2
         if record.get('additional_query_requests', 0) != 0:
             return 2
+        if record.get('stage') == 'async_submission':
+            try:
+                task_id = async_submission_task_id(record.get('http_status'), response)
+                if type(record.get('task_id')) is not type(task_id) or record['task_id'] != task_id:
+                    return 2
+            except AssertionError:
+                return 2
         if record.get('stage') == 'anonymous_route':
             if (not anonymous_route_redirected(record)
                     or record.get('login_form_visible') or record.get('account_link_visible')):

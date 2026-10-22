@@ -4,6 +4,8 @@
 
 后续已完成 [结合代码的完整根因分析与实施计划](ANALYSIS-PLAN.md)，包括耗时拆分、补查限额缺陷、Server/SDK 接口改法、分阶段交付和验收矩阵。
 
+当前上游交付：元数据[apache/hugegraph-toolchain #832](https://github.com/apache/hugegraph-toolchain/pull/832)、查询[#833](https://github.com/apache/hugegraph-toolchain/pull/833)、本报告[#835](https://github.com/apache/hugegraph-toolchain/pull/835)、Server缓冲区[apache/hugegraph #3390](https://github.com/apache/hugegraph/pull/3390)。它们分别对应原组织仓库中的#78、#79、#80和#327；文中历史样本及本地集成源码标识保留原始来源，不代表上游PR当前提交。
+
 最终交叉审查还完成了共享解析与图构造前属性投影，以及默认不扫描、手动最多100000点/边、按实际Server和身份隔离的30分钟统计缓存。此前影响组的后端186项、前端同组合18组/401项和真实功能复核见[最终验证记录](VALIDATION.md#最终交叉审查与按需统计补充)。这些是后续功能验证，未重写下文基线或优化对比中的历史耗时；PD近似值与OLAP定期更新仍属后续计划。
 
 最终元数据/任务就绪定向6组55项及生产构建通过；真实浏览器只查询选中图Schema并显示空Schema提示，表单测试验证此时不能进入下一步，见[补充验证](VALIDATION.md#元数据与任务就绪的最终定向验证)和[任务截图](screenshots/comparison/task-selected-schema-blocked.png)。这一轮及预检/分组键检查均为功能验收，不加入上述性能对照或186/401测试总数。
@@ -16,7 +18,7 @@
 
 - 本机进程部署：1 PD + 1 Store + 1 Server（hstore 后端）+ 1 Hubble，单副本；没有使用 Docker 镜像或 Helm。
 - cgroup 配额：4 vCPU、16 GiB RAM；Java 17.0.20.1。堆上限：PD 1 GiB、Store 2 GiB、Server/Hubble 各 3 GiB。
-- Toolchain/Hubble：`37ea0b61d606abc0dc859b8a121815906df3c0aa`；Server/PD/Store 1.8.0：`86c05ef9c5d417bd37eab21d4ecd5af82bab17ef`。
+- 原始基线源码：Toolchain/Hubble `37ea0b61d606abc0dc859b8a121815906df3c0aa`；Server/PD/Store 1.8.0 `86c05ef9c5d417bd37eab21d4ecd5af82bab17ef`。这些标识描述下文历史基线，优化轮次见[对比来源](comparison/provenance.json)，后续功能轮次见[验证记录](VALIDATION.md)。
 - Hubble、PD、Store 本轮从源码构建成功；前端强制执行冻结依赖安装和 production 构建。Server 使用本地源码构建的分发产物，本轮重新 compile 后核对 dist/api/core/hstore 共 1011 个 class，与运行 JAR 字节完全一致。
 - Server 使用默认匿名模式。这些结论不代替管理员、普通用户权限模式的实测；不同身份模式的列表实现不同。
 - 串行请求、常驻服务；空间列表先预热 3 次，1/10/100 空间各 20 次，500/1000 各 10 次；`all=true` 5 次。数据接口预热 1 次，小结果测 10 次、大结果测 5 次。P95 使用最近秩法，5 次采样的 P95 等于最大值，不能当作稳定 SLA。
@@ -135,19 +137,21 @@
 
 - [原始采样](samples.jsonl.gz)、[HTTP/gRPC 跟踪](trace.jsonl.gz)、[资源时间序列](resources.jsonl.gz)、[汇总 CSV](summary.csv)、[汇总 JSONL](summary.jsonl)。
 - [版本与环境](provenance.json)、[PD 基线](pd-summary.jsonl)、[浏览器观测](browser.jsonl)、[最终点边数量](final-count-validation.json)、[未知空间统计](space-statistics-check.json)。
-- [复现脚本](scripts/benchmark.py)、[点边生成及测试](scripts/data_benchmark.py)、[图数量测试](scripts/graphs_benchmark.py)、[浏览器测试](scripts/browser_benchmark.py)、[跟踪代理](scripts/trace_proxy.py)。脚本使用本次环境的 `/workspace/hubble-perf` 路径和端口；移到其他机器时需先调整这些路径。
+- [复现脚本](scripts/benchmark.py)、[点边生成及测试](scripts/data_benchmark.py)、[图数量测试](scripts/graphs_benchmark.py)、[基线浏览器测试](scripts/browser_benchmark.py)、[跟踪代理](scripts/trace_proxy.py)。历史采样/设置脚本使用本次环境的 `/workspace/hubble-perf` 路径和端口；移到其他机器时需先调整这些路径。
 - 服务保留在本地：Hubble `127.0.0.1:8088`、production 前端 `127.0.0.1:3000`、Server `127.0.0.1:18080`、PD REST/gRPC `8620/8686`、Store REST/gRPC `8520/8500`。Hubble 仍启用 PD 发现；最后已改为发现后直连 Server。
 - 构建日志与运行工作目录保留在 `/workspace/hubble-perf/logs` 和 `/workspace/hubble-perf/runtime`。配置中的本地随机密钥未复制到报告目录。
 - 早期夹具中还观察到“删除图后立即同名重建”导致 `Graph has been closed` 的 500；正式两组数据改用新的图名，重新生成伪随机属性并校验数量。该设置阶段失败没有混入正式接口耗时，尚不能认定其根因。
 - 浏览器脚本最初等待万级画布，但实际页面已切表格；修正为验证原生表格和上限提示后重新执行。原先等待条件的超时不计为产品渲染失败。
 
-保留的数据集可以直接重跑读取和浏览器测试（会追加本地采样/查询历史）：
+保留的最终运行栈可以重跑读取和优化后浏览器功能检查（会追加本地采样/查询历史，不覆盖历史性能样本）：
 
 ```bash
 cd /workspace/hugegraph-toolchain/docs/performance/2026-10-22-hubble-hstore/scripts
 python3 data_benchmark.py run
-python3 browser_benchmark.py
+python3 browser_comparison.py after --output-dir ./hubble-results
 ```
+
+`browser_benchmark.py`保留基线默认250点断言，只适用于基线checkout和运行栈；最终运行栈默认300点，使用上面的`after`检查。浏览器参数与依赖见[复现说明](scripts/REPRODUCTION.md)。
 
 空间数量梯度需要只有 DEFAULT 的全新专用集群；图数量梯度需要空的专用空间，脚本会拒绝在已有数据上假标数量。导入脚本也拒绝覆盖已有同名图。运行依赖为 Python requests/hpack/grpcio/grpcio-tools/playwright/matplotlib，以及已构建的 Java 服务；PD 独立脚本使用工作目录中按源码 proto 生成的 Python 模块。
 

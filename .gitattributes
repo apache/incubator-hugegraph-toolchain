@@ -22,3 +22,6 @@ hugegraph-dist/scripts/ export-ignore
 
 # Exclude documentation screenshots; keep Hubble frontend assets for builds.
 /hugegraph-hubble/docs/images/ export-ignore
+
+# Keep optional local performance evidence out of source releases.
+/docs/performance/2026-10-22-hubble-hstore/ export-ignore

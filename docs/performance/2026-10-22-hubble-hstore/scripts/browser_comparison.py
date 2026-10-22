@@ -15,7 +15,8 @@
 
 """Exercise bounded query previews and the pre-submit async gate in local Chromium."""
 import argparse, json, pathlib, re, time
-from browser_probe import INIT, add_browser_arguments, prepare_browser_args, put_query, browser_exit_code, wait_for_count_result
+from browser_probe import (INIT, add_browser_arguments, prepare_browser_args, put_query,
+                           browser_exit_code, wait_for_count_result, async_submission_task_id)
 ROOT=pathlib.Path('hubble-results')
 RECORDS=[]
 
@@ -66,9 +67,13 @@ def main(argv=None):
                 page.screenshot(path=str(shots/f'{args.phase}-{graph}-large-gate.png'));save(args.phase,record)
                 if graph=='perf_small64':
                     page.get_by_role('button',name='Switch to Async Task',exact=True).click()
-                    with page.expect_response(lambda r:'/gremlin-query/async-task' in r.url and r.request.method=='POST') as info:page.get_by_role('button',name='Submit Task',exact=True).click()
-                    r=info.value;r.finished();task=r.json()
-                    save(args.phase,dict(stage='async_submission',graph=graph,http_status=r.status,task_id=task.get('data',{}).get('task_id'),response=task,errors=errors[:]))
+                    record=dict(stage='async_submission',graph=graph)
+                    try:
+                        with page.expect_response(lambda r:'/gremlin-query/async-task' in r.url and r.request.method=='POST') as info:page.get_by_role('button',name='Submit Task',exact=True).click()
+                        r=info.value;r.finished();record.update(http_status=r.status,response=r.json())
+                        record['task_id']=async_submission_task_id(r.status,record['response'])
+                    except Exception as e:record['error']=str(e)[:600]
+                    record['errors']=errors[:];save(args.phase,record)
                     page.screenshot(path=str(shots/f'{args.phase}-{graph}-async-submitted.png'))
             if args.phase=='after' and graph=='perf_large8192':
                 try:
