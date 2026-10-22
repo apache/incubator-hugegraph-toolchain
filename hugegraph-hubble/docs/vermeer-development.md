@@ -98,8 +98,11 @@ Server's per-label permissions, authenticated direct access requires a HugeGraph
 super administrator; anonymous mode follows the Server's anonymous graph access.
 With direct integration configured, source graph deletion first checks for a
 Vermeer copy. Removing an existing copy requires the same administrator permission;
-missing permission or failed cleanup stops source deletion even when compute is
-unavailable. Graphs without a copy retain Server's original deletion permissions.
+missing permission or a cleanup failure reported by the native HTTP API stops
+source deletion even when compute is unavailable. A successful HTTP response does
+not verify every Worker acknowledgement or removal of saved files; those remain
+native deletion limitations. Graphs without a copy retain Server's original
+deletion permissions.
 
 The Hubble direct adapter supports the nine algorithms shown by its Vermeer
 forms. Results are queried through the task API and are not written back to

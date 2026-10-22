@@ -397,3 +397,60 @@ it('refreshes graph status when Vermeer becomes available again', async () => {
         'DEFAULT', expect.objectContaining({name: 'hugegraph', status: 'loaded'})
     );
 });
+
+it('preserves an in-flight load guard when switching away and back before its acknowledgement', async () => {
+    jest.useFakeTimers();
+    const first = deferred();
+    const second = deferred();
+    try {
+        Object.assign(mockParams, {graphSpace: 'A', graph: 'graph-a'});
+        api.analysis.getGraphSpaceList.mockResolvedValue({status: 200, data: {graphspaces: ['A']}});
+        // A1 may already have completed natively while its HTTP acknowledgement
+        // is delayed; graph metadata legitimately still reports loaded.
+        api.analysis.getGraphList.mockResolvedValue({status: 200, data: {graphs: [
+            {name: 'graph-a', status: 'loaded'}, {name: 'graph-b', status: 'loaded'},
+        ]}});
+        api.analysis.loadVermeerTask.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+        api.analysis.fetchAsyncTaskResult.mockResolvedValue({status: 200, data: {task_status: 'queued'}});
+        const onGraphInfoChange = jest.fn();
+        const topBar = () => <GraphAnalysisContext.Provider value={{isVermeer: true}}>
+            <TopBar moduleName='algorithms' onGraphInfoChange={onGraphInfoChange}
+                showOlapSwitch={false} showNavigationButton={false} isOlapModeEnable={false}
+                isOlapModeLoading={false} onOlapModeChange={jest.fn()} />
+        </GraphAnalysisContext.Provider>;
+        const view = render(topBar());
+        await act(async () => {});
+        fireEvent.click(screen.getByRole('button', {name: /analysis.topbar.reload_to_vermeer/}));
+        await act(async () => {});
+        Object.assign(mockParams, {graph: 'graph-b'});
+        view.rerender(topBar());
+        await act(async () => {});
+        const loadB = screen.getByRole('button', {name: /analysis.topbar.reload_to_vermeer/});
+        expect(loadB).toBeEnabled();
+        fireEvent.click(loadB);
+        expect(api.analysis.loadVermeerTask).toHaveBeenCalledTimes(2);
+        Object.assign(mockParams, {graph: 'graph-a'});
+        view.rerender(topBar());
+        await act(async () => {});
+        const load = screen.getByRole('button', {name: /analysis.topbar.reload_to_vermeer/});
+        // Desired behavior: pending A1 still blocks duplicate A2 for A only.
+        expect(load).toBeDisabled();
+        fireEvent.click(load);
+        expect(api.analysis.loadVermeerTask).toHaveBeenCalledTimes(2);
+        await act(async () => second.resolve({status: 200, data: {task_id: -11}}));
+        expect(screen.getByRole('button', {name: /analysis.topbar.reload_to_vermeer/})).toBeDisabled();
+        await act(async () => first.resolve({status: 200, data: {task_id: -10}}));
+        await act(async () => jest.advanceTimersByTime(2000));
+        expect(api.analysis.fetchAsyncTaskResult).toHaveBeenLastCalledWith('A', 'graph-a', -10);
+        Object.assign(mockParams, {graph: 'graph-b'});
+        view.rerender(topBar());
+        await act(async () => {});
+        expect(screen.getByRole('button', {name: 'analysis.topbar.load_to_vermeer'})).toBeDisabled();
+        await act(async () => jest.advanceTimersByTime(2000));
+        expect(api.analysis.fetchAsyncTaskResult).toHaveBeenLastCalledWith('A', 'graph-b', -11);
+        view.unmount();
+    }
+    finally {
+        jest.useRealTimers();
+    }
+});

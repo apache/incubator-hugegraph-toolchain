@@ -258,8 +258,8 @@ public class GraphsController extends BaseController {
                         "Invalid graph drop confirmation");
         HugeClient client = this.authClient(graphspace, graph);
         if (this.vermeerService.directConfigured()) {
-            // Failure (including missing caller permission) must stop source
-            // deletion rather than leave a retained Vermeer copy behind.
+            // Missing caller permission or failure reported by the native HTTP
+            // API must stop source deletion; success does not verify Worker files.
             this.vermeerService.cleanupDirectGraph(client);
         } else if (!getVermeerGraph(graphspace, graph).isEmpty()) {
             try {
