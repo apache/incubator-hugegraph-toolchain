@@ -31,15 +31,11 @@ test('forwards inline error ownership for graph context reads', () => {
     const config = {suppressBusinessErrorToast: true};
 
     analysis.getGraphSpaceList(config);
-    analysis.getGraphList('DEFAULT', config);
     analysis.getOlapMode('DEFAULT', 'g', config);
 
     expect(request.get).toHaveBeenNthCalledWith(1, '/graphspaces/list', config);
     expect(request.get).toHaveBeenNthCalledWith(
-        2, '/graphspaces/DEFAULT/graphs/list', config
-    );
-    expect(request.get).toHaveBeenNthCalledWith(
-        3, '/graphspaces/DEFAULT/graphs/g/graph_read_mode', config
+        2, '/graphspaces/DEFAULT/graphs/g/graph_read_mode', config
     );
 });
 
@@ -55,21 +51,6 @@ test('keeps OLAP and Vermeer configs outside mutation bodies', () => {
     expect(request.post).toHaveBeenCalledWith(
         '/vermeer/task', {graphspace: 'DEFAULT', graph: 'g'}, config
     );
-});
-
-test('requests only brief graph metadata when opted in and preserves request configuration', () => {
-    const config = {
-        suppressBusinessErrorToast: true,
-        signal: new AbortController().signal,
-        params: {query: 'person'},
-    };
-
-    analysis.getGraphList('DEFAULT', config, true);
-
-    expect(request.get).toHaveBeenCalledWith('/graphspaces/DEFAULT/graphs', {
-        ...config,
-        params: {query: 'person', brief: true, page_no: 1, page_size: -1},
-    });
 });
 
 test('lets the async query page own business error feedback', () => {

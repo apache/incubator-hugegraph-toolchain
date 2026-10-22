@@ -143,8 +143,8 @@ const TopBar = props => {
             setGraphLoading(true);
             setGraphError(false);
             try {
-                const response = await api.analysis.getGraphList(
-                    currentGraphSpace, INLINE_ERROR_CONFIG, true
+                const response = await api.manage.getGraphList(
+                    currentGraphSpace, {brief: true, page_no: 1, page_size: -1}, INLINE_ERROR_CONFIG
                 );
                 if (graphRequest.current !== request) {
                     return;

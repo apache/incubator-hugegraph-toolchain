@@ -134,12 +134,8 @@ public class GraphsService {
         info.putIfAbsent("graphspace", graphSpace);
         if (vermeerInfo.size() != 0) {
             info.put("status", vermeerInfo.get("status"));
-            String lastLoadTime = vermeerInfo.get("last_load_time");
-            if (lastLoadTime == null) {
-                lastLoadTime = vermeerInfo.get("update_time");
-            }
             // todo date format
-            info.put("last_load_time", lastLoadTime);
+            info.put("last_load_time", vermeerInfo.get("last_load_time"));
         }
         return info;
     }

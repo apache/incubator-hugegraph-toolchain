@@ -26,7 +26,6 @@ import * as api from '../../api';
 jest.mock('../../api', () => ({
     analysis: {
         getGraphSpaceList: jest.fn(),
-        getGraphList: jest.fn(),
         getOlapMode: jest.fn(),
         getExecutionLogs: jest.fn(),
         fetchFavoriteQueries: jest.fn(),
@@ -101,12 +100,8 @@ it.each(['button', 'shortcut'])(
             status: 200, data: {graphspaces: ['DEFAULT']},
         });
         let resolveGraphs;
-        api.analysis.getGraphList
-            .mockImplementationOnce(() => new Promise(resolve => {
-                resolveGraphs = resolve;
-            }))
-            .mockResolvedValue(graphResponse);
-        api.manage.getGraphList.mockResolvedValue({status: 200, data: {records: graphs}});
+        const pendingGraphs = new Promise(resolve => { resolveGraphs = resolve; });
+        api.manage.getGraphList.mockReturnValue(pendingGraphs);
         api.analysis.getOlapMode.mockResolvedValue({status: 200, data: {status: '1'}});
         api.analysis.getExecutionLogs.mockResolvedValue(records);
         api.analysis.fetchFavoriteQueries.mockResolvedValue(records);
@@ -135,9 +130,9 @@ it.each(['button', 'shortcut'])(
                 <ExecuteOnNavigation action={action} />
             </MemoryRouter>
         );
-        await waitFor(() => expect(api.analysis.getGraphList).toHaveBeenCalled());
-        expect(api.analysis.getGraphList).toHaveBeenCalledWith(
-            'DEFAULT', {suppressBusinessErrorToast: true}, true
+        await waitFor(() => expect(api.manage.getGraphList).toHaveBeenCalled());
+        expect(api.manage.getGraphList).toHaveBeenCalledWith(
+            'DEFAULT', {brief: true, page_no: 1, page_size: -1}, {suppressBusinessErrorToast: true}
         );
         const run = () => screen.getByRole('button', {name: 'analysis.query.execute_query'});
         expect(run()).toBeDisabled();
@@ -146,6 +141,7 @@ it.each(['button', 'shortcut'])(
         expect(api.analysis.getGraphData).not.toHaveBeenCalled();
 
         await act(async () => {
+            api.manage.getGraphList.mockResolvedValue(graphResponse);
             resolveGraphs(graphResponse);
         });
         await waitFor(() => expect(run()).toBeEnabled());
@@ -180,8 +176,7 @@ it('executes the ready dropdown graph while the previous graph query is pending'
     api.analysis.getGraphSpaceList.mockResolvedValue({
         status: 200, data: {graphspaces: ['DEFAULT']},
     });
-    api.analysis.getGraphList.mockResolvedValue(graphResponse);
-    api.manage.getGraphList.mockResolvedValue({status: 200, data: {records: graphs}});
+    api.manage.getGraphList.mockResolvedValue(graphResponse);
     api.analysis.getOlapMode.mockResolvedValue({status: 200, data: {status: '1'}});
     api.analysis.getText2GqlConfig.mockResolvedValue({status: 200, data: {available: false}});
     api.analysis.getExecutionLogs.mockResolvedValue(records);
