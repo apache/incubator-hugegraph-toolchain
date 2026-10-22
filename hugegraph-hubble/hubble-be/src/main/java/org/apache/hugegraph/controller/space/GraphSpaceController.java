@@ -54,9 +54,9 @@ import java.util.List;
 public class GraphSpaceController extends BaseController {
     private static final int DEFAULT_MAX_GRAPH_NUMBER = 100;
     private static final int DEFAULT_MAX_ROLE_NUMBER = 100;
-    private static final int DEFAULT_STORAGE_VALUE = 1000000;
+    private static final int DEFAULT_STORAGE_VALUE = 10240;
     private static final int DEFAULT_MEMORY_VALUE = 128;
-    private static final int DEFAULT_CPU_VALUE = 64;
+    private static final int DEFAULT_CPU_VALUE = 128;
 
     @Autowired
     private GraphSpaceService graphSpaceService;

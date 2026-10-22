@@ -22,6 +22,8 @@ import java.util.Map;
 import org.apache.hugegraph.api.space.GraphSpaceAPI;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
+import org.apache.hugegraph.structure.space.GraphSpace;
+import org.apache.hugegraph.util.JsonUtil;
 import org.apache.hugegraph.testutil.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,6 +39,19 @@ public class GraphSpaceAPITest extends BaseUnitTest {
     public void setup() {
         this.mockClient = Mockito.mock(RestClient.class);
         this.graphSpaceAPI = new GraphSpaceAPI(this.mockClient);
+    }
+
+    @Test
+    public void testPreciseStorageUsageSurvivesSerialization() {
+        GraphSpace space = JsonUtil.fromJson(
+                "{\"name\":\"shop\",\"storage_used\":0,\"storage_used_kb\":524288}", GraphSpace.class);
+        Assert.assertEquals(Long.valueOf(524288), space.getStorageUsedKb());
+        GraphSpace copy = JsonUtil.fromJson(JsonUtil.toJson(space), GraphSpace.class);
+        Assert.assertEquals(space.getStorageUsedKb(), copy.getStorageUsedKb());
+        GraphSpace legacy = JsonUtil.fromJson("{\"storage_used\":2}", GraphSpace.class);
+        Assert.assertNull(legacy.getStorageUsedKb());
+        Assert.assertEquals(2, legacy.getStorageUsed());
+        Assert.assertFalse(JsonUtil.toJson(space.convertReq()).contains("storage_used_kb"));
     }
 
     @Test

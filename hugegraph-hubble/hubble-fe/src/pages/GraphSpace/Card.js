@@ -24,13 +24,16 @@ import style from './index.module.scss';
 import {useCallback} from 'react';
 import {useTranslation} from 'react-i18next';
 import {getResourceDisplayName} from '../../utils/displayName';
-
-const showText = (val, suffix, unlimited, empty) => (
-    val > 99999 ? (empty === undefined ? unlimited : empty) : `${val}${suffix}`
-);
+import {formatResourceLimit, formatStorageUsed} from './storageUsage';
 
 const formatPercent = percent => {
-    return percent >= 100 ? <InfoOutlined /> : `${percent}%`;
+    if (percent >= 100) {
+        return <InfoOutlined />;
+    }
+    if (percent > 0 && percent < 0.01) {
+        return '<0.01%';
+    }
+    return `${Number(percent.toFixed(2))}%`;
 };
 
 const TitleField = ({item, onClick, onKeyDown}) => {
@@ -132,9 +135,9 @@ const GraphSpaceCard = ({
     };
 
     const unlimited = t('graphspace.unit.unlimited');
-    const cpu = showText(item.cpu_limit, t('graphspace.unit.cpu'), unlimited);
-    const memory = showText(item.memory_limit, t('graphspace.unit.memory'), unlimited);
-    const storage = showText(item.storage_limit, t('graphspace.unit.memory'), unlimited);
+    const cpu = formatResourceLimit(item.cpu_limit, t('graphspace.unit.cpu'), unlimited);
+    const memory = formatResourceLimit(item.memory_limit, t('graphspace.unit.memory'), unlimited);
+    const storage = formatResourceLimit(item.storage_limit, t('graphspace.unit.memory'), unlimited);
     const statisticDate = item.statistic?.date;
 
     return (
@@ -212,7 +215,7 @@ const GraphSpaceCard = ({
                             </li>
                             <li>
                                 {t('graphspace.card.max_graph')}
-                                {showText(item.max_graph_number, '', t('graphspace.unit.unlimited'))}
+                                {formatResourceLimit(item.max_graph_number, '', t('graphspace.unit.unlimited'))}
                             </li>
                             <li>{t('graphspace.card.cpu', {val: cpu})}</li>
                             <li>{t('graphspace.card.memory', {val: memory})}</li>
@@ -236,9 +239,9 @@ const GraphSpaceCard = ({
                             >
                                 <div>{t('graphspace.card.used')}</div>
                                 <div>
-                                    {item.storage_used}{t('graphspace.unit.memory')}
+                                    {formatStorageUsed(item)}
                                     {' / '}
-                                    {showText(
+                                    {formatResourceLimit(
                                         item.storage_limit,
                                         t('graphspace.unit.memory'),
                                         t('graphspace.unit.unlimited'),

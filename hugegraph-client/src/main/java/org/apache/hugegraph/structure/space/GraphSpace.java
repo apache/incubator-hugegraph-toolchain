@@ -66,6 +66,8 @@ public class GraphSpace {
     private int memoryUsed; // GB
     @JsonProperty("storage_used")
     private int storageUsed; // GB
+    @JsonProperty("storage_used_kb")
+    private Long storageUsedKb;
     @JsonProperty("storage_percent")
     private double storagePercent;
     @JsonProperty("graph_number_used")
@@ -268,6 +270,15 @@ public class GraphSpace {
         return this;
     }
 
+    public Long getStorageUsedKb() {
+        return this.storageUsedKb;
+    }
+
+    public GraphSpace setStorageUsedKb(Long storageUsedKb) {
+        this.storageUsedKb = storageUsedKb;
+        return this;
+    }
+
     public double getStoragePercent() {
         return storagePercent;
     }
@@ -333,7 +344,7 @@ public class GraphSpace {
         return new GraphSpaceReq(this);
     }
 
-    @JsonIgnoreProperties({"cpu_used", "memory_used", "storage_used",
+    @JsonIgnoreProperties({"cpu_used", "memory_used", "storage_used", "storage_used_kb",
                            "storage_percent", "graph_number_used", "role_number_used",
                            "create_time", "update_time"})
     public static class GraphSpaceReq extends GraphSpace {

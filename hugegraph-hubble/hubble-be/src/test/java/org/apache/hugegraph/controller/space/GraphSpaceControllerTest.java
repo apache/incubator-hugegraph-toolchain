@@ -210,11 +210,11 @@ public class GraphSpaceControllerTest {
 
         Assert.assertEquals(100, graphSpace.getMaxGraphNumber());
         Assert.assertEquals(100, graphSpace.getMaxRoleNumber());
-        Assert.assertEquals(64, graphSpace.getCpuLimit());
+        Assert.assertEquals(128, graphSpace.getCpuLimit());
         Assert.assertEquals(128, graphSpace.getMemoryLimit());
-        Assert.assertEquals(64, graphSpace.getComputeCpuLimit());
+        Assert.assertEquals(128, graphSpace.getComputeCpuLimit());
         Assert.assertEquals(128, graphSpace.getComputeMemoryLimit());
-        Assert.assertEquals(1000000, graphSpace.getStorageLimit());
+        Assert.assertEquals(10240, graphSpace.getStorageLimit());
     }
 
     @Test

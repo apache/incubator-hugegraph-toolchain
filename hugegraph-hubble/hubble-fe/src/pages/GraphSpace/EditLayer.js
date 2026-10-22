@@ -60,11 +60,11 @@ const EditLayer = ({visible, detail, onCancel, refresh}) => {
     const defaultValues = {
         description: '',
         max_graph_number: 100,
-        cpu_limit: 64,
+        cpu_limit: 128,
         memory_limit: 128,
-        compute_cpu_limit: 64,
+        compute_cpu_limit: 128,
         compute_memory_limit: 128,
-        storage_limit: 1000000,
+        storage_limit: 10240,
     };
 
     const isDisabled = useMemo(() => {

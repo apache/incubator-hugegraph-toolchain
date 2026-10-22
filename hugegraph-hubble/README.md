@@ -7,6 +7,27 @@
 hugegraph-hubble is a graph management and analysis platform that provides features:
 graph data load, schema management, graph relationship analysis, and graphical display.
 
+## Graph-space quotas and usage
+
+New graph spaces start with 128 CPU cores, 128 GB memory, 128 compute CPU cores,
+128 GB compute memory, 10240 GB storage and 100 graphs. Server also defaults the
+role limit to 100. Existing spaces retain their configured limits. Large finite
+quotas display their actual values; only the legacy `Integer.MAX_VALUE` sentinel
+is shown as unlimited.
+
+With a Server that supplies `storage_used_kb`, cards show approximate usage in
+KB, MB or GB, including amounts below one GB. The Java client and Hubble preserve
+this optional field; older Servers continue using integer-GB `storage_used`.
+Usage follows Store heartbeat and PD quota-check refreshes rather than individual
+writes. Ratios below 0.01% remain visible as `<0.01%`.
+
+Chrome verification screenshots below use local API fixtures for authenticated
+and anonymous modes. They illustrate the display and capability visibility, not
+live cluster acceptance.
+
+![Authenticated graph-space usage](docs/assets/graphspace-usage-authenticated.png)
+![Anonymous graph-space usage](docs/assets/graphspace-usage-anonymous.png)
+
 ## Product Tour
 
 ### Graph Data Workbench
