@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.sun.net.httpserver.HttpServer;
@@ -129,7 +130,7 @@ public class DirectVermeerServiceTest {
                 "id", 12, "graph_name", "DEFAULT-graph-with-dash",
                 "task_type", "compute", "status", "complete")));
         Mockito.when(backend.request("GET", "tasks/value/12?cursor=0&limit=1001", null))
-               .thenThrow(new ExternalException("Query values expired"));
+               .thenThrow(new VermeerClient.ValuesNotFoundException());
         DirectVermeerService direct = service(backend);
         HugeClient client = graphClient();
         AsyncTaskService tasks = new AsyncTaskService();
@@ -143,6 +144,84 @@ public class DirectVermeerServiceTest {
         Assert.assertEquals("success", listed.get(0).status());
         Assert.assertNull(listed.get(0).result());
         expect(ExternalException.class, () -> direct.results(client, -12, 0, 1000));
+    }
+
+    @Test
+    public void testHttpValueCacheAbsencePreservesOnlyMetadata() throws Exception {
+        AtomicInteger status = new AtomicInteger(400);
+        AtomicReference<String> body = new AtomicReference<>(
+                "{\"errcode\":1,\"message\":\"task_id error:12\"}");
+        HttpServer server = resultServer(status, body);
+        try {
+            DirectVermeerService direct = httpResultService(server);
+            Task task = direct.task(graphClient(), -12, true);
+            Assert.assertEquals("success", task.status());
+            Assert.assertNull(task.result());
+            expect(VermeerClient.ValuesNotFoundException.class,
+                    () -> direct.results(graphClient(), -12, 0, 1000));
+            // Other native errors must not be mistaken for a missing cache.
+            body.set("{\"errcode\":1,\"message\":\"compute value not exist, task_id:12\"}");
+            expect(ExternalException.class, () -> direct.task(graphClient(), -12, true));
+            status.set(403);
+            body.set("{\"errcode\":1,\"message\":\"task_id error:12\"}");
+            expect(ExternalException.class, () -> direct.task(graphClient(), -12, true));
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    public void testTransientHttpValueFailuresPropagateAndRetryRecovers() throws Exception {
+        AtomicInteger status = new AtomicInteger(503);
+        AtomicReference<String> body = new AtomicReference<>(
+                "{\"errcode\":1,\"message\":\"task_id error:12\"}");
+        HttpServer server = resultServer(status, body);
+        try {
+            DirectVermeerService direct = httpResultService(server);
+            expect(ExternalException.class, () -> direct.task(graphClient(), -12, true));
+            status.set(0); // Close the connection without an HTTP response.
+            expect(ExternalException.class, () -> direct.task(graphClient(), -12, true));
+            status.set(200);
+            body.set("{\"errcode\":0,\"vertices\":[{\"ID\":\"fresh\",\"Value\":\"1\"}],\"cursor\":1}");
+            Task retried = direct.task(graphClient(), -12, true);
+            Assert.assertEquals("success", retried.status());
+            Assert.assertTrue(String.valueOf(retried.result()).contains("fresh"));
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    private HttpServer resultServer(AtomicInteger status, AtomicReference<String> body) throws Exception {
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/api/v1/task/12", exchange -> {
+            byte[] value = ("{\"task\":{\"id\":12,\"graph_name\":\"DEFAULT-graph-with-dash\"," +
+                            "\"task_type\":\"compute\",\"status\":\"complete\"}}")
+                    .getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, value.length);
+            exchange.getResponseBody().write(value);
+            exchange.close();
+        });
+        server.createContext("/api/v1/tasks/value/12", exchange -> {
+            if (status.get() == 0) {
+                exchange.close();
+                return;
+            }
+            byte[] value = body.get().getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(status.get(), value.length);
+            exchange.getResponseBody().write(value);
+            exchange.close();
+        });
+        server.start();
+        return server;
+    }
+
+    private DirectVermeerService httpResultService(HttpServer server) {
+        HugeConfig config = Mockito.mock(HugeConfig.class);
+        Mockito.when(config.get(HubbleOptions.VERMEER_URL))
+               .thenReturn("http://127.0.0.1:" + server.getAddress().getPort());
+        VermeerClient backend = new VermeerClient();
+        ReflectionTestUtils.setField(backend, "config", config);
+        return service(backend);
     }
 
     @Test

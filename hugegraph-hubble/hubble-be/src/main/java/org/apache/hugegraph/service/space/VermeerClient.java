@@ -80,6 +80,9 @@ public class VermeerClient {
             HttpResponse<String> response = this.http.send(request.build(),
                     HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                if (this.valuesNotFound(method, path, response)) {
+                    throw new ValuesNotFoundException();
+                }
                 throw new ExternalException("Vermeer request failed (HTTP " +
                                             response.statusCode() + ")");
             }
@@ -99,6 +102,33 @@ public class VermeerClient {
             // Adapter validation can include URLs, token values or file paths.
             // Preserve the availability boundary without exposing those details.
             throw new ExternalException("Invalid Vermeer configuration or request");
+        }
+    }
+
+    private boolean valuesNotFound(String method, String path, HttpResponse<String> response) {
+        String endpoint = path.split("\\?", 2)[0];
+        String prefix = "tasks/value/";
+        if (response.statusCode() != 400 || !"GET".equals(method) || !endpoint.startsWith(prefix)) {
+            return false;
+        }
+        String taskId = endpoint.substring(prefix.length());
+        if (!taskId.matches("[1-9][0-9]*")) {
+            return false;
+        }
+        try {
+            Map<String, Object> error = this.mapper.readValue(response.body(),
+                    new TypeReference<Map<String, Object>>() { });
+            return error != null && "1".equals(String.valueOf(error.get("errcode"))) &&
+                   ("task_id error:" + taskId).equals(error.get("message"));
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public static final class ValuesNotFoundException extends ExternalException {
+
+        public ValuesNotFoundException() {
+            super("Vermeer task values are no longer available");
         }
     }
 }

@@ -173,8 +173,8 @@ public class DirectVermeerService {
             Map<String, Object> values;
             try {
                 values = this.resultValues(id, 0, 1000);
-            } catch (ExternalException e) {
-                // Query values expire independently of persisted task history.
+            } catch (VermeerClient.ValuesNotFoundException e) {
+                // Only confirmed value-cache absence preserves metadata alone.
                 return task;
             }
             Map<String, Object> data = new HashMap<>(task.asMap());
