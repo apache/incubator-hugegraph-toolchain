@@ -33,6 +33,14 @@ public interface OperationsDataService {
                               int page, int pageSize, String sort,
                               String order);
 
+    default Map<String, Object> nodes(HugeClient client, Set<String> capabilities,
+                                      String type, String status, String query,
+                                      int page, int pageSize, String sort,
+                                      String order, boolean refresh) {
+        return this.nodes(client, capabilities, type, status, query,
+                          page, pageSize, sort, order);
+    }
+
     Map<String, Object> node(HugeClient client, Set<String> capabilities,
                              String nodeId, boolean refresh);
 }

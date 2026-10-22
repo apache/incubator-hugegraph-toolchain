@@ -18,6 +18,8 @@
 
 package org.apache.hugegraph.service.op;
 
+import java.util.Map;
+
 public class UpstreamResponseTooLargeException
        extends UpstreamRequestException {
 
@@ -25,5 +27,12 @@ public class UpstreamResponseTooLargeException
 
     public UpstreamResponseTooLargeException() {
         super("upstream_response_too_large");
+    }
+
+    public UpstreamResponseTooLargeException(String path, long limit,
+                                            long observedBytes, boolean exact) {
+        super("upstream_response_too_large", null,
+              Map.of("request_path", path, "max_response_bytes", limit,
+                     "response_bytes", observedBytes, "response_size_exact", exact));
     }
 }

@@ -113,16 +113,25 @@ public final class OperationsModels {
         private final boolean fresh;
         private final boolean stale;
         private final String reason;
+        private final Map<String, Object> diagnostics;
 
         public MetricStatus(String availability, Long observedAt,
                             Long lastSuccessAt, boolean fresh, boolean stale,
                             String reason) {
+            this(availability, observedAt, lastSuccessAt, fresh, stale, reason,
+                 Collections.emptyMap());
+        }
+
+        public MetricStatus(String availability, Long observedAt,
+                            Long lastSuccessAt, boolean fresh, boolean stale,
+                            String reason, Map<String, Object> diagnostics) {
             this.availability = availability;
             this.observedAt = observedAt;
             this.lastSuccessAt = lastSuccessAt;
             this.fresh = fresh;
             this.stale = stale;
             this.reason = reason;
+            this.diagnostics = immutableMap(diagnostics);
         }
 
         public String getAvailability() {
@@ -149,10 +158,20 @@ public final class OperationsModels {
             return this.reason;
         }
 
+        public Map<String, Object> getDiagnostics() {
+            return this.diagnostics;
+        }
+
+        public MetricStatus withDiagnostics(Map<String, Object> details) {
+            return new MetricStatus(this.availability, this.observedAt,
+                                    this.lastSuccessAt, this.fresh, this.stale,
+                                    this.reason, details);
+        }
+
         public MetricStatus stale(String staleReason) {
             return new MetricStatus(this.availability, this.observedAt,
                                     this.lastSuccessAt, false, true,
-                                    staleReason);
+                                    staleReason, this.diagnostics);
         }
     }
 
@@ -204,10 +223,18 @@ public final class OperationsModels {
         private final boolean fresh;
         private final boolean stale;
         private final String reason;
+        private final Map<String, Object> diagnostics;
 
         public SourceStatus(String availability, String status, Long observedAt,
                             Long lastSuccessAt, boolean fresh, boolean stale,
                             String reason) {
+            this(availability, status, observedAt, lastSuccessAt, fresh, stale,
+                 reason, Collections.emptyMap());
+        }
+
+        public SourceStatus(String availability, String status, Long observedAt,
+                            Long lastSuccessAt, boolean fresh, boolean stale,
+                            String reason, Map<String, Object> diagnostics) {
             this.availability = availability;
             this.status = status;
             this.observedAt = observedAt;
@@ -215,6 +242,7 @@ public final class OperationsModels {
             this.fresh = fresh;
             this.stale = stale;
             this.reason = reason;
+            this.diagnostics = immutableMap(diagnostics);
         }
 
         public String getAvailability() {
@@ -245,10 +273,20 @@ public final class OperationsModels {
             return this.reason;
         }
 
+        public Map<String, Object> getDiagnostics() {
+            return this.diagnostics;
+        }
+
+        public SourceStatus withDiagnostics(Map<String, Object> details) {
+            return new SourceStatus(this.availability, this.status, this.observedAt,
+                                    this.lastSuccessAt, this.fresh, this.stale,
+                                    this.reason, details);
+        }
+
         public SourceStatus stale(String staleReason) {
             return new SourceStatus(this.availability, this.status,
                                     this.observedAt, this.lastSuccessAt,
-                                    false, true, staleReason);
+                                    false, true, staleReason, this.diagnostics);
         }
     }
 
@@ -314,7 +352,8 @@ public final class OperationsModels {
                     MetricStatus staleStatus = status.getLastSuccessAt() == null ?
                             status : new MetricStatus(
                             "UNAVAILABLE", status.getObservedAt(),
-                            status.getLastSuccessAt(), false, true, staleReason);
+                            status.getLastSuccessAt(), false, true, staleReason,
+                            status.getDiagnostics());
                     statuses.put(group, staleStatus);
                 });
                 staleNodes.add(new Node(

@@ -31,8 +31,9 @@ import {
     SourceStrip,
     TierIcon,
 } from './components';
-import {formatMetricValue, formatObservedAt} from './topology';
+import {formatMetricValue, formatObservedAt, selectAttentionSources} from './topology';
 import {operationsReturnTo} from './navigation';
+import SourceDiagnostics from './SourceDiagnostics';
 import './operations.scss';
 
 const GROUPS_BY_TYPE = {
@@ -576,6 +577,10 @@ const NodeDetail = () => {
                 sourceNames={pdMode ? undefined : ['server']}
                 detailed
             />
+            {selectAttentionSources({[SOURCE_BY_TYPE[node.type]]: source}).length > 0 && (
+                <SourceDiagnostics sources={data?.sources}
+                    sourceName={SOURCE_BY_TYPE[node.type]} nodes={[node]} />
+            )}
             <section
                 className='operations-surface operations-node-summary'
                 aria-labelledby='operations-node-summary-heading'

@@ -531,6 +531,19 @@
     white-space: nowrap;
 }
 
+.operations-source-diagnostics {
+    margin-bottom: 16px;
+
+    h4 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 16px 0 8px;
+    }
+
+    code { overflow-wrap: anywhere; }
+}
+
 .operations-nodes-table .ant-table {
     table-layout: fixed;
 }
@@ -580,7 +593,8 @@
     gap: 16px;
 
     .operations-page-header,
-    .operations-source-strip { margin-bottom: 0; }
+    .operations-source-strip,
+    .operations-source-diagnostics { margin-bottom: 0; }
 }
 
 .operations-node-identity {

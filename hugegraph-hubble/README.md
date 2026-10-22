@@ -416,6 +416,30 @@ trusted Store scheme, hostname or literal address, and port; discovery cannot
 add origins to this allowlist. HTTPS origins keep their configured hostname for
 TLS SNI and certificate hostname verification.
 
+### Cluster source diagnostics
+
+Cluster Overview distinguishes node reachability from collection quality. A
+Store source with failed or partial collection shows an amber attention status,
+even when its last topology status remains `UP`. **Inspect Store source** opens
+source diagnostics on the Nodes page, including when discovery returned no
+nodes. The panel shows the failed request path, HTTP status when reported,
+response size and limit, last observation and success, freshness, and affected
+nodes or metric groups. A streamed response stopped at the limit is labeled
+**At least**, since its complete size is unknown. **Refresh** requests a new
+snapshot so operators can retry collection and confirm recovery.
+
+Chrome interaction checks on 2026-10-22 used the running frontend with mocked
+Hubble API responses in authenticated administrator and anonymous modes. Both
+checks covered the overview-to-empty-Nodes diagnostic link, response evidence,
+refresh recovery, unchanged PD `UP` status, generated `Server` names and custom
+names, GraphSpace visibility and context switching, and account visibility only
+in authenticated mode. These fixtures do not verify live Server/PD/Store
+connectivity, authentication enforcement, or the connection resolver. Browser
+screenshots: authenticated [source health](docs/assets/operations-source-health-authenticated.png)
+and [source diagnostics](docs/assets/operations-source-diagnostics-authenticated.png);
+anonymous [source health](docs/assets/operations-source-health-anonymous.png)
+and [source diagnostics](docs/assets/operations-source-diagnostics-anonymous.png).
+
 ## Functional Modules Overview
 
 ```mermaid

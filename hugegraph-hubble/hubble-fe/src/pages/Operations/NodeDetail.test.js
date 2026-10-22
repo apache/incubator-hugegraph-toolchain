@@ -180,7 +180,7 @@ test('keeps null metrics safe and distinguishes unavailable groups', async () =>
 
     expect(await screen.findByRole('heading', {name: 'Store A'})).toBeInTheDocument();
     expect(screen.getAllByText('Unavailable').length).toBeGreaterThan(0);
-    expect(screen.getByText(/TIMEOUT/)).toBeInTheDocument();
+    expect(screen.getAllByText(/TIMEOUT/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Stale/i).length).toBeGreaterThan(0);
     expect(screen.queryByText('undefined')).not.toBeInTheDocument();
     const identity = screen.getByRole('region', {name: 'Node identity'});
