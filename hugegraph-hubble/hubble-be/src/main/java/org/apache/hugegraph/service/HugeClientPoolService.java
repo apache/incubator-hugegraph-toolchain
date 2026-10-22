@@ -38,6 +38,9 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import javax.net.ssl.SSLException;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
@@ -52,6 +55,9 @@ import org.apache.hugegraph.entity.GraphConnection;
 import org.apache.hugegraph.exception.ParameterizedException;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.options.HubbleOptions;
+import org.apache.hugegraph.structure.auth.TokenPayload;
+import org.apache.hugegraph.structure.auth.User;
+import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.util.HugeClientUtil;
 import org.apache.hugegraph.util.JsonUtil;
 import org.apache.hugegraph.util.UrlUtil;
@@ -61,6 +67,9 @@ import org.springframework.stereotype.Service;
 @Log4j2
 @Service
 public final class HugeClientPoolService {
+
+    private static final ObjectMapper POLICY_MAPPER = new ObjectMapper()
+            .enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS);
 
     @Autowired
     private HugeConfig config;
@@ -72,11 +81,41 @@ public final class HugeClientPoolService {
     private PDHugeClientFactory pdHugeClientFactory;
 
     private final Map<String, HugeClient> clients = new ConcurrentHashMap<>();
-    private final Map<HugeClient, String> statisticsContexts =
+    private final Map<HugeClient, StatisticsContext> statisticsContexts =
             Collections.synchronizedMap(new WeakHashMap<>());
 
     public String statisticsContext(HugeClient client) {
-        return this.statisticsContexts.get(client);
+        StatisticsContext context = this.statisticsContexts.get(client);
+        return context == null ? null : context.key();
+    }
+
+    public String statisticsPolicy(HugeClient client) {
+        StatisticsContext context = this.statisticsContexts.get(client);
+        if (context == null || (!context.bearer() && context.username() == null)) {
+            return "";
+        }
+        Object userId;
+        if (context.bearer()) {
+            TokenPayload identity = client.auth().verifyToken();
+            E.checkState(identity != null && StringUtils.isNotEmpty(identity.userId()),
+                         "Current-user identity is unavailable");
+            userId = identity.userId();
+        } else {
+            User user = client.findUserByName(context.username());
+            E.checkState(user != null && context.username().equals(user.name()),
+                         "Current-user identity is unavailable");
+            userId = user.id();
+        }
+        User.UserRole policy = client.auth().getUserRole(userId);
+        E.checkState(policy != null, "Current authorization policy is unavailable");
+        try {
+            return DigestUtils.sha256Hex(POLICY_MAPPER.writeValueAsBytes(policy.roles()));
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Unable to serialize current authorization policy", e);
+        }
+    }
+
+    private record StatisticsContext(String key, String username, boolean bearer) {
     }
 
     private Cache<String, List<String>> urlCache = CacheBuilder.newBuilder()
@@ -243,8 +282,9 @@ public final class HugeClientPoolService {
     private void registerStatisticsContext(HugeClient client, Object target,
                                            String token, String username, String password) {
         String authType = token != null ? "bearer" : username != null ? "basic" : "anonymous";
-        this.statisticsContexts.put(client, DigestUtils.sha256Hex(JsonUtil.toJson(
-                Arrays.asList(target, authType, token, username, password))));
+        String key = DigestUtils.sha256Hex(JsonUtil.toJson(
+                Arrays.asList(target, authType, token, username, password)));
+        this.statisticsContexts.put(client, new StatisticsContext(key, username, token != null));
     }
 
     /**

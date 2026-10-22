@@ -493,7 +493,6 @@ public class GraphsService {
             // Unregistered clients have no stable target/identity partition.
             return this.collectBoundedStatistics(client);
         }
-        this.requireStatisticsAccess(client, graphSpace, graph);
         try {
             return this.boundedStatistics.get(key, () -> this.collectBoundedStatistics(client));
         } catch (ExecutionException | UncheckedExecutionException e) {
@@ -507,15 +506,8 @@ public class GraphsService {
     private String statisticsKey(HugeClient client, String graphSpace, String graph) {
         String context = this.clientPool.statisticsContext(client);
         return context == null ? null : "bounded:" + context + ":" +
+               this.clientPool.statisticsPolicy(client) + ":" +
                JsonUtil.toJson(java.util.Arrays.asList(graphSpace, graph));
-    }
-
-    private void requireStatisticsAccess(HugeClient client, String graphSpace, String graph) {
-        if (this.authModeService.enabled()) {
-            client.assignGraph(graphSpace, graph);
-            // Validate graph read access without fetching elements or their properties.
-            client.graph().listVertices(0);
-        }
     }
 
     public void postStatistics(RestClient pdClient,
@@ -809,7 +801,6 @@ public class GraphsService {
         String key = this.statisticsKey(client, graphSpace, graph);
         GraphStatisticsEntity statistics = key == null ? null : this.boundedStatistics.getIfPresent(key);
         if (statistics != null) {
-            this.requireStatisticsAccess(client, graphSpace, graph);
             res.put("date", statistics.getUpdateTime().substring(0, 10).replace("-", ""));
             res.put("vertex", Long.valueOf(statistics.getVertexCount()));
             res.put("edge", Long.valueOf(statistics.getEdgeCount()));

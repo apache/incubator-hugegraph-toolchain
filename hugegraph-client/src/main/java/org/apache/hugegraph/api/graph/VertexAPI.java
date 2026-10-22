@@ -121,10 +121,7 @@ public class VertexAPI extends GraphAPI {
     public Vertices list(String label, Map<String, Object> properties,
                          boolean keepP, int offset, String page, int limit) {
         checkOffset(offset);
-        // A zero-result request still lets Server validate graph read access.
-        if (limit != 0) {
-            checkLimit(limit, "Limit");
-        }
+        checkLimit(limit, "Limit");
         String props = GraphAPI.formatProperties(properties);
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("label", label);

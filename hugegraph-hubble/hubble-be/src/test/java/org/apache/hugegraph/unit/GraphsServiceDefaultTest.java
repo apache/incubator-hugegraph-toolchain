@@ -63,7 +63,6 @@ public class GraphsServiceDefaultTest {
 
     private HugeClient client;
     private GraphsManager graphs;
-    private GraphManager graph;
     private GraphsService service;
     private AuthModeService authMode;
 
@@ -72,8 +71,6 @@ public class GraphsServiceDefaultTest {
         this.client = Mockito.mock(HugeClient.class);
         this.graphs = Mockito.mock(GraphsManager.class);
         Mockito.when(this.client.graphs()).thenReturn(this.graphs);
-        this.graph = Mockito.mock(GraphManager.class);
-        Mockito.when(this.client.graph()).thenReturn(this.graph);
         this.service = new GraphsService();
         ReflectionTestUtils.setField(this.service, "clientPool", Mockito.mock(HugeClientPoolService.class));
         this.authMode = Mockito.mock(AuthModeService.class);
@@ -343,14 +340,14 @@ public class GraphsServiceDefaultTest {
         Assert.assertEquals(100000, first.getScanLimit());
         Mockito.verify(query, Mockito.times(2))
                .executeQueryCount(Mockito.eq(this.client), Mockito.anyString());
-        Mockito.verify(this.graph, Mockito.times(2)).listVertices(0);
+        Mockito.verify(this.client, Mockito.never()).graph();
         now.set(TimeUnit.SECONDS.toNanos(1799));
         Map<String, Object> overview = this.service.evCount(this.client, "space", "graph");
         Assert.assertEquals(100000L, overview.get("vertex"));
         Assert.assertEquals(90000L, overview.get("edge"));
         Assert.assertEquals(true, overview.get("approximate"));
         Assert.assertEquals(100000, overview.get("scan_limit"));
-        Mockito.verify(this.graph, Mockito.times(3)).listVertices(0);
+        Mockito.verify(this.client, Mockito.never()).graph();
         Mockito.verify(query, Mockito.times(2))
                .executeQueryCount(Mockito.eq(this.client), Mockito.anyString());
 
@@ -367,6 +364,46 @@ public class GraphsServiceDefaultTest {
         this.service.getStatistics(this.client, "space", "graph");
         Mockito.verify(query, Mockito.times(8))
                .executeQueryCount(Mockito.eq(this.client), Mockito.anyString());
+    }
+
+    @Test
+    public void testStatisticsCachePartitionsByCurrentPolicyAndPreservesSnapshots() {
+        GraphsService service = Mockito.spy(this.service);
+        HugeClientPoolService pool = Mockito.mock(HugeClientPoolService.class);
+        Mockito.when(pool.statisticsContext(this.client)).thenReturn("context");
+        Mockito.when(pool.statisticsPolicy(this.client)).thenReturn("policy-a");
+        ReflectionTestUtils.setField(service, "clientPool", pool);
+        GraphStatisticsEntity first = GraphStatisticsEntity.emptyEntity();
+        first.setVertexCount("12");
+        GraphStatisticsEntity changed = GraphStatisticsEntity.emptyEntity();
+        changed.setVertexCount("2");
+        Mockito.doReturn(first, changed).when(service).collectBoundedStatistics(this.client);
+        GraphManager graph = Mockito.mock(GraphManager.class);
+        Mockito.when(this.client.graph()).thenReturn(graph);
+
+        Assert.assertSame(first, service.getStatistics(this.client, "space", "graph"));
+        Assert.assertEquals(12L, service.evCount(this.client, "space", "graph").get("vertex"));
+        Mockito.when(pool.statisticsPolicy(this.client)).thenReturn("policy-b");
+        Assert.assertNull(service.evCount(this.client, "space", "graph").get("vertex"));
+        Assert.assertSame(changed, service.getStatistics(this.client, "space", "graph"));
+        Assert.assertEquals(2L, service.evCount(this.client, "space", "graph").get("vertex"));
+
+        ServerException unavailable = new ServerException("Current policy unavailable");
+        Mockito.when(pool.statisticsPolicy(this.client)).thenThrow(unavailable);
+        org.apache.hugegraph.testutil.Assert.assertThrows(
+                ServerException.class, () -> service.getStatistics(this.client, "space", "graph"));
+        org.apache.hugegraph.testutil.Assert.assertThrows(
+                ServerException.class, () -> service.evCount(this.client, "space", "graph"));
+        Mockito.doReturn("policy-a").when(pool).statisticsPolicy(this.client);
+        Assert.assertSame(first, service.getStatistics(this.client, "space", "graph"));
+        Assert.assertEquals(12L, service.evCount(this.client, "space", "graph").get("vertex"));
+        Mockito.verify(service, Mockito.times(2)).collectBoundedStatistics(this.client);
+
+        HugeClient reusedTarget = Mockito.mock(HugeClient.class);
+        Mockito.when(pool.statisticsContext(reusedTarget)).thenReturn("context");
+        Mockito.when(pool.statisticsPolicy(reusedTarget)).thenReturn("policy-a");
+        Assert.assertSame(first, service.getStatistics(reusedTarget, "space", "graph"));
+        Mockito.verify(service, Mockito.never()).collectBoundedStatistics(reusedTarget);
     }
 
     @Test
@@ -388,57 +425,9 @@ public class GraphsServiceDefaultTest {
     }
 
     @Test
-    public void testCachedStatisticsValidateGraphReadAccessOnEachRequest() {
-        GraphsService service = Mockito.spy(this.service);
-        HugeClientPoolService pool = Mockito.mock(HugeClientPoolService.class);
-        Mockito.when(pool.statisticsContext(this.client)).thenReturn("context");
-        ReflectionTestUtils.setField(service, "clientPool", pool);
-        GraphStatisticsEntity statistics = GraphStatisticsEntity.emptyEntity();
-        statistics.setVertexCount("12");
-        Mockito.doReturn(statistics).when(service).collectBoundedStatistics(this.client);
-
-        Assert.assertSame(statistics, service.getStatistics(this.client, "space", "graph"));
-        Assert.assertEquals(12L, service.evCount(this.client, "space", "graph").get("vertex"));
-        ServerException unavailable = new ServerException("Graph read unavailable");
-        Mockito.when(this.graph.listVertices(0)).thenThrow(unavailable);
-        try {
-            service.getStatistics(this.client, "space", "graph");
-            Assert.fail("Expected graph read failure");
-        } catch (ServerException e) {
-            Assert.assertSame(unavailable, e);
-        }
-        try {
-            service.evCount(this.client, "space", "graph");
-            Assert.fail("Expected graph read failure");
-        } catch (ServerException e) {
-            Assert.assertSame(unavailable, e);
-        }
-
-        Mockito.doReturn(Collections.emptyList()).when(this.graph).listVertices(0);
-        Assert.assertSame(statistics, service.getStatistics(this.client, "space", "graph"));
-        Assert.assertEquals(12L, service.evCount(this.client, "space", "graph").get("vertex"));
-        Mockito.verify(this.graph, Mockito.times(6)).listVertices(0);
-        Mockito.verify(this.graph, Mockito.never()).getEVCount(Mockito.anyString());
-        Mockito.verify(service).collectBoundedStatistics(this.client);
-
-        HugeClient reusedTarget = Mockito.mock(HugeClient.class);
-        GraphManager reusedGraph = Mockito.mock(GraphManager.class);
-        Mockito.when(reusedTarget.graph()).thenReturn(reusedGraph);
-        Mockito.when(pool.statisticsContext(reusedTarget)).thenReturn("context");
-        Assert.assertSame(statistics, service.getStatistics(reusedTarget, "space", "graph"));
-        Mockito.verify(reusedGraph).listVertices(0);
-        Mockito.verify(service, Mockito.never()).collectBoundedStatistics(reusedTarget);
-
-        Mockito.when(this.authMode.enabled()).thenReturn(false);
-        Assert.assertSame(statistics, service.getStatistics(this.client, "space", "graph"));
-        Mockito.verify(this.graph, Mockito.times(6)).listVertices(0);
-    }
-
-    @Test
     public void testStatisticsLoadingDoesNotBlockAnotherKeyInTheSameCacheSegment() throws Exception {
         GraphsService service = Mockito.spy(this.service);
         HugeClient otherClient = Mockito.mock(HugeClient.class);
-        Mockito.when(otherClient.graph()).thenReturn(Mockito.mock(GraphManager.class));
         HugeClientPoolService pool = Mockito.mock(HugeClientPoolService.class);
         Mockito.when(pool.statisticsContext(Mockito.any())).thenReturn("shared-context");
         ReflectionTestUtils.setField(service, "clientPool", pool);

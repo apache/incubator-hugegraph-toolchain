@@ -36,12 +36,16 @@ import com.sun.net.httpserver.HttpServer;
 import org.apache.hugegraph.config.ConfigException;
 import org.apache.hugegraph.config.HugeConfig;
 import org.apache.hugegraph.driver.HugeClient;
+import org.apache.hugegraph.driver.AuthManager;
 import org.apache.hugegraph.driver.factory.PDHugeClientFactory;
 import org.apache.hugegraph.exception.ParameterizedException;
 import org.apache.hugegraph.options.HubbleOptions;
 import org.apache.hugegraph.service.HugeClientPoolService;
 import org.apache.hugegraph.service.SettingSSLService;
+import org.apache.hugegraph.structure.auth.TokenPayload;
+import org.apache.hugegraph.structure.auth.User;
 import org.apache.hugegraph.testutil.Assert;
+import org.apache.hugegraph.util.JsonUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -252,6 +256,76 @@ public class HugeClientPoolServiceTest {
             first.stop(0);
             second.stop(0);
         }
+    }
+
+    @Test
+    public void testStatisticsPolicyReadsCurrentBasicUserPolicyWithCanonicalMapOrder() {
+        HugeClient client = Mockito.mock(HugeClient.class);
+        AuthManager auth = Mockito.mock(AuthManager.class);
+        Mockito.when(client.auth()).thenReturn(auth);
+        User user = new User();
+        user.name("reader");
+        user.setId("reader-id");
+        Mockito.when(client.findUserByName("reader")).thenReturn(user);
+        ReflectionTestUtils.invokeMethod(this.service, "registerStatisticsContext",
+                                         client, "target", null, "reader", "fixture");
+        User.UserRole first = JsonUtil.fromJson(
+                "{\"roles\":{\"space\":{\"graph\":{\"READ\":{\"VERTEX#*\":[" +
+                "{\"type\":\"VERTEX\",\"label\":\"*\",\"properties\":{\"a\":1,\"b\":2}}]," +
+                "\"EDGE#*\":[{\"type\":\"EDGE\",\"label\":\"*\"}]}}}}}", User.UserRole.class);
+        User.UserRole reordered = JsonUtil.fromJson(
+                "{\"roles\":{\"space\":{\"graph\":{\"READ\":{\"EDGE#*\":[" +
+                "{\"type\":\"EDGE\",\"label\":\"*\"}],\"VERTEX#*\":[" +
+                "{\"type\":\"VERTEX\",\"label\":\"*\",\"properties\":{\"b\":2,\"a\":1}}]}}}}}",
+                User.UserRole.class);
+        User.UserRole changed = JsonUtil.fromJson("{\"roles\":{}}", User.UserRole.class);
+        Mockito.when(auth.getUserRole("reader-id")).thenReturn(first, reordered, changed)
+               .thenThrow(new IllegalStateException("Policy unavailable"));
+
+        String context = this.service.statisticsContext(client);
+        String policy = this.service.statisticsPolicy(client);
+        Assert.assertTrue(policy.matches("[0-9a-f]{64}"));
+        Assert.assertEquals(policy, this.service.statisticsPolicy(client));
+        Assert.assertNotEquals(policy, this.service.statisticsPolicy(client));
+        Assert.assertThrows(IllegalStateException.class, () -> this.service.statisticsPolicy(client));
+        Assert.assertEquals(context, this.service.statisticsContext(client));
+        Mockito.verify(client, Mockito.times(4)).findUserByName("reader");
+        Mockito.verify(auth, Mockito.times(4)).getUserRole("reader-id");
+        Mockito.verify(auth, Mockito.never()).verifyToken();
+
+        Mockito.doReturn(JsonUtil.fromJson("{}", User.UserRole.class))
+               .when(auth).getUserRole("reader-id");
+        Assert.assertThrows(RuntimeException.class, () -> this.service.statisticsPolicy(client));
+        Mockito.doReturn(null).when(auth).getUserRole("reader-id");
+        Assert.assertThrows(IllegalStateException.class, () -> this.service.statisticsPolicy(client));
+    }
+
+    @Test
+    public void testStatisticsPolicyUsesVerifiedBearerIdentity() {
+        HugeClient client = Mockito.mock(HugeClient.class);
+        AuthManager auth = Mockito.mock(AuthManager.class);
+        Mockito.when(client.auth()).thenReturn(auth);
+        Mockito.when(auth.verifyToken()).thenReturn(JsonUtil.fromJson(
+                "{\"user_id\":\"reader-id\",\"user_name\":\"reader\"}", TokenPayload.class));
+        Mockito.when(auth.getUserRole("reader-id")).thenReturn(
+                JsonUtil.fromJson("{\"roles\":{}}", User.UserRole.class));
+        ReflectionTestUtils.invokeMethod(this.service, "registerStatisticsContext",
+                                         client, "target", "fixture", null, null);
+
+        Assert.assertTrue(this.service.statisticsPolicy(client).matches("[0-9a-f]{64}"));
+        Mockito.verify(auth).verifyToken();
+        Mockito.verify(auth).getUserRole("reader-id");
+        Mockito.verify(client, Mockito.never()).findUserByName(Mockito.anyString());
+    }
+
+    @Test
+    public void testAnonymousStatisticsPolicyDoesNotCallServer() {
+        HugeClient client = Mockito.mock(HugeClient.class);
+        ReflectionTestUtils.invokeMethod(this.service, "registerStatisticsContext",
+                                         client, "target", null, null, null);
+
+        Assert.assertEquals("", this.service.statisticsPolicy(client));
+        Mockito.verifyNoInteractions(client);
     }
 
     @Test
