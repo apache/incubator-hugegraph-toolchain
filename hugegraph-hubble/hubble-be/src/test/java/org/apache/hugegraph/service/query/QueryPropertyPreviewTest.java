@@ -21,6 +21,7 @@ package org.apache.hugegraph.service.query;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.junit.Test;
@@ -137,6 +138,95 @@ public class QueryPropertyPreviewTest {
         Assert.assertSame(longName, copy.label());
         Assert.assertTrue(original.properties().containsKey(longName));
         Assert.assertTrue(preview.truncated());
+    }
+
+    @Test
+    public void testBranchingCollectionsShareOneValueBudget() {
+        Object branch = 7L;
+        for (int depth = 0; depth < 4; depth++) {
+            Map<String, Object> parent = new LinkedHashMap<>();
+            for (int i = 0; i < 20; i++) {
+                parent.put("key" + i, branch);
+            }
+            branch = parent;
+        }
+        QueryPropertyPreview preview = new QueryPropertyPreview();
+        Object projected = preview.project(new TypedResult(Type.GENERAL, List.of(branch)))
+                                  .getData().get(0);
+        Assert.assertTrue(this.projectedValues(projected) <= QueryPropertyPreview.VALUE_LIMIT + 5);
+        Assert.assertTrue(projected.toString().contains("value budget exhausted"));
+        Assert.assertTrue(preview.truncated());
+    }
+
+    @Test
+    public void testBudgetIsSharedAcrossRowsAndGraphViewWithoutLosingIdentity() {
+        List<Object> rows = new ArrayList<>();
+        for (int i = 0; i < 1000; i++) {
+            rows.add(List.of(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L));
+        }
+        QueryPropertyPreview preview = new QueryPropertyPreview();
+        List<Object> projected = preview.project(new TypedResult(Type.GENERAL, rows)).getData();
+        int count = 0;
+        for (Object row : projected) {
+            count += this.projectedValues(row);
+        }
+        Assert.assertTrue(count <= QueryPropertyPreview.VALUE_LIMIT + rows.size());
+        Assert.assertEquals("[preview: value budget exhausted]", projected.get(999));
+        Vertex vertex = new Vertex("person");
+        BigInteger id = new BigInteger("9007199254740993123456");
+        vertex.id(id);
+        vertex.property("payload", "still bounded");
+        GraphView graph = preview.project(new GraphView(List.of(vertex), List.of()));
+        Vertex copy = graph.getVertices().iterator().next();
+        Assert.assertSame(id, copy.id());
+        Assert.assertEquals("person", copy.label());
+        Assert.assertEquals("[preview: value budget exhausted]", copy.property("payload"));
+        Assert.assertEquals("still bounded", vertex.property("payload"));
+        Assert.assertTrue(preview.truncated());
+        QueryPropertyPreview nextQuery = new QueryPropertyPreview();
+        Assert.assertEquals(7L, nextQuery.project(new TypedResult(Type.GENERAL, List.of(7L))).getData().get(0));
+        Assert.assertFalse(nextQuery.truncated());
+    }
+
+    @Test
+    public void testRepeatedGraphObjectsCannotReuseAnUnchargedPropertyTree() {
+        Map<String, Object> branch = new LinkedHashMap<>();
+        for (int i = 0; i < 20; i++) {
+            branch.put("key" + i, List.of(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L));
+        }
+        Vertex vertex = new Vertex("person");
+        vertex.id(1L);
+        vertex.properties().put("branch", branch);
+        List<Object> rows = new ArrayList<>();
+        for (int i = 0; i < 1000; i++) {
+            rows.add(vertex);
+        }
+        QueryPropertyPreview preview = new QueryPropertyPreview();
+        List<Object> copies = preview.project(new TypedResult(Type.VERTEX, rows)).getData();
+        int count = 0;
+        for (Object value : copies) {
+            Vertex copy = (Vertex) value;
+            Assert.assertEquals(1L, copy.id());
+            count += this.projectedValues(copy.property("branch"));
+        }
+        Assert.assertTrue(count <= QueryPropertyPreview.VALUE_LIMIT + rows.size() + 5);
+        Assert.assertEquals("[preview: value budget exhausted]",
+                            ((Vertex) copies.get(999)).property("branch"));
+        Assert.assertTrue(preview.truncated());
+    }
+
+    private int projectedValues(Object value) {
+        int count = 1;
+        if (value instanceof Map) {
+            for (Object nested : ((Map<?, ?>) value).values()) {
+                count += this.projectedValues(nested);
+            }
+        } else if (value instanceof List) {
+            for (Object nested : (List<?>) value) {
+                count += this.projectedValues(nested);
+            }
+        }
+        return count;
     }
 
     @Test

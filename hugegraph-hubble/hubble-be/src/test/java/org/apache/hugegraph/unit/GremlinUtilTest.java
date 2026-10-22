@@ -28,6 +28,56 @@ public class GremlinUtilTest {
     private static final int LIMIT = 250;
 
     @Test
+    public void testOneToOneMappersAndLocalLimitsPreserveAnEarlierGlobalBound() {
+        for (String mapper : new String[]{"id()", "label()", "path()", "project('name').by('name')",
+                                          "select('x')", "valueMap()", "elementMap()"}) {
+            String query = "g.V().as('x').limit(1000)." + mapper;
+            Assert.assertEquals(query, GremlinUtil.optimizeLimit(query, 300));
+            Assert.assertEquals(query + ".limit(1001)", GremlinUtil.optimizePreviewLimit(query, 1001));
+            for (String expansion : new String[]{".unfold()", ".out()"}) {
+                Assert.assertEquals(query + expansion + ".limit(300)",
+                                    GremlinUtil.optimizeLimit(query + expansion, 300));
+            }
+        }
+        for (String local : new String[]{"limit(local, 5)", "range(Scope.local, 0, 5)",
+                                         "sample(local, 5)", "tail(Scope.local, 5)"}) {
+            String query = "g.V().limit(1000)." + local;
+            Assert.assertEquals(query, GremlinUtil.optimizeLimit(query, 300));
+            Assert.assertEquals(query + ".limit(1001)", GremlinUtil.optimizePreviewLimit(query, 1001));
+            String unbounded = "g.V()." + local;
+            Assert.assertEquals(unbounded + ".limit(300)", GremlinUtil.optimizeLimit(unbounded, 300));
+        }
+    }
+
+    @Test
+    public void testLocalReducersDoNotBypassResultLimits() {
+        for (String query : new String[]{"g.V().valueMap().count(local)",
+                                         "g.V().values('scores').sum(Scope.local)",
+                                         "g.V().values('scores').min(local)",
+                                         "g.V().values('scores').max(Scope.local)",
+                                         "g.V().values('scores').mean(local)",
+                                         "g.V().fold().unfold().valueMap().count(local)"}) {
+            Assert.assertEquals(query + ".limit(300)", GremlinUtil.optimizeLimit(query, 300));
+            Assert.assertEquals(query + ".limit(1001)", GremlinUtil.optimizePreviewLimit(query, 1001));
+        }
+        for (String query : new String[]{"g.V().count()", "g.V().count(global)",
+                                         "g.V().values('age').sum(Scope.global)"}) {
+            Assert.assertEquals(query, GremlinUtil.optimizeLimit(query, 300));
+            Assert.assertEquals(query, GremlinUtil.optimizePreviewLimit(query, 1001));
+        }
+        for (String bounded : new String[]{"g.V().limit(10).count(local)",
+                                           "g.V().limit(10).valueMap().count(local)",
+                                           "g.V().limit(10).elementMap().count(Scope.local)"}) {
+            Assert.assertEquals(bounded, GremlinUtil.optimizeLimit(bounded, 300));
+            Assert.assertEquals(bounded + ".limit(1001)", GremlinUtil.optimizePreviewLimit(bounded, 1001));
+        }
+        String expanding = "g.V().limit(10).valueMap().unfold()";
+        Assert.assertEquals(expanding + ".limit(300)", GremlinUtil.optimizeLimit(expanding, 300));
+        Assert.assertEquals("g.V().valueMap().count(local /* scope */).limit(300)",
+                            GremlinUtil.optimizeLimit("g.V().valueMap().count(local /* scope */)", 300));
+    }
+
+    @Test
     public void testExpansionAfterBarrierReceivesFinalLimits() {
         for (String query : new String[]{"g.V().fold().unfold().out()",
                                          "g.V().groupCount().by(label).unfold()",

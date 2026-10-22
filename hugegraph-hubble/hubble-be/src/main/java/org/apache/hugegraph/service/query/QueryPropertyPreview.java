@@ -19,7 +19,6 @@
 package org.apache.hugegraph.service.query;
 
 import java.util.ArrayList;
-import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -36,11 +35,13 @@ import org.apache.hugegraph.structure.graph.Vertex;
 final class QueryPropertyPreview {
 
     static final int STRING_LIMIT = 256;
+    static final int VALUE_LIMIT = 10000;
+    private static final String VALUE_OMITTED = "[preview: value budget exhausted]";
     private static final int COLLECTION_LIMIT = 20;
     private static final int DEPTH_LIMIT = 4;
 
-    private final Map<Object, Object> copies = new IdentityHashMap<>();
     private boolean truncated;
+    private int remainingValues = VALUE_LIMIT;
 
     boolean truncated() {
         return this.truncated;
@@ -71,9 +72,6 @@ final class QueryPropertyPreview {
     }
 
     private Object value(Object value, int depth) {
-        if (this.copies.containsKey(value)) {
-            return this.copies.get(value);
-        }
         if (value instanceof Vertex) {
             Vertex original = (Vertex) value;
             Vertex copy = new Vertex(original.label());
@@ -93,7 +91,6 @@ final class QueryPropertyPreview {
         if (value instanceof Path) {
             Path original = (Path) value;
             Path copy = new Path();
-            this.copies.put(original, copy);
             copy.labels(original.labels().toArray());
             Object crosspoint = original.crosspoint();
             copy.crosspoint(crosspoint instanceof GraphElement ? this.value(crosspoint, 0) : crosspoint);
@@ -102,6 +99,13 @@ final class QueryPropertyPreview {
             }
             return copy;
         }
+        // Identity and path structure above are retained even after the
+        // shared property/general-value budget is exhausted.
+        if (this.remainingValues == 0) {
+            this.truncated = true;
+            return VALUE_OMITTED;
+        }
+        this.remainingValues--;
         if (value instanceof byte[]) {
             byte[] bytes = (byte[]) value;
             if (bytes.length > STRING_LIMIT) {
@@ -141,7 +145,11 @@ final class QueryPropertyPreview {
                 if (this.omitKey(entry.getKey())) {
                     continue;
                 }
+                boolean exhausted = this.exhausted(entry.getValue());
                 copy.put(entry.getKey(), this.value(entry.getValue(), depth + 1));
+                if (exhausted) {
+                    break;
+                }
             }
             return copy;
         }
@@ -152,7 +160,11 @@ final class QueryPropertyPreview {
                     this.truncated = true;
                     break;
                 }
+                boolean exhausted = this.exhausted(item);
                 copy.add(this.value(item, depth + 1));
+                if (exhausted) {
+                    break;
+                }
             }
             return copy;
         }
@@ -164,11 +176,20 @@ final class QueryPropertyPreview {
                     this.truncated = true;
                     break;
                 }
+                boolean exhausted = this.exhausted(item);
                 copy.add(this.value(item, depth + 1));
+                if (exhausted) {
+                    break;
+                }
             }
             return copy;
         }
         return value;
+    }
+
+    private boolean exhausted(Object value) {
+        return this.remainingValues == 0 &&
+               !(value instanceof GraphElement) && !(value instanceof Path);
     }
 
     private boolean omitKey(Object key) {
@@ -182,7 +203,6 @@ final class QueryPropertyPreview {
     }
 
     private GraphElement element(GraphElement original, GraphElement copy) {
-        this.copies.put(original, copy);
         // SDK query elements have an attached manager: property() on them can
         // write to Server. Only populate the detached copy's property map.
         int visited = 0;
@@ -192,7 +212,11 @@ final class QueryPropertyPreview {
                 break;
             }
             if (!this.omitKey(entry.getKey())) {
+                boolean exhausted = this.exhausted(entry.getValue());
                 copy.properties().put(entry.getKey(), this.value(entry.getValue(), 0));
+                if (exhausted) {
+                    break;
+                }
             }
         }
         return copy;

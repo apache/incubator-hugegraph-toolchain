@@ -30,13 +30,14 @@ public final class GremlinUtil {
 
     private static final Pattern OUTER_STEP = Pattern.compile("\\.\\s*(\\w+)\\s*\\(");
     private static final Pattern LOCAL_SCOPE = Pattern.compile(
-            "^\\s*(?:Scope\\s*\\.\\s*)?local\\s*,");
+            "^\\s*(?:Scope\\s*\\.\\s*)?local\\s*(?:,|\\))");
     private static final Set<String> RESULT_LIMIT_STEPS = ImmutableSet.of(
             "limit", "range", "tail", "sample");
     private static final Set<String> FILTER_STEPS = ImmutableSet.of(
             "has", "hasId", "hasLabel", "hasKey", "hasValue", "hasNot", "dedup",
             "order", "by", "where", "filter", "is", "not", "and", "or",
-            "simplePath", "cyclicPath", "as", "identity");
+            "simplePath", "cyclicPath", "as", "identity", "valueMap", "elementMap",
+            "id", "label", "path", "project", "select");
     private static final Set<String> TERMINAL_STEPS = ImmutableSet.of(
             "count", "sum", "min", "max", "mean", "fold", "group", "groupCount",
             "next", "hasNext", "toList", "toSet");
@@ -481,13 +482,16 @@ public final class GremlinUtil {
         boolean terminal = false;
         while (steps.find()) {
             String step = steps.group(1);
+            boolean localScope = LOCAL_SCOPE.matcher(code.substring(steps.end())).find();
             if (TERMINAL_STEPS.contains(step)) {
-                terminal = true;
-                bounded = true;
+                terminal = !localScope;
+                if (!localScope) {
+                    bounded = true;
+                }
                 continue;
             }
             if (RESULT_LIMIT_STEPS.contains(step)) {
-                bounded = !LOCAL_SCOPE.matcher(code.substring(steps.end())).find();
+                bounded = bounded || !localScope;
             } else if (!FILTER_STEPS.contains(step)) {
                 terminal = false;
                 bounded = false;
