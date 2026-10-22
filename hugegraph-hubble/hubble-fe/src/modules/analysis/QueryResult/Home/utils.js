@@ -128,12 +128,9 @@ const getBoundedJsonPreview = (value, {items = 100, characters = 20000, depth = 
 };
 
 const getBoundedGraphView = (graphView = {}, edgeLimit = GRAPH_EDGE_LIMIT,
-    {propertiesTruncated = false, vertexIds, edgeIds} = {}) => {
-    // Missing metadata comes from an older backend; keep its conservative
-    // response-wide protection. Two explicit arrays identify exact elements.
-    const perElement = Array.isArray(vertexIds) && Array.isArray(edgeIds);
-    const partialVertices = new Set(perElement ? vertexIds.map(id => hubbleRenderId('node', id)) : []);
-    const partialEdges = new Set(perElement ? edgeIds.map(id => hubbleRenderId('edge', id)) : []);
+    {vertexIds, edgeIds} = {}) => {
+    const partialVertices = new Set((vertexIds ?? []).map(id => hubbleRenderId('node', id)));
+    const partialEdges = new Set((edgeIds ?? []).map(id => hubbleRenderId('edge', id)));
     // Keep the read-only marker in raw graph data, including saved/exported canvases.
     const preview = (element, partial) => partial ? {...element, '~hubble_properties_preview': true} : element;
     const vertices = [];
@@ -145,7 +142,7 @@ const getBoundedGraphView = (graphView = {}, edgeLimit = GRAPH_EDGE_LIMIT,
         const id = hubbleRenderId('node', vertex.id);
         if (!ids.has(id)) {
             ids.add(id);
-            vertices.push(preview(vertex, perElement ? partialVertices.has(id) : propertiesTruncated));
+            vertices.push(preview(vertex, partialVertices.has(id)));
         }
         if (vertices.length >= GRAPH_NODE_LIMIT) {
             break;
@@ -164,7 +161,7 @@ const getBoundedGraphView = (graphView = {}, edgeLimit = GRAPH_EDGE_LIMIT,
         if (!renderedEdgeIds.has(id) && ids.has(hubbleRenderId('node', edge.source))
             && ids.has(hubbleRenderId('node', edge.target))) {
             renderedEdgeIds.add(id);
-            edges.push(preview(edge, perElement ? partialEdges.has(id) : propertiesTruncated));
+            edges.push(preview(edge, partialEdges.has(id)));
         }
     }
     return {...graphView, vertices, edges};

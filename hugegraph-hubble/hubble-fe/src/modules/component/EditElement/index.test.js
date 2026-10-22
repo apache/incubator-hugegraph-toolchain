@@ -138,7 +138,7 @@ test('keeps a complete vertex editable beside a partial vertex from the same que
     const preview = getBoundedGraphView({vertices: [
         {id: initial.id, label: 'person', properties: initial.properties},
         {id: 'partial', label: 'person', properties: {name: 'prefix… [preview 256/257 chars]'}},
-    ], edges: []}, 500, {propertiesTruncated: true, vertexIds: ['partial'], edgeIds: []});
+    ], edges: []}, 500, {vertexIds: ['partial'], edgeIds: []});
     const drawer = vertex => ({...initial, id: vertex.id, renderingId: `node:${vertex.id}`,
         properties: vertex.properties, raw: vertex});
     const onChange = jest.fn();
