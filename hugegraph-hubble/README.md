@@ -34,8 +34,9 @@ imported as complete graph data. No full-property request runs automatically.
 
 The [local performance report](https://github.com/hugegraph/hugegraph-toolchain/pull/80)
 retains Chromium evidence for defaults, partial results, preflight, context
-switching and anonymous account/login visibility. Enabled-auth browser integration
-is listed separately as pending; service/controller tests cover those roles.
+switching and anonymous account/login visibility. A separate isolated PD/Store/Server
+fixture also verifies administrator and ordinary-member login, two-vertex Gremlin
+queries, account/GraphSpace visibility, denied access and logout in Chromium.
 
 ![Interactive 1,000-vertex preview](https://github.com/hugegraph/hugegraph-toolchain/blob/06561300277881bd4310434b6ee1adfefdbddbbb/docs/performance/2026-10-22-hubble-hstore/screenshots/comparison/after-perf_large8192-vertices1000.png?raw=true)
 

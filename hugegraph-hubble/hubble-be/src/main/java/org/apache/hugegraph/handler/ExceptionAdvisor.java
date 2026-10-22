@@ -154,7 +154,7 @@ public class ExceptionAdvisor {
         log.error("hubble.server_request_failed");
 
         String message = operations ? safeServerMessage(e) :
-                         this.handleMessage(sanitize(e.getMessage()), null);
+                         this.handleMessage(sanitize(this.queryMessage(e.getMessage())), null);
         closeRequestClient();
         return Response.builder()
                        .status(serverStatus(e.status()))
@@ -199,7 +199,7 @@ public class ExceptionAdvisor {
         log.error("hubble.unexpected_request_failed");
         String message = operations ?
                          "unexpected_request_failure" :
-                         this.handleMessage(sanitize(e.getMessage()), null);
+                         this.handleMessage(sanitize(this.queryMessage(e.getMessage())), null);
         closeRequestClient();
         return Response.builder()
                        .status(Constant.STATUS_BAD_REQUEST)
@@ -273,6 +273,35 @@ public class ExceptionAdvisor {
                request.getRequestURI().startsWith("/api/v1.3/operations");
     }
 
+    private static final int QUERY_MESSAGE_LIMIT = 2048;
+    private static final String QUERY_MESSAGE_SUFFIX = "… [message truncated]";
+    private static final Pattern QUERY_ROUTE = Pattern.compile(
+            "/graphspaces/[^/]+/graphs/[^/]+/(?:gremlin-query|cypher)(?:/|$)");
+
+    private String queryMessage(String message) {
+        if (message == null || message.length() <= QUERY_MESSAGE_LIMIT ||
+            !(RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes)) {
+            return message;
+        }
+        HttpServletRequest request = this.getRequest();
+        String uri = request.getRequestURI();
+        if (uri == null || !QUERY_ROUTE.matcher(uri).find()) {
+            return message;
+        }
+        // Preserve redaction of complete JSON strings and private-key blocks:
+        // cutting first could remove the closing delimiter needed by sanitize.
+        message = sanitize(message);
+        if (message.length() <= QUERY_MESSAGE_LIMIT) {
+            return message;
+        }
+        int end = QUERY_MESSAGE_LIMIT - QUERY_MESSAGE_SUFFIX.length();
+        if (Character.isHighSurrogate(message.charAt(end - 1)) &&
+            Character.isLowSurrogate(message.charAt(end))) {
+            end--;
+        }
+        return message.substring(0, end) + QUERY_MESSAGE_SUFFIX;
+    }
+
     private static final Pattern URL = Pattern.compile(
             "(?i)https?://[^\\s]+", Pattern.CASE_INSENSITIVE);
     private static final String SENSITIVE_KEY =
@@ -342,11 +371,12 @@ public class ExceptionAdvisor {
     }
 
     private String handleMessage(String message, Object[] args) {
+        message = this.queryMessage(message);
         String[] strArgs = null;
         if (args != null && args.length > 0) {
             strArgs = new String[args.length];
             for (int i = 0; i < args.length; i++) {
-                strArgs[i] = args[i] != null ? args[i].toString() : "?";
+                strArgs[i] = this.queryMessage(args[i] != null ? args[i].toString() : "?");
             }
         }
         message = handleErrorCode(message);
@@ -356,7 +386,7 @@ public class ExceptionAdvisor {
         } catch (Throwable e) {
             log.error("hubble.message_resolution_failed");
         }
-        return sanitize(message);
+        return this.queryMessage(sanitize(message));
     }
 
     private String handleErrorCode(String message) {
