@@ -768,7 +768,8 @@ public class LiveOperationsCollector implements OperationsCollector {
             boolean failed = false;
             for (Map.Entry<String, MetricStatus> entry : node.getMetricStatuses().entrySet()) {
                 String availability = entry.getValue().getAvailability();
-                if ("UNAVAILABLE".equals(availability) || "MALFORMED".equals(availability)) {
+                if ("UNAVAILABLE".equals(availability) || "MALFORMED".equals(availability) ||
+                    "UNSUPPORTED".equals(availability)) {
                     failed = true;
                     groups.add(entry.getKey());
                 }
@@ -798,8 +799,8 @@ public class LiveOperationsCollector implements OperationsCollector {
                                                       "upstream_deadline"));
                 continue;
             }
+            URI endpoint = job.getTarget().resolve("/metrics/" + group);
             try {
-                URI endpoint = job.getTarget().resolve("/metrics/" + group);
                 String payload = this.http.get(endpoint, this.storeUsername,
                                                this.storePassword,
                                                allowedTargets);
@@ -809,6 +810,7 @@ public class LiveOperationsCollector implements OperationsCollector {
             } catch (RuntimeException e) {
                 failureReason = mergeReason(failureReason, metricReason(e));
                 Map<String, Object> details = new LinkedHashMap<>(diagnostics(e));
+                details.put("request_path", endpoint.getRawPath());
                 details.put("metric_group", group);
                 statuses.put(group, metricStatus(e, now, true).withDiagnostics(details));
             }

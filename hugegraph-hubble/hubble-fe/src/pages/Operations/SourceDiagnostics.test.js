@@ -67,6 +67,28 @@ test('reports recovery when a previously selected failed source is healthy again
     expect(screen.queryByText('No source error details were reported')).not.toBeInTheDocument();
 });
 
+test.each(['PARTIAL', 'UNSUPPORTED'])(
+    'shows unsupported metric request details only for a partial source (%s)', availability => {
+        render(<SourceDiagnostics sourceName='stores' sources={{stores: {
+            status: 'UP', availability, reason: 'unsupported_version',
+        }}} nodes={[{id: 'store-1', type: 'STORE', name: 'Store A', metric_statuses: {
+            system: {availability: 'AVAILABLE'},
+            raft: {availability: 'UNSUPPORTED', reason: 'unsupported_version',
+                diagnostics: {request_path: '/metrics/raft', http_status: 404}},
+        }}]} />);
+
+        if (availability === 'PARTIAL') {
+            expect(screen.getByText(/Store A · raft/)).toBeInTheDocument();
+            expect(screen.getByText('/metrics/raft')).toBeInTheDocument();
+            expect(screen.getByText('404')).toBeInTheDocument();
+            expect(screen.queryByText(/No per-node failure details/)).not.toBeInTheDocument();
+        }
+        else {
+            expect(screen.queryByText('/metrics/raft')).not.toBeInTheDocument();
+        }
+    }
+);
+
 test('localizes the collection status and response size lower bound in Chinese', () => {
     i18n.changeLanguage('zh-CN');
     render(<SourceDiagnostics sourceName='stores' sources={{stores: {

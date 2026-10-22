@@ -786,6 +786,32 @@ public class LiveOperationsCollectorTest {
     }
 
     @Test
+    public void testPartialStoreMetricsIncludeUnsupportedGroupDiagnostics()
+           throws IOException {
+        HttpServer pd = pdServer(200, cluster(), 200, stores());
+        String base = "127.0.0.1:" + pd.getAddress().getPort();
+        context(pd, "/v1/prom/targets-all", 200, targets(base));
+        context(pd, "/metrics/system", 200, "{\"heap\":{\"used\":1}}");
+        context(pd, "/metrics/drive", 200, "{\"disk\":{\"total_space\":10}}");
+        context(pd, "/metrics/raft", 404, "private-response");
+        Snapshot snapshot;
+        try {
+            snapshot = collector(true, pd).collect(serverClient(), true);
+        } finally {
+            pd.stop(0);
+        }
+
+        Assert.assertEquals("PARTIAL", snapshot.getSources().get("stores").getAvailability());
+        Assert.assertEquals(Map.of("affected_node_count", 1,
+                                   "failed_metric_groups", Collections.singletonList("raft")),
+                            snapshot.getSources().get("stores").getDiagnostics());
+        MetricStatus metric = store(snapshot).getMetricStatuses().get("raft");
+        Assert.assertEquals("UNSUPPORTED", metric.getAvailability());
+        Assert.assertEquals(Map.of("request_path", "/metrics/raft", "http_status", 404,
+                                   "metric_group", "raft"), metric.getDiagnostics());
+    }
+
+    @Test
     public void testOversizedDiscoveryResponsesKeepSourceDiagnostics()
            throws IOException {
         for (String path : new String[]{"/v1/stores", "/v1/cluster",
@@ -885,6 +911,8 @@ public class LiveOperationsCollectorTest {
                                               .get("system").getAvailability());
         Assert.assertEquals("malformed_response", store.getMetricStatuses()
                                                    .get("system").getReason());
+        Assert.assertEquals(Map.of("request_path", "/metrics/system", "metric_group", "system"),
+                            store.getMetricStatuses().get("system").getDiagnostics());
         Assert.assertEquals("AVAILABLE", store.getMetricStatuses()
                                               .get("drive").getAvailability());
         Assert.assertEquals("AVAILABLE", store.getMetricStatuses()

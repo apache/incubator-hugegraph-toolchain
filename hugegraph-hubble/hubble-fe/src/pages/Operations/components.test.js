@@ -94,6 +94,7 @@ test.each([
     ['UP', 'AVAILABLE', true, 'degraded', 'Attention'],
     ['DEGRADED', 'AVAILABLE', false, 'degraded', 'Attention'],
     ['DOWN', 'PARTIAL', false, 'down', 'DOWN'],
+    ['DOWN', 'UNSUPPORTED', false, 'down', 'DOWN'],
     ['UNKNOWN', 'UNAVAILABLE', false, 'unknown', 'UNKNOWN'],
     ['UNKNOWN', 'PARTIAL', false, 'degraded', 'Attention'],
     ['UNKNOWN', 'UNSUPPORTED', false, 'unknown', 'UNKNOWN'],
@@ -113,6 +114,10 @@ test.each([
     expect(badge).toHaveTextContent(label);
     const topologyLabel = status === 'DEGRADED' ? 'Attention' : status;
     expect(source).toHaveAccessibleName(new RegExp(`Node status: ${topologyLabel}`));
+    if (status === 'DOWN') {
+        expect(source).toHaveAccessibleName(/Abnormal - Unavailable/);
+        expect(source).not.toHaveTextContent('Not applicable in this deployment');
+    }
     if (colorStatus !== 'up') {
         expect(badge).not.toHaveClass('status-up');
         expect(within(badge).queryByText('UP', {exact: true})).not.toBeInTheDocument();
