@@ -67,6 +67,11 @@ test('reports recovery when a previously selected failed source is healthy again
     expect(screen.queryByText('No source error details were reported')).not.toBeInTheDocument();
 });
 
+test('does not synthesize a selected source without a received snapshot', () => {
+    render(<SourceDiagnostics sourceName='stores' sources={{}} />);
+    expect(screen.queryByRole('region', {name: 'Source diagnostics'})).not.toBeInTheDocument();
+});
+
 test.each([true, false])('describes missing node details at the correct scope (complete=%s)', complete => {
     render(<SourceDiagnostics sourceName='stores' complete={complete} sources={{stores: {
         status: 'UNKNOWN', availability: 'MALFORMED', reason: 'malformed_response',
@@ -120,6 +125,24 @@ test.each([false, true])('excludes intentionally uncollected PD followers (stale
     expect(screen.getByText('/actuator/prometheus')).toBeInTheDocument();
     expect(screen.getByText('503')).toBeInTheDocument();
     expect(screen.queryByText(/PD follower/)).not.toBeInTheDocument();
+});
+
+test.each([false, true])('excludes unavailable topology placeholders from Store failures (stale=%s)', stale => {
+    render(<SourceDiagnostics sourceName='stores' sources={{stores: {
+        status: 'UP', availability: 'PARTIAL', reason: 'unsupported_version',
+    }}} nodes={[
+        {id: 'failed', type: 'STORE', name: 'Store failed', metric_statuses: {raft: {
+            availability: 'UNSUPPORTED', reason: 'unsupported_version',
+            diagnostics: {request_path: '/metrics/raft', http_status: 404},
+        }}},
+        {id: 'healthy', type: 'STORE', name: 'Store healthy', metric_statuses: {backend: {
+            availability: 'UNSUPPORTED', reason: 'topology_fields_unavailable', stale,
+        }}},
+    ]} />);
+    expect(screen.getByText(/Store failed · raft/)).toBeInTheDocument();
+    expect(screen.getByText('/metrics/raft')).toBeInTheDocument();
+    expect(screen.getByText('404')).toBeInTheDocument();
+    expect(screen.queryByText(/Store healthy/)).not.toBeInTheDocument();
 });
 
 test('localizes the collection status and response size lower bound in Chinese', () => {

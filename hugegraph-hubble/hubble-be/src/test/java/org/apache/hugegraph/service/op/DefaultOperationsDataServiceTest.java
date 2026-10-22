@@ -194,8 +194,11 @@ public class DefaultOperationsDataServiceTest {
     @Test
     public void testNodeDiagnosticsIgnorePaginationAndFiltersWithoutCopyingMetrics() {
         java.util.List<Node> nodes = new java.util.ArrayList<>();
+        MetricStatus placeholder = new MetricStatus("UNSUPPORTED", 2000L, null,
+                false, false, "topology_fields_unavailable");
         for (int i = 0; i < 25; i++) {
-            nodes.add(node(String.format("store-%012d", i), "STORE", "healthy-" + i, "UP"));
+            nodes.add(new Node(String.format("store-%012d", i), "STORE", "healthy-" + i,
+                    null, "1.8.0", "UP", 2000L, Collections.emptyMap(), Map.of("backend", placeholder)));
         }
         Map<String, MetricStatus> statuses = new LinkedHashMap<>();
         statuses.put("system", new MetricStatus("UNAVAILABLE", 2000L, null,
@@ -204,6 +207,7 @@ public class DefaultOperationsDataServiceTest {
         statuses.put("raft", new MetricStatus("UNSUPPORTED", 2000L, null,
                 false, false, "unsupported_version"));
         statuses.put("drive", new MetricStatus("AVAILABLE", 2000L, 2000L, true, false, null));
+        statuses.put("backend", placeholder);
         nodes.add(new Node("store-ffffffffffff", "STORE", "z-failing", null, "1.7.0",
                 "UP", 2000L, Map.of("drive", Map.of("private_metric", "private-value")), statuses));
         SourceStatus source = new SourceStatus("PARTIAL", "UP", 2000L, 1000L,

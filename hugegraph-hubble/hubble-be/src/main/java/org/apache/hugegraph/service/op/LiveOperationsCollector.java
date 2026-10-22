@@ -666,8 +666,14 @@ public class LiveOperationsCollector implements OperationsCollector {
                                              SourceStatus status,
                                              List<Node> nodes) {
         try {
-            Map<String, String> restAddresses =
-                    this.parser.parseStoreRestAddresses(stores);
+            Map<String, String> restAddresses;
+            try {
+                restAddresses = this.parser.parseStoreRestAddresses(stores);
+            } catch (MalformedUpstreamException e) {
+                Map<String, Object> details = Map.of("request_path", "/v1/stores");
+                this.applyStoreMetricStatus(nodes, metricStatus(e, now, true).withDiagnostics(details));
+                return metricFailureStatus(status, now, 0, metricReason(e)).withDiagnostics(details);
+            }
             String targetPath = "/v1/prom/targets/store";
             String targetPayload;
             try {
@@ -777,7 +783,8 @@ public class LiveOperationsCollector implements OperationsCollector {
             for (Map.Entry<String, MetricStatus> entry : node.getMetricStatuses().entrySet()) {
                 String availability = entry.getValue().getAvailability();
                 if ("UNAVAILABLE".equals(availability) || "MALFORMED".equals(availability) ||
-                    "UNSUPPORTED".equals(availability)) {
+                    "UNSUPPORTED".equals(availability) &&
+                    "unsupported_version".equals(entry.getValue().getReason())) {
                     failed = true;
                     groups.add(entry.getKey());
                 }

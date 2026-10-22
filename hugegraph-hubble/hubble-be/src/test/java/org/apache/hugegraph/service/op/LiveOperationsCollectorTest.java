@@ -898,6 +898,47 @@ public class LiveOperationsCollectorTest {
     }
 
     @Test
+    public void testMalformedStoreRestAddressRetainsDiscoveryPath() throws IOException {
+        HttpServer pd = pdServer(200, cluster(), 200,
+                stores().replace("127.0.0.1:PD_TEST_PORT", "invalid address"));
+        Snapshot snapshot;
+        try {
+            snapshot = collector(true, pd).collect(serverClient(), true);
+        } finally {
+            pd.stop(0);
+        }
+        Assert.assertEquals("malformed_response", snapshot.getSources().get("stores").getReason());
+        Assert.assertEquals(Map.of("request_path", "/v1/stores"),
+                            snapshot.getSources().get("stores").getDiagnostics());
+        for (String group : new String[]{"system", "drive", "raft"}) {
+            MetricStatus status = store(snapshot).getMetricStatuses().get(group);
+            Assert.assertEquals("MALFORMED", status.getAvailability());
+            Assert.assertEquals(Map.of("request_path", "/v1/stores"), status.getDiagnostics());
+        }
+    }
+
+    @Test
+    public void testStoreFailureSummaryExcludesTopologyPlaceholders() {
+        RecordingHttpClient http = new RecordingHttpClient(storesWithDifferentRestAddresses(),
+                targets("127.0.0.1:8520", "127.0.0.1:9520"));
+        http.unavailableAuthority("127.0.0.1:8520");
+        LiveOperationsCollector collector = collector(http, 4, 1000);
+        Snapshot snapshot;
+        try {
+            snapshot = collector.collect(serverClient(), true);
+        } finally {
+            collector.close();
+        }
+        Assert.assertEquals("PARTIAL", snapshot.getSources().get("stores").getAvailability());
+        Assert.assertEquals(Map.of("affected_node_count", 1,
+                                  "failed_metric_groups", Arrays.asList("system", "drive", "raft")),
+                            snapshot.getSources().get("stores").getDiagnostics());
+        Assert.assertEquals(1L, snapshot.getNodes().stream().filter(node -> "STORE".equals(node.getType()))
+                .filter(node -> "topology_fields_unavailable".equals(
+                        node.getMetricStatuses().get("backend").getReason())).count());
+    }
+
+    @Test
     public void testMalformedMetricDiscoveryResponsesRetainPaths()
            throws IOException {
         for (String path : new String[]{"/actuator/prometheus", "/v1/prom/targets-all"}) {
