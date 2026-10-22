@@ -78,9 +78,13 @@ public class VermeerService {
                 return ImmutableMap.of("enable", false, "retryable", false);
             }
             boolean permitted = this.direct.permitted(client);
-            boolean available = permitted && this.direct.available();
-            return ImmutableMap.of("enable", available,
-                                   "retryable", permitted && !available);
+            try {
+                boolean available = permitted && this.direct.available();
+                return ImmutableMap.of("enable", available,
+                                       "retryable", permitted && !available);
+            } catch (VermeerClient.ConfigurationException e) {
+                return ImmutableMap.of("enable", false, "retryable", false, "error", true);
+            }
         }
         return this.getVermeer(token, throwIfNoConfig);
     }

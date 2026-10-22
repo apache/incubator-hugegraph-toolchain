@@ -408,6 +408,57 @@ public class DirectVermeerServiceTest {
     }
 
     @Test
+    public void testReadinessSeparatesConfigurationFailuresFromTransientStates() throws Exception {
+        AtomicInteger status = new AtomicInteger(503);
+        AtomicReference<String> body = new AtomicReference<>("{\"available\":false}");
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/api/v1/workers/availability", exchange -> {
+            byte[] value = body.get().getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(status.get(), value.length);
+            exchange.getResponseBody().write(value);
+            exchange.close();
+        });
+        server.start();
+        Path token = Files.createTempFile("vermeer-missing-", ".token");
+        Files.delete(token);
+        try {
+            HugeConfig config = Mockito.mock(HugeConfig.class);
+            Mockito.when(config.get(HubbleOptions.VERMEER_URL))
+                   .thenReturn("http://127.0.0.1:" + server.getAddress().getPort());
+            VermeerClient backend = new VermeerClient();
+            ReflectionTestUtils.setField(backend, "config", config);
+            VermeerService service = new VermeerService();
+            ReflectionTestUtils.setField(service, "direct", service(backend));
+            HugeClient client = graphClient();
+            Assert.assertEquals(Map.of("enable", false, "retryable", true),
+                                service.getVermeer(client, "login-token", false));
+            for (int denied : List.of(401, 403)) {
+                status.set(denied);
+                Assert.assertEquals(Map.of("enable", false, "retryable", false, "error", true),
+                                    service.getVermeer(client, "login-token", false));
+            }
+            status.set(200);
+            Assert.assertEquals(Map.of("enable", false, "retryable", true),
+                                service.getVermeer(client, "login-token", false));
+            body.set("{\"available\":true}");
+            Assert.assertEquals(Map.of("enable", true, "retryable", false),
+                                service.getVermeer(client, "login-token", false));
+            Mockito.when(config.get(HubbleOptions.VERMEER_TOKEN_FILE)).thenReturn(token.toString());
+            Assert.assertEquals(Map.of("enable", false, "retryable", false, "error", true),
+                                service.getVermeer(client, "login-token", false));
+            try {
+                backend.request("GET", "workers/availability", null);
+                Assert.fail("Expected missing token file failure");
+            } catch (VermeerClient.ConfigurationException e) {
+                Assert.assertEquals("Unable to read Vermeer token file", e.getMessage());
+                Assert.assertNull(e.getCause());
+            }
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
     public void testStandaloneDisablesNativeCapabilityAndRejectsOperations() {
         VermeerClient backend = Mockito.mock(VermeerClient.class);
         Mockito.when(backend.configured()).thenReturn(true);
@@ -495,6 +546,7 @@ public class DirectVermeerServiceTest {
             backend.request("GET", "graphs", null);
             Assert.fail("Expected adapter configuration failure");
         } catch (ExternalException e) {
+            Assert.assertTrue(e instanceof VermeerClient.ConfigurationException);
             Assert.assertEquals("Invalid Vermeer configuration or request", e.getMessage());
             Assert.assertNull(e.getCause());
         }
@@ -508,6 +560,10 @@ public class DirectVermeerServiceTest {
         var page = tasks.list(client, 1, 10, "", "", "");
         Assert.assertEquals(List.of(serverTask), page.getRecords());
         Assert.assertTrue(((AsyncTaskService.TaskPage) page).isVermeerUnavailable());
+        VermeerService service = new VermeerService();
+        ReflectionTestUtils.setField(service, "direct", direct);
+        Assert.assertEquals(Map.of("enable", false, "retryable", false, "error", true),
+                            service.getVermeer(client, "login-token", false));
     }
 
     @Test

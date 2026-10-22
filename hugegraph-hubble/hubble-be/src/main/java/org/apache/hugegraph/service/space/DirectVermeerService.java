@@ -75,6 +75,8 @@ public class DirectVermeerService {
             // Readiness is scoped by the authenticated service credential.
             Map<String, Object> workers = this.backend.request("GET", "workers/availability", null);
             return Boolean.TRUE.equals(workers.get("available"));
+        } catch (VermeerClient.ConfigurationException e) {
+            throw e;
         } catch (RuntimeException e) {
             return false;
         }

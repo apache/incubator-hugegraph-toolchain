@@ -69,7 +69,12 @@ public class VermeerClient {
                     .header("Content-Type", "application/json");
             String tokenFile = this.config.get(HubbleOptions.VERMEER_TOKEN_FILE);
             if (tokenFile != null && !tokenFile.isBlank()) {
-                String token = Files.readString(Path.of(tokenFile)).trim();
+                String token;
+                try {
+                    token = Files.readString(Path.of(tokenFile)).trim();
+                } catch (IOException e) {
+                    throw new ConfigurationException("Unable to read Vermeer token file");
+                }
                 E.checkState(!token.isEmpty(), "Vermeer token file is empty");
                 request.header("Authorization", "Bearer " + token);
             }
@@ -80,6 +85,9 @@ public class VermeerClient {
             HttpResponse<String> response = this.http.send(request.build(),
                     HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                if (response.statusCode() == 401 || response.statusCode() == 403) {
+                    throw new ConfigurationException("Vermeer service authentication failed");
+                }
                 if (this.valuesNotFound(method, path, response)) {
                     throw new ValuesNotFoundException();
                 }
@@ -101,7 +109,7 @@ public class VermeerClient {
         } catch (IllegalArgumentException | IllegalStateException | SecurityException e) {
             // Adapter validation can include URLs, token values or file paths.
             // Preserve the availability boundary without exposing those details.
-            throw new ExternalException("Invalid Vermeer configuration or request");
+            throw new ConfigurationException("Invalid Vermeer configuration or request");
         }
     }
 
@@ -129,6 +137,13 @@ public class VermeerClient {
 
         public ValuesNotFoundException() {
             super("Vermeer task values are no longer available");
+        }
+    }
+
+    public static final class ConfigurationException extends ExternalException {
+
+        public ConfigurationException(String message) {
+            super(message);
         }
     }
 }

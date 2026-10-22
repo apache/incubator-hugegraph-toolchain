@@ -36,7 +36,7 @@ SETUP = Path(os.environ.get('VERMEER_DEV_HOME', '/workspace/.onboarding'))
 RUN = SETUP / 'integration'
 SOURCE = Path(os.environ.get('VERMEER_SOURCE_DIR', str(REPO.parent / 'hugegraph-computer/vermeer')))
 GO = SETUP / 'tools/go1.23.7'
-COMPUTER_COMMIT = '090bf276e2c7860c292f317c3569559034621c21'
+COMPUTER_COMMIT = 'b5c1693f27779aeefc0098833368fbfc5448d544'
 IMAGES = {
     'pd': 'hugegraph/pd@sha256:1ca2c236cba50ac27f47e9db4c9a44f1f50bb9df85a07e837b7c25ba7a2704a8',
     'store': 'hugegraph/store@sha256:1cc8d6a1e1624328b91e5346731b57c68569de435400981ff7287150ae63651c',

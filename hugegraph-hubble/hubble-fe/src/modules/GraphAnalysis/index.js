@@ -186,6 +186,7 @@ const GraphAnalysisHome = props => {
                 isVermeer: Boolean(enable),
             }));
             setVermeerReady(true);
+            setVermeerError(Boolean(data?.error));
             if (!enable && data.retryable) {
                 vermeerRetry.current = setTimeout(refreshVermeer, 5000);
             }

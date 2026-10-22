@@ -209,3 +209,43 @@ it('cancels transient discovery on unmount and does not poll disabled capability
         jest.useRealTimers();
     }
 });
+
+it('keeps Server algorithms available and manually retries a non-retryable Vermeer configuration error', async () => {
+    jest.useFakeTimers();
+    api.auth.getVermeer
+        .mockResolvedValueOnce({status: 200, data: {enable: false, retryable: false, error: true}})
+        .mockResolvedValue({status: 200, data: {enable: true, retryable: false, error: false}});
+    const view = render(<GraphAnalysisHome moduleName='algorithms' />);
+    try {
+        await act(async () => {});
+        expect(screen.getByText('algorithm module')).toBeVisible();
+        expect(screen.getByText('Vermeer disabled')).toBeVisible();
+        expect(screen.getByText('analysis.topbar.get_vermeer_failed')).toBeVisible();
+        const retry = screen.getByRole('button', {name: 'analysis.topbar.retry_vermeer'});
+        await act(async () => jest.advanceTimersByTime(15000));
+        expect(api.auth.getVermeer).toHaveBeenCalledTimes(1);
+        fireEvent.click(retry);
+        await act(async () => {});
+        expect(api.auth.getVermeer).toHaveBeenCalledTimes(2);
+        expect(screen.getByText('algorithm module')).toBeVisible();
+        expect(screen.getByText('Vermeer enabled')).toBeVisible();
+        expect(screen.queryByText('analysis.topbar.get_vermeer_failed')).not.toBeInTheDocument();
+        await act(async () => jest.advanceTimersByTime(15000));
+        expect(api.auth.getVermeer).toHaveBeenCalledTimes(2);
+    }
+    finally {
+        view.unmount();
+        jest.useRealTimers();
+    }
+});
+
+it('keeps Server tasks visible after a known Vermeer configuration error', async () => {
+    api.auth.getVermeer.mockResolvedValue({
+        status: 200, data: {enable: false, retryable: false, error: true},
+    });
+    render(<GraphAnalysisHome moduleName='asyncTasks' />);
+    await act(async () => {});
+    expect(screen.getByText('async module')).toBeVisible();
+    expect(screen.getByText('analysis.topbar.get_vermeer_failed')).toBeVisible();
+    expect(screen.getByRole('button', {name: 'analysis.topbar.retry_vermeer'})).toBeEnabled();
+});
