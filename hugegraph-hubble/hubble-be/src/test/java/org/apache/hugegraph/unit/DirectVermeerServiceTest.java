@@ -239,6 +239,7 @@ public class DirectVermeerServiceTest {
     public void testVermeerOutageKeepsServerTasksWithLocalWarning() {
         DirectVermeerService direct = Mockito.mock(DirectVermeerService.class);
         Mockito.when(direct.configured()).thenReturn(true);
+        Mockito.when(direct.supported()).thenReturn(true);
         HugeClient client = graphClient();
         Task serverTask = Mockito.mock(Task.class);
         Mockito.when(serverTask.type()).thenReturn("gremlin");
@@ -328,9 +329,12 @@ public class DirectVermeerServiceTest {
     }
 
     @Test
-    public void testStandaloneDisablesNativeCapabilityAndRejectsSubmissions() {
+    public void testStandaloneDisablesNativeCapabilityAndRejectsOperations() {
         VermeerClient backend = Mockito.mock(VermeerClient.class);
         Mockito.when(backend.configured()).thenReturn(true);
+        Mockito.when(backend.request("GET", "task/12", null)).thenReturn(Map.of("task", Map.of(
+                "id", 12, "graph_name", "DEFAULT-graph-with-dash",
+                "task_type", "compute", "status", "waiting")));
         DirectVermeerService direct = service(backend);
         HugeConfig config = Mockito.mock(HugeConfig.class);
         Mockito.when(config.get(HubbleOptions.PD_ENABLED)).thenReturn(false);
@@ -343,8 +347,47 @@ public class DirectVermeerServiceTest {
         expect(ExternalException.class, () -> direct.load(client, false, Map.of()));
         expect(ExternalException.class,
                 () -> direct.compute(client, Map.of("compute.algorithm", "pagerank")));
+        expect(ExternalException.class, () -> direct.task(client, -12, true));
+        expect(ExternalException.class, () -> direct.results(client, -12, 0, 10));
+        expect(ExternalException.class, () -> direct.cancel(client, -12));
+        expect(ExternalException.class, () -> direct.deleteGraph(client));
+        Assert.assertTrue(direct.tasks(client).isEmpty());
         Mockito.verify(backend, Mockito.never()).request(Mockito.anyString(),
                 Mockito.anyString(), Mockito.any());
+    }
+
+    @Test
+    public void testStandaloneTaskHistoryIgnoresConfiguredNativeService() {
+        for (boolean unavailable : List.of(false, true)) {
+            VermeerClient backend = Mockito.mock(VermeerClient.class);
+            Mockito.when(backend.configured()).thenReturn(true);
+            var response = Mockito.when(backend.request("GET", "tasks?limit=10000", null));
+            if (unavailable) {
+                response.thenThrow(new ExternalException("Vermeer unavailable"));
+            } else {
+                response.thenReturn(Map.of("tasks", List.of(Map.of(
+                        "id", 12, "graph_name", "DEFAULT-graph-with-dash",
+                        "task_type", "compute", "status", "complete"))));
+            }
+            DirectVermeerService direct = service(backend);
+            HugeConfig config = Mockito.mock(HugeConfig.class);
+            Mockito.when(config.get(HubbleOptions.PD_ENABLED)).thenReturn(false);
+            ReflectionTestUtils.setField(direct, "config", config);
+            HugeClient client = graphClient();
+            Task serverTask = Mockito.mock(Task.class);
+            Mockito.when(serverTask.type()).thenReturn("gremlin");
+            Mockito.when(client.task().list((String) null)).thenReturn(List.of(serverTask));
+            Mockito.when(client.task().get(7)).thenReturn(serverTask);
+            AsyncTaskService tasks = new AsyncTaskService();
+            ReflectionTestUtils.setField(tasks, "vermeer", direct);
+            var page = tasks.list(client, 1, 10, "", "", "");
+            Assert.assertEquals(List.of(serverTask), page.getRecords());
+            Assert.assertFalse(((AsyncTaskService.TaskPage) page).isVermeerUnavailable());
+            Assert.assertTrue(direct.tasks(client).isEmpty());
+            Assert.assertSame(serverTask, tasks.get(client, 7));
+            Mockito.verify(backend, Mockito.never()).request(Mockito.anyString(),
+                    Mockito.anyString(), Mockito.any());
+        }
     }
 
     @Test

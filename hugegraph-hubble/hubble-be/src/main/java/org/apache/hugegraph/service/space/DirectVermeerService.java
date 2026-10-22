@@ -99,7 +99,6 @@ public class DirectVermeerService {
     public Map<String, Object> load(HugeClient client, boolean force,
                                     Map<String, Object> options) {
         authorize(client);
-        this.requireSupported();
         Map<String, Object> graph = HubbleUtil.uncheckedCast(
                 this.graph(client.getGraphSpaceName(), client.getGraphName()).get("graph"));
         if (graph != null && "error".equals(graph.get("status"))) {
@@ -130,7 +129,6 @@ public class DirectVermeerService {
 
     public Map<String, Object> compute(HugeClient client, Map<String, Object> options) {
         authorize(client);
-        this.requireSupported();
         E.checkArgument(options != null && options.get("compute.algorithm") != null,
                         "compute.algorithm is required");
         String algorithm = options.get("compute.algorithm").toString();
@@ -209,7 +207,7 @@ public class DirectVermeerService {
     }
 
     public List<Task> tasks(HugeClient client) {
-        if (!this.permitted(client)) {
+        if (!this.supported() || !this.permitted(client)) {
             return List.of();
         }
         authorize(client);
@@ -311,6 +309,7 @@ public class DirectVermeerService {
     }
 
     private void authorize(HugeClient client) {
+        this.requireSupported();
         // authClient resolves the connection and GraphSpace access. A graph
         // read additionally verifies the caller's permission before using a
         // shared Vermeer service credential or reading raw Store partitions.

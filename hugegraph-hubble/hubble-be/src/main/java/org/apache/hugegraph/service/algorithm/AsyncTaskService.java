@@ -95,7 +95,7 @@ public class AsyncTaskService {
         }
         List<Task> tasks = new ArrayList<>(client.task().list(status));
         boolean vermeerUnavailable = false;
-        if (this.vermeer != null && this.vermeer.configured() &&
+        if (this.vermeer != null && this.vermeer.configured() && this.vermeer.supported() &&
             (type.isEmpty() || type.startsWith(VERMEER_TASK_TYPE))) {
             try {
                 tasks.addAll(this.vermeer.tasks(client));
