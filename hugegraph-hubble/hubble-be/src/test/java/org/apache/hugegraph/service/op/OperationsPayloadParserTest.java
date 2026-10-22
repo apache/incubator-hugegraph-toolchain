@@ -212,6 +212,33 @@ public class OperationsPayloadParserTest {
     }
 
     @Test
+    public void testCombinesDataAndClusterHealthWithoutChangingNodeStatus() {
+        OperationsPayloadParser parser = new OperationsPayloadParser(MAPPER);
+        String stores = "{\"status\":0,\"data\":{\"stores\":[]}}";
+        String[][] states = {
+                {"Cluster_OK", "PState_Normal", "UP", null},
+                {"Cluster_OK", "PState_Warn", "DEGRADED", "data_warn"},
+                {"Cluster_OK", "PState_Offline", "DEGRADED", "data_offline"},
+                {"Cluster_OK", "PState_Fault", "DOWN", "data_fault"},
+                {"Cluster_OK", "PState_None", "DEGRADED", "data_state_unknown"},
+                {"Cluster_OK", "PState_Future", "DEGRADED", "data_state_unknown"},
+                {"Cluster_Fault", "PState_Warn", "DOWN", "cluster_fault"}
+        };
+        for (String[] state : states) {
+            String cluster = "{\"status\":0,\"data\":{\"state\":\"" + state[0] +
+                             "\",\"dataState\":\"" + state[1] + "\",\"pdList\":[{" +
+                             "\"restUrl\":\"http://pd:8620\",\"state\":\"Up\"}]}}";
+            OperationsModels.Topology topology = parser.parseTopology(cluster, stores);
+
+            Assert.assertEquals(state[2], topology.getStatus());
+            Assert.assertEquals(state[3], topology.getReason());
+            Assert.assertEquals(state[0], topology.getClusterState());
+            Assert.assertEquals(state[1], topology.getDataState());
+            Assert.assertEquals("UP", topology.getNodes().get(0).getStatus());
+        }
+    }
+
+    @Test
     public void testRedactsDrivePathsAndSummarizesRaftMetrics() {
         OperationsPayloadParser parser = new OperationsPayloadParser(MAPPER);
 

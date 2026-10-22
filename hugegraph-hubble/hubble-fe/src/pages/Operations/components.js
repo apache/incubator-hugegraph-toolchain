@@ -150,12 +150,19 @@ const SourceStrip = ({sources = {}, detailed = false,
                     defaultValue: source.availability ?? 'UNSUPPORTED',
                 });
                 const healthSummary = sourceHealthSummary(source, t);
+                const clusterHealthDetails = [
+                    source.cluster_state
+                        ? `${t('operations.source_cluster_state')}: ${source.cluster_state}` : null,
+                    source.data_state
+                        ? `${t('operations.source_data_state')}: ${source.data_state}` : null,
+                ].filter(Boolean).join(' · ');
                 const sourceDetails = [
                     healthSummary,
                     `${t('operations.source_topology_status')}: ${
                         displayHealthStatus(source.status ?? 'UNKNOWN', t)
                     }`,
                     `${t('operations.source_collection_status')}: ${availability}`,
+                    clusterHealthDetails,
                     observed
                         ? `${t('operations.last_observed')}: ${observed}` : null,
                     source.stale ? t('operations.stale') : null,
@@ -197,6 +204,7 @@ const SourceStrip = ({sources = {}, detailed = false,
                                     {` · ${t('operations.source_collection_status')}: ${
                                         availability
                                     }`}
+                                    {clusterHealthDetails ? ` · ${clusterHealthDetails}` : ''}
                                     {observed
                                         ? ` · ${t('operations.last_observed')}: ${
                                             observed

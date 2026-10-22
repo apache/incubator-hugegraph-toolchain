@@ -94,8 +94,17 @@ public class OperationsPayloadParser {
                                  cluster.get("dataSize"));
         this.putCapacityFacts(facts, storeNodes.values());
         String clusterState = this.text(cluster, "state");
-        return new Topology(this.clusterStatus(clusterState),
-                            this.clusterReason(clusterState), nodes, facts);
+        String dataState = this.text(cluster, "dataState");
+        String status = this.clusterStatus(clusterState);
+        String reason = this.clusterReason(clusterState);
+        String dataStatus = this.dataStatus(dataState);
+        if (dataState != null && severity(dataStatus) >= severity(status) &&
+            !"UP".equals(dataStatus)) {
+            status = dataStatus;
+            reason = this.dataReason(dataState);
+        }
+        return new Topology(status, reason, nodes, facts,
+                            clusterState, dataState);
     }
 
     public Map<String, String> parseStoreHosts(String storesPayload) {
@@ -566,6 +575,46 @@ public class OperationsPayloadParser {
     private void requireObject(JsonNode value, String source) {
         if (value == null || !value.isObject()) {
             throw new MalformedUpstreamException(source);
+        }
+    }
+
+    private static int severity(String status) {
+        switch (status) {
+            case "DOWN":
+                return 3;
+            case "DEGRADED":
+                return 2;
+            case "UNKNOWN":
+                return 1;
+            default:
+                return 0;
+        }
+    }
+
+    private String dataStatus(String state) {
+        if (state == null) {
+            return "UP";
+        }
+        switch (state.toUpperCase(Locale.ROOT)) {
+            case "PSTATE_NORMAL":
+                return "UP";
+            case "PSTATE_FAULT":
+                return "DOWN";
+            default:
+                return "DEGRADED";
+        }
+    }
+
+    private String dataReason(String state) {
+        switch (state.toUpperCase(Locale.ROOT)) {
+            case "PSTATE_WARN":
+                return "data_warn";
+            case "PSTATE_OFFLINE":
+                return "data_offline";
+            case "PSTATE_FAULT":
+                return "data_fault";
+            default:
+                return "data_state_unknown";
         }
     }
 

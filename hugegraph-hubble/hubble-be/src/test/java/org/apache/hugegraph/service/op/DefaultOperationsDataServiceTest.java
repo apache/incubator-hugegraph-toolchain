@@ -35,6 +35,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.Cache;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.service.op.OperationsModels.Node;
@@ -52,8 +54,72 @@ public class DefaultOperationsDataServiceTest {
             Instant.ofEpochMilli(2000L), ZoneOffset.UTC);
 
     @Test
+    public void testClusterHealthCopiesRetainRawStatesAndSerializeSafely() {
+        SourceStatus source = new SourceStatus("PARTIAL", "UP", 2000L,
+                                               1000L, true, false,
+                                               "data_fault")
+                .withDiagnostics(Collections.singletonMap("request_path", "/v1/cluster"));
+        SourceStatus withHealth = source.withClusterHealth(
+                                  "Cluster_OK", "PState_Fault");
+        Assert.assertEquals(source.getDiagnostics(), withHealth.getDiagnostics());
+        SourceStatus stale = withHealth.withDiagnostics(
+                Collections.singletonMap("http_status", 503)).stale("refresh_failed");
+        Assert.assertEquals(Collections.singletonMap("http_status", 503), stale.getDiagnostics());
+        JsonNode serialized = new ObjectMapper().valueToTree(stale);
+
+        Assert.assertNull(source.getClusterState());
+        Assert.assertNull(source.getDataState());
+        Assert.assertEquals("UP", stale.getStatus());
+        Assert.assertEquals("Cluster_OK", serialized.path("cluster_state").asText());
+        Assert.assertEquals("PState_Fault", serialized.path("data_state").asText());
+        Assert.assertEquals(Long.valueOf(1000L), stale.getLastSuccessAt());
+        Assert.assertTrue(stale.isStale());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testSourceCacheMergeRetainsCurrentRawClusterHealth() {
+        AtomicInteger calls = new AtomicInteger();
+        OperationsCollector collector = (client, metrics) -> {
+            if (calls.getAndIncrement() == 0) {
+                return fullSnapshot();
+            }
+            Map<String, SourceStatus> sources = new LinkedHashMap<>();
+            sources.put("pd", new SourceStatus("UNAVAILABLE", "UNKNOWN",
+                        2000L, null, false, false, "upstream_unavailable")
+                        .withClusterHealth("Cluster_Warn", "PState_Warn"));
+            return new Snapshot("DEGRADED", 2000L, false, null, sources,
+                                Collections.emptyList(), Collections.emptyMap());
+        };
+        DefaultOperationsDataService service = new DefaultOperationsDataService(
+                collector, 5, CLOCK);
+        Set<String> capabilities = Set.of(OperationsCapabilityService.HEALTH_READ,
+                                          OperationsCapabilityService.TOPOLOGY_READ);
+        HugeClient client = client("token-a");
+
+        service.overview(client, capabilities, false);
+        Map<String, Object> result = service.overview(client, capabilities, true);
+        Map<String, SourceStatus> sources = (Map<String, SourceStatus>) result.get("sources");
+        SourceStatus pd = sources.get("pd");
+
+        Assert.assertEquals("Cluster_Warn", pd.getClusterState());
+        Assert.assertEquals("PState_Warn", pd.getDataState());
+        Assert.assertEquals("UP", pd.getStatus());
+        Assert.assertEquals(Long.valueOf(1000L), pd.getLastSuccessAt());
+        Assert.assertTrue(pd.isStale());
+    }
+
+    @Test
     public void testSpaceAdminOverviewContainsOnlyRedactedHealth() {
-        DefaultOperationsDataService service = service(snapshot(), 5);
+        Snapshot snapshot = snapshot();
+        Map<String, SourceStatus> sources = new LinkedHashMap<>(snapshot.getSources());
+        sources.put("pd", new SourceStatus("PARTIAL", "UP", 2000L, 2000L,
+                                          true, false, "data_fault")
+                        .withClusterHealth("Cluster_OK", "PState_Fault"));
+        Snapshot withHealth = new Snapshot("DEGRADED", snapshot.getObservedAt(),
+                                          false, null, sources, snapshot.getNodes(),
+                                          snapshot.getFacts());
+        DefaultOperationsDataService service = service(withHealth, 5);
         HugeClient client = client("token-a");
 
         Map<String, Object> overview = service.overview(client,
@@ -62,6 +128,11 @@ public class DefaultOperationsDataServiceTest {
         Assert.assertFalse(overview.containsKey("nodes"));
         Assert.assertFalse(overview.containsKey("facts"));
         Assert.assertTrue(overview.containsKey("sources"));
+        JsonNode serialized = new ObjectMapper().valueToTree(overview);
+        Assert.assertEquals("Cluster_OK", serialized.path("sources").path("pd")
+                                                  .path("cluster_state").asText());
+        Assert.assertEquals("PState_Fault", serialized.path("sources").path("pd")
+                                                    .path("data_state").asText());
     }
 
     @Test

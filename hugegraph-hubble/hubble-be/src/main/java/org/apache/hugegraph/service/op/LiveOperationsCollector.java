@@ -393,9 +393,18 @@ public class LiveOperationsCollector implements OperationsCollector {
                 metricStatuses.put("system", metricStatus(e, now, false));
             }
             try {
-                metrics.put("backend", this.safeBackendMetrics(
-                            client.metrics().backend()));
-                metricStatuses.put("backend", availableMetric(now));
+                Map<String, Object> backend = this.safeBackendMetrics(
+                                              client.metrics().backend());
+                metrics.put("backend", backend);
+                if (((Number) backend.get("failed_graphs")).longValue() > 0L) {
+                    partial = true;
+                    reason = mergeServerReason(reason, "backend_metrics_failed");
+                    metricStatuses.put("backend", unavailableMetric(
+                                       now, "backend_metrics_failed")
+                            .withDiagnostics(Map.of("failed_graphs", backend.get("failed_graphs"))));
+                } else {
+                    metricStatuses.put("backend", availableMetric(now));
+                }
             } catch (RuntimeException e) {
                 partial = true;
                 reason = mergeServerReason(reason, metricReason(e));
@@ -442,6 +451,8 @@ public class LiveOperationsCollector implements OperationsCollector {
         }
         boolean clusterParsed = false;
         boolean storesParsed = false;
+        String clusterState = null;
+        String dataState = null;
         if (cluster != null) {
             try {
                 Topology topology = this.parser.parseTopology(cluster,
@@ -450,8 +461,14 @@ public class LiveOperationsCollector implements OperationsCollector {
                 this.mergeNodes(nodes, topology.getNodes());
                 facts.putAll(topology.getFacts());
                 clusterReason = topology.getReason();
+                clusterState = topology.getClusterState();
+                dataState = topology.getDataState();
                 pdStatus = available(this.nodeStatus(topology.getNodes(), "PD"),
                                      now);
+                if (dataState != null && !"PState_Normal".equalsIgnoreCase(dataState)) {
+                    pdStatus = new SourceStatus("PARTIAL", pdStatus.getStatus(),
+                                                now, now, true, false, clusterReason);
+                }
                 clusterParsed = true;
             } catch (MalformedUpstreamException e) {
                 pdStatus = malformed(now);
@@ -484,7 +501,7 @@ public class LiveOperationsCollector implements OperationsCollector {
             this.applyStoreMetricStatus(nodes, this.metricStatus(storesStatus,
                                                                  now));
         }
-        sources.put("pd", pdStatus);
+        sources.put("pd", pdStatus.withClusterHealth(clusterState, dataState));
         sources.put("stores", storesStatus);
         return clusterReason;
     }
@@ -567,6 +584,14 @@ public class LiveOperationsCollector implements OperationsCollector {
                                           List<Node> nodes) {
         int index = this.pdNodeIndex(nodes);
         if (index < 0) {
+            for (int i = 0; i < nodes.size(); i++) {
+                Node node = nodes.get(i);
+                if ("PD".equals(node.getType())) {
+                    Map<String, MetricStatus> statuses = new LinkedHashMap<>(node.getMetricStatuses());
+                    statuses.put("system", unsupportedMetric(now, "pd_metrics_unmapped"));
+                    nodes.set(i, copyNode(node, node.getMetrics(), statuses));
+                }
+            }
             return new SourceStatus("PARTIAL", status.getStatus(), now,
                                     status.getLastSuccessAt(), false, false,
                                     preferredReason(status,
@@ -623,7 +648,6 @@ public class LiveOperationsCollector implements OperationsCollector {
 
     private int pdNodeIndex(List<Node> nodes) {
         String configuredId = stableId("pd", this.pdBase);
-        int first = -1;
         for (int i = 0; i < nodes.size(); i++) {
             Node node = nodes.get(i);
             if (!"PD".equals(node.getType())) {
@@ -632,13 +656,20 @@ public class LiveOperationsCollector implements OperationsCollector {
             if (configuredId.equals(node.getId())) {
                 return i;
             }
-            if ("LEADER".equals(node.getRole())) {
-                first = i;
-            } else if (first < 0) {
-                first = i;
-            }
         }
-        return first;
+        return -1;
+    }
+
+    private String storeMetricTargets() {
+        try {
+            return this.get("/v1/prom/targets/store");
+        } catch (UpstreamRequestException e) {
+            if (!"upstream_http_status_404".equals(e.getMessage()) &&
+                !"upstream_http_status_405".equals(e.getMessage())) {
+                throw e;
+            }
+            return this.get("/v1/prom/targets-all");
+        }
     }
 
     private SourceStatus collectStoreMetrics(String stores, long now,
@@ -648,7 +679,7 @@ public class LiveOperationsCollector implements OperationsCollector {
             Map<String, String> restAddresses =
                     this.parser.parseStoreRestAddresses(stores);
             Map<String, URI> targets = this.parser.parseStoreMetricTargets(
-                                       this.get("/v1/prom/targets-all"));
+                                       this.storeMetricTargets());
             Set<String> allowedTargets = new java.util.LinkedHashSet<>();
             boolean partial = false;
             int successfulGroups = 0;
@@ -943,6 +974,7 @@ public class LiveOperationsCollector implements OperationsCollector {
             Map<String, Map<String, Object>> upstream) {
         long graphs = 0L;
         long nodes = 0L;
+        long failures = 0L;
         Map<String, Long> backends = new LinkedHashMap<>();
         if (upstream != null) {
             for (Map<String, Object> graph : upstream.values()) {
@@ -950,6 +982,9 @@ public class LiveOperationsCollector implements OperationsCollector {
                     continue;
                 }
                 graphs++;
+                if (graph.get("exception") != null) {
+                    failures++;
+                }
                 Object nodeCount = graph.get("nodes");
                 if (nodeCount instanceof Number) {
                     nodes += ((Number) nodeCount).longValue();
@@ -964,6 +999,7 @@ public class LiveOperationsCollector implements OperationsCollector {
         }
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("graphs", graphs);
+        result.put("failed_graphs", failures);
         result.put("nodes", nodes);
         result.put("backend_counts", backends);
         return result;
