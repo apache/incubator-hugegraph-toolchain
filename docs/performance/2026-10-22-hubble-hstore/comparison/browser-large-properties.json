@@ -1,0 +1,31 @@
+{
+  "stage": "large_properties",
+  "space": "perf_space_0996",
+  "graph": "perf_property_preview",
+  "snapshot": {
+    "status": "ready",
+    "nodes": 2,
+    "edges": 1,
+    "error": null
+  },
+  "raw_preview": [
+    {
+      "id": "9007199254740993",
+      "preview": true,
+      "payload_length": 284,
+      "boundary256_length": 256
+    },
+    {
+      "id": "9007199254740995",
+      "preview": true,
+      "payload_length": 285,
+      "boundary256_length": 256
+    }
+  ],
+  "preview_notice": "Long properties show only the first 256 characters and their original length. Preview properties cannot be edited.",
+  "readonly_notice": "These properties contain truncated previews and cannot be edited. Use the original data for changes.",
+  "edit_disabled": true,
+  "mutation_requests": [],
+  "page_errors": [],
+  "original_vertex_sha256_unchanged": true
+}

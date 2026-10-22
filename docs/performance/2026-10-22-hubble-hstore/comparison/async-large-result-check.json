@@ -1,0 +1,285 @@
+{
+  "graph": "perf_large8192",
+  "space": "perf_space_0999",
+  "query": "g.V().limit(12000)",
+  "task_id": 1,
+  "submission": {
+    "status": 200,
+    "data": {
+      "task_id": 1,
+      "execute_status": "ASYNC_TASK_SUCCESS"
+    },
+    "message": "Success",
+    "cause": null
+  },
+  "statuses": [
+    {
+      "ts": 1792659429.2227995,
+      "status": "running"
+    },
+    {
+      "ts": 1792659430.2278528,
+      "status": "running"
+    },
+    {
+      "ts": 1792659431.2390816,
+      "status": "running"
+    },
+    {
+      "ts": 1792659432.244782,
+      "status": "running"
+    },
+    {
+      "ts": 1792659433.2523723,
+      "status": "running"
+    },
+    {
+      "ts": 1792659434.2584593,
+      "status": "running"
+    },
+    {
+      "ts": 1792659435.268493,
+      "status": "running"
+    },
+    {
+      "ts": 1792659436.2765048,
+      "status": "running"
+    },
+    {
+      "ts": 1792659437.2808363,
+      "status": "running"
+    },
+    {
+      "ts": 1792659438.288653,
+      "status": "running"
+    },
+    {
+      "ts": 1792659439.294177,
+      "status": "running"
+    },
+    {
+      "ts": 1792659440.30204,
+      "status": "running"
+    },
+    {
+      "ts": 1792659441.310017,
+      "status": "running"
+    },
+    {
+      "ts": 1792659442.3273702,
+      "status": "running"
+    },
+    {
+      "ts": 1792659443.340863,
+      "status": "running"
+    },
+    {
+      "ts": 1792659444.3576407,
+      "status": "running"
+    },
+    {
+      "ts": 1792659445.3936834,
+      "status": "running"
+    },
+    {
+      "ts": 1792659446.4152231,
+      "status": "running"
+    },
+    {
+      "ts": 1792659447.424456,
+      "status": "running"
+    },
+    {
+      "ts": 1792659448.439371,
+      "status": "running"
+    },
+    {
+      "ts": 1792659449.4502943,
+      "status": "running"
+    },
+    {
+      "ts": 1792659450.4603026,
+      "status": "running"
+    },
+    {
+      "ts": 1792659451.6142995,
+      "status": "running"
+    },
+    {
+      "ts": 1792659452.6382644,
+      "status": "running"
+    },
+    {
+      "ts": 1792659453.6471682,
+      "status": "running"
+    },
+    {
+      "ts": 1792659454.6910574,
+      "status": "running"
+    },
+    {
+      "ts": 1792659455.715181,
+      "status": "running"
+    },
+    {
+      "ts": 1792659456.7236485,
+      "status": "running"
+    },
+    {
+      "ts": 1792659457.7472084,
+      "status": "running"
+    },
+    {
+      "ts": 1792659458.7901187,
+      "status": "running"
+    },
+    {
+      "ts": 1792659459.797088,
+      "status": "running"
+    },
+    {
+      "ts": 1792659460.8828924,
+      "status": "running"
+    },
+    {
+      "ts": 1792659461.8933496,
+      "status": "running"
+    },
+    {
+      "ts": 1792659462.9036133,
+      "status": "running"
+    },
+    {
+      "ts": 1792659463.912884,
+      "status": "running"
+    },
+    {
+      "ts": 1792659464.921502,
+      "status": "running"
+    },
+    {
+      "ts": 1792659465.9390118,
+      "status": "running"
+    },
+    {
+      "ts": 1792659466.9441416,
+      "status": "running"
+    },
+    {
+      "ts": 1792659467.962313,
+      "status": "running"
+    },
+    {
+      "ts": 1792659468.9910612,
+      "status": "running"
+    },
+    {
+      "ts": 1792659469.997375,
+      "status": "running"
+    },
+    {
+      "ts": 1792659471.006107,
+      "status": "running"
+    },
+    {
+      "ts": 1792659472.0198362,
+      "status": "running"
+    },
+    {
+      "ts": 1792659473.0267167,
+      "status": "running"
+    },
+    {
+      "ts": 1792659474.0368335,
+      "status": "running"
+    },
+    {
+      "ts": 1792659475.042498,
+      "status": "running"
+    },
+    {
+      "ts": 1792659476.0491474,
+      "status": "running"
+    },
+    {
+      "ts": 1792659477.054497,
+      "status": "running"
+    },
+    {
+      "ts": 1792659478.0869796,
+      "status": "running"
+    },
+    {
+      "ts": 1792659479.093198,
+      "status": "running"
+    },
+    {
+      "ts": 1792659480.105117,
+      "status": "running"
+    },
+    {
+      "ts": 1792659481.1125708,
+      "status": "running"
+    },
+    {
+      "ts": 1792659482.1203256,
+      "status": "running"
+    },
+    {
+      "ts": 1792659483.1292794,
+      "status": "running"
+    },
+    {
+      "ts": 1792659484.146893,
+      "status": "running"
+    },
+    {
+      "ts": 1792659485.1601927,
+      "status": "running"
+    },
+    {
+      "ts": 1792659486.1709554,
+      "status": "running"
+    },
+    {
+      "ts": 1792659487.1851149,
+      "status": "running"
+    },
+    {
+      "ts": 1792659488.1891909,
+      "status": "running"
+    },
+    {
+      "ts": 1792659489.2088995,
+      "status": "running"
+    }
+  ],
+  "followup_status": {
+    "task_name": "g.V().limit(12000)",
+    "task_progress": 0,
+    "task_create": 1792659429196,
+    "task_status": "failed",
+    "task_update": 1792659555667,
+    "task_retries": 0,
+    "id": 1,
+    "task_type": "gremlin",
+    "task_callable": "org.apache.hugegraph.job.GremlinJob",
+    "task_input": "{\"gremlin\":\"g.V().limit(12000)\",\"aliases\":{\"perf_large8192\":\"graph\"},\"bindings\":{},\"language\":\"gremlin-groovy\"}"
+  },
+  "followup_ts": 1792659556.5478845,
+  "final_status": "failed",
+  "final_metadata": {
+    "task_name": "g.V().limit(12000)",
+    "task_progress": 0,
+    "task_create": 1792659429196,
+    "task_status": "failed",
+    "task_update": 1792659555667,
+    "task_retries": 0,
+    "id": 1,
+    "task_type": "gremlin",
+    "task_callable": "org.apache.hugegraph.job.GremlinJob",
+    "task_input": "{\"gremlin\":\"g.V().limit(12000)\",\"aliases\":{\"perf_large8192\":\"graph\"},\"bindings\":{},\"language\":\"gremlin-groovy\"}"
+  },
+  "failure_result": "org.apache.hugegraph.exception.LimitExceedException: Task result size 99665305 exceeded limit 16777216 bytes",
+  "terminal_observed_ts": 1792659565.8263898
+}

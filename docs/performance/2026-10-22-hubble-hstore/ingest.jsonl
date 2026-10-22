@@ -1,0 +1,4 @@
+{"graph": "perf_small64", "kind": "vertices", "count": 12000, "property_bytes": 64, "seconds": 0.6505947719999767, "elements_per_second": 18444.66097246848}
+{"graph": "perf_small64", "kind": "edges", "count": 12000, "property_bytes": 64, "seconds": 4.273436378000042, "elements_per_second": 2808.044612943547}
+{"graph": "perf_large8192", "kind": "vertices", "count": 12000, "property_bytes": 8192, "seconds": 1.9938442579999673, "elements_per_second": 6018.524241224962}
+{"graph": "perf_large8192", "kind": "edges", "count": 12000, "property_bytes": 8192, "seconds": 7.006740713999989, "elements_per_second": 1712.636515294923}

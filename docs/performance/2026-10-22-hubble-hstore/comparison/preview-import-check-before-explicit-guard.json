@@ -1,0 +1,19 @@
+{
+  "http_status": 400,
+  "response": {
+    "status": 400,
+    "data": null,
+    "message": "Failed to deserialize json",
+    "cause": null
+  },
+  "submitted_file": {
+    "vertices": [
+      {
+        "~hubble_properties_preview": true
+      }
+    ],
+    "edges": []
+  },
+  "contains_vertex_id_or_label": false,
+  "original_vertex_sha256_unchanged": true
+}

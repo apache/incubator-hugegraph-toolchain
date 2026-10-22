@@ -1,0 +1,680 @@
+{
+  "phase": "after-adaptive",
+  "elapsed_ms": 1569.2221079989395,
+  "snapshot": {
+    "status": "ready",
+    "nodes": 1000,
+    "edges": 74,
+    "error": null
+  },
+  "duration_ms": 2025.547,
+  "hotspots": [
+    {
+      "function": "(program)",
+      "self_ms": 496.85,
+      "inclusive_ms": 496.85,
+      "url": "",
+      "line": 0,
+      "column": 0,
+      "callers": [
+        "(program)",
+        "(root)"
+      ]
+    },
+    {
+      "function": "(idle)",
+      "self_ms": 197.94,
+      "inclusive_ms": 197.94,
+      "url": "",
+      "line": 0,
+      "column": 0,
+      "callers": [
+        "(idle)",
+        "(root)"
+      ]
+    },
+    {
+      "function": "KO",
+      "self_ms": 71.16,
+      "inclusive_ms": 148.05,
+      "url": "http://127.0.0.1:3000/assets/react-BGAeazFP.js",
+      "line": 18,
+      "column": 23019,
+      "callers": [
+        "KO",
+        "l",
+        "",
+        "f",
+        "tick",
+        "tick",
+        "",
+        "",
+        "V6",
+        "graphLayout"
+      ]
+    },
+    {
+      "function": "(garbage collector)",
+      "self_ms": 61.79,
+      "inclusive_ms": 61.79,
+      "url": "",
+      "line": 0,
+      "column": 0,
+      "callers": [
+        "(garbage collector)",
+        "(root)"
+      ]
+    },
+    {
+      "function": "f",
+      "self_ms": 58.12,
+      "inclusive_ms": 58.12,
+      "url": "http://127.0.0.1:3000/assets/react-BGAeazFP.js",
+      "line": 18,
+      "column": 26324,
+      "callers": [
+        "f",
+        "KO",
+        "l",
+        "",
+        "f",
+        "tick",
+        "tick",
+        "",
+        "",
+        "V6"
+      ]
+    },
+    {
+      "function": "KO",
+      "self_ms": 36.18,
+      "inclusive_ms": 61.15,
+      "url": "http://127.0.0.1:3000/assets/react-BGAeazFP.js",
+      "line": 18,
+      "column": 23019,
+      "callers": [
+        "KO",
+        "o",
+        "",
+        "f",
+        "tick",
+        "tick",
+        "",
+        "",
+        "V6",
+        "graphLayout"
+      ]
+    },
+    {
+      "function": "value",
+      "self_ms": 26.27,
+      "inclusive_ms": 49.79,
+      "url": "http://127.0.0.1:3000/assets/react-BGAeazFP.js",
+      "line": 12,
+      "column": 70807,
+      "callers": [
+        "value",
+        "value",
+        "t",
+        "R",
+        "t",
+        "_v",
+        "e",
+        "e",
+        "createElement",
+        ""
+      ]
+    },
+    {
+      "function": "",
+      "self_ms": 24.15,
+      "inclusive_ms": 46.09,
+      "url": "http://127.0.0.1:3000/assets/main-CqbnI39b.js",
+      "line": 148,
+      "column": 18100,
+      "callers": [
+        "",
+        "Yo",
+        "jc",
+        "sl",
+        "Xd",
+        "Yd",
+        "Ld",
+        "Nf",
+        "D",
+        "(root)"
+      ]
+    },
+    {
+      "function": "BO",
+      "self_ms": 18.77,
+      "inclusive_ms": 18.77,
+      "url": "http://127.0.0.1:3000/assets/react-BGAeazFP.js",
+      "line": 18,
+      "column": 21497,
+      "callers": [
+        "BO",
+        "KO",
+        "l",
+        "",
+        "f",
+        "tick",
+        "tick",
+        "",
+        "",
+        "V6"
+      ]
+    },
+    {
+      "function": "h",
+      "self_ms": 17.17,
+      "inclusive_ms": 17.17,
+      "url": "http://127.0.0.1:3000/assets/react-BGAeazFP.js",
+      "line": 18,
+      "column": 25076,
+      "callers": [
+        "h",
+        "KO",
+        "o",
+        "",
+        "f",
+        "tick",
+        "tick",
+        "",
+        "",
+        "V6"
+      ]
+    },
+    {
+      "function": "getResource",
+      "self_ms": 16.22,
+      "inclusive_ms": 16.22,
+      "url": "http://127.0.0.1:3000/assets/main-CqbnI39b.js",
+      "line": 386,
+      "column": 21212,
+      "callers": [
+        "getResource",
+        "getResource",
+        "",
+        "",
+        "",
+        "resolve",
+        "translate",
+        "t",
+        "a",
+        "Rht"
+      ]
+    },
+    {
+      "function": "createElement",
+      "self_ms": 15.45,
+      "inclusive_ms": 223.71,
+      "url": "http://127.0.0.1:3000/assets/react-BGAeazFP.js",
+      "line": 159,
+      "column": 47731,
+      "callers": [
+        "createElement",
+        "",
+        "",
+        "createElements",
+        "",
+        "o",
+        "(root)"
+      ]
+    },
+    {
+      "function": "OAe",
+      "self_ms": 14.13,
+      "inclusive_ms": 14.13,
+      "url": "http://127.0.0.1:3000/assets/main-CqbnI39b.js",
+      "line": 386,
+      "column": 18665,
+      "callers": [
+        "OAe",
+        "extractFromKey",
+        "translate",
+        "t",
+        "a",
+        "IRt",
+        "Yo",
+        "Bc",
+        "sl",
+        "Xd"
+      ]
+    },
+    {
+      "function": "F8",
+      "self_ms": 14.13,
+      "inclusive_ms": 14.91,
+      "url": "http://127.0.0.1:3000/assets/react-BGAeazFP.js",
+      "line": 159,
+      "column": 95797,
+      "callers": [
+        "F8",
+        "I8",
+        "",
+        "_l",
+        "Ru",
+        "Lu",
+        "Ru",
+        "Lu",
+        "Ru",
+        "Lu"
+      ]
+    },
+    {
+      "function": "kl",
+      "self_ms": 12.92,
+      "inclusive_ms": 12.92,
+      "url": "http://127.0.0.1:3000/assets/react-BGAeazFP.js",
+      "line": 8,
+      "column": 97195,
+      "callers": [
+        "kl",
+        "Du",
+        "Tu",
+        "Du",
+        "Tu",
+        "Du",
+        "Tu",
+        "Du",
+        "Tu",
+        "Du"
+      ]
+    },
+    {
+      "function": "",
+      "self_ms": 12.35,
+      "inclusive_ms": 21.41,
+      "url": "http://127.0.0.1:3000/assets/main-CqbnI39b.js",
+      "line": 123,
+      "column": 15591,
+      "callers": [
+        "",
+        "Yo",
+        "jc",
+        "sl",
+        "Xd",
+        "Yd",
+        "Ld",
+        "Nf",
+        "D",
+        "(root)"
+      ]
+    },
+    {
+      "function": "t",
+      "self_ms": 12.05,
+      "inclusive_ms": 22.36,
+      "url": "http://127.0.0.1:3000/assets/react-BGAeazFP.js",
+      "line": 13,
+      "column": 2493,
+      "callers": [
+        "t",
+        "R",
+        "t",
+        "R",
+        "t",
+        "_v",
+        "e",
+        "e",
+        "createElement",
+        ""
+      ]
+    },
+    {
+      "function": "jc",
+      "self_ms": 11.54,
+      "inclusive_ms": 147.01,
+      "url": "http://127.0.0.1:3000/assets/react-BGAeazFP.js",
+      "line": 8,
+      "column": 68574,
+      "callers": [
+        "jc",
+        "sl",
+        "Xd",
+        "Yd",
+        "Ld",
+        "Nf",
+        "D",
+        "(root)"
+      ]
+    },
+    {
+      "function": "",
+      "self_ms": 10.36,
+      "inclusive_ms": 18.99,
+      "url": "http://127.0.0.1:3000/assets/main-CqbnI39b.js",
+      "line": 123,
+      "column": 15591,
+      "callers": [
+        "",
+        "Yo",
+        "jc",
+        "sl",
+        "Xd",
+        "Yd",
+        "Ld",
+        "Pf",
+        "kf",
+        "jf"
+      ]
+    },
+    {
+      "function": "t",
+      "self_ms": 9.32,
+      "inclusive_ms": 81.47,
+      "url": "http://127.0.0.1:3000/assets/react-BGAeazFP.js",
+      "line": 13,
+      "column": 10464,
+      "callers": [
+        "t",
+        "R",
+        "t",
+        "_v",
+        "e",
+        "e",
+        "createElement",
+        "",
+        "",
+        "createElements"
+      ]
+    },
+    {
+      "function": "Yo",
+      "self_ms": 8.9,
+      "inclusive_ms": 54.47,
+      "url": "http://127.0.0.1:3000/assets/react-BGAeazFP.js",
+      "line": 8,
+      "column": 49099,
+      "callers": [
+        "Yo",
+        "Bc",
+        "sl",
+        "Xd",
+        "Yd",
+        "Ld",
+        "Nf",
+        "D",
+        "(root)"
+      ]
+    },
+    {
+      "function": "we",
+      "self_ms": 8.67,
+      "inclusive_ms": 9.82,
+      "url": "http://127.0.0.1:3000/assets/react-BGAeazFP.js",
+      "line": 11,
+      "column": 8080,
+      "callers": [
+        "we",
+        "we",
+        "we",
+        "we",
+        "Te",
+        "adopt",
+        "",
+        "(root)"
+      ]
+    },
+    {
+      "function": "BO",
+      "self_ms": 7.8,
+      "inclusive_ms": 7.8,
+      "url": "http://127.0.0.1:3000/assets/react-BGAeazFP.js",
+      "line": 18,
+      "column": 21497,
+      "callers": [
+        "BO",
+        "KO",
+        "o",
+        "",
+        "f",
+        "tick",
+        "tick",
+        "",
+        "",
+        "V6"
+      ]
+    },
+    {
+      "function": "l",
+      "self_ms": 7.69,
+      "inclusive_ms": 172.46,
+      "url": "http://127.0.0.1:3000/assets/react-BGAeazFP.js",
+      "line": 18,
+      "column": 25896,
+      "callers": [
+        "l",
+        "",
+        "f",
+        "tick",
+        "tick",
+        "",
+        "",
+        "V6",
+        "graphLayout",
+        ""
+      ]
+    },
+    {
+      "function": "",
+      "self_ms": 7.61,
+      "inclusive_ms": 7.61,
+      "url": "http://127.0.0.1:3000/assets/main-CqbnI39b.js",
+      "line": 426,
+      "column": 2440,
+      "callers": [
+        "",
+        "Sj",
+        "j1e",
+        "",
+        "e2e",
+        "Nzt",
+        "",
+        "",
+        "",
+        "_l"
+      ]
+    },
+    {
+      "function": "o",
+      "self_ms": 7.52,
+      "inclusive_ms": 86.83,
+      "url": "http://127.0.0.1:3000/assets/react-BGAeazFP.js",
+      "line": 18,
+      "column": 24915,
+      "callers": [
+        "o",
+        "",
+        "f",
+        "tick",
+        "tick",
+        "",
+        "",
+        "V6",
+        "graphLayout",
+        ""
+      ]
+    },
+    {
+      "function": "Ms",
+      "self_ms": 6.88,
+      "inclusive_ms": 6.88,
+      "url": "http://127.0.0.1:3000/assets/react-BGAeazFP.js",
+      "line": 8,
+      "column": 56858,
+      "callers": [
+        "Ms",
+        "e.useRef",
+        "",
+        "Yo",
+        "jc",
+        "sl",
+        "Xd",
+        "Yd",
+        "Ld",
+        "Nf"
+      ]
+    },
+    {
+      "function": "value",
+      "self_ms": 6.8,
+      "inclusive_ms": 10.05,
+      "url": "http://127.0.0.1:3000/assets/react-BGAeazFP.js",
+      "line": 17,
+      "column": 157337,
+      "callers": [
+        "value",
+        "m",
+        "",
+        "",
+        "value",
+        "value",
+        "value",
+        "t",
+        "(root)"
+      ]
+    },
+    {
+      "function": "e.createElement",
+      "self_ms": 6.74,
+      "inclusive_ms": 6.74,
+      "url": "http://127.0.0.1:3000/assets/react-BGAeazFP.js",
+      "line": 1,
+      "column": 10852,
+      "callers": [
+        "e.createElement",
+        "a",
+        "Yo",
+        "jc",
+        "sl",
+        "Xd",
+        "Yd",
+        "Ld",
+        "Nf",
+        "D"
+      ]
+    },
+    {
+      "function": "t",
+      "self_ms": 6.52,
+      "inclusive_ms": 9.23,
+      "url": "http://127.0.0.1:3000/assets/react-BGAeazFP.js",
+      "line": 12,
+      "column": 94817,
+      "callers": [
+        "t",
+        "R",
+        "t",
+        "R",
+        "t",
+        "R",
+        "t",
+        "_v",
+        "e",
+        "e"
+      ]
+    },
+    {
+      "function": "ov",
+      "self_ms": 6.35,
+      "inclusive_ms": 6.35,
+      "url": "http://127.0.0.1:3000/assets/react-BGAeazFP.js",
+      "line": 17,
+      "column": 132988,
+      "callers": [
+        "ov",
+        "lv",
+        "getGraphicStyle",
+        "getKeyStyle",
+        "getKeyStyle",
+        "drawKeyShape",
+        "_drawKeyShape",
+        "render",
+        "_v",
+        "e"
+      ]
+    },
+    {
+      "function": "FO",
+      "self_ms": 6.33,
+      "inclusive_ms": 7.43,
+      "url": "http://127.0.0.1:3000/assets/react-BGAeazFP.js",
+      "line": 18,
+      "column": 19917,
+      "callers": [
+        "FO",
+        "IO",
+        "QO",
+        "o",
+        "",
+        "f",
+        "tick",
+        "tick",
+        "",
+        ""
+      ]
+    },
+    {
+      "function": "f",
+      "self_ms": 6.06,
+      "inclusive_ms": 6.06,
+      "url": "http://127.0.0.1:3000/assets/main-CqbnI39b.js",
+      "line": 401,
+      "column": 584,
+      "callers": [
+        "f",
+        "h",
+        "_",
+        "h",
+        "_",
+        "h",
+        "g",
+        "h",
+        "_",
+        "h"
+      ]
+    },
+    {
+      "function": "Pc",
+      "self_ms": 6.01,
+      "inclusive_ms": 6.01,
+      "url": "http://127.0.0.1:3000/assets/main-CqbnI39b.js",
+      "line": 65,
+      "column": 1055,
+      "callers": [
+        "Pc",
+        "useToken",
+        "",
+        "",
+        "",
+        "Yo",
+        "jc",
+        "sl",
+        "Xd",
+        "Yd"
+      ]
+    },
+    {
+      "function": "we",
+      "self_ms": 5.9,
+      "inclusive_ms": 12.13,
+      "url": "http://127.0.0.1:3000/assets/react-BGAeazFP.js",
+      "line": 11,
+      "column": 8080,
+      "callers": [
+        "we",
+        "we",
+        "we",
+        "we",
+        "Te",
+        "replaceData",
+        "",
+        "",
+        "",
+        ""
+      ]
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "created_utc": "2026-10-22T09:29:18.097066+00:00",
+  "baseline_toolchain_commit": "37ea0b61d606abc0dc859b8a121815906df3c0aa",
+  "hubble_api_after_source_commit": "8bd40d51",
+  "hubble_final_local_source_head": "de29f5ab51bd0f92d807a2db4876ad63ba64ae0a",
+  "server_source_during_hubble_comparison": "86c05ef9c5d417bd37eab21d4ecd5af82bab17ef",
+  "original_struct_class_sha256": "bdf942035f073e45e35af4e16e2565b5d67afda8223770b374212f5869a192bf",
+  "baseline_hubble_jar_sha256": "d4ebe650788b2852ad670749bc0bceb2dda21ebb8457256c09106572c47d2232",
+  "runtime_configuration_change": {
+    "gremlin.suffix_limit": {
+      "before": 250,
+      "after": 300
+    }
+  },
+  "request_accept_encoding": "identity",
+  "discovered_server": "http://127.0.0.1:18080",
+  "http_trace_proxy_used": false,
+  "auth_mode": "anonymous",
+  "server_unchanged_during_hubble_comparison": true,
+  "property_fixture": {
+    "space": "perf_space_0996",
+    "graph": "perf_property_preview",
+    "vertices": 2,
+    "edges": 1,
+    "payload_chars": [
+      102400,
+      1048576
+    ],
+    "total_graphs_before": 55,
+    "total_graphs_after": 56,
+    "created_after_matched_metadata_samples": true
+  },
+  "final_functional_smoke_server": "patched Struct; not included in Hubble performance timing"
+}

@@ -1,0 +1,4 @@
+{"label": "pd_GetGraphSpace_single", "n": 30, "p50_ms": 0.3912765000109175, "p95_ms": 5.216179999933956, "returned_spaces": 1, "response_bytes": 28, "header": "error {\n}\n"}
+{"label": "pd_GetGraphSpace_all", "n": 30, "p50_ms": 1.4751515000170912, "p95_ms": 7.1660730000076, "returned_spaces": 1000, "response_bytes": 29998, "header": "error {\n}\n"}
+{"label": "pd_GetGraphSpace_single", "n": 30, "p50_ms": 0.3628939999771319, "p95_ms": 0.8129789998747583, "returned_spaces": 1, "response_bytes": 28, "header": "error {\n}\n"}
+{"label": "pd_GetGraphSpace_all", "n": 30, "p50_ms": 0.9367939999265218, "p95_ms": 1.4531269998769858, "returned_spaces": 1000, "response_bytes": 29998, "header": "error {\n}\n"}

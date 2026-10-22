@@ -1,0 +1,73 @@
+[
+  {
+    "endpoint": "server_vertices_12000",
+    "accept_encoding": "identity",
+    "n": 3,
+    "p50_ms": 2464.1659499993693,
+    "samples": [
+      {
+        "ms": 2395.7232780003324,
+        "decoded_bytes": 99156908,
+        "content_encoding": null
+      },
+      {
+        "ms": 3373.1698569999935,
+        "decoded_bytes": 99156908,
+        "content_encoding": null
+      },
+      {
+        "ms": 2464.1659499993693,
+        "decoded_bytes": 99156908,
+        "content_encoding": null
+      }
+    ]
+  },
+  {
+    "endpoint": "server_vertices_12000",
+    "accept_encoding": "gzip",
+    "n": 3,
+    "p50_ms": 4952.387238000483,
+    "samples": [
+      {
+        "ms": 4952.387238000483,
+        "decoded_bytes": 99156908,
+        "content_encoding": "gzip"
+      },
+      {
+        "ms": 5348.554797000361,
+        "decoded_bytes": 99156908,
+        "content_encoding": "gzip"
+      },
+      {
+        "ms": 4720.14026800025,
+        "decoded_bytes": 99156908,
+        "content_encoding": "gzip"
+      }
+    ]
+  },
+  {
+    "endpoint": "unproxied_hubble_vertices_12000",
+    "n": 3,
+    "p50_ms": 36975.05070300031,
+    "samples": [
+      {
+        "ms": 48629.02863999989,
+        "decoded_bytes": 302597361,
+        "graph_vertices": 12000,
+        "graph_edges": 615
+      },
+      {
+        "ms": 36975.05070300031,
+        "decoded_bytes": 302597361,
+        "graph_vertices": 12000,
+        "graph_edges": 615
+      },
+      {
+        "ms": 36974.2660539996,
+        "decoded_bytes": 302597361,
+        "graph_vertices": 12000,
+        "graph_edges": 615
+      }
+    ]
+  }
+]

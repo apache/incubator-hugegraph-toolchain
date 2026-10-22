@@ -1,0 +1,74 @@
+[
+  {
+    "label": "hubble_default_vertices",
+    "graph": "perf_small64",
+    "n": 10,
+    "main_ms": 19.108925999944404,
+    "main_bytes": 33803.0,
+    "enrichment_calls": 3.0,
+    "enrichment_ms_sum": 36.077020499988066,
+    "enrichment_bytes_sum": 99963.0,
+    "hubble_body_bytes": 104896.0,
+    "e2e_ms": 98.38865300002908
+  },
+  {
+    "label": "hubble_default_vertices",
+    "graph": "perf_large8192",
+    "n": 10,
+    "main_ms": 186.5993655000011,
+    "main_bytes": 2065803.0,
+    "enrichment_calls": 3.0,
+    "enrichment_ms_sum": 23.655109500055005,
+    "enrichment_bytes_sum": 4033915.0,
+    "hubble_body_bytes": 6330944.0,
+    "e2e_ms": 272.7742919999514
+  },
+  {
+    "label": "hubble_vertices_12000",
+    "graph": "perf_small64",
+    "n": 5,
+    "main_ms": 36.29954000007274,
+    "main_bytes": 1621027,
+    "enrichment_calls": 120,
+    "enrichment_ms_sum": 608.929460999434,
+    "enrichment_bytes_sum": 2528416,
+    "hubble_body_bytes": 4990641,
+    "e2e_ms": 790.7623019999619
+  },
+  {
+    "label": "hubble_vertices_12000",
+    "graph": "perf_large8192",
+    "n": 5,
+    "main_ms": 596.7144489999328,
+    "main_bytes": 99157027,
+    "enrichment_calls": 120,
+    "enrichment_ms_sum": 19733.676923999497,
+    "enrichment_bytes_sum": 101039776,
+    "hubble_body_bytes": 302597361,
+    "e2e_ms": 21568.96628300001
+  },
+  {
+    "label": "hubble_paths_12000",
+    "graph": "perf_small64",
+    "n": 5,
+    "main_ms": 174.22981400000026,
+    "main_bytes": 6137497,
+    "enrichment_calls": 120,
+    "enrichment_ms_sum": 267.3086190001186,
+    "enrichment_bytes_sum": 1636854,
+    "hubble_body_bytes": 10011767,
+    "e2e_ms": 1406.3785419999704
+  },
+  {
+    "label": "hubble_paths_12000",
+    "graph": "perf_large8192",
+    "n": 5,
+    "main_ms": 1469.3520589999025,
+    "main_bytes": 298745497,
+    "enrichment_calls": 120,
+    "enrichment_ms_sum": 431.54936000041744,
+    "enrichment_bytes_sum": 99172854,
+    "hubble_body_bytes": 497691767,
+    "e2e_ms": 5047.962279999979
+  }
+]

@@ -1,0 +1,10 @@
+{
+  "perf_small64": {
+    "vertexcount": "12000",
+    "edgecount": "12000"
+  },
+  "perf_large8192": {
+    "vertexcount": "12000",
+    "edgecount": "12000"
+  }
+}

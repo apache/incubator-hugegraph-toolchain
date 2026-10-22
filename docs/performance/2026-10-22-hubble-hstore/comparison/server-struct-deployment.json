@@ -1,0 +1,8 @@
+{
+  "old_jar_sha256": "d93f1df97282dd8cf11907a67c852b3cceea9bbeefa54635785bf848661b4854",
+  "new_jar_sha256": "37b7742184a17c6fae4699050bdbb20af2b3919a1d0def58c11b04ee7d4d5560",
+  "source_commit": "474f8961af67476764ddc2536956a3d889daf899",
+  "pid_before": 8272,
+  "pid_after": 25034,
+  "timestamp": 1792661021.1894927
+}

@@ -1,0 +1,19 @@
+{
+  "old_jar_sha256": "d93f1df97282dd8cf11907a67c852b3cceea9bbeefa54635785bf848661b4854",
+  "new_jar_sha256": "37b7742184a17c6fae4699050bdbb20af2b3919a1d0def58c11b04ee7d4d5560",
+  "classes_before": 173,
+  "classes_after": 173,
+  "changed_classes": [
+    "org/apache/hugegraph/serializer/BytesBuffer$1.class",
+    "org/apache/hugegraph/serializer/BytesBuffer$IndexColumnName.class",
+    "org/apache/hugegraph/serializer/BytesBuffer$IndexExpiryLayout.class",
+    "org/apache/hugegraph/serializer/BytesBuffer.class"
+  ],
+  "added_classes": [],
+  "removed_classes": [],
+  "nested_class_disassembly_equal": {
+    "org.apache.hugegraph.serializer.BytesBuffer$1": true,
+    "org.apache.hugegraph.serializer.BytesBuffer$IndexColumnName": true,
+    "org.apache.hugegraph.serializer.BytesBuffer$IndexExpiryLayout": true
+  }
+}

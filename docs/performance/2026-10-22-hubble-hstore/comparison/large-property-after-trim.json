@@ -1,0 +1,200 @@
+{
+  "fixture": {
+    "space": "perf_space_0996",
+    "graph": "perf_property_preview",
+    "vertex_ids": [
+      9007199254740993,
+      9007199254740995
+    ],
+    "vertices": [
+      {
+        "id": 9007199254740993,
+        "lengths": {
+          "payload": 102400,
+          "boundary256": 256,
+          "boundary257": 257
+        },
+        "sha256": {
+          "payload": "43d0ff51c01c877bf5cfbde888ed110dbe7101f7e6fc35a6893841f6addf0566",
+          "boundary256": "ff4279f89a42c8826514f5d90a8db40aa1bc300d3bab3305de81a146a6181534",
+          "boundary257": "15eb95a462ee20bd91a415ae2d4aed341288186ddaa2b37908f7d592f0c3f85f"
+        }
+      },
+      {
+        "id": 9007199254740995,
+        "lengths": {
+          "payload": 1048576,
+          "boundary256": 256,
+          "boundary257": 257
+        },
+        "sha256": {
+          "payload": "2a704396d552341a13ffc84bc05ea4943f06a264c4bf5143ce7f78a3224ca454",
+          "boundary256": "ff4279f89a42c8826514f5d90a8db40aa1bc300d3bab3305de81a146a6181534",
+          "boundary257": "15eb95a462ee20bd91a415ae2d4aed341288186ddaa2b37908f7d592f0c3f85f"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "L9007199254740993>1>1>>L9007199254740995",
+        "outV": 9007199254740993,
+        "inV": 9007199254740995,
+        "payload_length": 1048576,
+        "sha256": "815831d1d6d59b51ef8b59045c083023be8259229474d8709e2cb5b935407547"
+      }
+    ]
+  },
+  "records": [
+    {
+      "label": "vertices",
+      "query": "g.V()",
+      "ms": 371.8113530012488,
+      "bytes": 9924,
+      "rows": 2,
+      "vertices": 2,
+      "edges": 1,
+      "properties_truncated": true,
+      "property_preview_limit": 256,
+      "payload_lengths": [
+        284,
+        285,
+        284,
+        285,
+        284,
+        285,
+        285
+      ],
+      "vertex_ids": [
+        "9007199254740993",
+        "9007199254740995"
+      ],
+      "boundary256_lengths": [
+        256,
+        256,
+        256,
+        256,
+        256,
+        256
+      ],
+      "boundary257_lengths": [
+        281,
+        281,
+        281,
+        281,
+        281,
+        281
+      ]
+    },
+    {
+      "label": "edges",
+      "query": "g.E()",
+      "ms": 171.34557400095218,
+      "bytes": 5050,
+      "rows": 1,
+      "vertices": 2,
+      "edges": 1,
+      "properties_truncated": true,
+      "property_preview_limit": 256,
+      "payload_lengths": [
+        285,
+        285,
+        284,
+        285,
+        285
+      ],
+      "vertex_ids": [
+        "9007199254740993",
+        "9007199254740995"
+      ],
+      "boundary256_lengths": [
+        256,
+        256
+      ],
+      "boundary257_lengths": [
+        281,
+        281
+      ]
+    },
+    {
+      "label": "paths",
+      "query": "g.V().outE().inV().path()",
+      "ms": 195.7775769988075,
+      "bytes": 7598,
+      "rows": 1,
+      "vertices": 2,
+      "edges": 1,
+      "properties_truncated": true,
+      "property_preview_limit": 256,
+      "payload_lengths": [
+        284,
+        285,
+        285,
+        284,
+        285,
+        285
+      ],
+      "vertex_ids": [
+        "9007199254740993",
+        "9007199254740995"
+      ],
+      "boundary256_lengths": [
+        256,
+        256,
+        256,
+        256
+      ],
+      "boundary257_lengths": [
+        281,
+        281,
+        281,
+        281
+      ]
+    },
+    {
+      "label": "scalar",
+      "query": "g.V(9007199254740995).values('payload')",
+      "ms": 108.92728300132148,
+      "bytes": 1048,
+      "rows": 1,
+      "vertices": 0,
+      "edges": 0,
+      "properties_truncated": true,
+      "property_preview_limit": 256,
+      "payload_lengths": [],
+      "vertex_ids": [],
+      "boundary256_lengths": [],
+      "boundary257_lengths": []
+    },
+    {
+      "label": "ids",
+      "query": "g.V().id()",
+      "ms": 37.520900999879814,
+      "bytes": 548,
+      "rows": 2,
+      "vertices": 0,
+      "edges": 0,
+      "properties_truncated": false,
+      "property_preview_limit": 256,
+      "payload_lengths": [],
+      "vertex_ids": [],
+      "boundary256_lengths": [],
+      "boundary257_lengths": []
+    },
+    {
+      "label": "count",
+      "query": "g.V().count()",
+      "ms": 53.54265599999053,
+      "bytes": 474,
+      "rows": 1,
+      "vertices": 0,
+      "edges": 0,
+      "properties_truncated": false,
+      "property_preview_limit": 256,
+      "payload_lengths": [],
+      "vertex_ids": [],
+      "boundary256_lengths": [],
+      "boundary257_lengths": []
+    }
+  ],
+  "original_data_sha256_unchanged": true
+}

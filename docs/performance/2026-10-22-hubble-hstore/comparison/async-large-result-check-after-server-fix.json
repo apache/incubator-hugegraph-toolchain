@@ -1,0 +1,44 @@
+{
+  "graph": "perf_large8192",
+  "space": "perf_space_0999",
+  "query": "g.V().limit(12000)",
+  "task_id": 10001,
+  "submission": {
+    "status": 200,
+    "data": {
+      "task_id": 10001,
+      "execute_status": "ASYNC_TASK_SUCCESS"
+    },
+    "message": "Success",
+    "cause": null
+  },
+  "statuses": [
+    {
+      "ts": 1792661265.8117561,
+      "status": "running"
+    },
+    {
+      "ts": 1792661266.8265252,
+      "status": "running"
+    },
+    {
+      "ts": 1792661267.8343256,
+      "status": "failed"
+    }
+  ],
+  "final_status": "failed",
+  "task_metadata": {
+    "task_name": "g.V().limit(12000)",
+    "task_progress": 0,
+    "task_create": 1792661265655,
+    "task_status": "failed",
+    "task_update": 1792661267255,
+    "task_retries": 0,
+    "id": 10001,
+    "task_type": "gremlin",
+    "task_callable": "org.apache.hugegraph.job.GremlinJob",
+    "task_input": "{\"gremlin\":\"g.V().limit(12000)\",\"aliases\":{\"perf_large8192\":\"graph\"},\"bindings\":{},\"language\":\"gremlin-groovy\"}"
+  },
+  "task_execution_ms": 1600,
+  "failure_result": "org.apache.hugegraph.exception.LimitExceedException: Task result size 99665305 exceeded limit 16777216 bytes"
+}

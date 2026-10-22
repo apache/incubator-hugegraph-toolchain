@@ -1,0 +1,2 @@
+{"phase": "after-warm-small", "label": "perf_small64_vertices300", "n": 10, "warmup": 10, "success": 10, "p50_ms": 52.17037700003857, "p95_ms": 56.77156700039632, "bytes": 126341, "encoding": "identity", "transport": "direct-discovered-server"}
+{"phase": "after-warm-small", "label": "perf_small64_vertices1000", "n": 10, "warmup": 10, "success": 10, "p50_ms": 111.60032450061408, "p95_ms": 124.7560510000767, "bytes": 421130, "encoding": "identity", "transport": "direct-discovered-server"}

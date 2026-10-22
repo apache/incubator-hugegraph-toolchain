@@ -1,0 +1,27 @@
+{
+  "toolchain_commit": "37ea0b61d606abc0dc859b8a121815906df3c0aa",
+  "server_pd_store_commit": "86c05ef9c5d417bd37eab21d4ecd5af82bab17ef",
+  "cgroup_cpu_max": "400000 100000",
+  "cgroup_memory_max": "17179869184",
+  "java_version": "openjdk version \"17.0.20.1\" 2026-08-18\nOpenJDK Runtime Environment Temurin-17.0.20.1+1 (build 17.0.20.1+1)\nOpenJDK 64-Bit Server VM Temurin-17.0.20.1+1 (build 17.0.20.1+1, mixed mode, sharing)",
+  "topology": "1 PD + 1 Store + 1 Server + 1 Hubble, local JVMs, single replica, anonymous Server",
+  "heap_mib": {
+    "pd": 1024,
+    "store": 2048,
+    "server": 3072,
+    "hubble": 3072
+  },
+  "property_generation": "deterministic SHAKE256 -> base64, truncated to 64 or 8192 ASCII bytes per element",
+  "graph_shape": "directed ring of 12000 vertices and 12000 edges",
+  "server_recompile_class_check": {
+    "hugegraph-dist": "10/10 identical",
+    "hugegraph-api": "225/225 identical",
+    "hugegraph-core": "744/744 identical",
+    "hugegraph-hstore": "32/32 identical"
+  },
+  "jars_sha256": {
+    "runtime/pd/lib/hg-pd-service-1.8.0.jar": "2ad11ca76b2f05dbff281daeb5cdfccbdefd7809323e29446add50a1be1c717e",
+    "runtime/store/lib/hg-store-node-1.8.0.jar": "60c57ab31e1dc23ba1944e520a0b83bc8380f681580bf3b48c347b6614370225",
+    "hubble-be-1.8.0.jar": "d4ebe650788b2852ad670749bc0bceb2dda21ebb8457256c09106572c47d2232"
+  }
+}

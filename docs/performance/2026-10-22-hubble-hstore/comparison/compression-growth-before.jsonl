@@ -1,0 +1,4 @@
+{"variant":"before","iteration":-1,"input_bytes":8388608,"compressed_bytes":8431637,"ms":987.332,"growths":690,"copied_prefix_bytes":4836342825,"sha256":"99ee27414d8542564f58b3ab48fe3781a588a7cb546bb998ca3b08687437c95d"}
+{"variant":"before","iteration":0,"input_bytes":8388608,"compressed_bytes":8431637,"ms":745.237,"growths":690,"copied_prefix_bytes":4836342825,"sha256":"99ee27414d8542564f58b3ab48fe3781a588a7cb546bb998ca3b08687437c95d"}
+{"variant":"before","iteration":1,"input_bytes":8388608,"compressed_bytes":8431637,"ms":696.756,"growths":690,"copied_prefix_bytes":4836342825,"sha256":"99ee27414d8542564f58b3ab48fe3781a588a7cb546bb998ca3b08687437c95d"}
+{"variant":"before","iteration":2,"input_bytes":8388608,"compressed_bytes":8431637,"ms":683.635,"growths":690,"copied_prefix_bytes":4836342825,"sha256":"99ee27414d8542564f58b3ab48fe3781a588a7cb546bb998ca3b08687437c95d"}

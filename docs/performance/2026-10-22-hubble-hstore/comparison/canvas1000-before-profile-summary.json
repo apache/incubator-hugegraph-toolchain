@@ -1,0 +1,681 @@
+{
+  "elapsed_ms": 1972.2168249991228,
+  "snapshot": {
+    "status": "ready",
+    "nodes": 1000,
+    "edges": 74,
+    "error": null
+  },
+  "duration_ms": 2327.867,
+  "hotspots": [
+    {
+      "function": "f",
+      "self_ms": 335.4,
+      "inclusive_ms": 335.4,
+      "url": "http://127.0.0.1:3000/assets/react-CJ_g2qf4.js",
+      "line": 18,
+      "column": 26324,
+      "callers": [
+        "f",
+        "KO",
+        "l",
+        "",
+        "f",
+        "tick",
+        "tick",
+        "",
+        "",
+        "V6"
+      ]
+    },
+    {
+      "function": "(program)",
+      "self_ms": 332.73,
+      "inclusive_ms": 332.73,
+      "url": "",
+      "line": 0,
+      "column": 0,
+      "callers": [
+        "(program)",
+        "(root)"
+      ]
+    },
+    {
+      "function": "KO",
+      "self_ms": 319.94,
+      "inclusive_ms": 761.99,
+      "url": "http://127.0.0.1:3000/assets/react-CJ_g2qf4.js",
+      "line": 18,
+      "column": 23019,
+      "callers": [
+        "KO",
+        "l",
+        "",
+        "f",
+        "tick",
+        "tick",
+        "",
+        "",
+        "V6",
+        "graphLayout"
+      ]
+    },
+    {
+      "function": "(idle)",
+      "self_ms": 107.94,
+      "inclusive_ms": 107.94,
+      "url": "",
+      "line": 0,
+      "column": 0,
+      "callers": [
+        "(idle)",
+        "(root)"
+      ]
+    },
+    {
+      "function": "BO",
+      "self_ms": 106.66,
+      "inclusive_ms": 106.66,
+      "url": "http://127.0.0.1:3000/assets/react-CJ_g2qf4.js",
+      "line": 18,
+      "column": 21497,
+      "callers": [
+        "BO",
+        "KO",
+        "l",
+        "",
+        "f",
+        "tick",
+        "tick",
+        "",
+        "",
+        "V6"
+      ]
+    },
+    {
+      "function": "KO",
+      "self_ms": 99.98,
+      "inclusive_ms": 212.66,
+      "url": "http://127.0.0.1:3000/assets/react-CJ_g2qf4.js",
+      "line": 18,
+      "column": 23019,
+      "callers": [
+        "KO",
+        "o",
+        "",
+        "f",
+        "tick",
+        "tick",
+        "",
+        "",
+        "V6",
+        "graphLayout"
+      ]
+    },
+    {
+      "function": "(garbage collector)",
+      "self_ms": 88.29,
+      "inclusive_ms": 88.29,
+      "url": "",
+      "line": 0,
+      "column": 0,
+      "callers": [
+        "(garbage collector)",
+        "(root)"
+      ]
+    },
+    {
+      "function": "h",
+      "self_ms": 74.84,
+      "inclusive_ms": 74.84,
+      "url": "http://127.0.0.1:3000/assets/react-CJ_g2qf4.js",
+      "line": 18,
+      "column": 25076,
+      "callers": [
+        "h",
+        "KO",
+        "o",
+        "",
+        "f",
+        "tick",
+        "tick",
+        "",
+        "",
+        "V6"
+      ]
+    },
+    {
+      "function": "BO",
+      "self_ms": 37.84,
+      "inclusive_ms": 37.84,
+      "url": "http://127.0.0.1:3000/assets/react-CJ_g2qf4.js",
+      "line": 18,
+      "column": 21497,
+      "callers": [
+        "BO",
+        "KO",
+        "o",
+        "",
+        "f",
+        "tick",
+        "tick",
+        "",
+        "",
+        "V6"
+      ]
+    },
+    {
+      "function": "FO",
+      "self_ms": 24.04,
+      "inclusive_ms": 26.21,
+      "url": "http://127.0.0.1:3000/assets/react-CJ_g2qf4.js",
+      "line": 18,
+      "column": 19917,
+      "callers": [
+        "FO",
+        "IO",
+        "QO",
+        "l",
+        "",
+        "f",
+        "tick",
+        "tick",
+        "",
+        ""
+      ]
+    },
+    {
+      "function": "FO",
+      "self_ms": 23.2,
+      "inclusive_ms": 24.26,
+      "url": "http://127.0.0.1:3000/assets/react-CJ_g2qf4.js",
+      "line": 18,
+      "column": 19917,
+      "callers": [
+        "FO",
+        "IO",
+        "QO",
+        "o",
+        "",
+        "f",
+        "tick",
+        "tick",
+        "",
+        ""
+      ]
+    },
+    {
+      "function": "createElement",
+      "self_ms": 19.05,
+      "inclusive_ms": 156.76,
+      "url": "http://127.0.0.1:3000/assets/react-CJ_g2qf4.js",
+      "line": 159,
+      "column": 47731,
+      "callers": [
+        "createElement",
+        "",
+        "",
+        "createElements",
+        "",
+        "o",
+        "(root)"
+      ]
+    },
+    {
+      "function": "qO",
+      "self_ms": 17.1,
+      "inclusive_ms": 30.9,
+      "url": "http://127.0.0.1:3000/assets/react-CJ_g2qf4.js",
+      "line": 18,
+      "column": 23375,
+      "callers": [
+        "qO",
+        "l",
+        "",
+        "f",
+        "tick",
+        "tick",
+        "",
+        "",
+        "V6",
+        "graphLayout"
+      ]
+    },
+    {
+      "function": "t",
+      "self_ms": 15.09,
+      "inclusive_ms": 24.74,
+      "url": "http://127.0.0.1:3000/assets/react-CJ_g2qf4.js",
+      "line": 13,
+      "column": 2493,
+      "callers": [
+        "t",
+        "R",
+        "t",
+        "R",
+        "t",
+        "_v",
+        "e",
+        "e",
+        "createElement",
+        ""
+      ]
+    },
+    {
+      "function": "o",
+      "self_ms": 14.68,
+      "inclusive_ms": 280.68,
+      "url": "http://127.0.0.1:3000/assets/react-CJ_g2qf4.js",
+      "line": 18,
+      "column": 24915,
+      "callers": [
+        "o",
+        "",
+        "f",
+        "tick",
+        "tick",
+        "",
+        "",
+        "V6",
+        "graphLayout",
+        ""
+      ]
+    },
+    {
+      "function": "value",
+      "self_ms": 14.47,
+      "inclusive_ms": 23.03,
+      "url": "http://127.0.0.1:3000/assets/react-CJ_g2qf4.js",
+      "line": 12,
+      "column": 70807,
+      "callers": [
+        "value",
+        "value",
+        "t",
+        "R",
+        "t",
+        "_v",
+        "e",
+        "e",
+        "createElement",
+        ""
+      ]
+    },
+    {
+      "function": "d",
+      "self_ms": 12.77,
+      "inclusive_ms": 12.77,
+      "url": "http://127.0.0.1:3000/assets/react-CJ_g2qf4.js",
+      "line": 18,
+      "column": 26087,
+      "callers": [
+        "d",
+        "qO",
+        "l",
+        "",
+        "f",
+        "tick",
+        "tick",
+        "",
+        "",
+        "V6"
+      ]
+    },
+    {
+      "function": "l",
+      "self_ms": 11.23,
+      "inclusive_ms": 841.52,
+      "url": "http://127.0.0.1:3000/assets/react-CJ_g2qf4.js",
+      "line": 18,
+      "column": 25896,
+      "callers": [
+        "l",
+        "",
+        "f",
+        "tick",
+        "tick",
+        "",
+        "",
+        "V6",
+        "graphLayout",
+        ""
+      ]
+    },
+    {
+      "function": "F8",
+      "self_ms": 9.55,
+      "inclusive_ms": 9.55,
+      "url": "http://127.0.0.1:3000/assets/react-CJ_g2qf4.js",
+      "line": 159,
+      "column": 95745,
+      "callers": [
+        "F8",
+        "I8",
+        "",
+        "_l",
+        "Ru",
+        "Lu",
+        "Ru",
+        "Lu",
+        "Ru",
+        "Lu"
+      ]
+    },
+    {
+      "function": "we",
+      "self_ms": 8.7,
+      "inclusive_ms": 8.7,
+      "url": "http://127.0.0.1:3000/assets/react-CJ_g2qf4.js",
+      "line": 11,
+      "column": 8080,
+      "callers": [
+        "we",
+        "we",
+        "we",
+        "we",
+        "Te",
+        "adopt",
+        "",
+        "(root)"
+      ]
+    },
+    {
+      "function": "qO",
+      "self_ms": 8.64,
+      "inclusive_ms": 17.16,
+      "url": "http://127.0.0.1:3000/assets/react-CJ_g2qf4.js",
+      "line": 18,
+      "column": 23375,
+      "callers": [
+        "qO",
+        "o",
+        "",
+        "f",
+        "tick",
+        "tick",
+        "",
+        "",
+        "V6",
+        "graphLayout"
+      ]
+    },
+    {
+      "function": "t",
+      "self_ms": 8.63,
+      "inclusive_ms": 57.51,
+      "url": "http://127.0.0.1:3000/assets/react-CJ_g2qf4.js",
+      "line": 13,
+      "column": 10464,
+      "callers": [
+        "t",
+        "R",
+        "t",
+        "_v",
+        "e",
+        "e",
+        "createElement",
+        "",
+        "",
+        "createElements"
+      ]
+    },
+    {
+      "function": "",
+      "self_ms": 8.13,
+      "inclusive_ms": 1141.09,
+      "url": "http://127.0.0.1:3000/assets/react-CJ_g2qf4.js",
+      "line": 18,
+      "column": 17479,
+      "callers": [
+        "",
+        "f",
+        "tick",
+        "tick",
+        "",
+        "",
+        "V6",
+        "graphLayout",
+        "",
+        ""
+      ]
+    },
+    {
+      "function": "ov",
+      "self_ms": 7.54,
+      "inclusive_ms": 7.54,
+      "url": "http://127.0.0.1:3000/assets/react-CJ_g2qf4.js",
+      "line": 17,
+      "column": 132988,
+      "callers": [
+        "ov",
+        "lv",
+        "getGraphicStyle",
+        "getKeyStyle",
+        "getKeyStyle",
+        "drawKeyShape",
+        "_drawKeyShape",
+        "render",
+        "_v",
+        "e"
+      ]
+    },
+    {
+      "function": "t",
+      "self_ms": 7.54,
+      "inclusive_ms": 9.66,
+      "url": "http://127.0.0.1:3000/assets/react-CJ_g2qf4.js",
+      "line": 12,
+      "column": 94817,
+      "callers": [
+        "t",
+        "R",
+        "t",
+        "R",
+        "t",
+        "R",
+        "t",
+        "_v",
+        "e",
+        "e"
+      ]
+    },
+    {
+      "function": "Yo",
+      "self_ms": 6.85,
+      "inclusive_ms": 41.87,
+      "url": "http://127.0.0.1:3000/assets/react-CJ_g2qf4.js",
+      "line": 8,
+      "column": 49099,
+      "callers": [
+        "Yo",
+        "Bc",
+        "sl",
+        "Xd",
+        "Yd",
+        "Ld",
+        "Nf",
+        "D",
+        "(root)"
+      ]
+    },
+    {
+      "function": "IO",
+      "self_ms": 6.52,
+      "inclusive_ms": 34.03,
+      "url": "http://127.0.0.1:3000/assets/react-CJ_g2qf4.js",
+      "line": 18,
+      "column": 20432,
+      "callers": [
+        "IO",
+        "QO",
+        "o",
+        "",
+        "f",
+        "tick",
+        "tick",
+        "",
+        "",
+        "V6"
+      ]
+    },
+    {
+      "function": "f",
+      "self_ms": 6.47,
+      "inclusive_ms": 6.47,
+      "url": "http://127.0.0.1:3000/assets/react-CJ_g2qf4.js",
+      "line": 18,
+      "column": 26324,
+      "callers": [
+        "f",
+        "",
+        "f",
+        "tick",
+        "tick",
+        "",
+        "",
+        "V6",
+        "graphLayout",
+        ""
+      ]
+    },
+    {
+      "function": "s",
+      "self_ms": 6.34,
+      "inclusive_ms": 6.34,
+      "url": "http://127.0.0.1:3000/assets/react-CJ_g2qf4.js",
+      "line": 18,
+      "column": 25385,
+      "callers": [
+        "s",
+        "qO",
+        "o",
+        "",
+        "f",
+        "tick",
+        "tick",
+        "",
+        "",
+        "V6"
+      ]
+    },
+    {
+      "function": "Yo",
+      "self_ms": 5.9,
+      "inclusive_ms": 52.59,
+      "url": "http://127.0.0.1:3000/assets/react-CJ_g2qf4.js",
+      "line": 8,
+      "column": 49099,
+      "callers": [
+        "Yo",
+        "jc",
+        "sl",
+        "Xd",
+        "Yd",
+        "Ld",
+        "Nf",
+        "D",
+        "(root)"
+      ]
+    },
+    {
+      "function": "we",
+      "self_ms": 5.82,
+      "inclusive_ms": 14.16,
+      "url": "http://127.0.0.1:3000/assets/react-CJ_g2qf4.js",
+      "line": 11,
+      "column": 8080,
+      "callers": [
+        "we",
+        "we",
+        "we",
+        "we",
+        "Te",
+        "replaceData",
+        "",
+        "",
+        "",
+        ""
+      ]
+    },
+    {
+      "function": "Ea",
+      "self_ms": 5.77,
+      "inclusive_ms": 5.77,
+      "url": "http://127.0.0.1:3000/assets/main-Cm2oUk4b.js",
+      "line": 30,
+      "column": 8504,
+      "callers": [
+        "Ea",
+        "Ga",
+        "Pc",
+        "useToken",
+        "",
+        "",
+        "Dbe",
+        "Yo",
+        "Bc",
+        "sl"
+      ]
+    },
+    {
+      "function": "",
+      "self_ms": 5.52,
+      "inclusive_ms": 9.83,
+      "url": "http://127.0.0.1:3000/assets/main-Cm2oUk4b.js",
+      "line": 123,
+      "column": 15591,
+      "callers": [
+        "",
+        "Yo",
+        "jc",
+        "sl",
+        "Xd",
+        "Yd",
+        "Ld",
+        "Pf",
+        "kf",
+        "jf"
+      ]
+    },
+    {
+      "function": "Yo",
+      "self_ms": 5.38,
+      "inclusive_ms": 64.76,
+      "url": "http://127.0.0.1:3000/assets/react-CJ_g2qf4.js",
+      "line": 8,
+      "column": 49099,
+      "callers": [
+        "Yo",
+        "jc",
+        "sl",
+        "Xd",
+        "Yd",
+        "Ld",
+        "Pf",
+        "kf",
+        "jf",
+        ""
+      ]
+    },
+    {
+      "function": "f",
+      "self_ms": 4.36,
+      "inclusive_ms": 4.36,
+      "url": "http://127.0.0.1:3000/assets/main-Cm2oUk4b.js",
+      "line": 401,
+      "column": 584,
+      "callers": [
+        "f",
+        "h",
+        "_",
+        "h",
+        "_",
+        "h",
+        "g",
+        "h",
+        "_",
+        "h"
+      ]
+    }
+  ]
+}
