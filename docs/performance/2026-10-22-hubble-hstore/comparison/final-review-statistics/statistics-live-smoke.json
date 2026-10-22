@@ -1,0 +1,48 @@
+{
+  "functional_checks": true,
+  "performance_sample": false,
+  "scan_limit_each": 100000,
+  "cache_reused": true,
+  "snapshot_before_unknown": true,
+  "snapshot_after_counts": [
+    12000,
+    12000
+  ],
+  "records": [
+    {
+      "name": "graph-core",
+      "ms": 72.889,
+      "bytes": 154
+    },
+    {
+      "name": "space-core",
+      "ms": 63.359,
+      "bytes": 690
+    },
+    {
+      "name": "graph-page",
+      "ms": 56.475,
+      "bytes": 1368
+    },
+    {
+      "name": "snapshot-before-explicit",
+      "ms": 38.798,
+      "bytes": 123
+    },
+    {
+      "name": "explicit-bounded",
+      "ms": 257.649,
+      "bytes": 236
+    },
+    {
+      "name": "explicit-cached",
+      "ms": 35.661,
+      "bytes": 236
+    },
+    {
+      "name": "snapshot-from-cache",
+      "ms": 33.663,
+      "bytes": 155
+    }
+  ]
+}

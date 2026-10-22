@@ -1,0 +1,13 @@
+{
+  "performance_sample": false,
+  "records": [
+    {
+      "query": "g.V().repeat(out()).times(2).path()",
+      "http": 200,
+      "status": 200,
+      "rows": 300,
+      "default_limit_applied": true,
+      "ms": 465.6
+    }
+  ]
+}

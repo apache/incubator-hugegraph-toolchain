@@ -1,6 +1,27 @@
 # 最终验证记录
 
-本地集成源码：`1ea4a9bb7e150b3169a713473b0ccf81eac85bdb`，随后文档提交不改变运行代码。Java17；Node24.22.0 / pnpm12.14.0。Maven使用经过校验的候选SDK和独立缓存，未绕过外部输入门禁。前端生产构建包含i18n、TypeScript及Vite，最终文案修复后再次成功。
+前一轮本地集成源码为`1ea4a9bb7e150b3169a713473b0ccf81eac85bdb`；最终交叉审查与统计阶段见下一节。Java17；Node24.22.0 / pnpm12.14.0。Maven使用经过校验的候选SDK和独立缓存，未绕过外部输入门禁。前端生产构建包含i18n、TypeScript及Vite，最终文案修复后再次成功。
+
+## 最终交叉审查与按需统计补充
+
+首批交叉审查集成源码为`3e9d20fa55449b3efbb10130040be90eb16d4add`。这是后续功能回归，不重测或覆盖既有P50/P95。查询[#79](https://github.com/hugegraph/hugegraph-toolchain/pull/79)中，默认上限与预览复用同一语句解析规则，属性投影前移至图构造之前；转换图视图时跳过已投影点边属性，避免重复扣除共享预算。1000个顶点×10个属性使用同一个回归测试：临时移除该跳过逻辑后1项失败，恢复后同项通过，两次均未跳过测试；失败为原本完整属性被二次投影耗尽预算。只归档[摘要和日志SHA](comparison/final-review-statistics/validation-summary.json)，不提交原始构建日志。
+
+列表[#78](https://github.com/hugegraph/hugegraph-toolchain/pull/78)进一步将核心元数据与统计/Schema分开。默认只读缓存或已有快照，无可用快照显示“未统计”，不启动点边扫描。用户手动收集时分别执行`g.V().limit(100000).groupCount().by(label)`和`g.E().limit(100000).groupCount().by(label)`；结果可能只是有界近似值。缓存以实际解析到的Server、授权身份、空间和图区分。用户后续明确缓存30分钟，已复用既有Guava依赖实现`maximumSize(1024)`与`expireAfterWrite(30m)`，并验证实际过期清理和容量驱逐；既有异步任务map保持原样，未再复用它做手动时间戳缓存。PD近似值及OLAP定期更新保留为后续事项，此轮未新建统计系统。
+
+- 后端集成146项、补充28项，其中15项重叠，合计**159项不同测试**通过；统计阶段87项与上述测试有重叠，不另行累加。
+- 前端同一最终组合**8组/224项**全部通过。最初2项新增交互测试发生`userEvent`超时，改用明确的`act`和`fireEvent`后同组合通过，没有提高超时。i18n、TypeScript和Vite生产构建通过。本机日志为`/workspace/stats-front-async-followup-tests.log`，不随报告上传。这组结果不把下文既有全量扫描改记为全绿。
+- [查询8项实际API检查](comparison/final-review-statistics/cross-review-live-smoke.json)覆盖默认300、显式大limit、长整数/数字分隔符、终结toList、count及长路径；[大属性复核](comparison/final-review-statistics/large-property-cross-review.json)确认原值SHA不变；[最终Chrome默认300与切图](comparison/final-review-statistics/cross-review-browser-smoke.json)通过，页面异常0。
+- [统计7次实际调用](comparison/final-review-statistics/statistics-live-smoke.json)覆盖图/空间核心信息、图分页、无快照、手动收集和缓存复用；[统计Chrome检查](comparison/final-review-statistics/statistics-browser-smoke.json)确认默认完整统计请求0次、手动1次。对真实Server统计响应施加受控延迟时，核心信息和导航仍可用，提示明确每类最多100000个元素，页面异常0。JSON里的单次耗时仅是功能检查记录，不能当作新的性能基准。
+
+进一步跨模块复核：后端集成**185项**全部通过（`final-integrated-review-backend-tests.log`），前端同组合**18组/401项**全部通过（`final-integrated-review-frontend-confirmed.log`）。初次前端检查中，旧`getGraphData` mock缺少新增inline配置；补齐fixture和对应断言后通过，未放宽断言或测试超时。后续缓存30分钟及legacy Basic快照/手动缓存身份一致性定向检查分别21/23项通过，有重叠，不与集成数量相加。上述原始日志仅留本机，不上传报告。
+
+最终30分钟缓存与ID wire修复后，集成**后端186/186、前端同组合18组/401项**全部通过，i18n、TypeScript及Vite生产构建通过；本机日志为`final-30min-wire-backend-tests.log`、`final-30min-wire-frontend-tests.log`与`final-30min-wire-build.log`。这组取代185项轮次作为最终集成数量，不与前述轮次累加。随后统计来源Tooltip仅在成功状态展示，未统计、错误和加载状态不声称已有快照；该小修另有6项定向测试及生产构建通过，亦不累加到401项。最终本地源码为`1bae746aff7684180d5f7a99bade7a9c400ae007`。
+
+只读保护收敛到具体元素，完整属性仍可编辑。[最终HTTP wire检查](comparison/final-review-statistics/mixed-preview-wire.json)中2个顶点ID以及部分预览ID列表均为字符串，与实际SDK元素的JSON序列化一致；真实`JacksonConfig` serializer也有回归断言。此前运行目录中数字型ID的中间记录不代表最终wire。[混合预览Chrome](comparison/final-review-statistics/mixed-preview-browser.json)确认完整点Edit可用、裁剪点Edit禁用、页面异常0、PUT/PATCH请求0，原始属性SHA不变。
+
+[真实普通repeat语句](comparison/final-review-statistics/common-traversal-live-smoke.json)`g.V().repeat(out()).times(2).path()`在Hubble实际执行返回300行并应用默认上限；单次响应耗时不是性能基准。
+
+![手动收集统计及100000上限提示](screenshots/comparison/statistics-bounded.png)
 
 ## 后端、浏览器及脚本
 

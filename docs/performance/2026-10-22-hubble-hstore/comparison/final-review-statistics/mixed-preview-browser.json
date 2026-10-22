@@ -1,0 +1,25 @@
+{
+  "raw": [
+    {
+      "id": "9007199254741011",
+      "partial": false
+    },
+    {
+      "id": "9007199254741013",
+      "partial": true
+    }
+  ],
+  "drawer_edit_states": [
+    {
+      "vertex": "complete_vertex_id",
+      "edit_disabled": false
+    },
+    {
+      "vertex": "partial_vertex_id",
+      "edit_disabled": true
+    }
+  ],
+  "page_errors": [],
+  "mutation_requests": [],
+  "original_sha256_unchanged": true
+}

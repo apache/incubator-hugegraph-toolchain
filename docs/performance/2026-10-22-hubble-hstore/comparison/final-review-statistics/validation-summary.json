@@ -1,0 +1,104 @@
+{
+  "performance_sample": false,
+  "integrated_toolchain_source": "3e9d20fa55449b3efbb10130040be90eb16d4add",
+  "backend": {
+    "integrated_tests": 146,
+    "followup_tests": 28,
+    "overlapping_tests": 15,
+    "distinct_tests": 159,
+    "statistics_phase_tests": 87,
+    "statistics_phase_overlaps_integrated_total": true
+  },
+  "frontend": {
+    "suites": 8,
+    "tests": 224,
+    "all_passed_in_final_same_combination": true,
+    "initial_followup_failures": 2,
+    "initial_failure_kind": "userEvent timeouts",
+    "test_adjustment": "Explicit act and fireEvent; no timeout increase",
+    "production_i18n_tsc_vite_passed": true
+  },
+  "projection_counterfactual": {
+    "test": "QueryPropertyPreviewTest.testThousandVertexViewsDoNotChargeProjectedPropertiesTwice",
+    "vertices": 1000,
+    "properties_per_vertex": 10,
+    "same_test_without_skip": {
+      "tests": 1,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0
+    },
+    "same_test_with_skip_restored": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "logs_not_archived": true,
+    "source_log_sha256": {
+      "projection-1000-vertices-counterfactual.log": "b25cf2e779d91096d486fcad720827dbb8f99066290f89328cc374a279b8a6a3",
+      "projection-1000-vertices-fixed.log": "474ddce7ae97193f096c689e210d0373666072ded8402ecf3f9c161cce8badec"
+    }
+  },
+  "statistics": {
+    "manual_scan_limit_each": 100000,
+    "cache_ttl_seconds": 1800,
+    "cache_partition": "Resolved server, authorization identity, GraphSpace and graph",
+    "default_without_snapshot": "Uncollected/unknown; no count scan",
+    "pd_approximate_and_scheduled_olap_system_implemented": false,
+    "cache_implementation": "Existing Guava CacheBuilder",
+    "maximum_entries": 1024,
+    "expiration": "expireAfterWrite 30 minutes",
+    "physical_expiration_cleanup_and_size_eviction_tested": true,
+    "legacy_async_task_map_preserved": true,
+    "initial_cache_ttl_seconds": 300,
+    "cache_updated_after_initial_integrated_source": true
+  },
+  "later_integrated_review": {
+    "backend_tests_passed": 185,
+    "frontend_suites_passed": 18,
+    "frontend_tests_passed": 401,
+    "initial_frontend_issue": "Old getGraphData mock lacked inline configuration; fixture and expected contract updated without weaker assertions or longer timeouts",
+    "later_focused_cache_and_legacy_basic_tests": [
+      21,
+      23
+    ],
+    "focused_counts_overlap_not_summed": true,
+    "log_sha256": {
+      "final-integrated-review-backend-tests.log": "027bae2550d655f1c8799c846704f6fc3cd625702ea337548524a4a7cf975178",
+      "final-integrated-review-frontend-confirmed.log": "b4f58bb7782ba29230422ae1e45fd964166399b58da34b7e717d4c8566144138"
+    }
+  },
+  "final_integrated_review": {
+    "toolchain_source": "1bae746aff7684180d5f7a99bade7a9c400ae007",
+    "backend_tests_passed": 186,
+    "frontend_suites_passed": 18,
+    "frontend_tests_passed": 401,
+    "production_i18n_tsc_vite_passed": true,
+    "replaces_prior_round_counts_not_added": true,
+    "log_sha256": {
+      "final-30min-wire-backend-tests.log": "e51b4407c143778d6515d3a1a826e2e5100221e9d4ff64c28210a3337e5555eb",
+      "final-30min-wire-frontend-tests.log": "f9176598d524e6fd0959f1a7bdcbefeeb90a518d5eb825f5c5c00da86135cb99",
+      "final-30min-wire-build.log": "9472ac6a980b63ada061a7aa2e0e0b364423d0b01aae6862d85ef78ba5a527b7"
+    }
+  },
+  "final_snapshot_tooltip_followup": {
+    "tests_passed": 6,
+    "production_build_passed": true,
+    "source_shown_only_on_success": true,
+    "overlapping_not_added_to_frontend_total": true,
+    "log_sha256": {
+      "final-snapshot-tooltip-tests.log": "606f02ce57642d14ed1d5b40c684340b9cb8d6a38d14d775d039c4e43e267a75",
+      "final-snapshot-tooltip-build.log": "a223d8b1c7c02930c7e6e41bf0a2cdfb245351ad65c9abfdd54f68573178735f"
+    }
+  },
+  "per_element_readonly": {
+    "wire_element_and_preview_ids": "string",
+    "real_jackson_config_serializer_asserted": true,
+    "mixed_browser_complete_edit_enabled": true,
+    "mixed_browser_partial_edit_disabled": true,
+    "mutation_requests": 0,
+    "page_errors": 0,
+    "original_sha256_unchanged": true
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "stage": "final_stack_functional_smoke",
+  "server": "patched Struct",
+  "performance_sample": false,
+  "default_snapshot": {
+    "status": "ready",
+    "nodes": 300,
+    "edges": 21,
+    "error": null
+  },
+  "default_notice": true,
+  "context_url": "http://127.0.0.1:3000/gremlin/perf_space_0997/perf_meta_001",
+  "page_errors": []
+}

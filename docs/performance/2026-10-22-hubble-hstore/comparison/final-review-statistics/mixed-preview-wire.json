@@ -1,0 +1,16 @@
+{
+  "performance_sample": false,
+  "rows": 2,
+  "wire_vertex_ids": [
+    "9007199254741011",
+    "9007199254741013"
+  ],
+  "wire_vertex_id_type": "string",
+  "property_preview_vertex_ids": [
+    "9007199254741013"
+  ],
+  "property_preview_edge_ids": [],
+  "properties_truncated": true,
+  "complete_vertex_id": "9007199254741011",
+  "partial_vertex_id": "9007199254741013"
+}

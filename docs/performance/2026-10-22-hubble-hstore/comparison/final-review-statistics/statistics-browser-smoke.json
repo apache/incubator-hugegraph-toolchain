@@ -1,0 +1,10 @@
+{
+  "default_full_statistics_requests": 0,
+  "manual_statistics_requests": 1,
+  "core_usable_while_statistics_pending": true,
+  "statistics_response_from_real_server": true,
+  "controlled_response_delay": true,
+  "unknown_snapshot_has_no_provenance_tooltip": true,
+  "tooltip": "Counts use at most 100000 vertices and 100000 edges and may be approximate; cached statistics may be reused for 30 minutes",
+  "page_errors": []
+}
