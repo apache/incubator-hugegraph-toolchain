@@ -405,8 +405,8 @@ test('expansion retains a partial edge marker through pending export and endpoin
     await act(async () => { await view.result.current.expand({vertex_id: 1}); });
     expect(owner.getSnapshot().data.edges.find(edge => edge.data.raw.id === 'partial-edge').data.raw)
         .toMatchObject({'~hubble_properties_preview': true});
-    expect(owner.getSnapshot().data.nodes.find(node => node.data.raw.id === 'future').data.raw
-        ['~hubble_properties_preview']).toBeUndefined();
+    const complete = owner.getSnapshot().data.nodes.find(node => node.data.raw.id === 'future').data.raw;
+    expect(complete['~hubble_properties_preview']).toBeUndefined();
 });
 
 test('does not resurrect a pending edge after its known endpoint was deleted and then supplied again', async () => {
