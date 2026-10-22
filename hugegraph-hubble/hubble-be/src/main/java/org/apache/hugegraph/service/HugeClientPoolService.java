@@ -89,24 +89,38 @@ public final class HugeClientPoolService {
         return context == null ? null : context.key();
     }
 
+    /** Return null when current policy metadata cannot safely support snapshot reuse. */
     public String statisticsPolicy(HugeClient client) {
         StatisticsContext context = this.statisticsContexts.get(client);
         if (context == null || (!context.bearer() && context.username() == null)) {
             return "";
         }
-        Object userId;
-        if (context.bearer()) {
-            TokenPayload identity = client.auth().verifyToken();
-            E.checkState(identity != null && StringUtils.isNotEmpty(identity.userId()),
-                         "Current-user identity is unavailable");
-            userId = identity.userId();
-        } else {
-            User user = client.findUserByName(context.username());
-            E.checkState(user != null && context.username().equals(user.name()),
-                         "Current-user identity is unavailable");
-            userId = user.id();
+        User.UserRole policy;
+        try {
+            Object userId;
+            if (context.bearer()) {
+                TokenPayload identity = client.auth().verifyToken();
+                E.checkState(identity != null && StringUtils.isNotEmpty(identity.userId()),
+                             "Current-user identity is unavailable");
+                userId = identity.userId();
+            } else {
+                if (!client.supportsDefaultRole()) {
+                    // Legacy lookup lists all users and may require auth administration.
+                    return null;
+                }
+                User user = client.findUserByName(context.username());
+                E.checkState(user != null && context.username().equals(user.name()),
+                             "Current-user identity is unavailable");
+                userId = user.id();
+            }
+            policy = client.auth().getUserRole(userId);
+        } catch (ServerException e) {
+            if (e.status() == 403 || e.status() == 404) {
+                // Older readers may query graph data without access to auth metadata.
+                return null;
+            }
+            throw e;
         }
-        User.UserRole policy = client.auth().getUserRole(userId);
         E.checkState(policy != null, "Current authorization policy is unavailable");
         try {
             return DigestUtils.sha256Hex(POLICY_MAPPER.writeValueAsBytes(policy.roles()));

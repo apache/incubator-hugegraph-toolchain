@@ -261,6 +261,7 @@ public class HugeClientPoolServiceTest {
     @Test
     public void testStatisticsPolicyReadsCurrentBasicUserPolicyWithCanonicalMapOrder() {
         HugeClient client = Mockito.mock(HugeClient.class);
+        Mockito.when(client.supportsDefaultRole()).thenReturn(true);
         AuthManager auth = Mockito.mock(AuthManager.class);
         Mockito.when(client.auth()).thenReturn(auth);
         User user = new User();

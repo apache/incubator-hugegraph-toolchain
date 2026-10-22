@@ -305,6 +305,7 @@ public class GraphsServiceDefaultTest {
     public void testExplicitStatisticsAreBoundedAndCachedForThirtyMinutes() {
         QueryService query = Mockito.mock(QueryService.class);
         HugeClientPoolService pool = Mockito.mock(HugeClientPoolService.class);
+        Mockito.when(pool.statisticsPolicy(Mockito.any())).thenReturn("policy");
         Mockito.when(pool.statisticsContext(this.client)).thenReturn("server-a-user-a");
         ReflectionTestUtils.setField(this.service, "queryService", query);
         ReflectionTestUtils.setField(this.service, "clientPool", pool);
@@ -370,6 +371,7 @@ public class GraphsServiceDefaultTest {
     public void testStatisticsCachePartitionsByCurrentPolicyAndPreservesSnapshots() {
         GraphsService service = Mockito.spy(this.service);
         HugeClientPoolService pool = Mockito.mock(HugeClientPoolService.class);
+        Mockito.when(pool.statisticsPolicy(Mockito.any())).thenReturn("policy");
         Mockito.when(pool.statisticsContext(this.client)).thenReturn("context");
         Mockito.when(pool.statisticsPolicy(this.client)).thenReturn("policy-a");
         ReflectionTestUtils.setField(service, "clientPool", pool);
@@ -410,6 +412,7 @@ public class GraphsServiceDefaultTest {
     public void testStatisticsCacheEvictsOldIdentitiesAtCapacity() {
         GraphsService service = Mockito.spy(this.service);
         HugeClientPoolService pool = Mockito.mock(HugeClientPoolService.class);
+        Mockito.when(pool.statisticsPolicy(Mockito.any())).thenReturn("policy");
         ReflectionTestUtils.setField(service, "clientPool", pool);
         Mockito.doReturn(GraphStatisticsEntity.emptyEntity()).when(service)
                .collectBoundedStatistics(this.client);
@@ -429,6 +432,7 @@ public class GraphsServiceDefaultTest {
         GraphsService service = Mockito.spy(this.service);
         HugeClient otherClient = Mockito.mock(HugeClient.class);
         HugeClientPoolService pool = Mockito.mock(HugeClientPoolService.class);
+        Mockito.when(pool.statisticsPolicy(Mockito.any())).thenReturn("policy");
         Mockito.when(pool.statisticsContext(Mockito.any())).thenReturn("shared-context");
         ReflectionTestUtils.setField(service, "clientPool", pool);
         Cache<String, GraphStatisticsEntity> cache = CacheBuilder.newBuilder()
@@ -471,6 +475,7 @@ public class GraphsServiceDefaultTest {
     public void testStatisticsCachePreservesOriginalFailureAndAllowsRetry() {
         GraphsService service = Mockito.spy(this.service);
         HugeClientPoolService pool = Mockito.mock(HugeClientPoolService.class);
+        Mockito.when(pool.statisticsPolicy(Mockito.any())).thenReturn("policy");
         Mockito.when(pool.statisticsContext(this.client)).thenReturn("context");
         ReflectionTestUtils.setField(service, "clientPool", pool);
         ExternalException original = new ExternalException("gremlin.execute.failed");

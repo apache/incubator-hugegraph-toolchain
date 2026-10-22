@@ -490,7 +490,7 @@ public class GraphsService {
                                                String graph) {
         String key = this.statisticsKey(client, graphSpace, graph);
         if (key == null) {
-            // Unregistered clients have no stable target/identity partition.
+            // Snapshot reuse requires a stable target, identity and current policy.
             return this.collectBoundedStatistics(client);
         }
         try {
@@ -505,8 +505,11 @@ public class GraphsService {
 
     private String statisticsKey(HugeClient client, String graphSpace, String graph) {
         String context = this.clientPool.statisticsContext(client);
-        return context == null ? null : "bounded:" + context + ":" +
-               this.clientPool.statisticsPolicy(client) + ":" +
+        if (context == null) {
+            return null;
+        }
+        String policy = this.clientPool.statisticsPolicy(client);
+        return policy == null ? null : "bounded:" + context + ":" + policy + ":" +
                JsonUtil.toJson(java.util.Arrays.asList(graphSpace, graph));
     }
 
