@@ -61,7 +61,7 @@ const AlgorithmFormHome = props => {
     const isListEmpty = _.isEmpty(
         Object.values(ALGORITHM_NAME).filter(item => isAlgorithmNameMatched(item, search, t))
     );
-    const canRunLouvain = !isKnownZeroCount(graphNums?.edgeCount);
+    const canRunLouvain = !isKnownZeroCount(graphNums?.edgeCount, graphNums);
 
     return (
         <div className={c.algorithmSidebar}>

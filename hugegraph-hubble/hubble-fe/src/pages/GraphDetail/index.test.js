@@ -245,3 +245,19 @@ test('marks bounded snapshot totals consistently with graph cards and canvas cou
     expect(api.manage.getGraphStatistic).not.toHaveBeenCalled();
     expect(api.manage.getGraphView).not.toHaveBeenCalled();
 });
+
+test('an approximate zero remains visible without declaring the current graph empty', async () => {
+    readyCore();
+    api.analysis.getGraphData.mockResolvedValue({status: 200, data: {
+        vertexcount: '0', edgecount: '0', approximate: true, scan_limit: 100000,
+    }});
+    api.manage.getGraphView.mockResolvedValue({status: 200, data: {vertices: [], edges: []}});
+    renderDetail();
+
+    expect(await screen.findAllByText('≈0')).toHaveLength(2);
+    expect(screen.getByText('Total vertices')).toBeInTheDocument();
+    expect(screen.queryByText('This graph has no schema or data yet')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', {name: /Query this graph/})).toBeEnabled();
+    expect(api.manage.getGraphView).not.toHaveBeenCalled();
+    expect(api.manage.getGraphStatistic).not.toHaveBeenCalled();
+});

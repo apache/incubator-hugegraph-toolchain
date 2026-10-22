@@ -65,3 +65,8 @@ test.each([null, undefined, -1])('lets the server validate Louvain when edge cou
     renderForm({vertexCount: null, edgeCount});
     expect(screen.getByTestId('olap-readiness')).toHaveTextContent('true');
 });
+
+test.each([0, '0'])('lets the server validate Louvain after an approximate zero snapshot (%s)', edgeCount => {
+    renderForm({vertexCount: 0, edgeCount, approximate: true, scan_limit: 100000});
+    expect(screen.getByTestId('olap-readiness')).toHaveTextContent('true');
+});

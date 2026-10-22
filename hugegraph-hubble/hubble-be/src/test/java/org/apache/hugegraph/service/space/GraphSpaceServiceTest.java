@@ -76,13 +76,13 @@ public class GraphSpaceServiceTest {
         Mockito.when(manager.getGraphSpace("protected"))
                .thenReturn(graphSpace("protected", true, "20260712"));
 
-        IPage<Map<String, Object>> result = this.service.queryBriefPage(
-                this.client, "", "", 2, 1, true, false);
+        Map<String, Object> result = this.service.queryBriefPage(
+                this.client, "", "", 2, 1, true, false, "");
 
-        Assert.assertEquals(2L, result.getTotal());
-        Assert.assertEquals("b", result.getRecords().get(0).get("name"));
-        Assert.assertEquals("Bee", result.getRecords().get(0).get("nickname"));
-        Assert.assertEquals(2, result.getRecords().get(0).size());
+        Assert.assertEquals(2L, result.get("total"));
+        Assert.assertEquals("b", briefRecords(result).get(0).get("name"));
+        Assert.assertEquals("Bee", briefRecords(result).get(0).get("nickname"));
+        Assert.assertEquals(2, briefRecords(result).get(0).size());
         Mockito.verifyNoInteractions(this.graphsService, this.userService);
         Mockito.verify(manager, Mockito.never()).listProfile(Mockito.anyString());
     }
@@ -98,11 +98,11 @@ public class GraphSpaceServiceTest {
         Mockito.when(manager.listProfile(""))
                .thenReturn(java.util.Collections.singletonList(profile));
 
-        IPage<Map<String, Object>> result = this.service.queryBriefPage(
-                this.client, "", "", 1, -1, false, true);
+        Map<String, Object> result = this.service.queryBriefPage(
+                this.client, "", "", 1, 100, false, true, "");
 
-        Assert.assertEquals("public", result.getRecords().get(0).get("name"));
-        Assert.assertEquals(2, result.getRecords().get(0).size());
+        Assert.assertEquals("public", briefRecords(result).get(0).get("name"));
+        Assert.assertEquals(2, briefRecords(result).get(0).size());
         Mockito.verifyNoInteractions(this.graphsService, this.userService);
         Mockito.verify(manager, Mockito.never()).listGraphSpace();
     }
@@ -120,14 +120,90 @@ public class GraphSpaceServiceTest {
         Mockito.when(manager.getGraphSpace("protected"))
                .thenReturn(graphSpace("protected", true, "20260712"));
 
-        IPage<Map<String, Object>> result = this.service.queryBriefPage(
-                this.client, "", "", 1, -1, false, false);
+        Map<String, Object> result = this.service.queryBriefPage(
+                this.client, "", "", 1, 100, false, false, "");
 
-        Assert.assertEquals(1L, result.getTotal());
-        Assert.assertEquals("public", result.getRecords().get(0).get("name"));
+        Assert.assertEquals(1L, result.get("total"));
+        Assert.assertEquals("public", briefRecords(result).get(0).get("name"));
         Mockito.verify(auth).isSpaceMember("protected");
         Mockito.verifyNoInteractions(this.graphsService);
         Mockito.verify(manager, Mockito.never()).listProfile(Mockito.anyString());
+    }
+
+    @Test
+    public void testBriefPagesBeyondAllRecordCapKeepSelectionAndSearch() {
+        GraphSpaceManager manager = Mockito.mock(GraphSpaceManager.class);
+        Mockito.when(this.client.graphSpace()).thenReturn(manager);
+        List<Map<String, Object>> profiles = IntStream.rangeClosed(0, 10000)
+                .mapToObj(index -> {
+                    Map<String, Object> profile = new HashMap<>();
+                    profile.put("name", String.format("space_%05d", index));
+                    profile.put("nickname", index == 10000 ? "Late Alias" : "Space " + index);
+                    profile.put("create_time", "20260712");
+                    profile.put("dp_password", "must not leave metadata");
+                    return profile;
+                }).collect(Collectors.toList());
+        Mockito.when(manager.listProfile("")).thenReturn(profiles);
+
+        Map<String, Object> first = this.service.queryBriefPage(
+                this.client, "", "", 1, 100, false, true, "space_10000");
+
+        Assert.assertEquals(10001L, first.get("total"));
+        Assert.assertEquals(100, briefRecords(first).size());
+        Assert.assertEquals("space_00000", briefRecords(first).get(0).get("name"));
+        Assert.assertEquals(Map.of("name", "space_10000", "nickname", "Late Alias"), first.get("selected"));
+        Mockito.verify(manager).listProfile("");
+        Mockito.verifyNoInteractions(this.graphsService, this.userService);
+        Mockito.verify(manager, Mockito.never()).getGraphSpace(Mockito.anyString());
+
+        Map<String, Object> last = this.service.queryBriefPage(
+                this.client, "", "", 101, 100, false, true, "space_10000");
+        Assert.assertEquals(1, briefRecords(last).size());
+        Assert.assertEquals(first.get("selected"), briefRecords(last).get(0));
+        for (String query : new String[]{"late alias", "SPACE_10000"}) {
+            Map<String, Object> searched = this.service.queryBriefPage(
+                    this.client, query, "", 1, 100, false, true, "space_00000");
+            Assert.assertEquals(1L, searched.get("total"));
+            Assert.assertEquals("space_10000", briefRecords(searched).get(0).get("name"));
+            Assert.assertEquals(Map.of("name", "space_00000", "nickname", "Space 0"), searched.get("selected"));
+        }
+        Mockito.verify(manager, Mockito.times(4)).listProfile("");
+        Mockito.verifyNoMoreInteractions(manager);
+    }
+
+    @Test
+    public void testBriefSelectionCannotRevealAnUnauthorizedSpace() {
+        GraphSpaceManager manager = Mockito.mock(GraphSpaceManager.class);
+        AuthManager auth = Mockito.mock(AuthManager.class);
+        Mockito.when(this.client.graphSpace()).thenReturn(manager);
+        Mockito.when(this.client.auth()).thenReturn(auth);
+        Mockito.when(manager.listGraphSpace()).thenReturn(List.of("public", "private"));
+        GraphSpace publicSpace = graphSpace("public", false, "20260712");
+        publicSpace.setNickname("Public alias");
+        Mockito.when(manager.getGraphSpace("public")).thenReturn(publicSpace);
+        Mockito.when(manager.getGraphSpace("private")).thenReturn(graphSpace("private", true, "20260712"));
+
+        for (boolean anonymous : new boolean[]{true, false}) {
+            Map<String, Object> page = this.service.queryBriefPage(
+                    this.client, "private", "", 1, 100, anonymous, false, "private");
+            Assert.assertNull(page.get("selected"));
+            Assert.assertEquals(0L, page.get("total"));
+            Assert.assertTrue(briefRecords(page).isEmpty());
+        }
+        Mockito.verify(manager, Mockito.times(2)).listGraphSpace();
+        Mockito.verify(manager, Mockito.times(2)).getGraphSpace("public");
+        Mockito.verify(manager, Mockito.times(2)).getGraphSpace("private");
+        Mockito.verifyNoInteractions(this.graphsService, this.userService);
+    }
+
+    @Test
+    public void testInvalidBriefPageDoesNotEnumerateSpaces() {
+        for (int size : new int[]{-1, 0, 501}) {
+            org.apache.hugegraph.testutil.Assert.assertThrows(
+                    IllegalArgumentException.class, () -> this.service.queryBriefPage(
+                    this.client, "", "", 1, size, false, true, ""));
+        }
+        Mockito.verifyNoInteractions(this.client);
     }
 
     @Test
@@ -638,6 +714,11 @@ public class GraphSpaceServiceTest {
         statistic.put("vertex", vertex);
         statistic.put("edge", edge);
         return statistic;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> briefRecords(Map<String, Object> page) {
+        return (List<Map<String, Object>>) page.get("records");
     }
 
     private static GraphSpace graphSpace(String name, boolean auth,

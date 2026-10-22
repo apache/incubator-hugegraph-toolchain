@@ -25,7 +25,10 @@ const toGraphCounts = data => {
 const isKnownCount = value => value != null && String(value).trim() !== ''
     && Number.isFinite(Number(value)) && Number(value) >= 0;
 
-const isKnownZeroCount = value => isKnownCount(value) && Number(value) === 0;
+// A recorded approximate zero can outlive later graph writes. Keep displaying
+// the snapshot, but let the Server decide whether current data can be queried.
+const isKnownZeroCount = (value, statistics = {}) => !statistics?.approximate
+    && isKnownCount(value) && Number(value) === 0;
 
 const formatRecordedCount = (value, {approximate, scan_limit: scanLimit} = {}) => {
     if (!isKnownCount(value)) return value;

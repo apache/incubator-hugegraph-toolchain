@@ -15,10 +15,10 @@
  * under the License.
  */
 
-import {loadGraphOptions, mergeGraphOptions} from './graphOptions';
+import {loadGraphOptions, loadGraphspaceOptions, mergeGraphOptions} from './graphOptions';
 import * as api from '../api';
 
-jest.mock('../api', () => ({manage: {getGraphList: jest.fn()}}));
+jest.mock('../api', () => ({manage: {getGraphList: jest.fn(), getGraphSpaceList: jest.fn()}}));
 
 beforeEach(() => jest.clearAllMocks());
 
@@ -49,4 +49,23 @@ test('merges a selected graph only once when its page is reached', () => {
 test('preserves forbidden status for the context permission boundary', async () => {
     api.manage.getGraphList.mockResolvedValue({status: 403});
     await expect(loadGraphOptions('space')).rejects.toMatchObject({status: 403});
+});
+
+test('loads one GraphSpace page and its authorized late selection', async () => {
+    const records = [{name: 'first'}];
+    const selected = {name: 'space_10000', nickname: 'Late space'};
+    api.manage.getGraphSpaceList.mockResolvedValue({status: 200, data: {records, total: 10001, selected}});
+    const config = {suppressBusinessErrorToast: true};
+
+    expect(await loadGraphspaceOptions({query: 'alias', selected: selected.name}, config))
+        .toEqual({records, selected, hasMore: true});
+    expect(api.manage.getGraphSpaceList).toHaveBeenCalledTimes(1);
+    expect(api.manage.getGraphSpaceList).toHaveBeenCalledWith({
+        brief: true, page_no: 1, page_size: 100, query: 'alias', selected: selected.name,
+    }, config);
+});
+
+test.each([403, 503])('rejects GraphSpace response %s without losing the status', async status => {
+    api.manage.getGraphSpaceList.mockResolvedValue({status});
+    await expect(loadGraphspaceOptions()).rejects.toMatchObject({status});
 });

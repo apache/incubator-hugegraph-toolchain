@@ -19,14 +19,7 @@ import * as api from '../api';
 
 export const GRAPH_OPTION_PAGE_SIZE = 100;
 
-export const loadGraphOptions = async (graphspace, {pageNo = 1, query = '', selected = ''} = {}, config = {}) => {
-    const response = await api.manage.getGraphList(graphspace, {
-        brief: true,
-        page_no: pageNo,
-        page_size: GRAPH_OPTION_PAGE_SIZE,
-        query,
-        selected,
-    }, config);
+const optionsPage = (response, pageNo, selected) => {
     if (response?.status !== 200 || !Array.isArray(response.data?.records)) {
         const error = new Error('Graph options unavailable');
         error.status = response?.status;
@@ -39,6 +32,28 @@ export const loadGraphOptions = async (graphspace, {pageNo = 1, query = '', sele
             ? response.data.selected : records.find(item => item.name === selected) ?? null,
         hasMore: pageNo * GRAPH_OPTION_PAGE_SIZE < Number(response.data.total ?? records.length),
     };
+};
+
+export const loadGraphOptions = async (graphspace, {pageNo = 1, query = '', selected = ''} = {}, config = {}) => {
+    const response = await api.manage.getGraphList(graphspace, {
+        brief: true,
+        page_no: pageNo,
+        page_size: GRAPH_OPTION_PAGE_SIZE,
+        query,
+        selected,
+    }, config);
+    return optionsPage(response, pageNo, selected);
+};
+
+export const loadGraphspaceOptions = async ({pageNo = 1, query = '', selected = ''} = {}, config = {}) => {
+    const response = await api.manage.getGraphSpaceList({
+        brief: true,
+        page_no: pageNo,
+        page_size: GRAPH_OPTION_PAGE_SIZE,
+        query,
+        selected,
+    }, config);
+    return optionsPage(response, pageNo, selected);
 };
 
 export const mergeGraphOptions = (records, selected) => {

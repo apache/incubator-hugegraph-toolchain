@@ -117,6 +117,21 @@ test.each([null, undefined])('unavailable graph counts (%s) do not imply an empt
     expect(mockCounts.mock.lastCall[0].data).toMatchObject({allGraphNodesNum: count, allGraphEdgesNum: count});
 });
 
+test('an approximate zero snapshot keeps the current graph view available', () => {
+    mockModel = {...mockModel, graphData: {nodes: [{id: 'existing'}], edges: []}};
+    render(<GraphResult data={{vertices: [{id: 'existing', label: 'person'}], edges: []}}
+        metaData={{vertexMeta: [{name: 'person'}], edgeMeta: [{name: 'knows'}]}}
+        graphNums={{vertexCount: '0', edgeCount: '0', approximate: true, scan_limit: 100000}}
+        queryStatus={GRAPH_STATUS.STANDBY} panelType={PANEL_TYPE.CLOSED}
+        graphRenderMode={GRAPH_RENDER_MODE.CANVAS2D} updatePanelType={jest.fn()} />);
+
+    expect(screen.queryByText('analysis.algorithm.empty_graph_title')).not.toBeInTheDocument();
+    expect(screen.getByText('graph menu')).toBeInTheDocument();
+    expect(mockCounts.mock.lastCall[0].data).toMatchObject({
+        allGraphNodesNum: '0', allGraphEdgesNum: '0', approximate: true, scan_limit: 100000,
+    });
+});
+
 test('only projects raw node choices while the edge drawer is visible', () => {
     const raw = {id: 'alice', label: 'person'};
     const reads = jest.fn(() => raw);

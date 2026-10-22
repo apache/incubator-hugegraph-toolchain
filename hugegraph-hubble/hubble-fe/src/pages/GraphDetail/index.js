@@ -178,8 +178,8 @@ const GraphDetail = () => {
         ? statisticsStatus
         : 'loading';
     const visibleStatistic = isStatisticsDataCurrent ? statistic : {};
-    const hasZeroCounts = isStatisticsDataCurrent && isKnownZeroCount(statistic.vertex_count)
-        && isKnownZeroCount(statistic.edge_count);
+    const hasZeroCounts = isStatisticsDataCurrent && isKnownZeroCount(statistic.vertex_count, statistic)
+        && isKnownZeroCount(statistic.edge_count, statistic);
     useEffect(() => {
         // Zero recorded data does not prove the schema is empty. Check schema
         // metadata only when it can affect the empty-graph guidance.

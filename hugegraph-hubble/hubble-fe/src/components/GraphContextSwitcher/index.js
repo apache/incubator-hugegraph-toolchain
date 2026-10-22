@@ -20,7 +20,6 @@ import {Alert, Button, Select, Space} from 'antd';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useLocation, useNavigate} from 'react-router-dom';
 import {useTranslation} from 'react-i18next';
-import * as api from '../../api';
 import {isPdEnabled} from '../../utils/config';
 import {DEFAULT_GRAPHSPACE} from '../../utils/productMode';
 import {
@@ -32,9 +31,8 @@ import {
 } from '../../utils/workbenchGraphContext';
 import style from './index.module.scss';
 import {getResourceDisplayName} from '../../utils/displayName';
-import {loadGraphOptions, mergeGraphOptions} from '../../utils/graphOptions';
+import {loadGraphOptions, loadGraphspaceOptions, mergeGraphOptions} from '../../utils/graphOptions';
 
-const GRAPHSPACE_LIST_PARAMS = {brief: true, page_no: 1, page_size: -1};
 const INLINE_ERROR_CONFIG = {suppressBusinessErrorToast: true};
 const SELECT_MIN_WIDTH = 112;
 const SELECT_MAX_WIDTH = 240;
@@ -58,18 +56,6 @@ const getSelectWidth = label => {
 const getAnalysisModule = pathname => pathname.match(
     /^\/(gremlin|algorithms|asyncTasks)(?:\/|$)/
 )?.[1];
-
-const getRecords = response => {
-    if (response?.status !== 200) {
-        const error = new Error(`Unexpected graph context response: ${response?.status}`);
-        error.status = response?.status;
-        throw error;
-    }
-    if (Array.isArray(response.data)) {
-        return response.data;
-    }
-    return response.data?.records ?? [];
-};
 
 const errorStatus = error => error?.status ?? error?.response?.data?.status
                      ?? error?.response?.status;
@@ -98,6 +84,10 @@ const GraphContextSwitcher = () => {
         pdEnabled ? [] : [{name: DEFAULT_GRAPHSPACE, nickname: DEFAULT_GRAPHSPACE}]
     ));
     const [graphs, setGraphs] = useState([]);
+    const [graphspaceBrowse, setGraphspaceBrowse] = useState({query: '', pageNo: 1});
+    const graphspaceRequest = useRef(null);
+    const graphspaceQuery = graphspaceBrowse.query;
+    const graphspacePageNo = graphspaceBrowse.pageNo;
     const [graphBrowse, setGraphBrowse] = useState({});
     const graphRequest = useRef(null);
     const graphQuery = graphBrowse.graphspace === context.graphspace ? graphBrowse.query ?? '' : '';
@@ -127,27 +117,49 @@ const GraphContextSwitcher = () => {
             return undefined;
         }
 
+        const request = Symbol('graphspace-options');
+        graphspaceRequest.current = request;
         setLoading(value => ({...value, graphspaces: true}));
-        api.manage.getGraphSpaceList(GRAPHSPACE_LIST_PARAMS, INLINE_ERROR_CONFIG)
-            .then(response => {
-                if (!cancelled) {
-                    const records = getRecords(response);
-                    setGraphspaces(records);
-                    setErrors(value => ({...value, graphspaces: false}));
-                    setLoading(value => ({...value, graphspaces: false}));
-                }
-            })
-            .catch(error => {
-                if (!cancelled) {
-                    setErrors(value => ({...value, graphspaces: errorKind(error)}));
-                    setLoading(value => ({...value, graphspaces: false}));
-                }
-            });
-
+        const fetchPage = () => loadGraphspaceOptions({
+            pageNo: graphspacePageNo,
+            query: graphspaceQuery,
+            selected: context.graphspace,
+        }, INLINE_ERROR_CONFIG).then(options => {
+            if (!cancelled) {
+                setGraphspaces(current => mergeGraphOptions(
+                    graphspacePageNo > 1 ? [...current, ...options.records] : options.records,
+                    options.selected
+                ));
+                setGraphspaceBrowse({
+                    query: graphspaceQuery,
+                    pageNo: graphspacePageNo,
+                    hasMore: options.hasMore,
+                    scope: context.graphspace,
+                });
+                setErrors(value => ({...value, graphspaces: false}));
+            }
+        }).catch(error => {
+            if (!cancelled) {
+                setErrors(value => ({...value, graphspaces: errorKind(error)}));
+            }
+        }).finally(() => {
+            if (!cancelled) {
+                graphspaceRequest.current = null;
+                setLoading(value => ({...value, graphspaces: false}));
+            }
+        });
+        const timer = graphspaceQuery && graphspacePageNo === 1 ? setTimeout(fetchPage, 200) : undefined;
+        if (!timer) {
+            fetchPage();
+        }
         return () => {
             cancelled = true;
+            clearTimeout(timer);
+            if (graphspaceRequest.current === request) {
+                graphspaceRequest.current = null;
+            }
         };
-    }, [navigate, pdEnabled, reloadTokens.graphspaces]);
+    }, [context.graphspace, graphspacePageNo, graphspaceQuery, pdEnabled, reloadTokens.graphspaces]);
 
     useEffect(() => {
         let cancelled = false;
@@ -216,7 +228,8 @@ const GraphContextSwitcher = () => {
         reloadTokens.graphs]);
 
     useEffect(() => {
-        if (!pdEnabled || loading.graphspaces || errors.graphspaces || !context.graphspace || (
+        if (!pdEnabled || graphspaceBrowse.scope !== context.graphspace || loading.graphspaces ||
+            errors.graphspaces || !context.graphspace || (
             graphspaces.some(item => item.name === context.graphspace)
         )) {
             return;
@@ -230,6 +243,7 @@ const GraphContextSwitcher = () => {
         context.graphspace,
         errors.graphspaces,
         graphspaces,
+        graphspaceBrowse.scope,
         loading.graphspaces,
         navigate,
         pdEnabled,
@@ -286,6 +300,7 @@ const GraphContextSwitcher = () => {
 
     const selectGraphspace = useCallback(graphspace => {
         const nextContext = {graphspace};
+        setGraphspaceBrowse({query: '', pageNo: 1});
         setGraphs([]);
         setErrors(value => ({...value, graphs: false}));
         setLoading(value => ({...value, graphs: true}));
@@ -315,6 +330,20 @@ const GraphContextSwitcher = () => {
     const searchGraphs = useCallback(query => {
         setGraphBrowse(current => ({...current, graphspace: context.graphspace, query, pageNo: 1, hasMore: false}));
     }, [context.graphspace]);
+
+    const searchGraphspaces = useCallback(query => {
+        setGraphspaceBrowse(current => ({...current, query, pageNo: 1, hasMore: false}));
+    }, []);
+
+    const loadMoreGraphspaces = useCallback(event => {
+        const list = event.currentTarget;
+        if (!graphspaceBrowse.hasMore || graphspaceRequest.current || loading.graphspaces ||
+            list.scrollTop + list.clientHeight < list.scrollHeight - 16) {
+            return;
+        }
+        graphspaceRequest.current = Symbol('next-graphspace-page');
+        setGraphspaceBrowse(current => ({...current, pageNo: current.pageNo + 1}));
+    }, [graphspaceBrowse.hasMore, loading.graphspaces]);
 
     const loadMoreGraphs = useCallback(event => {
         const list = event.currentTarget;
@@ -352,6 +381,10 @@ const GraphContextSwitcher = () => {
                     className={style.graphspace}
                     disabled={!pdEnabled}
                     loading={loading.graphspaces}
+                    showSearch
+                    filterOption={false}
+                    onSearch={searchGraphspaces}
+                    onPopupScroll={loadMoreGraphspaces}
                     onChange={selectGraphspace}
                     placeholder={t('workbench.context.select_graphspace')}
                     title={selectedGraphspaceLabel}

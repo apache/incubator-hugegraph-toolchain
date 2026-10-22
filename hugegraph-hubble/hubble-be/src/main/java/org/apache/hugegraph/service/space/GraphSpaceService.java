@@ -133,20 +133,49 @@ public class GraphSpaceService {
                 .collect(Collectors.toList());
     }
 
-    public IPage<Map<String, Object>> queryBriefPage(
+    public Map<String, Object> queryBriefPage(
             HugeClient client, String query, String createTime,
-            int pageNo, int pageSize, boolean anonymous, boolean administrator) {
+            int pageNo, int pageSize, boolean anonymous, boolean administrator,
+            String selected) {
+        PageUtil.checkPositivePage(pageNo, pageSize);
         if (administrator && !anonymous) {
-            return pageAndMap(queryAllGsMetadata(client, query, createTime),
-                              pageNo, pageSize, info -> briefView(
-                                      info.get("name"), info.get("nickname")));
+            return briefPage(queryAllGsMetadata(client, "", createTime),
+                             query, pageNo, pageSize, selected,
+                             info -> info.get("name").toString(),
+                             info -> (String) info.get("nickname"));
         }
         List<GraphSpace> spaces = anonymous ?
-                queryAnonymousSpaces(client, query, createTime) :
-                queryAccessibleSpaces(client, query, createTime);
-        return pageAndMap(spaces, pageNo, pageSize,
-                          space -> briefView(space.getName(),
-                                             space.getNickname()));
+                queryAnonymousSpaces(client, "", createTime) :
+                queryAccessibleSpaces(client, "", createTime);
+        return briefPage(spaces, query, pageNo, pageSize, selected,
+                         GraphSpace::getName, GraphSpace::getNickname);
+    }
+
+    private static <S> Map<String, Object> briefPage(
+            List<S> spaces, String query, int pageNo, int pageSize, String selected,
+            Function<S, String> name, Function<S, String> nickname) {
+        // Resolve the selected option from the same authorized list, even when
+        // it is outside the page or search. Only project the requested page.
+        Map<String, Object> selectedSpace = spaces.stream()
+                .filter(space -> name.apply(space).equals(selected)).findFirst()
+                .map(space -> briefView(name.apply(space), nickname.apply(space)))
+                .orElse(null);
+        String search = query == null ? "" : query.toLowerCase(Locale.ROOT);
+        List<S> matching = spaces.stream().filter(space ->
+                name.apply(space).toLowerCase(Locale.ROOT).contains(search) ||
+                nickname.apply(space) != null &&
+                nickname.apply(space).toLowerCase(Locale.ROOT).contains(search))
+                .collect(Collectors.toList());
+        IPage<Map<String, Object>> page = pageAndMap(matching, pageNo, pageSize,
+                space -> briefView(name.apply(space), nickname.apply(space)));
+        Map<String, Object> result = new HashMap<>();
+        result.put("records", page.getRecords());
+        result.put("total", page.getTotal());
+        result.put("current", page.getCurrent());
+        result.put("size", page.getSize());
+        result.put("pages", page.getPages());
+        result.put("selected", selectedSpace);
+        return result;
     }
 
     private static Map<String, Object> briefView(Object name, Object nickname) {

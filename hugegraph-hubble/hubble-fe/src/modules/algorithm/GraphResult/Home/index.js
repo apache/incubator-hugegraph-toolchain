@@ -109,8 +109,8 @@ const GraphResult = props => {
     const {edgeMeta, vertexMeta} = metaData || {};
     const hasGraphData = Number(graphNums?.vertexCount) > 0
         || Number(graphNums?.edgeCount) > 0;
-    const hasKnownEmptyCounts = isKnownZeroCount(graphNums?.vertexCount)
-        && isKnownZeroCount(graphNums?.edgeCount);
+    const hasKnownEmptyCounts = isKnownZeroCount(graphNums?.vertexCount, graphNums)
+        && isKnownZeroCount(graphNums?.edgeCount, graphNums);
     const hasKnownEmptySchema = Array.isArray(vertexMeta) && Array.isArray(edgeMeta)
         && vertexMeta.length === 0 && edgeMeta.length === 0;
     const isEmptyGraph = !hasGraphData && (hasKnownEmptyCounts || hasKnownEmptySchema);
