@@ -47,6 +47,12 @@
 
 [真实多行hstore查询](comparison/final-review-statistics/multiline-gremlin-live-final.json)验证默认300行及显式大结果预览1000行均通过。[同一1MiB Cypher标量](comparison/final-review-statistics/cypher-property-preview-live-final.json)单次功能对照的响应由2097713字节降至1135字节；原始读取仍为1048576字符，SHA与原夹具一致。该体积对照不是延迟benchmark；Cypher SDK仍先完整物化结果，不能据此宣称上游硬限制已完成。复杂或未知Map键仍直接省略并保留不完整标志。
 
+## 缓存与只读保护的维护性复核
+
+#78在空间卡片未提供统计时隐藏计数行，不新增请求。手动统计使用Guava `Cache.get`加载，避免不同key受segment锁阻塞，并保留原始`RuntimeException`；同一25项专项测试在旧源码反证中恰有1项并发测试失败，修复后25项通过。仅在PD自动发现成功时使用规范化peers与cluster加既有授权指纹的逻辑缓存身份，显式Server和非PD连接仍隔离；双HTTP版本端点真实夹具19项通过，额外PD调用为0。#79移除无实际发布版本支撑的全局partial回退，只按具体partial ID标注只读，截断Alert保留。
+
+主合并后端**15类/218项**与前端**12组/272项**（96.438秒）单次全部通过，分别记录于`final-cache-scope-all-backend-tests.log`、`final-cache-scope-all-frontend-tests.log`。生产构建通过；重启最终编译版本后的真实浏览器确认默认完整统计请求0次、点击采集1次，真实Server响应受控延迟期间核心信息仍可操作，计数显示≈12000，提示包含100000上限、近似值和30分钟缓存，页面异常0。这与此前186项后端、18组401项前端及后续各轮定向结果分开记录，不累加为全量，也未重测或改写历史benchmark。
+
 ## 后端、浏览器及脚本
 
 - 查询/投影：55项专项全部通过、Checkstyle0；最终逐行mapper/局部scope小修单独20项通过（有重叠，不累加）。异常/历史19项全部通过。
