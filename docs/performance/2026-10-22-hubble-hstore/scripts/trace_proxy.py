@@ -47,7 +47,8 @@ def create_http_proxy(port, upstream, kind):
                 self.send_response(status)
                 for k, v in response.getheaders():
                     if k.lower() not in ('transfer-encoding', 'content-length', 'connection'):
-                        self.send_header(k, v)
+                        self.send_header(k.replace('\r', '').replace('\n', ''),
+                                         v.replace('\r', '').replace('\n', ''))
                 self.send_header('Content-Length', str(size))
                 # end_headers() can partially write before raising. Once it is
                 # attempted, a second HTTP status line would corrupt the reply.

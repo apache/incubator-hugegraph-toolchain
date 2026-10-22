@@ -17,16 +17,17 @@
 import argparse
 import json
 import pathlib
+import re
 import time
 
 import requests
 
-ROOT = pathlib.Path('/workspace/hubble-perf')
+EXPECTED_LIMIT_BYTES = 16 * 1024 * 1024
 TERMINAL_STATES = {'success', 'failed', 'cancelled', 'canceled'}
 
 
 def poll_task(session, task_url, record, timeout=300, poll_interval=1):
-    """Return whether a terminal state was observed within the polling budget."""
+    """Succeed only for the expected retained 16 MiB result-size rejection."""
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         remaining = deadline - time.monotonic()
@@ -51,45 +52,66 @@ def poll_task(session, task_url, record, timeout=300, poll_interval=1):
                 response = session.get(task_url, params={'with_result': 'true'}, timeout=15)
                 response.raise_for_status()
                 details = response.json()
-                record['failure_result'] = str(details.get('task_result', details.get('result')))[:1000]
-            return True
+                failure = str(details.get('task_result', details.get('result')))
+                record['failure_result'] = failure[:1000]
+                match = re.search(r'Task result size (\d+) exceeded limit (\d+) bytes', failure)
+                if match:
+                    size, limit = map(int, match.groups())
+                    record.update(reported_result_bytes=size, retained_limit_bytes=limit)
+                    if size > limit and limit == EXPECTED_LIMIT_BYTES:
+                        record['expected_limit_rejection'] = True
+                        return True
+            record['expected_limit_rejection'] = False
+            record['validation_error'] = 'Unexpected terminal outcome; expected the retained 16 MiB size rejection'
+            return False
         remaining = deadline - time.monotonic()
         if remaining > 0:
             time.sleep(min(poll_interval, remaining))
-    record.update(final_status='TIMEOUT', timed_out=True, polling_timeout_seconds=timeout)
+    record.update(final_status='TIMEOUT', timed_out=True, polling_timeout_seconds=timeout, expected_limit_rejection=False)
     return False
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser()
-    parser.add_argument('--output', default='async-large-result-check.json')
+    parser.add_argument('--output', type=pathlib.Path, default=pathlib.Path('hubble-results/async-large-result-check.json'))
+    parser.add_argument('--hubble-api-url', default='http://127.0.0.1:8088/api/v1.3')
+    parser.add_argument('--server-url', default='http://127.0.0.1:18080')
+    parser.add_argument('--space', default='perf_space_0999')
+    parser.add_argument('--graph', default='perf_large8192')
     parser.add_argument('--timeout', type=float, default=300,
                         help='Maximum task polling duration in seconds (default: 300).')
     parser.add_argument('--poll-interval', type=float, default=1)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if args.timeout <= 0 or args.poll_interval <= 0:
         parser.error('--timeout and --poll-interval must be positive')
     session = requests.Session()
     session.trust_env = False
-    space = 'perf_space_0999'
-    graph = 'perf_large8192'
+    space = args.space
+    graph = args.graph
     query = 'g.V().limit(12000)'
-    response = session.post(
-        f'http://127.0.0.1:8088/api/v1.3/graphspaces/{space}/graphs/{graph}/gremlin-query/async-task',
-        json={'content': query}, timeout=30)
-    data = response.json()
-    assert response.status_code == 200 and data['status'] == 200, data
-    task_id = data['data']['task_id']
-    record = dict(graph=graph, space=space, query=query, task_id=task_id,
-                  submission=data, statuses=[])
-    print('submitted', task_id, flush=True)
-    terminal = poll_task(
-        session,
-        f'http://127.0.0.1:18080/graphspaces/{space}/graphs/{graph}/tasks/{task_id}',
-        record, args.timeout, args.poll_interval)
-    (ROOT / args.output).write_text(json.dumps(record, indent=2) + '\n')
+    record = dict(graph=graph, space=space, query=query, statuses=[],
+                  expected_limit_rejection=False)
+    accepted = False
+    try:
+        response = session.post(
+            f'{args.hubble_api_url.rstrip("/")}/graphspaces/{space}/graphs/{graph}/gremlin-query/async-task',
+            json={'content': query}, timeout=30)
+        data = response.json()
+        record.update(submission=data, submission_http_status=response.status_code)
+        assert response.status_code == 200 and data['status'] == 200, 'Task submission failed'
+        task_id = data['data']['task_id']
+        record['task_id'] = task_id
+        print('submitted', task_id, flush=True)
+        accepted = poll_task(
+            session,
+            f'{args.server_url.rstrip("/")}/graphspaces/{space}/graphs/{graph}/tasks/{task_id}',
+            record, args.timeout, args.poll_interval)
+    except Exception as error:
+        record['validation_error'] = str(error)[:1000]
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(json.dumps(record, indent=2) + '\n')
     print(json.dumps(record, indent=2), flush=True)
-    return 0 if terminal else 2
+    return 0 if accepted else 2
 
 
 if __name__ == '__main__':

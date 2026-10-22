@@ -25,6 +25,10 @@ import io
 import json
 import pathlib
 import socket
+import shutil
+import subprocess
+import sys
+import urllib.parse
 import tempfile
 import threading
 import time
@@ -43,6 +47,7 @@ def module(name):
 
 TRACE = module('trace_proxy')
 ASYNC = module('async_result_check')
+BROWSER = module('browser_probe')
 # The property probe is intentionally an executable fixture script. Load only
 # its integrity helper, without sending its live benchmark requests on import.
 node = next(n for n in ast.parse((SCRIPTS / 'large_property_probe.py').read_text()).body
@@ -72,6 +77,8 @@ class Upstream(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.send_header('Content-Length', '12')
+        if self.path == '/folded':
+            self.send_header('X-Probe', 'safe\r\n X-Evil: injected')
         self.end_headers()
         self.wfile.write(b'ok' if self.path == '/partial' else b'hello world!')
         self.close_connection = True
@@ -111,6 +118,18 @@ class ProxyFailureTest(unittest.TestCase):
             with serving(TRACE.create_http_proxy(0, upstream, 'test')) as port:
                 self.get(port)
         self.assertEqual(self.events[-1]['status'], 502)
+
+    def test_folded_upstream_header_cannot_split_downstream_response(self):
+        with serving(http.server.ThreadingHTTPServer(('127.0.0.1', 0), Upstream)) as upstream:
+            with serving(TRACE.create_http_proxy(0, upstream, 'test')) as port:
+                with contextlib.closing(http.client.HTTPConnection('127.0.0.1', port, timeout=2)) as connection:
+                    connection.request('GET', '/folded')
+                    response = connection.getresponse()
+                    self.assertEqual(response.status, 200)
+                    self.assertEqual(response.read(), b'hello world!')
+                    self.assertNotIn('\r', response.getheader('X-Probe'))
+                    self.assertNotIn('\n', response.getheader('X-Probe'))
+                    self.assertIsNone(response.getheader('X-Evil'))
 
     def test_downstream_failure_after_headers_closes_without_second_status(self):
         class BrokenWriter:
@@ -164,7 +183,7 @@ class AsyncPollingTest(unittest.TestCase):
 
         def get(url, params, timeout):
             if params['with_result'] == 'true':
-                return FakeResponse({'task_result': 'size exceeded limit'})
+                return FakeResponse({'task_result': 'Task result size 99665305 exceeded limit 16777216 bytes'})
             if clock[0] == 0:
                 clock[0] = 126
                 return FakeResponse({'task_status': 'running'})
@@ -178,7 +197,8 @@ class AsyncPollingTest(unittest.TestCase):
             self.assertTrue(ASYNC.poll_task(session, '/task', record))
         self.assertEqual(record['final_status'], 'failed')
         self.assertEqual(record['task_execution_ms'], 126471)
-        self.assertEqual(record['failure_result'], 'size exceeded limit')
+        self.assertTrue(record['expected_limit_rejection'])
+        self.assertEqual(record['retained_limit_bytes'], 16777216)
         self.assertFalse(record['timed_out'])
 
     def test_cli_timeout_records_timeout_and_nonzero_exit(self):
@@ -189,13 +209,11 @@ class AsyncPollingTest(unittest.TestCase):
         session.post.return_value = submitted
         session.get.return_value = FakeResponse({'task_status': 'running'})
         with tempfile.TemporaryDirectory() as directory, \
-             mock.patch.object(ASYNC, 'ROOT', pathlib.Path(directory)), \
              mock.patch.object(ASYNC.requests, 'Session', return_value=session), \
              mock.patch.object(ASYNC.time, 'monotonic', lambda: clock[0]), \
              mock.patch.object(ASYNC.time, 'sleep', lambda seconds: clock.__setitem__(0, clock[0] + seconds)), \
-             mock.patch('sys.argv', ['async_result_check.py', '--timeout', '2']), \
              contextlib.redirect_stdout(io.StringIO()):
-            self.assertEqual(ASYNC.main(), 2)
+            self.assertEqual(ASYNC.main(['--timeout', '2', '--output', str(pathlib.Path(directory) / 'async-large-result-check.json')]), 2)
             record = json.loads((pathlib.Path(directory) / 'async-large-result-check.json').read_text())
         self.assertEqual(record['final_status'], 'TIMEOUT')
         self.assertTrue(record['timed_out'])
@@ -225,6 +243,164 @@ class EdgeIntegrityTest(unittest.TestCase):
                 session.get.return_value = FakeResponse({'edges': edges})
                 with self.assertRaises(AssertionError):
                     verify_edges(session, '/edges', expected)
+
+
+class ScenarioHandler(http.server.BaseHTTPRequestHandler):
+    """Tiny fake services: no HugeGraph process or graph writes are involved."""
+    def log_message(self, *args):
+        pass
+
+    def reply(self, status, data):
+        body = json.dumps(data).encode()
+        self.send_response(status)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_GET(self):
+        if '/vertices/' in self.path:
+            self.reply(200, {'id': 'v1', 'label': 'node', 'properties': {'payload': 'original'}})
+        elif '/tasks/' in self.path:
+            if urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query).get('with_result') == ['true']:
+                self.reply(200, {'task_result': self.server.failure})
+            else:
+                self.reply(200, {'task_status': self.server.state})
+        else:
+            body = b'<html><body><div class="cm-content" contenteditable="true"></div><button>Run Query</button></body></html>'
+            self.send_response(200)
+            self.send_header('Content-Length', str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+    def do_POST(self):
+        body = self.rfile.read(int(self.headers['Content-Length']))
+        if self.path.endswith('/import'):
+            if b'properties_truncated' in body:
+                self.reply(self.server.root_status, {'status': self.server.root_status,
+                                                     'message': self.server.root_message})
+            elif b'~hubble_properties_preview' not in body:
+                self.reply(200, {'status': 200, 'data': {}})
+            else:
+                self.reply(self.server.import_status,
+                           {'status': self.server.import_status, 'message': self.server.import_message})
+        else:
+            self.reply(200, {'status': 200, 'data': {'task_id': 1}})
+
+
+class ReproductionCliTest(unittest.TestCase):
+    def run_script(self, name, arguments, cwd):
+        return subprocess.run([sys.executable, str(SCRIPTS / name), *arguments],
+                              cwd=cwd, capture_output=True, text=True, timeout=45)
+
+    def server(self):
+        server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), ScenarioHandler)
+        server.state = 'failed'
+        server.failure = 'Task result size 99665305 exceeded limit 16777216 bytes'
+        server.import_status = 400
+        server.root_status = 400
+        server.root_message = 'A truncated preview cannot be imported as full graph data'
+        server.import_message = 'A truncated preview cannot be imported as full graph data'
+        self.active_server = server
+        return server
+
+    def test_help_requires_no_private_runtime_files_from_empty_cwd(self):
+        names = ['browser_benchmark.py', 'browser_comparison.py', 'browser_large_properties.py',
+                 'profile_canvas.py', 'final_stack_smoke.py', 'async_result_check.py',
+                 'preview_import_check.py']
+        with tempfile.TemporaryDirectory() as directory:
+            for name in names:
+                with self.subTest(script=name):
+                    result = self.run_script(name, ['--help'], directory)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertIn('--', result.stdout)
+
+    def test_async_cli_rejects_unexpected_terminal_states_and_retains_evidence(self):
+        scenarios = [('failed', 'Task result size 99665305 exceeded limit 16777216 bytes', 0),
+                     ('success', '', 2), ('cancelled', '', 2), ('canceled', '', 2),
+                     ('failed', 'unrelated schema failure', 2),
+                     ('failed', 'Task result size 9000000 exceeded limit 8388608 bytes', 2),
+                     ('failed', 'Task result size 1 exceeded limit 16777216 bytes', 2),
+                     ('running', '', 2)]
+        with tempfile.TemporaryDirectory() as directory, serving(self.server()) as port:
+            base = f'http://127.0.0.1:{port}'
+            for state, failure, expected in scenarios:
+                with self.subTest(state=state, failure=failure):
+                    # The context owns this server until all subprocesses exit.
+                    self.active_server.state = state
+                    self.active_server.failure = failure
+                    output = pathlib.Path(directory) / 'task.json'
+                    result = self.run_script('async_result_check.py',
+                        ['--hubble-api-url', base, '--server-url', base, '--output', str(output),
+                         '--timeout', '0.08', '--poll-interval', '0.01'], directory)
+                    self.assertEqual(result.returncode, expected, result.stderr + result.stdout)
+                    record = json.loads(output.read_text())
+                    self.assertEqual(record['expected_limit_rejection'], expected == 0)
+                    self.assertEqual(record['final_status'], 'TIMEOUT' if state == 'running' else state)
+
+    def test_import_cli_requires_the_specific_guard_not_an_arbitrary_error(self):
+        with tempfile.TemporaryDirectory() as directory, serving(self.server()) as port:
+            base = f'http://127.0.0.1:{port}'
+            fixture = pathlib.Path(directory) / 'fixture.json'
+            fixture.write_text(json.dumps({'space': 's', 'graph': 'g', 'vertices': [
+                {'id': 'v1', 'sha256': {'payload': hashlib.sha256(b'original').hexdigest()}}]}))
+            for status, message, expected in [(400, 'A truncated preview cannot be imported as full graph data', 0),
+                    (400, 'Missing vertex label', 2), (401, 'Unauthorized', 2),
+                    (400, 'Invalid schema', 2), (200, 'success', 2)]:
+                with self.subTest(status=status, message=message):
+                    self.active_server.import_status = status
+                    self.active_server.import_message = message
+                    output = pathlib.Path(directory) / 'import.json'
+                    result = self.run_script('preview_import_check.py', ['--fixture', str(fixture),
+                        '--hubble-api-url', base, '--server-url', base, '--output', str(output)], directory)
+                    self.assertEqual(result.returncode, expected, result.stderr + result.stdout)
+                    record = json.loads(output.read_text())
+                    self.assertEqual(record['guard_verified'], expected == 0)
+                    self.assertEqual(record['original_vertex_sha256_unchanged'], expected == 0)
+                    self.assertEqual(record['empty_control']['http_status'], 200)
+                    self.assertEqual(record['root_preview_guard']['http_status'], 400)
+
+    def test_import_cli_fails_when_valid_empty_root_preview_guard_is_missing(self):
+        with tempfile.TemporaryDirectory() as directory, serving(self.server()) as port:
+            base = f'http://127.0.0.1:{port}'
+            fixture = pathlib.Path(directory) / 'fixture.json'
+            fixture.write_text(json.dumps({'space': 's', 'graph': 'g', 'vertices': [
+                {'id': 'v1', 'sha256': {'payload': hashlib.sha256(b'original').hexdigest()}}]}))
+            for status, message in [(200, 'success'), (400, 'Unknown field')]:
+                with self.subTest(status=status, message=message):
+                    self.active_server.root_status = status
+                    self.active_server.root_message = message
+                    output = pathlib.Path(directory) / 'import.json'
+                    result = self.run_script('preview_import_check.py', ['--fixture', str(fixture),
+                        '--hubble-api-url', base, '--server-url', base, '--output', str(output)], directory)
+                    self.assertEqual(result.returncode, 2, result.stderr + result.stdout)
+                    record = json.loads(output.read_text())
+                    self.assertFalse(record['guard_verified'])
+                    self.assertEqual(record['empty_control']['http_status'], 200)
+                    self.assertEqual(record['root_preview_guard']['http_status'], status)
+                    self.assertIn('validation_error', record)
+
+    @unittest.skipUnless(shutil.which('chromium') and importlib.util.find_spec('playwright'),
+                         'Chromium and Playwright required for real browser exit-code check')
+    def test_browser_timeout_keeps_diagnostics_and_exits_nonzero(self):
+        with tempfile.TemporaryDirectory() as directory, serving(self.server()) as port:
+            for name, positional, output_name in [('browser_comparison.py', ['before'], 'browser-comparison-before.jsonl'),
+                                                  ('browser_benchmark.py', [], 'browser.jsonl')]:
+                with self.subTest(script=name):
+                    output = pathlib.Path(directory) / name
+                    result = self.run_script(name, [*positional, '--base-url', f'http://127.0.0.1:{port}',
+                        '--output-dir', str(output), '--timeout-ms', '1000'], directory)
+                    self.assertEqual(result.returncode, 2, result.stderr + result.stdout)
+                    records = [json.loads(line) for line in (output / output_name).read_text().splitlines()]
+                    self.assertTrue(any(record.get('stage') == 'query' and 'error' in record for record in records))
+
+    def test_browser_saved_failures_include_empty_assertion_messages_and_context_errors(self):
+        self.assertEqual(BROWSER.browser_exit_code([{'stage': 'query', 'http_status': 200}]), 0)
+        for record in [{'error': ''}, {'stage': 'graph_context_switch', 'error': 'missing option'},
+                       {'http_status': 503}, {'response': {'status': 400}}, {'page_errors': ['broken']},
+                       {'errors': ['broken']}, {'additional_query_requests': 1}]:
+            with self.subTest(record=record):
+                self.assertEqual(BROWSER.browser_exit_code([record]), 2)
 
 
 if __name__ == '__main__':
