@@ -150,10 +150,11 @@ public class DefaultOperationsDataService implements OperationsDataService {
             SourceStatus source = snapshot.getSources().get(sourceName);
             Map<String, MetricStatus> failures = new LinkedHashMap<>();
             node.getMetricStatuses().forEach((group, status) -> {
-                if (metricFailed(status) || status.isStale() ||
+                if (!"metrics_not_collected".equals(status.getReason()) &&
+                    (metricFailed(status) || status.isStale() ||
                     "UNSUPPORTED".equals(status.getAvailability()) && source != null &&
                     ("PARTIAL".equals(source.getAvailability()) ||
-                     "DOWN".equals(source.getStatus()) || "DEGRADED".equals(source.getStatus()))) {
+                     "DOWN".equals(source.getStatus()) || "DEGRADED".equals(source.getStatus())))) {
                     failures.put(group, status);
                 }
             });

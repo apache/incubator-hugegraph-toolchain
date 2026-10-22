@@ -104,6 +104,24 @@ test.each([
     }
 );
 
+test.each([false, true])('excludes intentionally uncollected PD followers (stale=%s)', stale => {
+    render(<SourceDiagnostics sourceName='pd' sources={{pd: {
+        status: 'UP', availability: 'PARTIAL', reason: 'upstream_rejected',
+    }}} nodes={[
+        {id: 'leader', type: 'PD', name: 'PD leader', metric_statuses: {system: {
+            availability: 'UNAVAILABLE', reason: 'upstream_rejected',
+            diagnostics: {request_path: '/actuator/prometheus', http_status: 503},
+        }}},
+        {id: 'follower', type: 'PD', name: 'PD follower', metric_statuses: {system: {
+            availability: 'UNSUPPORTED', reason: 'metrics_not_collected', stale,
+        }}},
+    ]} />);
+    expect(screen.getByText(/PD leader · system/)).toBeInTheDocument();
+    expect(screen.getByText('/actuator/prometheus')).toBeInTheDocument();
+    expect(screen.getByText('503')).toBeInTheDocument();
+    expect(screen.queryByText(/PD follower/)).not.toBeInTheDocument();
+});
+
 test('localizes the collection status and response size lower bound in Chinese', () => {
     i18n.changeLanguage('zh-CN');
     render(<SourceDiagnostics sourceName='stores' sources={{stores: {
