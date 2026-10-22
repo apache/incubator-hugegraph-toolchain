@@ -282,10 +282,15 @@ public class QueryService {
             }
         }
         // Build graph view
-        GraphView graphView = new GraphView(vertices, edges);
+        QueryPropertyPreview propertyPreview = new QueryPropertyPreview();
+        GraphView graphView = propertyPreview.project(new GraphView(vertices, edges));
         return GremlinResult.builder()
                             .type(Type.PATH)
                             .graphView(graphView)
+                            .propertiesTruncated(propertyPreview.truncated())
+                            .propertyPreviewLimit(QueryPropertyPreview.STRING_LIMIT)
+                            .propertyPreviewVertexIds(propertyPreview.partialElementIds(graphView.getVertices()))
+                            .propertyPreviewEdgeIds(propertyPreview.partialElementIds(graphView.getEdges()))
                             .build();
     }
 

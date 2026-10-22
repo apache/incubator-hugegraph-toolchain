@@ -768,6 +768,79 @@ public class QueryServiceTest {
     }
 
     @Test
+    public void testExpansionPreviewsOnlyPartialPropertiesWithoutChangingSdkElements() throws Exception {
+        Vertex start = new Vertex("person");
+        start.id("start");
+        Vertex partial = new Vertex("person");
+        partial.id("partial");
+        String payload = "x".repeat(300);
+        partial.property("payload", payload);
+        Vertex complete = new Vertex("person");
+        complete.id("complete");
+        complete.property("name", "Alice");
+        Edge partialEdge = new Edge("knows");
+        partialEdge.id("partial-edge");
+        partialEdge.sourceId("start");
+        partialEdge.targetId("partial");
+        partialEdge.property("payload", payload);
+        Edge completeEdge = new Edge("knows");
+        completeEdge.id("complete-edge");
+        completeEdge.sourceId("start");
+        completeEdge.targetId("complete");
+        completeEdge.property("weight", 1);
+        GraphManager manager = Mockito.mock(GraphManager.class);
+        partial.attachManager(manager);
+        partialEdge.attachManager(manager);
+        GremlinManager gremlin = this.mockGremlin(this.resultSet(
+                new Path(List.of(start, partialEdge, partial)),
+                new Path(List.of(start, completeEdge, complete))));
+        AdjacentQuery query = AdjacentQuery.builder().vertexId("start").vertexLabel("person").build();
+
+        GremlinResult result = this.serviceWithConfig().expandVertex(this.mockClient(gremlin), query);
+
+        Assert.assertTrue(result.isPropertiesTruncated());
+        Assert.assertEquals(256, result.getPropertyPreviewLimit());
+        Assert.assertEquals(List.of("partial"), result.getPropertyPreviewVertexIds());
+        Assert.assertEquals(List.of("partial-edge"), result.getPropertyPreviewEdgeIds());
+        List<Vertex> vertices = new ArrayList<>(result.getGraphView().getVertices());
+        List<Edge> edges = new ArrayList<>(result.getGraphView().getEdges());
+        String expected = "x".repeat(256) + "… [preview 256/300 chars]";
+        Assert.assertEquals(expected, vertices.get(0).property("payload"));
+        Assert.assertEquals(expected, edges.get(0).property("payload"));
+        Assert.assertEquals("Alice", vertices.get(1).property("name"));
+        Assert.assertEquals(1, edges.get(1).property("weight"));
+        Assert.assertNotSame(partial.properties(), vertices.get(0).properties());
+        Assert.assertNotSame(partialEdge.properties(), edges.get(0).properties());
+        Assert.assertEquals(payload, partial.property("payload"));
+        Assert.assertEquals(payload, partialEdge.property("payload"));
+        Mockito.verifyNoInteractions(manager);
+    }
+
+    @Test
+    public void testExpansionKeepsCompletePropertiesUnmarked() throws Exception {
+        Vertex start = new Vertex("person");
+        start.id("start");
+        Vertex neighbor = new Vertex("person");
+        neighbor.id("neighbor");
+        neighbor.property("name", "Alice");
+        Edge edge = new Edge("knows");
+        edge.id("edge");
+        edge.sourceId("start");
+        edge.targetId("neighbor");
+        edge.property("weight", 1);
+        GremlinManager gremlin = this.mockGremlin(this.resultSet(new Path(List.of(start, edge, neighbor))));
+        AdjacentQuery query = AdjacentQuery.builder().vertexId("start").vertexLabel("person").build();
+
+        GremlinResult result = this.serviceWithConfig().expandVertex(this.mockClient(gremlin), query);
+
+        Assert.assertFalse(result.isPropertiesTruncated());
+        Assert.assertEquals(List.of(), result.getPropertyPreviewVertexIds());
+        Assert.assertEquals(List.of(), result.getPropertyPreviewEdgeIds());
+        Assert.assertEquals("Alice", result.getGraphView().getVertices().iterator().next().property("name"));
+        Assert.assertEquals(1, result.getGraphView().getEdges().iterator().next().property("weight"));
+    }
+
+    @Test
     public void testExpandVertexRejectsInvalidOperatorInService()
            throws Exception {
         GremlinManager gremlin = this.mockGremlin();

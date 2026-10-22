@@ -297,6 +297,15 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
         prunePending(owner);
         const pending = pendingRaw.current?.owner === scopeOwner ? pendingRaw.current.edges : [];
         const responseGraph = rawGraph(response.data?.graph_view);
+        const partialVertices = new Set((response.data?.property_preview_vertex_ids ?? [])
+            .map(id => hubbleRenderId('node', id)));
+        const partialEdges = new Set((response.data?.property_preview_edge_ids ?? [])
+            .map(id => hubbleRenderId('edge', id)));
+        // Expansion merges directly into the controller, outside the initial query preview.
+        const markPreview = (element, kind, partialIds) => partialIds.has(hubbleRenderId(kind, element.id))
+            ? {...element, '~hubble_properties_preview': true} : element;
+        responseGraph.vertices = responseGraph.vertices.map(vertex => markPreview(vertex, 'node', partialVertices));
+        responseGraph.edges = responseGraph.edges.map(edge => markPreview(edge, 'edge', partialEdges));
         const edges = new Map(pending.map(edge => [hubbleRenderId('edge', edge.id), edge]));
         const responseIds = new Set();
         responseGraph.edges.forEach(edge => {
