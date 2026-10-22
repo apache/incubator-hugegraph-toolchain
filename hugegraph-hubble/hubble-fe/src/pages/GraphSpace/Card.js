@@ -33,7 +33,8 @@ const formatPercent = percent => {
     if (percent > 0 && percent < 0.01) {
         return '<0.01%';
     }
-    return `${Number(percent.toFixed(2))}%`;
+    const rounded = Number(percent.toFixed(2));
+    return rounded === 100 ? '<100%' : `${rounded}%`;
 };
 
 const TitleField = ({item, onClick, onKeyDown}) => {

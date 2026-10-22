@@ -103,6 +103,32 @@ test('shows nonzero precise usage when the legacy ratio is rounded to zero', () 
     expect(screen.getByText(/1 MB/)).toBeInTheDocument();
 });
 
+test.each([
+    [600 * 1024, '99.99%'],
+    [512 * 1024, '<100%'],
+    [1, '<100%'],
+])('keeps %s KB of remaining quota visibly below full', (remainingKb, expected) => {
+    const {container} = render(<GraphSpaceCard item={{
+        name: 'nearly-full', storage_limit: 10240,
+        storage_used_kb: 10240 * 1024 * 1024 - remainingKb,
+    }} />);
+
+    expect(screen.getByText(expected)).toBeInTheDocument();
+    expect(screen.queryByText('100%')).not.toBeInTheDocument();
+    expect(container.querySelector('.ant-progress-status-normal')).toBeInTheDocument();
+});
+
+test.each([0, 1024])('keeps full or exceeded quota in the exception state (%s KB over)', excessKb => {
+    const {container} = render(<GraphSpaceCard item={{
+        name: 'full', storage_limit: 10240,
+        storage_used_kb: 10240 * 1024 * 1024 + excessKb,
+    }} />);
+
+    expect(screen.queryByText('<100%')).not.toBeInTheDocument();
+    expect(container.querySelector('.ant-progress-status-exception')).toBeInTheDocument();
+    expect(screen.getByRole('img', {name: 'info'})).toBeInTheDocument();
+});
+
 test('falls back to the daily-update label when statistics are unavailable', () => {
     const item = {
         name: 'empty',
