@@ -48,6 +48,7 @@ def module(name):
 TRACE = module('trace_proxy')
 ASYNC = module('async_result_check')
 BROWSER = module('browser_probe')
+SMOKE = module('final_stack_smoke')
 # The property probe is intentionally an executable fixture script. Load only
 # its integrity helper, without sending its live benchmark requests on import.
 node = next(n for n in ast.parse((SCRIPTS / 'large_property_probe.py').read_text()).body
@@ -393,6 +394,16 @@ class ReproductionCliTest(unittest.TestCase):
                     self.assertEqual(result.returncode, 2, result.stderr + result.stdout)
                     records = [json.loads(line) for line in (output / output_name).read_text().splitlines()]
                     self.assertTrue(any(record.get('stage') == 'query' and 'error' in record for record in records))
+
+    def test_default_notice_requires_both_complete_clauses_and_exact_limit(self):
+        for text in ['No result limit was set. This query defaults to at most 300 results.',
+                     'No result limit was set; This query defaults to at most 300 results']:
+            self.assertIsNotNone(SMOKE.DEFAULT_NOTICE.fullmatch(text))
+        for text in ['No result limit was set', 'This query defaults to at most 300 results',
+                     'No result limit was set; This query defaults to at most 3000 results',
+                     'No result limit was set; This query defaults to at most 250 results',
+                     'No result limit was set; This query defaults to at most 300 results but failed']:
+            self.assertIsNone(SMOKE.DEFAULT_NOTICE.fullmatch(text))
 
     def test_browser_saved_failures_include_empty_assertion_messages_and_context_errors(self):
         self.assertEqual(BROWSER.browser_exit_code([{'stage': 'query', 'http_status': 200}]), 0)
