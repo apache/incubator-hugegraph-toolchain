@@ -32,8 +32,11 @@ The existing read grammars cover common queries. Unrecognized manual scripts,
 including unsupported aggregate or UNION syntax, retain their native execution
 path and may not receive a default limit. Unbounded collection results from reducers such as
 fold, group and groupCount (including label histograms) require asynchronous
-mode or an explicitly bounded input. Preview edges use a bounded incident-edge
-sample and do not guarantee the complete induced subgraph of the displayed nodes.
+mode or an explicitly bounded input. Nested collection reducers with unbounded inputs
+conservatively require asynchronous mode even when later steps flatten them;
+explicit input bounds and final scalar results remain supported.
+Preview edges use a bounded incident-edge sample and do not guarantee the complete
+induced subgraph of the displayed nodes.
 
 Large preview properties show a bounded prefix and their original length. Clipped
 properties are read-only; exported previews retain that marker and cannot be

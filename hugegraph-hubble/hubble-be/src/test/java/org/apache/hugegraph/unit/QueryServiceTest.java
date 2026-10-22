@@ -436,6 +436,55 @@ public class QueryServiceTest {
     }
 
     @Test
+    public void testNestedCollectionWrappingFailsBeforeDispatchAndKeepsRawAndAsyncSemantics() throws Exception {
+        for (String collectors : new String[]{".fold()".repeat(2), ".fold()".repeat(3),
+                                              ".fold()".repeat(4), ".fold().groupCount()"}) {
+            String content = "g.V()" + collectors + ".unfold().limit(1)";
+            GremlinManager gremlin = this.mockGremlin();
+            QueryService service = this.serviceWithConfig();
+            HugeClient client = this.mockClient(gremlin);
+            GremlinQuery query = new GremlinQuery(content);
+            query.setPreview(true);
+            ExternalException error = (ExternalException) Assert.assertThrows(ExternalException.class,
+                    () -> service.executeGremlinQuery(client, query));
+            Assert.assertEquals("gremlin.preview.collection_requires_async", error.getMessage());
+            Mockito.verifyNoInteractions(gremlin);
+
+            query.setPreview(false);
+            service.executeGremlinQuery(client, query);
+            Mockito.verify(gremlin).gremlin(content);
+            query.setPreview(true);
+            Mockito.when(gremlin.executeAsTask(Mockito.any())).thenReturn(7L);
+            service.executeGremlinAsyncTask(client, query);
+            Mockito.verify(gremlin).executeAsTask(Mockito.argThat(request -> content.equals(request.gremlin)));
+        }
+    }
+
+    @Test
+    public void testBoundedNestedCollectionsAndFinalScalarsStillDispatch() throws Exception {
+        String bounded = "g.V().limit(10).fold().fold().unfold().limit(1)";
+        GremlinManager boundedGremlin = this.mockGremlin();
+        GremlinQuery boundedQuery = new GremlinQuery(bounded);
+        boundedQuery.setPreview(true);
+        this.serviceWithConfig().executeGremlinQuery(this.mockClient(boundedGremlin), boundedQuery);
+        Mockito.verify(boundedGremlin).gremlin(bounded + ".limit(1001)");
+        for (String terminal : new String[]{"count()", "count(local)", "hasNext()"}) {
+            String content = "g.V().fold().fold().unfold()." + terminal;
+            GremlinManager gremlin = this.mockGremlin();
+            GremlinQuery query = new GremlinQuery(content);
+            query.setPreview(true);
+            this.serviceWithConfig().executeGremlinQuery(this.mockClient(gremlin), query);
+            String expected = content;
+            if ("count(local)".equals(terminal)) {
+                expected += ".limit(300).limit(1001)";
+            } else if ("hasNext()".equals(terminal)) {
+                expected = "g.V().fold().fold().unfold().limit(300).limit(1001).hasNext()";
+            }
+            Mockito.verify(gremlin).gremlin(expected);
+        }
+    }
+
+    @Test
     public void testUnboundedGroupEntriesFailBeforeDispatchAndKeepRawAndAsyncSemantics() throws Exception {
         String content = "g.V().group().by(label).unfold().limit(1)";
         GremlinManager gremlin = this.mockGremlin();

@@ -289,6 +289,68 @@ public class GremlinUtilTest {
     }
 
     @Test
+    public void testCollectionWrappingPreservesNestedPayloadRisk() throws Exception {
+        try (TinkerGraph graph = TinkerGraph.open()) {
+            for (int i = 0; i < 1500; i++) {
+                graph.addVertex();
+            }
+            Bindings bindings = new SimpleBindings();
+            bindings.put("g", graph.traversal());
+            GremlinLangScriptEngine engine = new GremlinLangScriptEngine();
+            for (int depth = 2; depth <= 4; depth++) {
+                String collectors = ".fold()".repeat(depth);
+                String query = "g.V()" + collectors + ".unfold().limit(1)";
+                List<?> raw = execute(engine, bindings, GremlinUtil.optimizeLimit(query, 300));
+                Assert.assertEquals(1, raw.size());
+                Object payload = raw.get(0);
+                for (int layer = 2; layer < depth; layer++) {
+                    payload = ((List<?>) payload).get(0);
+                }
+                Assert.assertEquals(1500, ((List<?>) payload).size());
+                Assert.assertThrows(ExternalException.class,
+                                    () -> GremlinUtil.optimizePreviewLimit(query, 1001));
+                String bounded = "g.V().limit(10)" + collectors + ".unfold().limit(1)";
+                List<?> expected = execute(engine, bindings, bounded);
+                List<?> preview = execute(engine, bindings, GremlinUtil.optimizePreviewLimit(bounded, 1001));
+                Assert.assertEquals(expected, preview);
+                Object smallPayload = preview.get(0);
+                for (int layer = 2; layer < depth; layer++) {
+                    smallPayload = ((List<?>) smallPayload).get(0);
+                }
+                Assert.assertEquals(10, ((List<?>) smallPayload).size());
+                String count = query + ".count()";
+                Assert.assertEquals(count, GremlinUtil.optimizePreviewLimit(count, 1001));
+                Assert.assertEquals(List.of(1L), execute(engine, bindings, count));
+                String hasNext = query + ".hasNext()";
+                String limitedHasNext = GremlinUtil.optimizePreviewLimit(hasNext, 1001);
+                Assert.assertEquals(query + ".limit(1001).hasNext()", limitedHasNext);
+                Assert.assertEquals(true, engine.eval(limitedHasNext, bindings));
+            }
+            String keyed = "g.V().fold().groupCount().unfold().limit(1)";
+            Map.Entry<?, ?> entry = (Map.Entry<?, ?>) execute(engine, bindings, keyed).get(0);
+            Assert.assertEquals(1500, ((List<?>) entry.getKey()).size());
+            Assert.assertThrows(ExternalException.class,
+                                () -> GremlinUtil.optimizePreviewLimit(keyed, 1001));
+            String localCount = "g.V().fold().fold().unfold().count(local)";
+            Assert.assertEquals(List.of(1500L), execute(engine, bindings,
+                                GremlinUtil.optimizePreviewLimit(localCount, 1001)));
+            String singleFlatten = "g.V().fold().unfold().limit(10)";
+            List<?> flat = execute(engine, bindings, GremlinUtil.optimizePreviewLimit(singleFlatten, 1001));
+            Assert.assertEquals(10, flat.size());
+            Assert.assertTrue(flat.get(0) instanceof Vertex);
+            // Depth is deliberately not tracked: once nested, an unbounded
+            // collection requires async even if several unfolds flatten it.
+            String doubleFlatten = "g.V().fold().fold().unfold().unfold().limit(10)";
+            Assert.assertEquals(10, execute(engine, bindings, doubleFlatten).size());
+            Assert.assertThrows(ExternalException.class,
+                                () -> GremlinUtil.optimizePreviewLimit(doubleFlatten, 1001));
+            String boundedFlatten = "g.V().limit(10).fold().fold().unfold().unfold().limit(10)";
+            Assert.assertEquals(10, execute(engine, bindings,
+                                GremlinUtil.optimizePreviewLimit(boundedFlatten, 1001)).size());
+        }
+    }
+
+    @Test
     public void testGroupEntryValuesKeepTheirCollectionBoundsAfterUnfold() throws Exception {
         try (TinkerGraph graph = TinkerGraph.open()) {
             for (int i = 0; i < 1500; i++) {

@@ -221,6 +221,9 @@ public final class ReadOnlyGremlin {
                             break;
                         }
                         if (!step.localScope()) {
+                            // Collecting an existing large collection preserves
+                            // its contents as nested data inside the new result.
+                            nestedCollection |= largeCollection;
                             // A single List/Map can still download an entire
                             // graph. A later outer limit cannot shrink its input.
                             largeCollection |= bound == null || bound.compareTo(previewSize) > 0;
