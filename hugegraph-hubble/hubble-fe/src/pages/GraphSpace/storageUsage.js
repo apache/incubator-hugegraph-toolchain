@@ -30,6 +30,16 @@ export const formatStorageUsed = item => {
     return `${Number(value.toFixed(2))} ${unit}`;
 };
 
+export const storageUsagePercent = item => {
+    const kb = item.storage_used_kb;
+    const limit = item.storage_limit;
+    if (typeof kb === 'number' && Number.isFinite(kb) && kb >= 0
+        && typeof limit === 'number' && Number.isFinite(limit) && limit > 0) {
+        return kb / (limit * 1024 * 1024) * 100;
+    }
+    return (item.storage_percent ?? 0) * 100;
+};
+
 // Integer.MAX_VALUE is the legacy Server sentinel; large finite quotas remain numeric.
 export const formatResourceLimit = (value, suffix, unlimited, empty = unlimited) => (
     value === 2147483647 ? empty : `${value}${suffix}`

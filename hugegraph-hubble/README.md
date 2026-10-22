@@ -15,18 +15,33 @@ role limit to 100. Existing spaces retain their configured limits. Large finite
 quotas display their actual values; only the legacy `Integer.MAX_VALUE` sentinel
 is shown as unlimited.
 
+For API requests that omit compute CPU or memory, each omitted limit inherits
+the request's CPU or memory limit, defaulting to 128 when both are omitted.
+Explicit compute limits are preserved. The creation form starts all four fields
+at 128 and submits the values shown in the form.
+
 With a Server that supplies `storage_used_kb`, cards show approximate usage in
 KB, MB or GB, including amounts below one GB. The Java client and Hubble preserve
 this optional field; older Servers continue using integer-GB `storage_used`.
 Usage follows Store heartbeat and PD quota-check refreshes rather than individual
-writes. Ratios below 0.01% remain visible as `<0.01%`.
+writes. Cards calculate percentages from precise KB usage and the GB quota when
+available, so ratios below 0.01% remain visible as `<0.01%` even when the legacy
+Server ratio has rounded to zero.
 
 Chrome verification screenshots below use local API fixtures for authenticated
 and anonymous modes. They illustrate the display and capability visibility, not
-live cluster acceptance.
+live cluster acceptance. Chrome interactions cover login/non-auth mode, account
+visibility, creation defaults, and switching `ecommerce/orders` → `DEFAULT/people`
+→ `ecommerce/orders` through the header selectors, then returning to the usage cards.
+This UI selects GraphSpace/graph context within one deployment connection; it has
+no Server connection selector. The deployment uses `server.direct_url` or PD
+discovery. Switching real Server deployments and validating Store/PD refreshes
+remain unverified because no live cluster is configured in this test environment.
 
 ![Authenticated graph-space usage](docs/assets/graphspace-usage-authenticated.png)
 ![Anonymous graph-space usage](docs/assets/graphspace-usage-anonymous.png)
+![Authenticated graph context after switching](docs/assets/graphspace-context-authenticated.png)
+![Anonymous graph context after switching](docs/assets/graphspace-context-anonymous.png)
 
 ## Product Tour
 

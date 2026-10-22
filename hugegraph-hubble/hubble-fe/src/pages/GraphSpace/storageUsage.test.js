@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import {formatResourceLimit, formatStorageUsed} from './storageUsage';
+import {formatResourceLimit, formatStorageUsed, storageUsagePercent} from './storageUsage';
 
 test.each([
     [1, '1 KB'],
@@ -40,4 +40,22 @@ test('finite quotas above 99999 stay numeric and legacy sentinel stays unlimited
     expect(formatResourceLimit(1000000, ' GB', 'Unlimited')).toBe('1000000 GB');
     expect(formatResourceLimit(2147483647, ' GB', 'Unlimited')).toBe('Unlimited');
     expect(formatResourceLimit(2147483647, ' GB', 'Unlimited', '--')).toBe('--');
+});
+
+test('derives small percentages from KB even when the server rounded its ratio to zero', () => {
+    expect(storageUsagePercent({storage_used_kb: 1024, storage_limit: 10240, storage_percent: 0}))
+        .toBeCloseTo(0.0000095367431640625, 15);
+    expect(storageUsagePercent({storage_used_kb: 0, storage_limit: 100, storage_percent: 0.5})).toBe(0);
+    expect(storageUsagePercent({storage_used_kb: 2 * 1024 * 1024, storage_limit: 1})).toBe(200);
+});
+
+test('uses legacy ratios when precise usage or a positive limit is unavailable', () => {
+    for (const item of [
+        {storage_percent: 0.25},
+        {storage_used_kb: null, storage_limit: 100, storage_percent: 0.25},
+        {storage_used_kb: -1, storage_limit: 100, storage_percent: 0.25},
+        {storage_used_kb: 1024, storage_limit: 0, storage_percent: 0.25},
+    ]) {
+        expect(storageUsagePercent(item)).toBe(25);
+    }
 });

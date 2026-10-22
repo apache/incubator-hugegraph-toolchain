@@ -93,6 +93,16 @@ test('ships a localized default GraphSpace name in both languages', () => {
     expect(en.graphspace.default_name).toBe('Default GraphSpace');
 });
 
+test('shows nonzero precise usage when the legacy ratio is rounded to zero', () => {
+    render(<GraphSpaceCard item={{
+        name: 'small', storage_used_kb: 1024, storage_used: 0,
+        storage_limit: 10240, storage_percent: 0,
+    }} />);
+
+    expect(screen.getByText('<0.01%')).toBeInTheDocument();
+    expect(screen.getByText(/1 MB/)).toBeInTheDocument();
+});
+
 test('falls back to the daily-update label when statistics are unavailable', () => {
     const item = {
         name: 'empty',

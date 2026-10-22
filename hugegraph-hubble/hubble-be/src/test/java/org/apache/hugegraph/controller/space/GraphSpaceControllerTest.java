@@ -218,6 +218,18 @@ public class GraphSpaceControllerTest {
     }
 
     @Test
+    public void testOmittedComputeLimitsInheritRequestedResources() {
+        GraphSpaceEntity graphSpace = new GraphSpaceEntity();
+        graphSpace.setCpuLimit(4);
+        graphSpace.setMemoryLimit(8);
+
+        GraphSpaceController.applyResourceDefaults(graphSpace);
+
+        Assert.assertEquals(4, graphSpace.getComputeCpuLimit());
+        Assert.assertEquals(8, graphSpace.getComputeMemoryLimit());
+    }
+
+    @Test
     public void testApplyDefaultsPreservesExplicitResourceLimits() {
         GraphSpaceEntity graphSpace = new GraphSpaceEntity();
         graphSpace.setMaxGraphNumber(2);

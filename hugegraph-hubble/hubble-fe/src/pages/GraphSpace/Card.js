@@ -24,7 +24,7 @@ import style from './index.module.scss';
 import {useCallback} from 'react';
 import {useTranslation} from 'react-i18next';
 import {getResourceDisplayName} from '../../utils/displayName';
-import {formatResourceLimit, formatStorageUsed} from './storageUsage';
+import {formatResourceLimit, formatStorageUsed, storageUsagePercent} from './storageUsage';
 
 const formatPercent = percent => {
     if (percent >= 100) {
@@ -76,6 +76,7 @@ const GraphSpaceCard = ({
 }) => {
     const navigate = useNavigate();
     const {t} = useTranslation();
+    const storagePercent = storageUsagePercent(item);
 
     const handleGotoGraph = useCallback(() => {
         navigate(`/graphspace/${item.name}`);
@@ -229,9 +230,9 @@ const GraphSpaceCard = ({
                             <Progress
                                 type='circle'
                                 width={96}
-                                percent={item.storage_percent * 100}
+                                percent={storagePercent}
                                 format={formatPercent}
-                                status={item.storage_percent >= 1
+                                status={storagePercent >= 100
                                     ? 'exception' : 'normal'}
                             />
                             <div
