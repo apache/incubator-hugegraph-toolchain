@@ -16,6 +16,8 @@
  * under the License.
  */
 
+const LEGACY_UNLIMITED = 2147483647;
+
 export const formatStorageUsed = item => {
     const kb = item.storage_used_kb;
     if (typeof kb !== 'number' || !Number.isFinite(kb) || kb < 0) {
@@ -33,6 +35,9 @@ export const formatStorageUsed = item => {
 export const storageUsagePercent = item => {
     const kb = item.storage_used_kb;
     const limit = item.storage_limit;
+    if (limit === LEGACY_UNLIMITED) {
+        return null;
+    }
     if (typeof kb === 'number' && Number.isFinite(kb) && kb >= 0
         && typeof limit === 'number' && Number.isFinite(limit) && limit > 0) {
         return kb / (limit * 1024 * 1024) * 100;
@@ -42,7 +47,7 @@ export const storageUsagePercent = item => {
 
 // Integer.MAX_VALUE is the legacy Server sentinel; large finite quotas remain numeric.
 export const formatResourceLimit = (value, suffix, unlimited, empty = unlimited) => (
-    value === 2147483647 ? empty : `${value}${suffix}`
+    value === LEGACY_UNLIMITED ? empty : `${value}${suffix}`
 );
 
 export const formatComputeLimit = (value, inheritedValue, suffix, t) => {

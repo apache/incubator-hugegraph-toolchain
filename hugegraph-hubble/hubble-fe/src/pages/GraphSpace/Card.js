@@ -37,6 +37,8 @@ const formatPercent = percent => {
     return rounded === 100 ? '<100%' : `${rounded}%`;
 };
 
+const formatUnlimitedPercent = () => '--';
+
 const TitleField = ({item, onClick, onKeyDown}) => {
     const {t} = useTranslation();
     const displayName = item.name === 'DEFAULT'
@@ -238,8 +240,8 @@ const GraphSpaceCard = ({
                             <Progress
                                 type='circle'
                                 width={96}
-                                percent={storagePercent}
-                                format={formatPercent}
+                                percent={storagePercent ?? 0}
+                                format={storagePercent === null ? formatUnlimitedPercent : formatPercent}
                                 status={storagePercent >= 100
                                     ? 'exception' : 'normal'}
                             />

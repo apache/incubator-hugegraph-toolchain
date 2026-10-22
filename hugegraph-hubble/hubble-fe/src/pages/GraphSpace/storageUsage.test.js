@@ -69,3 +69,9 @@ test('compute zero continuously inherits the current graph-service limit', () =>
     expect(formatComputeLimit(6, 4, ' vCPU', t)).toBe('6 vCPU');
     expect(formatComputeLimit(0, undefined, ' GB', t)).toBe('Inherited (--)');
 });
+
+test.each([1024, undefined])('does not calculate a percentage of an unlimited quota (%s KB)', usedKb => {
+    expect(storageUsagePercent({
+        storage_limit: 2147483647, storage_used_kb: usedKb, storage_percent: 1,
+    })).toBeNull();
+});

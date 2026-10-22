@@ -259,3 +259,15 @@ test('shows inherited compute resources with their current effective limits', ()
     expect(screen.getByText(/Inherited \(4graphspace.unit.cpu\)/)).toBeInTheDocument();
     expect(screen.getByText(/Inherited \(8graphspace.unit.memory\)/)).toBeInTheDocument();
 });
+
+test.each([1024, undefined])('keeps unlimited usage visible without a percentage (%s KB)', usedKb => {
+    const {container} = render(<GraphSpaceCard item={{
+        name: 'unlimited', storage_limit: 2147483647, storage_used_kb: usedKb,
+        storage_used: 1, storage_percent: 1,
+    }} />);
+    expect(screen.getByText('--')).toBeInTheDocument();
+    expect(screen.getByText(/graphspace.unit.unlimited/)).toBeInTheDocument();
+    expect(screen.getByText(usedKb ? /1 MB/ : /1 GB/)).toBeInTheDocument();
+    expect(screen.queryByText('<0.01%')).not.toBeInTheDocument();
+    expect(container.querySelector('.ant-progress-status-exception')).not.toBeInTheDocument();
+});

@@ -40,9 +40,9 @@ const GRAPHSPACE_NICKNAME_PATTERN = new RegExp(
     '^[a-zA-Z\\u4E00-\\u9FA5]'
     + '[a-zA-Z0-9\\u4E00-\\u9FA5~!@#$%^&*()_+|<>,.?/:;\'`"\\[\\]{}\\\\]{0,47}$'
 );
-const MyFormItem = ({label, help, unit, children}) => {
+const MyFormItem = ({label, help, unit, children, extra}) => {
     return (
-        <Form.Item label={<FormHelpLabel label={label} help={help} />} colon={false}>
+        <Form.Item label={<FormHelpLabel label={label} help={help} />} colon={false} extra={extra}>
             <Space>
                 {children}
                 <span className='spanFontSize'>{unit}</span>
@@ -330,6 +330,8 @@ const EditLayer = ({visible, detail, onCancel, refresh}) => {
                         label={t('graphspace.form.cpu')}
                         help={t('graphspace.form.compute_cpu_help')}
                         unit={t('graphspace.unit.cpu')}
+                        extra={computeCpu === 0
+                            ? formatComputeLimit(0, cpu, t('graphspace.unit.cpu'), t) : null}
                     >
                         <Form.Item
                             name="compute_cpu_limit"
@@ -342,15 +344,14 @@ const EditLayer = ({visible, detail, onCancel, refresh}) => {
                                 min={0}
                             />
                         </Form.Item>
-                        {computeCpu === 0 && <Typography.Text type='secondary'>
-                            {formatComputeLimit(0, cpu, t('graphspace.unit.cpu'), t)}
-                        </Typography.Text>}
                     </MyFormItem>
 
                     <MyFormItem
                         label={t('graphspace.form.memory')}
                         help={t('graphspace.form.compute_memory_help')}
                         unit={t('graphspace.unit.memory')}
+                        extra={computeMemory === 0
+                            ? formatComputeLimit(0, memory, t('graphspace.unit.memory'), t) : null}
                     >
                         <Form.Item
                             name="compute_memory_limit"
@@ -363,9 +364,6 @@ const EditLayer = ({visible, detail, onCancel, refresh}) => {
                                 min={0}
                             />
                         </Form.Item>
-                        {computeMemory === 0 && <Typography.Text type='secondary'>
-                            {formatComputeLimit(0, memory, t('graphspace.unit.memory'), t)}
-                        </Typography.Text>}
                     </MyFormItem>
 
                     <Form.Item

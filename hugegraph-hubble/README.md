@@ -13,7 +13,8 @@ New graph spaces start with 128 CPU cores, 128 GB memory, 128 compute CPU cores,
 128 GB compute memory, 10240 GB storage and 100 graphs. Server also defaults the
 role limit to 100. Existing spaces retain their configured limits. Large finite
 quotas display their actual values; only the legacy `Integer.MAX_VALUE` sentinel
-is shown as unlimited.
+is shown as unlimited, with `--` instead of a percentage because it has no finite
+quota denominator. Its used storage remains visible.
 
 For API creation requests, omitted compute limits use Server's persisted `0`
 inheritance setting. Each zero continues following the corresponding graph-service
