@@ -47,6 +47,31 @@ import org.apache.hugegraph.util.Bytes;
 public class GraphServiceImportTest {
 
     @Test
+    public void testImportRejectsPreviewMarkersBeforeAnyGraphInteraction()
+           throws Exception {
+        String vertex = "{\"id\":\"source\",\"label\":\"person\",\"properties\":{}}";
+        String markedVertex = "{\"id\":\"source\",\"label\":\"person\",\"properties\":{}," +
+                              "\"~hubble_properties_preview\":true}";
+        String markedEdge = "{\"label\":\"knows\",\"source\":\"source\",\"target\":\"source\"," +
+                            "\"properties\":{},\"~hubble_properties_preview\":true}";
+        String[] inputs = {
+                "{\"vertices\":[" + markedVertex + "],\"edges\":[]}",
+                "{\"vertices\":[" + vertex + "],\"edges\":[" + markedEdge + "]}",
+                "{\"properties_truncated\":true,\"vertices\":[" + vertex + "],\"edges\":[]}"
+        };
+        for (String json : inputs) {
+            GraphService service = this.serviceWithSchemas();
+            GraphManager graph = Mockito.mock(GraphManager.class);
+            HugeClient client = this.clientWithGraph(graph);
+            ExternalException error = (ExternalException) Assert.assertThrows(ExternalException.class, () -> {
+                service.importJson(client, this.file(json));
+            });
+            Assert.assertEquals("graph.import.truncated-preview", error.getMessage());
+            Mockito.verifyNoInteractions(graph);
+        }
+    }
+
+    @Test
     public void testImportJsonRejectsOversizedFileBeforeMaterializing()
            throws Exception {
         GraphService service = this.serviceWithSchemas();

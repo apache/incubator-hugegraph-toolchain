@@ -196,6 +196,7 @@ public class GraphService {
         }
         JSONArray verticesArray = this.getImportArray(jsonObject, "vertices");
         JSONArray edgesArray = this.getImportArray(jsonObject, "edges");
+        this.checkImportPreview(jsonObject, verticesArray, edgesArray);
         List<VertexEntity> vertexEntities =
                 JsonUtil.convertList(verticesArray.toString(),
                                      VertexEntity.class);
@@ -284,6 +285,23 @@ public class GraphService {
             return HubbleOptions.UPLOAD_SINGLE_FILE_SIZE_LIMIT.defaultValue();
         }
         return this.config.get(HubbleOptions.UPLOAD_SINGLE_FILE_SIZE_LIMIT);
+    }
+
+    private void checkImportPreview(JSONObject root, JSONArray... arrays) {
+        Ex.check(!root.optBoolean("properties_truncated", false),
+                 "graph.import.truncated-preview");
+        // Validate both raw arrays before conversion or any graph writes, so
+        // preview metadata cannot be lost by a future DTO/mapper change.
+        for (JSONArray array : arrays) {
+            for (int i = 0; i < array.length(); i++) {
+                Object value = array.opt(i);
+                if (value instanceof JSONObject) {
+                    JSONObject element = (JSONObject) value;
+                    Ex.check(!element.optBoolean("~hubble_properties_preview", false),
+                             "graph.import.truncated-preview");
+                }
+            }
+        }
     }
 
     private JSONArray getImportArray(JSONObject jsonObject, String name) {
