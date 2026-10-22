@@ -89,18 +89,25 @@ Run Gremlin queries and inspect their graph, table, or JSON results without leav
 
 ### Bounded interactive previews
 
-Recognized Gremlin and Cypher reads without a bound default to 300 rows. Interactive previews
-return at most 1,000 rows and display at most 1,000 vertices with the configured
-edge budget. Common explicit large limits prompt users to select the existing
-asynchronous mode before a query is submitted.
+Common Gremlin traversals and Cypher reads without an explicit bound receive the
+configured default limit (300). Interactive previews keep at most 1,000 result rows
+and display at most 1,000 vertices with the configured edge budget. A common terminal
+decimal limit above that budget prompts users to select the existing asynchronous
+mode before submission; the frontend leaves the query text unchanged.
 
-The existing read grammars cover common queries. Unrecognized manual scripts,
-including unsupported aggregate or UNION syntax, retain their native execution
-path and may not receive a default limit. Unbounded collection results from reducers such as
-fold, group and groupCount (including label histograms) require asynchronous
-mode or an explicitly bounded input. Nested collection reducers with unbounded inputs
-conservatively require asynchronous mode even when later steps flatten them;
-explicit input bounds and final scalar results remain supported.
+Automatic limiting is syntax sugar for common reads. It does not evaluate numeric
+expressions, infer traversal cardinality or track nested collection shapes. Existing
+read-only validation for generated queries remains separate. Unrecognized manual
+scripts retain their native execution path and may not receive an upstream limit;
+use asynchronous mode for complex or large results.
+
+Recognized collection aggregations (`fold`, `group`, `groupCount` and Cypher `collect`)
+use the existing asynchronous mode in interactive previews, including queries with
+an explicit input bound. This uniform rule keeps the full aggregation semantics
+without trying to prove which query shapes produce small collections.
+
+![A large explicit limit prompts asynchronous execution before submission](docs/images/showcase/query-limit-hint.png)
+
 Preview edges use a bounded incident-edge sample and do not guarantee the complete
 induced subgraph of the displayed nodes.
 
