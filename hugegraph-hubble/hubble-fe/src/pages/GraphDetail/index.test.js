@@ -25,6 +25,7 @@ jest.mock('../../api', () => ({
         getGraphSpace: jest.fn(),
         getGraph: jest.fn(),
         getGraphStatistic: jest.fn(),
+        getGraphView: jest.fn(),
         updateGraphStatistic: jest.fn(),
     },
     analysis: {getGraphData: jest.fn()},
@@ -72,6 +73,7 @@ jest.mock('react-i18next', () => ({
 
 beforeEach(() => {
     jest.resetAllMocks();
+    api.manage.getGraphView.mockResolvedValue({status: 200, data: null});
     Object.defineProperty(window, 'matchMedia', {
         writable: true,
         value: query => ({
@@ -129,6 +131,7 @@ test('uses a recorded snapshot without running full graph statistics', async () 
     expect(screen.getByText('608')).toBeInTheDocument();
     expect(screen.getByText('Available')).toBeInTheDocument();
     expect(api.manage.getGraphStatistic).not.toHaveBeenCalled();
+    expect(api.manage.getGraphView).not.toHaveBeenCalled();
     expect(api.manage.updateGraphStatistic).not.toHaveBeenCalled();
 });
 
@@ -148,8 +151,10 @@ test('runs a full count only after an explicit action and keeps core navigation 
     await act(async () => {
         full.resolve({status: 200, data: {vertex_count: 12, edge_count: 20, vertices: {person: 12}, edges: {knows: 20}, approximate: true, scan_limit: 100000}});
     });
-    expect(screen.getAllByText('12')).toHaveLength(2);
-    expect(screen.getAllByText('20')).toHaveLength(2);
+    expect(screen.getByText('≈12')).toBeInTheDocument();
+    expect(screen.getByText('≈20')).toBeInTheDocument();
+    expect(screen.getByText('12')).toBeInTheDocument();
+    expect(screen.getByText('20')).toBeInTheDocument();
     fireEvent.mouseEnter(screen.getByText('Available'));
     expect(await screen.findByText('graph.detail.bounded_statistics_hint')).toBeInTheDocument();
 });
@@ -193,4 +198,50 @@ test('renders one actionable core metadata error', async () => {
     expect(await screen.findByText('Graph details are unavailable. Check the server and retry.')).toBeInTheDocument();
     expect(screen.getAllByRole('alert')).toHaveLength(1);
     expect(screen.getByRole('link', {name: 'Back to graphs'})).toHaveAttribute('href', '/graphspace/A');
+});
+
+
+test('zero recorded counts keep the normal page while schema loads and when schema already exists', async () => {
+    readyCore();
+    api.analysis.getGraphData.mockResolvedValue({status: 200, data: {vertexcount: '0', edgecount: '0'}});
+    const schema = deferred();
+    api.manage.getGraphView.mockReturnValue(schema.promise);
+    renderDetail();
+    expect(await screen.findByText('Total vertices')).toBeInTheDocument();
+    expect(screen.queryByText('This graph has no schema or data yet')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', {name: /Query this graph/})).toBeEnabled();
+    await act(async () => {
+        schema.resolve({status: 200, data: {vertices: [{id: 'person'}], edges: []}});
+    });
+    expect(screen.getByText('Total vertices')).toBeInTheDocument();
+    expect(screen.queryByText('This graph has no schema or data yet')).not.toBeInTheDocument();
+    expect(api.manage.getGraphStatistic).not.toHaveBeenCalled();
+});
+
+test('shows empty graph guidance only after schema is confirmed empty', async () => {
+    readyCore();
+    api.analysis.getGraphData.mockResolvedValue({status: 200, data: {vertexcount: '0', edgecount: '0'}});
+    const schema = deferred();
+    api.manage.getGraphView.mockReturnValue(schema.promise);
+    renderDetail();
+    expect(await screen.findByText('Total vertices')).toBeInTheDocument();
+    expect(screen.queryByText('This graph has no schema or data yet')).not.toBeInTheDocument();
+    await act(async () => {
+        schema.resolve({status: 200, data: {vertices: [], edges: []}});
+    });
+    expect(screen.getByText('This graph has no schema or data yet')).toBeInTheDocument();
+    expect(api.manage.getGraphStatistic).not.toHaveBeenCalled();
+});
+
+
+test('marks bounded snapshot totals consistently with graph cards and canvas counts', async () => {
+    readyCore();
+    api.analysis.getGraphData.mockResolvedValue({status: 200, data: {
+        vertexcount: '100000', edgecount: '20', approximate: true, scan_limit: 100000,
+    }});
+    renderDetail();
+    expect(await screen.findByText('≥100000')).toBeInTheDocument();
+    expect(screen.getByText('≈20')).toBeInTheDocument();
+    expect(api.manage.getGraphStatistic).not.toHaveBeenCalled();
+    expect(api.manage.getGraphView).not.toHaveBeenCalled();
 });

@@ -30,6 +30,7 @@ import style from './index.module.scss';
 import {byteConvert} from '../../utils/format';
 import {getResourceDisplayName} from '../../utils/displayName';
 import * as api from '../../api';
+import {formatRecordedCount} from '../../utils/graphStatistics';
 
 const EMPTY_SCHEMA = {vertices: [], edges: []};
 const CARD_LAYOUT = {type: 'dagre', options: {rankdir: 'LR', nodesep: 30, ranksep: 60}};
@@ -167,11 +168,13 @@ const GraphCard = ({item, menus, canMutate = true}) => {
             )}
             actions={[
                 hasElementCounts ? (
-                    <Tooltip key='counts' title={t('graph.card.counts_tooltip')}>
+                    <Tooltip key='counts' title={t(statistic.scan_limit > 0
+                        ? 'graph.detail.bounded_statistics_hint' : 'graph.card.counts_tooltip',
+                        {limit: statistic.scan_limit})}>
                         <span className={style.element_counts}>
                             {t('graph.card.element_counts', {
-                                vertices: statistic.vertex,
-                                edges: statistic.edge,
+                                vertices: formatRecordedCount(statistic.vertex, statistic),
+                                edges: formatRecordedCount(statistic.edge, statistic),
                             })}
                         </span>
                     </Tooltip>

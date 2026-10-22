@@ -23,7 +23,7 @@
 import c from './index.module.scss';
 import classnames from 'classnames';
 import {useTranslation} from 'react-i18next';
-import {isKnownCount} from '../../../utils/graphStatistics';
+import {isKnownCount, formatRecordedCount} from '../../../utils/graphStatistics';
 
 const isLoadingCount = value => {
     if (value === null || value === undefined
@@ -46,14 +46,8 @@ const NumberCard = props => {
     const {pathNum, data, hasPadding} = props;
     const {currentGraphNodesNum, currentGraphEdgesNum, allGraphNodesNum, allGraphEdgesNum,
         approximate, scan_limit: scanLimit} = data;
-    const totalDisplay = value => {
-        const display = getCountDisplay(value, t);
-        if (!isKnownCount(value)) {
-            return display;
-        }
-        if (scanLimit > 0 && Number(value) >= scanLimit) return `≥${display}`;
-        return approximate ? `≈${display}` : display;
-    };
+    const totalDisplay = value => isKnownCount(value)
+        ? formatRecordedCount(value, data) : getCountDisplay(value, t);
     const statisticsHint = scanLimit > 0
         ? t('analysis.canvas.number_card.bounded_hint', {limit: scanLimit})
         : approximate ? t('analysis.canvas.number_card.approximate_hint') : '';

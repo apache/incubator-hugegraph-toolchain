@@ -30,12 +30,14 @@ import * as api from '../../api';
 import GraphJourneyNav from '../../components/GraphJourneyNav';
 import style from './index.module.scss';
 import {useTranslation} from 'react-i18next';
+import {isKnownZeroCount, formatRecordedCount} from '../../utils/graphStatistics';
 
 const GraphDetail = () => {
     const [pageLoading, setPageLoading] = useState(true);
     const [statisticsLoading, setStatisticsLoading] = useState(true);
     const [statistic, setStatistic] = useState({});
     const [statisticsStatus, setStatisticsStatus] = useState('loading');
+    const [emptySchema, setEmptySchema] = useState(null);
     const [pageDataRoute, setPageDataRoute] = useState(null);
     const [statisticsDataRoute, setStatisticsDataRoute] = useState(null);
     const [pageError, setPageError] = useState(false);
@@ -176,11 +178,22 @@ const GraphDetail = () => {
         ? statisticsStatus
         : 'loading';
     const visibleStatistic = isStatisticsDataCurrent ? statistic : {};
-    const isEmptyGraph = visibleStatisticsStatus === 'success'
-        && Number(visibleStatistic.vertex_count ?? 0) === 0
-        && Number(visibleStatistic.edge_count ?? 0) === 0
-        && formatList(visibleStatistic.vertices).length === 0
-        && formatList(visibleStatistic.edges).length === 0;
+    const hasZeroCounts = isStatisticsDataCurrent && isKnownZeroCount(statistic.vertex_count)
+        && isKnownZeroCount(statistic.edge_count);
+    useEffect(() => {
+        // Zero recorded data does not prove the schema is empty. Check schema
+        // metadata only when it can affect the empty-graph guidance.
+        if (!hasZeroCounts) return undefined;
+        let active = true;
+        api.manage.getGraphView(graphspace, graph, {suppressBusinessErrorToast: true}).then(res => {
+            if (active) setEmptySchema({owner: statistic, data: res.status === 200 ? res.data : null});
+        }).catch(() => {});
+        return () => { active = false; };
+    }, [graphspace, graph, hasZeroCounts, statistic]);
+    const confirmedSchema = emptySchema?.owner === statistic ? emptySchema.data : null;
+    const isEmptyGraph = visibleStatisticsStatus === 'success' && hasZeroCounts
+        && Array.isArray(confirmedSchema?.vertices) && confirmedSchema.vertices.length === 0
+        && Array.isArray(confirmedSchema?.edges) && confirmedSchema.edges.length === 0;
 
     return (
         <Spin spinning={pageLoading || !isPageDataCurrent}>
@@ -319,6 +332,7 @@ const GraphDetail = () => {
                                             >
                                                 <Statistic
                                                     loading={statisticsLoading}
+                                                    formatter={value => formatRecordedCount(value, visibleStatistic)}
                                                     value={visibleStatisticsStatus !== 'success'
                                                         ? '--'
                                                         : visibleStatistic.vertex_count ?? 0}
@@ -347,6 +361,7 @@ const GraphDetail = () => {
                                             >
                                                 <Statistic
                                                     loading={statisticsLoading}
+                                                    formatter={value => formatRecordedCount(value, visibleStatistic)}
                                                     value={visibleStatisticsStatus !== 'success'
                                                         ? '--'
                                                         : visibleStatistic.edge_count ?? 0}

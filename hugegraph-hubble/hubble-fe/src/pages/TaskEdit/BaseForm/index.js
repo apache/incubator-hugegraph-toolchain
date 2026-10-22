@@ -82,6 +82,12 @@ const BaseForm = ({cancel, visible, loading}) => {
         setLastDemo('');
     }, [selectedGraph, selectedGraphspace]);
 
+    useEffect(() => {
+        if (selectedGraphspace && selectedGraph) {
+            baseForm.validateFields([['ingestion_option', 'graph']]).catch(() => {});
+        }
+    }, [baseForm, selectedGraph, selectedGraphspace]);
+
     const checkExistName = () => ({
         validator: async (_, value) => {
             const res = await api.manage.getTaskList({
@@ -145,9 +151,6 @@ const BaseForm = ({cancel, visible, loading}) => {
                 const options = res.data.records.map(item => ({
                     label: getResourceDisplayName(item.name, item.nickname),
                     value: item.name,
-                    schemaReady: !item.schemaview
-                        || item.schemaview.vertices.length > 0
-                        || item.schemaview.edges.length > 0,
                 }));
                 setGraphOptions(options);
 
@@ -290,10 +293,7 @@ const BaseForm = ({cancel, visible, loading}) => {
             if (res.status !== 200) {
                 throw new Error(res.message || t('graph.sample.failed'));
             }
-            setGraphOptions(options => options.map(option => {
-                return option.value === selectedGraph
-                    ? {...option, schemaReady: true} : option;
-            }));
+            baseForm.validateFields([['ingestion_option', 'graph']]).catch(() => {});
             setDemoError('');
             message.success(t('graph.sample.success', {
                 vertices: res.data.vertices,
@@ -448,19 +448,42 @@ const BaseForm = ({cancel, visible, loading}) => {
                         </Form.Item>
                         <Form.Item
                             name={['ingestion_option', 'graph']}
+                            hasFeedback
+                            validateTrigger={[]}
                             rules={[
                                 rules.required(t('task.edit.select_graph')),
                                 {
-                                    validator: (_, value) => {
-                                        const selected = graphOptions.find(
-                                            option => option.value === value
-                                        );
-                                        if (selected && !selected.schemaReady) {
-                                            return Promise.reject(
-                                                t('task.edit.prepare_schema_first')
-                                            );
+                                    validator: async (_, value) => {
+                                        if (!value) {
+                                            return;
                                         }
-                                        return Promise.resolve();
+                                        const graphspace = baseForm.getFieldValue(
+                                            ['ingestion_option', 'graphspace']
+                                        );
+                                        if (!graphspace || !graphOptions.some(option => option.value === value)) {
+                                            throw new Error(t('task.edit.select_graph'));
+                                        }
+                                        let response;
+                                        try {
+                                            response = await api.manage.getGraphView(graphspace, value, {
+                                                suppressBusinessErrorToast: true,
+                                            });
+                                        }
+                                        catch {
+                                            throw new Error(t('graph.card.schema_unavailable'));
+                                        }
+                                        const current = baseForm.getFieldValue('ingestion_option') || {};
+                                        if (current.graphspace !== graphspace || current.graph !== value) {
+                                            throw new Error(t('task.edit.select_graph'));
+                                        }
+                                        const view = response?.data;
+                                        if (response?.status !== 200 ||
+                                            !Array.isArray(view?.vertices) || !Array.isArray(view?.edges)) {
+                                            throw new Error(t('graph.card.schema_unavailable'));
+                                        }
+                                        if (!view.vertices.length && !view.edges.length) {
+                                            throw new Error(t('task.edit.prepare_schema_first'));
+                                        }
                                     },
                                 },
                             ]}

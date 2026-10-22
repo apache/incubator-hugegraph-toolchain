@@ -32,6 +32,9 @@ const mockT = (key, values) => {
     if (key === 'graph.card.element_counts') {
         return `${key}:${values.vertices}/${values.edges}`;
     }
+    if (key === 'graph.detail.bounded_statistics_hint') {
+        return `${key}:${values.limit}`;
+    }
     if (key === 'graph.card.view_schema') {
         return `${key}:${values.graph}`;
     }
@@ -283,4 +286,16 @@ test('renders core graph actions before schema and snapshot statistics complete'
         resolveSchema({status: 200, data: {vertices: [{id: 'person', label: 'person'}], edges: []}});
     });
     expect(screen.getByTestId('preview-contract')).toBeInTheDocument();
+});
+
+
+test('shows a capped snapshot as a lower bound with its scan limit', async () => {
+    api.analysis.getGraphData.mockResolvedValueOnce({status: 200, data: {
+        vertexcount: '100000', edgecount: '20', approximate: true, scan_limit: 100000,
+    }});
+    render(<MemoryRouter><GraphCard item={{name: 'g', graphspace: 'space',
+        schemaview: {vertices: [], edges: []}}} menus={[]} /></MemoryRouter>);
+    const counts = await screen.findByText('graph.card.element_counts:≥100000/≈20');
+    fireEvent.mouseEnter(counts);
+    expect(await screen.findByText('graph.detail.bounded_statistics_hint:100000')).toBeInTheDocument();
 });

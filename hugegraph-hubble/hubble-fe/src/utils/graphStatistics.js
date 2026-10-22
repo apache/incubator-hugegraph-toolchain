@@ -27,4 +27,10 @@ const isKnownCount = value => value != null && String(value).trim() !== ''
 
 const isKnownZeroCount = value => isKnownCount(value) && Number(value) === 0;
 
-export {toGraphCounts, isKnownCount, isKnownZeroCount};
+const formatRecordedCount = (value, {approximate, scan_limit: scanLimit} = {}) => {
+    if (!isKnownCount(value)) return value;
+    if (scanLimit > 0 && Number(value) >= scanLimit) return `≥${value}`;
+    return approximate ? `≈${value}` : value;
+};
+
+export {toGraphCounts, isKnownCount, isKnownZeroCount, formatRecordedCount};
