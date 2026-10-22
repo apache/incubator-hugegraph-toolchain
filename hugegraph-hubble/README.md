@@ -126,6 +126,46 @@ are received by the SDK before projection; this includes collections returned by
 expressions such as Cypher split. These previews are not an upstream byte or
 execution budget.
 
+<details>
+<summary>Current query preview controls — native browser screenshots</summary>
+
+These screenshots use the locally compiled implementation at `73b2ad28` and
+synthetic fixtures. They show functional behavior, not a replay of the historical
+performance samples. [Verification records](docs/images/showcase/query-preview-verification.json)
+distinguish returned rows, canvas vertices, blocked requests and preview markers.
+
+Ordinary Gremlin and Cypher reads both receive the 300-row default:
+
+![Gremlin default output limit](docs/images/showcase/query-preview-default.png)
+![Cypher default output limit](docs/images/showcase/query-preview-cypher-default.png)
+
+A large explicit limit prompts async mode before submission. A request for exactly
+1,000 vertices can still display a bounded canvas:
+
+![Large explicit limit guidance](docs/images/showcase/query-limit-hint.png)
+![A 1000-vertex canvas](docs/images/showcase/query-preview-canvas-1000.png)
+
+The notice refers to output rows, including after a bounded adjacency traversal
+and scalar reduction. Explicit range/tail bounds are preserved:
+
+![Scalar result with an output-row notice](docs/images/showcase/query-preview-scalar-output.png)
+![Explicit range retained](docs/images/showcase/query-preview-explicit-range.png)
+![Explicit tail retained](docs/images/showcase/query-preview-explicit-tail.png)
+
+Large properties show a prefix and original length with editing disabled. Expansion
+uses the same property projection; the actual downloaded JSON retained partial
+markers for all three displayed vertices and both edges in this fixture:
+
+![Read-only property preview](docs/images/showcase/query-preview-properties-readonly.png)
+![Canvas after expansion](docs/images/showcase/query-preview-expansion.png)
+
+Non-preview API compatibility is verified separately: Graph/JSON/Table retained
+1,200 query items, versus 1,000 items with truncation metadata in preview mode.
+No screenshot is presented as a raw-API application screen or an upstream byte
+budget. Hosted CI and full UI acceptance remain separate checks.
+
+</details>
+
 The [local performance report](https://github.com/hugegraph/hugegraph-toolchain/pull/80)
 retains Chromium evidence for defaults, partial results, preflight, context
 switching and anonymous account/login visibility. A separate isolated PD/Store/Server
