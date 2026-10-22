@@ -259,13 +259,19 @@ final class QueryPropertyPreview {
     }
 
     private boolean omitKey(Object key) {
-        if (key instanceof String && ((String) key).length() > STRING_LIMIT) {
-            // Renaming a map key changes its meaning and can merge distinct
-            // entries. Omit it explicitly instead of manufacturing a new key.
-            this.markTruncated();
-            return true;
+        if (key instanceof String && ((String) key).length() <= STRING_LIMIT) {
+            return false;
         }
-        return false;
+        if (key instanceof Boolean || key instanceof Character || key instanceof Byte ||
+            key instanceof Short || key instanceof Integer || key instanceof Long ||
+            key instanceof Float || key instanceof Double) {
+            return false;
+        }
+        // Jackson stringifies object keys outside the value projection budget.
+        // Only retain short text and fixed scalar wrappers; never stringify or
+        // rename arbitrary keys, which can contain entire property trees.
+        this.markTruncated();
+        return true;
     }
 
     private GraphElement element(GraphElement original, GraphElement copy, int depth) {

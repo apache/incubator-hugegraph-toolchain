@@ -86,15 +86,20 @@ const hasLargeExplicitReadLimit = (text, language = 'gremlin', maximum = 1000) =
         return false;
     }
     if (language.toLowerCase() === 'cypher') {
-        if (!/^\s*(?:MATCH|OPTIONAL\s+MATCH)\b/i.test(code)
-            || /\b(?:CREATE|MERGE|SET|DELETE|REMOVE|CALL)\b/i.test(code)) {
+        if (/\b(?:CREATE|MERGE|SET|DELETE|REMOVE|CALL)\b/i.test(code)) {
             return false;
         }
         const match = code.match(/\bLIMIT\s+(\d+)\s*$/i);
         return Boolean(match && Number(match[1]) > maximum);
     }
     if (!/^\s*g\s*\.\s*[VE]\s*\(/.test(code)
-        || /\.\s*(?:count|sum|min|max|mean|fold|group|groupCount|aggregate|cap|addV|addE|property|drop|sideEffect|iterate)\s*\(/.test(code)) {
+        || /\.\s*(?:addV|addE|property|drop|iterate)\s*\(/.test(code)) {
+        return false;
+    }
+    // Only a final scalar consumer proves that a large upstream limit is not
+    // a large browser result. Pass-through steps do not establish that bound.
+    if (/\.\s*(?:hasNext|next)\s*\(\s*\)\s*$/.test(code)
+        || /\.\s*(?:count|sum|min|max|mean)\s*\(\s*(?:(?:Scope\s*\.\s*)?global)?\s*\)\s*$/.test(code)) {
         return false;
     }
     let depth = 0;

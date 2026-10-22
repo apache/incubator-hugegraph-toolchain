@@ -285,6 +285,32 @@ public class QueryPropertyPreviewTest {
     }
 
     @Test
+    public void testStructuredAndUnknownKeysAreOmittedWithoutStringifyingThem() throws Exception {
+        Map<String, Object> structured = Map.of("payload", "x".repeat(1024 * 1024));
+        Object unknown = new Object() {
+            @Override
+            public String toString() {
+                throw new AssertionError("Preview must not stringify an unknown key");
+            }
+        };
+        Map<Object, Object> original = new LinkedHashMap<>();
+        original.put(structured, 1L);
+        original.put(unknown, 2L);
+        original.put("normal", 3L);
+        original.put(7, 4L);
+        original.put(true, 5L);
+        QueryPropertyPreview preview = new QueryPropertyPreview();
+        Object copy = preview.project(new TypedResult(Type.GENERAL, List.of(original))).getData().get(0);
+        String json = new ObjectMapper().writeValueAsString(copy);
+
+        Assert.assertEquals(Map.of("normal", 3L, 7, 4L, true, 5L), copy);
+        Assert.assertTrue(json.length() < 100);
+        Assert.assertTrue(preview.truncated());
+        Assert.assertEquals(5, original.size());
+        Assert.assertEquals(1024 * 1024, ((String) structured.get("payload")).length());
+    }
+
+    @Test
     public void testBranchingCollectionsShareOneValueBudget() {
         Object branch = 7L;
         for (int depth = 0; depth < 4; depth++) {

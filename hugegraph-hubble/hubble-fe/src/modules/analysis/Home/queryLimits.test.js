@@ -51,6 +51,13 @@ test.each([
     ['g.V() // .limit(10000)', false],
     ['g.V().limit(10) /* .limit(10000) */', false],
     ['g.V().limit(10000).count()', false],
+    ['g.V().limit(10000).count(Scope.global)', false],
+    ['g.V().limit(10000).hasNext()', false],
+    ['g.V().limit(10000).next()', false],
+    ['g.V().limit(10000).toList()', true],
+    ['g.V().limit(10000).valueMap().count(local)', true],
+    ["g.V().aggregate('seen').limit(10000)", true],
+    ['g.V().sideEffect(__.out()).limit(10000)', true],
     ['g.V().limit(10000).property("x", 1)', false],
     ['g.V().limit(10000); g.addV()', false],
     ['g.V().has("unterminated .limit(10000)', false],
@@ -60,6 +67,8 @@ test.each([
 
 test.each([
     ['MATCH (n) RETURN n LIMIT 10000', true],
+    ['UNWIND range(1, 1000000) AS n RETURN n LIMIT 1000000', true],
+    ['WITH range(1, 1000000) AS ns UNWIND ns AS n RETURN n LIMIT 1000000', true],
     ['MATCH (n) RETURN n LIMIT 300', false],
     ['MATCH (n) RETURN count(n) LIMIT 10000', true],
     ['MATCH (n) RETURN n.city, count(*) LIMIT 10000', true],
