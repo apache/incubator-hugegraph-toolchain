@@ -23,6 +23,12 @@
 
 ![手动收集统计及100000上限提示](screenshots/comparison/statistics-bounded.png)
 
+## 最后评论修复的定向复核
+
+前端大结果预检进一步精简：仅排除写操作与明确终结的标量结果，不再因`aggregate`或`sideEffect`漏拦；Cypher包含`WITH`、`UNWIND`时的显式大`LIMIT`也会拦截。复杂或未知类型的Map键直接省略，沿用不完整标志，不调用`toString()`。
+
+本轮Home及queryLimits定向**2组/156项**通过（`frontend-simple-preflight-final-tests.log`），QueryPropertyPreview定向**17项**通过（`element-preview-map-key-tests.log`）。这些是上述186项后端、18组401项前端影响组之后的独立定向结果，不累加成全量测试数量；本轮未重跑或改写历史性能实测。
+
 ## 后端、浏览器及脚本
 
 - 查询/投影：55项专项全部通过、Checkstyle0；最终逐行mapper/局部scope小修单独20项通过（有重叠，不累加）。异常/历史19项全部通过。
