@@ -94,7 +94,7 @@ public final class FilePreviewReader {
     private static String nextDataLine(BufferedReader reader, Pattern skippedLine) throws IOException {
         String line;
         while ((line = reader.readLine()) != null) {
-            if (!skippedLine.matcher(line).matches()) {
+            if (!line.isEmpty() && !skippedLine.matcher(line).matches()) {
                 return line;
             }
         }

@@ -62,6 +62,29 @@ public class FilePreviewReaderTest {
     }
 
     @Test
+    public void testCsvSkipsEmptyPhysicalLinesBeforeHeaderAndSample() throws Exception {
+        FileSetting setting = new FileSetting();
+        setting.setHasHeader(true);
+        for (String data : List.of("a,b\n\n1,2\n", "\n\na,b\n\n1,2\n")) {
+            FilePreviewReader.Columns columns = FilePreviewReader.read(this.write(data, setting), setting);
+
+            Assert.assertEquals(List.of("a", "b"), columns.names());
+            Assert.assertEquals(List.of("1", "2"), columns.values());
+        }
+    }
+
+    @Test
+    public void testCsvQuotedEmptyFieldRemainsADataLine() throws Exception {
+        FileSetting setting = new FileSetting();
+        Path file = this.write("\n\"\"\nvalue\n", setting);
+
+        FilePreviewReader.Columns columns = FilePreviewReader.read(file, setting);
+
+        Assert.assertEquals(List.of("col-1"), columns.names());
+        Assert.assertEquals(List.of(""), columns.values());
+    }
+
+    @Test
     public void testTextTreatsMultiCharacterDelimiterAsOneSeparator() throws Exception {
         FileSetting setting = new FileSetting();
         setting.setFormat("TEXT");
@@ -119,7 +142,7 @@ public class FilePreviewReaderTest {
     public void testHeaderOnlyHasEmptySample() throws Exception {
         FileSetting setting = new FileSetting();
         setting.setHasHeader(true);
-        Path file = this.write("name,age\n# no data yet\n", setting);
+        Path file = this.write("name,age\n\n# no data yet\n", setting);
 
         FilePreviewReader.Columns columns = FilePreviewReader.read(file, setting);
 
@@ -130,7 +153,7 @@ public class FilePreviewReaderTest {
     @Test
     public void testEmptyAndCommentOnlyFilesAreRejected() throws Exception {
         FileSetting setting = new FileSetting();
-        for (String data : List.of("", "# comment\n// comment\n")) {
+        for (String data : List.of("", "\n\n", "# comment\n// comment\n")) {
             Path file = this.write(data, setting);
             Assert.assertThrows(ExternalException.class, () -> FilePreviewReader.read(file, setting));
         }
