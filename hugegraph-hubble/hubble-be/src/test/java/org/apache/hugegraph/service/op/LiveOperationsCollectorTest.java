@@ -597,6 +597,34 @@ public class LiveOperationsCollectorTest {
     }
 
     @Test
+    public void testUnsupportedStoreMetricsDoNotHideConfirmedTopologyFailures()
+           throws IOException {
+        for (String status : new String[]{"UP", "DEGRADED", "DOWN"}) {
+            String stores = stores();
+            if ("DOWN".equals(status)) {
+                stores = stores.replace("\"Up\"", "\"Offline\"");
+            } else if ("DEGRADED".equals(status)) {
+                stores = stores.replace("}]}}", "},{\"storeId\":\"2\",\"address\":\"127.0.0.1:8501\"," +
+                        "\"restAddress\":\"127.0.0.1:PD_TEST_PORT\",\"state\":\"Offline\"}]}}");
+            }
+            String cluster = cluster().replace("http://pd:8620", "http://127.0.0.1:PD_TEST_PORT");
+            HttpServer pd = pdServer(200, cluster, 200, stores);
+            context(pd, "/v1/prom/targets-all", 200,
+                    targets("127.0.0.1:" + pd.getAddress().getPort()));
+            Snapshot snapshot;
+            try {
+                snapshot = collector(true, pd).collect(serverClient(), true);
+            } finally {
+                pd.stop(0);
+            }
+
+            Assert.assertEquals("UNSUPPORTED", snapshot.getSources().get("stores").getAvailability());
+            Assert.assertEquals(status, snapshot.getSources().get("stores").getStatus());
+            Assert.assertEquals("UP".equals(status) ? "UP" : "DEGRADED", snapshot.getStatus());
+        }
+    }
+
+    @Test
     public void testPartialStoreMetricsIncludeUnsupportedGroupDiagnostics()
            throws IOException {
         HttpServer pd = pdServer(200, cluster(), 200, stores());
@@ -1177,6 +1205,8 @@ public class LiveOperationsCollectorTest {
                                        int storesStatus, String stores)
                                        throws IOException {
         HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        cluster = cluster.replace("PD_TEST_PORT",
+                                  String.valueOf(server.getAddress().getPort()));
         stores = stores.replace("PD_TEST_PORT",
                                 String.valueOf(server.getAddress().getPort()));
         context(server, "/v1/cluster", clusterStatus, cluster);

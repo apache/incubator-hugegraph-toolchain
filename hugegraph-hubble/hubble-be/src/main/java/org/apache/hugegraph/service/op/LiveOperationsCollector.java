@@ -995,7 +995,9 @@ public class LiveOperationsCollector implements OperationsCollector {
     private String overallStatus(Map<String, SourceStatus> sources) {
         List<SourceStatus> supported = sources.values().stream()
                 .filter(source -> !"UNSUPPORTED".equals(
-                                  source.getAvailability()))
+                                  source.getAvailability()) ||
+                                  "DOWN".equals(source.getStatus()) ||
+                                  "DEGRADED".equals(source.getStatus()))
                 .collect(java.util.stream.Collectors.toList());
         if (!supported.isEmpty() && supported.stream().allMatch(
                                       LiveOperationsCollector::failedSource)) {
