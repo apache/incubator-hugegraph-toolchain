@@ -63,6 +63,7 @@ header: # `header` section is configurations for source codes license header.
     - '**/*.txt'
     - '**/*.csv'
     - '**/*.json'
+    - 'docs/performance/2026-10-22-hubble-hstore/**/*.jsonl'
     - '**/*.svg'
     - '**/*.gitattributes'
     - '**/.flattened-pom.xml'
