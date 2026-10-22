@@ -185,6 +185,17 @@ public final class HugeClientPoolService {
                                             token, username, password,
                                             timeoutOverride);
                     tmpclient.versionManager().getApiVersion();
+                    if (this.config.get(HubbleOptions.PD_ENABLED)) {
+                        List<String> peers = Arrays.stream(this.config.get(HubbleOptions.PD_PEERS).split(","))
+                                                   .map(String::trim).filter(peer -> !peer.isEmpty())
+                                                   .distinct().sorted().toList();
+                        // PD may select another replica for the same logical
+                        // graph. Share statistics within its cluster and auth
+                        // context, while explicit URLs remain isolated below.
+                        this.registerStatisticsContext(tmpclient,
+                                Arrays.asList("pd", peers, this.cluster),
+                                token, username, password);
+                    }
                     return tmpclient;
                 } catch (Exception e) {
                     if (tmpclient != null) {
@@ -224,11 +235,16 @@ public final class HugeClientPoolService {
         }
         this.sslService.configSSL(this.config, connection);
         HugeClient client = HugeClientUtil.tryConnect(connection);
-        String authType = token != null ? "bearer" : username != null ? "basic" : "anonymous";
-        this.statisticsContexts.put(client, DigestUtils.sha256Hex(JsonUtil.toJson(
-                Arrays.asList(url, authType, token, username, password))));
+        this.registerStatisticsContext(client, url, token, username, password);
 
         return client;
+    }
+
+    private void registerStatisticsContext(HugeClient client, Object target,
+                                           String token, String username, String password) {
+        String authType = token != null ? "bearer" : username != null ? "basic" : "anonymous";
+        this.statisticsContexts.put(client, DigestUtils.sha256Hex(JsonUtil.toJson(
+                Arrays.asList(target, authType, token, username, password))));
     }
 
     /**

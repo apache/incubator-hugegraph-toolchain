@@ -61,6 +61,7 @@ public class HugeClientPoolServiceTest {
     public void setup() {
         HugeConfig config = Mockito.mock(HugeConfig.class);
         Mockito.when(config.get(HubbleOptions.PD_ENABLED)).thenReturn(true);
+        Mockito.when(config.get(HubbleOptions.PD_PEERS)).thenReturn("127.0.0.1:8686");
         Mockito.when(config.get(HubbleOptions.CLIENT_URL_CACHE_MAX_ENTRIES))
                .thenReturn(1024);
         this.factory = Mockito.mock(PDHugeClientFactory.class);
@@ -247,6 +248,98 @@ public class HugeClientPoolServiceTest {
                 Assert.assertFalse(key.equals(this.service.statisticsContext(otherUser)));
                 Assert.assertFalse(key.equals(this.service.statisticsContext(otherServer)));
             }
+        } finally {
+            first.stop(0);
+            second.stop(0);
+        }
+    }
+
+    @Test
+    public void testDiscoveredStatisticsContextSharesAcrossServersInTheSamePdCluster() throws Exception {
+        AtomicInteger firstCalls = new AtomicInteger();
+        AtomicInteger secondCalls = new AtomicInteger();
+        HttpServer first = this.versionServer(200, "0.80", firstCalls);
+        HttpServer second = this.versionServer(200, "0.80", secondCalls);
+        try {
+            this.cacheCandidates(this.serverUrl(first));
+            HugeConfig config = (HugeConfig) ReflectionTestUtils.getField(this.service, "config");
+            Mockito.when(config.get(HubbleOptions.PD_PEERS)).thenReturn("pd-b:8686, pd-a:8686, pd-a:8686");
+            this.stubSuccessfulDiscovery(GRAPH_SPACE, SERVICE, this.serverUrl(first));
+            try (HugeClient a = this.service.create(null, GRAPH_SPACE, SERVICE, "fixture-a")) {
+                Mockito.when(config.get(HubbleOptions.PD_PEERS)).thenReturn("pd-a:8686,pd-b:8686");
+                this.stubSuccessfulDiscovery(GRAPH_SPACE, SERVICE, this.serverUrl(second));
+                try (HugeClient b = this.service.create(null, GRAPH_SPACE, SERVICE, "fixture-a");
+                     HugeClient explicit = this.service.create(this.serverUrl(second),
+                                                               GRAPH_SPACE, SERVICE, "fixture-a")) {
+                    Assert.assertEquals(this.service.statisticsContext(a), this.service.statisticsContext(b));
+                    Assert.assertFalse(this.service.statisticsContext(b).equals(
+                                       this.service.statisticsContext(explicit)));
+                }
+            }
+            Assert.assertTrue(firstCalls.get() > 0);
+            Assert.assertTrue(secondCalls.get() > 0);
+            Mockito.verify(this.factory, Mockito.times(2)).getURLs(CLUSTER, GRAPH_SPACE, SERVICE);
+            Mockito.verify(this.factory, Mockito.times(2)).getURLs(CLUSTER, GRAPH_SPACE, null);
+            Mockito.verify(this.factory, Mockito.times(2)).getURLs(
+                    CLUSTER, PDHugeClientFactory.DEFAULT_GRAPHSPACE, PDHugeClientFactory.DEFAULT_SERVICE);
+            Mockito.verifyNoMoreInteractions(this.factory);
+        } finally {
+            first.stop(0);
+            second.stop(0);
+        }
+    }
+
+    @Test
+    public void testDiscoveredStatisticsContextPartitionsPdClusterAndAuthentication() throws Exception {
+        HttpServer server = this.versionServer(200, "0.80", new AtomicInteger());
+        try {
+            this.cacheCandidates(this.serverUrl(server));
+            Mockito.when(this.factory.getURLs(Mockito.anyString(), Mockito.eq(GRAPH_SPACE), Mockito.eq(SERVICE)))
+                   .thenReturn(Collections.singletonList(this.serverUrl(server)));
+            HugeConfig config = (HugeConfig) ReflectionTestUtils.getField(this.service, "config");
+            try (HugeClient a = this.service.create(null, GRAPH_SPACE, SERVICE, "fixture-a");
+                 HugeClient otherUser = this.service.create(null, GRAPH_SPACE, SERVICE, "fixture-b");
+                 HugeClient anonymous = this.service.create(null, GRAPH_SPACE, SERVICE, null);
+                 HugeClient basic = this.service.createBasicClient(GRAPH_SPACE, SERVICE, "alice", "fixture-a");
+                 HugeClient otherPassword = this.service.createBasicClient(
+                                            GRAPH_SPACE, SERVICE, "alice", "fixture-b")) {
+                String key = this.service.statisticsContext(a);
+                Assert.assertFalse(key.equals(this.service.statisticsContext(otherUser)));
+                Assert.assertFalse(key.equals(this.service.statisticsContext(anonymous)));
+                Assert.assertFalse(key.equals(this.service.statisticsContext(basic)));
+                Assert.assertFalse(this.service.statisticsContext(basic).equals(
+                                   this.service.statisticsContext(otherPassword)));
+                Mockito.when(config.get(HubbleOptions.PD_PEERS)).thenReturn("other-pd:8686");
+                try (HugeClient otherPd = this.service.create(null, GRAPH_SPACE, SERVICE, "fixture-a")) {
+                    Assert.assertFalse(key.equals(this.service.statisticsContext(otherPd)));
+                }
+                Mockito.when(config.get(HubbleOptions.PD_PEERS)).thenReturn("127.0.0.1:8686");
+                ReflectionTestUtils.setField(this.service, "cluster", "other-cluster");
+                try (HugeClient otherCluster = this.service.create(null, GRAPH_SPACE, SERVICE, "fixture-a")) {
+                    Assert.assertFalse(key.equals(this.service.statisticsContext(otherCluster)));
+                }
+            }
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    public void testDirectStatisticsContextPartitionsConfiguredServer() throws Exception {
+        HttpServer first = this.versionServer(200, "0.80", new AtomicInteger());
+        HttpServer second = this.versionServer(200, "0.80", new AtomicInteger());
+        try {
+            this.cacheCandidates(this.serverUrl(first));
+            HugeConfig config = (HugeConfig) ReflectionTestUtils.getField(this.service, "config");
+            Mockito.when(config.get(HubbleOptions.PD_ENABLED)).thenReturn(false);
+            Mockito.when(config.get(HubbleOptions.SERVER_URL)).thenReturn(this.serverUrl(first));
+            try (HugeClient a = this.service.create(null, GRAPH_SPACE, SERVICE, "fixture-a")) {
+                Mockito.when(config.get(HubbleOptions.SERVER_URL)).thenReturn(this.serverUrl(second));
+                try (HugeClient b = this.service.create(null, GRAPH_SPACE, SERVICE, "fixture-a")) {
+                    Assert.assertFalse(this.service.statisticsContext(a).equals(this.service.statisticsContext(b)));
+                }
+            }
+            Mockito.verifyNoInteractions(this.factory);
         } finally {
             first.stop(0);
             second.stop(0);

@@ -23,6 +23,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -73,6 +74,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -491,8 +493,14 @@ public class GraphsService {
             // Unregistered clients have no stable target/identity partition.
             return this.collectBoundedStatistics(client);
         }
-        return this.boundedStatistics.asMap().computeIfAbsent(
-                key, ignored -> this.collectBoundedStatistics(client));
+        try {
+            return this.boundedStatistics.get(key, () -> this.collectBoundedStatistics(client));
+        } catch (ExecutionException | UncheckedExecutionException e) {
+            if (e.getCause() instanceof RuntimeException) {
+                throw (RuntimeException) e.getCause();
+            }
+            throw new IllegalStateException(e.getCause());
+        }
     }
 
     private String statisticsKey(HugeClient client, String graphSpace, String graph) {

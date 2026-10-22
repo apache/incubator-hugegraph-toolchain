@@ -24,6 +24,7 @@ import style from './index.module.scss';
 import {useCallback} from 'react';
 import {useTranslation} from 'react-i18next';
 import {getResourceDisplayName} from '../../utils/displayName';
+import {isKnownCount} from '../../utils/graphStatistics';
 
 const showText = (val, suffix, unlimited, empty) => (
     val > 99999 ? (empty === undefined ? unlimited : empty) : `${val}${suffix}`
@@ -136,7 +137,7 @@ const GraphSpaceCard = ({
     const memory = showText(item.memory_limit, t('graphspace.unit.memory'), unlimited);
     const storage = showText(item.storage_limit, t('graphspace.unit.memory'), unlimited);
     const statisticDate = item.statistic?.date;
-    const hasStatistics = item.statistic?.vertex != null && item.statistic?.edge != null;
+    const hasStatistics = isKnownCount(item.statistic?.vertex) && isKnownCount(item.statistic?.edge);
 
     return (
         <Card styles={{header: {
@@ -166,17 +167,16 @@ const GraphSpaceCard = ({
                     </Dropdown>
                 </Space.Compact>
             )}
-            actions={
-                [
+            actions={hasStatistics ? [
                     <Space key="1" size={8} wrap>
-                        <span>{t('graphspace.card.vertex')}: {item.statistic?.vertex ?? '-'}</span>
-                        <span>{t('graphspace.card.edge')}: {item.statistic?.edge ?? '-'}</span>
+                        <span>{t('graphspace.card.vertex')}: {item.statistic.vertex}</span>
+                        <span>{t('graphspace.card.edge')}: {item.statistic.edge}</span>
                         <Typography.Text type='secondary'>
-                            {!hasStatistics ? t('graph.detail.not_collected') : statisticDate
+                            {statisticDate
                                 ? t('graphspace.card.daily_snapshot', {date: statisticDate})
                                 : t('graphspace.card.daily_update')}
                         </Typography.Text>
-                        {hasStatistics && <span aria-label={t('graphspace.card.statistic_help')}>
+                        <span aria-label={t('graphspace.card.statistic_help')}>
                             <Tooltip title={(
                                 <>
                                     <div>{t('graphspace.card.daily_update')}</div>
@@ -191,10 +191,9 @@ const GraphSpaceCard = ({
                             >
                                 <InfoCircleOutlined />
                             </Tooltip>
-                        </span>}
+                        </span>
                     </Space>,
-                ]
-            }
+                ] : undefined}
         >
             <div
                 className={style.card_content}

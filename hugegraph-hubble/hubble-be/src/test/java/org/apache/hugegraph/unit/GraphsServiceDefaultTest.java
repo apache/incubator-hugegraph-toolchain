@@ -45,6 +45,10 @@ import org.apache.hugegraph.service.graphs.GraphsService;
 import org.apache.hugegraph.service.auth.AuthModeService;
 import org.apache.hugegraph.service.query.QueryService;
 import org.apache.hugegraph.service.HugeClientPoolService;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import com.google.common.base.Ticker;
@@ -378,6 +382,70 @@ public class GraphsServiceDefaultTest {
         Assert.assertTrue(cache.size() <= 1024L);
         Map<?, ?> asyncStatistics = (Map<?, ?>) ReflectionTestUtils.getField(service, "graphStatistics");
         Assert.assertTrue(asyncStatistics.isEmpty());
+    }
+
+    @Test
+    public void testStatisticsLoadingDoesNotBlockAnotherKeyInTheSameCacheSegment() throws Exception {
+        GraphsService service = Mockito.spy(this.service);
+        HugeClient otherClient = Mockito.mock(HugeClient.class);
+        HugeClientPoolService pool = Mockito.mock(HugeClientPoolService.class);
+        Mockito.when(pool.statisticsContext(Mockito.any())).thenReturn("shared-context");
+        ReflectionTestUtils.setField(service, "clientPool", pool);
+        Cache<String, GraphStatisticsEntity> cache = CacheBuilder.newBuilder()
+                .concurrencyLevel(1)
+                .maximumSize(1024)
+                .expireAfterWrite(30, TimeUnit.MINUTES)
+                .build();
+        ReflectionTestUtils.setField(service, "boundedStatistics", cache);
+        GraphStatisticsEntity slowStatistics = GraphStatisticsEntity.emptyEntity();
+        GraphStatisticsEntity otherStatistics = GraphStatisticsEntity.emptyEntity();
+        CountDownLatch collecting = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        Mockito.doAnswer(invocation -> {
+            collecting.countDown();
+            Assert.assertTrue(release.await(10, TimeUnit.SECONDS));
+            return slowStatistics;
+        }).when(service).collectBoundedStatistics(this.client);
+        Mockito.doReturn(otherStatistics).when(service).collectBoundedStatistics(otherClient);
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            Future<GraphStatisticsEntity> slow = executor.submit(
+                    () -> service.getStatistics(this.client, "space", "slow"));
+            Assert.assertTrue(collecting.await(5, TimeUnit.SECONDS));
+            Future<GraphStatisticsEntity> other = executor.submit(
+                    () -> service.getStatistics(otherClient, "space", "other"));
+
+            Assert.assertSame(otherStatistics, other.get(5, TimeUnit.SECONDS));
+            Assert.assertFalse(slow.isDone());
+            release.countDown();
+            Assert.assertSame(slowStatistics, slow.get(5, TimeUnit.SECONDS));
+            Assert.assertSame(otherStatistics, service.getStatistics(otherClient, "space", "other"));
+            Mockito.verify(service).collectBoundedStatistics(otherClient);
+        } finally {
+            release.countDown();
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    public void testStatisticsCachePreservesOriginalFailureAndAllowsRetry() {
+        GraphsService service = Mockito.spy(this.service);
+        HugeClientPoolService pool = Mockito.mock(HugeClientPoolService.class);
+        Mockito.when(pool.statisticsContext(this.client)).thenReturn("context");
+        ReflectionTestUtils.setField(service, "clientPool", pool);
+        ExternalException original = new ExternalException("gremlin.execute.failed");
+        GraphStatisticsEntity statistics = GraphStatisticsEntity.emptyEntity();
+        Mockito.doThrow(original).doReturn(statistics).when(service).collectBoundedStatistics(this.client);
+
+        try {
+            service.getStatistics(this.client, "space", "graph");
+            Assert.fail("Expected statistics failure");
+        } catch (ExternalException e) {
+            Assert.assertSame(original, e);
+        }
+        Assert.assertSame(statistics, service.getStatistics(this.client, "space", "graph"));
+        Assert.assertSame(statistics, service.getStatistics(this.client, "space", "graph"));
+        Mockito.verify(service, Mockito.times(2)).collectBoundedStatistics(this.client);
     }
 
     @Test
