@@ -127,6 +127,21 @@ public class OperationsHttpClientTest {
     }
 
     @Test
+    public void testDnsFailuresKeepOnlySafeRequestPaths() {
+        OperationsHttpClient client = new OperationsHttpClient(1000, 1000, 64);
+        for (String path : new String[]{"/v1/cluster", "/v1/stores", "/actuator/prometheus"}) {
+            UpstreamRequestException error = (UpstreamRequestException) Assert.assertThrows(
+                    UpstreamRequestException.class, () -> client.get(URI.create(
+                    "http://private-pd-host.invalid:8620" + path + "?token=private-query"),
+                    "private-user", "private-password"));
+            Assert.assertEquals("upstream_unavailable", error.getMessage());
+            Assert.assertTrue(error.getCause() instanceof UnknownHostException);
+            Assert.assertEquals(Map.of("request_path", path), error.getDiagnostics());
+            Assert.assertFalse(error.getDiagnostics().toString().contains("private-"));
+        }
+    }
+
+    @Test
     public void testCapsResponseBodyWithSafeExactSizeDiagnostics()
            throws IOException {
         HttpServer server = server(200, "0123456789", null, null);

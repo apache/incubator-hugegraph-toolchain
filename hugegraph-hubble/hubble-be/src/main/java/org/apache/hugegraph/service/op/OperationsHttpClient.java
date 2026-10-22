@@ -129,9 +129,6 @@ public class OperationsHttpClient {
         } catch (SocketTimeoutException e) {
             throw new UpstreamRequestException("upstream_timeout", e,
                                                Map.of("request_path", target.getRawPath()));
-        } catch (UnknownHostException e) {
-            throw new IllegalArgumentException("Unresolvable operations target",
-                                               e);
         } catch (IOException e) {
             throw new UpstreamRequestException("upstream_unavailable", e,
                                                Map.of("request_path", target.getRawPath()));

@@ -159,6 +159,33 @@ public class DefaultOperationsDataServiceTest {
 
     @SuppressWarnings("unchecked")
     @Test
+    public void testUncollectedPdFollowersAreExcludedFromSourceDiagnostics() {
+        for (boolean stale : new boolean[]{false, true}) {
+            MetricStatus failed = new MetricStatus("UNAVAILABLE", 2000L, null,
+                    false, false, "upstream_rejected")
+                    .withDiagnostics(Map.of("request_path", "/actuator/prometheus", "http_status", 503));
+            MetricStatus uncollected = new MetricStatus("UNSUPPORTED", 2000L, null,
+                    false, stale, "metrics_not_collected");
+            Node leader = new Node("pd-leader", "PD", "PD leader", "LEADER", "1.8.0", "UP",
+                    2000L, Collections.emptyMap(), Map.of("system", failed));
+            Node follower = new Node("pd-follower", "PD", "PD follower", "FOLLOWER", "1.8.0", "UP",
+                    2000L, Collections.emptyMap(), Map.of("system", uncollected));
+            SourceStatus source = new SourceStatus("PARTIAL", "UP", 2000L, null,
+                    false, false, "upstream_rejected");
+            Snapshot snapshot = new Snapshot("DEGRADED", 2000L, false, null,
+                    Map.of("pd", source), Arrays.asList(leader, follower), Collections.emptyMap());
+            Map<String, Object> result = service(snapshot, 5).nodes(client("token-a"),
+                    Set.of(OperationsCapabilityService.TOPOLOGY_READ),
+                    "PD", null, null, 1, 20, "name", "asc");
+            java.util.List<Map<String, Object>> diagnostics =
+                    (java.util.List<Map<String, Object>>) result.get("diagnostic_nodes");
+            Assert.assertEquals(1, diagnostics.size());
+            Assert.assertEquals("pd-leader", diagnostics.get(0).get("id"));
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
     public void testEmptyNodeListRetainsSourceFailureDiagnostics() {
         Map<String, Object> diagnostics = Map.of(
                 "request_path", "/v1/stores", "max_response_bytes", 8192L,

@@ -83,11 +83,13 @@ const SourceDiagnostics = ({sources = {}, sourceName, nodes = [], focus = false,
                 const recovered = sourceHealthStatus(source) === 'UP';
                 const failures = nodes.filter(node => node.type === type).flatMap(node => (
                     Object.entries(node.metric_statuses ?? {}).filter(([, status]) => (
-                        ['UNAVAILABLE', 'MALFORMED'].includes(status.availability)
-                            || status.availability === 'UNSUPPORTED'
-                                && (source.availability === 'PARTIAL'
-                                    || ['DOWN', 'DEGRADED'].includes(source.status))
-                            || status.stale
+                        status.reason !== 'metrics_not_collected' && (
+                            ['UNAVAILABLE', 'MALFORMED'].includes(status.availability)
+                                || status.availability === 'UNSUPPORTED'
+                                    && (source.availability === 'PARTIAL'
+                                        || ['DOWN', 'DEGRADED'].includes(source.status))
+                                || status.stale
+                        )
                     )).map(([group, status]) => ({node, group, status}))
                 ));
                 return (
