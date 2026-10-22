@@ -209,3 +209,10 @@ test.each([
         {suppressBusinessErrorToast: true}
     );
 });
+
+
+test('lets deferred schema previews own business error feedback', () => {
+    const config = {suppressBusinessErrorToast: true};
+    manage.getGraphView('DEFAULT', 'g', config);
+    expect(request.get).toHaveBeenCalledWith('/graphspaces/DEFAULT/graphs/g/schema/graphview', config);
+});

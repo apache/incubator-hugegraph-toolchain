@@ -26,6 +26,7 @@ jest.mock('../../../api', () => ({
     manage: {
         getDatasourceList: jest.fn(),
         getGraphList: jest.fn(),
+        getGraphView: jest.fn(),
         getTaskList: jest.fn(),
     },
 }));
@@ -48,6 +49,9 @@ beforeAll(() => {
 beforeEach(() => {
     jest.clearAllMocks();
     isPdEnabled.mockReturnValue(false);
+    api.manage.getGraphView.mockResolvedValue({
+        status: 200, data: {vertices: [{name: 'person'}], edges: []},
+    });
     api.manage.getDatasourceList.mockResolvedValue({
         status: 200,
         data: {records: [{datasource_id: '9', datasource_name: 'fixture.csv'}]},

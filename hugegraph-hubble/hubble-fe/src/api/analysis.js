@@ -28,11 +28,6 @@ const getGraphSpaceList = config => {
         : request.get('/graphspaces/list');
 };
 
-const getGraphList = (graphSpace, config) => {
-    const url = `/graphspaces/${graphSpace}/graphs/list`;
-    return config ? request.get(url, config) : request.get(url);
-};
-
 const getOlapMode = (graphSpace, graph, config) => {
     const url = `/graphspaces/${graphSpace}/graphs/${graph}/graph_read_mode`;
     return config ? request.get(url, config) : request.get(url);
@@ -103,8 +98,9 @@ const getText2GqlConfig = (graphspace, graph, config = {}) => {
         {...config, suppressBusinessErrorToast: true});
 };
 
-const getGraphData = (graphspace, graph) => {
-    return request.get(`/graphspaces/${graphspace}/graphs/${graph}/gremlin-query`);
+const getGraphData = (graphspace, graph, config) => {
+    const url = `/graphspaces/${graphspace}/graphs/${graph}/gremlin-query`;
+    return config ? request.get(url, config) : request.get(url);
 };
 
 const putExecutionQuery = (graphspace, graph, params) => {
@@ -243,7 +239,6 @@ const loadVermeerTask = (params, config) => {
 
 export {
     getGraphSpaceList,
-    getGraphList,
     getOlapMode,
     switchOlapMode,
     getExecutionLogs,

@@ -92,6 +92,25 @@ public class GraphSpaceController extends BaseController {
         return ImmutableMap.of("graphspaces", graphSpaces);
     }
 
+    @GetMapping(params = "brief=true")
+    public Object queryBriefPage(
+            @RequestParam(name = "query", defaultValue = "") String query,
+            @RequestParam(name = "create_time", defaultValue = "") String createTime,
+            @RequestParam(name = "page_no", defaultValue = "1") int pageNo,
+            @RequestParam(name = "page_size", defaultValue = "100") int pageSize,
+            @RequestParam(name = "selected", defaultValue = "") String selected) {
+        if (!isPdEnabled()) {
+            return ImmutableMap.of("records", Collections.emptyList(),
+                                   "total", 0);
+        }
+        HugeClient client = this.authClient(null, null);
+        boolean anonymous = this.authMode != null && this.authMode.anonymous();
+        boolean administrator = !anonymous && this.userService.isSuperAdmin(client);
+        return this.graphSpaceService.queryBriefPage(
+                client, query, createTime, pageNo, pageSize,
+                anonymous, administrator, selected);
+    }
+
     @GetMapping
     public Object queryPage(@RequestParam(name = "query", required = false,
                                     defaultValue = "") String query,

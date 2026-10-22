@@ -31,15 +31,11 @@ test('forwards inline error ownership for graph context reads', () => {
     const config = {suppressBusinessErrorToast: true};
 
     analysis.getGraphSpaceList(config);
-    analysis.getGraphList('DEFAULT', config);
     analysis.getOlapMode('DEFAULT', 'g', config);
 
     expect(request.get).toHaveBeenNthCalledWith(1, '/graphspaces/list', config);
     expect(request.get).toHaveBeenNthCalledWith(
-        2, '/graphspaces/DEFAULT/graphs/list', config
-    );
-    expect(request.get).toHaveBeenNthCalledWith(
-        3, '/graphspaces/DEFAULT/graphs/g/graph_read_mode', config
+        2, '/graphspaces/DEFAULT/graphs/g/graph_read_mode', config
     );
 });
 
@@ -131,4 +127,10 @@ test('opts manual synchronous Gremlin and Cypher reads into preview without chan
     expect(request.post).toHaveBeenLastCalledWith('/graphspaces/DEFAULT/graphs/g/cypher/async-task',
         params, {suppressBusinessErrorToast: true});
     expect(params).not.toHaveProperty('preview');
+});
+
+test('lets deferred statistics own business error feedback', () => {
+    const config = {suppressBusinessErrorToast: true};
+    analysis.getGraphData('DEFAULT', 'g', config);
+    expect(request.get).toHaveBeenCalledWith('/graphspaces/DEFAULT/graphs/g/gremlin-query', config);
 });

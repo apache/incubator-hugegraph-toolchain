@@ -84,6 +84,8 @@ test('does not expose a default GraphSpace mutation action', async () => {
     expect(screen.queryByText('Default')).not.toBeInTheDocument();
     expect(screen.getByText('graphspace.card.daily_snapshot')).toBeInTheDocument();
     expect(screen.getByLabelText('graphspace.card.statistic_help')).toBeInTheDocument();
+    expect(screen.getByText('graphspace.card.vertex: 0')).toBeInTheDocument();
+    expect(screen.getByText('graphspace.card.edge: 0')).toBeInTheDocument();
 });
 
 test('ships a localized default GraphSpace name in both languages', () => {
@@ -131,10 +133,11 @@ test.each([0, 1024])('keeps full or exceeded quota in the exception state (%s KB
     expect(screen.getByRole('img', {name: 'info'})).toBeInTheDocument();
 });
 
-test('falls back to the daily-update label when statistics are unavailable', () => {
+test('omits unavailable totals without claiming that no snapshot exists', () => {
     const item = {
         name: 'empty',
         nickname: 'Empty',
+        statistic: {},
         create_time: '2026-07-10',
         auth: false,
         max_graph_number: 10,
@@ -154,9 +157,11 @@ test('falls back to the daily-update label when statistics are unavailable', () 
         />
     );
 
-    expect(screen.getByText('graphspace.card.vertex: -')).toBeInTheDocument();
-    expect(screen.getByText('graphspace.card.edge: -')).toBeInTheDocument();
-    expect(screen.getByText('graphspace.card.daily_update')).toBeInTheDocument();
+    expect(screen.queryByText(/^graphspace.card.vertex:/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^graphspace.card.edge:/)).not.toBeInTheDocument();
+    expect(screen.queryByText('graph.detail.not_collected')).not.toBeInTheDocument();
+    expect(screen.getByTitle('Empty')).toBeInTheDocument();
+    expect(screen.getByText(/graphspace.card.max_graph/)).toHaveTextContent('10');
 });
 
 test('treats a backend nickname echo as an unset alias', () => {

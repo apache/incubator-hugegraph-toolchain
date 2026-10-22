@@ -27,6 +27,7 @@ import LogsDetail from '../LogsDetail/Home';
 import GraphAnalysisContext from '../../Context';
 import {GRAPH_STATUS, PANEL_TYPE, GRAPH_RENDER_MODE, useTranslatedConstants} from '../../../utils/constants';
 import * as api from '../../../api';
+import {toGraphCounts} from '../../../utils/graphStatistics';
 import {USER_CHANGE_EVENT} from '../../../utils/user';
 import _ from 'lodash';
 import c from './index.module.scss';
@@ -179,7 +180,7 @@ const AlgorithmHome = () => {
             graphNumsRequest.current = request;
             let response;
             try {
-                response = await api.analysis.getGraphData(graphSpace, graph);
+                response = await api.analysis.getGraphData(graphSpace, graph, {suppressBusinessErrorToast: true});
             } catch {
                 response = null;
             }
@@ -190,8 +191,7 @@ const AlgorithmHome = () => {
                 setGraphNums({vertexCount: null, edgeCount: null});
                 return {status: 'unavailable'};
             }
-            const {vertexcount, edgecount} = response.data || {};
-            setGraphNums({vertexCount: vertexcount, edgeCount: edgecount});
+            setGraphNums(toGraphCounts(response.data));
             return {status: 'refreshed'};
         },
         [graph, graphSpace, graphNumsScope]

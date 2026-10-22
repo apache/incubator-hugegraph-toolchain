@@ -24,6 +24,7 @@ import style from './index.module.scss';
 import {useCallback} from 'react';
 import {useTranslation} from 'react-i18next';
 import {getResourceDisplayName} from '../../utils/displayName';
+import {isKnownCount} from '../../utils/graphStatistics';
 import {formatResourceLimit, formatStorageUsed, formatStorageLimit,
     storageUsagePercent, formatComputeLimit} from './storageUsage';
 
@@ -144,6 +145,7 @@ const GraphSpaceCard = ({
     const memory = formatResourceLimit(item.memory_limit, t('graphspace.unit.memory'), unlimited);
     const storage = formatStorageLimit(item.storage_limit, unlimited);
     const statisticDate = item.statistic?.date;
+    const hasStatistics = isKnownCount(item.statistic?.vertex) && isKnownCount(item.statistic?.edge);
 
     return (
         <Card styles={{header: {
@@ -173,11 +175,10 @@ const GraphSpaceCard = ({
                     </Dropdown>
                 </Space.Compact>
             )}
-            actions={
-                [
+            actions={hasStatistics ? [
                     <Space key="1" size={8} wrap>
-                        <span>{t('graphspace.card.vertex')}: {item.statistic?.vertex ?? '-'}</span>
-                        <span>{t('graphspace.card.edge')}: {item.statistic?.edge ?? '-'}</span>
+                        <span>{t('graphspace.card.vertex')}: {item.statistic.vertex}</span>
+                        <span>{t('graphspace.card.edge')}: {item.statistic.edge}</span>
                         <Typography.Text type='secondary'>
                             {statisticDate
                                 ? t('graphspace.card.daily_snapshot', {date: statisticDate})
@@ -200,8 +201,7 @@ const GraphSpaceCard = ({
                             </Tooltip>
                         </span>
                     </Space>,
-                ]
-            }
+                ] : undefined}
         >
             <div
                 className={style.card_content}

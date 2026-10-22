@@ -18,13 +18,22 @@
 
 import fs from 'fs';
 import path from 'path';
-import {fireEvent, render, screen} from '@testing-library/react';
+import {act, fireEvent, render, screen} from '@testing-library/react';
 import {MemoryRouter, useLocation} from 'react-router-dom';
 import GraphCard from './Card';
+import * as api from '../../api';
+
+jest.mock('../../api', () => ({
+    manage: {getGraphView: jest.fn(() => new Promise(() => {}))},
+    analysis: {getGraphData: jest.fn(() => new Promise(() => {}))},
+}));
 
 const mockT = (key, values) => {
     if (key === 'graph.card.element_counts') {
         return `${key}:${values.vertices}/${values.edges}`;
+    }
+    if (key === 'graph.detail.bounded_statistics_hint') {
+        return `${key}:${values.limit}`;
     }
     if (key === 'graph.card.view_schema') {
         return `${key}:${values.graph}`;
@@ -254,4 +263,58 @@ test('does not invent point and edge counts when the list API omits them', () =>
     );
 
     expect(screen.queryByText(/graph\.card\.element_counts/)).not.toBeInTheDocument();
+});
+
+
+test('renders core graph actions before schema and snapshot statistics complete', async () => {
+    let resolveSchema;
+    let resolveSnapshot;
+    api.manage.getGraphView.mockReturnValueOnce(new Promise(resolve => { resolveSchema = resolve; }));
+    api.analysis.getGraphData.mockReturnValueOnce(new Promise(resolve => { resolveSnapshot = resolve; }));
+    render(<MemoryRouter><GraphCard item={{name: 'g', graphspace: 'space'}} menus={[]} /></MemoryRouter>);
+    expect(screen.getByRole('link', {name: 'graph.card.overview'})).toHaveAttribute('href', '/graphspace/space/graph/g/detail');
+    expect(screen.getByRole('link', {name: 'graph.card.query_graph'})).toHaveAttribute('href', '/gremlin/space/g');
+    expect(screen.getByText('graph.card.schema_loading', {selector: 'span'})).toBeInTheDocument();
+    expect(screen.queryByText('graph.card.empty_schema')).not.toBeInTheDocument();
+    expect(api.manage.getGraphView).toHaveBeenLastCalledWith('space', 'g', {suppressBusinessErrorToast: true});
+    expect(api.analysis.getGraphData).toHaveBeenLastCalledWith('space', 'g', {suppressBusinessErrorToast: true});
+    await act(async () => {
+        resolveSnapshot({status: 200, data: {vertexcount: null, edgecount: null}});
+    });
+    expect(screen.getByText('graph.detail.not_collected')).toBeInTheDocument();
+    expect(screen.queryByText('graph.detail.statistics_unavailable')).not.toBeInTheDocument();
+    await act(async () => {
+        resolveSchema({status: 200, data: {vertices: [{id: 'person', label: 'person'}], edges: []}});
+    });
+    expect(screen.getByTestId('preview-contract')).toBeInTheDocument();
+});
+
+
+test('shows a capped snapshot as a lower bound with its scan limit', async () => {
+    api.analysis.getGraphData.mockResolvedValueOnce({status: 200, data: {
+        vertexcount: '100000', edgecount: '20', approximate: true, scan_limit: 100000,
+    }});
+    render(<MemoryRouter><GraphCard item={{name: 'g', graphspace: 'space',
+        schemaview: {vertices: [], edges: []}}} menus={[]} /></MemoryRouter>);
+    const counts = await screen.findByText('graph.card.element_counts:≥100000/≈20');
+    fireEvent.mouseEnter(counts);
+    expect(await screen.findByText('graph.detail.bounded_statistics_hint:100000')).toBeInTheDocument();
+});
+
+test.each([
+    ['network failure', () => Promise.reject(new Error('network failure'))],
+    ['non-success response', () => Promise.resolve({status: 503})],
+])('shows a snapshot error for %s while keeping core actions available', async (_, response) => {
+    const calls = api.analysis.getGraphData.mock.calls.length;
+    api.analysis.getGraphData.mockImplementationOnce(response);
+    render(<MemoryRouter><GraphCard item={{name: 'g', graphspace: 'space',
+        schemaview: {vertices: [], edges: []}}} menus={[]} /></MemoryRouter>);
+
+    expect(await screen.findByText('graph.detail.statistics_unavailable')).toBeInTheDocument();
+    expect(screen.queryByText('graph.detail.not_collected')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', {name: 'graph.card.overview'}))
+        .toHaveAttribute('href', '/graphspace/space/graph/g/detail');
+    expect(screen.getByRole('link', {name: 'graph.card.query_graph'}))
+        .toHaveAttribute('href', '/gremlin/space/g');
+    expect(api.analysis.getGraphData).toHaveBeenCalledTimes(calls + 1);
 });
