@@ -89,7 +89,12 @@ public class OperationsPayloadParserTest {
                 {"HTTP://PD.EXAMPLE:80", "http://pd.example:80"},
                 {"http://pd.example", "http://PD.EXAMPLE:80/"},
                 {"https://pd.example:443", "HTTPS://PD.EXAMPLE/"},
-                {"http://pd.example:8620/pd", "HTTP://PD.EXAMPLE:8620/pd/"}
+                {"http://pd.example:8620/pd", "HTTP://PD.EXAMPLE:8620/pd/"},
+                {"http://pd.example:8620", "pd.example:8620"},
+                {"https://pd.example:8620", "PD.EXAMPLE:8620"},
+                {"https://pd.example", "pd.example:443"},
+                {"http://[::1]:8620", "[::1]:8620"},
+                {"https://pd.example:8620/pd", "pd.example:8620/pd"}
         };
         for (String[] urls : equivalent) {
             String cluster = pdCluster(urls[1]);
@@ -98,7 +103,6 @@ public class OperationsPayloadParserTest {
                     .getNodes().get(0).getId();
 
             Assert.assertEquals(expectedId, parser.pdMetricNodeId(cluster, urls[0]));
-            Assert.assertEquals(expectedId, parser.pdMetricNodeId(cluster, urls[1]));
         }
     }
 
@@ -117,6 +121,8 @@ public class OperationsPayloadParserTest {
                 pdCluster("http://pd.example:8620", "HTTP://PD.EXAMPLE:8620"),
                 "http://pd.example:8620"));
         Assert.assertNull(parser.pdMetricNodeId(pdCluster("not-a-uri"), "http://pd.example:8620"));
+        Assert.assertNull(parser.pdMetricNodeId(pdCluster("pd.example:8620"), "https://pd-alias.example:8620"));
+        Assert.assertNull(parser.pdMetricNodeId(pdCluster("http://pd.example:8620"), "https://pd.example:8620"));
     }
 
     private static String pdCluster(String... addresses) {

@@ -387,7 +387,8 @@ down. Older responses without `dataState` retain their existing behavior.
 
 PD JVM metrics are attached to a node only when the configured PD URL matches
 its advertised origin and base path after normalizing scheme, hostname, and
-default port. Existing node IDs remain unchanged; DNS aliases and ambiguous
+default port. A scheme-less advertised `host:port` uses the configured protocol.
+Existing node IDs remain unchanged; DNS aliases and ambiguous
 matches are not inferred. An unmatched URL reports `pd_metrics_unmapped` instead
 of assigning metrics to the leader. Store target discovery prefers
 `/v1/prom/targets/store`; only HTTP 404 or 405 falls back to

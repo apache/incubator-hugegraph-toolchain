@@ -301,7 +301,7 @@ public class OperationsPayloadParser {
     }
 
     String pdMetricNodeId(String clusterPayload, String configuredBase) {
-        String configured = canonicalPdEndpoint(configuredBase);
+        String configured = canonicalPdEndpoint(configuredBase, null);
         if (configured == null) {
             return null;
         }
@@ -312,9 +312,10 @@ public class OperationsPayloadParser {
         if (leader != null && leader.isObject()) {
             members.add(leader);
         }
+        String scheme = URI.create(configuredBase).getScheme();
         String matchedId = null;
         for (JsonNode member : members) {
-            String endpoint = canonicalPdEndpoint(this.text(member, "restUrl"));
+            String endpoint = canonicalPdEndpoint(this.text(member, "restUrl"), scheme);
             if (configured.equals(endpoint)) {
                 String id = this.pdId(member);
                 if (matchedId != null && !matchedId.equals(id)) {
@@ -326,12 +327,14 @@ public class OperationsPayloadParser {
         return matchedId;
     }
 
-    private static String canonicalPdEndpoint(String address) {
+    private static String canonicalPdEndpoint(String address, String configuredScheme) {
         if (address == null) {
             return null;
         }
         try {
-            URI target = URI.create(address).normalize();
+            String endpoint = configuredScheme != null && !address.contains("://") ?
+                              configuredScheme + "://" + address : address;
+            URI target = URI.create(endpoint).normalize();
             if (target.getRawQuery() != null) {
                 return null;
             }
