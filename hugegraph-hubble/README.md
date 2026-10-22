@@ -7,6 +7,72 @@
 hugegraph-hubble is a graph management and analysis platform that provides features:
 graph data load, schema management, graph relationship analysis, and graphical display.
 
+## Graph-space quotas and usage
+
+New graph spaces start with 128 CPU cores, 128 GB memory, 128 compute CPU cores,
+128 GB compute memory, 10240 GB storage and 100 graphs. Server also defaults the
+role limit to 100. Existing spaces retain their configured limits. Large finite
+quotas display their actual values; only the legacy `Integer.MAX_VALUE` sentinel
+is shown as unlimited, with `--` instead of a percentage because it has no finite
+quota denominator. Its used storage remains visible.
+
+For API creation requests, omitted compute limits use Server's persisted `0`
+inheritance setting. Each zero continues following the corresponding graph-service
+CPU or memory limit when that limit changes; positive compute limits stay fixed.
+All-omitted requests therefore have effective compute limits of 128/128. On API
+updates, omitted compute fields stay omitted through the Java client, so Server
+preserves their existing setting atomically. Explicit zero restores inheritance.
+Existing positive settings are not migrated.
+
+Upgrade the Java Client with this paired Server change before using partial
+GraphSpace updates. The client preserves omitted compute fields, explicit zero
+and explicit positive values, including values read back from Server. Older
+clients serialize an unset compute limit as zero; the new Server interprets
+that explicit zero as restoring inheritance. If a client cannot be upgraded,
+read the existing GraphSpace before updating it or explicitly send its current
+compute limits to preserve them. Server cannot distinguish those legacy default
+zeros from an intentional request to restore inheritance.
+
+Cards and tables label zero compute limits as `Inherited (current effective limit)`.
+The editor accepts zero, shows its effective limit, and preserves zero when only
+graph-service CPU or memory changes. The creation form still starts all four
+fields at an explicit 128 and submits the values shown in the form.
+Clearing a compute field has the same inheritance meaning as zero and shows its
+effective limit before saving. Restoring inheritance while editing requires the
+paired [Server fix](https://github.com/apache/hugegraph/pull/3391); older Servers
+can acknowledge zero while retaining the existing positive limit. The legacy
+storage-usage fallback remains available with older Servers.
+
+With a Server that supplies `storage_used_kb`, cards show approximate usage in
+KB, MB, GB or larger units, including amounts below one GB. The Java client and
+Hubble preserve this optional field only for nonnegative integer JSON numbers.
+Quoted or invalid values, including stale configuration strings echoed after a
+Server rollback, fall back to integer-GB `storage_used` and the legacy ratio.
+Usage follows Store heartbeat and PD quota-check refreshes rather than individual
+writes. Cards calculate percentages from precise KB usage and the GB quota when
+available, so ratios below 0.01% remain visible as `<0.01%` even when the legacy
+Server ratio has rounded to zero.
+
+Chrome verification screenshots below use local API fixtures for authenticated
+and anonymous modes. They illustrate the display and capability visibility, not
+live cluster acceptance. Chrome interactions cover login/non-auth mode, account
+visibility, creation defaults, and switching `ecommerce/orders` → `DEFAULT/people`
+→ `ecommerce/orders` through the header selectors, then returning to the usage cards.
+They also exercise editing an inherited space: changing CPU from 4 to 16 keeps
+both compute fields at raw zero in the saved request and updates the displayed
+effective CPU limit to 16. Clearing both compute inputs displays the same effective
+limits before saving; the backend converts their explicit null values to zero.
+This UI selects GraphSpace/graph context within one deployment connection; it has
+no Server connection selector. The deployment uses `server.direct_url` or PD
+discovery. Switching real Server deployments and validating Store/PD refreshes
+remain unverified because no live cluster is configured in this test environment.
+
+![Authenticated graph-space usage](docs/assets/graphspace-usage-authenticated.png)
+![Anonymous graph-space usage](docs/assets/graphspace-usage-anonymous.png)
+![Authenticated graph context after switching](docs/assets/graphspace-context-authenticated.png)
+![Anonymous graph context after switching](docs/assets/graphspace-context-anonymous.png)
+![Editing inherited compute limits](docs/assets/graphspace-inherited-compute.png)
+
 ## Product Tour
 
 ### Graph Data Workbench

@@ -46,7 +46,7 @@ test('keeps data preparation guidance out of the algorithm list column', () => {
     expect(screen.queryByText('analysis.algorithm.empty_graph_title')).not.toBeInTheDocument();
 });
 
-test('requires at least one edge before enabling Louvain', () => {
+test('only confirmed zero edges prevent Louvain', () => {
     const view = renderForm({vertexCount: 3, edgeCount: 0});
     expect(screen.getByTestId('olap-readiness')).toHaveTextContent('false');
 
@@ -57,5 +57,16 @@ test('requires at least one edge before enabling Louvain', () => {
             graph='hugegraph'
         />
     );
+    expect(screen.getByTestId('olap-readiness')).toHaveTextContent('true');
+});
+
+
+test.each([null, undefined, -1])('lets the server validate Louvain when edge counts are unknown (%s)', edgeCount => {
+    renderForm({vertexCount: null, edgeCount});
+    expect(screen.getByTestId('olap-readiness')).toHaveTextContent('true');
+});
+
+test.each([0, '0'])('lets the server validate Louvain after an approximate zero snapshot (%s)', edgeCount => {
+    renderForm({vertexCount: 0, edgeCount, approximate: true, scan_limit: 100000});
     expect(screen.getByTestId('olap-readiness')).toHaveTextContent('true');
 });

@@ -32,6 +32,7 @@ import * as api from '../../api/index';
 import FormHelpLabel from '../../components/FormHelpLabel';
 import {isAuthEnabled} from '../../utils/config';
 import {getResourceAlias} from '../../utils/displayName';
+import {formatComputeLimit} from './storageUsage';
 
 const PAGE_ERROR_CONFIG = {suppressBusinessErrorToast: true};
 // Keep this validation aligned with Server GraphManager.checkNickname().
@@ -39,9 +40,9 @@ const GRAPHSPACE_NICKNAME_PATTERN = new RegExp(
     '^[a-zA-Z\\u4E00-\\u9FA5]'
     + '[a-zA-Z0-9\\u4E00-\\u9FA5~!@#$%^&*()_+|<>,.?/:;\'`"\\[\\]{}\\\\]{0,47}$'
 );
-const MyFormItem = ({label, help, unit, children}) => {
+const MyFormItem = ({label, help, unit, children, extra}) => {
     return (
-        <Form.Item label={<FormHelpLabel label={label} help={help} />} colon={false}>
+        <Form.Item label={<FormHelpLabel label={label} help={help} />} colon={false} extra={extra}>
             <Space>
                 {children}
                 <span className='spanFontSize'>{unit}</span>
@@ -56,15 +57,19 @@ const EditLayer = ({visible, detail, onCancel, refresh}) => {
     const [loading, setLoading] = useState(false);
     const [existingAuth, setExistingAuth] = useState();
     const {t} = useTranslation();
+    const cpu = Form.useWatch('cpu_limit', form);
+    const memory = Form.useWatch('memory_limit', form);
+    const computeCpu = Form.useWatch('compute_cpu_limit', form);
+    const computeMemory = Form.useWatch('compute_memory_limit', form);
 
     const defaultValues = {
         description: '',
         max_graph_number: 100,
-        cpu_limit: 64,
+        cpu_limit: 128,
         memory_limit: 128,
-        compute_cpu_limit: 64,
+        compute_cpu_limit: 128,
         compute_memory_limit: 128,
-        storage_limit: 1000000,
+        storage_limit: 10240,
     };
 
     const isDisabled = useMemo(() => {
@@ -318,19 +323,25 @@ const EditLayer = ({visible, detail, onCancel, refresh}) => {
                     </Form.Item>
 
                     <Typography.Title level={5}>{t('graphspace.form.compute_task')}</Typography.Title>
+                    <Typography.Paragraph type='secondary'>
+                        {t('graphspace.form.compute_inheritance_help')}
+                    </Typography.Paragraph>
                     <MyFormItem
                         label={t('graphspace.form.cpu')}
                         help={t('graphspace.form.compute_cpu_help')}
                         unit={t('graphspace.unit.cpu')}
+                        extra={computeCpu === null || computeCpu === 0
+                            ? formatComputeLimit(0, cpu, t('graphspace.unit.cpu'), t) : null}
                     >
                         <Form.Item
                             name="compute_cpu_limit"
+                            rules={[{type: 'number', min: 0, message: t('graphspace.form.compute_nonnegative')}]}
                             noStyle
                         >
                             <InputNumber
                                 placeholder={t('graphspace.form.cpu_placeholder')}
                                 precision={0}
-                                min={1}
+                                min={0}
                             />
                         </Form.Item>
                     </MyFormItem>
@@ -339,15 +350,18 @@ const EditLayer = ({visible, detail, onCancel, refresh}) => {
                         label={t('graphspace.form.memory')}
                         help={t('graphspace.form.compute_memory_help')}
                         unit={t('graphspace.unit.memory')}
+                        extra={computeMemory === null || computeMemory === 0
+                            ? formatComputeLimit(0, memory, t('graphspace.unit.memory'), t) : null}
                     >
                         <Form.Item
                             name="compute_memory_limit"
+                            rules={[{type: 'number', min: 0, message: t('graphspace.form.compute_nonnegative')}]}
                             noStyle
                         >
                             <InputNumber
                                 placeholder={t('graphspace.form.memory_placeholder')}
                                 precision={0}
-                                min={1}
+                                min={0}
                             />
                         </Form.Item>
                     </MyFormItem>

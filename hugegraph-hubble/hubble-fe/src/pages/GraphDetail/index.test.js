@@ -15,20 +15,20 @@
  * limitations under the License.
  */
 
-import {act, render, screen, waitFor} from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import {act, fireEvent, render, screen} from '@testing-library/react';
 import {MemoryRouter, Route, Routes, useNavigate} from 'react-router-dom';
 import GraphDetail from './index';
 import * as api from '../../api';
-import {message} from 'antd';
 
 jest.mock('../../api', () => ({
     manage: {
         getGraphSpace: jest.fn(),
         getGraph: jest.fn(),
         getGraphStatistic: jest.fn(),
+        getGraphView: jest.fn(),
         updateGraphStatistic: jest.fn(),
     },
+    analysis: {getGraphData: jest.fn()},
 }));
 
 jest.mock('antd', () => ({
@@ -57,7 +57,9 @@ jest.mock('react-i18next', () => ({
         'graph.detail.data_status': 'Data status',
         'graph.detail.available': 'Available',
         'graph.detail.partial': 'Partial',
-        'graph.detail.loading': 'Loading',
+        'graph.detail.loading': 'Loading statistics',
+        'graph.detail.not_collected': 'Not collected',
+        'graph.detail.collect_statistics': 'Collect statistics',
         'graph.detail.retry_page': 'Retry graph details',
         'graph.detail.back_to_graphs': 'Back to graphs',
         'graph.detail.retry_statistics': 'Retry statistics',
@@ -71,6 +73,7 @@ jest.mock('react-i18next', () => ({
 
 beforeEach(() => {
     jest.resetAllMocks();
+    api.manage.getGraphView.mockResolvedValue({status: 200, data: null});
     Object.defineProperty(window, 'matchMedia', {
         writable: true,
         value: query => ({
@@ -82,338 +85,179 @@ beforeEach(() => {
     });
 });
 
-test('renders one actionable page error when all initialization requests fail', async () => {
-    api.manage.getGraphSpace.mockRejectedValue(new Error('connection refused'));
-    api.manage.getGraph.mockRejectedValue(new Error('connection refused'));
-    api.manage.getGraphStatistic.mockRejectedValue(new Error('connection refused'));
+const deferred = () => {
+    let resolve;
+    const promise = new Promise(done => { resolve = done; });
+    return {promise, resolve};
+};
 
-    render(
-        <MemoryRouter
-            initialEntries={['/graphspace/DEFAULT/graph/g/detail']}
-            future={{
-                v7_relativeSplatPath: true,
-                v7_startTransition: true,
-            }}
-        >
-            <Routes>
-                <Route
-                    path='/graphspace/:graphspace/graph/:graph/detail'
-                    element={<GraphDetail />}
-                />
-            </Routes>
-        </MemoryRouter>
-    );
+const Harness = () => {
+    const navigate = useNavigate();
+    return <>
+        <button onClick={() => navigate('/graphspace/B/graph/b/detail')}>Switch graph</button>
+        <Routes><Route path='/graphspace/:graphspace/graph/:graph/detail' element={<GraphDetail />} /></Routes>
+    </>;
+};
 
-    expect(await screen.findByText(
-        'Graph details are unavailable. Check the server and retry.'
-    )).toBeInTheDocument();
-    expect(screen.getAllByRole('alert')).toHaveLength(1);
-    expect(screen.getByRole('link', {name: 'Back to graphs'}))
-        .toHaveAttribute('href', '/graphspace/DEFAULT');
-    expect(message.error).not.toHaveBeenCalled();
-});
+const renderDetail = () => render(<MemoryRouter initialEntries={['/graphspace/A/graph/a/detail']}>
+    <Harness />
+</MemoryRouter>);
 
-test('shows one inline fallback without duplicating the transport toast', async () => {
-    api.manage.getGraphSpace.mockResolvedValue({
-        status: 200,
-        data: {nickname: 'Space'},
-    });
-    api.manage.getGraph.mockResolvedValue({
-        status: 200,
-        data: {nickname: 'Graph'},
-    });
-    api.manage.getGraphStatistic.mockResolvedValue({
-        status: 400,
-        message: 'Gremlin execution failed, details: ',
-    });
+const readyCore = () => {
+    api.manage.getGraphSpace.mockResolvedValue({status: 200, data: {name: 'A'}});
+    api.manage.getGraph.mockResolvedValue({status: 200, data: {name: 'a'}});
+};
 
-    render(
-        <MemoryRouter
-            initialEntries={['/graphspace/DEFAULT/graph/g/detail']}
-            future={{
-                v7_relativeSplatPath: true,
-                v7_startTransition: true,
-            }}
-        >
-            <Routes>
-                <Route
-                    path='/graphspace/:graphspace/graph/:graph/detail'
-                    element={<GraphDetail />}
-                />
-            </Routes>
-        </MemoryRouter>
-    );
-
-    expect(await screen.findByText('Statistics are unavailable. Retry later.'))
-        .toBeInTheDocument();
-    await waitFor(() => expect(api.manage.getGraphStatistic).toHaveBeenCalledTimes(1));
-    expect(message.error).not.toHaveBeenCalled();
-});
-
-test('exposes overview, schema and query as one graph journey', async () => {
-    api.manage.getGraphSpace.mockResolvedValue({
-        status: 200,
-        data: {nickname: 'Space'},
-    });
-    api.manage.getGraph.mockResolvedValue({
-        status: 200,
-        data: {nickname: 'Graph'},
-    });
-    api.manage.getGraphStatistic.mockResolvedValue({
-        status: 200,
-        data: {
-            vertex_count: 312,
-            edge_count: 608,
-            vertices: {person: 312},
-            edges: {knows: 608},
-            update_time: '2026-07-12 05:29:21',
-        },
-    });
-
-    render(
-        <MemoryRouter
-            initialEntries={['/graphspace/DEFAULT/graph/g/detail']}
-            future={{
-                v7_relativeSplatPath: true,
-                v7_startTransition: true,
-            }}
-        >
-            <Routes>
-                <Route
-                    path='/graphspace/:graphspace/graph/:graph/detail'
-                    element={<GraphDetail />}
-                />
-            </Routes>
-        </MemoryRouter>
-    );
-
-    expect(await screen.findAllByText('312')).not.toHaveLength(0);
-    expect(screen.getAllByText('608')).not.toHaveLength(0);
-    expect(screen.getByRole('link', {name: 'Schema'}))
-        .toHaveAttribute('href', '/graphspace/DEFAULT/graph/g/meta');
-    expect(screen.getByRole('button', {name: /Query this graph/}))
-        .toBeInTheDocument();
-    expect(screen.getByRole('link', {name: 'Overview'}))
-        .toHaveAttribute('aria-current', 'page');
-    expect(screen.getByText('Available')).toBeInTheDocument();
-    expect(screen.getByText('Detail')).toBeInTheDocument();
-    expect(screen.queryByText('Space - Graph - Detail')).not.toBeInTheDocument();
-});
-
-test('turns zero statistics into an actionable empty graph journey', async () => {
-    api.manage.getGraphSpace.mockResolvedValue({status: 200, data: {nickname: 'Space'}});
-    api.manage.getGraph.mockResolvedValue({status: 200, data: {nickname: 'Graph'}});
-    api.manage.getGraphStatistic.mockResolvedValue({
-        status: 200,
-        data: {vertex_count: 0, edge_count: 0, vertices: {}, edges: {}},
-    });
-
-    render(
-        <MemoryRouter
-            initialEntries={['/graphspace/DEFAULT/graph/g/detail']}
-            future={{v7_relativeSplatPath: true, v7_startTransition: true}}
-        >
-            <Routes>
-                <Route
-                    path='/graphspace/:graphspace/graph/:graph/detail'
-                    element={<GraphDetail />}
-                />
-            </Routes>
-        </MemoryRouter>
-    );
-
-    expect(await screen.findByText('This graph has no schema or data yet'))
-        .toBeInTheDocument();
-    expect(screen.getByRole('button', {name: 'Create schema'})).toBeInTheDocument();
-    expect(screen.getByRole('button', {name: 'Prepare data'})).toBeInTheDocument();
-    expect(screen.getAllByRole('button', {name: /Query this graph/}).length)
-        .toBeGreaterThan(0);
-});
-
-test('does not represent unavailable statistics as zero and retries only statistics', async () => {
-    api.manage.getGraphSpace.mockResolvedValue({
-        status: 200,
-        data: {nickname: 'Space'},
-    });
-    api.manage.getGraph.mockResolvedValue({
-        status: 200,
-        data: {nickname: 'Graph'},
-    });
-    api.manage.getGraphStatistic
-        .mockResolvedValueOnce({status: 503})
-        .mockResolvedValueOnce({
-            status: 200,
-            data: {vertex_count: 12, edge_count: 20, vertices: {}, edges: {}},
-        });
-
-    render(
-        <MemoryRouter
-            initialEntries={['/graphspace/DEFAULT/graph/g/detail']}
-            future={{
-                v7_relativeSplatPath: true,
-                v7_startTransition: true,
-            }}
-        >
-            <Routes>
-                <Route
-                    path='/graphspace/:graphspace/graph/:graph/detail'
-                    element={<GraphDetail />}
-                />
-            </Routes>
-        </MemoryRouter>
-    );
-
-    expect(await screen.findByText('Partial')).toBeInTheDocument();
-    expect(screen.queryByText('0')).not.toBeInTheDocument();
+test('renders core graph navigation while the snapshot read is still pending', async () => {
+    readyCore();
+    const snapshot = deferred();
+    api.analysis.getGraphData.mockReturnValue(snapshot.promise);
+    renderDetail();
+    expect(await screen.findByText('Detail')).toBeInTheDocument();
+    expect(screen.getByRole('link', {name: 'Schema'})).toHaveAttribute('href', '/graphspace/A/graph/a/meta');
+    expect(screen.getByRole('button', {name: /Query this graph/})).toBeEnabled();
+    expect(screen.getByText('Loading statistics')).toBeInTheDocument();
+    expect(api.manage.getGraphStatistic).not.toHaveBeenCalled();
+    await act(async () => { snapshot.resolve({status: 200, data: {vertexcount: null, edgecount: null}}); });
+    expect(screen.getByText('Not collected')).toBeInTheDocument();
     expect(screen.getAllByText('--')).toHaveLength(2);
+});
 
-    await userEvent.click(screen.getByRole('button', {name: 'Retry statistics'}));
+test('uses a recorded snapshot without running full graph statistics', async () => {
+    readyCore();
+    api.analysis.getGraphData.mockResolvedValue({status: 200, data: {vertexcount: 312, edgecount: 608}});
+    renderDetail();
+    expect(await screen.findByText('312')).toBeInTheDocument();
+    expect(screen.getByText('608')).toBeInTheDocument();
+    expect(screen.getByText('Available')).toBeInTheDocument();
+    expect(api.manage.getGraphStatistic).not.toHaveBeenCalled();
+    expect(api.manage.getGraphView).not.toHaveBeenCalled();
+    expect(api.manage.updateGraphStatistic).not.toHaveBeenCalled();
+});
 
-    expect(await screen.findByText('12')).toBeInTheDocument();
+test('runs a full count only after an explicit action and keeps core navigation usable', async () => {
+    readyCore();
+    api.analysis.getGraphData.mockResolvedValue({status: 200, data: {vertexcount: null, edgecount: null}});
+    const full = deferred();
+    api.manage.getGraphStatistic.mockReturnValue(full.promise);
+    renderDetail();
+    expect(await screen.findByText('Not collected')).toBeInTheDocument();
+    expect(api.manage.getGraphStatistic).not.toHaveBeenCalled();
+    await act(async () => { fireEvent.click(screen.getByRole('button', {name: /Collect statistics/})); });
+    expect(api.manage.getGraphStatistic).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('Loading statistics')).toBeInTheDocument();
+    expect(screen.getByRole('button', {name: /Query this graph/})).toBeEnabled();
+    expect(screen.getByRole('link', {name: 'Schema'})).toHaveAttribute('href', '/graphspace/A/graph/a/meta');
+    await act(async () => {
+        full.resolve({status: 200, data: {vertex_count: 12, edge_count: 20, vertices: {person: 12}, edges: {knows: 20}, approximate: true, scan_limit: 100000}});
+    });
+    expect(screen.getByText('≈12')).toBeInTheDocument();
+    expect(screen.getByText('≈20')).toBeInTheDocument();
+    expect(screen.getByText('12')).toBeInTheDocument();
     expect(screen.getByText('20')).toBeInTheDocument();
-    expect(api.manage.getGraphStatistic).toHaveBeenCalledTimes(2);
+    fireEvent.mouseEnter(screen.getByText('Available'));
+    expect(await screen.findByText('graph.detail.bounded_statistics_hint')).toBeInTheDocument();
+});
+
+test('shows a failed statistic read without hiding core metadata or inventing zeros', async () => {
+    readyCore();
+    api.analysis.getGraphData.mockResolvedValue({status: 503});
+    api.manage.getGraphStatistic.mockResolvedValue({status: 200, data: {vertex_count: 2, edge_count: 3}});
+    renderDetail();
+    expect(await screen.findByText('Statistics are unavailable. Retry later.')).toBeInTheDocument();
+    expect(screen.queryByText('0')).not.toBeInTheDocument();
+    expect(screen.getByText('Detail')).toBeInTheDocument();
+    await act(async () => { fireEvent.click(screen.getByRole('button', {name: 'Retry statistics'})); });
+    expect(await screen.findByText('2')).toBeInTheDocument();
     expect(api.manage.getGraphSpace).toHaveBeenCalledTimes(1);
     expect(api.manage.getGraph).toHaveBeenCalledTimes(1);
 });
 
-const createDeferred = () => {
-    let resolve;
-    const promise = new Promise(done => {
-        resolve = done;
-    });
-    return {promise, resolve};
-};
-
-const RouteHarness = () => {
-    const navigate = useNavigate();
-    return (
-        <>
-            <button onClick={() => navigate('/graphspace/B/graph/b/detail')}>
-                switch graph
-            </button>
-            <Routes>
-                <Route
-                    path='/graphspace/:graphspace/graph/:graph/detail'
-                    element={<GraphDetail />}
-                />
-            </Routes>
-        </>
-    );
-};
-
-test('does not claim statistics are available before the current request succeeds', async () => {
-    const statistics = createDeferred();
-    api.manage.getGraphSpace.mockResolvedValue({status: 200, data: {nickname: 'Space'}});
-    api.manage.getGraph.mockResolvedValue({status: 200, data: {nickname: 'Graph'}});
-    api.manage.getGraphStatistic.mockReturnValue(statistics.promise);
-
-    render(
-        <MemoryRouter
-            initialEntries={['/graphspace/DEFAULT/graph/g/detail']}
-            future={{v7_relativeSplatPath: true, v7_startTransition: true}}
-        >
-            <Routes>
-                <Route
-                    path='/graphspace/:graphspace/graph/:graph/detail'
-                    element={<GraphDetail />}
-                />
-            </Routes>
-        </MemoryRouter>
-    );
-
-    expect(await screen.findByText('Loading')).toBeInTheDocument();
-    expect(screen.queryByText('Available')).not.toBeInTheDocument();
-
-    await act(async () => {
-        statistics.resolve({status: 200, data: {vertex_count: 1, edge_count: 2}});
-        await statistics.promise;
-    });
-    expect(await screen.findByText('Available')).toBeInTheDocument();
-});
-
-test('keeps a failed route body free of stale graph identity', async () => {
-    const graphspaceB = createDeferred();
-    const graphB = createDeferred();
-    api.manage.getGraphSpace
-        .mockResolvedValueOnce({status: 200, data: {nickname: 'Space A'}})
-        .mockReturnValueOnce(graphspaceB.promise);
-    api.manage.getGraph
-        .mockResolvedValueOnce({status: 200, data: {nickname: 'Graph A'}})
-        .mockReturnValueOnce(graphB.promise);
-    api.manage.getGraphStatistic.mockResolvedValue({status: 200, data: {}});
-
-    render(
-        <MemoryRouter
-            initialEntries={['/graphspace/A/graph/a/detail']}
-            future={{v7_relativeSplatPath: true, v7_startTransition: true}}
-        >
-            <RouteHarness />
-        </MemoryRouter>
-    );
-
-    expect(await screen.findByText('Detail')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', {name: 'switch graph'}));
-    expect(screen.queryByText(/Space A|Graph A/)).not.toBeInTheDocument();
-
-    await act(async () => {
-        graphspaceB.resolve({status: 503});
-        graphB.resolve({status: 503});
-        await Promise.all([graphspaceB.promise, graphB.promise]);
-    });
-
-    expect(await screen.findByText(
-        'Graph details are unavailable. Check the server and retry.'
-    )).toBeInTheDocument();
-    expect(screen.queryByText(/Space A|Graph A/)).not.toBeInTheDocument();
-});
-
-test('ignores an update completion after navigating to another graph', async () => {
-    const update = createDeferred();
-    const statisticsA = createDeferred();
-    const statisticsB = createDeferred();
-    api.manage.getGraphSpace.mockImplementation(space => Promise.resolve({
-        status: 200,
-        data: {nickname: `Space ${space}`},
-    }));
-    api.manage.getGraph.mockImplementation((space, graph) => Promise.resolve({
-        status: 200,
-        data: {nickname: `Graph ${graph}`},
-    }));
-    api.manage.getGraphStatistic
-        .mockReturnValueOnce(statisticsA.promise)
-        .mockReturnValueOnce(statisticsB.promise);
-    api.manage.updateGraphStatistic.mockReturnValue(update.promise);
-
-    render(
-        <MemoryRouter
-            initialEntries={['/graphspace/A/graph/a/detail']}
-            future={{v7_relativeSplatPath: true, v7_startTransition: true}}
-        >
-            <RouteHarness />
-        </MemoryRouter>
-    );
-
-    expect(await screen.findByText('Detail')).toBeInTheDocument();
-    await act(async () => {
-        statisticsA.resolve({status: 200, data: {vertex_count: 1, edge_count: 2}});
-        await statisticsA.promise;
-    });
-    expect(await screen.findByText('1')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', {name: /Update Data/}));
-    await userEvent.click(screen.getByRole('button', {name: 'switch graph'}));
-    await waitFor(() => expect(screen.getByRole('link', {name: 'Schema'}))
-        .toHaveAttribute('href', '/graphspace/B/graph/b/meta'));
-    await act(async () => {
-        statisticsB.resolve({status: 200, data: {vertex_count: 22, edge_count: 2}});
-        await statisticsB.promise;
-    });
+test('ignores full statistics from the previous graph after navigation', async () => {
+    readyCore();
+    api.analysis.getGraphData.mockImplementation((space) => Promise.resolve({status: 200,
+        data: space === 'A' ? {vertexcount: null, edgecount: null} : {vertexcount: 22, edgecount: 33}}));
+    const fullA = deferred();
+    api.manage.getGraphStatistic.mockReturnValue(fullA.promise);
+    renderDetail();
+    expect(await screen.findByText('Not collected')).toBeInTheDocument();
+    await act(async () => { fireEvent.click(screen.getByRole('button', {name: /Collect statistics/})); });
+    await act(async () => { fireEvent.click(screen.getByRole('button', {name: 'Switch graph'})); });
     expect(await screen.findByText('22')).toBeInTheDocument();
-
-    await act(async () => {
-        update.resolve({status: 200});
-        await update.promise;
-    });
-    await waitFor(() => expect(message.success).not.toHaveBeenCalled());
-    expect(api.manage.getGraphStatistic).toHaveBeenCalledTimes(2);
+    await act(async () => { fullA.resolve({status: 200, data: {vertex_count: 999, edge_count: 888}}); });
+    expect(screen.queryByText('999')).not.toBeInTheDocument();
     expect(screen.getByText('22')).toBeInTheDocument();
+    expect(screen.getByRole('link', {name: 'Schema'})).toHaveAttribute('href', '/graphspace/B/graph/b/meta');
+});
+
+test('renders one actionable core metadata error', async () => {
+    api.manage.getGraphSpace.mockRejectedValue(new Error('connection refused'));
+    api.manage.getGraph.mockRejectedValue(new Error('connection refused'));
+    api.analysis.getGraphData.mockResolvedValue({status: 200, data: {vertexcount: null, edgecount: null}});
+    renderDetail();
+    expect(await screen.findByText('Graph details are unavailable. Check the server and retry.')).toBeInTheDocument();
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
+    expect(screen.getByRole('link', {name: 'Back to graphs'})).toHaveAttribute('href', '/graphspace/A');
+});
+
+
+test('zero recorded counts keep the normal page while schema loads and when schema already exists', async () => {
+    readyCore();
+    api.analysis.getGraphData.mockResolvedValue({status: 200, data: {vertexcount: '0', edgecount: '0'}});
+    const schema = deferred();
+    api.manage.getGraphView.mockReturnValue(schema.promise);
+    renderDetail();
+    expect(await screen.findByText('Total vertices')).toBeInTheDocument();
+    expect(screen.queryByText('This graph has no schema or data yet')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', {name: /Query this graph/})).toBeEnabled();
+    await act(async () => {
+        schema.resolve({status: 200, data: {vertices: [{id: 'person'}], edges: []}});
+    });
+    expect(screen.getByText('Total vertices')).toBeInTheDocument();
+    expect(screen.queryByText('This graph has no schema or data yet')).not.toBeInTheDocument();
+    expect(api.manage.getGraphStatistic).not.toHaveBeenCalled();
+});
+
+test('shows empty graph guidance only after schema is confirmed empty', async () => {
+    readyCore();
+    api.analysis.getGraphData.mockResolvedValue({status: 200, data: {vertexcount: '0', edgecount: '0'}});
+    const schema = deferred();
+    api.manage.getGraphView.mockReturnValue(schema.promise);
+    renderDetail();
+    expect(await screen.findByText('Total vertices')).toBeInTheDocument();
+    expect(screen.queryByText('This graph has no schema or data yet')).not.toBeInTheDocument();
+    await act(async () => {
+        schema.resolve({status: 200, data: {vertices: [], edges: []}});
+    });
+    expect(screen.getByText('This graph has no schema or data yet')).toBeInTheDocument();
+    expect(api.manage.getGraphStatistic).not.toHaveBeenCalled();
+});
+
+
+test('marks bounded snapshot totals consistently with graph cards and canvas counts', async () => {
+    readyCore();
+    api.analysis.getGraphData.mockResolvedValue({status: 200, data: {
+        vertexcount: '100000', edgecount: '20', approximate: true, scan_limit: 100000,
+    }});
+    renderDetail();
+    expect(await screen.findByText('≥100000')).toBeInTheDocument();
+    expect(screen.getByText('≈20')).toBeInTheDocument();
+    expect(api.manage.getGraphStatistic).not.toHaveBeenCalled();
+    expect(api.manage.getGraphView).not.toHaveBeenCalled();
+});
+
+test('an approximate zero remains visible without declaring the current graph empty', async () => {
+    readyCore();
+    api.analysis.getGraphData.mockResolvedValue({status: 200, data: {
+        vertexcount: '0', edgecount: '0', approximate: true, scan_limit: 100000,
+    }});
+    api.manage.getGraphView.mockResolvedValue({status: 200, data: {vertices: [], edges: []}});
+    renderDetail();
+
+    expect(await screen.findAllByText('≈0')).toHaveLength(2);
+    expect(screen.getByText('Total vertices')).toBeInTheDocument();
+    expect(screen.queryByText('This graph has no schema or data yet')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', {name: /Query this graph/})).toBeEnabled();
+    expect(api.manage.getGraphView).not.toHaveBeenCalled();
+    expect(api.manage.getGraphStatistic).not.toHaveBeenCalled();
 });

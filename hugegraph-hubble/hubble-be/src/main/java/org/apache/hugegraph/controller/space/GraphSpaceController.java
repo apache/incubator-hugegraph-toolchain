@@ -54,9 +54,9 @@ import java.util.List;
 public class GraphSpaceController extends BaseController {
     private static final int DEFAULT_MAX_GRAPH_NUMBER = 100;
     private static final int DEFAULT_MAX_ROLE_NUMBER = 100;
-    private static final int DEFAULT_STORAGE_VALUE = 1000000;
+    private static final int DEFAULT_STORAGE_VALUE = 10240;
     private static final int DEFAULT_MEMORY_VALUE = 128;
-    private static final int DEFAULT_CPU_VALUE = 64;
+    private static final int DEFAULT_CPU_VALUE = 128;
 
     @Autowired
     private GraphSpaceService graphSpaceService;
@@ -90,6 +90,25 @@ public class GraphSpaceController extends BaseController {
             graphSpaces = this.graphSpaceService.listAccessible(client);
         }
         return ImmutableMap.of("graphspaces", graphSpaces);
+    }
+
+    @GetMapping(params = "brief=true")
+    public Object queryBriefPage(
+            @RequestParam(name = "query", defaultValue = "") String query,
+            @RequestParam(name = "create_time", defaultValue = "") String createTime,
+            @RequestParam(name = "page_no", defaultValue = "1") int pageNo,
+            @RequestParam(name = "page_size", defaultValue = "100") int pageSize,
+            @RequestParam(name = "selected", defaultValue = "") String selected) {
+        if (!isPdEnabled()) {
+            return ImmutableMap.of("records", Collections.emptyList(),
+                                   "total", 0);
+        }
+        HugeClient client = this.authClient(null, null);
+        boolean anonymous = this.authMode != null && this.authMode.anonymous();
+        boolean administrator = !anonymous && this.userService.isSuperAdmin(client);
+        return this.graphSpaceService.queryBriefPage(
+                client, query, createTime, pageNo, pageSize,
+                anonymous, administrator, selected);
     }
 
     @GetMapping
@@ -204,12 +223,10 @@ public class GraphSpaceController extends BaseController {
         if (graphSpaceEntity.getMemoryLimit() <= 0) {
             graphSpaceEntity.setMemoryLimit(DEFAULT_MEMORY_VALUE);
         }
-        if (graphSpaceEntity.getComputeCpuLimit() <= 0) {
-            graphSpaceEntity.setComputeCpuLimit(DEFAULT_CPU_VALUE);
-        }
-        if (graphSpaceEntity.getComputeMemoryLimit() <= 0) {
-            graphSpaceEntity.setComputeMemoryLimit(DEFAULT_MEMORY_VALUE);
-        }
+        E.checkArgument(graphSpaceEntity.getComputeCpuLimit() >= 0,
+                        "compute_cpu_limit must be nonnegative; 0 inherits CPU");
+        E.checkArgument(graphSpaceEntity.getComputeMemoryLimit() >= 0,
+                        "compute_memory_limit must be nonnegative; 0 inherits memory");
         if (graphSpaceEntity.getStorageLimit() <= 0) {
             graphSpaceEntity.setStorageLimit(DEFAULT_STORAGE_VALUE);
         }

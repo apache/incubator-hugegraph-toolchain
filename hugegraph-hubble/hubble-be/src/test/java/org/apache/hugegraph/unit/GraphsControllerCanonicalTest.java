@@ -31,10 +31,14 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import jakarta.servlet.ServletException;
 
 import org.apache.hugegraph.controller.graphs.GraphsController;
+import org.apache.hugegraph.controller.query.GremlinQueryController;
+import org.apache.hugegraph.common.Constant;
+import org.apache.hugegraph.service.HugeClientPoolService;
 import org.apache.hugegraph.config.HugeConfig;
 import org.apache.hugegraph.controller.BaseController;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.entity.graphs.GraphCloneEntity;
+import org.apache.hugegraph.entity.graphs.GraphStatisticsEntity;
 import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.options.HubbleOptions;
 import org.apache.hugegraph.service.graphs.GraphsService;
@@ -45,10 +49,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 public class GraphsControllerCanonicalTest {
 
     private MockMvc mvc;
+    private GraphsController controller;
     private HugeClient client;
     private GraphsService graphsService;
     private RequestPostProcessor withClient;
@@ -56,6 +62,7 @@ public class GraphsControllerCanonicalTest {
     @Before
     public void setup() throws Exception {
         GraphsController controller = new GraphsController();
+        this.controller = controller;
         this.graphsService = Mockito.mock(GraphsService.class);
         this.setField(controller, "graphsService", this.graphsService);
         HugeConfig config = Mockito.mock(HugeConfig.class);
@@ -69,6 +76,103 @@ public class GraphsControllerCanonicalTest {
             return request;
         };
         this.mvc = MockMvcBuilders.standaloneSetup(controller).build();
+    }
+
+    @Test
+    public void testStatisticsUsesGremlinAuthenticationCapability() throws Exception {
+        HugeClientPoolService pool = Mockito.mock(HugeClientPoolService.class);
+        HugeClient basicClient = Mockito.mock(HugeClient.class);
+        this.setField(BaseController.class, this.controller, "hugeClientPoolService", pool);
+        Mockito.when(pool.createBasicClient("DEFAULT", "graph", "admin", "fixture-password"))
+               .thenReturn(basicClient);
+
+        for (boolean basicRequired : new boolean[]{false, true}) {
+            Mockito.when(this.client.requiresBasicGremlinAuth()).thenReturn(basicRequired);
+            this.mvc.perform(get("/api/v1.3/graphspaces/DEFAULT/graphs/graph/statistics")
+                             .with(this.withClient)
+                             .sessionAttr(Constant.USERNAME_KEY, "admin")
+                             .sessionAttr(Constant.TOKEN_KEY, "fixture-token")
+                             .sessionAttr(Constant.PASSWORD_KEY, "fixture-password")
+                             .sessionAttr(Constant.PASSWORD_EXPIRE_AT_KEY,
+                                          System.currentTimeMillis() + 60000L))
+                    .andExpect(status().isOk());
+            Mockito.verify(this.graphsService).getStatistics(
+                    basicRequired ? basicClient : this.client, "DEFAULT", "graph");
+        }
+        Mockito.verify(this.client).close();
+        Mockito.verify(pool).createBasicClient("DEFAULT", "graph", "admin", "fixture-password");
+    }
+
+    @Test
+    public void testLegacyOverviewSharesTheExplicitStatisticsCredentialContext() throws Exception {
+        HugeClientPoolService pool = Mockito.mock(HugeClientPoolService.class);
+        HugeClient basicClient = Mockito.mock(HugeClient.class);
+        Mockito.when(this.client.requiresBasicGremlinAuth()).thenReturn(true);
+        Mockito.when(pool.createBasicClient("DEFAULT", "graph", "admin", "fixture-password"))
+               .thenReturn(basicClient);
+        this.setField(BaseController.class, this.controller, "hugeClientPoolService", pool);
+        GremlinQueryController overview = new GremlinQueryController();
+        this.setField(overview, "graphsService", this.graphsService);
+        this.setField(BaseController.class, overview, "hugeClientPoolService", pool);
+        HugeConfig config = Mockito.mock(HugeConfig.class);
+        Mockito.when(config.get(HubbleOptions.PD_ENABLED)).thenReturn(false);
+        this.setField(BaseController.class, overview, "config", config);
+        Mockito.when(this.graphsService.evCount(basicClient, "DEFAULT", "graph"))
+               .thenReturn(Collections.emptyMap(), java.util.Map.of("vertex", 12L, "edge", 8L));
+        Mockito.when(this.graphsService.getStatistics(basicClient, "DEFAULT", "graph"))
+               .thenReturn(GraphStatisticsEntity.emptyEntity());
+        MockMvc routes = MockMvcBuilders.standaloneSetup(this.controller, overview).build();
+        RequestPostProcessor withCredentials = request -> {
+            request.setAttribute("hugeClient", this.client);
+            request.getSession().setAttribute(Constant.USERNAME_KEY, "admin");
+            request.getSession().setAttribute(Constant.TOKEN_KEY, "fixture-token");
+            request.getSession().setAttribute(Constant.PASSWORD_KEY, "fixture-password");
+            request.getSession().setAttribute(Constant.PASSWORD_EXPIRE_AT_KEY,
+                                              System.currentTimeMillis() + 60000L);
+            return request;
+        };
+        String graphPath = "/api/v1.3/graphspaces/DEFAULT/graphs/graph/";
+
+        routes.perform(get(graphPath + "gremlin-query").with(withCredentials))
+              .andExpect(status().isOk()).andExpect(jsonPath("$.vertexcount").doesNotExist());
+        routes.perform(get(graphPath + "statistics").with(withCredentials)).andExpect(status().isOk());
+        routes.perform(get(graphPath + "gremlin-query").with(withCredentials))
+              .andExpect(status().isOk()).andExpect(jsonPath("$.vertexcount").value("12"))
+              .andExpect(jsonPath("$.edgecount").value("8"));
+
+        org.mockito.InOrder calls = Mockito.inOrder(this.graphsService);
+        calls.verify(this.graphsService).evCount(basicClient, "DEFAULT", "graph");
+        calls.verify(this.graphsService).getStatistics(basicClient, "DEFAULT", "graph");
+        calls.verify(this.graphsService).evCount(basicClient, "DEFAULT", "graph");
+        Mockito.verifyNoMoreInteractions(this.graphsService);
+    }
+
+    @Test
+    public void testBriefListUsesMetadataRoute() throws Exception {
+        this.mvc.perform(get("/api/v1.3/graphspaces/DEFAULT/graphs")
+                         .param("brief", "true")
+                         .with(this.withClient))
+                .andExpect(status().isOk());
+
+        Mockito.verify(this.graphsService)
+               .queryBriefPage(this.client, "DEFAULT", "", "", 1, 100, "");
+        Mockito.verifyNoMoreInteractions(this.graphsService);
+    }
+
+    @Test
+    public void testBriefListForwardsPageSearchAndOffPageSelection() throws Exception {
+        this.mvc.perform(get("/api/v1.3/graphspaces/DEFAULT/graphs")
+                         .param("brief", "true")
+                         .param("query", "alias")
+                         .param("page_no", "2")
+                         .param("page_size", "10")
+                         .param("selected", "late_graph")
+                         .with(this.withClient))
+                .andExpect(status().isOk());
+
+        Mockito.verify(this.graphsService)
+               .queryBriefPage(this.client, "DEFAULT", "alias", "", 2, 10, "late_graph");
+        Mockito.verifyNoMoreInteractions(this.graphsService);
     }
 
     @Test

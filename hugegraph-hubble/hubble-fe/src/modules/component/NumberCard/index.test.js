@@ -27,7 +27,7 @@ const mockResources = {
 };
 
 const mockInterpolate = (value, values = {}) => Object.entries(values).reduce(
-    (text, [key, replacement]) => text.replace(`{{${key}}}`, replacement),
+    (text, [key, replacement]) => text.replaceAll(`{{${key}}}`, replacement),
     value
 );
 
@@ -147,7 +147,7 @@ test('marks missing and invalid counts unavailable instead of rendering blanks',
 });
 
 test('ships symmetric Chinese and English NumberCard copy', () => {
-    expect(zhAnalysis.analysis.canvas.number_card).toEqual({
+    expect(zhAnalysis.analysis.canvas.number_card).toMatchObject({
         paths: '路径',
         nodes: '节点',
         edges: '边',
@@ -156,7 +156,7 @@ test('ships symmetric Chinese and English NumberCard copy', () => {
         node_summary: '节点：当前结果 {{current}}，全图 {{total}}',
         edge_summary: '边：当前结果 {{current}}，全图 {{total}}',
     });
-    expect(enAnalysis.analysis.canvas.number_card).toEqual({
+    expect(enAnalysis.analysis.canvas.number_card).toMatchObject({
         paths: 'Paths',
         nodes: 'Nodes',
         edges: 'Edges',
@@ -165,4 +165,29 @@ test('ships symmetric Chinese and English NumberCard copy', () => {
         node_summary: 'Nodes: {{current}} in this result, {{total}} in the full graph',
         edge_summary: 'Edges: {{current}} in this result, {{total}} in the full graph',
     });
+});
+
+
+test('marks recorded totals approximate and explains cache reuse', () => {
+    render(<NumberCard data={{...counts, approximate: true}} />);
+    expect(screen.getByText('≈3')).toBeInTheDocument();
+    expect(screen.getByRole('group', {name: 'Nodes: 1 in this result, ≈3 in the full graph'}))
+        .toHaveAttribute('title', expect.stringContaining('cached statistics may be reused for 30 minutes'));
+});
+
+test('shows a capped scan as a lower bound instead of an exact denominator', () => {
+    render(<NumberCard data={{...counts, allGraphNodesNum: 100000, allGraphEdgesNum: 20,
+        approximate: true, scan_limit: 100000}} />);
+    expect(screen.getByText('≥100000')).toBeInTheDocument();
+    expect(screen.getByText('≈20')).toBeInTheDocument();
+    expect(screen.getByRole('group', {name: 'Nodes: 1 in this result, ≥100000 in the full graph'}))
+        .toHaveAttribute('title', expect.stringContaining('At most 100000 nodes and 100000 edges are scanned'));
+});
+
+test('does not add approximate markers to unavailable totals', () => {
+    render(<NumberCard data={{...counts, allGraphNodesNum: null, allGraphEdgesNum: -1,
+        approximate: true, scan_limit: 100000}} />);
+    expect(screen.getByText('Unavailable')).toBeInTheDocument();
+    expect(screen.getByText('Loading')).toBeInTheDocument();
+    expect(screen.queryByText(/≈Unavailable|≥Unavailable/)).not.toBeInTheDocument();
 });

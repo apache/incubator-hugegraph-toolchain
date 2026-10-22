@@ -114,7 +114,8 @@
     "unit": {
       "cpu": "核",
       "memory": "G",
-      "unlimited": "未限制"
+      "unlimited": "未限制",
+      "inherited": "继承（{{value}}）"
     },
     "form": {
       "title_edit": "编辑图空间",
@@ -139,9 +140,9 @@
       "admin_placeholder": "选择图空间管理员",
       "description": "描述",
       "description_placeholder": "图空间描述，可选",
-      "cpu_placeholder": "例如：64",
+      "cpu_placeholder": "例如：128",
       "memory_placeholder": "例如：128",
-      "storage_placeholder": "例如：1000000",
+      "storage_placeholder": "例如：10240",
       "max_graph_placeholder": "例如：100",
       "image_placeholder": "例如：example.com/hugegraph/image:1.0.0",
       "image_example": "例如：example.com/org/image:1.0.0",
@@ -152,17 +153,19 @@
       "name_help": "可选的显示别名或备注名，可使用中文；不参与 URL 或权限匹配，留空时显示 GraphSpace 名称",
       "auth_help": "开启后，该图空间内的访问需要通过 HugeGraph 权限校验；创建后不可修改",
       "max_graph_help": "该图空间允许创建的图数量上限，默认 100",
-      "graph_cpu_help": "图查询与写入服务可使用的 CPU 上限，默认 64 核",
+      "graph_cpu_help": "图查询与写入服务可使用的 CPU 上限，默认 128 核",
       "graph_memory_help": "图查询与写入服务可使用的内存上限，默认 128 GB",
-      "compute_cpu_help": "异步计算任务可使用的 CPU 上限，默认 64 核",
-      "compute_memory_help": "异步计算任务可使用的内存上限，默认 128 GB",
+      "compute_cpu_help": "异步计算任务的 CPU 上限。表单默认 128 核；0 表示持续继承图服务 CPU 上限",
+      "compute_memory_help": "异步计算任务的内存上限。表单默认 128 GB；0 表示持续继承图服务内存上限",
       "oltp_namespace_help": "部署图查询与写入服务的 Kubernetes 命名空间；非 Kubernetes 环境可留空",
       "olap_namespace_help": "部署异步计算任务的 Kubernetes 命名空间；不运行计算任务时可留空",
-      "storage_limit_help": "该图空间可使用的存储容量上限，默认 1000000 GB",
+      "storage_limit_help": "该图空间可使用的存储容量上限，默认 10240 GB",
       "image_format_error": "请输入正确的镜像地址格式(ie: example.com/org_1/xx_img:1.0.0)!",
       "id_rule": "以字母开头,只能包含小写字母、数字、_, 最长48位",
       "name_rule": "必须以中文或字母开头，可包含常用符号，最长 48 位",
-      "k8s_rule": "以字母开头,只能包含小写字母、数字、-,最长48位"
+      "k8s_rule": "以字母开头,只能包含小写字母、数字、-,最长48位",
+      "compute_inheritance_help": "填 0 或清空表示持续继承对应的图服务配额；正数表示独立配额。编辑时恢复继承需要 Server 包含 apache/hugegraph#3391 修复",
+      "compute_nonnegative": "填 0 继承，或填写正数配额"
     },
     "card": {
       "enter": "进入图空间",
@@ -180,7 +183,8 @@
       "storage": "最大存储空间限制：",
       "used": "已使用：",
       "set_default": "默认图空间",
-      "created": "创建"
+      "created": "创建",
+      "compute": "计算资源："
     }
   },
   "graph": {
@@ -325,7 +329,7 @@
       "data_status": "数据状态",
       "available": "可用",
       "partial": "部分可用",
-      "loading": "加载中",
+      "loading": "统计中",
       "retry_page": "重试图详情",
       "back_to_graphs": "返回图列表",
       "retry_statistics": "重试统计数据",
@@ -337,14 +341,18 @@
       "empty_title": "当前图还没有 Schema 或数据",
       "empty_description": "创建 Schema、准备数据或运行安全查询，即可开始使用",
       "create_schema": "创建 Schema",
-      "prepare_data": "准备数据"
+      "prepare_data": "准备数据",
+      "not_collected": "未统计",
+      "collect_statistics": "统计点边",
+      "snapshot_hint": "已有统计快照，可能为近似值，并非实时精确总量，可复用30分钟缓存",
+      "bounded_statistics_hint": "最多扫描 {{limit}} 个点和 {{limit}} 条边，统计可能为近似值，可复用30分钟缓存"
     },
     "card": {
       "more_actions": "{{graph}} 的更多操作",
       "storage": "存储空间",
       "schema_types": "{{vertices}} 个顶点类型 · {{edges}} 个边类型",
       "element_counts": "点：{{vertices}} / 边：{{edges}}",
-      "counts_tooltip": "来自图列表 API 的实际点边统计",
+      "counts_tooltip": "最近一次记录的点边数，可能不是实时值",
       "overview": "概览",
       "schema_info": "Schema 信息",
       "view_schema": "查看 {{graph}} 的 Schema",
@@ -352,7 +360,9 @@
       "empty_schema_help": "可以先建立模型，或运行安全查询",
       "open_schema": "创建 Schema",
       "query_graph": "查询此图",
-      "detail_tooltip": "点击可以查看本图目前存储的点边的数量"
+      "detail_tooltip": "点击可以查看本图目前存储的点边的数量",
+      "schema_loading": "Schema 加载中",
+      "schema_unavailable": "Schema 预览暂不可用"
     },
     "empty": {
       "description": "这个 GraphSpace 已可用，但还没有图。创建第一张图后即可配置 Schema、导入和查询数据",
