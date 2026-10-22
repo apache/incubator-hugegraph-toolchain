@@ -22,7 +22,7 @@
 
 import {useState, useCallback, useContext, useEffect} from 'react';
 import {Link} from 'react-router-dom';
-import {Alert, Table, Tag, Spin, message, Button, Typography, Modal} from 'antd';
+import {Table, Tag, Spin, message, Button, Typography, Modal} from 'antd';
 import GraphAnalysisContext from '../../Context';
 import {CloseOutlined} from '@ant-design/icons';
 import * as api from '../../../api/index';
@@ -333,14 +333,6 @@ const AsyncTaskDetail = props => {
 
     return (
         <div className={c.gremlinAsyncTaskDetail}>
-            {asyncManageTaskData?.vermeerUnavailable && (
-                <Alert
-                    showIcon
-                    type='warning'
-                    title={t('analysis.async_task.vermeer_unavailable')}
-                    action={<Button size='small' onClick={onRefresh}>{t('common.action.retry')}</Button>}
-                />
-            )}
             {size(currentSelectedRowKeys) !== 0 && (
                 <div className={c.massDelete}>
                     <div className={c.left}>

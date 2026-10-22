@@ -44,7 +44,7 @@ beforeAll(() => {
     }));
 });
 
-const renderDetail = (record = {}, page = {}) => render(
+const renderDetail = (record = {}) => render(
     <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
         <GraphAnalysisContext.Provider
             value={{
@@ -69,7 +69,6 @@ const renderDetail = (record = {}, page = {}) => render(
                         ...record,
                     }],
                     total: 1,
-                    ...page,
                 }}
                 loading={false}
             />
@@ -110,12 +109,4 @@ it('controls row expansion without opening a new browser tab', () => {
     }));
     expect(document.querySelector('.ant-table-row-expand-icon'))
         .not.toHaveClass('ant-table-row-expand-icon-expanded');
-});
-
-
-it('shows the Vermeer source warning while keeping Server tasks usable', () => {
-    renderDetail({}, {vermeerUnavailable: true});
-    expect(screen.getByRole('alert')).toHaveTextContent('analysis.async_task.vermeer_unavailable');
-    expect(screen.getByText('g.V().count()')).toBeInTheDocument();
-    expect(screen.getByRole('button', {name: 'common.action.retry'})).toBeInTheDocument();
 });

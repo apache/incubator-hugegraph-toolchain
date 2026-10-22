@@ -10,7 +10,7 @@ at `86c05ef9c5d417bd37eab21d4ecd5af82bab17ef`, and separately running PD, Store,
 Server, Vermeer Master/Worker, and Hubble. The development helper pins all three
 database images by digest. Vermeer was checked out from
 `hugegraph/hugegraph-computer` at
-`051c6acc5679db6942ca8142754fc048d6d9d127` ([Computer PR #19](https://github.com/hugegraph/hugegraph-computer/pull/19)); local edits are retained when refreshing
+`3ad48638bc631650570bff3516cab9233675d9d7` ([Computer PR #19](https://github.com/hugegraph/hugegraph-computer/pull/19)); local edits are retained when refreshing
 the environment.
 
 Run these commands from `/workspace/hugegraph-toolchain`:
@@ -171,3 +171,8 @@ its degree results returned 1000 values then one distinct value, and Chromium
 verified both next and previous page controls without page errors.
 
 ![Final page of a real 1001-vertex computation](images/vermeer/paged-results.png)
+
+Stopping the local Master also verified that the task page retains Server tasks
+and displays a retryable warning, including when the Server task list is empty.
+
+![Task page warning while the local Vermeer Master is stopped](images/vermeer/service-unavailable.png)
