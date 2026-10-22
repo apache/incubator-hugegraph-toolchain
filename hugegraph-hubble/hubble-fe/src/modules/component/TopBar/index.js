@@ -76,7 +76,8 @@ const TopBar = props => {
         last_load_time: currentGraphLoadTime,
     } = currentGraph;
 
-    const showVermeerGraphInfo = isVermeer && !_.isEmpty(currentGraph);
+    const showVermeerGraphInfo = isVermeer && !_.isEmpty(currentGraph) &&
+                                Boolean(currentGraphStatus);
 
     const renderLoadTime = () => {
         return format(Date.parse(currentGraphLoadTime), 'yyyy-MM-dd');
@@ -212,11 +213,21 @@ const TopBar = props => {
 
     useEffect(
         () => {
-            if (currentGraphSpace && _.isEmpty(currentGraph)) {
-                getGraphs();
+            if (!currentGraphSpace || (
+                graphSpaceFromParam && graphSpaceFromParam !== currentGraphSpace
+            )) {
+                return undefined;
             }
+            setCurrentGraph(current => (
+                graphFromParam && current.name && current.name !== graphFromParam
+                    ? {} : current
+            ));
+            getGraphs();
+            return () => {
+                graphRequest.current = null;
+            };
         },
-        [currentGraph, currentGraphSpace, getGraphs]
+        [currentGraphSpace, graphFromParam, graphSpaceFromParam, getGraphs]
     );
 
     useEffect(
@@ -225,23 +236,6 @@ const TopBar = props => {
         },
         [currentGraph, currentGraphSpace, onGraphInfoChange]
     );
-
-    useEffect(() => {
-        if (!graphFromParam
-            || !currentGraph?.name
-            || graphSpaceFromParam !== currentGraphSpace
-            || graphFromParam === currentGraph.name) {
-            return;
-        }
-        graphRequest.current = null;
-        setCurrentGraph({});
-        setGraphError(false);
-    }, [
-        currentGraph?.name,
-        currentGraphSpace,
-        graphFromParam,
-        graphSpaceFromParam,
-    ]);
 
     useEffect(
         () => {
