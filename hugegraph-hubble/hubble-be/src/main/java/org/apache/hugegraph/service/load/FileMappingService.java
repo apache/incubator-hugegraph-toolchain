@@ -44,7 +44,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -401,14 +400,12 @@ public class FileMappingService {
         }
     }
 
-    @Async
-    @Scheduled(fixedRate = 10 * 60 * 1000)
+    @Scheduled(fixedRate = 10 * 60 * 1000, scheduler = "maintenanceScheduler")
     public void deleteOrphanedJobFiles() {
         this.cleanupMappings(this.listOrphanedJobFiles());
     }
 
-    @Async
-    @Scheduled(fixedRate = 10 * 60 * 1000)
+    @Scheduled(fixedRate = 10 * 60 * 1000, scheduler = "maintenanceScheduler")
     public void deleteUnfinishedFile() {
         QueryWrapper<FileMapping> query = Wrappers.query();
         query.in("file_status", FileMappingStatus.UPLOADING.getValue(),

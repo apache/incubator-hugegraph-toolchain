@@ -56,6 +56,7 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
     AccountMutationAuthorizationTest.class,
     AsyncConfigLifecycleTest.class,
+    MaintenanceSchedulingTest.class,
     AsyncLoadShutdownTest.class,
     AuthContextServiceTest.class,
     AuthModeServiceTest.class,
