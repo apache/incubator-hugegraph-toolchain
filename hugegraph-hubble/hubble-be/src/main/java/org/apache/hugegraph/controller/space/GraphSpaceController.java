@@ -54,9 +54,9 @@ import java.util.List;
 public class GraphSpaceController extends BaseController {
     private static final int DEFAULT_MAX_GRAPH_NUMBER = 100;
     private static final int DEFAULT_MAX_ROLE_NUMBER = 100;
-    private static final int DEFAULT_STORAGE_VALUE = 1000000;
+    private static final int DEFAULT_STORAGE_VALUE = 10240;
     private static final int DEFAULT_MEMORY_VALUE = 128;
-    private static final int DEFAULT_CPU_VALUE = 64;
+    private static final int DEFAULT_CPU_VALUE = 128;
 
     @Autowired
     private GraphSpaceService graphSpaceService;
@@ -204,12 +204,10 @@ public class GraphSpaceController extends BaseController {
         if (graphSpaceEntity.getMemoryLimit() <= 0) {
             graphSpaceEntity.setMemoryLimit(DEFAULT_MEMORY_VALUE);
         }
-        if (graphSpaceEntity.getComputeCpuLimit() <= 0) {
-            graphSpaceEntity.setComputeCpuLimit(DEFAULT_CPU_VALUE);
-        }
-        if (graphSpaceEntity.getComputeMemoryLimit() <= 0) {
-            graphSpaceEntity.setComputeMemoryLimit(DEFAULT_MEMORY_VALUE);
-        }
+        E.checkArgument(graphSpaceEntity.getComputeCpuLimit() >= 0,
+                        "compute_cpu_limit must be nonnegative; 0 inherits CPU");
+        E.checkArgument(graphSpaceEntity.getComputeMemoryLimit() >= 0,
+                        "compute_memory_limit must be nonnegative; 0 inherits memory");
         if (graphSpaceEntity.getStorageLimit() <= 0) {
             graphSpaceEntity.setStorageLimit(DEFAULT_STORAGE_VALUE);
         }

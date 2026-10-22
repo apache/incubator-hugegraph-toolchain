@@ -49,8 +49,9 @@ def sha256(data):
 
 def installed_packages():
     expected_manager = json.loads((FRONTEND / 'package.json').read_text())['packageManager']
-    actual_manager = subprocess.check_output(
-        ['pnpm', '--version'], cwd=FRONTEND).decode().strip()
+    # Corepack selects the pinned manager before pnpm processes its arguments.
+    actual_manager = subprocess.check_output([
+        'pnpm', '--version'], cwd=FRONTEND).decode().strip()
     if expected_manager != 'pnpm@' + actual_manager:
         raise ValueError(f'Use the pinned package manager: {expected_manager}')
     source_lock = (FRONTEND / 'pnpm-lock.yaml').read_bytes()

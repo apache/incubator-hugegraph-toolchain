@@ -21,7 +21,8 @@ import userEvent from '@testing-library/user-event';
 import GraphSpaceCard from './Card';
 
 jest.mock('react-i18next', () => ({
-    useTranslation: () => ({t: key => key}),
+    useTranslation: () => ({t: (key, options) => key === 'graphspace.unit.inherited'
+        ? `Inherited (${options.value})` : key}),
 }));
 
 jest.mock('react-router-dom', () => {
@@ -91,6 +92,43 @@ test('ships a localized default GraphSpace name in both languages', () => {
 
     expect(zh.graphspace.default_name).toBe('默认图空间');
     expect(en.graphspace.default_name).toBe('Default GraphSpace');
+});
+
+test('shows nonzero precise usage when the legacy ratio is rounded to zero', () => {
+    render(<GraphSpaceCard item={{
+        name: 'small', storage_used_kb: 1024, storage_used: 0,
+        storage_limit: 10240, storage_percent: 0,
+    }} />);
+
+    expect(screen.getByText('<0.01%')).toBeInTheDocument();
+    expect(screen.getByText(/1 MB/)).toBeInTheDocument();
+    expect(screen.getByText('1 MB / 10240 GB')).toBeInTheDocument();
+});
+
+test.each([
+    [600 * 1024, '99.99%'],
+    [512 * 1024, '<100%'],
+    [1, '<100%'],
+])('keeps %s KB of remaining quota visibly below full', (remainingKb, expected) => {
+    const {container} = render(<GraphSpaceCard item={{
+        name: 'nearly-full', storage_limit: 10240,
+        storage_used_kb: 10240 * 1024 * 1024 - remainingKb,
+    }} />);
+
+    expect(screen.getByText(expected)).toBeInTheDocument();
+    expect(screen.queryByText('100%')).not.toBeInTheDocument();
+    expect(container.querySelector('.ant-progress-status-normal')).toBeInTheDocument();
+});
+
+test.each([0, 1024])('keeps full or exceeded quota in the exception state (%s KB over)', excessKb => {
+    const {container} = render(<GraphSpaceCard item={{
+        name: 'full', storage_limit: 10240,
+        storage_used_kb: 10240 * 1024 * 1024 + excessKb,
+    }} />);
+
+    expect(screen.queryByText('<100%')).not.toBeInTheDocument();
+    expect(container.querySelector('.ant-progress-status-exception')).toBeInTheDocument();
+    expect(screen.getByRole('img', {name: 'info'})).toBeInTheDocument();
 });
 
 test('falls back to the daily-update label when statistics are unavailable', () => {
@@ -211,4 +249,26 @@ test('keeps GraphSpace update and delete actions independently gated', async () 
     await userEvent.click(screen.getByRole('button', {name: 'common.action.more'}));
     expect(await screen.findByText('common.action.edit')).toBeInTheDocument();
     expect(screen.queryByText('common.action.delete')).not.toBeInTheDocument();
+});
+
+test('shows inherited compute resources with their current effective limits', () => {
+    render(<GraphSpaceCard item={{
+        name: 'inherited', cpu_limit: 4, memory_limit: 8,
+        compute_cpu_limit: 0, compute_memory_limit: 0,
+        storage_limit: 10240, storage_used_kb: 0,
+    }} />);
+    expect(screen.getByText(/Inherited \(4graphspace.unit.cpu\)/)).toBeInTheDocument();
+    expect(screen.getByText(/Inherited \(8graphspace.unit.memory\)/)).toBeInTheDocument();
+});
+
+test.each([1024, undefined])('keeps unlimited usage visible without a percentage (%s KB)', usedKb => {
+    const {container} = render(<GraphSpaceCard item={{
+        name: 'unlimited', storage_limit: 2147483647, storage_used_kb: usedKb,
+        storage_used: 1, storage_percent: 1,
+    }} />);
+    expect(screen.getByText('--')).toBeInTheDocument();
+    expect(screen.getByText(/graphspace.unit.unlimited/)).toBeInTheDocument();
+    expect(screen.getByText(usedKb ? /1 MB/ : /1 GB/)).toBeInTheDocument();
+    expect(screen.queryByText('<0.01%')).not.toBeInTheDocument();
+    expect(container.querySelector('.ant-progress-status-exception')).not.toBeInTheDocument();
 });

@@ -39,18 +39,39 @@ import org.apache.hugegraph.entity.space.GraphSpaceEntity;
 import org.apache.hugegraph.exception.ForbiddenException;
 import org.apache.hugegraph.handler.ExceptionAdvisor;
 import org.apache.hugegraph.options.HubbleOptions;
+import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.service.auth.UserService;
 import org.apache.hugegraph.service.auth.AuthModeService;
 import org.apache.hugegraph.service.graphs.GraphsService;
 import org.apache.hugegraph.service.space.GraphSpaceService;
 import org.apache.hugegraph.structure.space.GraphSpace;
 import org.apache.hugegraph.testutil.Assert;
+import org.apache.hugegraph.util.JsonUtil;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 public class GraphSpaceControllerTest {
+
+    @Test
+    public void testHttpStoragePrecisionSurvivesEntityWireWithoutCoercingLegacyConfigs() throws Exception {
+        String[] values = {"524288", "\"524288\"", "null", "-1", "{}"};
+        for (int i = 0; i < values.length; i++) {
+            okhttp3.Response response = Mockito.mock(okhttp3.Response.class, Mockito.RETURNS_DEEP_STUBS);
+            Mockito.when(response.code()).thenReturn(200);
+            Mockito.when(response.body().string()).thenReturn(
+                    "{\"name\":\"shop\",\"storage_used_kb\":" + values[i] +
+                    ",\"storage_used\":3,\"storage_percent\":0.03}");
+            GraphSpace space = new RestResult(response).readObject(GraphSpace.class);
+            GraphSpaceEntity entity = GraphSpaceEntity.fromGraphSpace(space);
+            Map<?, ?> wire = JsonUtil.fromJson(JsonUtil.toJson(entity), Map.class);
+            Assert.assertEquals(i == 0 ? 524288 : null, wire.get("storage_used_kb"));
+            Assert.assertEquals(3, wire.get("storage_used"));
+            Assert.assertEquals(0.03, (Double) wire.get("storage_percent"), 0.000001);
+        }
+    }
 
     @Test
     public void testStandaloneDetailNeverContainsDataPlaneSecrets() {
@@ -210,11 +231,81 @@ public class GraphSpaceControllerTest {
 
         Assert.assertEquals(100, graphSpace.getMaxGraphNumber());
         Assert.assertEquals(100, graphSpace.getMaxRoleNumber());
-        Assert.assertEquals(64, graphSpace.getCpuLimit());
+        Assert.assertEquals(128, graphSpace.getCpuLimit());
         Assert.assertEquals(128, graphSpace.getMemoryLimit());
-        Assert.assertEquals(64, graphSpace.getComputeCpuLimit());
-        Assert.assertEquals(128, graphSpace.getComputeMemoryLimit());
-        Assert.assertEquals(1000000, graphSpace.getStorageLimit());
+        Assert.assertEquals(0, graphSpace.getComputeCpuLimit());
+        Assert.assertEquals(0, graphSpace.getComputeMemoryLimit());
+        Assert.assertEquals(10240, graphSpace.getStorageLimit());
+        Map<?, ?> wire = JsonUtil.fromJson(JsonUtil.toJson(graphSpace.convertReq()), Map.class);
+        Assert.assertFalse(wire.containsKey("compute_cpu_limit"));
+        Assert.assertFalse(wire.containsKey("compute_memory_limit"));
+        Assert.assertEquals(128, wire.get("cpu_limit"));
+    }
+
+    @Test
+    public void testOmittedComputeLimitsKeepInheritanceSentinel() {
+        GraphSpaceEntity graphSpace = new GraphSpaceEntity();
+        graphSpace.setCpuLimit(4);
+        graphSpace.setMemoryLimit(8);
+
+        GraphSpaceController.applyResourceDefaults(graphSpace);
+
+        Assert.assertEquals(0, graphSpace.getComputeCpuLimit());
+        Assert.assertEquals(0, graphSpace.getComputeMemoryLimit());
+    }
+
+    @Test
+    public void testExplicitZeroSurvivesDefaultsAndNegativeComputeIsRejected() {
+        GraphSpaceEntity graphSpace = JsonUtil.fromJson(
+                "{\"compute_cpu_limit\":0,\"compute_memory_limit\":0}", GraphSpaceEntity.class);
+        GraphSpaceController.applyResourceDefaults(graphSpace);
+        Assert.assertEquals(0, graphSpace.getComputeCpuLimit());
+        Assert.assertEquals(0, graphSpace.getComputeMemoryLimit());
+        Map<?, ?> wire = JsonUtil.fromJson(JsonUtil.toJson(graphSpace.convertReq()), Map.class);
+        Assert.assertEquals(0, wire.get("compute_cpu_limit"));
+        Assert.assertEquals(0, wire.get("compute_memory_limit"));
+        graphSpace.setComputeCpuLimit(-1);
+        Assert.assertThrows(IllegalArgumentException.class,
+                            () -> GraphSpaceController.applyResourceDefaults(graphSpace));
+        graphSpace.setComputeCpuLimit(0);
+        graphSpace.setComputeMemoryLimit(-1);
+        Assert.assertThrows(IllegalArgumentException.class,
+                            () -> GraphSpaceController.applyResourceDefaults(graphSpace));
+    }
+
+    @Test
+    public void testUpdateComputePresenceAndSdkWireSerialization() throws Exception {
+        assertComputeUpdate("", null, null);
+        assertComputeUpdate(",\"compute_cpu_limit\":null,\"compute_memory_limit\":null", 0, 0);
+        assertComputeUpdate(",\"compute_cpu_limit\":0", 0, null);
+        assertComputeUpdate(",\"compute_cpu_limit\":0,\"compute_memory_limit\":0", 0, 0);
+        assertComputeUpdate(",\"compute_cpu_limit\":8,\"compute_memory_limit\":16", 8, 16);
+    }
+
+    private static void assertComputeUpdate(String fields, Integer expectedCpu,
+                                            Integer expectedMemory) throws Exception {
+        HugeClient client = Mockito.mock(HugeClient.class);
+        UserService users = Mockito.mock(UserService.class);
+        GraphSpaceService service = Mockito.mock(GraphSpaceService.class);
+        TestGraphSpaceController controller = controller(client, users, service);
+        Mockito.when(users.isSuperAdmin(client)).thenReturn(true);
+        GraphSpaceEntity previous = new GraphSpaceEntity();
+        Mockito.when(service.getWithAdmins(client, "space")).thenReturn(previous);
+        Mockito.when(service.toView(previous)).thenReturn(java.util.Collections.emptyMap());
+        MockMvc mvc = MockMvcBuilders.standaloneSetup(controller).build();
+        mvc.perform(put("/api/v1.3/graphspaces/space")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"cpu_limit\":4,\"memory_limit\":8" + fields + "}"))
+           .andExpect(status().isOk());
+        ArgumentCaptor<GraphSpace> updated = ArgumentCaptor.forClass(GraphSpace.class);
+        Mockito.verify(service).update(Mockito.eq(client), updated.capture());
+        Map<?, ?> wire = JsonUtil.fromJson(JsonUtil.toJson(updated.getValue().convertReq()), Map.class);
+        Assert.assertEquals(expectedCpu != null, wire.containsKey("compute_cpu_limit"));
+        Assert.assertEquals(expectedMemory != null, wire.containsKey("compute_memory_limit"));
+        Assert.assertEquals(expectedCpu, wire.get("compute_cpu_limit"));
+        Assert.assertEquals(expectedMemory, wire.get("compute_memory_limit"));
+        Mockito.verify(service, Mockito.never()).getWithoutAdmins(Mockito.any(), Mockito.anyString());
+        Assert.assertFalse(JsonUtil.toJson(updated.getValue()).contains("Provided"));
     }
 
     @Test
