@@ -26,15 +26,24 @@ def query(label,space,graph,content):
  rec={'label':label,'query':content,'bytes':len(r.content),'rows':len(rows),'vertices':len(gv.get('vertices')or[]),'edges':len(gv.get('edges')or[]),'metadata':{k:v for k,v in d.items()if k.endswith('limit')or k.endswith('truncated')or k=='default_limit_applied'}}
  assert rec['vertices']<=1000 and rec['edges']<=500,rec
  records.append(rec);return rec,rows
+def assert_long_key_sdk_error(response, payload):
+ """Accept only the documented bounded HTTP 400 SDK deserialization boundary."""
+ message=payload.get('message')or''
+ assert response.status_code==400 and payload.get('status')==400, 'Expected HTTP/application 400'
+ assert message.startswith('Failed to deserialize: {'), 'Expected SDK deserialization failure'
+ assert len(message)<=2048 and len(response.content)<8192 and payload.get('cause')is None, 'Expected a bounded error without a cause'
+ return {'label':'long_map_keys_1MiB','http_status':response.status_code,'bytes':len(response.content),'message_chars':len(message),'message_prefix':message[:80],'response_sha256':hashlib.sha256(response.content).hexdigest(),'sdk_deserialization_failed':True,'limitation':'SDK rejected a huge field name before Hubble preview; full message omitted from artifact'}
+
 F=json.loads((ROOT/'large-property-fixture.json').read_text())
-r=S.post(H+f"/graphspaces/{F['space']}/graphs/{F['graph']}/gremlin-query",json={'content':"g.V().groupCount().by('payload')",'preview':True},timeout=120)
+# The dedicated fixture has two vertices. Bound the aggregation input so the
+# unbounded-collection guard cannot mask the SDK field-name boundary.
+r=S.post(H+f"/graphspaces/{F['space']}/graphs/{F['graph']}/gremlin-query",json={'content':"g.V().limit(2).groupCount().by('payload')",'preview':True},timeout=120)
 o=r.json()
 if r.status_code==200 and o.get('status')==200:
  d=o['data'];rows=d['json_view']['data'];assert rows==[{}] and d.get('properties_truncated')is True
  records.append({'label':'long_map_keys_1MiB','http_status':r.status_code,'bytes':len(r.content),'rows':len(rows),'keys_omitted':True})
 else:
- records.append({'label':'long_map_keys_1MiB','http_status':r.status_code,'bytes':len(r.content),'message_chars':len(o.get('message')or''),'message_prefix':(o.get('message')or'')[:80],'response_sha256':hashlib.sha256(r.content).hexdigest(),'sdk_deserialization_failed':'Failed to deserialize'in(o.get('message')or''),'limitation':'SDK rejected a huge field name before Hubble preview; full message omitted from artifact'})
- assert len(o.get('message')or'')<=2048 and len(r.content)<8192 and o.get('cause')is None,records[-1]
+ records.append(assert_long_key_sdk_error(r,o))
 rec,rows=query('long_map_keys_8192','perf_space_0999','perf_large8192',"g.V().limit(2).groupCount().by('payload')")
 assert rows==[{}] and rec['bytes']<32768 and rec['metadata'].get('properties_truncated')is True,rec
 space='perf_space_0998';graph='perf_small64'

@@ -15,7 +15,7 @@
 
 """Exercise bounded query previews and the pre-submit async gate in local Chromium."""
 import argparse, json, pathlib, re, time
-from browser_probe import INIT, add_browser_arguments, prepare_browser_args, put_query, browser_exit_code
+from browser_probe import INIT, add_browser_arguments, prepare_browser_args, put_query, browser_exit_code, wait_for_count_result
 ROOT=pathlib.Path('hubble-results')
 RECORDS=[]
 
@@ -48,7 +48,7 @@ def main(argv=None):
                     if label=='default' or (args.phase=='after' and label=='vertices1000'):
                         page.wait_for_function("n=>{let s=window.__graphSnapshot();return s&&s.status==='ready'&&s.nodes===n;}",arg=expected,timeout=args.timeout_ms)
                     elif label=='count':
-                        page.wait_for_function("document.body.innerText.includes('12000') || document.body.innerText.includes('12,000')")
+                        record['count_result']=wait_for_count_result(page,response.json())
                     elif args.phase=='before':
                         page.get_by_text(re.compile('1,?000 result rows, displayed with pagination')).wait_for()
                     else:
@@ -86,8 +86,13 @@ def main(argv=None):
                     page.screenshot(path=str(shots/f'{args.phase}-anonymous-context-switch.png'))
                 except Exception as e:save(args.phase,dict(stage='graph_context_switch',error=str(e)[:600],url=page.url))
                 for route in ['/login','/account']:
-                    page.goto(args.base_url+route,wait_until='networkidle')
-                    save(args.phase,dict(stage='anonymous_route',requested=route,url=page.url,login_form_visible=page.get_by_role('textbox',name='Username',exact=True).count(),account_link_visible=page.get_by_role('link',name='Accounts',exact=True).count(),errors=errors[:]))
+                    record=dict(stage='anonymous_route',requested=route,requested_url=args.base_url+route)
+                    try:
+                        page.goto(record['requested_url'],wait_until='networkidle')
+                        page.wait_for_url(args.base_url+'/navigation')
+                        record.update(url=page.url,login_form_visible=page.get_by_role('textbox',name='Username',exact=True).count(),account_link_visible=page.get_by_role('link',name='Accounts',exact=True).count(),errors=errors[:])
+                    except Exception as error:record.update(error=str(error)[:600],url=page.url)
+                    save(args.phase,record)
                     page.screenshot(path=str(shots/f'{args.phase}-anonymous-{route[1:]}.png'))
             page.wait_for_load_state('networkidle',timeout=args.timeout_ms)
             context.close()

@@ -15,6 +15,8 @@
 
 """Shared, import-safe browser observation and CLI helpers for this report."""
 import pathlib
+import re
+from urllib.parse import urlsplit
 import shutil
 
 INIT = """(() => {
@@ -60,6 +62,33 @@ def put_query(page, query):
         raise AssertionError('Query editor did not retain the requested statement')
 
 
+def wait_for_count_result(page, payload, expected=12000):
+    """Require the returned scalar, then the active result table's exact cell."""
+    rows = ((payload.get('data') or {}).get('json_view') or {}).get('data')
+    assert payload.get('status') == 200 and rows == [expected], 'Unexpected count-query result'
+    page.get_by_role('tab', name='Table', exact=True).click()
+    value = re.compile(r'^(?:' + re.escape(str(expected)) + '|' + re.escape(f'{expected:,}') + r')$')
+    cell = page.get_by_role('tabpanel', name='Table', exact=True).get_by_role('cell', name=value)
+    cell.wait_for()
+    return {'response_count': rows[0], 'rendered_count': cell.inner_text()}
+
+
+def anonymous_route_redirected(record):
+    """Anonymous login/account deep links must land on same-origin navigation."""
+    try:
+        requested = record['requested']
+        source = urlsplit(record['requested_url'])
+        destination = urlsplit(record['url'])
+        return (requested in ('/login', '/account') and source.path == requested
+                and source.scheme in ('http', 'https') and source.hostname is not None
+                and (source.scheme, source.hostname, source.port) ==
+                    (destination.scheme, destination.hostname, destination.port)
+                and destination.path == '/navigation'
+                and not destination.query and not destination.fragment)
+    except (KeyError, TypeError, ValueError):
+        return False
+
+
 def browser_exit_code(records):
     """A saved diagnostic must never silently turn a failed run into success."""
     for record in records:
@@ -73,6 +102,7 @@ def browser_exit_code(records):
         if record.get('additional_query_requests', 0) != 0:
             return 2
         if record.get('stage') == 'anonymous_route':
-            if record.get('login_form_visible') or record.get('account_link_visible'):
+            if (not anonymous_route_redirected(record)
+                    or record.get('login_form_visible') or record.get('account_link_visible')):
                 return 2
     return 0

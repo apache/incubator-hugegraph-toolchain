@@ -395,6 +395,60 @@ class ReproductionCliTest(unittest.TestCase):
                     records = [json.loads(line) for line in (output / output_name).read_text().splitlines()]
                     self.assertTrue(any(record.get('stage') == 'query' and 'error' in record for record in records))
 
+    @unittest.skipUnless(shutil.which('chromium') and importlib.util.find_spec('playwright'),
+                         'Chromium and Playwright required for scoped count check')
+    def test_count_result_ignores_unrelated_totals_and_history_in_browser(self):
+        from playwright.sync_api import sync_playwright, TimeoutError as BrowserTimeout
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(executable_path=shutil.which('chromium'),
+                headless=True, args=['--no-sandbox', '--disable-dev-shm-usage'])
+            page = browser.new_page()
+            page.set_default_timeout(300)
+            page.set_content('<p>Graph total: 12000</p><p>History: 12000</p>'
+                '<button role="tab">Table</button><section role="tabpanel" aria-label="Table">'
+                '<table><tbody><tr><td>7</td></tr></tbody></table></section>')
+            wrong = {'status': 200, 'data': {'json_view': {'data': [7]}}}
+            with self.assertRaises(AssertionError):
+                BROWSER.wait_for_count_result(page, wrong)
+            correct = {'status': 200, 'data': {'json_view': {'data': [12000]}}}
+            with self.assertRaises(BrowserTimeout):
+                BROWSER.wait_for_count_result(page, correct)
+            page.locator('td').evaluate("cell => cell.textContent = '12000'")
+            self.assertEqual(BROWSER.wait_for_count_result(page, correct)['rendered_count'], '12000')
+            browser.close()
+
+    def test_count_response_cannot_be_satisfied_by_totals_or_history(self):
+        page = mock.Mock()
+        # The surrounding page can contain the fixture count even when the query
+        # response is wrong. It must not be consulted before payload validation.
+        page.locator.return_value.inner_text.return_value = 'Graph total: 12000; history: 12000'
+        for rows in [[7], [1200], [0], [], [12000, 12000], ['12000'], None]:
+            with self.subTest(rows=rows), self.assertRaises(AssertionError):
+                BROWSER.wait_for_count_result(page, {'status': 200, 'data': {'json_view': {'data': rows}}})
+        page.get_by_role.assert_not_called()
+        cell = page.get_by_role.return_value.get_by_role.return_value
+        cell.inner_text.return_value = '12000'
+        result = BROWSER.wait_for_count_result(page, {'status': 200, 'data': {'json_view': {'data': [12000]}}})
+        self.assertEqual(result, {'response_count': 12000, 'rendered_count': '12000'})
+        self.assertIn(mock.call('tabpanel', name='Table', exact=True), page.get_by_role.call_args_list)
+        cell.wait_for.assert_called_once()
+
+    def test_anonymous_routes_require_the_expected_same_origin_redirect(self):
+        for requested in ['/login', '/account']:
+            valid = {'stage': 'anonymous_route', 'requested': requested,
+                     'requested_url': 'http://localhost:3000' + requested,
+                     'url': 'http://localhost:3000/navigation',
+                     'login_form_visible': 0, 'account_link_visible': 0}
+            self.assertEqual(BROWSER.browser_exit_code([valid]), 0)
+            for destination in ['http://localhost:3000' + requested,
+                                'http://localhost:3000/warning',
+                                'http://other.invalid:3000/navigation',
+                                'http://localhost:3000/navigation?blocked=true', '']:
+                with self.subTest(requested=requested, destination=destination):
+                    self.assertEqual(BROWSER.browser_exit_code([{**valid, 'url': destination}]), 2)
+            incomplete = {key: value for key, value in valid.items() if key != 'requested_url'}
+            self.assertEqual(BROWSER.browser_exit_code([incomplete]), 2)
+
     def test_default_notice_requires_both_complete_clauses_and_exact_limit(self):
         for text in ['No result limit was set. This query defaults to at most 300 results.',
                      'No result limit was set; This query defaults to at most 300 results']:
