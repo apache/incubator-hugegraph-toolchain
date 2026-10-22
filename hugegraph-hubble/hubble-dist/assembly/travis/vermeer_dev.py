@@ -131,6 +131,7 @@ def configure():
         private_file(RUN / f'vermeer/{mode}.ini', text)
     template = REPO / 'hugegraph-hubble/hubble-dist/assembly/static/conf/hugegraph-hubble.properties'
     text = template.read_text().replace('dashboard.address=127.0.0.1:8092', 'dashboard.address=')
+    text = text.replace('pd.enabled=false', 'pd.enabled=true')
     text = text.replace('vermeer.url=', 'vermeer.url=' + VERMEER)
     text = text.replace('server.host=localhost', 'server.host=127.0.0.1')
     private_file(RUN / 'hubble.properties', text)
