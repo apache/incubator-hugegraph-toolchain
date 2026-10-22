@@ -1,0 +1,237 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0.html
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.hugegraph.unit;
+
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.net.InetSocketAddress;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+
+import com.sun.net.httpserver.HttpServer;
+import org.apache.hugegraph.config.HugeConfig;
+import org.apache.hugegraph.driver.HugeClient;
+import org.apache.hugegraph.exception.ForbiddenException;
+import org.apache.hugegraph.exception.ExternalException;
+import org.apache.hugegraph.options.HubbleOptions;
+import org.apache.hugegraph.service.space.DirectVermeerService;
+import org.apache.hugegraph.service.space.VermeerClient;
+import org.apache.hugegraph.service.algorithm.AsyncTaskService;
+import org.apache.hugegraph.service.space.VermeerService;
+import org.apache.hugegraph.service.auth.AuthModeService;
+import org.apache.hugegraph.structure.Task;
+import org.junit.Assert;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
+import org.springframework.test.util.ReflectionTestUtils;
+
+public class DirectVermeerServiceTest {
+
+    private static void expect(Class<? extends RuntimeException> type, Runnable action) {
+        try {
+            action.run();
+            Assert.fail("Expected " + type.getSimpleName());
+        } catch (RuntimeException e) {
+            Assert.assertTrue(e.toString(), type.isInstance(e));
+        }
+    }
+
+    private HugeClient graphClient() {
+        HugeClient client = Mockito.mock(HugeClient.class, Mockito.RETURNS_DEEP_STUBS);
+        Mockito.when(client.getGraphSpaceName()).thenReturn("DEFAULT");
+        Mockito.when(client.getGraphName()).thenReturn("graph-with-dash");
+        return client;
+    }
+
+    private DirectVermeerService service(VermeerClient backend) {
+        DirectVermeerService service = new DirectVermeerService();
+        ReflectionTestUtils.setField(service, "backend", backend);
+        AuthModeService mode = Mockito.mock(AuthModeService.class);
+        Mockito.when(mode.anonymous()).thenReturn(true);
+        ReflectionTestUtils.setField(service, "authMode", mode);
+        return service;
+    }
+
+    @Test
+    public void testComputeDoesNotForwardServerCredentials() {
+        VermeerClient backend = Mockito.mock(VermeerClient.class);
+        Mockito.when(backend.request(Mockito.eq("POST"), Mockito.eq("tasks/create"), Mockito.anyMap()))
+               .thenReturn(Map.of("task", Map.of("id", 12)));
+        DirectVermeerService service = service(backend);
+        HugeClient client = graphClient();
+        Map<String, Object> result = service.compute(client,
+                Map.of("compute.algorithm", "pagerank", "pagerank.damping", 0.85));
+        Assert.assertEquals(-12, result.get("task_id"));
+        Mockito.verify(client.graph()).listVertices(1);
+        ArgumentCaptor<Map> body = ArgumentCaptor.forClass(Map.class);
+        Mockito.verify(backend).request(Mockito.eq("POST"), Mockito.eq("tasks/create"), body.capture());
+        Assert.assertEquals("DEFAULT-graph-with-dash", body.getValue().get("graph"));
+        Map<?, ?> params = (Map<?, ?>) body.getValue().get("params");
+        Assert.assertEquals("local", params.get("output.type"));
+        Assert.assertEquals("1", params.get("output.need_query"));
+        Assert.assertEquals("0.85", params.get("pagerank.damping"));
+        Assert.assertFalse(params.containsKey("output.hugegraph_password"));
+        Assert.assertFalse(params.containsKey("output.hugegraph_token"));
+    }
+
+    @Test
+    public void testRestrictedReaderCannotAccessUnfilteredStoreData() {
+        VermeerClient backend = Mockito.mock(VermeerClient.class);
+        DirectVermeerService service = service(backend);
+        ReflectionTestUtils.setField(service, "authMode", Mockito.mock(AuthModeService.class));
+        HugeClient client = graphClient();
+        Mockito.when(client.isServerAuthEnabled()).thenReturn(true);
+        expect(ForbiddenException.class,
+                () -> service.compute(client, Map.of("compute.algorithm", "pagerank")));
+        Mockito.verifyNoInteractions(backend);
+    }
+
+    @Test
+    public void testRejectsCredentialAndTargetOverrides() {
+        VermeerClient backend = Mockito.mock(VermeerClient.class);
+        expect(IllegalArgumentException.class, () -> service(backend).compute(
+                graphClient(), Map.of("compute.algorithm", "pagerank", "output.type", "hugegraph")));
+        Mockito.verifyNoInteractions(backend);
+    }
+
+    @Test
+    public void testCannotReadAnotherGraphsResultsOrCancelItsTask() {
+        VermeerClient backend = Mockito.mock(VermeerClient.class);
+        Mockito.when(backend.request("GET", "task/12", null))
+               .thenReturn(Map.of("task", Map.of("id", 12, "graph_name", "other-graph")));
+        DirectVermeerService service = service(backend);
+        expect(ForbiddenException.class, () -> service.results(graphClient(), -12, 0, 10));
+        expect(ForbiddenException.class, () -> service.cancel(graphClient(), -12));
+        Mockito.verify(backend, Mockito.never()).request(Mockito.eq("GET"),
+                Mockito.startsWith("tasks/value/"), Mockito.isNull());
+        Mockito.verify(backend, Mockito.never()).request("GET", "task/cancel/12", null);
+    }
+
+    @Test
+    public void testTaskListIsScopedAndConvertsStatus() {
+        VermeerClient backend = Mockito.mock(VermeerClient.class);
+        Mockito.when(backend.request("GET", "tasks?limit=10000", null)).thenReturn(Map.of(
+                "tasks", List.of(
+                        Map.of("id", 1, "graph_name", "DEFAULT-graph-with-dash",
+                               "task_type", "compute", "status", "complete"),
+                        Map.of("id", 2, "graph_name", "other-graph"))));
+        var tasks = service(backend).tasks(graphClient());
+        Assert.assertEquals(1, tasks.size());
+        Assert.assertEquals(-1L, tasks.get(0).id());
+        Assert.assertEquals("success", tasks.get(0).status());
+    }
+
+    @Test
+    public void testRestrictedUserKeepsServerTasksAndHasNoDirectCapability() {
+        VermeerClient backend = Mockito.mock(VermeerClient.class);
+        Mockito.when(backend.configured()).thenReturn(true);
+        DirectVermeerService direct = service(backend);
+        ReflectionTestUtils.setField(direct, "authMode", Mockito.mock(AuthModeService.class));
+        HugeClient client = graphClient();
+        Mockito.when(client.isServerAuthEnabled()).thenReturn(true);
+        Task serverTask = Mockito.mock(Task.class);
+        Mockito.when(serverTask.type()).thenReturn("gremlin");
+        Mockito.when(client.task().list((String) null)).thenReturn(List.of(serverTask));
+        AsyncTaskService tasks = new AsyncTaskService();
+        ReflectionTestUtils.setField(tasks, "vermeer", direct);
+        Assert.assertEquals(List.of(serverTask), tasks.list(client, 1, 10, "", "", "").getRecords());
+        VermeerService vermeer = new VermeerService();
+        ReflectionTestUtils.setField(vermeer, "direct", direct);
+        Assert.assertEquals(false, vermeer.getVermeer(client, "login-token", false).get("enable"));
+        Mockito.verify(backend, Mockito.never()).request(Mockito.anyString(),
+                Mockito.anyString(), Mockito.any());
+    }
+
+    @Test
+    public void testVermeerOutageKeepsServerTasksWithLocalWarning() {
+        DirectVermeerService direct = Mockito.mock(DirectVermeerService.class);
+        Mockito.when(direct.configured()).thenReturn(true);
+        HugeClient client = graphClient();
+        Task serverTask = Mockito.mock(Task.class);
+        Mockito.when(serverTask.type()).thenReturn("gremlin");
+        Mockito.when(client.task().list((String) null)).thenReturn(List.of(serverTask));
+        Mockito.when(direct.tasks(client)).thenThrow(new ExternalException("service unavailable"));
+        AsyncTaskService tasks = new AsyncTaskService();
+        ReflectionTestUtils.setField(tasks, "vermeer", direct);
+        var page = tasks.list(client, 1, 10, "", "", "");
+        Assert.assertEquals(List.of(serverTask), page.getRecords());
+        Assert.assertTrue(((AsyncTaskService.TaskPage) page).isVermeerUnavailable());
+    }
+
+    @Test
+    public void testResultPagesKeepNativeCursorAndExposeContinuation() {
+        VermeerClient backend = Mockito.mock(VermeerClient.class);
+        Mockito.when(backend.request("GET", "task/12", null)).thenReturn(
+                Map.of("task", Map.of("graph_name", "DEFAULT-graph-with-dash")));
+        Mockito.when(backend.request("GET", "tasks/value/12?cursor=2&limit=2", null))
+               .thenReturn(Map.of("vertices", List.of(Map.of("ID", "third"), Map.of("ID", "fourth")),
+                                  "cursor", 4));
+        Map<String, Object> page = service(backend).results(graphClient(), -12, 2, 2);
+        Assert.assertEquals(4, page.get("cursor"));
+        Assert.assertEquals(true, page.get("has_more"));
+    }
+
+    @Test
+    public void testAuthenticatedClientProbeCannotDisablePermissionCheck() {
+        VermeerClient backend = Mockito.mock(VermeerClient.class);
+        DirectVermeerService direct = service(backend);
+        ReflectionTestUtils.setField(direct, "authMode", Mockito.mock(AuthModeService.class));
+        HugeClient client = graphClient();
+        // An authenticated graph-list probe succeeds even when auth is enabled.
+        Mockito.when(client.isServerAuthEnabled()).thenReturn(false);
+        expect(ForbiddenException.class,
+                () -> direct.compute(client, Map.of("compute.algorithm", "pagerank")));
+        Mockito.verify(client, Mockito.never()).isServerAuthEnabled();
+        Mockito.verifyNoInteractions(backend);
+        Mockito.when(client.auth().isSuperAdmin()).thenReturn(true);
+        Assert.assertTrue(direct.permitted(client));
+    }
+
+    @Test
+    public void testVermeerUsesSeparateServiceToken() throws Exception {
+        AtomicReference<String> authorization = new AtomicReference<>();
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        Path token = Files.createTempFile("vermeer-test-", ".token");
+        Files.writeString(token, "vermeer-service-token");
+        server.createContext("/api/v1/graphs", exchange -> {
+            authorization.set(exchange.getRequestHeaders().getFirst("Authorization"));
+            byte[] response = "{\"errcode\":0,\"graphs\":[]}".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, response.length);
+            try (var output = exchange.getResponseBody()) {
+                output.write(response);
+            }
+        });
+        server.start();
+        try {
+            HugeConfig config = Mockito.mock(HugeConfig.class);
+            Mockito.when(config.get(HubbleOptions.VERMEER_URL))
+                   .thenReturn("http://127.0.0.1:" + server.getAddress().getPort());
+            Mockito.when(config.get(HubbleOptions.VERMEER_TOKEN_FILE)).thenReturn(token.toString());
+            VermeerClient client = new VermeerClient();
+            ReflectionTestUtils.setField(client, "config", config);
+            Assert.assertNotNull(client.request("GET", "graphs", null).get("graphs"));
+            Assert.assertEquals("Bearer vermeer-service-token", authorization.get());
+        } finally {
+            server.stop(0);
+            Files.delete(token);
+        }
+    }
+}

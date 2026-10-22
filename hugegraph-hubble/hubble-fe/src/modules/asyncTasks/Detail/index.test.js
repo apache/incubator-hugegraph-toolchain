@@ -44,7 +44,7 @@ beforeAll(() => {
     }));
 });
 
-const renderDetail = () => render(
+const renderDetail = (record = {}, page = {}) => render(
     <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
         <GraphAnalysisContext.Provider
             value={{
@@ -66,14 +66,27 @@ const renderDetail = () => render(
                         task_status: 'success',
                         task_create: 1787991956000,
                         task_update: 1787991957000,
+                        ...record,
                     }],
                     total: 1,
+                    ...page,
                 }}
                 loading={false}
             />
         </GraphAnalysisContext.Provider>
     </MemoryRouter>
 );
+
+it('opens Vermeer results and disables unsupported task deletion', () => {
+    renderDetail({id: -12, task_type: 'vermeer-task:compute'});
+    fireEvent.click(screen.getByRole('button', {
+        name: 'analysis.async_task.action.check_result',
+    }));
+    expect(screen.getByTestId('inline-result')).toHaveTextContent('result -12');
+    expect(screen.queryByRole('button', {
+        name: 'analysis.async_task.action.delete',
+    })).not.toBeInTheDocument();
+});
 
 it('controls row expansion without opening a new browser tab', () => {
     window.open = jest.fn();
@@ -97,4 +110,12 @@ it('controls row expansion without opening a new browser tab', () => {
     }));
     expect(document.querySelector('.ant-table-row-expand-icon'))
         .not.toHaveClass('ant-table-row-expand-icon-expanded');
+});
+
+
+it('shows the Vermeer source warning while keeping Server tasks usable', () => {
+    renderDetail({}, {vermeerUnavailable: true});
+    expect(screen.getByRole('alert')).toHaveTextContent('analysis.async_task.vermeer_unavailable');
+    expect(screen.getByText('g.V().count()')).toBeInTheDocument();
+    expect(screen.getByRole('button', {name: 'common.action.retry'})).toBeInTheDocument();
 });

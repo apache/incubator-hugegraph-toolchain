@@ -34,6 +34,7 @@ jest.mock('../../../api', () => ({
         getGraphSpaceList: jest.fn(),
         getGraphList: jest.fn(),
         loadVermeerTask: jest.fn(),
+        fetchAsyncTaskResult: jest.fn(),
     },
 }));
 jest.mock('react-i18next', () => ({
@@ -255,3 +256,35 @@ it.each(['gremlin', 'algorithms', 'asyncTasks'])(
         );
     }
 );
+
+it('tracks the accepted load task while graph metadata still reports loaded', async () => {
+    jest.useFakeTimers();
+    try {
+        api.analysis.getGraphList.mockResolvedValue({
+            status: 200, data: {graphs: [{name: 'hugegraph', status: 'loaded'}]},
+        });
+        api.analysis.loadVermeerTask.mockResolvedValue({status: 200, data: {task_id: -10}});
+        api.analysis.fetchAsyncTaskResult
+            .mockResolvedValueOnce({status: 200, data: {task_status: 'queued'}})
+            .mockResolvedValue({status: 200, data: {task_status: 'success'}});
+        const view = renderTopBar({isVermeer: true});
+        await act(async () => {});
+        fireEvent.click(screen.getByRole('button', {name: 'analysis.topbar.reload_to_vermeer'}));
+        await act(async () => {});
+        expect(screen.getByText('analysis.topbar.loading')).toBeInTheDocument();
+        await act(async () => jest.advanceTimersByTime(2000));
+        expect(screen.getByText('analysis.topbar.loading')).toBeInTheDocument();
+        expect(api.analysis.getGraphList).toHaveBeenCalledTimes(1);
+        await act(async () => jest.advanceTimersByTime(2000));
+        expect(api.analysis.fetchAsyncTaskResult).toHaveBeenCalledWith('DEFAULT', 'hugegraph', -10);
+        expect(screen.getByText('analysis.topbar.loaded')).toBeInTheDocument();
+        expect(screen.getByRole('button', {name: 'analysis.topbar.reload_to_vermeer'})).toBeEnabled();
+        view.unmount();
+        const requests = api.analysis.fetchAsyncTaskResult.mock.calls.length;
+        await act(async () => jest.advanceTimersByTime(10000));
+        expect(api.analysis.fetchAsyncTaskResult).toHaveBeenCalledTimes(requests);
+    }
+    finally {
+        jest.useRealTimers();
+    }
+});

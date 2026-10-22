@@ -18,11 +18,11 @@
 
 import {fireEvent, render, screen, waitFor} from '@testing-library/react';
 import {MemoryRouter} from 'react-router-dom';
-import AsyncTaskResult from './index';
+import AsyncTaskResult, {AsyncTaskResultContent} from './index';
 import * as api from '../../../api/index';
 
 jest.mock('../../../api/index', () => ({
-    analysis: {fetchAsyncTaskResult: jest.fn()},
+    analysis: {fetchAsyncTaskResult: jest.fn(), fetchVermeerTaskValues: jest.fn()},
 }));
 jest.mock('react-router-dom', () => ({
     ...jest.requireActual('react-router-dom'),
@@ -86,4 +86,22 @@ it('keeps task context and a graph-scoped return entry visible', async () => {
     expect(screen.getByRole('link', {name: 'Back to task management'}))
         .toHaveAttribute('href', '/asyncTasks/DEFAULT/hugegraph');
     expect(await screen.findByText('true')).toBeInTheDocument();
+});
+
+
+it('pages direct Vermeer values and resets the cursor after a graph change', async () => {
+    api.analysis.fetchAsyncTaskResult.mockResolvedValue({status: 200, data: {
+        task_result: JSON.stringify({vertices: [{ID: 'first'}], cursor: 1000, has_more: true}),
+    }});
+    api.analysis.fetchVermeerTaskValues.mockResolvedValue({status: 200, data: {
+        vertices: [{ID: 'next'}], cursor: 1001, has_more: false,
+    }});
+    const view = render(<AsyncTaskResultContent graphspace='DEFAULT' graph='one' taskId={-9} />);
+    fireEvent.click(await screen.findByRole('button', {name: 'analysis.async_task.result_next'}));
+    expect(await screen.findByText('"next"')).toBeInTheDocument();
+    expect(api.analysis.fetchVermeerTaskValues).toHaveBeenCalledWith('DEFAULT', 'one', -9, 1000);
+    expect(screen.queryByRole('button', {name: 'analysis.async_task.result_next'})).not.toBeInTheDocument();
+    view.rerender(<AsyncTaskResultContent graphspace='DEFAULT' graph='two' taskId={-9} />);
+    await waitFor(() => expect(api.analysis.fetchAsyncTaskResult).toHaveBeenLastCalledWith('DEFAULT', 'two', -9));
+    expect(await screen.findByText('"first"')).toBeInTheDocument();
 });

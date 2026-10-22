@@ -59,15 +59,20 @@ public class VermeerController extends BaseController {
                                                        required = false,
                                                        defaultValue = "false")
                                                      boolean check) {
-        return vermeerService.getVermeer(this.getToken(), check);
+        return vermeerService.getVermeer(this.authClient(null, null), this.getToken(), check);
     }
 
     @PostMapping("task")
-    public void load(@RequestBody JsonLoad body) {
+    public Map<String, Object> load(@RequestBody JsonLoad body) {
         String graphspace = body.graphspace;
         String graph = body.graph;
         String vGraph = vermeerService.convert2VG(graphspace, graph);
         HugeClient client = this.authClient(graphspace, graph);
+
+        if (this.vermeerService.directConfigured()) {
+            return this.vermeerService.loadDirect(client,
+                    body.force || "reload".equals(body.taskType), body.params);
+        }
 
         Map<String, Object> graphInfo = HubbleUtil.uncheckedCast(
                 client.vermeer().getGraphInfoByName(vGraph).get("graph"));
@@ -98,6 +103,7 @@ public class VermeerController extends BaseController {
             Thread.currentThread().interrupt();
             log.warn("Interrupted while waiting for the Vermeer load task", e);
         }
+        return Map.of();
     }
 
     @DeleteMapping("{name}")

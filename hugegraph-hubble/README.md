@@ -9,6 +9,10 @@ graph data load, schema management, graph relationship analysis, and graphical d
 
 ## Product Tour
 
+For Hubble and the Go computing engine, see the [Vermeer development environment](docs/vermeer-development.md).
+
+![Vermeer PageRank task results](docs/images/vermeer/async-results.png)
+
 ### Graph Data Workbench
 
 Start from one workspace for graph discovery, import, query, account management, and cluster operations.

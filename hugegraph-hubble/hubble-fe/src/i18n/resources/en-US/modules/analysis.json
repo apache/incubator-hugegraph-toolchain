@@ -952,6 +952,9 @@
       }
     },
     "async_task": {
+      "result_next": "Next results",
+      "result_previous": "Previous results",
+      "vermeer_unavailable": "Vermeer tasks are unavailable. Server tasks remain visible. Retry after the service recovers",
       "name": "Async Tasks",
       "help_title": "About async tasks",
       "help_description": "Queries and built-in graph algorithms can run asynchronously. Track progress and results here, or stop and delete tasks. The list refreshes every 5 seconds",

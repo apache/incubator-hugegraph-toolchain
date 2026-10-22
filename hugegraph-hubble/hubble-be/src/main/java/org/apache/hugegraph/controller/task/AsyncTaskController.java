@@ -36,6 +36,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
+import org.apache.hugegraph.service.space.DirectVermeerService;
 
 @Log4j2
 @RestController
@@ -44,6 +46,18 @@ import java.util.List;
 public class AsyncTaskController extends BaseController {
 
     private final AsyncTaskService service;
+
+    @Autowired
+    private DirectVermeerService vermeer;
+
+    @GetMapping("{id}/values")
+    public Map<String, Object> values(@PathVariable("graphspace") String graphSpace,
+                                      @PathVariable("graph") String graph,
+                                      @PathVariable("id") int id,
+                                      @RequestParam(defaultValue = "0") int cursor,
+                                      @RequestParam(defaultValue = "1000") int limit) {
+        return this.vermeer.results(this.authClient(graphSpace, graph), id, cursor, limit);
+    }
 
     @Autowired
     public AsyncTaskController(AsyncTaskService service) {

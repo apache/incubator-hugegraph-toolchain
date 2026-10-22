@@ -130,7 +130,9 @@ import org.junit.runners.Suite;
     ResponseAdvisorStatusTest.class,
     UrlUtilTest.class,
     EntityUtilTest.class,
-    HubbleUtilTest.class
+    HubbleUtilTest.class,
+    DirectVermeerServiceTest.class,
+    VermeerCredentialSafetyTest.class
 })
 public class UnitTestSuite {
 }

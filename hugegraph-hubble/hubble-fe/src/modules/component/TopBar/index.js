@@ -68,6 +68,7 @@ const TopBar = props => {
     const [, setGraphLoading] = useState(false);
     const [graphError, setGraphError] = useState(false);
     const [isLoadRequestLoading, setLoadRequestLoading] = useState(false);
+    const [loadTask, setLoadTask] = useState();
     const graphSpaceRequest = useRef(null);
     const graphRequest = useRef(null);
     const loadRequest = useRef(null);
@@ -180,6 +181,74 @@ const TopBar = props => {
         graphRequest.current = null;
         loadRequest.current = null;
     }, []);
+
+    useEffect(() => {
+        loadRequest.current = null;
+        setLoadRequestLoading(false);
+        setLoadTask(undefined);
+    }, [currentGraphSpace, currentGraph.name]);
+
+    useEffect(() => {
+        if (!isVermeer || loadTask !== undefined || currentGraphStatus !== LOADING) {
+            return;
+        }
+        let active = true;
+        let timer;
+        const refresh = async () => {
+            await getGraphs();
+            if (active) {
+                timer = setTimeout(refresh, 2000);
+            }
+        };
+        timer = setTimeout(refresh, 2000);
+        return () => {
+            active = false;
+            clearTimeout(timer);
+            graphRequest.current = null;
+        };
+    }, [currentGraphStatus, getGraphs, isVermeer, loadTask]);
+
+    useEffect(() => {
+        if (loadTask === undefined) {
+            return;
+        }
+        let active = true;
+        let timer;
+        const poll = async () => {
+            try {
+                const response = await api.analysis.fetchAsyncTaskResult(
+                    currentGraphSpace, currentGraph.name, loadTask
+                );
+                if (!active) {
+                    return;
+                }
+                if (response?.status !== 200) {
+                    throw new Error('load task unavailable');
+                }
+                setGraphError(false);
+                if (['success', 'failed', 'cancelled'].includes(response.data?.task_status)) {
+                    await getGraphs();
+                    if (active) {
+                        setLoadTask(undefined);
+                    }
+                    return;
+                }
+            }
+            catch {
+                if (active) {
+                    setGraphError(true);
+                }
+            }
+            if (active) {
+                timer = setTimeout(poll, 2000);
+            }
+        };
+        timer = setTimeout(poll, 2000);
+        return () => {
+            active = false;
+            clearTimeout(timer);
+        };
+    }, [currentGraph.name, currentGraphSpace, getGraphs, loadTask]);
 
     useEffect(
         () => {
@@ -303,7 +372,13 @@ const TopBar = props => {
                 message.error(t('analysis.topbar.load_vermeer_failed'));
                 return;
             }
-            await getGraphs();
+            if (res.data?.task_id < 0) {
+                setLoadTask(res.data.task_id);
+                setCurrentGraph(current => ({...current, status: LOADING}));
+            }
+            else {
+                await getGraphs();
+            }
         }
         catch {
             if (loadRequest.current === request) {

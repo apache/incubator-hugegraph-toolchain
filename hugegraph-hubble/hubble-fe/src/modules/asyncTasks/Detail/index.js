@@ -22,7 +22,7 @@
 
 import {useState, useCallback, useContext, useEffect} from 'react';
 import {Link} from 'react-router-dom';
-import {Table, Tag, Spin, message, Button, Typography, Modal} from 'antd';
+import {Alert, Table, Tag, Spin, message, Button, Typography, Modal} from 'antd';
 import GraphAnalysisContext from '../../Context';
 import {CloseOutlined} from '@ant-design/icons';
 import * as api from '../../../api/index';
@@ -89,7 +89,7 @@ const AsyncTaskDetail = props => {
         getCheckboxProps: record => {
             const checkboxProps = ['scheduling', 'scheduled', 'queued', 'running', 'restoring', 'deleting'];
             return {
-                disabled: checkboxProps.includes(record.task_status),
+                disabled: record.id < 0 || checkboxProps.includes(record.task_status),
                 task_status: record.task_status,
             };
 
@@ -271,7 +271,7 @@ const AsyncTaskDetail = props => {
             dataIndex: 'manipulation',
             render: (result, rowData, _index) => {
                 const {'task_status': status, 'task_type': type, id: taskId}  = rowData;
-                const allowCheckResTypeArr = ['gremlin', 'computer-dis', 'cypher'];
+                const allowCheckResTypeArr = ['gremlin', 'computer-dis', 'cypher', 'vermeer-task:compute'];
                 const isAllowCheckRes = status === SUCCESS && allowCheckResTypeArr.includes(type);
                 const isResultExpanded = expandedTaskId === taskId;
                 const allowAbortStatusArr = ['scheduling', 'scheduled', 'queued', 'running', 'restoring'];
@@ -308,7 +308,7 @@ const AsyncTaskDetail = props => {
                                     : resultText}
                             </TaskAction>
                         )}
-                        {!isAllowAbort && (
+                        {!isAllowAbort && taskId >= 0 && (
                             status === DELETING
                                 ? <Spin type="strong" />
                                 : (
@@ -333,6 +333,14 @@ const AsyncTaskDetail = props => {
 
     return (
         <div className={c.gremlinAsyncTaskDetail}>
+            {asyncManageTaskData?.vermeerUnavailable && (
+                <Alert
+                    showIcon
+                    type='warning'
+                    title={t('analysis.async_task.vermeer_unavailable')}
+                    action={<Button size='small' onClick={onRefresh}>{t('common.action.retry')}</Button>}
+                />
+            )}
             {size(currentSelectedRowKeys) !== 0 && (
                 <div className={c.massDelete}>
                     <div className={c.left}>
@@ -371,6 +379,7 @@ const AsyncTaskDetail = props => {
                             'gremlin',
                             'computer-dis',
                             'cypher',
+                            'vermeer-task:compute',
                         ];
                         return rowData.task_status === FAILED
                                || (rowData.task_status === SUCCESS

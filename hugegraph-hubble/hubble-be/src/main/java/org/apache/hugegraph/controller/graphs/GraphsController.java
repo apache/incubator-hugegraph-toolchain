@@ -78,12 +78,12 @@ public class GraphsController extends BaseController {
     @Autowired
     HugeConfig config;
 
-    public boolean isVermeerEnabled() {
-        return vermeerService.isVermeerEnabled(this.getToken());
+    public boolean isVermeerEnabled(HugeClient client) {
+        return vermeerService.isVermeerEnabled(client, this.getToken());
     }
 
     public String getGraphFromVermeer(String vermeer) {
-        return vermeer.split("-")[1];
+        return vermeer.substring(vermeer.indexOf('-') + 1);
     }
 
     private Map<String, Object> getVermeerGraphs(String graphspace,
@@ -93,7 +93,7 @@ public class GraphsController extends BaseController {
             List<Map<String, Object>> graphinfos;
             try {
                 graphinfos = HubbleUtil.uncheckedCast(
-                        client.vermeer().getGraphsInfo().get("graphs"));
+                        vermeerService.graphs(client).get("graphs"));
             } catch (ServerException e) {
                 log.info("Failed to connect to the Vermeer service",
                          e.cause());
@@ -126,7 +126,7 @@ public class GraphsController extends BaseController {
 
     private Map<String, String> getVermeerGraph(String graphspace,
                                                 String graph) {
-        boolean enable = isVermeerEnabled();
+        boolean enable = isVermeerEnabled(this.authClient(graphspace, graph));
         if (enable) {
             String prefix = graphspace + "-";
             Map<String, Object> graphInfo = null;
@@ -134,7 +134,7 @@ public class GraphsController extends BaseController {
                 HugeClient client = this.authClient(graphspace, null);
 
                 graphInfo = HubbleUtil.uncheckedCast(
-                        client.vermeer().getGraphInfoByName(prefix + graph)
+                        vermeerService.graph(client, graphspace, graph)
                               .get("graph"));
             } catch (ServerException e) {
                 // if dashboard enables vermeer but server sets wrong vermeer 
@@ -166,7 +166,7 @@ public class GraphsController extends BaseController {
         // Get list of authorized graphs
         HugeClient client = this.authClient(graphspace, null);
 
-        boolean enable = isVermeerEnabled();
+        boolean enable = isVermeerEnabled(client);
         Map<String, Object> vermeerInfo = getVermeerGraphs(graphspace, enable);
         List<Map<String, Object>> sortedGraphs =
                 graphsService.sortedGraphsProfile(client, graphspace, "", "",
@@ -186,7 +186,7 @@ public class GraphsController extends BaseController {
                             @RequestParam(name = "page_size", required = false,
                                     defaultValue = "10") int pageSize) {
         HugeClient client = this.authClient(graphspace, null);
-        boolean enable = isVermeerEnabled();
+        boolean enable = isVermeerEnabled(client);
         Map<String, Object> vermeerInfo = getVermeerGraphs(graphspace, enable);
         Object result = this.graphsService.queryPage(client, graphspace,
                                                      getUser(), query,
@@ -257,7 +257,7 @@ public class GraphsController extends BaseController {
 
         Map<String, String> vermeer = getVermeerGraph(graphspace, graph);
         if (!vermeer.isEmpty()) {
-            HugeClient client = this.authClient(null, null);
+            HugeClient client = this.authClient(graphspace, graph);
             try {
                 vermeerService.deleteGraph(client, graphspace, graph);
             } catch (Exception e) {
