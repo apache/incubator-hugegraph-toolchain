@@ -33,6 +33,7 @@ import org.apache.hugegraph.entity.graphs.GraphStatisticsEntity;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.service.space.VermeerService;
 import org.apache.hugegraph.util.HubbleUtil;
+import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.structure.constant.GraphReadMode;
 import com.google.common.collect.ImmutableMap;
 
@@ -253,6 +254,8 @@ public class GraphsController extends BaseController {
                                defaultValue = "I'm sure to drop the graph")
                                String message) {
 
+        E.checkArgument("I'm sure to drop the graph".equals(message),
+                        "Invalid graph drop confirmation");
         HugeClient client = this.authClient(graphspace, graph);
         if (this.vermeerService.directConfigured()) {
             // Failure (including missing caller permission) must stop source

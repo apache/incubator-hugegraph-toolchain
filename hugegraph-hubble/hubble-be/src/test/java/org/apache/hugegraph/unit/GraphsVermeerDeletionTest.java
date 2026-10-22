@@ -21,10 +21,12 @@ package org.apache.hugegraph.unit;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.hugegraph.config.HugeConfig;
 import org.apache.hugegraph.controller.graphs.GraphsController;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.exception.ForbiddenException;
+import org.apache.hugegraph.options.HubbleOptions;
 import org.apache.hugegraph.service.auth.AuthModeService;
 import org.apache.hugegraph.service.graphs.GraphsService;
 import org.apache.hugegraph.service.load.JobManagerService;
@@ -44,6 +46,7 @@ public class GraphsVermeerDeletionTest {
 
     private static final String CONFIRM = "I'm sure to drop the graph";
     private VermeerClient backend;
+    private HugeConfig config;
     private HugeClient client;
     private GraphsService graphs;
     private ExecuteHistoryService history;
@@ -62,6 +65,9 @@ public class GraphsVermeerDeletionTest {
         Mockito.when(this.client.getGraphName()).thenReturn("graph_a");
         Mockito.when(this.client.auth().isSuperAdmin()).thenReturn(true);
         DirectVermeerService direct = new DirectVermeerService();
+        this.config = Mockito.mock(HugeConfig.class);
+        Mockito.when(this.config.get(HubbleOptions.PD_ENABLED)).thenReturn(true);
+        ReflectionTestUtils.setField(direct, "config", this.config);
         ReflectionTestUtils.setField(direct, "backend", this.backend);
         ReflectionTestUtils.setField(direct, "authMode", Mockito.mock(AuthModeService.class));
         VermeerService vermeer = new VermeerService();
@@ -139,5 +145,23 @@ public class GraphsVermeerDeletionTest {
         Mockito.verify(this.backend, Mockito.never()).request(
                 Mockito.eq("DELETE"), Mockito.anyString(), Mockito.isNull());
         Mockito.verify(this.graphs).delete(this.client, "graph_a", CONFIRM);
+    }
+
+    @Test
+    public void testStandaloneDeletionDoesNotTouchConfiguredVermeer() {
+        Mockito.when(this.config.get(HubbleOptions.PD_ENABLED)).thenReturn(false);
+        this.controller.delete("DEFAULT", "graph_a", CONFIRM);
+        Mockito.verify(this.backend, Mockito.never()).request(Mockito.anyString(),
+                Mockito.anyString(), Mockito.any());
+        Mockito.verify(this.graphs).delete(this.client, "graph_a", CONFIRM);
+        Mockito.verify(this.history).deleteByGraph("DEFAULT", "graph_a");
+    }
+
+    @Test
+    public void testInvalidConfirmationDoesNotUnloadOrDelete() {
+        expect(IllegalArgumentException.class,
+                () -> this.controller.delete("DEFAULT", "graph_a", "not confirmed"));
+        Mockito.verifyNoInteractions(this.backend, this.graphs, this.history,
+                                     this.collections, this.jobs);
     }
 }

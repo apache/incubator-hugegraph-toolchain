@@ -238,6 +238,10 @@ public class DirectVermeerService {
     }
 
     public void deleteGraphIfPresent(HugeClient client) {
+        if (!this.supported()) {
+            // A standalone source cannot have been loaded by this PD adapter.
+            return;
+        }
         // Source deletion must not depend on interactive compute availability.
         // If no copy exists, leave source deletion to Server's original rights.
         // Presence is private; unloading still requires the direct authorization.
