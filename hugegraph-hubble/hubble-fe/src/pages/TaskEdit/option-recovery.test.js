@@ -27,6 +27,7 @@ jest.mock('../../api', () => ({
     manage: {
         getDatasourceList: jest.fn(),
         getGraphList: jest.fn(),
+        getGraphView: jest.fn(),
         getGraphSpaceList: jest.fn(),
         getTaskList: jest.fn(),
         getDatasourceSchema: jest.fn(),
@@ -76,6 +77,7 @@ beforeEach(() => {
     window.localStorage.clear();
     window.sessionStorage.clear();
     isPdEnabled.mockReturnValue(false);
+    api.manage.getGraphView.mockResolvedValue({status: 200, data: {vertices: [], edges: []}});
     api.manage.getGraphList.mockResolvedValue({status: 200, data: {records: []}});
     api.manage.getTaskList.mockResolvedValue({status: 200, data: {total: 0}});
     jest.spyOn(message, 'success').mockImplementation(() => undefined);

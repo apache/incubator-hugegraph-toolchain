@@ -40,6 +40,10 @@ public class GraphStatisticsEntity {
     public String edgeCount;
     @JsonProperty("update_time")
     public String updateTime;
+    @JsonProperty("approximate")
+    public boolean approximate;
+    @JsonProperty("scan_limit")
+    public int scanLimit;
     @JsonProperty("vertices")
     public Map<String, Object> vertices;
     @JsonProperty("edges")

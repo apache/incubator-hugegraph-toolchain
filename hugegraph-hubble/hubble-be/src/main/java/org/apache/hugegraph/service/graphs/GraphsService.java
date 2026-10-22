@@ -19,8 +19,11 @@
 package org.apache.hugegraph.service.graphs;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -33,6 +36,7 @@ import org.apache.hugegraph.controller.query.GremlinController;
 import org.apache.hugegraph.driver.GraphsManager;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.entity.GraphConnection;
+import org.apache.hugegraph.service.HugeClientPoolService;
 import org.apache.hugegraph.entity.enums.AsyncTaskStatus;
 import org.apache.hugegraph.entity.enums.ExecuteStatus;
 import org.apache.hugegraph.entity.enums.ExecuteType;
@@ -42,7 +46,6 @@ import org.apache.hugegraph.entity.query.GremlinQuery;
 import org.apache.hugegraph.entity.space.BuiltInEntity;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.loader.util.JsonUtil;
-import org.apache.hugegraph.options.HubbleOptions;
 import org.apache.hugegraph.service.algorithm.AsyncTaskService;
 import org.apache.hugegraph.service.auth.UserService;
 import org.apache.hugegraph.service.auth.AuthModeService;
@@ -50,7 +53,6 @@ import org.apache.hugegraph.service.load.LoadTaskService;
 import org.apache.hugegraph.service.query.ExecuteHistoryService;
 import org.apache.hugegraph.service.query.QueryService;
 import org.apache.hugegraph.service.schema.SchemaService;
-import org.apache.hugegraph.structure.GraphElement;
 import org.apache.hugegraph.structure.Task;
 import org.apache.hugegraph.structure.constant.GraphReadMode;
 import org.apache.hugegraph.structure.gremlin.ResultSet;
@@ -65,7 +67,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -73,6 +74,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -103,21 +105,26 @@ public class GraphsService {
     private LoadTaskService loadTaskService;
     @Autowired
     private org.apache.hugegraph.config.HugeConfig config;
+    @Autowired
+    private HugeClientPoolService clientPool;
 
     private static final String GRAPH_STORAGE = "v1/graph/%s/%s/g";
     private static final String RUNNING_TASKS = "running_tasks";
     private static final String STATISTICS = "statistics";
     private static final String GREMLIN_STATISTICS_VERTEX =
-            "g.V().groupCount().by(label)";
+            "g.V().limit(100000).groupCount().by(label)";
     private static final String GREMLIN_STATISTICS_EDGE =
-            "g.E().groupCount().by(label)";
-    private static final int SMALL_STATISTICS_LIMIT = 10000;
-    private static final int SMALL_STATISTICS_PAGE_SIZE = 1000;
+            "g.E().limit(100000).groupCount().by(label)";
+    private static final int STATISTICS_SCAN_LIMIT = 100000;
     private static final String GRAPH_HLM = "hlm";
     private static final String GRAPH_COVID19 = "covid19";
 
     private final ConcurrentHashMap<String, Map<String, Object>> graphStatistics =
             new ConcurrentHashMap<>();
+    private Cache<String, GraphStatisticsEntity> boundedStatistics = CacheBuilder.newBuilder()
+            .maximumSize(1024)
+            .expireAfterWrite(30, TimeUnit.MINUTES)
+            .build();
 
     public Map<String, Object> get(HugeClient client, String graphSpace,
                                    String graph,
@@ -131,9 +138,8 @@ public class GraphsService {
         info.putIfAbsent("graphspace", graphSpace);
         if (vermeerInfo.size() != 0) {
             info.put("status", vermeerInfo.get("status"));
-            String lastLoadTime = vermeerInfo.get("update_time");
             // todo date format
-            info.put("last_load_time", lastLoadTime);
+            info.put("last_load_time", vermeerInfo.get("last_load_time"));
         }
         return info;
     }
@@ -144,22 +150,70 @@ public class GraphsService {
                                                 int pageNo, int pageSize,
                                                 boolean isVermeerEnabled,
                                                 Map<String, Object> vermeerInfo) {
-        List<Map<String, Object>> results =
-                sortedGraphsProfile(client, graphSpace, query, createTime,
-                                    isVermeerEnabled, vermeerInfo);
+        return PageUtil.page(
+                sortedGraphsMetadata(client, graphSpace, query, createTime,
+                                     isVermeerEnabled, vermeerInfo),
+                pageNo, pageSize);
+    }
 
-        for (Map<String, Object> result : results) {
-            String graph = result.get("name").toString();
-            try {
-                result.put("schemaview", schemaService.getSchemaView(
-                        client.assignGraph(graphSpace, graph)));
-            } catch (Exception e) {
-                log.warn("Failed to load the schema summary for graph '{}'",
-                         graph, e);
+    public Map<String, Object> queryBriefPage(
+            HugeClient client, String graphSpace, String query,
+            String createTime, int pageNo, int pageSize, String selected) {
+        PageUtil.checkPositivePage(pageNo, pageSize);
+        // The upstream SDK has no profile cursor. Read authorized profiles once,
+        // without decorating every graph or fetching the selected graph again.
+        List<Map<String, Object>> profiles = listGraphProfiles(client.graphs(), "").stream()
+                .filter(info -> info.get("create_time") == null ||
+                                info.get("create_time").toString()
+                                    .compareTo(StringUtils.defaultString(createTime)) > 0)
+                .collect(Collectors.toList());
+        Map<String, Object> selectedGraph = profiles.stream()
+                .filter(info -> info.get("name").equals(selected))
+                .findFirst().map(GraphsService::briefGraph).orElse(null);
+        String search = StringUtils.defaultString(query);
+        List<Map<String, Object>> matching = profiles.stream()
+                .filter(info -> StringUtils.containsIgnoreCase(info.get("name").toString(), search) ||
+                                StringUtils.containsIgnoreCase((String) info.get("nickname"), search))
+                .sorted(GraphsService::compareGraphs)
+                .collect(Collectors.toList());
+        IPage<Map<String, Object>> page = PageUtil.page(matching, pageNo, pageSize);
+        Map<String, Object> result = new HashMap<>();
+        result.put("records", page.getRecords().stream().map(GraphsService::briefGraph)
+                                  .collect(Collectors.toList()));
+        result.put("total", page.getTotal());
+        result.put("current", page.getCurrent());
+        result.put("size", page.getSize());
+        result.put("pages", page.getPages());
+        result.put("selected", selectedGraph);
+        return result;
+    }
+
+    private static Map<String, Object> briefGraph(Map<String, Object> source) {
+        Map<String, Object> brief = new HashMap<>();
+        brief.put("name", source.get("name"));
+        Object nickname = source.get("nickname");
+        brief.put("nickname", nickname == null ? source.get("name") : nickname);
+        return brief;
+    }
+
+    private static int compareGraphs(Map<String, Object> first,
+                                     Map<String, Object> second) {
+        boolean firstDefault = Boolean.TRUE.equals(first.get("default"));
+        boolean secondDefault = Boolean.TRUE.equals(second.get("default"));
+        if (firstDefault != secondDefault) {
+            return Boolean.compare(secondDefault, firstDefault);
+        }
+        if (firstDefault) {
+            Object firstTime = first.get("default_update_time");
+            Object secondTime = second.get("default_update_time");
+            if (firstTime instanceof Long && secondTime instanceof Long) {
+                int order = ((Long) firstTime).compareTo((Long) secondTime);
+                if (order != 0) {
+                    return order;
+                }
             }
         }
-
-        return PageUtil.page(results, pageNo, pageSize);
+        return first.get("name").toString().compareTo(second.get("name").toString());
     }
 
     public List<Map<String, Object>> sortedGraphsProfile(HugeClient client,
@@ -168,6 +222,15 @@ public class GraphsService {
                                                          String createTime,
                                                          boolean isVermeerEnabled,
                                                          Map<String, Object> vermeerInfo) {
+        return sortedGraphsMetadata(
+                client, graphSpace, query, createTime,
+                isVermeerEnabled, vermeerInfo);
+    }
+
+    private List<Map<String, Object>> sortedGraphsMetadata(
+            HugeClient client, String graphSpace, String query,
+            String createTime, boolean isVermeerEnabled,
+            Map<String, Object> vermeerInfo) {
         // Get authorized graphs
         List<Map<String, Object>> graphs = listGraphProfiles(client.graphs(), query);
         log.info("Query all graphs in '{}' ", graphSpace);
@@ -191,10 +254,12 @@ public class GraphsService {
             }
 
             info.put("storage", info.get("data_size"));
+            // Core metadata must not depend on a graph-wide scan or a remote
+            // statistics request. Counts and schema previews load separately.
+            info.put("statistic", Collections.emptyMap());
             // Ensure graphspace field is present for frontend navigation
             info.putIfAbsent("graphspace", graphSpace);
             info.putIfAbsent("graphspace_nickname", graphSpace);
-            info.put("statistic", evCount(client, graphSpace, name));
         }
 
         List<Map<String, Object>> results =
@@ -208,27 +273,7 @@ public class GraphsService {
                           return createTimeVal.toString()
                                              .compareTo(createTime) > 0;
                       })
-                      .sorted((graph1, graph2) -> {
-                          Object d1 = graph1.get("default");
-                          Object d2 = graph2.get("default");
-                          boolean default1 = d1 instanceof Boolean && (boolean) d1;
-                          boolean default2 = d2 instanceof Boolean && (boolean) d2;
-
-                          if (default1 != default2) {
-                              return Boolean.compare(default2, default1);
-                          } else if (default1) {
-                              Object t1 = graph1.get("default_update_time");
-                              Object t2 = graph2.get("default_update_time");
-                              if (t1 instanceof Long && t2 instanceof Long) {
-                                  return ((Long) t1).compareTo((Long) t2);
-                              }
-                              return 0;
-                          } else {
-                              String name1 = graph1.get("name").toString();
-                              String name2 = graph2.get("name").toString();
-                              return name1.compareTo(name2);
-                          }
-                      })
+                      .sorted(GraphsService::compareGraphs)
                       .collect(Collectors.toList());
         return results;
 
@@ -461,12 +506,29 @@ public class GraphsService {
     public GraphStatisticsEntity getStatistics(HugeClient client,
                                                String graphSpace,
                                                String graph) {
-        GraphStatisticsEntity result;
-        // Only invalidate the cache entry of the current graph
-        this.graphStatistics.remove(getStatisticsKey(graphSpace, graph));
-        result = postSmallStatistics(client, graphSpace, graph);
+        String key = this.statisticsKey(client, graphSpace, graph);
+        if (key == null) {
+            // Snapshot reuse requires a stable target, identity and current policy.
+            return this.collectBoundedStatistics(client);
+        }
+        try {
+            return this.boundedStatistics.get(key, () -> this.collectBoundedStatistics(client));
+        } catch (ExecutionException | UncheckedExecutionException e) {
+            if (e.getCause() instanceof RuntimeException) {
+                throw (RuntimeException) e.getCause();
+            }
+            throw new IllegalStateException(e.getCause());
+        }
+    }
 
-        return result;
+    private String statisticsKey(HugeClient client, String graphSpace, String graph) {
+        String context = this.clientPool.statisticsContext(client);
+        if (context == null) {
+            return null;
+        }
+        String policy = this.clientPool.statisticsPolicy(client);
+        return policy == null ? null : "bounded:" + context + ":" + policy + ":" +
+               JsonUtil.toJson(java.util.Arrays.asList(graphSpace, graph));
     }
 
     public void postStatistics(RestClient pdClient,
@@ -617,19 +679,7 @@ public class GraphsService {
         return result;
     }
 
-    public GraphStatisticsEntity postSmallStatistics(HugeClient client,
-                                                     String graphSpace,
-                                                     String graph) {
-        try {
-            return this.postSmallGremlinStatistics(client);
-        } catch (RuntimeException e) {
-            log.warn("Gremlin statistics failed for {}/{}, falling back " +
-                     "to bounded graph reads", graphSpace, graph, e);
-            return this.postSmallGraphStatistics(client);
-        }
-    }
-
-    private GraphStatisticsEntity postSmallGremlinStatistics(HugeClient client) {
+    public GraphStatisticsEntity collectBoundedStatistics(HugeClient client) {
         ResultSet vertexResult =
                 queryService.executeQueryCount(client,
                                                GREMLIN_STATISTICS_VERTEX);
@@ -645,6 +695,8 @@ public class GraphsService {
         result.setEdges(edges);
         result.setEdgeCount(getCountFromLabels(edges));
         result.setUpdateTime(HubbleUtil.dateFormat());
+        result.setApproximate(true);
+        result.setScanLimit(STATISTICS_SCAN_LIMIT);
         return result;
     }
 
@@ -655,45 +707,6 @@ public class GraphsService {
                  data.get(0) instanceof Map,
                  "Malformed %s statistics response", elementType);
         return HubbleUtil.uncheckedCast(data.get(0));
-    }
-
-    private GraphStatisticsEntity postSmallGraphStatistics(HugeClient client) {
-        Map<String, Object> vertexCounts = new HashMap<>();
-        int vertexCount = countSmallElements(
-                client.graph().iterateVertices(SMALL_STATISTICS_PAGE_SIZE),
-                vertexCounts);
-        Map<String, Object> edgeCounts = new HashMap<>();
-        int edgeCount = countSmallElements(
-                client.graph().iterateEdges(SMALL_STATISTICS_PAGE_SIZE),
-                edgeCounts);
-
-        GraphStatisticsEntity result = GraphStatisticsEntity.emptyEntity();
-        result.setVertices(vertexCounts);
-        result.setVertexCount(String.valueOf(vertexCount));
-        result.setEdges(edgeCounts);
-        result.setEdgeCount(String.valueOf(edgeCount));
-        result.setUpdateTime(HubbleUtil.dateFormat());
-        return result;
-    }
-
-    private static int countSmallElements(
-            Iterator<? extends GraphElement> elements,
-            Map<String, Object> counts) {
-        int count = 0;
-        while (elements.hasNext()) {
-            GraphElement element = elements.next();
-            count++;
-            Ex.check(count <= SMALL_STATISTICS_LIMIT,
-                     "Small graph statistics fallback exceeds %s elements",
-                     SMALL_STATISTICS_LIMIT);
-            incrementLabel(counts, element.label());
-        }
-        return count;
-    }
-
-    private static void incrementLabel(Map<String, Object> counts, String label) {
-        Number count = (Number) counts.getOrDefault(label, 0L);
-        counts.put(label, Math.addExact(count.longValue(), 1L));
     }
 
     public String getCountFromLabels(Map<String, Object> labels) {
@@ -799,25 +812,37 @@ public class GraphsService {
     }
 
     /**
-     * 统计指定单个图中的顶点总数和边总数
+     * Read recorded element counts without starting a graph-wide count.
+     * A graph without a recent statistics snapshot has unknown counts.
      */
     public Map<String, Object> evCount(HugeClient client,
                                        String graphSpace,
                                        String graph) {
         Map<String, Object> res = new HashMap<>();
+        String key = this.statisticsKey(client, graphSpace, graph);
+        GraphStatisticsEntity statistics = key == null ? null : this.boundedStatistics.getIfPresent(key);
+        if (statistics != null) {
+            res.put("date", statistics.getUpdateTime().substring(0, 10).replace("-", ""));
+            res.put("vertex", Long.valueOf(statistics.getVertexCount()));
+            res.put("edge", Long.valueOf(statistics.getEdgeCount()));
+            res.put("approximate", true);
+            res.put("scan_limit", statistics.getScanLimit());
+            return res;
+        }
         Long edgeCount = null;
         Long vertexCount = null;
         String statisticDate = HubbleUtil.dateFormatDay(HubbleUtil.nowDate());
         client.assignGraph(graphSpace, graph);
         GraphMetricsAPI.ElementCount statistic = null;
-        boolean pdEnabled = this.config != null &&
-                            this.config.get(HubbleOptions.PD_ENABLED);
-        if (!pdEnabled) {
+        try {
             statistic = client.graph().getEVCount(statisticDate);
             if (statistic == null) {
                 statisticDate = HubbleUtil.dateFormatLastDay();
                 statistic = client.graph().getEVCount(statisticDate);
             }
+        } catch (RuntimeException e) {
+            log.warn("Recorded element counts are unavailable for {}/{}",
+                     graphSpace, graph, e);
         }
 
         if (statistic != null) {
@@ -825,24 +850,12 @@ public class GraphsService {
             edgeCount = statistic.getEdges();
         } else {
             statisticDate = null;
-            try {
-                GraphStatisticsEntity live =
-                        this.postSmallGraphStatistics(client);
-                vertexCount = Long.valueOf(live.getVertexCount());
-                edgeCount = Long.valueOf(live.getEdgeCount());
-                statisticDate = HubbleUtil.dateFormatDay(HubbleUtil.nowDate());
-            } catch (RuntimeException e) {
-                vertexCount = null;
-                edgeCount = null;
-                statisticDate = null;
-                log.warn("Live element counts are unavailable for {}/{}",
-                         graphSpace, graph, e);
-            }
         }
 
         res.put("date", statisticDate);
         res.put("vertex", vertexCount);
         res.put("edge", edgeCount);
+        res.put("approximate", true);
         return res;
     }
 }

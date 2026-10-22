@@ -31,6 +31,7 @@ import GraphMenuBar from '../GraphMenuBar';
 import GraphToolBar from '../GraphToolBar';
 import Menu from '../../../component/Menu';
 import NumberCard from '../../../component/NumberCard';
+import {isKnownZeroCount} from '../../../../utils/graphStatistics';
 import EditElement from '../../../component/EditElement';
 import Search from '../../../component/Search';
 import SettingConfigPanel from '../../../component/SettingConfigPanel';
@@ -108,9 +109,8 @@ const GraphResult = props => {
     const {edgeMeta, vertexMeta} = metaData || {};
     const hasGraphData = Number(graphNums?.vertexCount) > 0
         || Number(graphNums?.edgeCount) > 0;
-    const hasKnownEmptyCounts = graphNums?.vertexCount !== null && graphNums?.edgeCount !== null
-        && Number(graphNums?.vertexCount) === 0
-        && Number(graphNums?.edgeCount) === 0;
+    const hasKnownEmptyCounts = isKnownZeroCount(graphNums?.vertexCount, graphNums)
+        && isKnownZeroCount(graphNums?.edgeCount, graphNums);
     const hasKnownEmptySchema = Array.isArray(vertexMeta) && Array.isArray(edgeMeta)
         && vertexMeta.length === 0 && edgeMeta.length === 0;
     const isEmptyGraph = !hasGraphData && (hasKnownEmptyCounts || hasKnownEmptySchema);
@@ -462,6 +462,8 @@ const GraphResult = props => {
                     currentGraphEdgesNum: graphData.edges.length,
                     allGraphNodesNum: graphNums?.vertexCount,
                     allGraphEdgesNum: graphNums?.edgeCount,
+                    approximate: graphNums?.approximate,
+                    scan_limit: graphNums?.scan_limit,
                 }}
             />
         </div>

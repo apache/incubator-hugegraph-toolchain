@@ -133,6 +133,58 @@ public class GraphSpaceService {
                 .collect(Collectors.toList());
     }
 
+    public Map<String, Object> queryBriefPage(
+            HugeClient client, String query, String createTime,
+            int pageNo, int pageSize, boolean anonymous, boolean administrator,
+            String selected) {
+        PageUtil.checkPositivePage(pageNo, pageSize);
+        if (administrator && !anonymous) {
+            return briefPage(queryAllGsMetadata(client, "", createTime),
+                             query, pageNo, pageSize, selected,
+                             info -> info.get("name").toString(),
+                             info -> (String) info.get("nickname"));
+        }
+        List<GraphSpace> spaces = anonymous ?
+                queryAnonymousSpaces(client, "", createTime) :
+                queryAccessibleSpaces(client, "", createTime);
+        return briefPage(spaces, query, pageNo, pageSize, selected,
+                         GraphSpace::getName, GraphSpace::getNickname);
+    }
+
+    private static <S> Map<String, Object> briefPage(
+            List<S> spaces, String query, int pageNo, int pageSize, String selected,
+            Function<S, String> name, Function<S, String> nickname) {
+        // Resolve the selected option from the same authorized list, even when
+        // it is outside the page or search. Only project the requested page.
+        Map<String, Object> selectedSpace = spaces.stream()
+                .filter(space -> name.apply(space).equals(selected)).findFirst()
+                .map(space -> briefView(name.apply(space), nickname.apply(space)))
+                .orElse(null);
+        String search = query == null ? "" : query.toLowerCase(Locale.ROOT);
+        List<S> matching = spaces.stream().filter(space ->
+                name.apply(space).toLowerCase(Locale.ROOT).contains(search) ||
+                nickname.apply(space) != null &&
+                nickname.apply(space).toLowerCase(Locale.ROOT).contains(search))
+                .collect(Collectors.toList());
+        IPage<Map<String, Object>> page = pageAndMap(matching, pageNo, pageSize,
+                space -> briefView(name.apply(space), nickname.apply(space)));
+        Map<String, Object> result = new HashMap<>();
+        result.put("records", page.getRecords());
+        result.put("total", page.getTotal());
+        result.put("current", page.getCurrent());
+        result.put("size", page.getSize());
+        result.put("pages", page.getPages());
+        result.put("selected", selectedSpace);
+        return result;
+    }
+
+    private static Map<String, Object> briefView(Object name, Object nickname) {
+        Map<String, Object> info = new HashMap<>();
+        info.put("name", name);
+        info.put("nickname", nickname == null ? name : nickname);
+        return info;
+    }
+
     private List<Map<String, Object>> queryAllGsMetadata(
             HugeClient client, String query, String createTime) {
         List<Map<String, Object>> results = client.graphSpace()
@@ -152,7 +204,7 @@ public class GraphSpaceService {
         String name = info.get("name").toString();
         info.put("graphspace_admin",
                  userService.listGraphSpaceAdmin(client, name));
-        info.put("statistic", evCount(client, name));
+        info.put("statistic", Collections.emptyMap());
         return info;
     }
 
@@ -196,7 +248,6 @@ public class GraphSpaceService {
     private Map<String, Object> accessibleView(HugeClient client,
                                                GraphSpace space) {
         GraphSpaceEntity entity = GraphSpaceEntity.fromGraphSpace(space);
-        entity.setStatistic(evCount(client, space.getName()));
         Map<String, Object> info = toView(entity);
         info.put("authed", true);
         info.put("default", false);
@@ -308,7 +359,6 @@ public class GraphSpaceService {
     private Map<String, Object> anonymousView(HugeClient client,
                                               GraphSpace space) {
         GraphSpaceEntity entity = GraphSpaceEntity.fromGraphSpace(space);
-        entity.setStatistic(evCount(client, space.getName()));
         Map<String, Object> info = toView(entity);
         info.put("authed", true);
         info.put("default", false);
@@ -534,7 +584,6 @@ public class GraphSpaceService {
             entity.graphspaceAdmin =
                     userService.listGraphSpaceAdmin(client, name);
         }
-        entity.setStatistic(evCount(client, graphSpace.getName()));
         return entity;
     }
 

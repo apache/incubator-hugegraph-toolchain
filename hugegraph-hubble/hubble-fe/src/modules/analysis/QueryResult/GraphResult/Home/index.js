@@ -485,6 +485,8 @@ const GraphResult = props => {
                     currentGraphEdgesNum: graphData.edges.length,
                     allGraphNodesNum: graphNums?.vertexCount,
                     allGraphEdgesNum: graphNums?.edgeCount,
+                    approximate: graphNums?.approximate,
+                    scan_limit: graphNums?.scan_limit,
                 }}
             />
         </div>
