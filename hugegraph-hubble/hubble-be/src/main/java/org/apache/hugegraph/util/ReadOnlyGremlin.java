@@ -43,6 +43,11 @@ public final class ReadOnlyGremlin {
     private static final Set<String> COLLECTIONS = Set.of("fold", "group", "groupCount");
     private static final Set<String> CONSUMERS = Set.of("toList", "toSet", "next", "hasNext");
 
+    private static final Set<String> BOUNDS = Set.of("limit", "range", "tail");
+
+    private static final Set<String> ADJACENCY = Set.of(
+            "out", "in", "both", "outE", "inE", "bothE", "outV", "inV", "bothV", "otherV");
+
     private static final Set<String> PREDICATES = Set.of(
             "eq", "neq", "gt", "gte", "lt", "lte", "inside", "outside", "between", "within", "without",
             "and", "or", "not", "startingWith", "notStartingWith", "endingWith", "notEndingWith",
@@ -118,7 +123,11 @@ public final class ReadOnlyGremlin {
                 if (methods == STEPS) {
                     this.collection |= COLLECTIONS.contains(name);
                     if (depth == 0) {
-                        this.explicitLimit |= "limit".equals(name);
+                        if (ADJACENCY.contains(name)) {
+                            this.explicitLimit = false;
+                        } else if (BOUNDS.contains(name)) {
+                            this.explicitLimit = true;
+                        }
                         this.consumerFollowed |= this.consumerPosition >= 0;
                         if (CONSUMERS.contains(name)) {
                             this.consumerPosition = dotPosition;

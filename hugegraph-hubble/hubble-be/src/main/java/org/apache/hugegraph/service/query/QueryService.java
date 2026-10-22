@@ -172,9 +172,9 @@ public class QueryService {
             typedResult = propertyPreview.project(typedResult);
         }
         boolean resultTruncated = typedResult.isTruncated();
-        // All views consume the same bounded, detached query data. Graph
+        // All views consume the same parsed query data. Graph
         // enrichment can introduce new SDK objects; project only those once.
-        GraphView graphView = this.buildGraphView(typedResult, client, resultTruncated);
+        GraphView graphView = this.buildGraphView(typedResult, client, resultTruncated, preview);
         if (propertyPreview != null) {
             graphView = propertyPreview.project(graphView);
         }
@@ -194,8 +194,8 @@ public class QueryService {
                             .resultTruncated(resultTruncated)
                             .resultLimit(preview ? GRAPH_VERTEX_LIMIT : 0)
                             .graphTruncated(graphView.isTruncated())
-                            .graphVertexLimit(GRAPH_VERTEX_LIMIT)
-                            .graphEdgeLimit(this.config.get(HubbleOptions.GREMLIN_EDGES_TOTAL_LIMIT))
+                            .graphVertexLimit(preview ? GRAPH_VERTEX_LIMIT : 0)
+                            .graphEdgeLimit(preview ? this.config.get(HubbleOptions.GREMLIN_EDGES_TOTAL_LIMIT) : 0)
                             .build();
     }
 
@@ -538,13 +538,14 @@ public class QueryService {
     }
 
     private GraphView buildGraphView(TypedResult result, HugeClient client,
-                                     boolean resultTruncated) {
+                                     boolean resultTruncated, boolean preview) {
         List<Object> data = result.getData();
         if (!result.getType().isGraph() || CollectionUtils.isEmpty(data)) {
             return GraphView.EMPTY;
         }
 
-        int edgeLimit = this.config.get(HubbleOptions.GREMLIN_EDGES_TOTAL_LIMIT);
+        int vertexLimit = preview ? GRAPH_VERTEX_LIMIT : Integer.MAX_VALUE;
+        int edgeLimit = preview ? this.config.get(HubbleOptions.GREMLIN_EDGES_TOTAL_LIMIT) : Integer.MAX_VALUE;
         Map<Object, Vertex> vertices = new LinkedHashMap<>();
         Map<String, Edge> edges = new LinkedHashMap<>();
         boolean truncated = resultTruncated;
@@ -556,7 +557,7 @@ public class QueryService {
                 if (element instanceof Vertex) {
                     Vertex vertex = (Vertex) element;
                     if (vertices.containsKey(vertex.id()) ||
-                        vertices.size() < GRAPH_VERTEX_LIMIT) {
+                        vertices.size() < vertexLimit) {
                         vertices.putIfAbsent(vertex.id(), vertex);
                     } else {
                         truncated = true;
@@ -577,12 +578,18 @@ public class QueryService {
         try {
             if (!edges.isEmpty()) {
                 // Paths already contain most or all endpoints. Fetch only the
-                // missing endpoints, within the same preview vertex budget.
-                vertices.putAll(this.verticesOfEdge(edges, vertices, client));
+                // missing endpoints, within the requested graph view budget.
+                vertices.putAll(this.verticesOfEdge(edges, vertices, client, vertexLimit));
             } else if (!vertices.isEmpty() && !truncated) {
-                EdgePreview preview = this.edgesOfVertex(vertices, client);
-                edges = preview.edges();
-                truncated = preview.truncated();
+                // Preserve full raw query data without decorating oversized
+                // vertex-only results through additional graph scans.
+                if (vertices.size() > GRAPH_VERTEX_LIMIT) {
+                    truncated = true;
+                } else {
+                    EdgePreview linked = this.edgesOfVertex(vertices, client);
+                    edges = linked.edges();
+                    truncated = linked.truncated();
+                }
             }
         } catch (Exception e) {
             // Decoration must not discard the result of the user's query.
@@ -591,9 +598,11 @@ public class QueryService {
         }
 
         int previousEdges = edges.size();
-        final Map<Object, Vertex> previewVertices = vertices;
-        edges.values().removeIf(edge -> !previewVertices.containsKey(edge.sourceId()) ||
-                                        !previewVertices.containsKey(edge.targetId()));
+        if (preview) {
+            final Map<Object, Vertex> previewVertices = vertices;
+            edges.values().removeIf(edge -> !previewVertices.containsKey(edge.sourceId()) ||
+                                            !previewVertices.containsKey(edge.targetId()));
+        }
         GraphView view = new GraphView(vertices.values(), edges.values());
         view.setTruncated(truncated || previousEdges != edges.size());
         return view;
@@ -739,9 +748,9 @@ public class QueryService {
 
     private Map<Object, Vertex> verticesOfEdge(Map<String, Edge> edges,
                                                Map<Object, Vertex> existing,
-                                               HugeClient client) {
+                                               HugeClient client, int vertexLimit) {
         int batchSize = this.config.get(HubbleOptions.GREMLIN_BATCH_QUERY_IDS);
-        int remaining = GRAPH_VERTEX_LIMIT - existing.size();
+        int remaining = vertexLimit - existing.size();
         Set<Object> vertexIds = new LinkedHashSet<>();
         for (Edge edge : edges.values()) {
             for (Object id : new Object[]{edge.sourceId(), edge.targetId()}) {

@@ -101,6 +101,12 @@ read-only validation for generated queries remains separate. Unrecognized manual
 scripts retain their native execution path and may not receive an upstream limit;
 use asynchronous mode for complex or large results.
 
+For common Gremlin reads, `limit`, `range` and `tail` preserve an explicit output
+bound. A following adjacency step such as `out()` starts a new output stream and
+receives the default bound. Non-preview API responses retain all returned query
+elements in Graph, JSON and Table views. Optional incident-edge sampling remains
+bounded; oversized vertex-only results skip it and report an incomplete graph view.
+
 Recognized collection aggregations (`fold`, `group`, `groupCount` and Cypher `collect`)
 use the existing asynchronous mode in interactive previews, including queries with
 an explicit input bound. This uniform rule keeps the full aggregation semantics

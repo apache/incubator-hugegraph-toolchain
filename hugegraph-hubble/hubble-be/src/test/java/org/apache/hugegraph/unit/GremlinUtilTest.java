@@ -55,6 +55,23 @@ public class GremlinUtilTest {
     }
 
     @Test
+    public void testCommonBoundsSurviveProjectionButNotLaterAdjacency() {
+        for (String bound : new String[]{"limit(500)", "range(0,5000)", "tail(500)"}) {
+            String query = "g.V()." + bound;
+            Assert.assertEquals(query, GremlinUtil.optimizeLimit(query, 300));
+            Assert.assertEquals(query + ".valueMap()",
+                                GremlinUtil.optimizeLimit(query + ".valueMap()", 300));
+            Assert.assertEquals(query + ".out().limit(300)",
+                                GremlinUtil.optimizeLimit(query + ".out()", 300));
+            Assert.assertEquals(query + ".out().limit(5)",
+                                GremlinUtil.optimizeLimit(query + ".out().limit(5)", 300));
+            Assert.assertEquals(query + ".limit(1001)", GremlinUtil.optimizePreviewLimit(query, 1001));
+        }
+        Assert.assertEquals("g.V().limit(10).bothE().inV().limit(300)",
+                            GremlinUtil.optimizeLimit("g.V().limit(10).bothE().inV()", 300));
+    }
+
+    @Test
     public void testCollectionPreviewsUniformlyUseAsyncWithoutBoundInference() {
         for (String query : new String[]{"g.V().fold()", "g.V().limit(10).fold()",
                                          "g.V().group().by(label)", "g.V().limit(10).groupCount().by(label)",

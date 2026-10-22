@@ -351,6 +351,8 @@ public class QueryServiceTest {
 
         Assert.assertEquals(1001, raw.getJsonView().getData().size());
         Assert.assertEquals(1001, raw.getTableView().getRows().size());
+        Assert.assertEquals(1001, raw.getGraphView().getVertices().size());
+        Assert.assertEquals(0, raw.getGraphVertexLimit());
         Assert.assertSame(payload, ((Vertex) raw.getJsonView().getData().get(0)).property("payload"));
         Assert.assertSame(payload, raw.getGraphView().getVertices().iterator().next().property("payload"));
         Assert.assertFalse(raw.isResultTruncated());
@@ -424,23 +426,65 @@ public class QueryServiceTest {
 
     @Test
     public void testScalarOutputLimitsFollowTheReductionBeforeDispatch() throws Exception {
-        GremlinManager gremlin = this.mockGremlin();
+        GremlinManager gremlin = this.mockGremlin(this.resultSet(12000L));
         GremlinQuery query = new GremlinQuery("g.V().count()");
         query.setPreview(true);
-        this.serviceWithConfig().executeGremlinQuery(this.mockClient(gremlin), query);
+        GremlinResult result = this.serviceWithConfig().executeGremlinQuery(this.mockClient(gremlin), query);
         Mockito.verify(gremlin).gremlin("g.V().count().limit(300).limit(1001)");
+        Assert.assertEquals(List.of(12000L), result.getJsonView().getData());
     }
 
     @Test
     public void testOversizedVertexResultDoesNotEnrich() throws Exception {
         List<Vertex> vertices = this.vertices(12000);
         GremlinManager gremlin = this.mockGremlin(this.resultSet(vertices.toArray()));
+        GremlinQuery query = new GremlinQuery("g.V().limit(12000)");
+        query.setPreview(true);
         GremlinResult result = this.serviceWithConfig().executeGremlinQuery(
-                               this.mockClient(gremlin), new GremlinQuery("g.V().limit(12000)"));
+                               this.mockClient(gremlin), query);
         Assert.assertEquals(1000, result.getGraphView().getVertices().size());
         Assert.assertTrue(result.isGraphTruncated());
         Assert.assertFalse(result.isDefaultLimitApplied());
         Mockito.verify(gremlin, Mockito.times(1)).gremlin(Mockito.anyString());
+    }
+
+    @Test
+    public void testRawVertexResultsKeepAllViewsWithoutLargeEnrichment() throws Exception {
+        List<Vertex> vertices = this.vertices(1200);
+        GremlinManager gremlin = this.mockGremlin(this.resultSet(vertices.toArray()));
+        GremlinResult raw = this.serviceWithConfig().executeGremlinQuery(
+                            this.mockClient(gremlin), new GremlinQuery("g.V().limit(1200)"));
+        Assert.assertEquals(1200, raw.getJsonView().getData().size());
+        Assert.assertEquals(1200, raw.getTableView().getRows().size());
+        Assert.assertEquals(1200, raw.getGraphView().getVertices().size());
+        Assert.assertFalse(raw.isResultTruncated());
+        Assert.assertTrue(raw.isGraphTruncated());
+        Assert.assertEquals(0, raw.getGraphVertexLimit());
+        Mockito.verify(gremlin, Mockito.times(1)).gremlin(Mockito.anyString());
+    }
+
+    @Test
+    public void testRawEdgesKeepDirectResultsAbovePreviewBudgets() throws Exception {
+        List<Vertex> vertices = this.vertices(1002);
+        List<Edge> edges = new ArrayList<>();
+        for (int i = 0; i < 501; i++) {
+            edges.add(this.edge("e" + i, i * 2, i * 2 + 1));
+        }
+        List<ResultSet> responses = new ArrayList<>();
+        responses.add(this.resultSet(edges.toArray()));
+        for (int start = 0; start < vertices.size(); start += 100) {
+            responses.add(this.resultSet(vertices.subList(start, Math.min(start + 100, vertices.size())).toArray()));
+        }
+        GremlinManager gremlin = this.mockGremlin(responses.toArray(new ResultSet[0]));
+        GremlinResult raw = this.serviceWithConfig().executeGremlinQuery(
+                            this.mockClient(gremlin), new GremlinQuery("g.E().limit(501)"));
+        Assert.assertEquals(501, raw.getJsonView().getData().size());
+        Assert.assertEquals(501, raw.getTableView().getRows().size());
+        Assert.assertEquals(501, raw.getGraphView().getEdges().size());
+        Assert.assertEquals(1002, raw.getGraphView().getVertices().size());
+        Assert.assertFalse(raw.isGraphTruncated());
+        Assert.assertEquals(0, raw.getGraphEdgeLimit());
+        Mockito.verify(gremlin, Mockito.times(12)).gremlin(Mockito.anyString());
     }
 
     @Test
