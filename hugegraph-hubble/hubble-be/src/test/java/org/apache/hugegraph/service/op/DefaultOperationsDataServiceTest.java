@@ -82,7 +82,7 @@ public class DefaultOperationsDataServiceTest {
         AtomicInteger calls = new AtomicInteger();
         OperationsCollector collector = (client, metrics) -> {
             if (calls.getAndIncrement() == 0) {
-                return fullSnapshot();
+                return fullSnapshotWithClusterHealth();
             }
             Map<String, SourceStatus> sources = new LinkedHashMap<>();
             sources.put("pd", new SourceStatus("UNAVAILABLE", "UNKNOWN",
@@ -107,6 +107,44 @@ public class DefaultOperationsDataServiceTest {
         Assert.assertEquals("UP", pd.getStatus());
         Assert.assertEquals(Long.valueOf(1000L), pd.getLastSuccessAt());
         Assert.assertTrue(pd.isStale());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testUnavailableSourceRetainsLastKnownRawClusterHealthAsStale() {
+        for (String reason : new String[]{"upstream_timeout", "upstream_rejected"}) {
+            AtomicInteger calls = new AtomicInteger();
+            OperationsCollector collector = (client, metrics) -> {
+                if (calls.getAndIncrement() == 0) {
+                    return fullSnapshotWithClusterHealth();
+                }
+                SourceStatus failure = new SourceStatus("UNAVAILABLE", "UNKNOWN",
+                        2000L, null, false, false, reason)
+                        .withDiagnostics(Collections.singletonMap("request_path", "/v1/cluster"));
+                return new Snapshot("DEGRADED", 2000L, false, null,
+                        Collections.singletonMap("pd", failure), Collections.emptyList(), Collections.emptyMap());
+            };
+            DefaultOperationsDataService service = new DefaultOperationsDataService(collector, 5, CLOCK);
+            Set<String> capabilities = Set.of(OperationsCapabilityService.HEALTH_READ,
+                                              OperationsCapabilityService.TOPOLOGY_READ);
+            HugeClient client = client("token-a");
+
+            service.overview(client, capabilities, false);
+            Map<String, Object> result = service.overview(client, capabilities, true);
+            SourceStatus pd = ((Map<String, SourceStatus>) result.get("sources")).get("pd");
+
+            Assert.assertEquals("UNAVAILABLE", pd.getAvailability());
+            Assert.assertEquals("Cluster_OK", pd.getClusterState());
+            Assert.assertEquals("PState_Fault", pd.getDataState());
+            Assert.assertEquals(reason, pd.getReason());
+            Assert.assertEquals(Collections.singletonMap("request_path", "/v1/cluster"), pd.getDiagnostics());
+            Assert.assertEquals("UP", pd.getStatus());
+            Assert.assertEquals(Long.valueOf(1000L), pd.getLastSuccessAt());
+            Assert.assertTrue(pd.isStale());
+            Assert.assertEquals(true, result.get("stale"));
+            Assert.assertTrue(((java.util.List<Node>) result.get("nodes")).stream()
+                    .anyMatch(node -> "PD".equals(node.getType()) && "UP".equals(node.getStatus())));
+        }
     }
 
     @Test
@@ -664,6 +702,16 @@ public class DefaultOperationsDataServiceTest {
                                    "UP"),
                               node("store-000000000002", "STORE", "store-b",
                                    "UP")), facts);
+    }
+
+    private static Snapshot fullSnapshotWithClusterHealth() {
+        Snapshot snapshot = fullSnapshot();
+        Map<String, SourceStatus> sources = new LinkedHashMap<>(snapshot.getSources());
+        sources.put("pd", new SourceStatus("PARTIAL", "UP", 1000L,
+                        1000L, true, false, "data_fault")
+                        .withClusterHealth("Cluster_OK", "PState_Fault"));
+        return new Snapshot("DEGRADED", snapshot.getObservedAt(), false,
+                            "data_fault", sources, snapshot.getNodes(), snapshot.getFacts());
     }
 
     private static Snapshot fullSnapshot() {
