@@ -120,7 +120,9 @@ const getBoundedJsonPreview = (value, {items = 100, characters = 20000, depth = 
     return {content: project(value, 0), truncated};
 };
 
-const getBoundedGraphView = (graphView = {}, edgeLimit = GRAPH_EDGE_LIMIT) => {
+const getBoundedGraphView = (graphView = {}, edgeLimit = GRAPH_EDGE_LIMIT, propertiesTruncated = false) => {
+    // Keep the read-only marker in raw graph data, including saved/exported canvases.
+    const preview = element => propertiesTruncated ? {...element, '~hubble_properties_preview': true} : element;
     const vertices = [];
     const ids = new Set();
     for (const vertex of graphView.vertices || []) {
@@ -130,7 +132,7 @@ const getBoundedGraphView = (graphView = {}, edgeLimit = GRAPH_EDGE_LIMIT) => {
         const id = hubbleRenderId('node', vertex.id);
         if (!ids.has(id)) {
             ids.add(id);
-            vertices.push(vertex);
+            vertices.push(preview(vertex));
         }
         if (vertices.length >= GRAPH_NODE_LIMIT) {
             break;
@@ -149,7 +151,7 @@ const getBoundedGraphView = (graphView = {}, edgeLimit = GRAPH_EDGE_LIMIT) => {
         if (!edgeIds.has(id) && ids.has(hubbleRenderId('node', edge.source))
             && ids.has(hubbleRenderId('node', edge.target))) {
             edgeIds.add(id);
-            edges.push(edge);
+            edges.push(preview(edge));
         }
     }
     return {...graphView, vertices, edges};

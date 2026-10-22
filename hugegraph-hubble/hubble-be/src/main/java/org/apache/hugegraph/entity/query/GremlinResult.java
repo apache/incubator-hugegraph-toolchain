@@ -66,6 +66,12 @@ public class GremlinResult {
     @JsonProperty("result_limit")
     private int resultLimit;
 
+    @JsonProperty("properties_truncated")
+    private boolean propertiesTruncated;
+
+    @JsonProperty("property_preview_limit")
+    private int propertyPreviewLimit;
+
     public enum Type {
 
         EMPTY,

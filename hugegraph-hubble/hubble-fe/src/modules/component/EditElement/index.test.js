@@ -114,3 +114,34 @@ test('edge editing preserves original endpoints and uses rendering ID only for c
         id: 'business-edge', label: 'knows', source: initial.id, target: 'peer', properties: {weight: '2'},
     }));
 });
+
+test('never edits or PUTs truncated preview properties, including a programmatic form submit', async () => {
+    const value = fixture();
+    const onChange = jest.fn();
+    render(content(value, {onChange, drawerInfo: {...initial,
+        raw: {'~hubble_properties_preview': true},
+        properties: {name: 'prefix… [preview 256/1000000 chars]'},
+    }}));
+    expect(screen.getByRole('button', {name: 'analysis.canvas.edit_element.edit'})).toBeDisabled();
+    expect(screen.getByText('analysis.query_result.properties_preview_read_only')).toBeInTheDocument();
+    expect(screen.getByText('prefix… [preview 256/1000000 chars]')).toBeInTheDocument();
+    edit();
+    await act(async () => { fireEvent.submit(document.querySelector('form')); });
+    expect(api.analysis.getVertexProperties).not.toHaveBeenCalled();
+    expect(api.analysis.updateVertexProperties).not.toHaveBeenCalled();
+    expect(onChange).not.toHaveBeenCalled();
+});
+
+test('invalidates an open edit form when its data becomes a property preview', async () => {
+    const value = fixture();
+    const onChange = jest.fn();
+    const result = render(content(value, {onChange}));
+    edit();
+    await screen.findByRole('textbox', {name: 'name'});
+    result.rerender(content(value, {onChange, drawerInfo: {...initial,
+        raw: {'~hubble_properties_preview': true},
+    }}));
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    await act(async () => { fireEvent.submit(document.querySelector('form')); });
+    expect(api.analysis.updateVertexProperties).not.toHaveBeenCalled();
+});

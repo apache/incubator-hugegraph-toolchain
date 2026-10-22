@@ -64,6 +64,62 @@ public class QueryServiceTest {
     }
 
     @Test
+    public void testPropertyPreviewCoversAllViewsWithoutChangingLegacyResults() throws Exception {
+        Vertex vertex = this.vertices(1).get(0);
+        String payload = "x".repeat(1024 * 1024);
+        vertex.property("payload", payload);
+        byte[] binary = new byte[1024 * 1024];
+        vertex.property("binary", binary);
+        String expected = "x".repeat(256) + "… [preview 256/1048576 chars]";
+        GremlinManager gremlin = this.mockGremlin(this.resultSet(vertex), this.resultSet());
+        GremlinQuery query = new GremlinQuery("g.V().limit(1)");
+        query.setPreview(true);
+        GremlinResult preview = this.serviceWithConfig().executeGremlinQuery(
+                                this.mockClient(gremlin), query);
+        Assert.assertEquals(expected, ((Vertex) preview.getJsonView().getData().get(0)).property("payload"));
+        Assert.assertEquals(expected, ((Vertex) preview.getTableView().getRows().get(0)).property("payload"));
+        Assert.assertEquals(expected, preview.getGraphView().getVertices().iterator().next().property("payload"));
+        Assert.assertTrue(preview.isPropertiesTruncated());
+        Assert.assertEquals("[binary preview: 1048576 bytes omitted]",
+                            ((Vertex) preview.getJsonView().getData().get(0)).property("binary"));
+        Assert.assertEquals(256, preview.getPropertyPreviewLimit());
+        Assert.assertEquals(payload, vertex.property("payload"));
+
+        GremlinManager rawGremlin = this.mockGremlin(this.resultSet(vertex), this.resultSet());
+        query.setPreview(false);
+        GremlinResult raw = this.serviceWithConfig().executeGremlinQuery(this.mockClient(rawGremlin), query);
+        Assert.assertEquals(payload, ((Vertex) raw.getJsonView().getData().get(0)).property("payload"));
+        Assert.assertEquals(payload, raw.getGraphView().getVertices().iterator().next().property("payload"));
+        Assert.assertSame(binary, ((Vertex) raw.getJsonView().getData().get(0)).property("binary"));
+        Assert.assertFalse(raw.isPropertiesTruncated());
+    }
+
+    @Test
+    public void testEnrichedEdgePropertiesAreAlsoPreviewed() throws Exception {
+        List<Vertex> vertices = this.vertices(2);
+        Edge edge = this.edge("edge", 0, 1);
+        edge.property("payload", "x".repeat(100000));
+        GremlinManager gremlin = this.mockGremlin(this.resultSet(vertices.toArray()), this.resultSet(edge));
+        GremlinQuery query = new GremlinQuery("g.V().limit(2)");
+        query.setPreview(true);
+        GremlinResult preview = this.serviceWithConfig().executeGremlinQuery(this.mockClient(gremlin), query);
+        String property = (String) preview.getGraphView().getEdges().iterator().next().property("payload");
+        Assert.assertTrue(property.endsWith("/100000 chars]"));
+        Assert.assertTrue(preview.isPropertiesTruncated());
+        Assert.assertEquals(100000, ((String) edge.property("payload")).length());
+    }
+
+    @Test
+    public void testScalarPropertyValuesArePreviewed() throws Exception {
+        GremlinManager gremlin = this.mockGremlin(this.resultSet("x".repeat(1024 * 1024)));
+        GremlinQuery query = new GremlinQuery("g.V().values('payload').limit(1)");
+        query.setPreview(true);
+        GremlinResult preview = this.serviceWithConfig().executeGremlinQuery(this.mockClient(gremlin), query);
+        Assert.assertTrue(((String) preview.getJsonView().getData().get(0)).endsWith("/1048576 chars]"));
+        Assert.assertTrue(preview.isPropertiesTruncated());
+    }
+
+    @Test
     public void testPreviewCapsLargeReadUpstreamWithoutDefaultLimitNotice()
            throws Exception {
         GremlinManager gremlin = this.mockGremlin();

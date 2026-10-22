@@ -25,6 +25,8 @@ import {
     getQueryResultStandbyMessage,
 } from './utils';
 import JSONbig from 'json-bigint';
+import {adaptHubbleGraph, exportHubbleGraph} from '../../../../visualization/hubble/adapter';
+import {toElementDetails} from '../../../../utils/analysisGraphData';
 import enAnalysis from '../../../../i18n/resources/en-US/modules/analysis.json';
 import zhAnalysis from '../../../../i18n/resources/zh-CN/modules/analysis.json';
 
@@ -317,4 +319,25 @@ it('shows server-provided default-limit and graph-truncation notices', () => {
     expect(screen.getByText('analysis.query_result.default_limit_applied')).toBeInTheDocument();
     expect(screen.getByText('Graph limit')).toBeInTheDocument();
     expect(screen.getByText(/graph canvas/)).toBeInTheDocument();
+});
+
+it('persists read-only property preview markers through graph export and reload', () => {
+    const source = {vertices: [{id: 1, label: 'person', properties: {payload: 'prefix… [preview 256/1000000 chars]'}}],
+        edges: [{id: 'loop', source: 1, target: 1, properties: {payload: 'prefix…'}}]};
+    const preview = getBoundedGraphView(source, 500, true);
+    expect(source.vertices[0]).not.toHaveProperty('~hubble_properties_preview');
+    const saved = exportHubbleGraph(adaptHubbleGraph(preview));
+    const restored = adaptHubbleGraph(saved);
+    expect(saved.vertices[0]['~hubble_properties_preview']).toBe(true);
+    expect(saved.edges[0]['~hubble_properties_preview']).toBe(true);
+    expect(toElementDetails({kind: 'node', id: restored.nodes[0].id, data: restored.nodes[0].data})
+        .raw['~hubble_properties_preview']).toBe(true);
+});
+
+it('shows the server property truncation notice alongside bounded result views', () => {
+    render(<QueryResult isQueryMode queryStatus='success' queryResult={{
+        properties_truncated: true, property_preview_limit: 256,
+        graph_view: {vertices: [{id: 1}], edges: []},
+    }} />);
+    expect(screen.getByText('analysis.query_result.properties_preview')).toBeInTheDocument();
 });

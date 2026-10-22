@@ -89,8 +89,8 @@ const QueryResult = props => {
         [queryResultGraph, edgeLimit]
     );
     const graphPreview = useMemo(
-        () => getBoundedGraphView(queryResultGraph, edgeLimit),
-        [queryResultGraph, edgeLimit]
+        () => getBoundedGraphView(queryResultGraph, edgeLimit, queryResult?.properties_truncated),
+        [queryResultGraph, edgeLimit, queryResult?.properties_truncated]
     );
     const graphTruncated = queryResult?.graph_truncated || graphLimit.exceeded;
     const [activeView, setActiveView] = useState(1);
@@ -185,6 +185,11 @@ const QueryResult = props => {
             className={`${c.queryResult} ${height !== undefined ? c.sized : ''}`}
             style={height !== undefined ? {height, '--analysis-result-height': `${height}px`} : undefined}
         >
+            {queryResult?.properties_truncated && queryStatus === GRAPH_STATUS.SUCCESS && (
+                <Alert showIcon type="info" title={t('analysis.query_result.properties_preview', {
+                    limit: queryResult.property_preview_limit || 256,
+                })} />
+            )}
             {queryResult?.result_truncated && queryStatus === GRAPH_STATUS.SUCCESS && (
                 <Alert showIcon type="warning"
                     title={t('analysis.query_result.result_preview_truncated', {limit: queryResult.result_limit || 1000})} />

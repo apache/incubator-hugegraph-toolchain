@@ -21,7 +21,7 @@
  */
 
 import {useState, useContext, useEffect, useRef} from 'react';
-import {Drawer, Input, Button, message, Form, Tag} from 'antd';
+import {Drawer, Input, Button, message, Form, Tag, Alert} from 'antd';
 import {UpOutlined, DownOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
 import {GraphContext} from '../Context';
@@ -37,6 +37,7 @@ const EditElement = ({show, cancel, drawerInfo, edgeMeta = [], onChange}) => {
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const {kind, renderingId, id, itemType, properties = {}, metaConfig = {}} = drawerInfo || {};
     const isEdge = kind === 'edge';
+    const propertiesArePreview = drawerInfo?.raw?.['~hubble_properties_preview'] === true;
     const {edgelabel_type, parent_label} = metaConfig;
     const children = edgeMeta.find(entry => entry.name === parent_label)?.children || [];
     const [isExpanded, setExpanded] = useState(false);
@@ -57,7 +58,7 @@ const EditElement = ({show, cancel, drawerInfo, edgeMeta = [], onChange}) => {
         setPropertyMeta({nullableProps: [], nonNullableProps: [], primaryKeys: []});
         if (show) form.resetFields();
         return () => { generation.current += 1; };
-    }, [graphSpace, graph, renderingId, show, form, controller]);
+    }, [graphSpace, graph, renderingId, show, form, controller, propertiesArePreview]);
     const finishClose = () => {
         generation.current += 1;
         setEdit(false);
@@ -70,7 +71,7 @@ const EditElement = ({show, cancel, drawerInfo, edgeMeta = [], onChange}) => {
         if (!submitting.current) return finishClose();
     };
     const beginEdit = () => run(async () => {
-        if (!show || !renderingId || pending || saved.current) return;
+        if (!show || !renderingId || pending || saved.current || propertiesArePreview) return;
         const token = generation.current;
         setPending(true);
         try {
@@ -91,7 +92,7 @@ const EditElement = ({show, cancel, drawerInfo, edgeMeta = [], onChange}) => {
         finally { if (token === generation.current) setPending(false); }
     });
     const save = values => run(async () => {
-        if (!show || !renderingId || pending || submitting.current || saved.current) return;
+        if (!show || !renderingId || pending || submitting.current || saved.current || propertiesArePreview) return;
         const token = generation.current;
         submitting.current = true;
         setPending(true);
@@ -153,7 +154,7 @@ const EditElement = ({show, cancel, drawerInfo, edgeMeta = [], onChange}) => {
             closable={{disabled: submitting.current}} mask={{closable: !submitting.current}}
             keyboard={!submitting.current}
             footer={[
-                <Button type="primary" loading={pending} disabled={!onChange || !renderingId || pending || saved.current}
+                <Button type="primary" loading={pending} disabled={!onChange || !renderingId || pending || saved.current || propertiesArePreview}
                     onClick={() => isEdit ? form.submit() : beginEdit()} key="save">
                     {t(`analysis.canvas.edit_element.${isEdit ? 'save' : 'edit'}`)}
                 </Button>,
@@ -161,6 +162,8 @@ const EditElement = ({show, cancel, drawerInfo, edgeMeta = [], onChange}) => {
                     {t('analysis.canvas.edit_element.close')}
                 </Button>,
             ]}>
+            {propertiesArePreview && <Alert showIcon type="info"
+                title={t('analysis.query_result.properties_preview_read_only')} />}
             {drawerInfo && <>
                 {field(`${typeLabel} ${t('analysis.canvas.edit_element.type')}`, itemType)}
                 {edgelabel_type === EDGELABEL_TYPE.SUB && <>
@@ -189,7 +192,7 @@ const EditElement = ({show, cancel, drawerInfo, edgeMeta = [], onChange}) => {
             </>}
             <div className={c.graphNodeInfo}>
                 <Form style={{display: isEdit ? undefined : 'none'}} form={form} onFinish={save}
-                    disabled={pending} labelAlign="left" labelWrap className={c.editForm}>
+                    disabled={pending || propertiesArePreview} labelAlign="left" labelWrap className={c.editForm}>
                     {isEdit && renderProperties(propertyMeta.nullableProps, true)}
                     {isEdit && renderProperties(propertyMeta.nonNullableProps, false)}
                 </Form>

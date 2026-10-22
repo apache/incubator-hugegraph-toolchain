@@ -128,17 +128,23 @@ public class QueryService {
         TypedResult typedResult = this.parseResults(resultSet,
                                   query.isPreview() ? GRAPH_VERTEX_LIMIT : Integer.MAX_VALUE);
         boolean resultTruncated = typedResult.isTruncated();
-        // Build json view
-        JsonView jsonView = new JsonView(typedResult.getData());
-        // Build table view
-        TableView tableView = this.buildTableView(typedResult);
-        // Build graph view
+        // Build topology from the original query objects, then project response
+        // copies so no SDK element is changed and prefixes are not clipped twice.
         GraphView graphView = this.buildGraphView(typedResult, client, resultTruncated);
+        QueryPropertyPreview propertyPreview = query.isPreview() ? new QueryPropertyPreview() : null;
+        if (propertyPreview != null) {
+            typedResult = propertyPreview.project(typedResult);
+            graphView = propertyPreview.project(graphView);
+        }
+        JsonView jsonView = new JsonView(typedResult.getData());
+        TableView tableView = this.buildTableView(typedResult);
         return GremlinResult.builder()
                             .type(typedResult.getType())
                             .jsonView(jsonView)
                             .tableView(tableView)
                             .graphView(graphView)
+                            .propertiesTruncated(propertyPreview != null && propertyPreview.truncated())
+                            .propertyPreviewLimit(query.isPreview() ? QueryPropertyPreview.STRING_LIMIT : 0)
                             .resultTruncated(resultTruncated)
                             .resultLimit(query.isPreview() ? GRAPH_VERTEX_LIMIT : 0)
                             .defaultLimitApplied(defaultLimitApplied)
