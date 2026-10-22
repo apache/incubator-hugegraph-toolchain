@@ -69,6 +69,58 @@ class PrivateDevelopmentFilesTest(unittest.TestCase):
         template.parent.mkdir(parents=True)
         template.write_text('dashboard.address=127.0.0.1:8092\npd.enabled=false\nvermeer.url=\n')
 
+    def retained_process(self, name):
+        pidfile = self.run / (f'vermeer/{name}.pid' if name in ('master', 'worker') else f'{name}.pid')
+        pidfile.parent.mkdir(parents=True, exist_ok=True)
+        pidfile.write_text('12345')
+        command = self.root / 'proc/12345/cmdline'
+        command.parent.mkdir(parents=True, exist_ok=True)
+        return pidfile, command
+
+    def synthetic_process_path(self, value):
+        text = str(value)
+        if text == '/proc' or text.startswith('/proc/'):
+            return self.root / text.lstrip('/')
+        return Path(value)
+
+    def test_retained_start_requires_the_full_component_command(self):
+        _, command = self.retained_process('master')
+        expected = DEV.process_args('master')
+        alternatives = [DEV.process_args('worker'),
+                        [expected[0], f'--env={self.root}/other-stack/master.ini']]
+        with mock.patch.object(DEV, 'Path', side_effect=self.synthetic_process_path), \
+                mock.patch.object(DEV.subprocess, 'Popen') as spawn:
+            for arguments in alternatives:
+                command.write_bytes(b'\0'.join(os.fsencode(str(arg)) for arg in arguments) + b'\0')
+                with self.assertRaises(RuntimeError):
+                    DEV.process('master', expected, self.run, 6688)
+            command.write_bytes(b'\0'.join(os.fsencode(str(arg)) for arg in expected) + b'\0')
+            DEV.process('master', expected, self.run, 6688)
+            spawn.assert_not_called()
+
+    def test_stop_preserves_other_component_or_stack_processes(self):
+        pidfile, command = self.retained_process('master')
+        for arguments in (DEV.process_args('worker'),
+                          [self.setup / 'vermeer-bin', f'--env={self.root}/other-stack/master.ini']):
+            command.write_bytes(b'\0'.join(os.fsencode(str(arg)) for arg in arguments) + b'\0')
+            with mock.patch.object(DEV, 'Path', side_effect=self.synthetic_process_path), \
+                    mock.patch.object(DEV.os, 'kill') as signal:
+                with self.assertRaises(RuntimeError):
+                    DEV.stop('vermeer')
+                signal.assert_not_called()
+                self.assertTrue(pidfile.exists())
+
+    def test_stop_signals_only_the_expected_hubble_command(self):
+        pidfile, command = self.retained_process('hubble')
+        (self.run / 'hubble-classpath').write_text('synthetic-classpath')
+        arguments = DEV.process_args('hubble')
+        command.write_bytes(b'\0'.join(os.fsencode(str(arg)) for arg in arguments) + b'\0')
+        with mock.patch.object(DEV, 'Path', side_effect=self.synthetic_process_path), \
+                mock.patch.object(DEV.os, 'kill', side_effect=lambda *_: command.write_bytes(b'')) as signal:
+            DEV.stop('hubble')
+            signal.assert_called_once_with(12345, DEV.signal.SIGTERM)
+        self.assertFalse(pidfile.exists())
+
     def test_new_file_and_parent_are_private_with_permissive_umask(self):
         path = self.root / 'new-parent/output'
         previous = os.umask(0o022)

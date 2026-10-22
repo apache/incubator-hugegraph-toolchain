@@ -33,6 +33,7 @@ import org.apache.hugegraph.options.HubbleOptions;
 import org.apache.hugegraph.service.auth.UserService;
 import org.apache.hugegraph.service.graphs.GraphsService;
 import org.apache.hugegraph.service.space.GraphSpaceService;
+import org.apache.hugegraph.service.space.VermeerService;
 import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,6 +61,9 @@ public class GraphSpaceController extends BaseController {
 
     @Autowired
     private GraphSpaceService graphSpaceService;
+
+    @Autowired
+    private VermeerService vermeerService;
 
     @Autowired
     private UserService userService;
@@ -271,6 +275,18 @@ public class GraphSpaceController extends BaseController {
         HugeClient client = this.requireGraphSpaceAdministrator();
         E.checkArgument(StringUtils.isNotEmpty(graphspace), "graphspace " +
                 "must not null");
+
+        if (this.vermeerService.directConfigured()) {
+            try {
+                List<String> graphs = this.authClient(graphspace, null).graphs().listGraph();
+                for (String graph : graphs) {
+                    this.vermeerService.cleanupDirectGraph(this.authClient(graphspace, graph));
+                }
+            } finally {
+                // authClient reuses the request's client; restore its global scope.
+                this.authClient(null, null);
+            }
+        }
 
         // Delete graphspace admin
         userService.listGraphSpaceAdmin(client, graphspace).forEach(u -> {

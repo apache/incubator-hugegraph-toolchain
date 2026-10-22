@@ -60,6 +60,8 @@ public class GraphsVermeerDeletionTest {
         Mockito.when(this.backend.configured()).thenReturn(true);
         Mockito.when(this.backend.request("GET", "graphs", null)).thenReturn(
                 Map.of("graphs", List.of(Map.of("name", "DEFAULT-graph_a"))));
+        Mockito.when(this.backend.request("GET", "tasks?type=todo&limit=10000", null))
+               .thenReturn(Map.of("tasks", List.of()));
         this.client = Mockito.mock(HugeClient.class, Mockito.RETURNS_DEEP_STUBS);
         Mockito.when(this.client.getGraphSpaceName()).thenReturn("DEFAULT");
         Mockito.when(this.client.getGraphName()).thenReturn("graph_a");
@@ -163,5 +165,45 @@ public class GraphsVermeerDeletionTest {
                 () -> this.controller.delete("DEFAULT", "graph_a", "not confirmed"));
         Mockito.verifyNoInteractions(this.backend, this.graphs, this.history,
                                      this.collections, this.jobs);
+    }
+
+    @Test
+    public void testAcceptedLoadBlocksDeletionEvenWhenNativeGraphIsAbsent() {
+        for (String type : List.of("load", "reload")) {
+            for (String state : List.of("created", "waiting", "loading")) {
+                Mockito.when(this.backend.request("GET", "tasks?type=todo&limit=10000", null))
+                       .thenReturn(Map.of("tasks", List.of(Map.of("graph_name", "DEFAULT-graph_a",
+                               "task_type", type, "status", state))));
+                Mockito.when(this.backend.request("GET", "graphs", null))
+                       .thenReturn(Map.of("graphs", List.of()));
+                expect(ExternalException.class,
+                        () -> this.controller.delete("DEFAULT", "graph_a", CONFIRM));
+            }
+        }
+        Mockito.verify(this.backend, Mockito.never()).request(
+                Mockito.eq("DELETE"), Mockito.anyString(), Mockito.isNull());
+        Mockito.verifyNoInteractions(this.graphs, this.history, this.collections, this.jobs);
+    }
+
+    @Test
+    public void testUnrelatedAndCompletedLoadsDoNotBlockDeletion() {
+        Mockito.when(this.backend.request("GET", "tasks?type=todo&limit=10000", null))
+               .thenReturn(Map.of("tasks", List.of(
+                       Map.of("graph_name", "OTHER-graph_a", "task_type", "load", "status", "loading"),
+                       Map.of("graph_name", "DEFAULT-graph_a", "task_type", "reload", "status", "loaded"),
+                       Map.of("graph_name", "DEFAULT-graph_a", "task_type", "compute", "status", "computing"))));
+        this.controller.delete("DEFAULT", "graph_a", CONFIRM);
+        Mockito.verify(this.graphs).delete(this.client, "graph_a", CONFIRM);
+    }
+
+    @Test
+    public void testTaskQueueFailureOrTruncationStopsDeletion() {
+        Mockito.when(this.backend.request("GET", "tasks?type=todo&limit=10000", null))
+               .thenThrow(new ExternalException("Vermeer task queue unavailable"))
+               .thenReturn(Map.of("tasks", java.util.Collections.nCopies(10000,
+                       Map.of("graph_name", "OTHER-graph_a"))));
+        expect(ExternalException.class, () -> this.controller.delete("DEFAULT", "graph_a", CONFIRM));
+        expect(ExternalException.class, () -> this.controller.delete("DEFAULT", "graph_a", CONFIRM));
+        Mockito.verifyNoInteractions(this.graphs, this.history, this.collections, this.jobs);
     }
 }

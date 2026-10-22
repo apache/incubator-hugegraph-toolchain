@@ -18,6 +18,9 @@ is outside this helper: `prepare` checks the existing Computer directory and Go
 binary, writes integration configuration and builds. It does not clone or reset
 source, install Go, or pre-pull images. `start` reuses existing containers; Docker
 may pull the pinned image when creating a missing container.
+Retained process IDs are accepted only when the full expected component command
+matches, including this environment's configuration paths. A mismatch stops the
+operation for inspection; it does not signal that process.
 
 Run these commands from `/workspace/hugegraph-toolchain`:
 
@@ -141,6 +144,12 @@ source deletion even when compute is unavailable. A successful HTTP response doe
 not verify every Worker acknowledgement or removal of saved files; those remain
 native deletion limitations. Graphs without a copy retain Server's original
 deletion permissions.
+
+GraphSpace deletion checks its Server member graphs and performs the same cleanup
+before changing administrator bindings or deleting the source space. Accepted
+native load/reload tasks must finish or be cancelled before source deletion;
+failure to verify the task queue also prevents deletion. These checks do not
+provide an atomic transaction against concurrent new submissions.
 
 The Hubble direct adapter supports the nine algorithms shown by its Vermeer
 forms. Results are queried through the task API and are not written back to

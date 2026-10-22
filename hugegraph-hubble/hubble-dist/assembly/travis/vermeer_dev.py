@@ -233,12 +233,25 @@ def container(name, options):
              '--label', 'hugegraph.vermeer-dev=true', *options, IMAGES[name]])
 
 
+def process_args(name):
+    if name in ('master', 'worker'):
+        return [SETUP / 'vermeer-bin', f'--env={RUN}/vermeer/{name}.ini']
+    classpath = (RUN / 'hubble-classpath').read_text().strip()
+    return [SETUP / 'tools/jdk17/bin/java', '-Dfile.encoding=UTF-8',
+            '--add-opens=java.base/java.net=ALL-UNNAMED', '-Dserver.address=127.0.0.1',
+            f'-Dhubble.home.path={RUN}/hubble-home',
+            f'-Dspring.datasource.url=jdbc:h2:file:{RUN}/hubble-data',
+            '-cp', f'{RUN}/hubble-classes:{classpath}',
+            'org.apache.hugegraph.HugeGraphHubble', RUN / 'hubble.properties']
+
+
 def process(name, args, cwd, port, prepare=None):
     pidfile = RUN / (f'vermeer/{name}.pid' if name in ('master', 'worker') else f'{name}.pid')
     if pidfile.exists():
         proc = Path('/proc') / pidfile.read_text().strip() / 'cmdline'
         if proc.exists() and proc.read_bytes():
-            if str(args[0]).encode() not in proc.read_bytes():
+            expected = b'\0'.join(os.fsencode(str(arg)) for arg in args) + b'\0'
+            if proc.read_bytes() != expected:
                 raise RuntimeError(f'{pidfile} belongs to another process')
             return
     with socket.socket() as probe:
@@ -281,20 +294,13 @@ def start():
                          '-v', f'{RUN}/server-data:/hugegraph-server/data'])
     wait_ready(lambda: request('http://127.0.0.1:8080/versions'), 'Server')
     for mode, port in [('master', 6688), ('worker', 6788)]:
-        process(mode, [SETUP / 'vermeer-bin', f'--env={RUN}/vermeer/{mode}.ini'], RUN / 'vermeer', port)
+        process(mode, process_args(mode), RUN / 'vermeer', port)
         health = '/api/v1/healthcheck' if mode == 'master' else '/healthcheck'
         wait_ready(lambda p=port, h=health: request(f'http://127.0.0.1:{p}{h}'), mode)
     wait_ready(lambda: request(VERMEER + '/api/v1/workers').get('workers'), 'Worker registration')
     # The example worker is in group "default"; without allocation tasks stay queued.
     request(VERMEER + '/api/v1/admin/workers/alloc/default/%24DEFAULT', 'POST')
-    classpath = (RUN / 'hubble-classpath').read_text().strip()
-    process('hubble', [SETUP / 'tools/jdk17/bin/java', '-Dfile.encoding=UTF-8',
-                       '--add-opens=java.base/java.net=ALL-UNNAMED', '-Dserver.address=127.0.0.1',
-                       f'-Dhubble.home.path={RUN}/hubble-home',
-                       f'-Dspring.datasource.url=jdbc:h2:file:{RUN}/hubble-data',
-                       '-cp', f'{RUN}/hubble-classes:{classpath}',
-                       'org.apache.hugegraph.HugeGraphHubble', RUN / 'hubble.properties'], REPO, 8088,
-                       prepare=snapshot_hubble_classes)
+    process('hubble', process_args('hubble'), REPO, 8088, prepare=snapshot_hubble_classes)
     wait_ready(lambda: request(HUBBLE + '/about', hubble=True), 'Hubble')
     capabilities = request(API + '/config', hubble=True)
     if capabilities.get('auth_enabled'):
@@ -372,8 +378,10 @@ def stop(component):
             continue
         pid = int(pidfile.read_text())
         proc = Path(f'/proc/{pid}/cmdline')
-        expected = b'vermeer-bin' if name in ('master', 'worker') else b'org.apache.hugegraph.HugeGraphHubble'
-        if proc.exists() and expected in proc.read_bytes():
+        if proc.exists() and proc.read_bytes():
+            expected = b'\0'.join(os.fsencode(str(arg)) for arg in process_args(name)) + b'\0'
+            if proc.read_bytes() != expected:
+                raise RuntimeError(f'{pidfile} belongs to another process')
             os.kill(pid, signal.SIGTERM)
             deadline = time.monotonic() + 15
             while proc.exists() and proc.read_bytes() and time.monotonic() < deadline:

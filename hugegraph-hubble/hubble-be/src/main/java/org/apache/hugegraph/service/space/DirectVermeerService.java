@@ -245,6 +245,21 @@ public class DirectVermeerService {
         // Source deletion must not depend on interactive compute availability.
         // If no copy exists, leave source deletion to Server's original rights.
         // Presence is private; unloading still requires the direct authorization.
+        // Reload briefly removes its graph record, so inspect accepted work first.
+        List<Map<String, Object>> pending = HubbleUtil.uncheckedCast(
+                this.backend.request("GET", "tasks?type=todo&limit=10000", null)
+                            .getOrDefault("tasks", List.of()));
+        if (pending.size() >= 10000) {
+            throw new ExternalException("Unable to verify the complete Vermeer task queue");
+        }
+        for (Map<String, Object> task : pending) {
+            if (name(client).equals(task.get("graph_name")) &&
+                Set.of("load", "reload").contains(task.get("task_type")) &&
+                !Set.of("complete", "loaded", "error", "canceled").contains(task.get("status"))) {
+                authorize(client);
+                throw new ExternalException("Finish or cancel the Vermeer load before deleting its source");
+            }
+        }
         if (this.graph(client.getGraphSpaceName(), client.getGraphName()).containsKey("graph")) {
             authorize(client);
             this.unloadGraph(client);
