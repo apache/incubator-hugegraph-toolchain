@@ -87,7 +87,7 @@ public final class ReadOnlyCypher {
             // Unknown manual-query syntax still belongs to the Server parser.
             return unchanged;
         }
-        if (parser.unboundedCollect) {
+        if (parser.collectionRequiresAsync) {
             throw new ExternalException("gremlin.preview.collection_requires_async", maximum - 1);
         }
         if (parser.finalLimitStart < 0) {
@@ -257,7 +257,7 @@ public final class ReadOnlyCypher {
         private int finalLimitEnd = -1;
         private int insertionPosition;
         private boolean currentInputBounded;
-        private boolean unboundedCollect;
+        private boolean collectionRequiresAsync;
 
         private Parser(List<Token> tokens, int collectionInputLimit) {
             this.tokens = tokens;
@@ -353,6 +353,48 @@ public final class ReadOnlyCypher {
                 }
             }
             return null;
+        }
+
+        private Long signedLiteral(int start, int end) {
+            if (end == start + 2) {
+                String sign = this.tokens.get(start).text;
+                if ("+".equals(sign) || "-".equals(sign)) {
+                    Long value = this.literalLimit(start + 1, end);
+                    if (value != null) {
+                        try {
+                            return "-".equals(sign) ? Math.negateExact(value) : value;
+                        } catch (ArithmeticException ignored) {
+                            return null;
+                        }
+                    }
+                }
+                return null;
+            }
+            return this.literalLimit(start, end);
+        }
+
+        private boolean boundedRange(List<Long> arguments) {
+            if (arguments.size() < 2 || arguments.size() > 3 || arguments.contains(null)) {
+                return false;
+            }
+            long start = arguments.get(0);
+            long end = arguments.get(1);
+            long step = arguments.size() == 3 ? arguments.get(2) : 1L;
+            if (step == 0) {
+                return false;
+            }
+            try {
+                long distance = Math.subtractExact(end, start);
+                if (step < 0) {
+                    distance = Math.negateExact(distance);
+                    step = Math.negateExact(step);
+                }
+                // range includes both endpoints; compare the last index to
+                // the limit without allocating or adding to a large count.
+                return distance < 0 || distance / step < this.collectionInputLimit;
+            } catch (ArithmeticException ignored) {
+                return false;
+            }
         }
 
         private void patterns() {
@@ -574,8 +616,9 @@ public final class ReadOnlyCypher {
                 throw invalid();
             }
             if ("collect".equals(name) && !this.currentInputBounded) {
-                this.unboundedCollect = true;
+                this.collectionRequiresAsync = true;
             }
+            List<Long> rangeArguments = "range".equals(name) ? new ArrayList<>() : null;
             this.position++;
             this.expect("(");
             if (this.consume("*")) {
@@ -588,9 +631,16 @@ public final class ReadOnlyCypher {
             if (!this.consume(")")) {
                 this.consume("DISTINCT");
                 do {
+                    int start = this.position;
                     this.expression(0, depth + 1);
+                    if (rangeArguments != null) {
+                        rangeArguments.add(this.signedLiteral(start, this.position));
+                    }
                 } while (this.consume(","));
                 this.expect(")");
+            }
+            if (rangeArguments != null && !this.boundedRange(rangeArguments)) {
+                this.collectionRequiresAsync = true;
             }
         }
 

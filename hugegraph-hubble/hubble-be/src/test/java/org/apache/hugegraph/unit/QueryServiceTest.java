@@ -228,8 +228,8 @@ public class QueryServiceTest {
         this.assertCypherPreview("MATCH (n) RETURN n", "MATCH (n) RETURN n LIMIT 300", true);
         this.assertCypherPreview("MATCH (n) WITH n LIMIT 5 RETURN n;",
                                  "MATCH (n) WITH n LIMIT 5 RETURN n LIMIT 300;", true);
-        this.assertCypherPreview("UNWIND range(1, 10000) AS value RETURN value;",
-                                 "UNWIND range(1, 10000) AS value RETURN value LIMIT 300;", true);
+        this.assertCypherPreview("UNWIND range(1, 1000) AS value RETURN value;",
+                                 "UNWIND range(1, 1000) AS value RETURN value LIMIT 300;", true);
         this.assertCypherPreview("MATCH (n) RETURN n LIMIT 10000;",
                                  "MATCH (n) RETURN n LIMIT 1001;", false);
         this.assertCypherPreview("MATCH (n) RETURN n.city, count(*) AS total",
@@ -262,21 +262,44 @@ public class QueryServiceTest {
 
     @Test
     public void testRawAndAsyncCypherCollectionsKeepTheirOriginalQuery() throws Exception {
-        String content = "MATCH (n) RETURN collect(n) AS nodes";
-        Map<String, Object> row = Map.of("nodes", List.of("Alice", "Bob"));
+        for (String content : new String[]{"MATCH (n) RETURN collect(n) AS nodes",
+                                           "RETURN range(1, 1000000000) AS nodes"}) {
+            Map<String, Object> row = Map.of("nodes", List.of("Alice", "Bob"));
+            CypherManager cypher = Mockito.mock(CypherManager.class);
+            Mockito.when(cypher.cypher(content)).thenReturn(this.resultSet(row));
+            Mockito.when(cypher.executeAsTask(content)).thenReturn(7L);
+            HugeClient client = this.mockClient(this.mockGremlin());
+            Mockito.when(client.cypher()).thenReturn(cypher);
+            QueryService service = this.serviceWithConfig();
+
+            GremlinResult raw = service.executeCypherQuery(client, content);
+            Assert.assertEquals(row, raw.getJsonView().getData().get(0));
+            Assert.assertFalse(raw.isPropertiesTruncated());
+            Assert.assertEquals(Long.valueOf(7L), service.executeCypherAsyncTask(client, content));
+            Mockito.verify(cypher).cypher(content);
+            Mockito.verify(cypher).executeAsTask(content);
+        }
+    }
+
+    @Test
+    public void testLargeOrUnknownCypherRangesRequireAsyncBeforeDispatch() throws Exception {
         CypherManager cypher = Mockito.mock(CypherManager.class);
-        Mockito.when(cypher.cypher(content)).thenReturn(this.resultSet(row));
-        Mockito.when(cypher.executeAsTask(content)).thenReturn(7L);
         HugeClient client = this.mockClient(this.mockGremlin());
         Mockito.when(client.cypher()).thenReturn(cypher);
         QueryService service = this.serviceWithConfig();
-
-        GremlinResult raw = service.executeCypherQuery(client, content);
-        Assert.assertEquals(row, raw.getJsonView().getData().get(0));
-        Assert.assertFalse(raw.isPropertiesTruncated());
-        Assert.assertEquals(Long.valueOf(7L), service.executeCypherAsyncTask(client, content));
-        Mockito.verify(cypher).cypher(content);
-        Mockito.verify(cypher).executeAsTask(content);
+        for (String content : new String[]{"RETURN range(1, 1000000000)",
+                                           "UNWIND range(1, 1000000000) AS n RETURN n",
+                                           "MATCH (n) WITH n LIMIT 1000 RETURN range(1, 1000000000)",
+                                           "MATCH (n) RETURN range(1, n.count)"}) {
+            ExternalException error = (ExternalException) Assert.assertThrows(ExternalException.class,
+                    () -> service.executeCypherQuery(client, content, true));
+            Assert.assertEquals("gremlin.preview.collection_requires_async", error.getMessage());
+        }
+        Mockito.verifyNoInteractions(cypher);
+        this.assertCypherPreview("RETURN range(1, 10)", "RETURN range(1, 10) LIMIT 300", true);
+        this.assertCypherPreview("UNWIND range(1, 1000) AS n RETURN n",
+                                 "UNWIND range(1, 1000) AS n RETURN n LIMIT 300", true);
+        this.assertCypherPreview("RETURN range(10, 1, -1)", "RETURN range(10, 1, -1) LIMIT 300", true);
     }
 
     @Test

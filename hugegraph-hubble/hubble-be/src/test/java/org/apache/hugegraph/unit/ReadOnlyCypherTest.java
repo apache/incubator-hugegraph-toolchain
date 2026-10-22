@@ -93,6 +93,32 @@ public class ReadOnlyCypherTest {
     }
 
     @Test
+    public void requiresAsyncForLargeOrUnprovenRangeValues() {
+        String[] queries = {
+            "RETURN range(1, 1000000000)",
+            "RETURN range(1, 1000000000) LIMIT 1",
+            "UNWIND range(1, 1000000000) AS item RETURN item",
+            "MATCH (n) WITH n LIMIT 10 RETURN range(1, 1000000000)",
+            "MATCH (n) RETURN range(1, n.count)",
+            "RETURN range(1, 2 + 3)"
+        };
+        for (String query : queries) {
+            ReadOnlyCypher.validate(query);
+            ExternalException error = (ExternalException) Assert.assertThrows(
+                                      ExternalException.class, () -> ReadOnlyCypher.preview(query, 300, 1001));
+            Assert.assertEquals("gremlin.preview.collection_requires_async", error.getMessage());
+            Assert.assertEquals(1000, error.args()[0]);
+        }
+    }
+
+    @Test
+    public void acceptsProvablyBoundedRangesIncludingDescendingSteps() {
+        this.assertPreview("RETURN range(1, 10)", "RETURN range(1, 10) LIMIT 300", true);
+        this.assertPreview("RETURN range(1, 1000)", "RETURN range(1, 1000) LIMIT 300", true);
+        this.assertPreview("RETURN range(10, 1, -1)", "RETURN range(10, 1, -1) LIMIT 300", true);
+    }
+
+    @Test
     public void preservesUnsupportedManualQueriesAndLimitExpressions() {
         String[] queries = {
             "MATCH (n) RETURN n LIMIT $limit",
