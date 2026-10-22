@@ -1,0 +1,10 @@
+{
+  "performance_sample": false,
+  "query": "g.V().groupCount().by(valueMap('payload'))",
+  "http_status": 200,
+  "response_bytes": 699,
+  "properties_truncated": true,
+  "retained_keys": 1,
+  "maximum_key_length": 76,
+  "fixture": "2 vertices: 64/257 character payload; SDK exposes grouping keys as text"
+}

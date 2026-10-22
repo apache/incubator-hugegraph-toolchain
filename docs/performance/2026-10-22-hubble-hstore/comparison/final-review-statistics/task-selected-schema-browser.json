@@ -1,0 +1,10 @@
+{
+  "stage": "selected_graph_schema_readiness",
+  "performance_sample": false,
+  "schema_requests": [
+    "/api/v1.3/graphspaces/perf_space_0997/graphs/perf_meta_001/schema/graphview"
+  ],
+  "mutations": [],
+  "page_errors": [],
+  "empty_schema_warning_visible": true
+}

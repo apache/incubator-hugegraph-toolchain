@@ -29,6 +29,16 @@
 
 本轮Home及queryLimits定向**2组/156项**通过（`frontend-simple-preflight-final-tests.log`），QueryPropertyPreview定向**17项**通过（`element-preview-map-key-tests.log`）。这些是上述186项后端、18组401项前端影响组之后的独立定向结果，不累加成全量测试数量；本轮未重跑或改写历史性能实测。
 
+## 元数据与任务就绪的最终定向验证
+
+[#78](https://github.com/hugegraph/hugegraph-toolchain/pull/78)收敛了空图引导：GraphDetail只在记录数量为零时按需异步确认Schema，再决定空图引导；Card、NumberCard和GraphDetail复用`formatRecordedCount`，有界计数显示`≥`，近似计数显示`≈`。Task仅用既有Schema接口异步校验当前选中图，等待中、空Schema或读取失败均阻止进入Next，不对全图列表逐项读取Schema。合并后的**6组/55项**单次全部通过（74.723秒，`final-metadata-readiness-tests.log`），i18n、TypeScript和Vite生产构建通过（`final-metadata-readiness-build.log`）。
+
+[实际Task浏览器检查](comparison/final-review-statistics/task-selected-schema-browser.json)仅发出1次选中图Schema GET，空Schema提示可见，mutation及页面异常均为0；等待或空Schema时提交不能推进的断言由上述AntD表单测试覆盖。[大结果预检Chrome](comparison/final-review-statistics/final-preflight-browser-smoke.json)中`aggregate`、`sideEffect`、终结`toList`三条显式大结果查询均为0 POST；`hasNext`仅1次POST并返回HTTP200，应用页面异常为0。Playwright关闭context时的`Target closed`辅助警告与应用`page_errors`分开记录。
+
+[真实SDK分组键检查](comparison/final-review-statistics/final-group-key-live-smoke.json)在64/257字符属性的2点夹具上执行`g.V().groupCount().by(valueMap('payload'))`，HTTP200、响应699字节、`properties_truncated=true`，只保留1个短键（最长76字符）。该SDK将分组键暴露为文本，超过256字符的键被省略；结构或unknown键的1MiB场景另由17项单元测试覆盖，不将这条live检查称为1MiB分组实测。
+
+这些均是后续功能验收，不是性能对照。此前186项后端、18组401项前端仍是原影响组记录；本轮55项与前述156项前端、17项后端定向结果分别记录，不混算为全量总数，也不改写历史benchmark。
+
 ## 后端、浏览器及脚本
 
 - 查询/投影：55项专项全部通过、Checkstyle0；最终逐行mapper/局部scope小修单独20项通过（有重叠，不累加）。异常/历史19项全部通过。

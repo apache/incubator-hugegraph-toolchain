@@ -1,0 +1,23 @@
+{
+  "stage": "final_preflight_review",
+  "performance_sample": false,
+  "blocked": [
+    {
+      "query": "g.V().aggregate('seen').limit(10000)",
+      "query_posts": 0
+    },
+    {
+      "query": "g.V().sideEffect(__.out()).limit(10000)",
+      "query_posts": 0
+    },
+    {
+      "query": "g.V().limit(10000).toList()",
+      "query_posts": 0
+    }
+  ],
+  "page_errors": [],
+  "scalar_consumer": {
+    "status": 200,
+    "query_posts": 1
+  }
+}
