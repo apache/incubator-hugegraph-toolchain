@@ -10,7 +10,7 @@ at `86c05ef9c5d417bd37eab21d4ecd5af82bab17ef`, and separately running PD, Store,
 Server, Vermeer Master/Worker, and Hubble. The development helper pins all three
 database images by digest. Vermeer was checked out from
 `hugegraph/hugegraph-computer` at
-`16afc7fa910499e286eeb19bde6c462b4b25ae41` ([Computer PR #19](https://github.com/hugegraph/hugegraph-computer/pull/19)); local edits are retained when refreshing
+`36598e9b07bc2d4fe067b2c7fd5ca7d867a34c38` ([Computer PR #19](https://github.com/hugegraph/hugegraph-computer/pull/19)); local edits are retained when refreshing
 the environment.
 
 Run these commands from `/workspace/hugegraph-toolchain`:
