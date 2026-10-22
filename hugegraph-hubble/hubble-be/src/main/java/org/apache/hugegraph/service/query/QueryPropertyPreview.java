@@ -56,12 +56,13 @@ final class QueryPropertyPreview {
         return this.truncationVersion > 0;
     }
 
-    List<Object> partialElementIds(Collection<? extends GraphElement> elements) {
-        List<Object> ids = new ArrayList<>();
+    List<String> partialElementIds(Collection<? extends GraphElement> elements) {
+        List<String> ids = new ArrayList<>();
         if (elements != null) {
             for (GraphElement element : elements) {
                 if (Boolean.TRUE.equals(this.detachedProperties.get(element.properties()))) {
-                    ids.add(element.id());
+                    // Match JacksonConfig graph element serializers on the wire.
+                    ids.add(String.valueOf(element.id()));
                 }
             }
         }

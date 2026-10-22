@@ -32,6 +32,7 @@ import org.mockito.Mockito;
 
 import org.apache.hugegraph.api.gremlin.GremlinRequest;
 import org.apache.hugegraph.config.HugeConfig;
+import org.apache.hugegraph.config.JacksonConfig;
 import org.apache.hugegraph.driver.CypherManager;
 import org.apache.hugegraph.driver.GraphManager;
 import org.apache.hugegraph.driver.GremlinManager;
@@ -53,6 +54,10 @@ import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.gremlin.Result;
 import org.apache.hugegraph.structure.gremlin.ResultSet;
 import org.apache.hugegraph.testutil.Assert;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 
 public class QueryServiceTest {
 
@@ -86,7 +91,7 @@ public class QueryServiceTest {
         Assert.assertEquals("[binary preview: 1048576 bytes omitted]",
                             ((Vertex) preview.getJsonView().getData().get(0)).property("binary"));
         Assert.assertEquals(256, preview.getPropertyPreviewLimit());
-        Assert.assertEquals(List.of(0), preview.getPropertyPreviewVertexIds());
+        Assert.assertEquals(List.of("0"), preview.getPropertyPreviewVertexIds());
         Assert.assertEquals(List.of(), preview.getPropertyPreviewEdgeIds());
         Assert.assertEquals(payload, vertex.property("payload"));
 
@@ -106,6 +111,8 @@ public class QueryServiceTest {
             vertex.property("name", "person" + vertex.id());
         }
         vertices.get(150).property("description", "x".repeat(257));
+        long partialId = 9007199254741013L;
+        vertices.get(150).id(partialId);
         GremlinManager gremlin = this.mockGremlin(this.resultSet(vertices.toArray()), this.resultSet());
         GremlinQuery query = new GremlinQuery("g.V().limit(300)");
         query.setPreview(true);
@@ -113,10 +120,19 @@ public class QueryServiceTest {
 
         Assert.assertEquals(300, preview.getGraphView().getVertices().size());
         Assert.assertTrue(preview.isPropertiesTruncated());
-        Assert.assertEquals(List.of(150), preview.getPropertyPreviewVertexIds());
+        Assert.assertEquals(List.of(String.valueOf(partialId)), preview.getPropertyPreviewVertexIds());
         Assert.assertEquals(List.of(), preview.getPropertyPreviewEdgeIds());
         Assert.assertEquals("person0", preview.getGraphView().getVertices().iterator().next().property("name"));
         Assert.assertEquals(257, ((String) vertices.get(150).property("description")).length());
+        JsonNode json = this.serializedQuery(preview);
+        JsonNode graphId = json.get("graph_view").get("vertices").get(150).get("id");
+        JsonNode previewId = json.get("property_preview_vertex_ids").get(0);
+        Assert.assertTrue(graphId.isTextual());
+        Assert.assertTrue(previewId.isTextual());
+        Assert.assertEquals(String.valueOf(partialId), graphId.textValue());
+        Assert.assertEquals(graphId, previewId);
+        Assert.assertTrue(json.get("property_preview_edge_ids").isArray());
+        Assert.assertEquals(0, json.get("property_preview_edge_ids").size());
     }
 
     @Test
@@ -138,9 +154,15 @@ public class QueryServiceTest {
         Assert.assertTrue(property.endsWith("/100000 chars]"));
         Assert.assertTrue(preview.isPropertiesTruncated());
         Assert.assertEquals(100000, ((String) edge.property("payload")).length());
-        Assert.assertEquals(List.of(0), preview.getPropertyPreviewVertexIds());
+        Assert.assertEquals(List.of("0"), preview.getPropertyPreviewVertexIds());
         Assert.assertEquals(List.of("edge", "later"), preview.getPropertyPreviewEdgeIds());
         Assert.assertEquals(3, preview.getGraphView().getEdges().size());
+        JsonNode json = this.serializedQuery(preview);
+        JsonNode graphEdges = json.get("graph_view").get("edges");
+        JsonNode previewIds = json.get("property_preview_edge_ids");
+        Assert.assertTrue(previewIds.get(0).isTextual());
+        Assert.assertEquals(graphEdges.get(0).get("id"), previewIds.get(0));
+        Assert.assertEquals(graphEdges.get(2).get("id"), previewIds.get(1));
     }
 
     @Test
@@ -648,6 +670,15 @@ public class QueryServiceTest {
         Assert.assertEquals(502, cypherError.status());
         Assert.assertEquals("gremlin.server.authentication-failed",
                             cypherError.getMessage());
+    }
+
+    private JsonNode serializedQuery(GremlinResult result) throws Exception {
+        // Use the same element serializers registered by Hubble's HTTP layer.
+        SimpleModule module = new SimpleModule();
+        module.addSerializer(Vertex.class, new JacksonConfig.VertexSerializer());
+        module.addSerializer(Edge.class, new JacksonConfig.EdgeSerializer());
+        ObjectMapper mapper = new ObjectMapper().registerModule(module);
+        return mapper.readTree(mapper.writeValueAsString(result));
     }
 
     private QueryService serviceWithConfig() throws Exception {

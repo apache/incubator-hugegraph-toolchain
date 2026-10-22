@@ -75,10 +75,10 @@ public class GremlinResult {
     private int propertyPreviewLimit;
 
     @JsonProperty("property_preview_vertex_ids")
-    private List<Object> propertyPreviewVertexIds;
+    private List<String> propertyPreviewVertexIds;
 
     @JsonProperty("property_preview_edge_ids")
-    private List<Object> propertyPreviewEdgeIds;
+    private List<String> propertyPreviewEdgeIds;
 
     public enum Type {
 

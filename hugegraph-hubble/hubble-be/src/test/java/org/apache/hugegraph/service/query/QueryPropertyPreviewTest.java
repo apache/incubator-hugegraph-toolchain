@@ -366,10 +366,10 @@ public class QueryPropertyPreviewTest {
         Assert.assertEquals("[preview: value budget exhausted]", lastProperties.values().iterator().next());
         Assert.assertEquals(lastProperties, graphVertices.get(999).properties());
         Assert.assertEquals(10, ((Vertex) rows.get(999)).properties().size());
-        List<Object> partialIds = preview.partialElementIds(graphVertices);
+        List<String> partialIds = preview.partialElementIds(graphVertices);
         Assert.assertTrue(partialIds.size() > 1);
-        Assert.assertFalse(partialIds.contains(0));
-        Assert.assertTrue(partialIds.contains(999));
+        Assert.assertFalse(partialIds.contains("0"));
+        Assert.assertTrue(partialIds.contains("999"));
         Assert.assertTrue(preview.truncated());
     }
 
