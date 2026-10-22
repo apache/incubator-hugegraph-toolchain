@@ -129,7 +129,7 @@ public class OperationsHttpClient {
         } catch (SocketTimeoutException e) {
             throw new UpstreamRequestException("upstream_timeout", e,
                                                Map.of("request_path", target.getRawPath()));
-        } catch (IOException e) {
+        } catch (IOException | IllegalArgumentException e) {
             throw new UpstreamRequestException("upstream_unavailable", e,
                                                Map.of("request_path", target.getRawPath()));
         }

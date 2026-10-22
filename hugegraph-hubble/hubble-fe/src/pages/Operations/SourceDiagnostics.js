@@ -60,7 +60,7 @@ const SourceDiagnostics = ({sources = {}, sourceName, nodes = [], focus = false,
     const {t, i18n} = useTranslation();
     const panel = useRef(null);
     const selected = sourceName && SOURCE_TYPES[sourceName]
-        ? [{name: sourceName, ...(sources[sourceName] ?? {})}]
+        ? (sources[sourceName] ? [{name: sourceName, ...sources[sourceName]}] : [])
         : selectAttentionSources(sources);
     useEffect(() => {
         if (focus && panel.current) {
@@ -83,13 +83,12 @@ const SourceDiagnostics = ({sources = {}, sourceName, nodes = [], focus = false,
                 const recovered = sourceHealthStatus(source) === 'UP';
                 const failures = nodes.filter(node => node.type === type).flatMap(node => (
                     Object.entries(node.metric_statuses ?? {}).filter(([, status]) => (
-                        status.reason !== 'metrics_not_collected' && (
-                            ['UNAVAILABLE', 'MALFORMED'].includes(status.availability)
-                                || status.availability === 'UNSUPPORTED'
-                                    && (source.availability === 'PARTIAL'
-                                        || ['DOWN', 'DEGRADED'].includes(source.status))
-                                || status.stale
-                        )
+                        ['UNAVAILABLE', 'MALFORMED'].includes(status.availability)
+                            || status.stale && status.availability !== 'UNSUPPORTED'
+                            || status.availability === 'UNSUPPORTED'
+                                && status.reason === 'unsupported_version'
+                                && (source.availability === 'PARTIAL'
+                                    || ['DOWN', 'DEGRADED'].includes(source.status))
                     )).map(([group, status]) => ({node, group, status}))
                 ));
                 return (

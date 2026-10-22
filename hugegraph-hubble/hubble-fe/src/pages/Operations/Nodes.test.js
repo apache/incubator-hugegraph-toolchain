@@ -482,6 +482,19 @@ test('opens source diagnostics from an alert without needing a node result', asy
     await waitFor(() => expect(panel).toHaveFocus());
 });
 
+test('hides source diagnostics after an initial load failure and shows a received healthy source on retry', async () => {
+    getNodes.mockRejectedValueOnce(new Error('network unavailable')).mockResolvedValueOnce({
+        items: [], total: 0, sources: {stores: {status: 'UP', availability: 'AVAILABLE', fresh: true}},
+    });
+    render(<MemoryRouter initialEntries={[
+        '/operations/nodes?type=STORE&source=stores#operations-source-diagnostics',
+    ]}><Nodes /></MemoryRouter>);
+    await screen.findByText('Unable to load current cluster data');
+    expect(screen.queryByRole('region', {name: 'Source diagnostics'})).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', {name: 'Refresh'}));
+    expect(await screen.findByText('Source collection has recovered')).toBeInTheDocument();
+});
+
 test('uses compact snapshot diagnostics independently of the filtered node table', async () => {
     getNodes.mockResolvedValue({items: [], total: 0, sources: {stores: {
         status: 'UP', availability: 'PARTIAL', reason: 'upstream_rejected',
