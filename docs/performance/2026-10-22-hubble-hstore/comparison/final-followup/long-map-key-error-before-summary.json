@@ -1,0 +1,8 @@
+{
+  "http_status": 400,
+  "bytes": 1151232,
+  "message_chars": 1151156,
+  "message_prefix": "Failed to deserialize: {\"requestId\":\"2b5e9531-3cd4-4efb-ba87-3da64f089359\",\"stat",
+  "response_sha256": "2b76c2f3ec4e91de1abf5f67721c4da7de48ad416cdec09423fc6a91c01bbeda",
+  "note": "Huge key content omitted; SDK deserialization fails before preview"
+}

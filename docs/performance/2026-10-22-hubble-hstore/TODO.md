@@ -15,21 +15,21 @@
 - [x] **审查与修复**：检查 limit 语义、异步不重放、边端点、权限、兼容和返回字段；处理所有可复现问题。
 - [x] **测试与构建**：后端单元测试、前端相关测试、正式前端构建；验证代码风格。
 - [x] **本地对比**：1000 空间、50 图；64 B / 8 KiB 属性、12000 点边；记录请求数、P50/P95、响应字节及剩余限制。
-- [x] **Chrome 验证**：匿名模式、登录/账号路径降级、空间/图切换、默认上限、大查询引导、截断与属性只读提示，保留截图；真实授权模式见后续事项。
-- [x] **代码 PR**：列表 [#78](https://github.com/hugegraph/hugegraph-toolchain/pull/78)、查询/大属性预览 [#79](https://github.com/hugegraph/hugegraph-toolchain/pull/79)、Server 缓冲区 [#327](https://github.com/hugegraph/hugegraph/pull/327)；本报告以独立 PR 提交。
+- [x] **Chrome 验证**：匿名模式、登录/账号路径降级、空间/图切换、默认上限、大查询引导、截断与属性只读提示，保留截图；另建隔离 PD 认证夹具，真实管理员/普通成员登录、查询、权限可见性、注销均通过。
+- [x] **代码 PR**：列表 [#78](https://github.com/hugegraph/hugegraph-toolchain/pull/78)、查询/大属性预览 [#79](https://github.com/hugegraph/hugegraph-toolchain/pull/79)、Server 缓冲区 [#327](https://github.com/hugegraph/hugegraph/pull/327)；[实测报告 #80](https://github.com/hugegraph/hugegraph-toolchain/pull/80)。
 
 集成验证已通过后端服务/Controller/查询回归、前端查询/选择器/TopBar/布局测试及生产构建。审查和实测进一步推动修复了局部 limit 误判、预览上游未限量、截断标记遗漏、力导向固定迭代和旧 TopBar 隐式全量统计。普通只读预览在上游限制为 1001 条，保留 1 条用于判断是否截断；最终最多交付 1000 条。详见优化对比和原始记录。
 
 ## 用户补充：大属性可视化预览
 
-- [x] `preview:true` 字符串最多 256 字符并注明原始长度；大二进制值只返回大小说明；集合最多 20 项、深度最多 4 层。实际点边标识、数值精度、路径顺序保持不变。
+- [x] `preview:true` 字符串最多 256 字符并注明原始长度；大二进制值只返回大小说明；超长 Map 键整项省略并明确标记；集合最多 20 项、深度最多 4 层。实际点边标识、数值精度、路径顺序保持不变。
 - [x] JSON/Table/Graph 使用脱离 SDK 数据对象的预览副本，禁止意外触发属性写入；原始 API 与存储数据不变。
 - [x] 截断预览只读，导出/本地适配器重新载入保留标记；实际数据库导入接口明确拒绝预览文件。仓库没有服务端保存画布功能；普通完整属性仍可编辑。
 - [x] 真实 100 KiB / 1 MiB 属性与 256/257 字符边界、二进制、长 ID/BigInt 的响应大小、原值校验和 Chrome 交互验证。
 
-## 明确后续事项
+- [x] **最终 Review 补测**：聚合后展开、Map 键过滤、边 sentinel、Cypher 分组大 LIMIT 预检及查询错误消息2048字符上限；后端51+19项分组回归，真实 API 与原值完整性复核通过。
 
-- [ ] 授权模式真实浏览器集成：本地基线 Server 为匿名模式，普通用户/管理员分支通过单元测试，尚未在启用认证的真实 Server 上完成 Chrome 实测。
+## 明确后续事项
 
 - [ ] Server 提供经过授权的空间精简列表：当前匿名/普通用户逐空间详情调用若仍存在，应如实报告，不通过 admin-only 接口绕过。
 - [ ] Cypher 的默认结果上限与同步预览：本轮只为 Gremlin 增加 default300/preview 契约；Cypher 仅共享图视图上限及常见大 LIMIT 前端提示，不宣称无界 Cypher 已有完整保护。

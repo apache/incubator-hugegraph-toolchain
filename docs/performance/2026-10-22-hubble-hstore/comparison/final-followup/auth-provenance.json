@@ -1,0 +1,65 @@
+{
+  "timestamp_utc": "2026-10-22T09:57:33.825280+00:00",
+  "performance_sample": false,
+  "independent_runtime_root": "/workspace/hubble-perf/auth-fixture",
+  "source_runtime_reused": "Existing local source-built1.8.0 PD/Store/Server JARs; current Hubble target/classes; current frontend production build",
+  "pd_cluster": "perf_auth_isolated",
+  "ports": {
+    "pd_http": 28620,
+    "pd_grpc": 28686,
+    "pd_raft": 28610,
+    "store_http": 28520,
+    "store_grpc": 28500,
+    "store_raft": 28510,
+    "server_http": 38080,
+    "gremlin": 38182,
+    "server_gremlin_proxy": "127.0.0.1:38182",
+    "hubble_http": 28088,
+    "frontend": 23000
+  },
+  "data_paths": "All PD/Store data and Server/Hubble state under independent_runtime_root; shared library symlinks read only",
+  "credentials_archived": false,
+  "runtime_configuration_archived": false,
+  "process_resources": {
+    "pd": {
+      "pid": 31841,
+      "rss_bytes": 487759872,
+      "heap_limit_mib": 256
+    },
+    "store": {
+      "pid": 32426,
+      "rss_bytes": 491745280,
+      "heap_limit_mib": 256
+    },
+    "server": {
+      "pid": 36160,
+      "rss_bytes": 625811456,
+      "heap_limit_mib": 512
+    },
+    "hubble": {
+      "pid": 34407,
+      "rss_bytes": 457998336,
+      "heap_limit_mib": 384
+    }
+  },
+  "combined_java_rss_bytes": 2063314944,
+  "task_result_limit_changed": false,
+  "default_task_result_limit_bytes": 16777216,
+  "original_stack_auth_enabled": false,
+  "original_stack_counts": {
+    "perf_small64_V": 12000,
+    "perf_small64_E": 12000,
+    "perf_large8192_V": 12000,
+    "perf_large8192_E": 12000
+  },
+  "original_stack_stopped_or_reconfigured": false,
+  "ordinary_user_final_role": "USER; SPACE_MEMBER plus OBSERVER on auth_visible only",
+  "connection_ui": "No runtime PD/direct or Server endpoint switch exists; deployment configuration chooses mode, UI switches GraphSpace/graph",
+  "intermediate_fixture_setup_corrections": [
+    "Set independent gremlinserver.url to match Gremlin YAML port; no original data writes",
+    "Select visible query editor rather than natural-language input",
+    "Accept404 for unavailable hidden GraphSpace"
+  ],
+  "observer_boundary": "Initial OBSERVER-only user could list permitted GraphSpace and read vertices via REST, but graph list returned403; final browser uses ordinary SPACE_MEMBER, not administrator",
+  "helm_used": false
+}

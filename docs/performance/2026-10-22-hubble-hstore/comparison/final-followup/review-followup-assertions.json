@@ -1,0 +1,114 @@
+{
+  "performance_sample": false,
+  "server": "patched Struct",
+  "records": [
+    {
+      "label": "long_map_keys_1MiB",
+      "http_status": 400,
+      "bytes": 2121,
+      "message_chars": 2048,
+      "message_prefix": "Failed to deserialize: {\"requestId\":\"8d47b51a-2ebd-4121-8ecb-aa39f651a6c7\",\"stat",
+      "response_sha256": "85eaf5b1a897473462a576271c7084e75a9c0b7a0b624a582badecd0979a5572",
+      "sdk_deserialization_failed": true,
+      "limitation": "SDK rejected a huge field name before Hubble preview; full message omitted from artifact"
+    },
+    {
+      "label": "long_map_keys_8192",
+      "query": "g.V().limit(2).groupCount().by('payload')",
+      "bytes": 475,
+      "rows": 1,
+      "vertices": 0,
+      "edges": 0,
+      "metadata": {
+        "default_limit_applied": false,
+        "default_limit": 300,
+        "graph_truncated": false,
+        "graph_vertex_limit": 1000,
+        "graph_edge_limit": 500,
+        "result_truncated": false,
+        "result_limit": 1000,
+        "properties_truncated": true,
+        "property_preview_limit": 256
+      }
+    },
+    {
+      "label": "terminal_read_default",
+      "query": "g.V().fold().unfold().out()",
+      "bytes": 126401,
+      "rows": 300,
+      "vertices": 300,
+      "edges": 21,
+      "metadata": {
+        "default_limit_applied": true,
+        "default_limit": 300,
+        "graph_truncated": false,
+        "graph_vertex_limit": 1000,
+        "graph_edge_limit": 500,
+        "result_truncated": false,
+        "result_limit": 1000,
+        "properties_truncated": false,
+        "property_preview_limit": 256
+      }
+    },
+    {
+      "label": "terminal_read_explicit_preview",
+      "query": "g.V().fold().unfold().out().limit(12000)",
+      "bytes": 407858,
+      "rows": 1000,
+      "vertices": 1000,
+      "edges": 0,
+      "metadata": {
+        "default_limit_applied": false,
+        "default_limit": 300,
+        "graph_truncated": true,
+        "graph_vertex_limit": 1000,
+        "graph_edge_limit": 500,
+        "result_truncated": true,
+        "result_limit": 1000,
+        "properties_truncated": false,
+        "property_preview_limit": 256
+      }
+    },
+    {
+      "label": "terminal_count",
+      "query": "g.V().fold().unfold().out().count()",
+      "bytes": 482,
+      "rows": 1,
+      "vertices": 0,
+      "edges": 0,
+      "metadata": {
+        "default_limit_applied": false,
+        "default_limit": 300,
+        "graph_truncated": false,
+        "graph_vertex_limit": 1000,
+        "graph_edge_limit": 500,
+        "result_truncated": false,
+        "result_limit": 1000,
+        "properties_truncated": false,
+        "property_preview_limit": 256
+      },
+      "count": 12000
+    },
+    {
+      "label": "aggregate_count",
+      "query": "g.V().count()",
+      "bytes": 482,
+      "rows": 1,
+      "vertices": 0,
+      "edges": 0,
+      "metadata": {
+        "default_limit_applied": false,
+        "default_limit": 300,
+        "graph_truncated": false,
+        "graph_vertex_limit": 1000,
+        "graph_edge_limit": 500,
+        "result_truncated": false,
+        "result_limit": 1000,
+        "properties_truncated": false,
+        "property_preview_limit": 256
+      },
+      "count": 12000
+    }
+  ],
+  "original_property_sha256_unchanged": true
+}

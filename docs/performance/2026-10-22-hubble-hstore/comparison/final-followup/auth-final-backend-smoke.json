@@ -1,0 +1,16 @@
+{
+  "performance_sample": false,
+  "final_backend_functional_smoke": true,
+  "config": {
+    "server_capabilities_verified": true,
+    "auth_enabled": true,
+    "pd_enabled": true,
+    "graph_create_enabled": true,
+    "cypher_enabled": true
+  },
+  "auth_role": "USER",
+  "auth_mode": "PD",
+  "query_rows": 2,
+  "graph_vertices": 2,
+  "logout_invalidated_session": true
+}

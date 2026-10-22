@@ -1,0 +1,69 @@
+{
+  "performance_sample": false,
+  "fixture": "independent PD+Store+Server+Hubble",
+  "records": [
+    {
+      "identity": "admin",
+      "role": "SUPERADMIN",
+      "mode": "PD",
+      "config": {
+        "server_capabilities_verified": true,
+        "auth_enabled": true,
+        "pd_enabled": true,
+        "graph_create_enabled": true,
+        "cypher_enabled": true
+      },
+      "space_options": [
+        "DEFAULT",
+        "auth_hidden",
+        "auth_visible"
+      ],
+      "account_link_visible": true,
+      "query_snapshot": {
+        "status": "ready",
+        "nodes": 2,
+        "edges": 0,
+        "error": null
+      },
+      "gremlin_http_status": 200,
+      "gremlin_error": null,
+      "rest_visible_vertices": 2,
+      "hidden_space_http_status": 200,
+      "hidden_space_business_status": 200,
+      "account_route_url": "http://127.0.0.1:23000/account",
+      "page_errors": [],
+      "logout_invalidated_session": true
+    },
+    {
+      "identity": "user",
+      "role": "USER",
+      "mode": "PD",
+      "config": {
+        "server_capabilities_verified": true,
+        "auth_enabled": true,
+        "pd_enabled": true,
+        "graph_create_enabled": true,
+        "cypher_enabled": true
+      },
+      "space_options": [
+        "DEFAULT",
+        "auth_visible"
+      ],
+      "account_link_visible": false,
+      "query_snapshot": {
+        "status": "ready",
+        "nodes": 2,
+        "edges": 0,
+        "error": null
+      },
+      "gremlin_http_status": 200,
+      "gremlin_error": null,
+      "rest_visible_vertices": 2,
+      "hidden_space_http_status": 404,
+      "hidden_space_business_status": 404,
+      "account_route_url": "http://127.0.0.1:23000/navigation",
+      "page_errors": [],
+      "logout_invalidated_session": true
+    }
+  ]
+}

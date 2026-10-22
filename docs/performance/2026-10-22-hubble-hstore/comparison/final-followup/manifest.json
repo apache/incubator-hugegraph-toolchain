@@ -1,0 +1,72 @@
+{
+  "files": [
+    {
+      "file": "auth-final-backend-smoke.json",
+      "bytes": 372,
+      "sha256": "b14cc8e08ce246f7c28430c8f40cc253b63123ad6917caf52953a4b1632791f3"
+    },
+    {
+      "file": "auth-fixture-stopped.json",
+      "bytes": 549,
+      "sha256": "74e77ffdbf5d1efa46c5a9767dc532eb7bb5d44e9db25e4622a771c695915f84"
+    },
+    {
+      "file": "auth-provenance.json",
+      "bytes": 2368,
+      "sha256": "f895d63d277f9a14435dda100a86abac3c6ae75ced5fb25fcae74120620d5a70"
+    },
+    {
+      "file": "auth-verification.md",
+      "bytes": 3303,
+      "sha256": "a7a911a21f0ffd904bb783648239ef380e5c00abb98a753bec5e57b7924ba8fa"
+    },
+    {
+      "file": "browser-auth.json",
+      "bytes": 1784,
+      "sha256": "c00c78c876ad0efb8ff62bcf6a1fae215e388e52f964e0d9cb859486ea7e121b"
+    },
+    {
+      "file": "long-map-key-error-before-summary.json",
+      "bytes": 351,
+      "sha256": "c045b1b90e6c55be395e8430bb31dec818b7086e22f971d43e5f7be13f2750d6"
+    },
+    {
+      "file": "review-followup-assertions.json",
+      "bytes": 3275,
+      "sha256": "ae722c03bd95a9b498c46a4c5300a007a75caa4e35f739f6e33150a1599c7995"
+    },
+    {
+      "file": "review-followup-before-short-error.json",
+      "bytes": 3075,
+      "sha256": "c843b083e61fc69891f6942cef4e1f422f95e6d9c2fb15f031fe3260bd59d399"
+    },
+    {
+      "file": "review-followup.md",
+      "bytes": 1501,
+      "sha256": "1d70bda7dd970f8cd5bfdf8ca29dbd57ea36d0f79dd17092c0bc1d3146b1d0cf"
+    },
+    {
+      "file": "review_followup_assertions.py",
+      "bytes": 4232,
+      "sha256": "2920654b7a05b35778c804ed2e6a321b404cefc8e01b6c66cbb3507b86b1964a"
+    },
+    {
+      "file": "screenshots/auth-admin-account.png",
+      "bytes": 75111,
+      "sha256": "c680f6cb7de0700f3d71cf642f0874d1d240efd430b8b88c93fb554f751290bc"
+    },
+    {
+      "file": "screenshots/auth-user-query.png",
+      "bytes": 111546,
+      "sha256": "02d8a8f974c01e9237154c0b526fa001d15360332adab15ca6eb2ce971f6befb"
+    },
+    {
+      "file": "screenshots/auth-user-spaces.png",
+      "bytes": 91627,
+      "sha256": "4076dab3ad7f85e610f120e0a9401ff65720bccb79d11354ded5002c5c4f093f"
+    }
+  ],
+  "credentials_value_scan": "PASS; passwords absent in all archived text",
+  "screenshots_reviewed": "Three final screenshots visually inspected; no passwords or tokens",
+  "runtime_config_archived": false
+}

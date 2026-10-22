@@ -9,7 +9,7 @@
 - API 统一 `Accept-Encoding: identity`，通过 PD 发现后直连 Server `18080`；没有 HTTP 跟踪代理。耗时包含接收完整响应，不包含 Python JSON 解析或浏览器绘制。Hubble 到 Server 的 SDK 协议保持一致，没有通过调整全局超时或编码制造收益。
 - 主要对比在构建、单测及浏览器任务暂停后的独立窗口进行。每场景预热 1 次，再串行采样 5 次；全空间统计采样 3 次。匹配的 13 个场景共 126 次正式采样，另有两个新精简接口的 10 次采样；均成功。P95 用最近秩法，少量样本不能代表稳定 SLA。
 - 显式 `limit(300)`、`limit(1000)` 保持主查询结果条数相同。路径的图预览现在遵守 1000 点 / 500 边预算，因此完整 JSON 行数相同，Graph 子视图较小。默认查询 250→300、导航全量统计→精简元数据、画布超限切表格→最多1000点预览属于产品行为变化，单独报告。
-- API 匹配窗口的 `preview:false` 路径与最终代码一致；其后的上游预览补丁只影响 `preview:true`，用独立的 18 项执行断言验证。Hubble 的 API、浏览器及布局采样均在 Server 压缩补充修复部署前完成，Server 保持 `86c05ef9c5d417bd37eab21d4ecd5af82bab17ef`。
+- API 匹配窗口使用当时的 `preview:false` 实现；之后的上游预览、属性投影及 Review 边界修复分别做功能断言，没有重新采样完整性能表。上游预览用独立的 18 项断言验证。主要 Hubble API、浏览器及布局采样均在 Server 压缩补充修复部署前完成，Server 保持 `86c05ef9c5d417bd37eab21d4ecd5af82bab17ef`；最后补测另行标记。
 - 随后的超长属性阶段另建2点1边专用图，包含100 KiB / 1 MiB属性、256/257字符边界及大整数ID；总图数55→56，1000空间、50图列表和两张12000点边图保持不变。新增图发生在匹配元数据采样之后。属性阶段另做6场景、各1次预热+5次采样；原始与裁剪属性夹具只比较体积与完整性，原始阶段有构建负载，不比较延迟。
 - 本地原配置显式写了 `gremlin.suffix_limit=250`，升级运行配置改为 300，与此次代码及分发默认值一致。未复制其他运行配置、密钥或数据库。
 - 初期开发负载窗口的 12000 点大属性请求为 40.90 秒预热、68.85 / 63.09 秒两次完整样本；随后中止剩余采样。它们不用于计算提速倍数。原始历史报告中的代理和压缩差异说明仍有效。
@@ -84,7 +84,7 @@
 
 这些是有界预览，不能与旧的完整12000条响应相减作为纯计算提速，也不等于已经完成完整导出。
 
-最终Chrome复测8个查询用例均得到预期画布/表格状态，页面异常为0；登录页在匿名模式重定向，账户入口隐藏，空间0997及图`perf_meta_001`的实际选择和路由切换通过。具有真实登录凭据的管理员/普通用户环境没有部署；权限分支由单测覆盖，本轮结果不替代真实鉴权环境集成验证。
+最终Chrome复测8个查询用例均得到预期画布/表格状态，页面异常为0；登录页在匿名模式重定向，账户入口隐藏，空间0997及图`perf_meta_001`的实际选择和路由切换通过。该性能窗口采用匿名模式；之后另建完全隔离的真实 PD 认证夹具，完成管理员和普通成员 Chrome 验证，见下文补充。认证夹具不用于性能表。
 
 | 最终Chrome查询 | 结果可用时间 | 最长主线程任务 | 实际画布 |
 | --- | ---: | ---: | --- |
@@ -152,6 +152,18 @@ Server默认任务结果上限为压缩后16 MiB；异步执行不等于可以�
 对应原始Server源码：[任务结果上限](https://github.com/apache/hugegraph/blob/86c05ef9c5d417bd37eab21d4ecd5af82bab17ef/hugegraph-server/hugegraph-core/src/main/java/org/apache/hugegraph/config/CoreOptions.java#L302)、[大小检查](https://github.com/apache/hugegraph/blob/86c05ef9c5d417bd37eab21d4ecd5af82bab17ef/hugegraph-server/hugegraph-core/src/main/java/org/apache/hugegraph/task/HugeTask.java#L800)、[LZ4初始容量](https://github.com/apache/hugegraph/blob/86c05ef9c5d417bd37eab21d4ecd5af82bab17ef/hugegraph-struct/src/main/java/org/apache/hugegraph/util/LZ4Util.java#L40)、[Struct扩容](https://github.com/apache/hugegraph/blob/86c05ef9c5d417bd37eab21d4ecd5af82bab17ef/hugegraph-struct/src/main/java/org/apache/hugegraph/serializer/BytesBuffer.java#L213)。
 
 该Server补充修复单独验证，不混入前述Hubble对照窗口。8 MiB随机输入微基准中，相同压缩输出8431637字节且摘要一致；扩容次数690→1，累计复制4836342825→5590886字节，压缩中位耗时696.756→11.064 ms。Struct模块136项测试通过。实际Server仅替换该Struct补丁JAR后，同一8 KiB / 12000点语句的任务10001在 **1.600秒** 后到达相同16 MiB上限，错误大小仍为99665305字节；原任务为126.471秒。前次运行存在开发负载，这两次不是严格成对吞吐基准；配对微基准及相同拒绝结果支持扩容修复的因果判断。结果容量未扩大，超限完整任务依然失败。部署清单和类差异单独留档：173个类中169个字节相同，另3个嵌套类仅调试偏移变化，反汇编逻辑相同。
+
+## Review 边界与真实认证补充
+
+后续 Review 修复了中间 `fold()` 后继续展开漏加上限、Cypher 分组聚合绕过显式大 LIMIT 提示、超长 Map 键绕过属性预览，以及恰好达到边预算的误报。超长字符串 Map 键直接省略整项并标记不完整，不改名、不合并键；边补查最多多取一条候选，收满后继续全局停止。51 项后端查询测试及独立代码审查通过。
+
+真实 1 MiB Map 键仍受 SDK JSON 字段名长度限制，返回 HTTP400。此前错误消息把原始大响应带回浏览器；现在查询错误消息最多2048字符，保留原状态码和脱敏规则。实际错误响应 **1,151,232→2,121字节**，消息1,151,156→2048字符。19 项异常/历史测试和原属性 SHA 校验通过。完整断言及边界见 [最终功能补测](comparison/final-followup/review-followup.md)、[原始结果](comparison/final-followup/review-followup-assertions.json) 和 [复现脚本](comparison/final-followup/review_followup_assertions.py)。这些单次功能断言不覆盖前述性能采样。
+
+另外在独立端口和数据目录部署 PD/Store/Server/Hubble 认证夹具，真实 Chrome 验证管理员与普通空间成员：实际表单登录、已授权图查询画布2点、空间/图选择、账号管理入口可见性、未授权空间拒绝、注销后401，页面异常为0。普通成员仅见 DEFAULT 和已授权空间，管理员可见全部测试空间。原性能数据及主实例配置未变，新夹具验证后已停止。
+
+[认证说明与角色边界](comparison/final-followup/auth-verification.md)、[浏览器原始结果](comparison/final-followup/browser-auth.json)、[来源与资源](comparison/final-followup/auth-provenance.json)、[最后后端冒烟](comparison/final-followup/auth-final-backend-smoke.json)、[停止清单](comparison/final-followup/auth-fixture-stopped.json)。没有单独验证空间管理员或 OBSERVER-only 完整 UI；本版没有 PD/direct 或 Server 实例热切换按钮，验证的是实际存在的空间/图切换及部署连接配置。
+
+![普通成员真实认证查询](comparison/final-followup/screenshots/auth-user-query.png)
 
 ## 证据、复现与边界
 

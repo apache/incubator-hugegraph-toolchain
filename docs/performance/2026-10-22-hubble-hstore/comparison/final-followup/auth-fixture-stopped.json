@@ -1,0 +1,37 @@
+[
+  {
+    "component": "hubble",
+    "pid": 37647,
+    "stopped": true
+  },
+  {
+    "component": "server",
+    "pid": 36160,
+    "stopped": true
+  },
+  {
+    "component": "store",
+    "pid": 32426,
+    "stopped": true
+  },
+  {
+    "component": "pd",
+    "pid": 31841,
+    "stopped": true
+  },
+  {
+    "component": "frontend",
+    "pid": 32448,
+    "stop_signal": "SIGTERM"
+  },
+  {
+    "component": "frontend",
+    "pid": 32460,
+    "stop_signal": "SIGTERM"
+  },
+  {
+    "component": "frontend",
+    "pid": 32475,
+    "stop_signal": "SIGTERM"
+  }
+]
