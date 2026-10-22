@@ -290,7 +290,8 @@ const Nodes = () => {
             <SourceDiagnostics
                 sources={data.sources}
                 sourceName={selectedSource}
-                nodes={data.items}
+                nodes={data.diagnostic_nodes ?? data.items}
+                complete={Array.isArray(data.diagnostic_nodes)}
                 focus={Boolean(selectedSource) && !loading && location.hash === `#${DIAGNOSTICS_ID}`}
             />
             <section className='operations-surface'>

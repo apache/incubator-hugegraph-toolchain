@@ -67,6 +67,15 @@ test('reports recovery when a previously selected failed source is healthy again
     expect(screen.queryByText('No source error details were reported')).not.toBeInTheDocument();
 });
 
+test.each([true, false])('describes missing node details at the correct scope (complete=%s)', complete => {
+    render(<SourceDiagnostics sourceName='stores' complete={complete} sources={{stores: {
+        status: 'UNKNOWN', availability: 'MALFORMED', reason: 'malformed_response',
+    }}} />);
+
+    expect(screen.getByText(complete ? /No per-node failure details were reported in this snapshot/
+        : /No per-node failure details were reported on this page/)).toBeInTheDocument();
+});
+
 test.each(['PARTIAL', 'UNSUPPORTED'])(
     'shows unsupported metric request details only for a partial source (%s)', availability => {
         render(<SourceDiagnostics sourceName='stores' sources={{stores: {

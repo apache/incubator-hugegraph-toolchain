@@ -56,7 +56,7 @@ const DiagnosticRequest = ({diagnostics = {}}) => {
     );
 };
 
-const SourceDiagnostics = ({sources = {}, sourceName, nodes = [], focus = false}) => {
+const SourceDiagnostics = ({sources = {}, sourceName, nodes = [], focus = false, complete = false}) => {
     const {t, i18n} = useTranslation();
     const panel = useRef(null);
     const selected = sourceName && SOURCE_TYPES[sourceName]
@@ -120,7 +120,8 @@ const SourceDiagnostics = ({sources = {}, sourceName, nodes = [], focus = false}
                         ]} />
                         {failures.length > 0 ? (
                             <div>
-                                <strong>{t('operations.diagnostic_affected_metrics')}</strong>
+                                <strong>{t(complete ? 'operations.diagnostic_affected_metrics_snapshot'
+                                    : 'operations.diagnostic_affected_metrics')}</strong>
                                 <ul>{failures.map(({node, group, status}) => (
                                     <li key={`${node.id}-${group}`}>
                                         {node.name} · {group}: {formatReason(status.reason, t)
@@ -129,7 +130,8 @@ const SourceDiagnostics = ({sources = {}, sourceName, nodes = [], focus = false}
                                     </li>
                                 ))}</ul>
                             </div>
-                        ) : !recovered && <p>{t('operations.diagnostic_no_node_details')}</p>}
+                        ) : !recovered && <p>{t(complete ? 'operations.diagnostic_no_node_details_snapshot'
+                            : 'operations.diagnostic_no_node_details')}</p>}
                     </div>
                 );
             })}

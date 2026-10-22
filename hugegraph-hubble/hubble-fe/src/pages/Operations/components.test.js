@@ -92,9 +92,10 @@ test.each([
     ['UP', 'UNAVAILABLE', false, 'degraded', 'Attention'],
     ['UP', 'MALFORMED', false, 'degraded', 'Attention'],
     ['UP', 'AVAILABLE', true, 'degraded', 'Attention'],
-    ['DEGRADED', 'AVAILABLE', false, 'degraded', 'Attention'],
-    ['DOWN', 'PARTIAL', false, 'down', 'DOWN'],
-    ['DOWN', 'UNSUPPORTED', false, 'down', 'DOWN'],
+    ...['AVAILABLE', 'PARTIAL', 'UNAVAILABLE', 'MALFORMED', 'UNSUPPORTED'].flatMap(availability => [
+        ['DEGRADED', availability, false, 'degraded', 'Attention'],
+        ['DOWN', availability, false, 'down', 'DOWN'],
+    ]),
     ['UNKNOWN', 'UNAVAILABLE', false, 'unknown', 'UNKNOWN'],
     ['UNKNOWN', 'PARTIAL', false, 'degraded', 'Attention'],
     ['UNKNOWN', 'UNSUPPORTED', false, 'unknown', 'UNKNOWN'],
@@ -116,6 +117,9 @@ test.each([
     expect(source).toHaveAccessibleName(new RegExp(`Node status: ${topologyLabel}`));
     if (status === 'DOWN') {
         expect(source).toHaveAccessibleName(/Abnormal - Unavailable/);
+        expect(source).not.toHaveTextContent('Not applicable in this deployment');
+    }
+    if (status === 'DEGRADED') {
         expect(source).not.toHaveTextContent('Not applicable in this deployment');
     }
     if (colorStatus !== 'up') {
