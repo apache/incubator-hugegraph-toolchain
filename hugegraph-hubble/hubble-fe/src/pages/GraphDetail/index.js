@@ -232,9 +232,9 @@ const GraphDetail = () => {
                                 <div className={style.statusBar}>
                                     <Space size='middle'>
                                         <span>{t('graph.detail.data_status')}</span>
-                                        <Tooltip title={t(visibleStatistic.scan_limit != null
+                                        <Tooltip title={visibleStatisticsStatus === 'success' ? t(visibleStatistic.scan_limit != null
                                             ? 'graph.detail.bounded_statistics_hint' : 'graph.detail.snapshot_hint',
-                                            {limit: visibleStatistic.scan_limit ?? 100000})}>
+                                            {limit: visibleStatistic.scan_limit ?? 100000}) : undefined}>
                                         <Tag
                                             color={visibleStatisticsStatus === 'error'
                                                 ? 'gold'
