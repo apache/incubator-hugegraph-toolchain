@@ -333,6 +333,43 @@ public class QueryPropertyPreviewTest {
     }
 
     @Test
+    public void testThousandVertexViewsDoNotChargeProjectedPropertiesTwice() {
+        List<Object> rows = new ArrayList<>();
+        for (int i = 0; i < 1000; i++) {
+            Vertex vertex = new Vertex("person");
+            vertex.id(i);
+            for (int property = 0; property < 10; property++) {
+                vertex.property("key" + property, "value" + property);
+            }
+            rows.add(vertex);
+        }
+        QueryPropertyPreview preview = new QueryPropertyPreview();
+        TypedResult typed = preview.project(new TypedResult(Type.VERTEX, rows));
+        List<Vertex> vertices = new ArrayList<>();
+        for (Object row : typed.getData()) {
+            vertices.add((Vertex) row);
+        }
+        GraphView graph = new GraphView(vertices, List.of());
+        Assert.assertNotSame(vertices.get(0), graph.getVertices().iterator().next());
+        List<Vertex> graphVertices = new ArrayList<>(preview.project(graph).getVertices());
+        Assert.assertEquals(1000, graphVertices.size());
+        for (int i = 0; i < vertices.size(); i++) {
+            Vertex vertex = vertices.get(i);
+            Vertex graphVertex = graphVertices.get(i);
+            Assert.assertEquals(vertex.id(), graphVertex.id());
+            Assert.assertEquals(vertex.properties(), graphVertex.properties());
+            Assert.assertSame(vertex.properties(), graphVertex.properties());
+        }
+        Assert.assertEquals(10, vertices.get(0).properties().size());
+        Map<String, Object> lastProperties = vertices.get(999).properties();
+        Assert.assertEquals(1, lastProperties.size());
+        Assert.assertEquals("[preview: value budget exhausted]", lastProperties.values().iterator().next());
+        Assert.assertEquals(lastProperties, graphVertices.get(999).properties());
+        Assert.assertEquals(10, ((Vertex) rows.get(999)).properties().size());
+        Assert.assertTrue(preview.truncated());
+    }
+
+    @Test
     public void testRepeatedGraphObjectsCannotReuseAnUnchargedPropertyTree() {
         Map<String, Object> branch = new LinkedHashMap<>();
         for (int i = 0; i < 20; i++) {
