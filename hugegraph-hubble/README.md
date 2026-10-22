@@ -386,7 +386,9 @@ details. A data fault degrades the cluster view without marking the PD process
 down. Older responses without `dataState` retain their existing behavior.
 
 PD JVM metrics are attached to a node only when the configured PD URL matches
-its advertised identity. An unmatched URL reports `pd_metrics_unmapped` instead
+its advertised origin and base path after normalizing scheme, hostname, and
+default port. Existing node IDs remain unchanged; DNS aliases and ambiguous
+matches are not inferred. An unmatched URL reports `pd_metrics_unmapped` instead
 of assigning metrics to the leader. Store target discovery prefers
 `/v1/prom/targets/store`; only HTTP 404 or 405 falls back to
 `/v1/prom/targets-all`. Authentication, timeout, malformed-response, and server

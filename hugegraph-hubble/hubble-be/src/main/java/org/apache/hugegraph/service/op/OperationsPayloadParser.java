@@ -300,6 +300,53 @@ public class OperationsPayloadParser {
                                Collections.emptyMap()));
     }
 
+    String pdMetricNodeId(String clusterPayload, String configuredBase) {
+        String configured = canonicalPdEndpoint(configuredBase);
+        if (configured == null) {
+            return null;
+        }
+        JsonNode cluster = this.data(clusterPayload, "pd_cluster");
+        List<JsonNode> members = new ArrayList<>();
+        this.requiredArray(cluster, "pdList", "pd_cluster").forEach(members::add);
+        JsonNode leader = cluster.get("pdLeader");
+        if (leader != null && leader.isObject()) {
+            members.add(leader);
+        }
+        String matchedId = null;
+        for (JsonNode member : members) {
+            String endpoint = canonicalPdEndpoint(this.text(member, "restUrl"));
+            if (configured.equals(endpoint)) {
+                String id = this.pdId(member);
+                if (matchedId != null && !matchedId.equals(id)) {
+                    return null;
+                }
+                matchedId = id;
+            }
+        }
+        return matchedId;
+    }
+
+    private static String canonicalPdEndpoint(String address) {
+        if (address == null) {
+            return null;
+        }
+        try {
+            URI target = URI.create(address).normalize();
+            if (target.getRawQuery() != null) {
+                return null;
+            }
+            String path = target.getRawPath();
+            if (path == null) {
+                path = "";
+            } else if (path.endsWith("/")) {
+                path = path.substring(0, path.length() - 1);
+            }
+            return OperationsHttpClient.origin(target) + path;
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
     private String pdId(JsonNode pd) {
         String identity = this.text(pd, "restUrl");
         if (identity == null) {

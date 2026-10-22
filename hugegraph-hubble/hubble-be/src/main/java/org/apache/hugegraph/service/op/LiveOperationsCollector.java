@@ -489,7 +489,7 @@ public class LiveOperationsCollector implements OperationsCollector {
             }
         }
         if (includeMetrics && clusterParsed) {
-            pdStatus = this.collectPdMetrics(now, pdStatus, nodes);
+            pdStatus = this.collectPdMetrics(now, pdStatus, nodes, cluster);
         }
         if (includeMetrics && storesParsed) {
             storesStatus = this.collectStoreMetrics(stores, now, storesStatus,
@@ -581,8 +581,8 @@ public class LiveOperationsCollector implements OperationsCollector {
     }
 
     private SourceStatus collectPdMetrics(long now, SourceStatus status,
-                                          List<Node> nodes) {
-        int index = this.pdNodeIndex(nodes);
+                                          List<Node> nodes, String cluster) {
+        int index = this.pdNodeIndex(nodes, cluster);
         if (index < 0) {
             for (int i = 0; i < nodes.size(); i++) {
                 Node node = nodes.get(i);
@@ -646,14 +646,14 @@ public class LiveOperationsCollector implements OperationsCollector {
         return status.getReason() == null ? fallback : status.getReason();
     }
 
-    private int pdNodeIndex(List<Node> nodes) {
-        String configuredId = stableId("pd", this.pdBase);
+    private int pdNodeIndex(List<Node> nodes, String cluster) {
+        String configuredId = this.parser.pdMetricNodeId(cluster, this.pdBase);
         for (int i = 0; i < nodes.size(); i++) {
             Node node = nodes.get(i);
             if (!"PD".equals(node.getType())) {
                 continue;
             }
-            if (configuredId.equals(node.getId())) {
+            if (node.getId().equals(configuredId)) {
                 return i;
             }
         }

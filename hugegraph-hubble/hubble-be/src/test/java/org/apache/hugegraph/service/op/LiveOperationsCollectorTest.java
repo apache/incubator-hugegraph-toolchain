@@ -594,6 +594,25 @@ public class LiveOperationsCollectorTest {
     }
 
     @Test
+    public void testPdMetricsMatchCanonicalAdvertisedUrl() throws IOException {
+        HttpServer pd = pdServer(200, cluster().replace("http://pd:8620", "http://pd:8620/"),
+                                 200, stores());
+        Snapshot snapshot;
+        try {
+            snapshot = collector(true, pd).collect(serverClient(), true);
+        } finally {
+            pd.stop(0);
+        }
+
+        Assert.assertEquals("AVAILABLE", snapshot.getSources().get("pd").getAvailability());
+        OperationsModels.Node node = snapshot.getNodes().stream()
+                .filter(value -> "PD".equals(value.getType()))
+                .findFirst().orElseThrow(AssertionError::new);
+        Assert.assertTrue(node.getMetrics().containsKey("system"));
+        Assert.assertEquals("AVAILABLE", node.getMetricStatuses().get("system").getAvailability());
+    }
+
+    @Test
     public void testStoreTargetsPreferDedicatedEndpointWithoutBroadDiscovery()
            throws IOException {
         HttpServer pd = pdServer(200, cluster(), 200, stores());
