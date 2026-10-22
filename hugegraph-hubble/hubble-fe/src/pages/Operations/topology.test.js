@@ -127,6 +127,15 @@ test('exposes an unavailable metric recovery reason without marking it stale', (
     expect(hasStaleMetrics(unavailableStore)).toBe(false);
 });
 
+test.each(['UP', 'UNKNOWN', 'DOWN', 'DEGRADED'].flatMap(status => (
+    [false, true].map(stale => [status, stale])
+)))('preserves confirmed %s topology with unsupported collection (stale=%s)', (status, stale) => {
+    const source = {status, availability: 'UNSUPPORTED', stale};
+    expect(selectAttentionSources({stores: source})).toEqual(
+        ['DOWN', 'DEGRADED'].includes(status) ? [{name: 'stores', ...source}] : []
+    );
+});
+
 test('keeps source-level attention separate from unsupported node metrics', () => {
     const sources = {
         server: {status: 'UP', availability: 'AVAILABLE'},
