@@ -176,6 +176,77 @@ public class QueryServiceTest {
     }
 
     @Test
+    public void testCypherPreviewBoundsGraphAndScalarPropertiesAcrossViews() throws Exception {
+        String payload = "x".repeat(1024 * 1024);
+        String expected = "x".repeat(256) + "… [preview 256/1048576 chars]";
+        List<Object> rows = new ArrayList<>();
+        for (int i = 0; i < 1001; i++) {
+            rows.add(Map.of("n", Map.of("_type", "node", "_label", "person", "_id", i, "payload", payload)));
+        }
+        String content = "MATCH (n) RETURN n";
+        CypherManager cypher = Mockito.mock(CypherManager.class);
+        Mockito.when(cypher.cypher(content)).thenReturn(this.resultSet(rows.toArray()));
+        GremlinManager gremlin = this.mockGremlin();
+        HugeClient client = this.mockClient(gremlin);
+        Mockito.when(client.cypher()).thenReturn(cypher);
+        QueryService service = this.serviceWithConfig();
+        GremlinResult preview = service.executeCypherQuery(client, content, true);
+
+        Assert.assertEquals(1000, preview.getJsonView().getData().size());
+        Assert.assertEquals(1000, preview.getTableView().getRows().size());
+        Assert.assertEquals(1000, preview.getGraphView().getVertices().size());
+        Vertex jsonVertex = (Vertex) preview.getJsonView().getData().get(0);
+        Vertex graphVertex = preview.getGraphView().getVertices().iterator().next();
+        Assert.assertEquals(expected, jsonVertex.property("payload"));
+        Assert.assertSame(jsonVertex, preview.getTableView().getRows().get(0));
+        Assert.assertSame(jsonVertex.properties(), graphVertex.properties());
+        Assert.assertTrue(preview.isResultTruncated());
+        Assert.assertTrue(preview.isPropertiesTruncated());
+        Assert.assertEquals(1000, preview.getPropertyPreviewVertexIds().size());
+        Assert.assertEquals(List.of(), preview.getPropertyPreviewEdgeIds());
+        Assert.assertTrue(this.serializedQuery(preview).toString().length() < 2 * 1024 * 1024);
+        Mockito.verify(cypher).cypher(content);
+        Mockito.verify(gremlin, Mockito.never()).gremlin(Mockito.anyString());
+
+        String scalarQuery = "MATCH (n) RETURN n.payload AS payload";
+        Map<String, Object> scalarRow = Map.of("payload", payload);
+        Mockito.when(cypher.cypher(scalarQuery)).thenReturn(this.resultSet(scalarRow));
+        GremlinResult scalar = service.executeCypherQuery(client, scalarQuery, true);
+        Map<?, ?> jsonRow = (Map<?, ?>) scalar.getJsonView().getData().get(0);
+        Map<?, ?> tableRow = (Map<?, ?>) scalar.getTableView().getRows().get(0);
+        Assert.assertEquals(expected, jsonRow.get("payload"));
+        Assert.assertSame(jsonRow, tableRow.get("result"));
+        Assert.assertEquals(1024 * 1024, ((String) scalarRow.get("payload")).length());
+    }
+
+    @Test
+    public void testCypherWithoutPreviewAndAsyncKeepFullResultsAndQuery() throws Exception {
+        String content = "MATCH (n) RETURN n";
+        String payload = "x".repeat(1024 * 1024);
+        List<Object> rows = new ArrayList<>();
+        for (int i = 0; i < 1001; i++) {
+            rows.add(Map.of("n", Map.of("_type", "node", "_label", "person", "_id", i, "payload", payload)));
+        }
+        CypherManager cypher = Mockito.mock(CypherManager.class);
+        Mockito.when(cypher.cypher(content)).thenReturn(this.resultSet(rows.toArray()));
+        Mockito.when(cypher.executeAsTask(content)).thenReturn(7L);
+        HugeClient client = this.mockClient(this.mockGremlin());
+        Mockito.when(client.cypher()).thenReturn(cypher);
+        QueryService service = this.serviceWithConfig();
+        GremlinResult raw = service.executeCypherQuery(client, content);
+
+        Assert.assertEquals(1001, raw.getJsonView().getData().size());
+        Assert.assertEquals(1001, raw.getTableView().getRows().size());
+        Assert.assertSame(payload, ((Vertex) raw.getJsonView().getData().get(0)).property("payload"));
+        Assert.assertSame(payload, raw.getGraphView().getVertices().iterator().next().property("payload"));
+        Assert.assertFalse(raw.isResultTruncated());
+        Assert.assertFalse(raw.isPropertiesTruncated());
+        Assert.assertNull(raw.getPropertyPreviewVertexIds());
+        Assert.assertEquals(Long.valueOf(7L), service.executeCypherAsyncTask(client, content));
+        Mockito.verify(cypher).executeAsTask(content);
+    }
+
+    @Test
     public void testPreviewCapsLargeReadUpstreamWithoutDefaultLimitNotice()
            throws Exception {
         GremlinManager gremlin = this.mockGremlin();

@@ -82,9 +82,7 @@ const executeText2Gql = (graphspace, graph, language, params, config = {}) => {
     }
     return request.post(
         `/graphspaces/${graphspace}/graphs/${graph}/${dialect.endpoint}`,
-        language === 'gremlin'
-            ? {...(typeof params === 'string' ? {content: params} : params), preview: true}
-            : params,
+        {...(typeof params === 'string' ? {content: params} : params), preview: true},
         {...config, suppressBusinessErrorToast: true}
     );
 };
@@ -115,7 +113,7 @@ const putExecutionQuery = (graphspace, graph, params) => {
 
 const getCypherExecutionQuery = (graphspace, graph, params) => {
     return request.get(`/graphspaces/${graphspace}/graphs/${graph}/cypher`, {
-        params,
+        params: {...params, preview: true},
         suppressBusinessErrorToast: true,
     });
 };

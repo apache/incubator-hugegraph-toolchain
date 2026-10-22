@@ -65,8 +65,11 @@ public class CypherController extends GremlinController {
     @GetMapping
     public GremlinResult execute(@PathVariable("graphspace") String graphSpace,
                                  @PathVariable("graph") String graph,
-                                 @RequestParam(name = "cypher") String query) {
-        return this.executeQuery(graphSpace, graph, new GremlinQuery(query));
+                                 @RequestParam(name = "cypher") String query,
+                                 @RequestParam(name = "preview", defaultValue = "false") boolean preview) {
+        GremlinQuery request = new GremlinQuery(query);
+        request.setPreview(preview);
+        return this.executeQuery(graphSpace, graph, request);
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -89,7 +92,7 @@ public class CypherController extends GremlinController {
 
         StopWatch timer = StopWatch.createStarted();
         try {
-            GremlinResult result = this.queryService.executeCypherQuery(client, query.getContent());
+            GremlinResult result = this.queryService.executeCypherQuery(client, query.getContent(), query.isPreview());
             status = ExecuteStatus.SUCCESS;
             return result;
         } catch (Throwable e) {

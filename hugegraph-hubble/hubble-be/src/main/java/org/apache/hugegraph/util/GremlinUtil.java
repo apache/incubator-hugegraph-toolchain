@@ -303,6 +303,7 @@ public final class GremlinUtil {
         boolean inLineComment = false;
         boolean inBlockComment = false;
         boolean escaped = false;
+        int delimiterDepth = 0;
         for (int i = 0; i < gremlin.length(); i++) {
             char ch = gremlin.charAt(i);
             if (escaped) {
@@ -313,7 +314,7 @@ public final class GremlinUtil {
             }
             if (inLineComment) {
                 if (ch == '\n') {
-                    if (chainContinues(gremlin, i)) {
+                    if (delimiterDepth != 0 || chainContinues(gremlin, i)) {
                         statement.append(ch);
                         matchable.append(ch);
                     } else {
@@ -386,9 +387,16 @@ public final class GremlinUtil {
                 matchable.append(ch);
                 continue;
             }
-            boolean separator = ch == ';' ||
-                                ch == '\n' &&
-                                !chainContinues(gremlin, i);
+            if (!inSingleQuote && !inDoubleQuote) {
+                if (ch == '(' || ch == '[' || ch == '{') {
+                    delimiterDepth++;
+                } else if (ch == ')' || ch == ']' || ch == '}') {
+                    delimiterDepth--;
+                }
+            }
+            boolean separator = delimiterDepth == 0 &&
+                                (ch == ';' || ch == '\n' &&
+                                 !chainContinues(gremlin, i));
             if (separator && !inSingleQuote && !inDoubleQuote) {
                 result.append(optimizeStatement(statement.toString(),
                                                 matchable.toString(), limit, preview));

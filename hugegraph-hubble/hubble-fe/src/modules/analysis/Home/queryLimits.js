@@ -90,7 +90,9 @@ const hasLargeExplicitReadLimit = (text, language = 'gremlin', maximum = 1000) =
             return false;
         }
         const match = code.match(/\bLIMIT\s+(\d+)\s*$/i);
-        return Boolean(match && Number(match[1]) > maximum);
+        // Keep expressions and parameters in async mode rather than evaluating
+        // user code to guess their result bound.
+        return match ? Number(match[1]) > maximum : /\bLIMIT\s+\S/i.test(code);
     }
     if (!/^\s*g\s*\.\s*[VE]\s*\(/.test(code)
         || /\.\s*(?:addV|addE|property|drop|iterate)\s*\(/.test(code)) {
@@ -101,6 +103,14 @@ const hasLargeExplicitReadLimit = (text, language = 'gremlin', maximum = 1000) =
     if (/\.\s*(?:hasNext|next)\s*\(\s*\)\s*$/.test(code)
         || /\.\s*(?:count|sum|min|max|mean)\s*\(\s*(?:(?:Scope\s*\.\s*)?global)?\s*\)\s*$/.test(code)) {
         return false;
+    }
+    const range = code.match(/\.\s*range\s*\((?:\s*(?:Scope\s*\.\s*)?global\s*,)?([^(),]+),([^(),]+)\)\s*(?:\.\s*(?:toList|toSet)\s*\(\s*\))?\s*$/);
+    if (range) {
+        const low = integerBound(range[1]);
+        const high = integerBound(range[2]);
+        if (low !== null && high !== null && high >= low && high - low <= BigInt(maximum)) {
+            return false;
+        }
     }
     let depth = 0;
     const limits = [];

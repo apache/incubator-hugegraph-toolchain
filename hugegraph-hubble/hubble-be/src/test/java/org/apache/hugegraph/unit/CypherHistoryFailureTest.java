@@ -35,6 +35,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -49,7 +50,7 @@ public class CypherHistoryFailureTest {
         RuntimeException unsafe = new RuntimeException(
                 "No signature of method: secret.Groovy.stack()");
         Mockito.when(queryService.executeCypherQuery(
-                     Mockito.eq(client), Mockito.anyString()))
+                     Mockito.eq(client), Mockito.anyString(), Mockito.anyBoolean()))
                .thenThrow(unsafe);
 
         TestController controller = new TestController(client);
@@ -58,7 +59,7 @@ public class CypherHistoryFailureTest {
 
         Assert.assertThrows(RuntimeException.class,
                             () -> controller.execute("DEFAULT", "hugegraph",
-                                                     "MATCH INVALID"));
+                                                     "MATCH INVALID", false));
 
         ArgumentCaptor<ExecuteHistory> saved =
                 ArgumentCaptor.forClass(ExecuteHistory.class);
@@ -118,7 +119,7 @@ public class CypherHistoryFailureTest {
         ReflectionTestUtils.setField(controller, "historyService", historyService);
         GremlinQuery mutation = new GremlinQuery("CREATE (:person)", "Create a person manually");
         controller.execute("DEFAULT", "hugegraph", mutation);
-        Mockito.verify(queryService).executeCypherQuery(client, mutation.getContent());
+        Mockito.verify(queryService).executeCypherQuery(client, mutation.getContent(), false);
         ArgumentCaptor<ExecuteHistory> history = ArgumentCaptor.forClass(ExecuteHistory.class);
         Mockito.verify(historyService).save(history.capture());
         Assert.assertEquals(mutation.getText(), history.getValue().getText());
@@ -134,7 +135,7 @@ public class CypherHistoryFailureTest {
         ReflectionTestUtils.setField(controller, "historyService", historyService);
         GremlinQuery query = new GremlinQuery("MATCH (n) RETURN count(n) AS count", "How many nodes?", true);
         controller.execute("DEFAULT", "hugegraph", query);
-        Mockito.verify(queryService).executeCypherQuery(client, query.getContent());
+        Mockito.verify(queryService).executeCypherQuery(client, query.getContent(), false);
         ArgumentCaptor<ExecuteHistory> history = ArgumentCaptor.forClass(ExecuteHistory.class);
         Mockito.verify(historyService).save(history.capture());
         Assert.assertEquals(query.getContent(), history.getValue().getContent());
@@ -153,12 +154,30 @@ public class CypherHistoryFailureTest {
         mvc.perform(post("/api/v1.3/graphspaces/DEFAULT/graphs/hugegraph/cypher")
                    .contentType(MediaType.APPLICATION_JSON)
                    .content("{\"content\":\"MATCH (n) RETURN n LIMIT 10\"," +
-                            "\"text\":\"Find nodes\",\"read_only\":true}"))
+                            "\"text\":\"Find nodes\",\"read_only\":true,\"preview\":true}"))
            .andExpect(status().isOk());
-        Mockito.verify(queryService).executeCypherQuery(client, "MATCH (n) RETURN n LIMIT 10");
+        Mockito.verify(queryService).executeCypherQuery(client, "MATCH (n) RETURN n LIMIT 10", true);
         ArgumentCaptor<ExecuteHistory> history = ArgumentCaptor.forClass(ExecuteHistory.class);
         Mockito.verify(historyService).save(history.capture());
         Assert.assertEquals("Find nodes", history.getValue().getText());
+    }
+
+    @Test
+    public void testCypherGetPreviewIsExplicitAndDefaultsToRaw() throws Exception {
+        HugeClient client = Mockito.mock(HugeClient.class);
+        QueryService queryService = Mockito.mock(QueryService.class);
+        TestController controller = new TestController(client);
+        ReflectionTestUtils.setField(controller, "queryService", queryService);
+        ReflectionTestUtils.setField(controller, "historyService", Mockito.mock(ExecuteHistoryService.class));
+        MockMvc mvc = MockMvcBuilders.standaloneSetup(controller).build();
+        String content = "MATCH (n) RETURN n LIMIT 10";
+        String endpoint = "/api/v1.3/graphspaces/DEFAULT/graphs/hugegraph/cypher";
+        mvc.perform(get(endpoint).param("cypher", content).param("preview", "true"))
+           .andExpect(status().isOk());
+        mvc.perform(get(endpoint).param("cypher", content))
+           .andExpect(status().isOk());
+        Mockito.verify(queryService).executeCypherQuery(client, content, true);
+        Mockito.verify(queryService).executeCypherQuery(client, content, false);
     }
 
     @Test
@@ -177,7 +196,7 @@ public class CypherHistoryFailureTest {
             upstream.status(401);
             ExternalException original = new ExternalException(
                     502, "gremlin.server.authentication-failed", upstream);
-            Mockito.when(queryService.executeCypherQuery(client, "RETURN 1")).thenThrow(original);
+            Mockito.when(queryService.executeCypherQuery(client, "RETURN 1", false)).thenThrow(original);
             ExternalException failure = (ExternalException) Assert.assertThrows(ExternalException.class,
                     () -> controller.execute("DEFAULT", "hugegraph", new GremlinQuery("RETURN 1", "", true)));
             Assert.assertEquals(502, failure.status());

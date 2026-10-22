@@ -124,10 +124,40 @@ public class QueryService {
         log.debug("Gremlin query optimized");
         // Execute gremlin query
         ResultSet resultSet = this.executeGremlin(gremlin, client);
+        GremlinResult result = this.buildQueryResult(resultSet, client, query.isPreview());
+        result.setDefaultLimitApplied(defaultLimitApplied);
+        result.setDefaultLimit(this.config.get(HubbleOptions.GREMLIN_SUFFIX_LIMIT));
+        return result;
+    }
+
+    public JsonView executeSingleGremlinQuery(HugeClient client, GremlinQuery query) {
+
+        log.debug("Execute single Gremlin query");
+        String gremlin = this.optimize(query.getContent());
+        log.debug("Single Gremlin query optimized");
+        // Execute gremlin query
+        ResultSet resultSet = this.executeGremlin(gremlin, client);
+        // Scan data, vote the result type
+        TypedResult typedResult = this.parseResults(resultSet);
+        // Build json view
+        JsonView jsonView = new JsonView(typedResult.getData());
+        return jsonView;
+    }
+
+    public GremlinResult executeCypherQuery(HugeClient client, String query) {
+        return this.executeCypherQuery(client, query, false);
+    }
+
+    public GremlinResult executeCypherQuery(HugeClient client, String query, boolean preview) {
+        ResultSet resultSet = this.executeCypher(query, client);
+        return this.buildQueryResult(resultSet, client, preview);
+    }
+
+    private GremlinResult buildQueryResult(ResultSet resultSet, HugeClient client, boolean preview) {
         // Scan data, vote the result type
         TypedResult typedResult = this.parseResults(resultSet,
-                                  query.isPreview() ? GRAPH_VERTEX_LIMIT : Integer.MAX_VALUE);
-        QueryPropertyPreview propertyPreview = query.isPreview() ? new QueryPropertyPreview() : null;
+                                  preview ? GRAPH_VERTEX_LIMIT : Integer.MAX_VALUE);
+        QueryPropertyPreview propertyPreview = preview ? new QueryPropertyPreview() : null;
         if (propertyPreview != null) {
             typedResult = propertyPreview.project(typedResult);
         }
@@ -146,55 +176,17 @@ public class QueryService {
                             .tableView(tableView)
                             .graphView(graphView)
                             .propertiesTruncated(propertyPreview != null && propertyPreview.truncated())
-                            .propertyPreviewLimit(query.isPreview() ? QueryPropertyPreview.STRING_LIMIT : 0)
+                            .propertyPreviewLimit(preview ? QueryPropertyPreview.STRING_LIMIT : 0)
                             .propertyPreviewVertexIds(propertyPreview == null ? null :
                                                       propertyPreview.partialElementIds(graphView.getVertices()))
                             .propertyPreviewEdgeIds(propertyPreview == null ? null :
                                                     propertyPreview.partialElementIds(graphView.getEdges()))
                             .resultTruncated(resultTruncated)
-                            .resultLimit(query.isPreview() ? GRAPH_VERTEX_LIMIT : 0)
-                            .defaultLimitApplied(defaultLimitApplied)
-                            .defaultLimit(this.config.get(HubbleOptions.GREMLIN_SUFFIX_LIMIT))
+                            .resultLimit(preview ? GRAPH_VERTEX_LIMIT : 0)
                             .graphTruncated(graphView.isTruncated())
                             .graphVertexLimit(GRAPH_VERTEX_LIMIT)
                             .graphEdgeLimit(this.config.get(HubbleOptions.GREMLIN_EDGES_TOTAL_LIMIT))
                             .build();
-    }
-
-    public JsonView executeSingleGremlinQuery(HugeClient client, GremlinQuery query) {
-
-        log.debug("Execute single Gremlin query");
-        String gremlin = this.optimize(query.getContent());
-        log.debug("Single Gremlin query optimized");
-        // Execute gremlin query
-        ResultSet resultSet = this.executeGremlin(gremlin, client);
-        // Scan data, vote the result type
-        TypedResult typedResult = this.parseResults(resultSet);
-        // Build json view
-        JsonView jsonView = new JsonView(typedResult.getData());
-        return jsonView;
-    }
-
-    public GremlinResult executeCypherQuery(HugeClient client, String query) {
-        // Execute cypher query
-        ResultSet resultSet = this.executeCypher(query, client);
-        // Scan data, vote the result type
-        TypedResult typedResult = this.parseResults(resultSet);
-        // Build json view
-        JsonView jsonView = new JsonView(typedResult.getData());
-        // Build table view
-        TableView tableView = this.buildTableView(typedResult);
-        // Build graph view
-        GraphView graphView = this.buildGraphView(typedResult, client);
-        return GremlinResult.builder()
-                .type(typedResult.getType())
-                .jsonView(jsonView)
-                .tableView(tableView)
-                .graphView(graphView)
-                .graphTruncated(graphView.isTruncated())
-                .graphVertexLimit(GRAPH_VERTEX_LIMIT)
-                .graphEdgeLimit(this.config.get(HubbleOptions.GREMLIN_EDGES_TOTAL_LIMIT))
-                .build();
     }
 
     private ResultSet executeCypher(String cypher, HugeClient client) {
@@ -533,10 +525,6 @@ public class QueryService {
             }
             setter.accept(key, entry.getValue());
         }
-    }
-
-    private GraphView buildGraphView(TypedResult result, HugeClient client) {
-        return this.buildGraphView(result, client, false);
     }
 
     private GraphView buildGraphView(TypedResult result, HugeClient client,

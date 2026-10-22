@@ -124,6 +124,51 @@ public class GremlinUtilTest {
     }
 
     @Test
+    public void testFormattedReadArgumentsKeepEffectiveResultLimits() throws Exception {
+        try (TinkerGraph graph = TinkerGraph.open()) {
+            Vertex previous = null;
+            for (int i = 0; i < 1500; i++) {
+                Vertex vertex = graph.addVertex("active", true);
+                if (previous != null) {
+                    previous.addEdge("next", vertex);
+                }
+                previous = vertex;
+            }
+            Bindings bindings = new SimpleBindings();
+            bindings.put("g", graph.traversal());
+            GremlinLangScriptEngine engine = new GremlinLangScriptEngine();
+            for (String query : new String[]{"g.V().has(\n 'active', true\n).out()",
+                                             "g.V().has(\n // active vertices\n 'active', true\n).out()",
+                                             "g.V().has('active', within([\n true,\n false\n])).out()",
+                                             "g.V().where(\n out().has(\n 'active', true\n )\n).out()"}) {
+                Assert.assertEquals(1499, execute(engine, bindings, query).size());
+                String ordinary = GremlinUtil.optimizeLimit(query, 300);
+                String preview = GremlinUtil.optimizePreviewLimit(query, 1000);
+                Assert.assertEquals(query + ".limit(300)", ordinary);
+                Assert.assertEquals(query + ".limit(1000)", preview);
+                Assert.assertEquals(300, execute(engine, bindings, ordinary).size());
+                Assert.assertEquals(1000, execute(engine, bindings, preview).size());
+                Assert.assertEquals(1001, execute(engine, bindings,
+                                   GremlinUtil.optimizePreviewLimit(query, 1001)).size());
+            }
+        }
+    }
+
+    @Test
+    public void testFormattedReadsStillSplitAtTopLevelStatementBoundaries() {
+        String first = "g.V().has(\n // ) ] } ; stay inside the call\n 'active', true\n).out()";
+        String second = "g.V().has('name', within([\n 'a;(b)',\n 'c'\n]))";
+        String script = first + "\n" + second + ";\ng.V().count()\ng.E()";
+
+        Assert.assertEquals(first + ".limit(300)\n" + second +
+                            ".limit(300);\ng.V().count()\ng.E().limit(300)",
+                            GremlinUtil.optimizeLimit(script, 300));
+        Assert.assertEquals(first + ".limit(1001)\n" + second +
+                            ".limit(1001);\ng.V().count()\ng.E().limit(1001)",
+                            GremlinUtil.optimizePreviewLimit(script, 1001));
+    }
+
+    @Test
     public void testOneToOneMappersAndLocalLimitsPreserveAnEarlierGlobalBound() {
         for (String mapper : new String[]{"id()", "label()", "path()", "project('name').by('name')",
                                           "select('x')", "valueMap()", "elementMap()", "propertyMap()",

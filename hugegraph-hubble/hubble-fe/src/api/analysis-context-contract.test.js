@@ -69,6 +69,7 @@ test('lets the async query page own business error feedback', () => {
         params,
         {suppressBusinessErrorToast: true}
     );
+    expect(params).not.toHaveProperty('preview');
     expect(request.post).toHaveBeenNthCalledWith(
         2,
         '/graphspaces/DEFAULT/graphs/g/cypher/async-task',
@@ -112,13 +113,22 @@ test.each([
     const body = {content, text: 'Find people', read_only: true};
     analysis.executeText2Gql('DEFAULT', 'g', language, body, config);
     expect(request.post).toHaveBeenCalledWith(`/graphspaces/DEFAULT/graphs/g/${endpoint}`,
-        language === 'gremlin' ? {...body, preview: true} : body,
+        {...body, preview: true},
         {...config, suppressBusinessErrorToast: true});
     expect(request.get).not.toHaveBeenCalled();
 });
 
-test('opts manual synchronous Gremlin reads into bounded preview without changing async bodies', () => {
+test('opts manual synchronous Gremlin and Cypher reads into preview without changing async bodies', () => {
     analysis.getExecutionQuery('DEFAULT', 'g', 'g.V()');
     expect(request.post).toHaveBeenCalledWith('/graphspaces/DEFAULT/graphs/g/gremlin-query',
         {content: 'g.V()', preview: true}, {suppressBusinessErrorToast: true});
+    const params = {content: 'MATCH (n) RETURN n LIMIT 10000'};
+    analysis.getCypherExecutionQuery('DEFAULT', 'g', params);
+    expect(request.get).toHaveBeenCalledWith('/graphspaces/DEFAULT/graphs/g/cypher', {
+        params: {...params, preview: true}, suppressBusinessErrorToast: true,
+    });
+    analysis.getCypherTask('DEFAULT', 'g', params);
+    expect(request.post).toHaveBeenLastCalledWith('/graphspaces/DEFAULT/graphs/g/cypher/async-task',
+        params, {suppressBusinessErrorToast: true});
+    expect(params).not.toHaveProperty('preview');
 });
