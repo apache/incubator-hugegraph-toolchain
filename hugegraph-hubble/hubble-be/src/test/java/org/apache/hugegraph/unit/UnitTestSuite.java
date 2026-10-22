@@ -78,6 +78,7 @@ import org.junit.runners.Suite;
     HubbleDataSourceTest.class,
     AvaticaRuntimeTest.class,
     JaxbRuntimeTest.class,
+    JacksonConfigTest.class,
     GraphSpaceControllerTest.class,
     GraphSpaceAuthMutationAuthorizationTest.class,
     GraphSpaceAuthOwnershipTest.class,
