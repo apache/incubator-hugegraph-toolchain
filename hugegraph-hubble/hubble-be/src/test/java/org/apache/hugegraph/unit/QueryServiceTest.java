@@ -86,6 +86,8 @@ public class QueryServiceTest {
         Assert.assertEquals("[binary preview: 1048576 bytes omitted]",
                             ((Vertex) preview.getJsonView().getData().get(0)).property("binary"));
         Assert.assertEquals(256, preview.getPropertyPreviewLimit());
+        Assert.assertEquals(List.of(0), preview.getPropertyPreviewVertexIds());
+        Assert.assertEquals(List.of(), preview.getPropertyPreviewEdgeIds());
         Assert.assertEquals(payload, vertex.property("payload"));
 
         GremlinManager rawGremlin = this.mockGremlin(this.resultSet(vertex), this.resultSet());
@@ -98,11 +100,37 @@ public class QueryServiceTest {
     }
 
     @Test
+    public void testOneLargePropertyDoesNotMarkOtherPreviewVertices() throws Exception {
+        List<Vertex> vertices = this.vertices(300);
+        for (Vertex vertex : vertices) {
+            vertex.property("name", "person" + vertex.id());
+        }
+        vertices.get(150).property("description", "x".repeat(257));
+        GremlinManager gremlin = this.mockGremlin(this.resultSet(vertices.toArray()), this.resultSet());
+        GremlinQuery query = new GremlinQuery("g.V().limit(300)");
+        query.setPreview(true);
+        GremlinResult preview = this.serviceWithConfig().executeGremlinQuery(this.mockClient(gremlin), query);
+
+        Assert.assertEquals(300, preview.getGraphView().getVertices().size());
+        Assert.assertTrue(preview.isPropertiesTruncated());
+        Assert.assertEquals(List.of(150), preview.getPropertyPreviewVertexIds());
+        Assert.assertEquals(List.of(), preview.getPropertyPreviewEdgeIds());
+        Assert.assertEquals("person0", preview.getGraphView().getVertices().iterator().next().property("name"));
+        Assert.assertEquals(257, ((String) vertices.get(150).property("description")).length());
+    }
+
+    @Test
     public void testEnrichedEdgePropertiesAreAlsoPreviewed() throws Exception {
         List<Vertex> vertices = this.vertices(2);
+        vertices.get(0).property("description", "x".repeat(257));
         Edge edge = this.edge("edge", 0, 1);
         edge.property("payload", "x".repeat(100000));
-        GremlinManager gremlin = this.mockGremlin(this.resultSet(vertices.toArray()), this.resultSet(edge));
+        Edge complete = this.edge("complete", 0, 1);
+        complete.property("name", "complete");
+        Edge later = this.edge("later", 1, 0);
+        later.property("payload", "y".repeat(257));
+        GremlinManager gremlin = this.mockGremlin(this.resultSet(vertices.toArray()),
+                                                  this.resultSet(edge, complete, later));
         GremlinQuery query = new GremlinQuery("g.V().limit(2)");
         query.setPreview(true);
         GremlinResult preview = this.serviceWithConfig().executeGremlinQuery(this.mockClient(gremlin), query);
@@ -110,6 +138,9 @@ public class QueryServiceTest {
         Assert.assertTrue(property.endsWith("/100000 chars]"));
         Assert.assertTrue(preview.isPropertiesTruncated());
         Assert.assertEquals(100000, ((String) edge.property("payload")).length());
+        Assert.assertEquals(List.of(0), preview.getPropertyPreviewVertexIds());
+        Assert.assertEquals(List.of("edge", "later"), preview.getPropertyPreviewEdgeIds());
+        Assert.assertEquals(3, preview.getGraphView().getEdges().size());
     }
 
     @Test

@@ -127,9 +127,15 @@ const getBoundedJsonPreview = (value, {items = 100, characters = 20000, depth = 
     return {content: project(value, 0), truncated};
 };
 
-const getBoundedGraphView = (graphView = {}, edgeLimit = GRAPH_EDGE_LIMIT, propertiesTruncated = false) => {
+const getBoundedGraphView = (graphView = {}, edgeLimit = GRAPH_EDGE_LIMIT,
+    {propertiesTruncated = false, vertexIds, edgeIds} = {}) => {
+    // Missing metadata comes from an older backend; keep its conservative
+    // response-wide protection. Two explicit arrays identify exact elements.
+    const perElement = Array.isArray(vertexIds) && Array.isArray(edgeIds);
+    const partialVertices = new Set(perElement ? vertexIds.map(id => hubbleRenderId('node', id)) : []);
+    const partialEdges = new Set(perElement ? edgeIds.map(id => hubbleRenderId('edge', id)) : []);
     // Keep the read-only marker in raw graph data, including saved/exported canvases.
-    const preview = element => propertiesTruncated ? {...element, '~hubble_properties_preview': true} : element;
+    const preview = (element, partial) => partial ? {...element, '~hubble_properties_preview': true} : element;
     const vertices = [];
     const ids = new Set();
     for (const vertex of graphView.vertices || []) {
@@ -139,14 +145,14 @@ const getBoundedGraphView = (graphView = {}, edgeLimit = GRAPH_EDGE_LIMIT, prope
         const id = hubbleRenderId('node', vertex.id);
         if (!ids.has(id)) {
             ids.add(id);
-            vertices.push(preview(vertex));
+            vertices.push(preview(vertex, perElement ? partialVertices.has(id) : propertiesTruncated));
         }
         if (vertices.length >= GRAPH_NODE_LIMIT) {
             break;
         }
     }
     const edges = [];
-    const edgeIds = new Set();
+    const renderedEdgeIds = new Set();
     for (const edge of graphView.edges || []) {
         if (edges.length >= edgeLimit) {
             break;
@@ -155,10 +161,10 @@ const getBoundedGraphView = (graphView = {}, edgeLimit = GRAPH_EDGE_LIMIT, prope
             continue;
         }
         const id = hubbleRenderId('edge', edge.id);
-        if (!edgeIds.has(id) && ids.has(hubbleRenderId('node', edge.source))
+        if (!renderedEdgeIds.has(id) && ids.has(hubbleRenderId('node', edge.source))
             && ids.has(hubbleRenderId('node', edge.target))) {
-            edgeIds.add(id);
-            edges.push(preview(edge));
+            renderedEdgeIds.add(id);
+            edges.push(preview(edge, perElement ? partialEdges.has(id) : propertiesTruncated));
         }
     }
     return {...graphView, vertices, edges};

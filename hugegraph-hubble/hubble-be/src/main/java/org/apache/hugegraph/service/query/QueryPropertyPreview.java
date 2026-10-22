@@ -19,7 +19,7 @@
 package org.apache.hugegraph.service.query;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -44,17 +44,34 @@ final class QueryPropertyPreview {
     private static final int COLLECTION_LIMIT = 20;
     private static final int DEPTH_LIMIT = 4;
 
-    private boolean truncated;
+    private int truncationVersion;
     private boolean structureTruncated;
     private int remainingValues = VALUE_LIMIT;
     // GraphView wraps vertices but retains their property map. Recognize only
     // maps created for our detached copies, including through those wrappers.
     // Caching original SDK objects/maps would let repeated rows evade the budget.
-    private final Set<Map<String, Object>> detachedProperties =
-            Collections.newSetFromMap(new IdentityHashMap<>());
+    private final Map<Map<String, Object>, Boolean> detachedProperties = new IdentityHashMap<>();
 
     boolean truncated() {
-        return this.truncated;
+        return this.truncationVersion > 0;
+    }
+
+    List<Object> partialElementIds(Collection<? extends GraphElement> elements) {
+        List<Object> ids = new ArrayList<>();
+        if (elements != null) {
+            for (GraphElement element : elements) {
+                if (Boolean.TRUE.equals(this.detachedProperties.get(element.properties()))) {
+                    ids.add(element.id());
+                }
+            }
+        }
+        return ids;
+    }
+
+    private void markTruncated() {
+        // A boolean cannot identify later partial elements after the first
+        // truncation. Each element records changes within its own property tree.
+        this.truncationVersion++;
     }
 
     TypedResult project(TypedResult result) {
@@ -84,7 +101,7 @@ final class QueryPropertyPreview {
 
     private Object value(Object value, int depth) {
         if (value instanceof GraphElement &&
-            this.detachedProperties.contains(((GraphElement) value).properties())) {
+            this.detachedProperties.containsKey(((GraphElement) value).properties())) {
             return value;
         }
         boolean available = this.takeValue();
@@ -113,7 +130,7 @@ final class QueryPropertyPreview {
         if (value instanceof byte[]) {
             byte[] bytes = (byte[]) value;
             if (bytes.length > STRING_LIMIT) {
-                this.truncated = true;
+                this.markTruncated();
                 return "[binary preview: " + bytes.length + " bytes omitted]";
             }
             return bytes.clone();
@@ -126,14 +143,14 @@ final class QueryPropertyPreview {
                     Character.isLowSurrogate(text.charAt(end))) {
                     end--;
                 }
-                this.truncated = true;
+                this.markTruncated();
                 return text.substring(0, end) + "… [preview " + end + "/" +
                        text.length() + " chars]";
             }
         }
         if (value instanceof Map || value instanceof List || value instanceof Set) {
             if (depth >= DEPTH_LIMIT) {
-                this.truncated = true;
+                this.markTruncated();
                 return NESTED_OMITTED;
             }
         }
@@ -143,7 +160,7 @@ final class QueryPropertyPreview {
             int visited = 0;
             for (Map.Entry<?, ?> entry : original.entrySet()) {
                 if (visited++ == COLLECTION_LIMIT) {
-                    this.truncated = true;
+                    this.markTruncated();
                     break;
                 }
                 if (this.omitKey(entry.getKey())) {
@@ -161,7 +178,7 @@ final class QueryPropertyPreview {
             List<Object> copy = new ArrayList<>();
             for (Object item : (List<?>) value) {
                 if (copy.size() == COLLECTION_LIMIT) {
-                    this.truncated = true;
+                    this.markTruncated();
                     break;
                 }
                 boolean exhausted = this.remainingValues == 0;
@@ -177,7 +194,7 @@ final class QueryPropertyPreview {
             int visited = 0;
             for (Object item : (Set<?>) value) {
                 if (visited++ == COLLECTION_LIMIT) {
-                    this.truncated = true;
+                    this.markTruncated();
                     break;
                 }
                 boolean exhausted = this.remainingValues == 0;
@@ -193,7 +210,7 @@ final class QueryPropertyPreview {
 
     private boolean takeValue() {
         if (this.remainingValues == 0) {
-            this.truncated = true;
+            this.markTruncated();
             return false;
         }
         this.remainingValues--;
@@ -213,7 +230,7 @@ final class QueryPropertyPreview {
             // same depth and work budget as the path objects and labels.
             crosspoint = descend ? this.value(crosspoint, depth + 1) : NESTED_OMITTED;
             if (!descend) {
-                this.truncated = true;
+                this.markTruncated();
             }
         }
         List<Object> objects = new ArrayList<>();
@@ -230,7 +247,7 @@ final class QueryPropertyPreview {
             }
         }
         if (objects.size() < originalObjects.size() || labels.size() < originalLabels.size()) {
-            this.truncated = true;
+            this.markTruncated();
             this.structureTruncated = true;
         }
         // SDK Path stores CopyOnWriteArrayLists. Build each prefix in one batch
@@ -244,7 +261,7 @@ final class QueryPropertyPreview {
         if (key instanceof String && ((String) key).length() > STRING_LIMIT) {
             // Renaming a map key changes its meaning and can merge distinct
             // entries. Omit it explicitly instead of manufacturing a new key.
-            this.truncated = true;
+            this.markTruncated();
             return true;
         }
         return false;
@@ -253,15 +270,18 @@ final class QueryPropertyPreview {
     private GraphElement element(GraphElement original, GraphElement copy, int depth) {
         // SDK query elements have an attached manager: property() on them can
         // write to Server. Only populate the detached copy's property map.
-        this.detachedProperties.add(copy.properties());
+        int before = this.truncationVersion;
         if (depth >= DEPTH_LIMIT) {
-            this.truncated |= !original.properties().isEmpty();
+            if (!original.properties().isEmpty()) {
+                this.markTruncated();
+            }
+            this.detachedProperties.put(copy.properties(), this.truncationVersion != before);
             return copy;
         }
         int visited = 0;
         for (Map.Entry<String, Object> entry : original.properties().entrySet()) {
             if (visited++ == COLLECTION_LIMIT) {
-                this.truncated = true;
+                this.markTruncated();
                 break;
             }
             if (!this.omitKey(entry.getKey())) {
@@ -272,6 +292,7 @@ final class QueryPropertyPreview {
                 }
             }
         }
+        this.detachedProperties.put(copy.properties(), this.truncationVersion != before);
         return copy;
     }
 }

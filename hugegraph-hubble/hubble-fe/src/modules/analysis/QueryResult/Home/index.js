@@ -89,8 +89,13 @@ const QueryResult = props => {
         [queryResultGraph, edgeLimit]
     );
     const graphPreview = useMemo(
-        () => getBoundedGraphView(queryResultGraph, edgeLimit, queryResult?.properties_truncated),
-        [queryResultGraph, edgeLimit, queryResult?.properties_truncated]
+        () => getBoundedGraphView(queryResultGraph, edgeLimit, {
+            propertiesTruncated: queryResult?.properties_truncated,
+            vertexIds: queryResult?.property_preview_vertex_ids,
+            edgeIds: queryResult?.property_preview_edge_ids,
+        }),
+        [queryResultGraph, edgeLimit, queryResult?.properties_truncated,
+            queryResult?.property_preview_vertex_ids, queryResult?.property_preview_edge_ids]
     );
     const graphTruncated = queryResult?.graph_truncated || graphLimit.exceeded;
     const [activeView, setActiveView] = useState(1);

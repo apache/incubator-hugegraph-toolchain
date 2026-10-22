@@ -349,7 +349,9 @@ it('shows server-provided default-limit and graph-truncation notices', () => {
 it('persists read-only property preview markers through graph export and reload', () => {
     const source = {vertices: [{id: 1, label: 'person', properties: {payload: 'prefix… [preview 256/1000000 chars]'}}],
         edges: [{id: 'loop', source: 1, target: 1, properties: {payload: 'prefix…'}}]};
-    const preview = getBoundedGraphView(source, 500, true);
+    const preview = getBoundedGraphView(source, 500, {
+        propertiesTruncated: true, vertexIds: [1], edgeIds: ['loop'],
+    });
     expect(source.vertices[0]).not.toHaveProperty('~hubble_properties_preview');
     const saved = exportHubbleGraph(adaptHubbleGraph(preview));
     const restored = adaptHubbleGraph(saved);
@@ -357,6 +359,44 @@ it('persists read-only property preview markers through graph export and reload'
     expect(saved.edges[0]['~hubble_properties_preview']).toBe(true);
     expect(toElementDetails({kind: 'node', id: restored.nodes[0].id, data: restored.nodes[0].data})
         .raw['~hubble_properties_preview']).toBe(true);
+});
+
+it('marks only the truncated vertex in an ordinary 300-vertex query', () => {
+    const vertices = Array.from({length: 300}, (_, id) => ({id, label: 'person', properties: {name: 'Alice'}}));
+    vertices[143].properties.name = 'x'.repeat(256) + '… [preview 256/257 chars]';
+    const preview = getBoundedGraphView({vertices, edges: []}, 500, {
+        propertiesTruncated: true, vertexIds: [143], edgeIds: [],
+    });
+    expect(preview.vertices.filter(vertex => vertex['~hubble_properties_preview'])).toEqual([
+        expect.objectContaining({id: 143}),
+    ]);
+    expect(preview.vertices[0]).toBe(vertices[0]);
+    expect(vertices[143]).not.toHaveProperty('~hubble_properties_preview');
+});
+
+it('matches every partial ID precisely and keeps vertices separate from edges', () => {
+    const parsed = JSONbig.parse('{"vertices":[{"id":9007199254740993},{"id":"shared"},{"id":7}],'
+        + '"vertexIds":[9007199254740993,7]}');
+    const preview = getBoundedGraphView({vertices: parsed.vertices,
+        edges: [{id: 'shared', source: 'shared', target: 7}]}, 500, {
+        propertiesTruncated: true, vertexIds: parsed.vertexIds, edgeIds: ['shared'],
+    });
+    expect(preview.vertices.map(vertex => !!vertex['~hubble_properties_preview'])).toEqual([true, false, true]);
+    expect(preview.edges[0]['~hubble_properties_preview']).toBe(true);
+});
+
+it('honors explicit complete metadata and protects all elements when an older backend omits it', () => {
+    const source = {vertices: [{id: 1}], edges: [{id: 'loop', source: 1, target: 1}]};
+    const complete = getBoundedGraphView(source, 500, {
+        propertiesTruncated: true, vertexIds: [], edgeIds: [],
+    });
+    expect(complete.vertices[0]).not.toHaveProperty('~hubble_properties_preview');
+    expect(complete.edges[0]).not.toHaveProperty('~hubble_properties_preview');
+    for (const metadata of [{propertiesTruncated: true}, {propertiesTruncated: true, vertexIds: []}]) {
+        const fallback = getBoundedGraphView(source, 500, metadata);
+        expect(fallback.vertices[0]['~hubble_properties_preview']).toBe(true);
+        expect(fallback.edges[0]['~hubble_properties_preview']).toBe(true);
+    }
 });
 
 it('shows the server property truncation notice alongside bounded result views', () => {

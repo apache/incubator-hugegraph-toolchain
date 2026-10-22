@@ -147,6 +147,10 @@ public class QueryService {
                             .graphView(graphView)
                             .propertiesTruncated(propertyPreview != null && propertyPreview.truncated())
                             .propertyPreviewLimit(query.isPreview() ? QueryPropertyPreview.STRING_LIMIT : 0)
+                            .propertyPreviewVertexIds(propertyPreview == null ? null :
+                                                      propertyPreview.partialElementIds(graphView.getVertices()))
+                            .propertyPreviewEdgeIds(propertyPreview == null ? null :
+                                                    propertyPreview.partialElementIds(graphView.getEdges()))
                             .resultTruncated(resultTruncated)
                             .resultLimit(query.isPreview() ? GRAPH_VERTEX_LIMIT : 0)
                             .defaultLimitApplied(defaultLimitApplied)

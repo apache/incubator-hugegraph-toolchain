@@ -74,7 +74,7 @@ public class ExceptionAdvisorStatusTest {
     }
 
     @Test
-    public void testQueryErrorArgumentsAndFormattedMessageAreBoundedWithoutChangingStatus() {
+    public void testQueryErrorArgumentsAreFormattedBeforeTheFinalLimit() {
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(
                 new MockHttpServletRequest("POST", "/api/v1.3/graphspaces/DEFAULT/graphs/g/gremlin-query")));
         MessageSourceHandler messages = Mockito.mock(MessageSourceHandler.class);
@@ -82,7 +82,8 @@ public class ExceptionAdvisorStatusTest {
                .thenAnswer(invocation -> {
                    Object[] args = (Object[]) invocation.getRawArguments()[1];
                    String argument = args[0].toString();
-                   Assert.assertTrue(argument.length() <= 2048);
+                   Assert.assertTrue(argument.length() > 2048);
+                   Assert.assertFalse(argument.contains("[message truncated]"));
                    return "Query failed: " + argument;
                });
         ExceptionAdvisor advisor = new ExceptionAdvisor();
@@ -93,6 +94,58 @@ public class ExceptionAdvisorStatusTest {
         Assert.assertTrue(response.getMessage().startsWith("Query failed: detail"));
         Assert.assertTrue(response.getMessage().length() <= 2048);
         Assert.assertTrue(response.getMessage().endsWith("[message truncated]"));
+    }
+
+    @Test
+    public void testLongStructuredQueryErrorResolvesItsCodeBeforeTheFinalLimit() {
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(
+                new MockHttpServletRequest("POST", "/api/v1.3/graphspaces/DEFAULT/graphs/g/gremlin-query")));
+        String payload = "x".repeat(1024 * 1024);
+        String structured = "{\"message\":\"" + payload + "\",\"code\":\"104-001\"," +
+                            "\"attach\":[\"vertex-name\"]}";
+        ServerException failure = new ServerException(structured);
+        failure.status(HttpStatus.FORBIDDEN.value());
+
+        Response response = advisor().exceptionHandler(failure);
+
+        Assert.assertEquals(HttpStatus.FORBIDDEN.value(), response.getStatus());
+        Assert.assertEquals(ErrorCodeMessage.getErrorMessage("104-001", payload, "vertex-name"),
+                            response.getMessage());
+        Assert.assertFalse(response.getMessage().contains("[message truncated]"));
+        Assert.assertNull(response.getCause());
+
+        String longArgument = "vertex-name " + payload;
+        structured = "{\"code\":\"104-001\",\"message\":\"upstream failure\"," +
+                     "\"attach\":[\"" + longArgument + "\"]}";
+        Response bounded = advisor().exceptionHandler(new ExternalException(503, structured));
+
+        Assert.assertEquals(503, bounded.getStatus());
+        Assert.assertTrue(bounded.getMessage().startsWith("顶点 vertex-name "));
+        Assert.assertTrue(bounded.getMessage().length() <= 2048);
+        Assert.assertTrue(bounded.getMessage().endsWith("[message truncated]"));
+    }
+
+    @Test
+    public void testLongQueryMessageIsRedactedBeforeLocalizationDiagnostics() {
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(
+                new MockHttpServletRequest("POST", "/api/v1.3/graphspaces/DEFAULT/graphs/g/gremlin-query")));
+        MessageSourceHandler messages = Mockito.mock(MessageSourceHandler.class);
+        Mockito.when(messages.getMessage(Mockito.anyString(), Mockito.nullable(Object[].class)))
+               .thenAnswer(invocation -> {
+                   String message = invocation.getArgument(0);
+                   Assert.assertFalse(message.contains("private-canary"));
+                   return message;
+               });
+        ExceptionAdvisor advisor = new ExceptionAdvisor();
+        ReflectionTestUtils.setField(advisor, "messageSourceHandler", messages);
+        String message = "Failed to deserialize: {\"password\":\"" +
+                         "private-canary".repeat(10000) + "\"}";
+
+        Response response = advisor.exceptionHandler(new ExternalException(503, message));
+
+        Assert.assertEquals(503, response.getStatus());
+        Assert.assertTrue(response.getMessage().contains("[REDACTED]"));
+        Assert.assertTrue(response.getMessage().length() <= 2048);
     }
 
     @Test

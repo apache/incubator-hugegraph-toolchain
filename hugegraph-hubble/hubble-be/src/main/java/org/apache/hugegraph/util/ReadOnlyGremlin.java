@@ -116,6 +116,8 @@ public final class ReadOnlyGremlin {
             "and", "or", "not", "startingWith", "notStartingWith", "endingWith", "notEndingWith",
             "containing", "notContaining", "regex", "notRegex");
 
+    private static final Set<String> TEXT_PREDICATES = Set.of("contains");
+
     private static final Set<String> CONSTANTS = Set.of(
             "true", "false", "null", "asc", "desc", "shuffle", "local", "global", "keys", "values",
             "first", "last", "all", "mixed", "id", "label", "key", "value",
@@ -323,18 +325,18 @@ public final class ReadOnlyGremlin {
                 return this.number();
             } else {
                 String name = this.identifier();
+                this.whitespace();
                 if ("__".equals(name)) {
                     this.expect('.');
-                    if (!STEPS.containsKey(this.identifier())) {
-                        throw invalid();
-                    }
-                    this.arguments(depth);
-                    this.chain(STEPS.keySet(), depth, null);
-                } else if ("P".equals(name) || "TextP".equals(name)) {
+                    this.anonymousTraversal(this.identifier(), depth);
+                } else if (STEPS.containsKey(name) && this.next('(')) {
+                    this.anonymousTraversal(name, depth);
+                } else if ("P".equals(name) || "TextP".equals(name) || "Text".equals(name)) {
                     this.expect('.');
-                    this.predicate(this.identifier(), depth);
+                    this.predicate(this.identifier(), depth,
+                                   "Text".equals(name) ? TEXT_PREDICATES : PREDICATES);
                 } else if (PREDICATES.contains(name)) {
-                    this.predicate(name, depth);
+                    this.predicate(name, depth, PREDICATES);
                 } else {
                     if (this.consume('.')) {
                         name += "." + this.identifier();
@@ -348,8 +350,16 @@ public final class ReadOnlyGremlin {
             return Argument.OTHER;
         }
 
-        private void predicate(String name, int depth) {
-            if (!PREDICATES.contains(name)) {
+        private void anonymousTraversal(String name, int depth) {
+            if (!STEPS.containsKey(name)) {
+                throw invalid();
+            }
+            this.arguments(depth);
+            this.chain(STEPS.keySet(), depth, null);
+        }
+
+        private void predicate(String name, int depth, Set<String> methods) {
+            if (!methods.contains(name)) {
                 throw invalid();
             }
             this.arguments(depth);

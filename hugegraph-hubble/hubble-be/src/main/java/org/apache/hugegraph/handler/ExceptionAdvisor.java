@@ -154,7 +154,7 @@ public class ExceptionAdvisor {
         log.error("hubble.server_request_failed");
 
         String message = operations ? safeServerMessage(e) :
-                         this.handleMessage(sanitize(this.queryMessage(e.getMessage())), null);
+                         this.handleMessage(sanitize(e.getMessage()), null);
         closeRequestClient();
         return Response.builder()
                        .status(serverStatus(e.status()))
@@ -199,7 +199,7 @@ public class ExceptionAdvisor {
         log.error("hubble.unexpected_request_failed");
         String message = operations ?
                          "unexpected_request_failure" :
-                         this.handleMessage(sanitize(this.queryMessage(e.getMessage())), null);
+                         this.handleMessage(sanitize(e.getMessage()), null);
         closeRequestClient();
         return Response.builder()
                        .status(Constant.STATUS_BAD_REQUEST)
@@ -288,12 +288,8 @@ public class ExceptionAdvisor {
         if (uri == null || !QUERY_ROUTE.matcher(uri).find()) {
             return message;
         }
-        // Preserve redaction of complete JSON strings and private-key blocks:
-        // cutting first could remove the closing delimiter needed by sanitize.
-        message = sanitize(message);
-        if (message.length() <= QUERY_MESSAGE_LIMIT) {
-            return message;
-        }
+        // Limit only the final resolved and redacted text, never structured
+        // upstream errors or arguments needed by error-code/i18n formatting.
         int end = QUERY_MESSAGE_LIMIT - QUERY_MESSAGE_SUFFIX.length();
         if (Character.isHighSurrogate(message.charAt(end - 1)) &&
             Character.isLowSurrogate(message.charAt(end))) {
@@ -371,15 +367,17 @@ public class ExceptionAdvisor {
     }
 
     private String handleMessage(String message, Object[] args) {
-        message = this.queryMessage(message);
         String[] strArgs = null;
         if (args != null && args.length > 0) {
             strArgs = new String[args.length];
             for (int i = 0; i < args.length; i++) {
-                strArgs[i] = this.queryMessage(args[i] != null ? args[i].toString() : "?");
+                strArgs[i] = args[i] != null ? args[i].toString() : "?";
             }
         }
-        message = handleErrorCode(message);
+        // Parse complete upstream JSON before redaction or truncation can
+        // remove fields/delimiters; redact the resolved key before localization
+        // because missing-key diagnostics may log it.
+        message = sanitize(handleErrorCode(message));
 
         try {
             message = this.messageSourceHandler.getMessage(message, strArgs);

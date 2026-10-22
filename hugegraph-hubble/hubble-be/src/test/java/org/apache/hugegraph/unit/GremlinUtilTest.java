@@ -83,6 +83,41 @@ public class GremlinUtilTest {
         }
     }
 
+    @Test
+    public void testBareAnonymousTraversalsReceiveEffectiveOuterLimits() throws Exception {
+        try (TinkerGraph graph = TinkerGraph.open()) {
+            Vertex previous = null;
+            for (int i = 0; i < 1500; i++) {
+                Vertex vertex = graph.addVertex("name", "vertex-" + i);
+                if (previous != null) {
+                    previous.addEdge("next", vertex);
+                    previous.addEdge("next", vertex);
+                    previous.addEdge("next", vertex);
+                }
+                previous = vertex;
+            }
+            Bindings bindings = new SimpleBindings();
+            bindings.put("g", graph.traversal());
+            GremlinLangScriptEngine engine = new GremlinLangScriptEngine();
+            for (String query : new String[]{"g.V().repeat(out()).times(2).path()",
+                                             "g.V().repeat(__.out()).times(2).path()",
+                                             "g.V().where(out().count().is(gt(2))).out()",
+                                             "g.V().where(__.out().count().is(gt(2))).out()"}) {
+                Assert.assertTrue(execute(engine, bindings, query).size() > 1001);
+                String ordinary = GremlinUtil.optimizeLimit(query, 300);
+                String preview = GremlinUtil.optimizePreviewLimit(query, 1001);
+                Assert.assertEquals(query + ".limit(300)", ordinary);
+                Assert.assertEquals(query + ".limit(1001)", preview);
+                Assert.assertEquals(300, execute(engine, bindings, ordinary).size());
+                Assert.assertEquals(1001, execute(engine, bindings, preview).size());
+            }
+        }
+        String textPredicate = "g.V().has('name', Text.contains('x')).out()";
+        Assert.assertEquals(textPredicate + ".limit(300)", GremlinUtil.optimizeLimit(textPredicate, 300));
+        Assert.assertEquals(textPredicate + ".limit(1001)",
+                            GremlinUtil.optimizePreviewLimit(textPredicate, 1001));
+    }
+
     private static List<?> execute(GremlinLangScriptEngine engine, Bindings bindings,
                                    String query) throws Exception {
         return ((Traversal<?, ?>) engine.eval(query, bindings)).toList();
