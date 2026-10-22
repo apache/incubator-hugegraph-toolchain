@@ -54,14 +54,14 @@ public class VermeerClient {
 
     public Map<String, Object> request(String method, String path,
                                       Map<String, ?> body) {
-        E.checkState(this.configured(), "Configure vermeer.url first");
-        URI base = URI.create(this.config.get(HubbleOptions.VERMEER_URL));
-        E.checkArgument(("http".equals(base.getScheme()) ||
-                         "https".equals(base.getScheme())) &&
-                        base.getHost() != null && base.getUserInfo() == null &&
-                        base.getQuery() == null && base.getFragment() == null,
-                        "Invalid vermeer.url");
         try {
+            E.checkState(this.configured(), "Configure vermeer.url first");
+            URI base = URI.create(this.config.get(HubbleOptions.VERMEER_URL));
+            E.checkArgument(("http".equals(base.getScheme()) ||
+                             "https".equals(base.getScheme())) &&
+                            base.getHost() != null && base.getUserInfo() == null &&
+                            base.getQuery() == null && base.getFragment() == null,
+                            "Invalid vermeer.url");
             HttpRequest.Builder request = HttpRequest.newBuilder(
                     URI.create(base.toString().replaceAll("/+$", "") +
                                "/api/v1/" + path))
@@ -94,7 +94,11 @@ public class VermeerClient {
             Thread.currentThread().interrupt();
             throw new ExternalException("Vermeer request interrupted", e);
         } catch (IOException e) {
-            throw new ExternalException("Vermeer service is unavailable", e);
+            throw new ExternalException("Vermeer service is unavailable");
+        } catch (IllegalArgumentException | IllegalStateException | SecurityException e) {
+            // Adapter validation can include URLs, token values or file paths.
+            // Preserve the availability boundary without exposing those details.
+            throw new ExternalException("Invalid Vermeer configuration or request");
         }
     }
 }

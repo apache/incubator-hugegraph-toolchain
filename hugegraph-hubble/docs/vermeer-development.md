@@ -74,6 +74,8 @@ token authentication, put its separate service token in a protected file and set
 `vermeer.token_file`. Hubble does not reuse its HugeGraph login token for Vermeer.
 An empty `vermeer.url` retains the existing Dashboard/Server-proxy path and its
 token-output capability restriction.
+The native adapter requires `pd.enabled=true` because its loader reads PD/Store
+partitions. Standalone Server deployments keep native load/compute disabled.
 
 The direct adapter uses the routes implemented by Vermeer:
 
@@ -105,6 +107,10 @@ Hubble provides next/previous controls for these result pages. Native Vermeer do
 Query values are temporary; successful task history remains readable after their
 cache expires. Local output uses a safe per-graph basename and truncates its part
 files on repeated computations, rather than accumulating files for every run.
+The native task-history API currently has no cursor or offset. Hubble reads up to
+10,000 native tasks before applying graph filters; older records outside that
+window are not included in the displayed total. Extending history beyond that
+window requires coordinated native API pagination.
 
 PD, Store and Server use the metadata cluster name `hg`. Both Vermeer processes
 read PD's shared secret from `VERMEER_PD_PASSWORD_FILE` or `pd_password_file`,
@@ -160,7 +166,7 @@ not create accounts or change permissions.
 
 Recorded verification uses the rebuilt local services, with no mocked API
 responses: all nine supported algorithms returned six vertex values; Chrome
-verified anonymous/admin/observer flows and a delayed Worker load. The final complete Hubble backend suite passed 879 tests, including the direct
+verified anonymous/admin/observer flows and a delayed Worker load. The final complete Hubble backend suite passed 881 tests, including the direct
 Vermeer permission and task regressions. The focused
 frontend suites, lint, i18n, TypeScript and production build passed. The separate
 Go regression includes deterministic storage-initialization failure and retry.

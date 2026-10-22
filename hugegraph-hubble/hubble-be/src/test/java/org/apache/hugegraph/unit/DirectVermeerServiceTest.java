@@ -68,6 +68,9 @@ public class DirectVermeerServiceTest {
         AuthModeService mode = Mockito.mock(AuthModeService.class);
         Mockito.when(mode.anonymous()).thenReturn(true);
         ReflectionTestUtils.setField(service, "authMode", mode);
+        HugeConfig config = Mockito.mock(HugeConfig.class);
+        Mockito.when(config.get(HubbleOptions.PD_ENABLED)).thenReturn(true);
+        ReflectionTestUtils.setField(service, "config", config);
         return service;
     }
 
@@ -294,6 +297,7 @@ public class DirectVermeerServiceTest {
     public void testWorkerStartupIsRetryableWithoutPollingDeniedCapability() {
         DirectVermeerService direct = Mockito.mock(DirectVermeerService.class);
         Mockito.when(direct.configured()).thenReturn(true);
+        Mockito.when(direct.supported()).thenReturn(true);
         HugeClient client = graphClient();
         Mockito.when(direct.permitted(client)).thenReturn(true);
         Mockito.when(direct.available()).thenReturn(false, true);
@@ -307,6 +311,67 @@ public class DirectVermeerServiceTest {
         Assert.assertEquals(Map.of("enable", false, "retryable", false),
                             service.getVermeer(client, "login-token", false));
         Mockito.verify(direct, Mockito.times(2)).available();
+    }
+
+    @Test
+    public void testStandaloneDisablesNativeCapabilityAndRejectsSubmissions() {
+        VermeerClient backend = Mockito.mock(VermeerClient.class);
+        Mockito.when(backend.configured()).thenReturn(true);
+        DirectVermeerService direct = service(backend);
+        HugeConfig config = Mockito.mock(HugeConfig.class);
+        Mockito.when(config.get(HubbleOptions.PD_ENABLED)).thenReturn(false);
+        ReflectionTestUtils.setField(direct, "config", config);
+        HugeClient client = graphClient();
+        VermeerService service = new VermeerService();
+        ReflectionTestUtils.setField(service, "direct", direct);
+        Assert.assertEquals(Map.of("enable", false, "retryable", false),
+                            service.getVermeer(client, "login-token", false));
+        expect(ExternalException.class, () -> direct.load(client, false, Map.of()));
+        expect(ExternalException.class,
+                () -> direct.compute(client, Map.of("compute.algorithm", "pagerank")));
+        Mockito.verify(backend, Mockito.never()).request(Mockito.anyString(),
+                Mockito.anyString(), Mockito.any());
+    }
+
+    @Test
+    public void testInvalidVermeerConfigurationKeepsServerTasks() throws Exception {
+        HugeConfig config = Mockito.mock(HugeConfig.class);
+        for (String url : List.of("http://invalid host/private", "ftp://localhost/private")) {
+            Mockito.when(config.get(HubbleOptions.VERMEER_URL)).thenReturn(url);
+            assertInvalidConfigurationKeepsServerTasks(config);
+        }
+        Path token = Files.createTempFile("vermeer-test-", ".token");
+        try {
+            Mockito.when(config.get(HubbleOptions.VERMEER_URL)).thenReturn("http://127.0.0.1:1");
+            Mockito.when(config.get(HubbleOptions.VERMEER_TOKEN_FILE)).thenReturn(token.toString());
+            assertInvalidConfigurationKeepsServerTasks(config);
+            Files.writeString(token, "private-token\ninvalid-header");
+            assertInvalidConfigurationKeepsServerTasks(config);
+        } finally {
+            Files.delete(token);
+        }
+    }
+
+    private void assertInvalidConfigurationKeepsServerTasks(HugeConfig config) {
+        VermeerClient backend = new VermeerClient();
+        ReflectionTestUtils.setField(backend, "config", config);
+        try {
+            backend.request("GET", "graphs", null);
+            Assert.fail("Expected adapter configuration failure");
+        } catch (ExternalException e) {
+            Assert.assertEquals("Invalid Vermeer configuration or request", e.getMessage());
+            Assert.assertNull(e.getCause());
+        }
+        DirectVermeerService direct = service(backend);
+        HugeClient client = graphClient();
+        Task serverTask = Mockito.mock(Task.class);
+        Mockito.when(serverTask.type()).thenReturn("gremlin");
+        Mockito.when(client.task().list((String) null)).thenReturn(List.of(serverTask));
+        AsyncTaskService tasks = new AsyncTaskService();
+        ReflectionTestUtils.setField(tasks, "vermeer", direct);
+        var page = tasks.list(client, 1, 10, "", "", "");
+        Assert.assertEquals(List.of(serverTask), page.getRecords());
+        Assert.assertTrue(((AsyncTaskService.TaskPage) page).isVermeerUnavailable());
     }
 
     @Test

@@ -58,6 +58,11 @@ public class DirectVermeerService {
         return this.backend.configured();
     }
 
+    public boolean supported() {
+        // Native HugeGraph loading reads partitions from PD and Store.
+        return this.config.get(HubbleOptions.PD_ENABLED);
+    }
+
     public boolean permitted(HugeClient client) {
         return this.authMode.anonymous() || client.auth().isSuperAdmin();
     }
@@ -96,6 +101,7 @@ public class DirectVermeerService {
     public Map<String, Object> load(HugeClient client, boolean force,
                                     Map<String, Object> options) {
         authorize(client);
+        this.requireSupported();
         Map<String, Object> graph = HubbleUtil.uncheckedCast(
                 this.graph(client.getGraphSpaceName(), client.getGraphName()).get("graph"));
         if (graph != null && "error".equals(graph.get("status"))) {
@@ -126,6 +132,7 @@ public class DirectVermeerService {
 
     public Map<String, Object> compute(HugeClient client, Map<String, Object> options) {
         authorize(client);
+        this.requireSupported();
         E.checkArgument(options != null && options.get("compute.algorithm") != null,
                         "compute.algorithm is required");
         String algorithm = options.get("compute.algorithm").toString();
@@ -310,6 +317,12 @@ public class DirectVermeerService {
                     "Direct Vermeer access requires a super administrator in authenticated mode");
         }
         client.graph().listVertices(1);
+    }
+
+    private void requireSupported() {
+        if (!this.supported()) {
+            throw new ExternalException("Direct Vermeer requires pd.enabled=true");
+        }
     }
 
     private static String json(Object value) {
