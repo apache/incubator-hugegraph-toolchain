@@ -75,7 +75,7 @@ public class OperationsControllerTest {
                                                 Mockito.isNull(), Mockito.isNull(),
                                                 Mockito.isNull(), Mockito.eq(1),
                                                 Mockito.eq(20), Mockito.eq("name"),
-                                                Mockito.eq("asc")))
+                                                Mockito.eq("asc"), Mockito.eq(false)))
                .thenReturn(Collections.singletonMap("total", 0));
 
         Map<String, Object> response = fixture.controller.nodes(null, null, null,
@@ -83,6 +83,28 @@ public class OperationsControllerTest {
                                                                  "name", "asc");
 
         Assert.assertEquals(0, response.get("total"));
+    }
+
+    @Test
+    public void testAdminCanRefreshNodes() {
+        Fixture fixture = fixture("ADMIN");
+        Mockito.when(fixture.dataService.nodes(Mockito.any(), Mockito.anySet(),
+                                                Mockito.eq("STORE"), Mockito.isNull(),
+                                                Mockito.isNull(), Mockito.eq(1),
+                                                Mockito.eq(20), Mockito.eq("name"),
+                                                Mockito.eq("asc"), Mockito.eq(true)))
+               .thenReturn(Collections.singletonMap("observed_at", 2000L));
+
+        Map<String, Object> response = fixture.controller.nodes(
+                "STORE", null, null, 1, 20, "name", "asc", true);
+
+        Assert.assertEquals(2000L, response.get("observed_at"));
+    }
+
+    @Test(expected = ForbiddenException.class)
+    public void testSpaceAdminCannotRefreshNodes() {
+        fixture("SPACEADMIN").controller.nodes(null, null, null, 1, 20,
+                                                "name", "asc", true);
     }
 
     @Test

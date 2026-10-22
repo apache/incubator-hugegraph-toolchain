@@ -86,6 +86,74 @@ test('uses the last successful data time for a stale source', () => {
     expect(source).not.toHaveTextContent(formatter.format(new Date(2000)));
 });
 
+test.each([
+    ['UP', 'AVAILABLE', false, 'up', 'UP'],
+    ['UP', 'PARTIAL', false, 'degraded', 'Attention'],
+    ['UP', 'UNAVAILABLE', false, 'degraded', 'Attention'],
+    ['UP', 'MALFORMED', false, 'degraded', 'Attention'],
+    ['UP', 'AVAILABLE', true, 'degraded', 'Attention'],
+    ['DEGRADED', 'AVAILABLE', false, 'degraded', 'Attention'],
+    ['DOWN', 'PARTIAL', false, 'down', 'DOWN'],
+    ['UNKNOWN', 'UNAVAILABLE', false, 'unknown', 'UNKNOWN'],
+    ['UNKNOWN', 'PARTIAL', false, 'degraded', 'Attention'],
+    ['UNKNOWN', 'UNSUPPORTED', false, 'unknown', 'UNKNOWN'],
+])('combines topology %s, collection %s and stale=%s in source health', (
+    status, availability, stale, colorStatus, label
+) => {
+    render(
+        <SourceStrip
+            sources={{stores: {status, availability, stale}}}
+            sourceNames={['stores']}
+        />
+    );
+
+    const source = screen.getByText('Store').closest('.operations-source');
+    const badge = source.querySelector('.operations-health');
+    expect(badge).toHaveClass(`status-${colorStatus}`);
+    expect(badge).toHaveTextContent(label);
+    const topologyLabel = status === 'DEGRADED' ? 'Attention' : status;
+    expect(source).toHaveAccessibleName(new RegExp(`Node status: ${topologyLabel}`));
+    if (colorStatus !== 'up') {
+        expect(badge).not.toHaveClass('status-up');
+        expect(within(badge).queryByText('UP', {exact: true})).not.toBeInTheDocument();
+    }
+});
+
+test('keeps node UP as secondary evidence when collection is partially available', () => {
+    render(
+        <SourceStrip
+            detailed
+            sources={{stores: {
+                status: 'UP', availability: 'PARTIAL', reason: 'response_too_large',
+            }}}
+            sourceNames={['stores']}
+        />
+    );
+
+    const source = screen.getByText('Store').closest('.operations-source');
+    expect(source.querySelector('.operations-health')).toHaveClass('status-degraded');
+    expect(source).toHaveTextContent('Node status: UP');
+    expect(source).toHaveTextContent('Metrics collection: Partially available');
+    expect(source).toHaveTextContent(i18n.t('operations.reason_response_too_large'));
+});
+
+test('does not show a green UP beside the Chinese partial-availability warning', async () => {
+    await i18n.changeLanguage('zh-CN');
+    render(
+        <SourceStrip
+            sources={{stores: {status: 'UP', availability: 'PARTIAL'}}}
+            sourceNames={['stores']}
+        />
+    );
+
+    const source = screen.getByText('Store').closest('.operations-source');
+    expect(within(source).getByText('需关注')).toBeInTheDocument();
+    expect(within(source).getByText('异常 - 部分可用')).toBeInTheDocument();
+    expect(source.querySelector('.operations-health')).toHaveClass('status-degraded');
+    expect(within(source).queryByText('UP', {exact: true})).not.toBeInTheDocument();
+    expect(source).toHaveAccessibleName(/节点状态: UP/);
+});
+
 test('uses a concise Attention label and explains the degraded state', () => {
     render(<HealthStatus status='DEGRADED' reason='refresh_failed' />);
 
@@ -101,7 +169,7 @@ test('uses semantic tier icons and keeps the PD leader on the visual axis', () =
             <ClusterTopology nodes={[
                 {
                     id: 'server-1',
-                    name: 'HugeGraph Server 123abc',
+                    name: 'Server 123abc',
                     type: 'SERVER',
                     status: 'UP',
                 },
@@ -115,7 +183,6 @@ test('uses semantic tier icons and keeps the PD leader on the visual axis', () =
 
     expect(screen.getByLabelText('SERVER icon')).toBeInTheDocument();
     expect(screen.getByText('Server 123abc')).toBeInTheDocument();
-    expect(screen.queryByText('HugeGraph Server 123abc')).not.toBeInTheDocument();
     expect(screen.getAllByLabelText('PD icon')).toHaveLength(2);
     expect(screen.getByLabelText('STORE icon')).toBeInTheDocument();
     expect(screen.getByText('pd-1').closest('a')).toHaveClass('is-axis-node');
@@ -125,6 +192,19 @@ test('uses semantic tier icons and keeps the PD leader on the visual axis', () =
     expect(screen.getByRole('link', {name: 'Server tier'})).toBeInTheDocument();
     expect(screen.getByRole('link', {name: 'Store tier'})).toBeInTheDocument();
     expect(screen.queryByRole('link', {name: 'SERVER tier'})).not.toBeInTheDocument();
+});
+
+test('preserves custom server names in the topology', () => {
+    render(
+        <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+            <ClusterTopology nodes={[
+                {id: 'server-custom', name: 'HugeGraph Server Production', type: 'SERVER', status: 'UP'},
+            ]} />
+        </MemoryRouter>
+    );
+
+    expect(screen.getByText('HugeGraph Server Production')).toBeInTheDocument();
+    expect(screen.queryByText('Server Production')).not.toBeInTheDocument();
 });
 
 test('shows stale metrics beside an up topology status', () => {

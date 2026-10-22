@@ -18,15 +18,31 @@
 
 package org.apache.hugegraph.service.op;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 public class UpstreamRequestException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 
+    private final Map<String, Object> diagnostics;
+
     public UpstreamRequestException(String reason) {
-        super(reason);
+        this(reason, null);
     }
 
     public UpstreamRequestException(String reason, Throwable cause) {
+        this(reason, cause, Collections.emptyMap());
+    }
+
+    public UpstreamRequestException(String reason, Throwable cause,
+                                    Map<String, Object> diagnostics) {
         super(reason, cause);
+        this.diagnostics = Collections.unmodifiableMap(new LinkedHashMap<>(diagnostics));
+    }
+
+    public Map<String, Object> getDiagnostics() {
+        return this.diagnostics;
     }
 }

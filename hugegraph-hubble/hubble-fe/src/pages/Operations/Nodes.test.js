@@ -467,3 +467,39 @@ test('renders a Store leader-shard count without an explicit node role', async (
         .closest('.operations-node-identity-cell');
     expect(within(identity).getByText('3 leader shards')).toBeInTheDocument();
 });
+
+
+test('opens source diagnostics from an alert without needing a node result', async () => {
+    getNodes.mockResolvedValue({items: [], total: 0, sources: {stores: {
+        status: 'UP', availability: 'PARTIAL', reason: 'response_too_large',
+        diagnostics: {request_path: '/v1/stores', max_response_bytes: 1048576},
+    }}});
+    render(<MemoryRouter initialEntries={[
+        '/operations/nodes?type=STORE&source=stores#operations-source-diagnostics',
+    ]}><Nodes /></MemoryRouter>);
+    const panel = await screen.findByRole('region', {name: 'Source diagnostics'});
+    await waitFor(() => expect(within(panel).getByText('/v1/stores')).toBeInTheDocument());
+    await waitFor(() => expect(panel).toHaveFocus());
+});
+
+test('preserves reported custom Server names and renders concise generated Server names', async () => {
+    getNodes.mockResolvedValue({items: [
+        {id: 'server-a', type: 'SERVER', name: 'Server 7eb71715c010', status: 'UP'},
+        {id: 'server-b', type: 'SERVER', name: 'HugeGraph Server custom-name', status: 'UP'},
+    ], total: 2});
+    render(<MemoryRouter><Nodes /></MemoryRouter>);
+    expect(await screen.findByRole('link', {name: /Server 7eb71715c010/})).toBeInTheDocument();
+    expect(screen.getByRole('link', {name: /HugeGraph Server custom-name/})).toBeInTheDocument();
+});
+
+test('explicit refresh bypasses the cached snapshot and retries source collection', async () => {
+    getNodes.mockResolvedValue({items: [], total: 0, sources: {}, observed_at: 1000, stale: false});
+    render(<MemoryRouter><Nodes /></MemoryRouter>);
+    const refresh = await screen.findByRole('button', {name: 'Refresh'});
+    await waitFor(() => expect(refresh).not.toHaveClass('ant-btn-loading'));
+    expect(getNodes).toHaveBeenCalledTimes(1);
+    expect(getNodes.mock.calls[0][0]).not.toHaveProperty('refresh');
+    fireEvent.click(refresh);
+    await waitFor(() => expect(getNodes).toHaveBeenCalledTimes(2));
+    expect(getNodes).toHaveBeenLastCalledWith(expect.objectContaining({refresh: true}));
+});

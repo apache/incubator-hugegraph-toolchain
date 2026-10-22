@@ -58,6 +58,7 @@ public class LiveOperationsCollectorTest {
         Assert.assertEquals("UP", snapshot.getStatus());
         Assert.assertEquals(1, snapshot.getNodes().size());
         Assert.assertEquals("SERVER", snapshot.getNodes().get(0).getType());
+        Assert.assertEquals("Server", snapshot.getNodes().get(0).getName());
         Assert.assertTrue(snapshot.getNodes().get(0).getMetrics()
                                   .containsKey("system"));
         Assert.assertTrue(snapshot.getNodes().get(0).getMetrics()
@@ -115,6 +116,11 @@ public class LiveOperationsCollectorTest {
         Assert.assertEquals(2L, snapshot.getNodes().stream()
                                 .filter(node -> "SERVER".equals(node.getType()))
                                 .count());
+        snapshot.getNodes().stream()
+                .filter(node -> "SERVER".equals(node.getType()))
+                .forEach(node -> Assert.assertEquals(
+                         "Server " + node.getId().substring("server-".length()),
+                         node.getName()));
         Assert.assertEquals("UP", snapshot.getSources().get("server")
                                           .getStatus());
         Assert.assertEquals("AVAILABLE",
@@ -483,7 +489,7 @@ public class LiveOperationsCollectorTest {
     }
 
     @Test
-    public void testDirectMetricFailureOverridesStaleStoreRegistration() {
+    public void testDirectMetricFailurePreservesPdStoreStatus() {
         RecordingHttpClient http = new RecordingHttpClient(
                 storesWithDifferentRestAddresses(),
                 targets("127.0.0.1:8520", "127.0.0.1:9520"));
@@ -498,13 +504,46 @@ public class LiveOperationsCollectorTest {
 
         Assert.assertEquals("UP",
                             snapshot.getSources().get("pd").getStatus());
-        Assert.assertEquals("DEGRADED",
+        Assert.assertEquals("UP",
                             snapshot.getSources().get("stores").getStatus());
+        Assert.assertEquals("PARTIAL",
+                            snapshot.getSources().get("stores").getAvailability());
         Assert.assertEquals(Long.valueOf(2L),
                             snapshot.getFacts().get("stores"));
-        Assert.assertEquals(Long.valueOf(1L),
+        Assert.assertEquals(Long.valueOf(2L),
                             snapshot.getFacts().get("stores_up"));
+        Assert.assertEquals(0L, snapshot.getNodes().stream()
+                .filter(node -> "STORE".equals(node.getType()))
+                .filter(node -> "DOWN".equals(node.getStatus()))
+                .count());
         Assert.assertEquals(1L, snapshot.getNodes().stream()
+                .filter(node -> "STORE".equals(node.getType()))
+                .filter(node -> "upstream_unavailable".equals(
+                        node.getMetricStatuses().get("system").getReason()))
+                .count());
+    }
+
+    @Test
+    public void testDirectMetricFailurePreservesPdReportedDownStore() {
+        RecordingHttpClient http = new RecordingHttpClient(
+                storesWithDifferentRestAddresses().replace("\"Up\"", "\"Offline\""),
+                targets("127.0.0.1:8520", "127.0.0.1:9520"));
+        http.unavailableAuthority("127.0.0.1:9520");
+        LiveOperationsCollector collector = collector(http, 4, 1000);
+        Snapshot snapshot;
+        try {
+            snapshot = collector.collect(serverClient(), true);
+        } finally {
+            collector.close();
+        }
+
+        Assert.assertEquals("DOWN",
+                            snapshot.getSources().get("stores").getStatus());
+        Assert.assertEquals("PARTIAL",
+                            snapshot.getSources().get("stores").getAvailability());
+        Assert.assertEquals(Long.valueOf(0L),
+                            snapshot.getFacts().get("stores_up"));
+        Assert.assertEquals(2L, snapshot.getNodes().stream()
                 .filter(node -> "STORE".equals(node.getType()))
                 .filter(node -> "DOWN".equals(node.getStatus()))
                 .count());
@@ -556,6 +595,37 @@ public class LiveOperationsCollectorTest {
     }
 
     @Test
+    public void testOversizedDiscoveryResponsesKeepSourceDiagnostics()
+           throws IOException {
+        for (String path : new String[]{"/v1/stores", "/v1/cluster",
+                                        "/v1/prom/targets-all"}) {
+            HttpServer pd = pdServer(200, "/v1/cluster".equals(path) ?
+                                          "x".repeat(9000) : cluster(),
+                                     200, "/v1/stores".equals(path) ?
+                                          "x".repeat(9000) : stores());
+            if ("/v1/prom/targets-all".equals(path)) {
+                context(pd, path, 200, "x".repeat(9000));
+            }
+            Snapshot snapshot;
+            try {
+                snapshot = collector(true, pd).collect(
+                           serverClient(), "/v1/prom/targets-all".equals(path));
+            } finally {
+                pd.stop(0);
+            }
+
+            String source = "/v1/cluster".equals(path) ? "pd" : "stores";
+            Assert.assertEquals("response_too_large",
+                                snapshot.getSources().get(source).getReason());
+            Assert.assertEquals(Map.of("request_path", path,
+                                       "max_response_bytes", 8192L,
+                                       "response_bytes", 9000L,
+                                       "response_size_exact", true),
+                                snapshot.getSources().get(source).getDiagnostics());
+        }
+    }
+
+    @Test
     public void testStoreMetricFailureKeepsSpecificSafeReason()
            throws IOException {
         HttpServer pd = pdServer(200, cluster(), 200, stores());
@@ -584,6 +654,15 @@ public class LiveOperationsCollectorTest {
                                                 .get("system").getAvailability());
         Assert.assertEquals("response_too_large", store.getMetricStatuses()
                                                    .get("system").getReason());
+        Assert.assertEquals(Map.of("request_path", "/metrics/system",
+                                   "max_response_bytes", 8192L,
+                                   "response_bytes", 9000L,
+                                   "response_size_exact", true,
+                                   "metric_group", "system"),
+                            store.getMetricStatuses().get("system").getDiagnostics());
+        Assert.assertEquals(Map.of("affected_node_count", 1,
+                                   "failed_metric_groups", Collections.singletonList("system")),
+                            snapshot.getSources().get("stores").getDiagnostics());
         Assert.assertEquals("AVAILABLE", store.getMetricStatuses()
                                               .get("drive").getAvailability());
         Assert.assertEquals("AVAILABLE", store.getMetricStatuses()
@@ -904,10 +983,15 @@ public class LiveOperationsCollectorTest {
                                     .getAvailability());
         Assert.assertEquals("upstream_deadline",
                             snapshot.getSources().get("stores").getReason());
-        Assert.assertEquals("DOWN",
+        Assert.assertEquals("UP",
                             snapshot.getSources().get("stores").getStatus());
-        Assert.assertEquals(Long.valueOf(0L),
+        Assert.assertEquals(Long.valueOf(30L),
                             snapshot.getFacts().get("stores_up"));
+        Assert.assertTrue(snapshot.getNodes().stream()
+                .filter(node -> "STORE".equals(node.getType()))
+                .allMatch(node -> "UP".equals(node.getStatus()) &&
+                                  "UNAVAILABLE".equals(node.getMetricStatuses()
+                                                         .get("system").getAvailability())));
         Assert.assertEquals(0, http.activeRequests());
     }
 
@@ -937,13 +1021,15 @@ public class LiveOperationsCollectorTest {
                 .filter(node -> "upstream_deadline".equals(
                         node.getMetricStatuses().get("system").getReason()))
                 .count());
-        Assert.assertEquals(1L, snapshot.getNodes().stream()
+        Assert.assertEquals(0L, snapshot.getNodes().stream()
                 .filter(node -> "STORE".equals(node.getType()))
                 .filter(node -> "DOWN".equals(node.getStatus()))
                 .count());
-        Assert.assertEquals("DEGRADED",
+        Assert.assertEquals("UP",
                             snapshot.getSources().get("stores").getStatus());
-        Assert.assertEquals(Long.valueOf(1L),
+        Assert.assertEquals("PARTIAL",
+                            snapshot.getSources().get("stores").getAvailability());
+        Assert.assertEquals(Long.valueOf(2L),
                             snapshot.getFacts().get("stores_up"));
     }
 

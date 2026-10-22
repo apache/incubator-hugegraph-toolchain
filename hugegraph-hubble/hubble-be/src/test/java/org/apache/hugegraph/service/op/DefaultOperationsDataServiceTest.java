@@ -81,6 +81,36 @@ public class DefaultOperationsDataServiceTest {
         Assert.assertEquals(1, ((java.util.List<?>) result.get("items")).size());
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testEmptyNodeListRetainsSourceFailureDiagnostics() {
+        Map<String, Object> diagnostics = Map.of(
+                "request_path", "/v1/stores", "max_response_bytes", 8192L,
+                "response_bytes", 9000L, "response_size_exact", true);
+        SourceStatus source = new SourceStatus(
+                "UNAVAILABLE", "UNKNOWN", 2000L, null, false, false,
+                "response_too_large").withDiagnostics(diagnostics);
+        Snapshot snapshot = new Snapshot(
+                "DEGRADED", 2000L, false, null,
+                Collections.singletonMap("stores", source),
+                Collections.emptyList(), Collections.emptyMap());
+        DefaultOperationsDataService service = service(snapshot, 5);
+        Set<String> capabilities = Set.of(
+                OperationsCapabilityService.HEALTH_READ,
+                OperationsCapabilityService.TOPOLOGY_READ);
+
+        Map<String, Object> result = service.nodes(client("token-a"), capabilities,
+                                                   "STORE", null, null, 1, 20,
+                                                   "name", "asc");
+
+        Assert.assertEquals(0, result.get("total"));
+        Assert.assertTrue(((java.util.List<?>) result.get("items")).isEmpty());
+        Map<String, SourceStatus> sources =
+                (Map<String, SourceStatus>) result.get("sources");
+        Assert.assertEquals("response_too_large", sources.get("stores").getReason());
+        Assert.assertEquals(diagnostics, sources.get("stores").getDiagnostics());
+    }
+
     @Test
     public void testNodesUseStableGlobalSortingBeforePagination() {
         DefaultOperationsDataService service = service(snapshot(), 5);
@@ -103,6 +133,39 @@ public class DefaultOperationsDataServiceTest {
                 (java.util.List<Node>) second.get("items");
         Assert.assertTrue(firstItems.get(0).getName().compareToIgnoreCase(
                           secondItems.get(0).getName()) >= 0);
+    }
+
+    @Test
+    public void testExplicitNodesRefreshReplacesCachedSnapshotWithinTtl() {
+        AtomicInteger calls = new AtomicInteger();
+        OperationsCollector collector = (client, metrics) -> {
+            Snapshot result = snapshot();
+            return new Snapshot(result.getStatus(), 2000L + calls.incrementAndGet(),
+                                false, result.getReason(), result.getSources(),
+                                result.getNodes(), result.getFacts());
+        };
+        DefaultOperationsDataService service = new DefaultOperationsDataService(
+                collector, 5, CLOCK);
+        HugeClient client = client("token-a");
+        Set<String> capabilities = Set.of(
+                OperationsCapabilityService.HEALTH_READ,
+                OperationsCapabilityService.TOPOLOGY_READ);
+
+        Map<String, Object> first = service.nodes(client, capabilities,
+                null, null, null, 1, 20, "name", "asc");
+        Map<String, Object> cached = service.nodes(client, capabilities,
+                null, null, null, 1, 20, "name", "asc", false);
+        Assert.assertEquals(1, calls.get());
+        Assert.assertEquals(2001L, first.get("observed_at"));
+        Assert.assertEquals(first.get("observed_at"), cached.get("observed_at"));
+
+        Map<String, Object> refreshed = service.nodes(client, capabilities,
+                null, null, null, 1, 20, "name", "asc", true);
+        Map<String, Object> subsequent = service.nodes(client, capabilities,
+                null, null, null, 1, 20, "name", "asc");
+        Assert.assertEquals(2, calls.get());
+        Assert.assertEquals(2002L, refreshed.get("observed_at"));
+        Assert.assertEquals(refreshed.get("observed_at"), subsequent.get("observed_at"));
     }
 
     @Test
@@ -239,6 +302,8 @@ public class DefaultOperationsDataServiceTest {
         Assert.assertTrue(sources.get("stores").isStale());
         Assert.assertEquals(Long.valueOf(1000L),
                             sources.get("stores").getLastSuccessAt());
+        Assert.assertEquals(Collections.singletonMap("request_path", "/v1/stores"),
+                            sources.get("stores").getDiagnostics());
         Node staleStore = ((java.util.List<Node>) nodes).stream()
                 .filter(node -> "STORE".equals(node.getType()))
                 .findFirst().orElseThrow(AssertionError::new);
@@ -246,6 +311,9 @@ public class DefaultOperationsDataServiceTest {
         Assert.assertEquals("UNAVAILABLE", backend.getAvailability());
         Assert.assertEquals("upstream_unavailable", backend.getReason());
         Assert.assertTrue(backend.isStale());
+        Assert.assertEquals(Long.valueOf(1000L), backend.getLastSuccessAt());
+        Assert.assertEquals(sources.get("stores").getDiagnostics(),
+                            backend.getDiagnostics());
     }
 
     @Test
@@ -380,6 +448,10 @@ public class DefaultOperationsDataServiceTest {
         Assert.assertEquals("UNAVAILABLE", system.getAvailability());
         Assert.assertEquals(Long.valueOf(1000L), system.getLastSuccessAt());
         Assert.assertTrue(system.isStale());
+        Assert.assertEquals("upstream_timeout", system.getReason());
+        Assert.assertEquals(Map.of("request_path", "/metrics/system",
+                                   "metric_group", "system"),
+                            system.getDiagnostics());
         Assert.assertTrue(store.getMetricStatuses().get("drive").isFresh());
     }
 
@@ -544,7 +616,8 @@ public class DefaultOperationsDataServiceTest {
         sources.put("pd", available());
         sources.put("stores", new SourceStatus("UNAVAILABLE", "UNKNOWN",
                                                 2000L, null, false, false,
-                                                "upstream_unavailable"));
+                                                "upstream_unavailable")
+                .withDiagnostics(Collections.singletonMap("request_path", "/v1/stores")));
         return new Snapshot("DEGRADED", 2000L, false, null, sources,
                 Arrays.asList(node("server-000000000001", "SERVER", "server",
                                    "UP"),
@@ -580,7 +653,9 @@ public class DefaultOperationsDataServiceTest {
             metrics.put("drive", Collections.singletonMap("total", 30L));
             statuses.put("system", new MetricStatus(
                          "UNAVAILABLE", observedAt, null, false, false,
-                         "upstream_timeout"));
+                         "upstream_timeout")
+                    .withDiagnostics(Map.of("request_path", "/metrics/system",
+                                            "metric_group", "system")));
             statuses.put("drive", new MetricStatus(
                          "AVAILABLE", observedAt, observedAt, true, false, null));
         } else {
