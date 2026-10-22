@@ -40,6 +40,7 @@ import {useTranslation} from 'react-i18next';
 import {EditLayer} from './EditLayer';
 import {Link} from 'react-router-dom';
 import GraphSpaceCard from './Card';
+import {formatResourceLimit, formatComputeLimit, formatStorageLimit} from './storageUsage';
 import style from './index.module.scss';
 import * as api from '../../api/index';
 import {useAuthContext} from '../../auth/AuthContext';
@@ -47,10 +48,6 @@ import {getResourceDisplayName} from '../../utils/displayName';
 import {TopbarPageContextSlot} from '../../components/Topbar/PageContextSlot';
 
 const PAGE_ERROR_CONFIG = {suppressBusinessErrorToast: true};
-
-const showText = (val, suffix, unlimited, empty) => (
-    val > 99999 ? (empty === undefined ? unlimited : empty) : `${val}${suffix}`
-);
 
 const GraphSpaceRowAction = ({onAction, value, children}) => {
     const handleClick = useCallback(() => onAction(value), [onAction, value]);
@@ -183,13 +180,23 @@ const GraphSpace = () => {
         {
             title: t('graphspace.col.graph_service'),
             dataIndex: 'cpu_limit',
-            render: (_, row) => `${showText(row.cpu_limit, t('graphspace.unit.cpu'), t('graphspace.unit.unlimited'))}/${showText(row.memory_limit, t('graphspace.unit.memory'), t('graphspace.unit.unlimited'))}/${row.oltp_namespace}`,
+            render: (_, row) => [
+                formatResourceLimit(row.cpu_limit,
+                    t('graphspace.unit.cpu'), t('graphspace.unit.unlimited')),
+                formatResourceLimit(row.memory_limit,
+                    t('graphspace.unit.memory'), t('graphspace.unit.unlimited')),
+                row.oltp_namespace,
+            ].join('/'),
             ellipsis: true,
         },
         {
             title: t('graphspace.col.compute_task'),
             dataIndex: 'task',
-            render: (_, row) => `${showText(row.compute_cpu_limit, t('graphspace.unit.cpu'), t('graphspace.unit.unlimited'))}/${showText(row.compute_memory_limit, t('graphspace.unit.memory'), t('graphspace.unit.unlimited'))}/${row.olap_namespace}`,
+            render: (_, row) => [
+                formatComputeLimit(row.compute_cpu_limit, row.cpu_limit, t('graphspace.unit.cpu'), t),
+                formatComputeLimit(row.compute_memory_limit, row.memory_limit, t('graphspace.unit.memory'), t),
+                row.olap_namespace,
+            ].join('/'),
             ellipsis: true,
         },
         {
@@ -197,7 +204,7 @@ const GraphSpace = () => {
             dataIndex: 'storage_limit',
             width: 150,
             align: 'center',
-            render: val => showText(val, t('graphspace.unit.memory'), t('graphspace.unit.unlimited')),
+            render: val => formatStorageLimit(val, t('graphspace.unit.unlimited')),
         },
         {
             title: t('graphspace.col.operation'),
