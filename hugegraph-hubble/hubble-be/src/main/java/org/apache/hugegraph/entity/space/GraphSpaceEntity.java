@@ -25,11 +25,17 @@ import java.util.Map;
 
 import org.apache.hugegraph.structure.space.GraphSpace;
 import org.apache.hugegraph.util.JsonUtil;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GraphSpaceEntity extends GraphSpace {
+    @JsonIgnore
+    private boolean computeCpuLimitProvided;
+    @JsonIgnore
+    private boolean computeMemoryLimitProvided;
+
     @JsonProperty("graphspace_admin")
     public List<String> graphspaceAdmin = new ArrayList<>();
 
@@ -37,6 +43,33 @@ public class GraphSpaceEntity extends GraphSpace {
     public Map<String, Object> statistic = new HashMap<>();
 
     public GraphSpaceEntity() {
+    }
+
+    @Override
+    @JsonProperty("compute_cpu_limit")
+    public void setComputeCpuLimit(int value) {
+        super.setComputeCpuLimit(value);
+        this.computeCpuLimitProvided = true;
+    }
+
+    @Override
+    @JsonProperty("compute_memory_limit")
+    public void setComputeMemoryLimit(int value) {
+        super.setComputeMemoryLimit(value);
+        this.computeMemoryLimitProvided = true;
+    }
+
+    @Override
+    public Object convertReq() {
+        // Preserve omission so Server can apply update semantics atomically.
+        Map<?, ?> request = JsonUtil.fromJson(JsonUtil.toJson(super.convertReq()), Map.class);
+        if (!this.computeCpuLimitProvided) {
+            request.remove("compute_cpu_limit");
+        }
+        if (!this.computeMemoryLimitProvided) {
+            request.remove("compute_memory_limit");
+        }
+        return request;
     }
 
     public static GraphSpaceEntity fromGraphSpace(GraphSpace graphSpace) {

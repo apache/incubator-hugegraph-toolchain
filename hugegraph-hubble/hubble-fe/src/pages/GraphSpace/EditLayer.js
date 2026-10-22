@@ -32,6 +32,7 @@ import * as api from '../../api/index';
 import FormHelpLabel from '../../components/FormHelpLabel';
 import {isAuthEnabled} from '../../utils/config';
 import {getResourceAlias} from '../../utils/displayName';
+import {formatComputeLimit} from './storageUsage';
 
 const PAGE_ERROR_CONFIG = {suppressBusinessErrorToast: true};
 // Keep this validation aligned with Server GraphManager.checkNickname().
@@ -56,6 +57,10 @@ const EditLayer = ({visible, detail, onCancel, refresh}) => {
     const [loading, setLoading] = useState(false);
     const [existingAuth, setExistingAuth] = useState();
     const {t} = useTranslation();
+    const cpu = Form.useWatch('cpu_limit', form);
+    const memory = Form.useWatch('memory_limit', form);
+    const computeCpu = Form.useWatch('compute_cpu_limit', form);
+    const computeMemory = Form.useWatch('compute_memory_limit', form);
 
     const defaultValues = {
         description: '',
@@ -318,6 +323,9 @@ const EditLayer = ({visible, detail, onCancel, refresh}) => {
                     </Form.Item>
 
                     <Typography.Title level={5}>{t('graphspace.form.compute_task')}</Typography.Title>
+                    <Typography.Paragraph type='secondary'>
+                        {t('graphspace.form.compute_inheritance_help')}
+                    </Typography.Paragraph>
                     <MyFormItem
                         label={t('graphspace.form.cpu')}
                         help={t('graphspace.form.compute_cpu_help')}
@@ -325,14 +333,18 @@ const EditLayer = ({visible, detail, onCancel, refresh}) => {
                     >
                         <Form.Item
                             name="compute_cpu_limit"
+                            rules={[{type: 'number', min: 0, message: t('graphspace.form.compute_nonnegative')}]}
                             noStyle
                         >
                             <InputNumber
                                 placeholder={t('graphspace.form.cpu_placeholder')}
                                 precision={0}
-                                min={1}
+                                min={0}
                             />
                         </Form.Item>
+                        {computeCpu === 0 && <Typography.Text type='secondary'>
+                            {formatComputeLimit(0, cpu, t('graphspace.unit.cpu'), t)}
+                        </Typography.Text>}
                     </MyFormItem>
 
                     <MyFormItem
@@ -342,14 +354,18 @@ const EditLayer = ({visible, detail, onCancel, refresh}) => {
                     >
                         <Form.Item
                             name="compute_memory_limit"
+                            rules={[{type: 'number', min: 0, message: t('graphspace.form.compute_nonnegative')}]}
                             noStyle
                         >
                             <InputNumber
                                 placeholder={t('graphspace.form.memory_placeholder')}
                                 precision={0}
-                                min={1}
+                                min={0}
                             />
                         </Form.Item>
+                        {computeMemory === 0 && <Typography.Text type='secondary'>
+                            {formatComputeLimit(0, memory, t('graphspace.unit.memory'), t)}
+                        </Typography.Text>}
                     </MyFormItem>
 
                     <Form.Item

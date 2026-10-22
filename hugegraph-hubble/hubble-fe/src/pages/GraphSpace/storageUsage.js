@@ -44,3 +44,10 @@ export const storageUsagePercent = item => {
 export const formatResourceLimit = (value, suffix, unlimited, empty = unlimited) => (
     value === 2147483647 ? empty : `${value}${suffix}`
 );
+
+export const formatComputeLimit = (value, inheritedValue, suffix, t) => {
+    const effective = value === 0 ? inheritedValue : value;
+    const formatted = effective == null ? '--'
+        : formatResourceLimit(effective, suffix, t('graphspace.unit.unlimited'));
+    return value === 0 ? t('graphspace.unit.inherited', {value: formatted}) : formatted;
+};

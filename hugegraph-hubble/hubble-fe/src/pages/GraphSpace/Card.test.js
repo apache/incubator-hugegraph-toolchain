@@ -21,7 +21,8 @@ import userEvent from '@testing-library/user-event';
 import GraphSpaceCard from './Card';
 
 jest.mock('react-i18next', () => ({
-    useTranslation: () => ({t: key => key}),
+    useTranslation: () => ({t: (key, options) => key === 'graphspace.unit.inherited'
+        ? `Inherited (${options.value})` : key}),
 }));
 
 jest.mock('react-router-dom', () => {
@@ -247,4 +248,14 @@ test('keeps GraphSpace update and delete actions independently gated', async () 
     await userEvent.click(screen.getByRole('button', {name: 'common.action.more'}));
     expect(await screen.findByText('common.action.edit')).toBeInTheDocument();
     expect(screen.queryByText('common.action.delete')).not.toBeInTheDocument();
+});
+
+test('shows inherited compute resources with their current effective limits', () => {
+    render(<GraphSpaceCard item={{
+        name: 'inherited', cpu_limit: 4, memory_limit: 8,
+        compute_cpu_limit: 0, compute_memory_limit: 0,
+        storage_limit: 10240, storage_used_kb: 0,
+    }} />);
+    expect(screen.getByText(/Inherited \(4graphspace.unit.cpu\)/)).toBeInTheDocument();
+    expect(screen.getByText(/Inherited \(8graphspace.unit.memory\)/)).toBeInTheDocument();
 });

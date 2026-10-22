@@ -204,12 +204,10 @@ public class GraphSpaceController extends BaseController {
         if (graphSpaceEntity.getMemoryLimit() <= 0) {
             graphSpaceEntity.setMemoryLimit(DEFAULT_MEMORY_VALUE);
         }
-        if (graphSpaceEntity.getComputeCpuLimit() <= 0) {
-            graphSpaceEntity.setComputeCpuLimit(graphSpaceEntity.getCpuLimit());
-        }
-        if (graphSpaceEntity.getComputeMemoryLimit() <= 0) {
-            graphSpaceEntity.setComputeMemoryLimit(graphSpaceEntity.getMemoryLimit());
-        }
+        E.checkArgument(graphSpaceEntity.getComputeCpuLimit() >= 0,
+                        "compute_cpu_limit must be nonnegative; 0 inherits CPU");
+        E.checkArgument(graphSpaceEntity.getComputeMemoryLimit() >= 0,
+                        "compute_memory_limit must be nonnegative; 0 inherits memory");
         if (graphSpaceEntity.getStorageLimit() <= 0) {
             graphSpaceEntity.setStorageLimit(DEFAULT_STORAGE_VALUE);
         }

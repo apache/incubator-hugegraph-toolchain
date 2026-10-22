@@ -114,7 +114,8 @@
     "unit": {
       "cpu": "vCPU",
       "memory": "GB",
-      "unlimited": "Unlimited"
+      "unlimited": "Unlimited",
+      "inherited": "Inherited ({{value}})"
     },
     "form": {
       "title_edit": "Edit Graph Space",
@@ -154,15 +155,17 @@
       "max_graph_help": "The maximum number of graphs allowed in this GraphSpace. Defaults to 100",
       "graph_cpu_help": "CPU limit for graph read and write services. Defaults to 128 vCPU",
       "graph_memory_help": "Memory limit for graph read and write services. Defaults to 128 GB",
-      "compute_cpu_help": "CPU limit for asynchronous compute tasks. Defaults to 128 vCPU",
-      "compute_memory_help": "Memory limit for asynchronous compute tasks. Defaults to 128 GB",
+      "compute_cpu_help": "CPU limit for asynchronous compute tasks. The form defaults to 128 vCPU; 0 continuously inherits the graph-service CPU limit",
+      "compute_memory_help": "Memory limit for asynchronous compute tasks. The form defaults to 128 GB; 0 continuously inherits the graph-service memory limit",
       "oltp_namespace_help": "Kubernetes namespace for graph read and write services. Leave blank outside Kubernetes",
       "olap_namespace_help": "Kubernetes namespace for asynchronous compute tasks. Leave blank when compute tasks are not used",
       "storage_limit_help": "Storage capacity limit for this GraphSpace. Defaults to 10240 GB",
       "image_format_error": "Please enter a valid image address (e.g. example.com/org_1/xx_img:1.0.0)",
       "id_rule": "Start with a letter, lowercase letters/digits/underscore, max 48 chars",
       "name_rule": "Start with a letter or Chinese character; common symbols are allowed; max 48 characters",
-      "k8s_rule": "Start with a letter, lowercase letters/digits/hyphen, max 48 chars"
+      "k8s_rule": "Start with a letter, lowercase letters/digits/hyphen, max 48 chars",
+      "compute_inheritance_help": "Set 0 to keep inheriting the corresponding graph-service limit as it changes. Positive values stay independent. Saving preserves inheritance.",
+      "compute_nonnegative": "Use 0 to inherit or enter a positive limit"
     },
     "card": {
       "enter": "Enter Graph Space",
@@ -180,7 +183,8 @@
       "storage": "Max Storage: ",
       "used": "Used: ",
       "set_default": "Default Space",
-      "created": "created"
+      "created": "created",
+      "compute": "Compute:"
     }
   },
   "graph": {

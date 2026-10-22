@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import {formatResourceLimit, formatStorageUsed, storageUsagePercent} from './storageUsage';
+import {formatResourceLimit, formatStorageUsed, storageUsagePercent, formatComputeLimit} from './storageUsage';
 
 test.each([
     [1, '1 KB'],
@@ -58,4 +58,14 @@ test('uses legacy ratios when precise usage or a positive limit is unavailable',
     ]) {
         expect(storageUsagePercent(item)).toBe(25);
     }
+});
+
+test('compute zero continuously inherits the current graph-service limit', () => {
+    const t = (key, options) => key === 'graphspace.unit.inherited'
+        ? `Inherited (${options.value})` : 'Unlimited';
+    expect(formatComputeLimit(0, 4, ' vCPU', t)).toBe('Inherited (4 vCPU)');
+    expect(formatComputeLimit(0, 16, ' vCPU', t)).toBe('Inherited (16 vCPU)');
+    expect(formatComputeLimit(0, 8, ' GB', t)).toBe('Inherited (8 GB)');
+    expect(formatComputeLimit(6, 4, ' vCPU', t)).toBe('6 vCPU');
+    expect(formatComputeLimit(0, undefined, ' GB', t)).toBe('Inherited (--)');
 });

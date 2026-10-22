@@ -40,7 +40,7 @@ import {useTranslation} from 'react-i18next';
 import {EditLayer} from './EditLayer';
 import {Link} from 'react-router-dom';
 import GraphSpaceCard from './Card';
-import {formatResourceLimit} from './storageUsage';
+import {formatResourceLimit, formatComputeLimit} from './storageUsage';
 import style from './index.module.scss';
 import * as api from '../../api/index';
 import {useAuthContext} from '../../auth/AuthContext';
@@ -193,10 +193,8 @@ const GraphSpace = () => {
             title: t('graphspace.col.compute_task'),
             dataIndex: 'task',
             render: (_, row) => [
-                formatResourceLimit(row.compute_cpu_limit,
-                    t('graphspace.unit.cpu'), t('graphspace.unit.unlimited')),
-                formatResourceLimit(row.compute_memory_limit,
-                    t('graphspace.unit.memory'), t('graphspace.unit.unlimited')),
+                formatComputeLimit(row.compute_cpu_limit, row.cpu_limit, t('graphspace.unit.cpu'), t),
+                formatComputeLimit(row.compute_memory_limit, row.memory_limit, t('graphspace.unit.memory'), t),
                 row.olap_namespace,
             ].join('/'),
             ellipsis: true,

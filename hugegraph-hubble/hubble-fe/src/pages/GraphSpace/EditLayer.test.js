@@ -21,10 +21,14 @@ import {EditLayer} from './EditLayer';
 import * as api from '../../api';
 import {isAuthEnabled} from '../../utils/config';
 
-jest.mock('react-i18next', () => ({
-    initReactI18next: {type: '3rdParty', init: jest.fn()},
-    useTranslation: () => ({t: key => key}),
-}));
+jest.mock('react-i18next', () => {
+    const t = (key, options) => key === 'graphspace.unit.inherited'
+        ? `Inherited (${options.value})` : key;
+    return {
+        initReactI18next: {type: '3rdParty', init: jest.fn()},
+        useTranslation: () => ({t}),
+    };
+});
 
 jest.mock('../../api', () => ({
     auth: {getUserList: jest.fn()},
@@ -278,4 +282,36 @@ test('resource fields are optional and expose examples and field help', async ()
     fireEvent.click(screen.getByRole('button', {name: 'common.action.create'}));
     await waitFor(() => expect(api.manage.addGraphSpace).toHaveBeenCalled());
     expect(api.manage.addGraphSpace.mock.calls[0][0].cpu_limit).toBe(4);
+});
+
+test('editing CPU keeps raw zero compute limits and updates inherited effective values', async () => {
+    api.manage.getGraphSpace.mockResolvedValue({status: 200, data: {
+        name: 'inherited', auth: false, cpu_limit: 4, memory_limit: 8,
+        compute_cpu_limit: 0, compute_memory_limit: 0,
+    }});
+    render(<EditLayer visible detail={{name: 'inherited'}} onCancel={jest.fn()} refresh={jest.fn()} />);
+    await waitFor(() => expect(document.querySelector('#control-hooks_compute_cpu_limit')).toHaveValue('0'));
+    expect(document.querySelector('#control-hooks_compute_memory_limit')).toHaveValue('0');
+    expect(await screen.findByText('Inherited (4graphspace.unit.cpu)')).toBeInTheDocument();
+    fireEvent.change(document.querySelector('#control-hooks_cpu_limit'), {target: {value: '16'}});
+    expect(await screen.findByText('Inherited (16graphspace.unit.cpu)')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', {name: 'common.action.save'}));
+    await waitFor(() => expect(api.manage.updateGraphSpace).toHaveBeenCalled());
+    expect(api.manage.updateGraphSpace.mock.calls[0][1]).toMatchObject({
+        cpu_limit: 16, memory_limit: 8, compute_cpu_limit: 0, compute_memory_limit: 0,
+    });
+});
+
+test('creation can explicitly select zero compute inheritance without changing form defaults', async () => {
+    render(<EditLayer visible detail={{}} onCancel={jest.fn()} refresh={jest.fn()} />);
+    fireEvent.change(screen.getByPlaceholderText('graphspace.form.id_placeholder'), {
+        target: {value: 'inherit_new'},
+    });
+    fireEvent.change(document.querySelector('#control-hooks_compute_cpu_limit'), {target: {value: '0'}});
+    fireEvent.change(document.querySelector('#control-hooks_compute_memory_limit'), {target: {value: '0'}});
+    fireEvent.click(screen.getByRole('button', {name: 'common.action.create'}));
+    await waitFor(() => expect(api.manage.addGraphSpace).toHaveBeenCalled());
+    expect(api.manage.addGraphSpace.mock.calls[0][0]).toMatchObject({
+        cpu_limit: 128, memory_limit: 128, compute_cpu_limit: 0, compute_memory_limit: 0,
+    });
 });

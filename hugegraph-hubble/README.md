@@ -15,10 +15,18 @@ role limit to 100. Existing spaces retain their configured limits. Large finite
 quotas display their actual values; only the legacy `Integer.MAX_VALUE` sentinel
 is shown as unlimited.
 
-For API requests that omit compute CPU or memory, each omitted limit inherits
-the request's CPU or memory limit, defaulting to 128 when both are omitted.
-Explicit compute limits are preserved. The creation form starts all four fields
-at 128 and submits the values shown in the form.
+For API creation requests, omitted compute limits use Server's persisted `0`
+inheritance setting. Each zero continues following the corresponding graph-service
+CPU or memory limit when that limit changes; positive compute limits stay fixed.
+All-omitted requests therefore have effective compute limits of 128/128. On API
+updates, omitted compute fields stay omitted through the Java client, so Server
+preserves their existing setting atomically. Explicit zero restores inheritance.
+Existing positive settings are not migrated.
+
+Cards and tables label zero compute limits as `Inherited (current effective limit)`.
+The editor accepts zero, shows its effective limit, and preserves zero when only
+graph-service CPU or memory changes. The creation form still starts all four
+fields at an explicit 128 and submits the values shown in the form.
 
 With a Server that supplies `storage_used_kb`, cards show approximate usage in
 KB, MB or GB, including amounts below one GB. The Java client and Hubble preserve
@@ -33,6 +41,9 @@ and anonymous modes. They illustrate the display and capability visibility, not
 live cluster acceptance. Chrome interactions cover login/non-auth mode, account
 visibility, creation defaults, and switching `ecommerce/orders` → `DEFAULT/people`
 → `ecommerce/orders` through the header selectors, then returning to the usage cards.
+They also exercise editing an inherited space: changing CPU from 4 to 16 keeps
+both compute fields at raw zero in the saved request and updates the displayed
+effective CPU limit to 16.
 This UI selects GraphSpace/graph context within one deployment connection; it has
 no Server connection selector. The deployment uses `server.direct_url` or PD
 discovery. Switching real Server deployments and validating Store/PD refreshes
@@ -42,6 +53,7 @@ remain unverified because no live cluster is configured in this test environment
 ![Anonymous graph-space usage](docs/assets/graphspace-usage-anonymous.png)
 ![Authenticated graph context after switching](docs/assets/graphspace-context-authenticated.png)
 ![Anonymous graph context after switching](docs/assets/graphspace-context-anonymous.png)
+![Editing inherited compute limits](docs/assets/graphspace-inherited-compute.png)
 
 ## Product Tour
 
