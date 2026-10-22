@@ -17,6 +17,7 @@
 
 package org.apache.hugegraph.unit;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -131,17 +132,143 @@ public class GraphsServiceDefaultTest {
         Mockito.when(this.graphs.listProfile(""))
                .thenReturn(Collections.singletonList(graph));
 
-        IPage<Map<String, Object>> result = service.queryBriefPage(
-                this.client, "space", "", "", 1, -1);
+        Map<String, Object> result = service.queryBriefPage(
+                this.client, "space", "", "", 1, 100, "graph");
 
-        Assert.assertEquals(1L, result.getTotal());
-        Assert.assertEquals("Graph", result.getRecords().get(0).get("nickname"));
-        Assert.assertEquals(2, result.getRecords().get(0).size());
+        Assert.assertEquals(1L, result.get("total"));
+        Assert.assertEquals("Graph", briefRecords(result).get(0).get("nickname"));
+        Assert.assertEquals(2, briefRecords(result).get(0).size());
+        Assert.assertEquals(briefRecords(result).get(0), result.get("selected"));
+        Assert.assertFalse(graph.containsKey("statistic"));
+        Assert.assertFalse(graph.containsKey("status"));
         Mockito.verify(service, Mockito.never())
                .evCount(Mockito.any(), Mockito.anyString(), Mockito.anyString());
         Mockito.verifyNoInteractions(schema);
         Mockito.verify(this.client, Mockito.never())
                .assignGraph(Mockito.anyString(), Mockito.anyString());
+    }
+
+    @Test
+    public void testBriefGraphListPagesAboveTenThousandWithoutLosingTheSelectedGraph() {
+        GraphsService service = Mockito.spy(this.service);
+        SchemaService schema = Mockito.mock(SchemaService.class);
+        ReflectionTestUtils.setField(service, "schemaService", schema);
+        List<Map<String, Object>> authorized = new ArrayList<>();
+        for (int index = 10000; index >= 0; index--) {
+            Map<String, Object> graph = profile(String.format("graph_%05d", index), false);
+            graph.put("nickname", "Alias " + index);
+            graph.put("pd.peers", "private");
+            authorized.add(graph);
+        }
+        Mockito.when(this.graphs.listProfile("")).thenReturn(authorized);
+
+        Map<String, Object> first = service.queryBriefPage(
+                this.client, "space", "", "", 1, 100, "graph_10000");
+
+        Assert.assertEquals(10001L, first.get("total"));
+        Assert.assertEquals(100, briefRecords(first).size());
+        for (int index = 0; index < 100; index++) {
+            Map<String, Object> graph = briefRecords(first).get(index);
+            Assert.assertEquals(String.format("graph_%05d", index), graph.get("name"));
+            Assert.assertEquals("Alias " + index, graph.get("nickname"));
+            Assert.assertEquals(2, graph.size());
+        }
+        Map<?, ?> selected = (Map<?, ?>) first.get("selected");
+        Assert.assertEquals("graph_10000", selected.get("name"));
+        Assert.assertEquals("Alias 10000", selected.get("nickname"));
+        Assert.assertEquals(2, selected.size());
+        Mockito.verify(this.graphs).listProfile("");
+
+        Map<String, Object> last = service.queryBriefPage(
+                this.client, "space", "", "", 101, 100, "graph_00000");
+
+        Assert.assertEquals(1, briefRecords(last).size());
+        Assert.assertEquals("graph_10000", briefRecords(last).get(0).get("name"));
+        Assert.assertEquals("graph_00000", ((Map<?, ?>) last.get("selected")).get("name"));
+        Assert.assertTrue(authorized.stream().noneMatch(info -> info.containsKey("statistic") ||
+                                                              info.containsKey("status")));
+        Mockito.verify(this.graphs, Mockito.times(2)).listProfile("");
+        Mockito.verifyNoMoreInteractions(this.graphs);
+        Mockito.verify(service, Mockito.never())
+               .evCount(Mockito.any(), Mockito.anyString(), Mockito.anyString());
+        Mockito.verifyNoInteractions(schema);
+        Mockito.verify(this.client, Mockito.never())
+               .assignGraph(Mockito.anyString(), Mockito.anyString());
+    }
+
+    @Test
+    public void testBriefGraphSearchFindsAliasesOutsideTheFirstPageAndRetainsSelection() {
+        Map<String, Object> selected = profile("first", false);
+        selected.put("nickname", "Current graph");
+        Map<String, Object> later = profile("last", false);
+        later.put("nickname", "Late Needle Alias");
+        Mockito.when(this.graphs.listProfile("")).thenReturn(Arrays.asList(selected, later));
+
+        Map<String, Object> result = this.service.queryBriefPage(
+                this.client, "space", "needle", "", 1, 1, "first");
+
+        Assert.assertEquals(1L, result.get("total"));
+        Assert.assertEquals("last", briefRecords(result).get(0).get("name"));
+        Assert.assertEquals("first", ((Map<?, ?>) result.get("selected")).get("name"));
+        Assert.assertEquals(2, ((Map<?, ?>) result.get("selected")).size());
+        Mockito.verify(this.graphs).listProfile("");
+        Mockito.verifyNoMoreInteractions(this.graphs);
+    }
+
+    @Test
+    public void testBriefDefaultGraphPagesHaveStableNameTieBreaks() {
+        Map<String, Object> first = profile("default_a", true);
+        Map<String, Object> second = profile("default_b", true);
+        first.put("default_update_time", "2026-10-22 10:00:00");
+        second.put("default_update_time", "2026-10-22 10:00:00");
+        Mockito.when(this.graphs.listProfile(""))
+               .thenReturn(Arrays.asList(second, first), Arrays.asList(first, second));
+
+        Map<String, Object> pageOne = this.service.queryBriefPage(
+                this.client, "space", "", "", 1, 1, "");
+        Map<String, Object> pageTwo = this.service.queryBriefPage(
+                this.client, "space", "", "", 2, 1, "");
+
+        Assert.assertEquals("default_a", briefRecords(pageOne).get(0).get("name"));
+        Assert.assertEquals("default_b", briefRecords(pageTwo).get(0).get("name"));
+        Mockito.verify(this.graphs, Mockito.times(2)).listProfile("");
+        Mockito.verifyNoMoreInteractions(this.graphs);
+    }
+
+    @Test
+    public void testBriefGraphListDoesNotInventAnUnavailableSelection() {
+        Mockito.when(this.graphs.listProfile(""))
+               .thenReturn(Collections.singletonList(profile("visible", false)));
+
+        Map<String, Object> result = this.service.queryBriefPage(
+                this.client, "space", "", "", 1, 100, "private");
+
+        Assert.assertNull(result.get("selected"));
+        Assert.assertEquals("visible", briefRecords(result).get(0).get("name"));
+        Mockito.verify(this.graphs).listProfile("");
+        Mockito.verifyNoMoreInteractions(this.graphs);
+    }
+
+    @Test
+    public void testBriefGraphListDoesNotFallBackAfterForbiddenResponse() {
+        ServerException forbidden = new ServerException("forbidden");
+        forbidden.status(403);
+        Mockito.when(this.graphs.listProfile("")).thenThrow(forbidden);
+
+        try {
+            this.service.queryBriefPage(this.client, "space", "", "", 1, 100, "private");
+            Assert.fail("Expected forbidden response");
+        } catch (ServerException actual) {
+            Assert.assertSame(forbidden, actual);
+        }
+
+        Mockito.verify(this.graphs).listProfile("");
+        Mockito.verifyNoMoreInteractions(this.graphs);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> briefRecords(Map<String, Object> page) {
+        return (List<Map<String, Object>>) page.get("records");
     }
 
     private static Map<String, Object> profile(String name, boolean isDefault) {

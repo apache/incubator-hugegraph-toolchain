@@ -132,7 +132,7 @@ it.each(['button', 'shortcut'])(
         );
         await waitFor(() => expect(api.manage.getGraphList).toHaveBeenCalled());
         expect(api.manage.getGraphList).toHaveBeenCalledWith(
-            'DEFAULT', {brief: true, page_no: 1, page_size: -1}, {suppressBusinessErrorToast: true}
+            'DEFAULT', expect.objectContaining({brief: true, page_no: 1, page_size: 100}), {suppressBusinessErrorToast: true}
         );
         const run = () => screen.getByRole('button', {name: 'analysis.query.execute_query'});
         expect(run()).toBeDisabled();

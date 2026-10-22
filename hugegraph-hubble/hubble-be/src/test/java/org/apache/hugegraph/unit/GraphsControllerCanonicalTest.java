@@ -155,7 +155,23 @@ public class GraphsControllerCanonicalTest {
                 .andExpect(status().isOk());
 
         Mockito.verify(this.graphsService)
-               .queryBriefPage(this.client, "DEFAULT", "", "", 1, -1);
+               .queryBriefPage(this.client, "DEFAULT", "", "", 1, 100, "");
+        Mockito.verifyNoMoreInteractions(this.graphsService);
+    }
+
+    @Test
+    public void testBriefListForwardsPageSearchAndOffPageSelection() throws Exception {
+        this.mvc.perform(get("/api/v1.3/graphspaces/DEFAULT/graphs")
+                         .param("brief", "true")
+                         .param("query", "alias")
+                         .param("page_no", "2")
+                         .param("page_size", "10")
+                         .param("selected", "late_graph")
+                         .with(this.withClient))
+                .andExpect(status().isOk());
+
+        Mockito.verify(this.graphsService)
+               .queryBriefPage(this.client, "DEFAULT", "alias", "", 2, 10, "late_graph");
         Mockito.verifyNoMoreInteractions(this.graphsService);
     }
 

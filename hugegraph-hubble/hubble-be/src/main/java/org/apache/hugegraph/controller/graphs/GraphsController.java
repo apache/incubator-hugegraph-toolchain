@@ -181,10 +181,11 @@ public class GraphsController extends BaseController {
             @RequestParam(name = "query", defaultValue = "") String query,
             @RequestParam(name = "create_time", defaultValue = "") String createTime,
             @RequestParam(name = "page_no", defaultValue = "1") int pageNo,
-            @RequestParam(name = "page_size", defaultValue = "-1") int pageSize) {
+            @RequestParam(name = "page_size", defaultValue = "100") int pageSize,
+            @RequestParam(name = "selected", defaultValue = "") String selected) {
         return this.graphsService.queryBriefPage(
                 this.authClient(graphspace, null), graphspace,
-                query, createTime, pageNo, pageSize);
+                query, createTime, pageNo, pageSize, selected);
     }
 
     @GetMapping

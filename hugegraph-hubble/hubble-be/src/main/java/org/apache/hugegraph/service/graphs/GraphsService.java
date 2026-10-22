@@ -156,26 +156,64 @@ public class GraphsService {
                 pageNo, pageSize);
     }
 
-    public IPage<Map<String, Object>> queryBriefPage(
+    public Map<String, Object> queryBriefPage(
             HugeClient client, String graphSpace, String query,
-            String createTime, int pageNo, int pageSize) {
-        List<Map<String, Object>> graphs = sortedGraphsMetadata(
-                client, graphSpace, query, createTime,
-                false, Collections.emptyMap());
-        if (pageSize == -1 && graphs.size() > PageUtil.HARD_CAP) {
-            throw new IllegalArgumentException(
-                      "Graph list exceeds the maximum all-record limit of " +
-                      PageUtil.HARD_CAP);
+            String createTime, int pageNo, int pageSize, String selected) {
+        PageUtil.checkPositivePage(pageNo, pageSize);
+        // The upstream SDK has no profile cursor. Read authorized profiles once,
+        // without decorating every graph or fetching the selected graph again.
+        List<Map<String, Object>> profiles = listGraphProfiles(client.graphs(), "").stream()
+                .filter(info -> info.get("create_time") == null ||
+                                info.get("create_time").toString()
+                                    .compareTo(StringUtils.defaultString(createTime)) > 0)
+                .collect(Collectors.toList());
+        Map<String, Object> selectedGraph = profiles.stream()
+                .filter(info -> info.get("name").equals(selected))
+                .findFirst().map(GraphsService::briefGraph).orElse(null);
+        String search = StringUtils.defaultString(query);
+        List<Map<String, Object>> matching = profiles.stream()
+                .filter(info -> StringUtils.containsIgnoreCase(info.get("name").toString(), search) ||
+                                StringUtils.containsIgnoreCase((String) info.get("nickname"), search))
+                .sorted(GraphsService::compareGraphs)
+                .collect(Collectors.toList());
+        IPage<Map<String, Object>> page = PageUtil.page(matching, pageNo, pageSize);
+        Map<String, Object> result = new HashMap<>();
+        result.put("records", page.getRecords().stream().map(GraphsService::briefGraph)
+                                  .collect(Collectors.toList()));
+        result.put("total", page.getTotal());
+        result.put("current", page.getCurrent());
+        result.put("size", page.getSize());
+        result.put("pages", page.getPages());
+        result.put("selected", selectedGraph);
+        return result;
+    }
+
+    private static Map<String, Object> briefGraph(Map<String, Object> source) {
+        Map<String, Object> brief = new HashMap<>();
+        brief.put("name", source.get("name"));
+        Object nickname = source.get("nickname");
+        brief.put("nickname", nickname == null ? source.get("name") : nickname);
+        return brief;
+    }
+
+    private static int compareGraphs(Map<String, Object> first,
+                                     Map<String, Object> second) {
+        boolean firstDefault = Boolean.TRUE.equals(first.get("default"));
+        boolean secondDefault = Boolean.TRUE.equals(second.get("default"));
+        if (firstDefault != secondDefault) {
+            return Boolean.compare(secondDefault, firstDefault);
         }
-        IPage<Map<String, Object>> page = PageUtil.page(graphs, pageNo, pageSize);
-        page.setRecords(page.getRecords().stream().map(source -> {
-            Map<String, Object> brief = new HashMap<>();
-            brief.put("name", source.get("name"));
-            Object nickname = source.get("nickname");
-            brief.put("nickname", nickname == null ? source.get("name") : nickname);
-            return brief;
-        }).collect(Collectors.toList()));
-        return page;
+        if (firstDefault) {
+            Object firstTime = first.get("default_update_time");
+            Object secondTime = second.get("default_update_time");
+            if (firstTime instanceof Long && secondTime instanceof Long) {
+                int order = ((Long) firstTime).compareTo((Long) secondTime);
+                if (order != 0) {
+                    return order;
+                }
+            }
+        }
+        return first.get("name").toString().compareTo(second.get("name").toString());
     }
 
     public List<Map<String, Object>> sortedGraphsProfile(HugeClient client,
@@ -235,27 +273,7 @@ public class GraphsService {
                           return createTimeVal.toString()
                                              .compareTo(createTime) > 0;
                       })
-                      .sorted((graph1, graph2) -> {
-                          Object d1 = graph1.get("default");
-                          Object d2 = graph2.get("default");
-                          boolean default1 = d1 instanceof Boolean && (boolean) d1;
-                          boolean default2 = d2 instanceof Boolean && (boolean) d2;
-
-                          if (default1 != default2) {
-                              return Boolean.compare(default2, default1);
-                          } else if (default1) {
-                              Object t1 = graph1.get("default_update_time");
-                              Object t2 = graph2.get("default_update_time");
-                              if (t1 instanceof Long && t2 instanceof Long) {
-                                  return ((Long) t1).compareTo((Long) t2);
-                              }
-                              return 0;
-                          } else {
-                              String name1 = graph1.get("name").toString();
-                              String name2 = graph2.get("name").toString();
-                              return name1.compareTo(name2);
-                          }
-                      })
+                      .sorted(GraphsService::compareGraphs)
                       .collect(Collectors.toList());
         return results;
 

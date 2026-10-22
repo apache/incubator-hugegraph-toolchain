@@ -103,7 +103,7 @@ it('uses route context and brief authorized graph metadata without enumerating a
         'A', expect.objectContaining({name: 'graph-b'})
     ));
     expect(api.manage.getGraphList).toHaveBeenCalledWith(
-        'A', {brief: true, page_no: 1, page_size: -1}, {suppressBusinessErrorToast: true}
+        'A', expect.objectContaining({brief: true, page_no: 1, page_size: 100}), {suppressBusinessErrorToast: true}
     );
     expect(api.analysis.getGraphSpaceList).not.toHaveBeenCalled();
     expect(api.manage.getGraph).not.toHaveBeenCalled();
@@ -391,7 +391,7 @@ it('ignores a late graph response after the route switches GraphSpace', async ()
 
     const view = renderTopBar();
     await waitFor(() => expect(api.manage.getGraphList).toHaveBeenCalledWith(
-        'A', {brief: true, page_no: 1, page_size: -1}, expect.any(Object)
+        'A', expect.objectContaining({brief: true, page_no: 1, page_size: 100}), expect.any(Object)
     ));
 
     Object.assign(mockParams, {graphSpace: 'B'});
@@ -409,7 +409,7 @@ it('ignores a late graph response after the route switches GraphSpace', async ()
         </GraphAnalysisContext.Provider>
     );
     await waitFor(() => expect(api.manage.getGraphList).toHaveBeenCalledWith(
-        'B', {brief: true, page_no: 1, page_size: -1}, expect.any(Object)
+        'B', expect.objectContaining({brief: true, page_no: 1, page_size: 100}), expect.any(Object)
     ));
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith(
         '/gremlin/B/graph-b', {replace: true}
@@ -474,3 +474,23 @@ it.each(['gremlin', 'algorithms', 'asyncTasks'])(
         );
     }
 );
+
+
+it('resolves a route-selected late-page graph from the same bounded response', async () => {
+    Object.assign(mockParams, {graphSpace: 'A', graph: 'graph_10000'});
+    const selected = {name: 'graph_10000', nickname: 'Late graph'};
+    api.manage.getGraphList.mockResolvedValue({
+        status: 200,
+        data: {records: [{name: 'graph_00000'}], total: 10001, selected},
+    });
+    const onGraphInfoChange = jest.fn();
+
+    renderTopBar({isVermeer: false}, {onGraphInfoChange});
+
+    await waitFor(() => expect(onGraphInfoChange).toHaveBeenCalledWith('A', selected));
+    expect(api.manage.getGraphList).toHaveBeenCalledTimes(1);
+    expect(api.manage.getGraphList).toHaveBeenCalledWith('A', {
+        brief: true, page_no: 1, page_size: 100, query: '', selected: 'graph_10000',
+    }, expect.any(Object));
+    expect(mockNavigate).not.toHaveBeenCalled();
+});

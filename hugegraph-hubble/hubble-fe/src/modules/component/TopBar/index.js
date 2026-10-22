@@ -31,6 +31,7 @@ import {useNavigate, useParams} from 'react-router-dom';
 import {useTranslation} from 'react-i18next';
 import _ from 'lodash';
 import c from './index.module.scss';
+import {loadGraphOptions} from '../../../utils/graphOptions';
 
 const {
     LOADED,
@@ -143,20 +144,13 @@ const TopBar = props => {
             setGraphLoading(true);
             setGraphError(false);
             try {
-                const response = await api.manage.getGraphList(
-                    currentGraphSpace, {brief: true, page_no: 1, page_size: -1}, INLINE_ERROR_CONFIG
+                const options = await loadGraphOptions(
+                    currentGraphSpace, {selected: graphFromParam}, INLINE_ERROR_CONFIG
                 );
                 if (graphRequest.current !== request) {
                     return;
                 }
-                const {status, data} = response || {};
-                if (status !== 200 || !Array.isArray(data?.records)) {
-                    throw new Error('graphs unavailable');
-                }
-                const graphs = data.records;
-                let graph = graphFromParam
-                    ? _.find(graphs, {name: graphFromParam})
-                    : graphs[0];
+                let graph = graphFromParam ? options.selected : options.records[0];
                 if (graphFromParam && !graph) {
                     throw new Error('selected graph unavailable');
                 }
