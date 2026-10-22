@@ -155,6 +155,10 @@ public class VermeerService {
         client.vermeer().deleteGraphByName(convert2VG(graphspace, graph));
     }
 
+    public void cleanupDirectGraph(HugeClient client) {
+        this.direct.deleteGraphIfPresent(client);
+    }
+
     public String convert2VG(String space, String graph) {
         return space + "-" + graph;
     }

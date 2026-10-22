@@ -288,20 +288,26 @@ def smoke():
                 {'backend': 'hstore', 'serializer': 'binary', 'store': GRAPH_NAME,
                  'pd.peers': '127.0.0.1:8686'})
     server = graphs + '/' + GRAPH_NAME
-    labels = request(server + '/schema/vertexlabels')['vertexlabels']
-    if not any(label['name'] == 'vermeer_demo' for label in labels):
+    properties = request(server + '/schema/propertykeys')['propertykeys']
+    if not any(prop['name'] == 'demo_name' for prop in properties):
         request(server + '/schema/propertykeys', 'POST',
                 {'name': 'demo_name', 'data_type': 'TEXT', 'cardinality': 'SINGLE'})
+    labels = request(server + '/schema/vertexlabels')['vertexlabels']
+    if not any(label['name'] == 'vermeer_demo' for label in labels):
         request(server + '/schema/vertexlabels', 'POST',
                 {'name': 'vermeer_demo', 'id_strategy': 'CUSTOMIZE_STRING', 'properties': ['demo_name']})
+    edges = request(server + '/schema/edgelabels')['edgelabels']
+    if not any(label['name'] == 'vermeer_link' for label in edges):
         request(server + '/schema/edgelabels', 'POST',
                 {'name': 'vermeer_link', 'source_label': 'vermeer_demo', 'target_label': 'vermeer_demo'})
-        for i in range(1, 7):
-            request(server + '/graph/vertices', 'POST',
-                    {'id': f'demo{i}', 'label': 'vermeer_demo', 'properties': {'demo_name': str(i)}})
-        for a, b in [(1, 2), (2, 3), (3, 1), (3, 4), (4, 5), (5, 6), (6, 4)]:
-            request(server + '/graph/edges', 'POST', {'label': 'vermeer_link', 'outV': f'demo{a}',
-                    'inV': f'demo{b}', 'outVLabel': 'vermeer_demo', 'inVLabel': 'vermeer_demo', 'properties': {}})
+    # Fixed vertex IDs and SINGLE edges upsert this fixture on every run, so an
+    # interrupted seed is repaired even when the Schema was already created.
+    for i in range(1, 7):
+        request(server + '/graph/vertices', 'POST',
+                {'id': f'demo{i}', 'label': 'vermeer_demo', 'properties': {'demo_name': str(i)}})
+    for a, b in [(1, 2), (2, 3), (3, 1), (3, 4), (4, 5), (5, 6), (6, 4)]:
+        request(server + '/graph/edges', 'POST', {'label': 'vermeer_link', 'outV': f'demo{a}',
+                'inV': f'demo{b}', 'outVLabel': 'vermeer_demo', 'inVLabel': 'vermeer_demo', 'properties': {}})
     loaded = request(API + '/vermeer/task', 'POST',
                      {'graphspace': 'DEFAULT', 'graph': GRAPH_NAME, 'task_type': 'reload'}, hubble=True)
     wait_task(loaded['task_id'])

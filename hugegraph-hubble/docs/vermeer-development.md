@@ -91,6 +91,9 @@ positive. Server task IDs retain their original meaning. All direct task and
 result operations check the selected graph. Because raw Store scans bypass
 Server's per-label permissions, authenticated direct access requires a HugeGraph
 super administrator; anonymous mode follows the Server's anonymous graph access.
+With direct integration configured, source graph deletion first checks and removes
+its Vermeer copy under the same administrator requirement. Missing permission or
+failed cleanup stops source deletion, even when compute capability is unavailable.
 
 The Hubble direct adapter supports the nine algorithms shown by its Vermeer
 forms. Results are queried through the task API and are not written back to

@@ -255,9 +255,12 @@ public class GraphsController extends BaseController {
                                defaultValue = "I'm sure to drop the graph")
                                String message) {
 
-        Map<String, String> vermeer = getVermeerGraph(graphspace, graph);
-        if (!vermeer.isEmpty()) {
-            HugeClient client = this.authClient(graphspace, graph);
+        HugeClient client = this.authClient(graphspace, graph);
+        if (this.vermeerService.directConfigured()) {
+            // Failure (including missing caller permission) must stop source
+            // deletion rather than leave a retained Vermeer copy behind.
+            this.vermeerService.cleanupDirectGraph(client);
+        } else if (!getVermeerGraph(graphspace, graph).isEmpty()) {
             try {
                 vermeerService.deleteGraph(client, graphspace, graph);
             } catch (Exception e) {
@@ -270,8 +273,7 @@ public class GraphsController extends BaseController {
             }
         }
 
-        this.graphsService.delete(this.authClient(graphspace, graph), graph,
-                                  message);
+        this.graphsService.delete(client, graph, message);
 
         // Clean Local DB Data
         executeHistoryService.deleteByGraph(graphspace, graph);

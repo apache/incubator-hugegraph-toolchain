@@ -84,6 +84,7 @@ import org.junit.runners.Suite;
     GraphSpaceUserServiceTest.class,
     StandaloneAccountPermissionServiceTest.class,
     GraphsControllerCanonicalTest.class,
+    GraphsVermeerDeletionTest.class,
     GremlinUtilTest.class,
     ReadOnlyGremlinTest.class,
     ReadOnlyCypherTest.class,

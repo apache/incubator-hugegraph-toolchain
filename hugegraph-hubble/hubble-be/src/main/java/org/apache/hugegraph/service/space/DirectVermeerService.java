@@ -209,6 +209,19 @@ public class DirectVermeerService {
 
     public void deleteGraph(HugeClient client) {
         authorize(client);
+        this.unloadGraph(client);
+    }
+
+    public void deleteGraphIfPresent(HugeClient client) {
+        // Source deletion must not depend on interactive compute availability.
+        // Keep the same authorization before using the shared service identity.
+        authorize(client);
+        if (this.graph(client.getGraphSpaceName(), client.getGraphName()).containsKey("graph")) {
+            this.unloadGraph(client);
+        }
+    }
+
+    private void unloadGraph(HugeClient client) {
         this.backend.request("DELETE", "graphs/" +
                 URLEncoder.encode(name(client), StandardCharsets.UTF_8), null);
     }
