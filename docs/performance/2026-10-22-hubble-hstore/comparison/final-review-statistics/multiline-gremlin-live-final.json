@@ -1,0 +1,19 @@
+{
+  "performance_sample": false,
+  "records": [
+    {
+      "query": "g.V().where(\n __.out()\n).out()",
+      "rows": 300,
+      "http_status": 200,
+      "default_limit_applied": true,
+      "result_truncated": false
+    },
+    {
+      "query": "g.V().where(\n __.out()\n).out().limit(12000)",
+      "rows": 1000,
+      "http_status": 200,
+      "default_limit_applied": false,
+      "result_truncated": true
+    }
+  ]
+}

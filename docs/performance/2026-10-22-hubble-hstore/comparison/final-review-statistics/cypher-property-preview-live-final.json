@@ -1,0 +1,26 @@
+{
+  "performance_sample": false,
+  "query": "MATCH (n) WHERE id(n) = 9007199254740995 RETURN n.payload AS payload LIMIT 1",
+  "before": {
+    "http_status": 200,
+    "status": 200,
+    "response_bytes": 2097713,
+    "properties_truncated": false,
+    "property_preview_limit": 0,
+    "maximum_view_string_length": 1048576
+  },
+  "note": "single live functional before/after comparison, not a latency benchmark",
+  "after": {
+    "http_status": 200,
+    "status": 200,
+    "response_bytes": 1135,
+    "properties_truncated": true,
+    "property_preview_limit": 256,
+    "maximum_view_string_length": 285
+  },
+  "raw_after": {
+    "property_length": 1048576,
+    "sha256_matches_original_fixture": true,
+    "properties_truncated": false
+  }
+}

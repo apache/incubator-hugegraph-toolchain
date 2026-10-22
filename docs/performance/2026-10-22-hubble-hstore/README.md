@@ -10,6 +10,8 @@
 
 ## 环境、构建与测试口径
 
+同步Cypher的[实际Chrome验收](comparison/final-review-statistics/final-cypher-browser-check.json)确认请求携带预览标记，合成1MiB属性在页面显示截断提示，响应1135字节且页面异常为0，见[页面截图](screenshots/comparison/cypher-preview-browser.png)。截图中的API Key字段为空，属性片段为专门生成的测试数据；该查询未调用模型服务。
+
 - 本机进程部署：1 PD + 1 Store + 1 Server（hstore 后端）+ 1 Hubble，单副本；没有使用 Docker 镜像或 Helm。
 - cgroup 配额：4 vCPU、16 GiB RAM；Java 17.0.20.1。堆上限：PD 1 GiB、Store 2 GiB、Server/Hubble 各 3 GiB。
 - Toolchain/Hubble：`37ea0b61d606abc0dc859b8a121815906df3c0aa`；Server/PD/Store 1.8.0：`86c05ef9c5d417bd37eab21d4ecd5af82bab17ef`。

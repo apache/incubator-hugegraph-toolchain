@@ -39,6 +39,14 @@
 
 这些均是后续功能验收，不是性能对照。此前186项后端、18组401项前端仍是原影响组记录；本轮55项与前述156项前端、17项后端定向结果分别记录，不混算为全量总数，也不改写历史benchmark。
 
+## 多行Gremlin与Cypher预览的后续验收
+
+[#79](https://github.com/hugegraph/hugegraph-toolchain/pull/79)后续评论修复了语句拆分的分隔符深度，格式化多行Gremlin不再被误拆；前端允许终结的小型全局`range`同步执行，Cypher非字面量`LIMIT`引导异步而不求值。同步Cypher与生成Cypher复用既有同一属性投影和三视图管线。
+
+本轮集成定向后端**118项**、前端**3组/174项**及生产构建通过；解析器专项31项通过，反证旧splitter时27项中新增2项失败。它们与此前186项后端、18组401项前端及55/156/17项后续定向结果分别记录，不累加为全量总数。
+
+[真实多行hstore查询](comparison/final-review-statistics/multiline-gremlin-live-final.json)验证默认300行及显式大结果预览1000行均通过。[同一1MiB Cypher标量](comparison/final-review-statistics/cypher-property-preview-live-final.json)单次功能对照的响应由2097713字节降至1135字节；原始读取仍为1048576字符，SHA与原夹具一致。该体积对照不是延迟benchmark；Cypher SDK仍先完整物化结果，不能据此宣称上游硬限制已完成。复杂或未知Map键仍直接省略并保留不完整标志。
+
 ## 后端、浏览器及脚本
 
 - 查询/投影：55项专项全部通过、Checkstyle0；最终逐行mapper/局部scope小修单独20项通过（有重叠，不累加）。异常/历史19项全部通过。
