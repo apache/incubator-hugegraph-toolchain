@@ -783,3 +783,29 @@ test('an unavailable viewport or a disposed runtime never generates invalid posi
     expect(mockEngine.addData).not.toHaveBeenCalled(); expect(mockEngine.getSize).not.toHaveBeenCalled();
     runtime.destroy();
 });
+
+test.each([{nodes: 300, iterations: 100}, {nodes: 1000, iterations: 50}])(
+    'bounds default static force work for $nodes preview nodes', async ({nodes, iterations}) => {
+    const runtime = new G6Runtime(document.createElement('div'));
+    const input = data(nodes);
+    input.nodes[0].data.fixed = true;
+    input.nodes[0].style = {x: 17, y: 23};
+    try {
+        await runtime.replace(input, {type: 'd3-force'});
+        expect(mockEngine.setLayout).toHaveBeenLastCalledWith(expect.objectContaining({
+            type: 'hubble-pinned-d3-force', iterations, preLayout: true,
+        }));
+        expect(runtime.read().nodes[0].style).toMatchObject({x: 17, y: 23});
+        expect(input.nodes[0].style).toEqual({x: 17, y: 23});
+    }
+    finally {runtime.stop(); runtime.destroy();}
+});
+
+test.each([0, 300])('preserves explicit force iterations %s on a large preview', async iterations => {
+    const runtime = new G6Runtime(document.createElement('div'));
+    try {
+        await runtime.replace(data(1000), {type: 'd3-force', options: {iterations}});
+        expect(mockEngine.setLayout).toHaveBeenLastCalledWith(expect.objectContaining({iterations}));
+    }
+    finally {runtime.stop(); runtime.destroy();}
+});

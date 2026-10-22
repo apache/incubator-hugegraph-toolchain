@@ -128,8 +128,8 @@
       "no_graph_result": "No graph result. Check Table or JSON data.",
       "non_graph_title": "Query result preview",
       "non_graph_description": "The query succeeded; this result cannot be rendered as a graph, so a JSON preview is shown below",
-      "preview_truncated": "Showing the first 3 items only",
-      "view_full_json": "View raw JSON",
+      "preview_truncated": "This preview is limited in items, depth and property length",
+      "view_full_json": "View JSON preview",
       "empty_success": "Query succeeded, result is empty",
       "empty_success_description": "The query ran successfully but returned no displayable data",
       "no_table_result": "No table result. Check Graph or JSON data.",
@@ -138,8 +138,12 @@
       "no_json_result": "No JSON result. Check Graph or Table data.",
       "expand_failed": "Failed to expand",
       "no_more_neighbors": "No more adjacent vertices",
-      "graph_limit_title": "Graph canvas collapsed for readability",
-      "graph_limit_description": "This result contains {{nodes}} nodes and {{edges}} edges. The canvas limit is {{nodeLimit}} nodes and {{edgeLimit}} edges. Use Table or JSON to inspect the complete result"
+      "graph_limit_title": "Showing a partial graph preview",
+      "graph_limit_description": "The canvas shows at most {{nodeLimit}} nodes and {{edgeLimit}} edges. Use an asynchronous task for large complete results.",
+      "default_limit_applied": "No result limit was set. This query defaults to at most {{limit}} results.",
+      "large_query_use_async": "This query explicitly requests more than {{limit}} results. Select asynchronous task mode to run it without downloading the complete result into the canvas.",
+      "json_preview_truncated": "This JSON preview is limited in items, depth and property length. Use an asynchronous task for complete large results.",
+      "result_preview_truncated": "Showing at most {{limit}} result items. Use an asynchronous task for complete large results."
     },
     "canvas": {
       "graph_canvas": "Graph canvas",

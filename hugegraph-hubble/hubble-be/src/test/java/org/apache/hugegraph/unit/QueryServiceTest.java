@@ -19,7 +19,10 @@
 package org.apache.hugegraph.unit;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.Collections;
 
 import org.junit.Test;
@@ -42,11 +45,226 @@ import org.apache.hugegraph.service.query.QueryService;
 import org.apache.hugegraph.service.schema.VertexLabelService;
 import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.constant.IdStrategy;
+import org.apache.hugegraph.structure.graph.Edge;
+import org.apache.hugegraph.structure.graph.Path;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.gremlin.ResultSet;
 import org.apache.hugegraph.testutil.Assert;
 
 public class QueryServiceTest {
+
+    @Test
+    public void testDefaultReadLimitIsReported() throws Exception {
+        GremlinManager gremlin = this.mockGremlin();
+        GremlinResult result = this.serviceWithConfig().executeGremlinQuery(
+                               this.mockClient(gremlin), new GremlinQuery("g.V()"));
+        Mockito.verify(gremlin).gremlin("g.V().limit(300)");
+        Assert.assertTrue(result.isDefaultLimitApplied());
+        Assert.assertEquals(300, result.getDefaultLimit());
+    }
+
+    @Test
+    public void testPreviewCapsLargeReadUpstreamWithoutDefaultLimitNotice()
+           throws Exception {
+        GremlinManager gremlin = this.mockGremlin();
+        GremlinQuery query = new GremlinQuery("g.V().outE().inV().path().limit(12000)");
+        query.setPreview(true);
+        GremlinResult result = this.serviceWithConfig().executeGremlinQuery(
+                               this.mockClient(gremlin), query);
+        Mockito.verify(gremlin).gremlin("g.V().outE().inV().path().limit(12000).limit(1001)");
+        Assert.assertFalse(result.isDefaultLimitApplied());
+    }
+
+    @Test
+    public void testPreviewRetainsDefaultLimitNotice() throws Exception {
+        GremlinManager gremlin = this.mockGremlin();
+        GremlinQuery query = new GremlinQuery("g.V()");
+        query.setPreview(true);
+        GremlinResult result = this.serviceWithConfig().executeGremlinQuery(
+                               this.mockClient(gremlin), query);
+        Mockito.verify(gremlin).gremlin("g.V().limit(300).limit(1001)");
+        Assert.assertTrue(result.isDefaultLimitApplied());
+        Assert.assertEquals(300, result.getDefaultLimit());
+    }
+
+    @Test
+    public void testPreviewDoesNotRewriteAggregatesOrMutations() throws Exception {
+        for (String content : new String[]{"g.V().count()", "g.V().groupCount().by(label)",
+                                           "g.V().property('x', 1).out()", "g.V().drop()"}) {
+            GremlinManager gremlin = this.mockGremlin();
+            GremlinQuery query = new GremlinQuery(content);
+            query.setPreview(true);
+            GremlinResult result = this.serviceWithConfig().executeGremlinQuery(
+                                   this.mockClient(gremlin), query);
+            Mockito.verify(gremlin).gremlin(content);
+            Assert.assertFalse(result.isDefaultLimitApplied());
+        }
+    }
+
+    @Test
+    public void testOversizedVertexResultDoesNotEnrich() throws Exception {
+        List<Vertex> vertices = this.vertices(12000);
+        GremlinManager gremlin = this.mockGremlin(this.resultSet(vertices.toArray()));
+        GremlinResult result = this.serviceWithConfig().executeGremlinQuery(
+                               this.mockClient(gremlin), new GremlinQuery("g.V().limit(12000)"));
+        Assert.assertEquals(1000, result.getGraphView().getVertices().size());
+        Assert.assertTrue(result.isGraphTruncated());
+        Assert.assertFalse(result.isDefaultLimitApplied());
+        Mockito.verify(gremlin, Mockito.times(1)).gremlin(Mockito.anyString());
+    }
+
+    @Test
+    public void testInteractivePreviewIsOptInAndBounded() throws Exception {
+        List<Vertex> vertices = this.vertices(12000);
+        GremlinManager gremlin = this.mockGremlin(this.resultSet(vertices.toArray()));
+        GremlinQuery query = new GremlinQuery("g.V().limit(12000)");
+        query.setPreview(true);
+        GremlinResult result = this.serviceWithConfig().executeGremlinQuery(
+                               this.mockClient(gremlin), query);
+        Assert.assertEquals(1000, result.getJsonView().getData().size());
+        Assert.assertEquals(1000, result.getTableView().getRows().size());
+        Assert.assertTrue(result.isResultTruncated());
+        Assert.assertTrue(result.isGraphTruncated());
+        Assert.assertEquals(1000, result.getResultLimit());
+        Mockito.verify(gremlin, Mockito.times(1)).gremlin(Mockito.anyString());
+    }
+
+    @Test
+    public void testPreviewReportsTruncatedFlattenedGraphRows() throws Exception {
+        List<Object> rows = new ArrayList<>();
+        for (int i = 0; i < 600; i++) {
+            rows.add(Map.of("a", Map.of("_type", "node", "_label", "person", "_id", i * 2),
+                            "b", Map.of("_type", "node", "_label", "person", "_id", i * 2 + 1)));
+        }
+        GremlinManager gremlin = this.mockGremlin(this.resultSet(rows.toArray()));
+        GremlinQuery query = new GremlinQuery("g.V().limit(600)");
+        query.setPreview(true);
+        GremlinResult result = this.serviceWithConfig().executeGremlinQuery(
+                               this.mockClient(gremlin), query);
+        Assert.assertEquals(1000, result.getJsonView().getData().size());
+        Assert.assertTrue(result.isResultTruncated());
+        Assert.assertTrue(result.isGraphTruncated());
+        Mockito.verify(gremlin, Mockito.times(1)).gremlin(Mockito.anyString());
+    }
+
+    @Test
+    public void testPathReusesExistingEndpoints() throws Exception {
+        List<Vertex> vertices = this.vertices(2);
+        Edge edge = this.edge("e", 0, 1);
+        Path path = Mockito.mock(Path.class);
+        Mockito.when(path.objects()).thenReturn(Arrays.asList(vertices.get(0), edge, vertices.get(1)));
+        GremlinManager gremlin = this.mockGremlin(this.resultSet(path));
+        GremlinResult result = this.serviceWithConfig().executeGremlinQuery(
+                               this.mockClient(gremlin), new GremlinQuery("g.V().outE().inV().path()"));
+        Assert.assertEquals(2, result.getGraphView().getVertices().size());
+        Assert.assertEquals(1, result.getGraphView().getEdges().size());
+        Assert.assertFalse(result.isGraphTruncated());
+        Mockito.verify(gremlin, Mockito.times(1)).gremlin(Mockito.anyString());
+    }
+
+    @Test
+    public void testCompletePathAtEdgeBudgetIsNotTruncated() throws Exception {
+        List<Vertex> vertices = this.vertices(1000);
+        List<Object> elements = new ArrayList<>();
+        for (int i = 0; i < 500; i++) {
+            elements.add(vertices.get(i * 2));
+            elements.add(this.edge("e" + i, i * 2, i * 2 + 1));
+            elements.add(vertices.get(i * 2 + 1));
+        }
+        Path path = Mockito.mock(Path.class);
+        Mockito.when(path.objects()).thenReturn(elements);
+        GremlinManager gremlin = this.mockGremlin(this.resultSet(path));
+        GremlinResult result = this.serviceWithConfig().executeGremlinQuery(
+                               this.mockClient(gremlin), new GremlinQuery("g.V().path().limit(1)"));
+        Assert.assertEquals(500, result.getGraphView().getEdges().size());
+        Assert.assertFalse(result.isGraphTruncated());
+        Mockito.verify(gremlin, Mockito.times(1)).gremlin(Mockito.anyString());
+    }
+
+    @Test
+    public void testEdgeBudgetStopsRemainingBatches() throws Exception {
+        List<Vertex> vertices = this.vertices(300);
+        List<Edge> edges = new ArrayList<>();
+        for (int i = 0; i < 500; i++) {
+            edges.add(this.edge("e" + i, i % 300, (i + 1) % 300));
+        }
+        GremlinManager gremlin = this.mockGremlin(this.resultSet(vertices.toArray()),
+                                                  this.resultSet(edges.toArray()));
+        GremlinResult result = this.serviceWithConfig().executeGremlinQuery(
+                               this.mockClient(gremlin), new GremlinQuery("g.V().limit(300)"));
+        Assert.assertEquals(500, result.getGraphView().getEdges().size());
+        Assert.assertTrue(result.isGraphTruncated());
+        Mockito.verify(gremlin, Mockito.times(2)).gremlin(Mockito.anyString());
+    }
+
+    @Test
+    public void testFullEnrichmentBatchReportsPartialEvenWhenEdgesAreFiltered()
+           throws Exception {
+        List<Edge> externalEdges = new ArrayList<>();
+        for (int i = 0; i < 500; i++) {
+            externalEdges.add(this.edge("e" + i, 0, 2000 + i));
+        }
+        GremlinManager gremlin = this.mockGremlin(this.resultSet(this.vertices(1).toArray()),
+                                                  this.resultSet(externalEdges.toArray()));
+        GremlinResult result = this.serviceWithConfig().executeGremlinQuery(
+                               this.mockClient(gremlin), new GremlinQuery("g.V().limit(1)"));
+        Assert.assertEquals(0, result.getGraphView().getEdges().size());
+        Assert.assertTrue(result.isGraphTruncated());
+        Mockito.verify(gremlin, Mockito.times(2)).gremlin(Mockito.anyString());
+    }
+
+    @Test
+    public void testDegreesPersistAcrossBatchesAndDoNotStopOtherVertices()
+           throws Exception {
+        List<Vertex> vertices = this.vertices(101);
+        Edge first = this.edge("first", 0, 1);
+        Edge blocked = this.edge("blocked", 0, 2);
+        Edge allowed = this.edge("allowed", 2, 3);
+        GremlinManager gremlin = this.mockGremlin(this.resultSet(vertices.toArray()),
+                                                  this.resultSet(first, first),
+                                                  this.resultSet(blocked, allowed));
+        QueryService service = this.serviceWithConfig();
+        Field field = QueryService.class.getDeclaredField("config");
+        field.setAccessible(true);
+        HugeConfig config = (HugeConfig) field.get(service);
+        Mockito.when(config.get(HubbleOptions.GREMLIN_VERTEX_DEGREE_LIMIT)).thenReturn(1);
+        GremlinResult result = service.executeGremlinQuery(this.mockClient(gremlin),
+                               new GremlinQuery("g.V().limit(101)"));
+        Assert.assertEquals(2, result.getGraphView().getEdges().size());
+        Assert.assertTrue(result.isGraphTruncated());
+        Assert.assertTrue(result.getGraphView().getEdges().contains(first));
+        Assert.assertTrue(result.getGraphView().getEdges().contains(allowed));
+    }
+
+    @Test
+    public void testAsyncKeepsOriginalQuery() throws Exception {
+        GremlinManager gremlin = Mockito.mock(GremlinManager.class);
+        Mockito.when(gremlin.executeAsTask(Mockito.any())).thenReturn(7L);
+        GremlinQuery query = new GremlinQuery("g.V()");
+        query.setPreview(true);
+        this.serviceWithConfig().executeGremlinAsyncTask(this.mockClient(gremlin), query);
+        Mockito.verify(gremlin).executeAsTask(Mockito.argThat(request ->
+                "g.V()".equals(request.gremlin)));
+        Mockito.verify(gremlin, Mockito.never()).gremlin(Mockito.anyString());
+    }
+
+    private List<Vertex> vertices(int size) {
+        List<Vertex> vertices = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            Vertex vertex = new Vertex("person");
+            vertex.id(i);
+            vertices.add(vertex);
+        }
+        return vertices;
+    }
+
+    private Edge edge(String id, int source, int target) {
+        Edge edge = new Edge("knows");
+        edge.id(id);
+        edge.sourceId(source);
+        edge.targetId(target);
+        return edge;
+    }
 
     @Test
     public void testQueryIgnoresNonEdgeAdjacentResults() throws Exception {
@@ -263,7 +481,7 @@ public class QueryServiceTest {
         QueryService service = new QueryService();
         HugeConfig config = Mockito.mock(HugeConfig.class);
         Mockito.when(config.get(HubbleOptions.GREMLIN_SUFFIX_LIMIT))
-               .thenReturn(250);
+               .thenReturn(300);
         Mockito.when(config.get(HubbleOptions.GREMLIN_VERTEX_DEGREE_LIMIT))
                .thenReturn(100);
         Mockito.when(config.get(HubbleOptions.GREMLIN_BATCH_QUERY_IDS))

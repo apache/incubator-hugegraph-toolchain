@@ -19,6 +19,8 @@ import {fireEvent, render, screen} from '@testing-library/react';
 import QueryResult from './index';
 import {
     getGraphViewLimitStatus,
+    getBoundedGraphView,
+    getBoundedJsonPreview,
     getJsonViewContent,
     getQueryResultStandbyMessage,
 } from './utils';
@@ -38,7 +40,7 @@ jest.mock('react-i18next', () => ({
                 'analysis.query_result.non_graph_title': 'Query result preview',
                 'analysis.query_result.non_graph_description':
                     'This result cannot be rendered as a graph; a JSON preview is shown.',
-                'analysis.query_result.view_full_json': 'View raw JSON',
+                'analysis.query_result.view_full_json': 'View JSON preview',
                 'analysis.query_result.empty_success':
                     'Query succeeded, result is empty',
             };
@@ -74,9 +76,9 @@ it('projects BigInt, production BigNumber, and null-prototype values safely', ()
 
 describe('graph view limits', () => {
     it.each([
-        [300, 300, false],
-        [301, 0, true],
-        [0, 301, true],
+        [1000, 500, false],
+        [1001, 0, true],
+        [0, 501, true],
     ])('evaluates %i nodes and %i edges', (nodeCount, edgeCount, exceeded) => {
         expect(getGraphViewLimitStatus({
             vertices: new Array(nodeCount),
@@ -92,7 +94,7 @@ describe('graph view limits', () => {
         });
     });
 
-    it('switches an existing result view to Table when a new result exceeds the limit', () => {
+    it('keeps a bounded graph preview selected when a new result exceeds the limit', () => {
         const result = nodeCount => ({
             graph_view: {vertices: new Array(nodeCount), edges: []},
             json_view: {data: []},
@@ -103,9 +105,9 @@ describe('graph view limits', () => {
             'aria-selected', 'true'
         );
 
-        view.rerender(<QueryResult queryResult={result(301)} />);
+        view.rerender(<QueryResult queryResult={result(1001)} />);
 
-        expect(screen.getByRole('tab', {name: 'Table'})).toHaveAttribute(
+        expect(screen.getByRole('tab', {name: 'Graph'})).toHaveAttribute(
             'aria-selected', 'true'
         );
     });
@@ -195,7 +197,7 @@ it('offers a direct JSON path when a non-graph preview is truncated', () => {
 
     expect(screen.getByText(/node-0/)).toBeInTheDocument();
     expect(screen.queryByText(/node-7/)).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', {name: 'View raw JSON'}));
+    fireEvent.click(screen.getByRole('button', {name: 'View JSON preview'}));
     expect(screen.getByText('json result')).toBeInTheDocument();
 });
 
@@ -271,4 +273,48 @@ it('passes the server-count refresh callback through to the query graph result',
     fireEvent.click(screen.getByRole('button', {name: 'Refresh saved graph counts'}));
     expect(onRefreshGraphNums).toHaveBeenCalledTimes(1);
     expect(onRefreshGraphNums).toHaveBeenCalledWith();
+});
+
+it('bounds graph preview by unique exact IDs and retains only connected edges', () => {
+    const vertices = Array.from({length: 1001}, (_, id) => ({id}));
+    vertices.unshift({id: 9007199254740993n}, {id: 9007199254740993n});
+    const preview = getBoundedGraphView({vertices, edges: [
+        {id: 'large', source: 9007199254740993n, target: 0},
+        {id: 'outside', source: 0, target: 1000},
+        {id: 'distinct-string', source: '0', target: 1},
+    ]});
+    expect(preview.vertices).toHaveLength(1000);
+    expect(preview.vertices[0].id).toBe(9007199254740993n);
+    expect(preview.edges.map(edge => edge.id)).toEqual(['large']);
+});
+
+it('stops projecting JSON before touching omitted rows and truncates large properties', () => {
+    const rows = [{payload: 'x'.repeat(1000000)}, {id: 2}, {id: 3}];
+    Object.defineProperty(rows, 3, {enumerable: true, get: () => {throw new Error('omitted row read');}});
+    const preview = getBoundedJsonPreview(rows, {items: 3, characters: 1200});
+    expect(preview.truncated).toBe(true);
+    expect(preview.content[0].payload.length).toBeLessThanOrEqual(1001);
+    expect(preview.content).toHaveLength(3);
+});
+
+it('does not traverse raw JSON before its tab is selected for a graph result', () => {
+    const read = jest.fn(() => 7);
+    const raw = {};
+    Object.defineProperty(raw, 'lazy', {enumerable: true, get: read});
+    render(<QueryResult isQueryMode queryStatus='success' queryResult={{
+        graph_view: {vertices: [{id: 1}], edges: []}, json_view: {data: raw},
+    }} />);
+    expect(read).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('tab', {name: 'JSON'}));
+    expect(read).toHaveBeenCalledTimes(1);
+});
+
+it('shows server-provided default-limit and graph-truncation notices', () => {
+    render(<QueryResult isQueryMode queryStatus='success' queryResult={{
+        default_limit_applied: true, default_limit: 300, graph_truncated: true,
+        graph_view: {vertices: [{id: 1}], edges: []},
+    }} />);
+    expect(screen.getByText('analysis.query_result.default_limit_applied')).toBeInTheDocument();
+    expect(screen.getByText('Graph limit')).toBeInTheDocument();
+    expect(screen.getByText(/graph canvas/)).toBeInTheDocument();
 });

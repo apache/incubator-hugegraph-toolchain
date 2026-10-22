@@ -45,6 +45,27 @@ public class GremlinResult {
     @JsonProperty("pathnum")
     private Integer pathnum;
 
+    @JsonProperty("default_limit_applied")
+    private boolean defaultLimitApplied;
+
+    @JsonProperty("default_limit")
+    private int defaultLimit;
+
+    @JsonProperty("graph_truncated")
+    private boolean graphTruncated;
+
+    @JsonProperty("graph_vertex_limit")
+    private int graphVertexLimit;
+
+    @JsonProperty("graph_edge_limit")
+    private int graphEdgeLimit;
+
+    @JsonProperty("result_truncated")
+    private boolean resultTruncated;
+
+    @JsonProperty("result_limit")
+    private int resultLimit;
+
     public enum Type {
 
         EMPTY,

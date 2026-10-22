@@ -82,7 +82,9 @@ const executeText2Gql = (graphspace, graph, language, params, config = {}) => {
     }
     return request.post(
         `/graphspaces/${graphspace}/graphs/${graph}/${dialect.endpoint}`,
-        params,
+        language === 'gremlin'
+            ? {...(typeof params === 'string' ? {content: params} : params), preview: true}
+            : params,
         {...config, suppressBusinessErrorToast: true}
     );
 };

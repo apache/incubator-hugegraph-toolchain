@@ -26,6 +26,7 @@ import {useParams} from 'react-router-dom';
 import GraphAnalysisContext from '../../Context';
 import QueryBar from '../QueryBar/Home';
 import useText2Gql from './useText2Gql';
+import {hasLargeExplicitReadLimit} from './queryLimits';
 import {DEFAULT_QUERY_LANGUAGE, QUERY_LANGUAGES} from '../../../utils/text2gql';
 import QueryResult from '../QueryResult/Home';
 import LogsDetail from '../LogsDetail/Home';
@@ -437,6 +438,19 @@ const AnalysisHome = ({toolbarExtra}) => {
 
     const onExecuteQuery = useCallback(
         async (tabKey, generated) => {
+            const content = generated?.content ?? codeEditorContent;
+            const language = generated?.language ?? (tabKey === CYPHER ? 'cypher' : 'gremlin');
+            if (hasLargeExplicitReadLimit(content, language)) {
+                const message = t('analysis.query_result.large_query_use_async', {limit: 1000});
+                queryRequest.current = null;
+                stopExecutionTimer();
+                setExecutionDurationMs(null);
+                setQueryMode(true);
+                setQueryResult();
+                setQueryMessage(message);
+                setQueryStatus(FAILED);
+                return {ok: false, message, retryable: false};
+            }
             const request = Symbol('query');
             const startedAt = Date.now();
             const isCurrent = () => queryRequest.current === request

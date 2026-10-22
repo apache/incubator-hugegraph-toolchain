@@ -62,8 +62,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -90,6 +91,8 @@ public class QueryService {
             "eq", "gt", "gte", "lt", "lte", "neq"
     );
 
+    public static final int GRAPH_VERTEX_LIMIT = 1000;
+
     private static final String TIMEOUT_EXCEPTION =
             "java.net.SocketTimeoutException";
 
@@ -112,22 +115,37 @@ public class QueryService {
 
         log.debug("Execute Gremlin query");
         String gremlin = this.optimize(query.getContent());
+        boolean defaultLimitApplied = !gremlin.equals(query.getContent());
+        if (query.isPreview()) {
+            // Stop ordinary read traversals upstream. The extra row tells the
+            // browser whether its bounded preview omits further results.
+            gremlin = GremlinUtil.optimizePreviewLimit(gremlin, GRAPH_VERTEX_LIMIT + 1);
+        }
         log.debug("Gremlin query optimized");
         // Execute gremlin query
         ResultSet resultSet = this.executeGremlin(gremlin, client);
         // Scan data, vote the result type
-        TypedResult typedResult = this.parseResults(resultSet);
+        TypedResult typedResult = this.parseResults(resultSet,
+                                  query.isPreview() ? GRAPH_VERTEX_LIMIT : Integer.MAX_VALUE);
+        boolean resultTruncated = typedResult.isTruncated();
         // Build json view
         JsonView jsonView = new JsonView(typedResult.getData());
         // Build table view
         TableView tableView = this.buildTableView(typedResult);
         // Build graph view
-        GraphView graphView = this.buildGraphView(typedResult, client);
+        GraphView graphView = this.buildGraphView(typedResult, client, resultTruncated);
         return GremlinResult.builder()
                             .type(typedResult.getType())
                             .jsonView(jsonView)
                             .tableView(tableView)
                             .graphView(graphView)
+                            .resultTruncated(resultTruncated)
+                            .resultLimit(query.isPreview() ? GRAPH_VERTEX_LIMIT : 0)
+                            .defaultLimitApplied(defaultLimitApplied)
+                            .defaultLimit(this.config.get(HubbleOptions.GREMLIN_SUFFIX_LIMIT))
+                            .graphTruncated(graphView.isTruncated())
+                            .graphVertexLimit(GRAPH_VERTEX_LIMIT)
+                            .graphEdgeLimit(this.config.get(HubbleOptions.GREMLIN_EDGES_TOTAL_LIMIT))
                             .build();
     }
 
@@ -161,6 +179,9 @@ public class QueryService {
                 .jsonView(jsonView)
                 .tableView(tableView)
                 .graphView(graphView)
+                .graphTruncated(graphView.isTruncated())
+                .graphVertexLimit(GRAPH_VERTEX_LIMIT)
+                .graphEdgeLimit(this.config.get(HubbleOptions.GREMLIN_EDGES_TOTAL_LIMIT))
                 .build();
     }
 
@@ -320,6 +341,10 @@ public class QueryService {
     }
 
     private TypedResult parseResults(ResultSet resultSet) {
+        return this.parseResults(resultSet, Integer.MAX_VALUE);
+    }
+
+    private TypedResult parseResults(ResultSet resultSet, int limit) {
         if (resultSet == null) {
             return new TypedResult(Type.EMPTY, null);
         }
@@ -329,8 +354,10 @@ public class QueryService {
         }
 
         Map<Type, Integer> typeVotes = new HashMap<>();
-        List<Object> typedData = new ArrayList<>(resultSet.size());
-        while (iter.hasNext()) {
+        List<Object> typedData = new ArrayList<>(Math.min(resultSet.size(), limit));
+        int rows = 0;
+        boolean truncated = false;
+        while (iter.hasNext() && rows++ < limit && typedData.size() < limit) {
             Result result = iter.next();
             if (result == null) {
                 // NOTE: null value doesn't vote
@@ -342,6 +369,10 @@ public class QueryService {
                         unwrapCypherElements((Map<?, ?>) object);
                 if (elements != null) {
                     for (Object element : elements) {
+                        if (typedData.size() >= limit) {
+                            truncated = true;
+                            break;
+                        }
                         Type elementType = element instanceof Vertex ?
                                            Type.VERTEX : Type.EDGE;
                         typeVotes.compute(elementType,
@@ -374,7 +405,7 @@ public class QueryService {
                                    Comparator.comparingInt(Map.Entry::getValue))
                               .getKey();
         }
-        return new TypedResult(type, typedData);
+        return new TypedResult(type, typedData, truncated || iter.hasNext());
     }
 
     private TableView buildTableView(TypedResult typedResult) {
@@ -493,62 +524,69 @@ public class QueryService {
     }
 
     private GraphView buildGraphView(TypedResult result, HugeClient client) {
+        return this.buildGraphView(result, client, false);
+    }
+
+    private GraphView buildGraphView(TypedResult result, HugeClient client,
+                                     boolean resultTruncated) {
         List<Object> data = result.getData();
         if (!result.getType().isGraph() || CollectionUtils.isEmpty(data)) {
             return GraphView.EMPTY;
         }
 
-        Map<Object, Vertex> vertices = new HashMap<>();
-        Map<String, Edge> edges = new HashMap<>();
+        int edgeLimit = this.config.get(HubbleOptions.GREMLIN_EDGES_TOTAL_LIMIT);
+        Map<Object, Vertex> vertices = new LinkedHashMap<>();
+        Map<String, Edge> edges = new LinkedHashMap<>();
+        boolean truncated = resultTruncated;
         for (Object object : data) {
-            if (object instanceof Vertex) {
-                Vertex vertex = (Vertex) object;
-                vertices.put(vertex.id(), vertex);
-            } else if (object instanceof Edge) {
-                Edge edge = (Edge) object;
-                edges.put(edge.id(), edge);
-            } else if (object instanceof Path) {
-                List<Object> elements = ((Path) object).objects();
-                for (Object element : elements) {
-                    if (element instanceof Vertex) {
-                        Vertex vertex = (Vertex) element;
-                        vertices.put(vertex.id(), vertex);
-                    } else if (element instanceof Edge) {
-                        Edge edge = (Edge) element;
-                        edges.put(edge.id(), edge);
+            List<?> elements = object instanceof Path ?
+                               ((Path) object).objects() :
+                               Collections.singletonList(object);
+            for (Object element : elements) {
+                if (element instanceof Vertex) {
+                    Vertex vertex = (Vertex) element;
+                    if (vertices.containsKey(vertex.id()) ||
+                        vertices.size() < GRAPH_VERTEX_LIMIT) {
+                        vertices.putIfAbsent(vertex.id(), vertex);
                     } else {
-                        return GraphView.EMPTY;
+                        truncated = true;
                     }
+                } else if (element instanceof Edge) {
+                    Edge edge = (Edge) element;
+                    if (edges.containsKey(edge.id()) || edges.size() < edgeLimit) {
+                        edges.putIfAbsent(edge.id(), edge);
+                    } else {
+                        truncated = true;
+                    }
+                } else if (object instanceof Path) {
+                    return GraphView.EMPTY;
                 }
             }
         }
 
-        boolean enrichmentSucceeded = true;
         try {
             if (!edges.isEmpty()) {
-                if (vertices.isEmpty()) {
-                    vertices = this.verticesOfEdge(result, edges, client);
-                } else {
-                    // TODO: reduce the number of requests
-                    vertices.putAll(this.verticesOfEdge(result, edges, client));
-                }
-            } else {
-                if (!vertices.isEmpty()) {
-                    edges = this.edgesOfVertex(result, vertices, client);
-                }
+                // Paths already contain most or all endpoints. Fetch only the
+                // missing endpoints, within the same preview vertex budget.
+                vertices.putAll(this.verticesOfEdge(edges, vertices, client));
+            } else if (!vertices.isEmpty() && !truncated) {
+                EdgePreview preview = this.edgesOfVertex(vertices, client);
+                edges = preview.edges();
+                truncated = preview.truncated();
             }
         } catch (Exception e) {
-            // The linked-element lookup is best-effort decoration; keep the
-            // elements already returned when it fails (e.g. gremlin rejected)
+            // Decoration must not discard the result of the user's query.
             log.warn("Failed to enrich graph view with linked elements", e);
-            enrichmentSucceeded = false;
+            truncated = true;
         }
 
-        if (!edges.isEmpty() && enrichmentSucceeded) {
-            Ex.check(!vertices.isEmpty(),
-                     "gremlin.edges.linked-vertex.not-exist");
-        }
-        return new GraphView(vertices.values(), edges.values());
+        int previousEdges = edges.size();
+        final Map<Object, Vertex> previewVertices = vertices;
+        edges.values().removeIf(edge -> !previewVertices.containsKey(edge.sourceId()) ||
+                                        !previewVertices.containsKey(edge.targetId()));
+        GraphView view = new GraphView(vertices.values(), edges.values());
+        view.setTruncated(truncated || previousEdges != edges.size());
+        return view;
     }
 
     private String buildGremlinQuery(HugeClient client, AdjacentQuery query) {
@@ -631,8 +669,10 @@ public class QueryService {
         return rawVertexId;
     }
 
-    private Map<String, Edge> edgesOfVertex(TypedResult result,
-                                            Map<Object, Vertex> vertices,
+    private record EdgePreview(Map<String, Edge> edges, boolean truncated) {
+    }
+
+    private EdgePreview edgesOfVertex(Map<Object, Vertex> vertices,
                                             HugeClient client) {
         final HugeConfig config = this.config;
         int batchSize = config.get(HubbleOptions.GREMLIN_BATCH_QUERY_IDS);
@@ -640,26 +680,24 @@ public class QueryService {
         int degreeLimit = config.get(HubbleOptions.GREMLIN_VERTEX_DEGREE_LIMIT);
 
         Set<Object> vertexIds = vertices.keySet();
-        Map<String, Edge> edges = new HashMap<>(vertexIds.size());
-        Iterables.partition(vertexIds, batchSize).forEach(batch -> {
-            List<String> escapedIds = batch.stream()
-                                           .map(GremlinUtil::escapeId)
-                                           .collect(Collectors.toList());
-            String ids = StringUtils.join(escapedIds, ",");
-            // Any better way to find two vertices has linked?
-            String gremlin;
-            if (result.getType().isPath()) {
-                // If result type is path, the vertices count not too much in theory
-                gremlin = String.format("g.V(%s).bothE().local(limit(%s)).dedup()",
-                                        ids, degreeLimit);
-            } else {
-                gremlin = String.format("g.V(%s).bothE().dedup().limit(%s)",
-                                        ids, edgeLimit);
+        Map<String, Edge> edges = new LinkedHashMap<>();
+        Map<Object, Integer> degrees = new HashMap<>();
+        boolean truncated = false;
+        for (List<Object> batch : Iterables.partition(vertexIds, batchSize)) {
+            if (edges.size() >= edgeLimit) {
+                break;
             }
+            List<String> escapedIds = batch.stream()
+                                          .map(GremlinUtil::escapeId)
+                                          .collect(Collectors.toList());
+            String ids = StringUtils.join(escapedIds, ",");
+            int batchLimit = edgeLimit - edges.size();
+            String gremlin = String.format("g.V(%s).bothE().dedup().limit(%s)",
+                                           ids, batchLimit);
             ResultSet resultSet = client.gremlin().gremlin(gremlin).execute();
-            // The edges count for per vertex
-            Map<Object, Integer> degrees = new HashMap<>(resultSet.size());
-            for (Iterator<Result> iter = resultSet.iterator(); iter.hasNext();) {
+            truncated |= resultSet.size() >= batchLimit;
+            for (Iterator<Result> iter = resultSet.iterator();
+                 iter.hasNext() && edges.size() < edgeLimit;) {
                 Object object = iter.next().getObject();
                 if (!(object instanceof Edge)) {
                     continue;
@@ -667,52 +705,54 @@ public class QueryService {
                 Edge edge = (Edge) object;
                 Object source = edge.sourceId();
                 Object target = edge.targetId();
-                // only add the interconnected edges of the found vertices
-                if (!vertexIds.contains(source) || !vertexIds.contains(target)) {
+                if (edges.containsKey(edge.id()) || !vertexIds.contains(source) ||
+                    !vertexIds.contains(target)) {
+                    continue;
+                }
+                int sourceDegree = degrees.getOrDefault(source, 0);
+                int targetDegree = degrees.getOrDefault(target, 0);
+                int sourceIncrement = source.equals(target) ? 2 : 1;
+                if (sourceDegree + sourceIncrement > degreeLimit ||
+                    targetDegree + 1 > degreeLimit) {
+                    truncated = true;
                     continue;
                 }
                 edges.put(edge.id(), edge);
-                if (edges.size() >= edgeLimit) {
-                    break;
-                }
-
-                int deg = degrees.compute(source, (k, v) -> v == null ? 1 : v + 1);
-                if (deg >= degreeLimit) {
-                    break;
-                }
-                deg = degrees.compute(target, (k, v) -> v == null ? 1 : v + 1);
-                if (deg >= degreeLimit) {
-                    break;
-                }
+                degrees.put(source, sourceDegree + 1);
+                degrees.merge(target, 1, Integer::sum);
             }
-        });
-        return edges;
+        }
+        return new EdgePreview(edges, truncated || edges.size() >= edgeLimit);
     }
 
-    private Map<Object, Vertex> verticesOfEdge(TypedResult result,
-                                               Map<String, Edge> edges,
+    private Map<Object, Vertex> verticesOfEdge(Map<String, Edge> edges,
+                                               Map<Object, Vertex> existing,
                                                HugeClient client) {
         int batchSize = this.config.get(HubbleOptions.GREMLIN_BATCH_QUERY_IDS);
+        int remaining = GRAPH_VERTEX_LIMIT - existing.size();
+        Set<Object> vertexIds = new LinkedHashSet<>();
+        for (Edge edge : edges.values()) {
+            for (Object id : new Object[]{edge.sourceId(), edge.targetId()}) {
+                if (!existing.containsKey(id) && vertexIds.size() < remaining) {
+                    vertexIds.add(id);
+                }
+            }
+        }
 
-        Set<Object> vertexIds = new HashSet<>(edges.size() * 2);
-        edges.values().forEach(edge -> {
-            vertexIds.add(edge.sourceId());
-            vertexIds.add(edge.targetId());
-        });
-
-        Map<Object, Vertex> vertices = new HashMap<>(vertexIds.size());
-        Iterables.partition(vertexIds, batchSize).forEach(batch -> {
+        Map<Object, Vertex> vertices = new LinkedHashMap<>();
+        for (List<Object> batch : Iterables.partition(vertexIds, batchSize)) {
             List<String> escapedIds = batch.stream()
-                                           .map(GremlinUtil::escapeId)
-                                           .collect(Collectors.toList());
+                                          .map(GremlinUtil::escapeId)
+                                          .collect(Collectors.toList());
             String ids = StringUtils.join(escapedIds, ",");
-            String gremlin = String.format("g.V(%s)", ids);
-            ResultSet resultSet = client.gremlin().gremlin(gremlin).execute();
+            ResultSet resultSet = client.gremlin().gremlin("g.V(" + ids + ")").execute();
             for (Iterator<Result> iter = resultSet.iterator(); iter.hasNext();) {
                 Vertex vertex = iter.next().getVertex();
-                vertices.put(vertex.id(), vertex);
+                if (vertexIds.contains(vertex.id()) && vertices.size() < remaining) {
+                    vertices.put(vertex.id(), vertex);
+                }
             }
-        });
+        }
         return vertices;
     }
 }

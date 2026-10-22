@@ -34,4 +34,10 @@ public class TypedResult {
     private GremlinResult.Type type;
 
     private List<Object> data;
+
+    private boolean truncated;
+
+    public TypedResult(GremlinResult.Type type, List<Object> data) {
+        this(type, data, false);
+    }
 }

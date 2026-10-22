@@ -99,7 +99,7 @@ test('forwards cancellation and generation timeout without changing execution re
         '/graphspaces/DEFAULT/graphs/g/text2gql', modelRequest,
         {...config, timeout: 65000, suppressBusinessErrorToast: true});
     expect(request.post).toHaveBeenNthCalledWith(2,
-        '/graphspaces/DEFAULT/graphs/g/gremlin-query', {content: 'g.V()', text: 'Find people'},
+        '/graphspaces/DEFAULT/graphs/g/gremlin-query', {content: 'g.V()', text: 'Find people', preview: true},
         {...config, suppressBusinessErrorToast: true});
 });
 
@@ -111,7 +111,14 @@ test.each([
     const config = {signal: new AbortController().signal};
     const body = {content, text: 'Find people', read_only: true};
     analysis.executeText2Gql('DEFAULT', 'g', language, body, config);
-    expect(request.post).toHaveBeenCalledWith(`/graphspaces/DEFAULT/graphs/g/${endpoint}`, body,
+    expect(request.post).toHaveBeenCalledWith(`/graphspaces/DEFAULT/graphs/g/${endpoint}`,
+        language === 'gremlin' ? {...body, preview: true} : body,
         {...config, suppressBusinessErrorToast: true});
     expect(request.get).not.toHaveBeenCalled();
+});
+
+test('opts manual synchronous Gremlin reads into bounded preview without changing async bodies', () => {
+    analysis.getExecutionQuery('DEFAULT', 'g', 'g.V()');
+    expect(request.post).toHaveBeenCalledWith('/graphspaces/DEFAULT/graphs/g/gremlin-query',
+        {content: 'g.V()', preview: true}, {suppressBusinessErrorToast: true});
 });

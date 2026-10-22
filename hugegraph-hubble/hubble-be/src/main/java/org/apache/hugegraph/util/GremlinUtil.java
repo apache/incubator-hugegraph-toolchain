@@ -18,7 +18,6 @@
 
 package org.apache.hugegraph.util;
 
-import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -29,24 +28,18 @@ import com.google.common.collect.ImmutableSet;
 
 public final class GremlinUtil {
 
-    private static final Set<String> LIMIT_SUFFIXES = ImmutableSet.of(
-            // vertex
-            ".V()", ".out()", ".in()", ".both()", ".outV()", ".inV()",
-            ".bothV()", ".otherV()",
-            // edge
-            ".E()", ".outE()", ".inE()", ".bothE()",
-            // path
-            ".path()", ".simplePath()", ".cyclicPath()",
-            // has
-            ".hasLabel(STR)", ".hasLabel(NUM)"
-    );
-
-    private static final String[] COMPILE_SEARCH_LIST = new String[]{
-        ".", "(", ")"
-    };
-    private static final String[] COMPILE_TARGET_LIST = new String[]{
-        "\\.", "\\(", "\\)"
-    };
+    private static final Pattern OUTER_STEP = Pattern.compile("\\.\\s*(\\w+)\\s*\\(");
+    private static final Pattern LOCAL_SCOPE = Pattern.compile(
+            "^\\s*(?:Scope\\s*\\.\\s*)?local\\s*,");
+    private static final Set<String> RESULT_LIMIT_STEPS = ImmutableSet.of(
+            "limit", "range", "tail", "sample");
+    private static final Set<String> FILTER_STEPS = ImmutableSet.of(
+            "has", "hasId", "hasLabel", "hasKey", "hasValue", "hasNot", "dedup",
+            "order", "by", "where", "filter", "is", "not", "and", "or",
+            "simplePath", "cyclicPath", "as", "identity");
+    private static final Set<String> TERMINAL_STEPS = ImmutableSet.of(
+            "count", "sum", "min", "max", "mean", "fold", "group", "groupCount",
+            "next", "hasNext", "toList", "toSet");
 
     private static final String[] ESCAPE_SEARCH_LIST = new String[]{
         "\\", "\"", "'", "\r", "\n"
@@ -54,12 +47,6 @@ public final class GremlinUtil {
     private static final String[] ESCAPE_TARGET_LIST = new String[]{
         "\\\\", "\\\"", "\\'", "\\r", "\\n"
     };
-
-    private static final Set<Pattern> LIMIT_PATTERNS = compile(LIMIT_SUFFIXES);
-
-    private static final Set<Pattern> IGNORED_PATTERNS = ImmutableSet.of(
-            Pattern.compile("^\\s*//.*")
-    );
 
     public static final String GREMLIN_HLM_SCHEMA =
             "graph.schema().propertyKey('姓名').asText().ifNotExist().create();\n" +
@@ -308,15 +295,24 @@ public final class GremlinUtil {
     }
 
     public static String optimizeLimit(String gremlin, int limit) {
-        // FIXME: Do not treat suffix matching as a resource-safety boundary. Decide on
-        // server-side timeout/result/byte limits without changing aggregation semantics.
+        return optimizeLimit(gremlin, limit, false);
+    }
+
+    public static String optimizePreviewLimit(String gremlin, int limit) {
+        return optimizeLimit(gremlin, limit, true);
+    }
+
+    private static String optimizeLimit(String gremlin, int limit,
+                                        boolean preview) {
+        // Default limits are a convenience for ordinary reads, not a resource
+        // sandbox for arbitrary Groovy scripts or large individual properties.
         /*
          * Scan the script with quote awareness: track single-quote,
          * double-quote and backslash-escape state so that ';' and true
          * statement-ending newlines are treated as separators only when
          * outside quotes.
-         * The suffix-pattern matching and '.limit(N)' appending are
-         * applied only to true statement tails (outside quotes).
+         * Read validation and '.limit(N)' appending are applied only to
+         * true statement tails (outside quotes).
          */
         StringBuilder result = new StringBuilder(gremlin.length());
         StringBuilder statement = new StringBuilder();
@@ -342,7 +338,7 @@ public final class GremlinUtil {
                     } else {
                         result.append(optimizeStatement(statement.toString(),
                                                         matchable.toString(),
-                                                        limit));
+                                                        limit, preview));
                         result.append(ch);
                         statement.setLength(0);
                         matchable.setLength(0);
@@ -414,7 +410,7 @@ public final class GremlinUtil {
                                 !chainContinues(gremlin, i);
             if (separator && !inSingleQuote && !inDoubleQuote) {
                 result.append(optimizeStatement(statement.toString(),
-                                                matchable.toString(), limit));
+                                                matchable.toString(), limit, preview));
                 result.append(ch);
                 statement.setLength(0);
                 matchable.setLength(0);
@@ -428,7 +424,7 @@ public final class GremlinUtil {
             result.append(statement);
         } else {
             result.append(optimizeStatement(statement.toString(),
-                                            matchable.toString(), limit));
+                                            matchable.toString(), limit, preview));
         }
         return result.toString();
     }
@@ -464,56 +460,70 @@ public final class GremlinUtil {
     }
 
     private static String optimizeStatement(String statement,
-                                            String matchable, int limit) {
+                                            String matchable, int limit,
+                                            boolean preview) {
         int codeEnd = matchable.length();
         while (codeEnd > 0 && Character.isWhitespace(
                                   matchable.charAt(codeEnd - 1))) {
             codeEnd--;
         }
         String code = matchable.substring(0, codeEnd);
-        boolean ignored = IGNORED_PATTERNS.stream().anyMatch(pattern -> {
-            return pattern.matcher(code).find();
-        });
-        if (ignored) {
+        try {
+            // Reuse the existing literal-only read grammar. General Groovy and
+            // mutations are left untouched, rather than guessed from a suffix.
+            ReadOnlyGremlin.validate(code.replace('\n', ' ').replace('\r', ' '));
+        } catch (RuntimeException ignored) {
             return statement;
         }
-        for (Pattern pattern : LIMIT_PATTERNS) {
-            Matcher matcher = pattern.matcher(code);
-            if (matcher.find()) {
-                return statement.substring(0, codeEnd) + ".limit(" + limit +
-                       ")" + statement.substring(codeEnd);
+
+        Matcher steps = OUTER_STEP.matcher(outerSteps(code));
+        boolean bounded = false;
+        while (steps.find()) {
+            String step = steps.group(1);
+            if (TERMINAL_STEPS.contains(step)) {
+                return statement;
+            }
+            if (RESULT_LIMIT_STEPS.contains(step)) {
+                bounded = !LOCAL_SCOPE.matcher(code.substring(steps.end())).find();
+            } else if (!FILTER_STEPS.contains(step)) {
+                bounded = false;
             }
         }
-        return statement;
+        if (bounded && !preview) {
+            return statement;
+        }
+        return statement.substring(0, codeEnd) + ".limit(" + limit + ")" +
+               statement.substring(codeEnd);
     }
 
-    private static Set<Pattern> compile(Set<String> texts) {
-        Set<Pattern> patterns = new LinkedHashSet<>();
-        for (String text : texts) {
-            String regex = StringUtils.replaceEach(text, COMPILE_SEARCH_LIST,
-                                                   COMPILE_TARGET_LIST);
-            Pattern pattern;
-            // Assume that (STR), (NUM) and () not exist at the same time
-            if (text.contains("(STR)")) {
-                // single quote
-                pattern = compile(regex.replaceAll("STR", "'[\\\\s\\\\S]+'"));
-                patterns.add(pattern);
-                // double quotes
-                pattern = compile(regex.replaceAll("STR", "\"[\\\\s\\\\S]+\""));
-                patterns.add(pattern);
-            } else if (text.contains("(NUM)")) {
-                pattern = compile(regex.replaceAll("NUM", "[\\\\d]+"));
-                patterns.add(pattern);
-            } else if (text.contains("()")) {
-                pattern = compile(regex);
-                patterns.add(pattern);
+    private static String outerSteps(String code) {
+        StringBuilder outer = new StringBuilder(code.length());
+        int depth = 0;
+        char quote = 0;
+        boolean escaped = false;
+        for (int i = 0; i < code.length(); i++) {
+            char ch = code.charAt(i);
+            if (quote != 0) {
+                if (escaped) {
+                    escaped = false;
+                } else if (ch == '\\') {
+                    escaped = true;
+                } else if (ch == quote) {
+                    quote = 0;
+                }
+                outer.append(' ');
+            } else if (ch == '\'' || ch == '"') {
+                quote = ch;
+                outer.append(' ');
+            } else if (ch == '(') {
+                outer.append(depth++ == 0 ? ch : ' ');
+            } else if (ch == ')') {
+                depth--;
+                outer.append(' ');
+            } else {
+                outer.append(depth == 0 ? ch : ' ');
             }
         }
-        return patterns;
-    }
-
-    private static Pattern compile(String regex) {
-        String finalRegex = "(" + regex + ")$";
-        return Pattern.compile(finalRegex);
+        return outer.toString();
     }
 }

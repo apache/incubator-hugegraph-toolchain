@@ -56,6 +56,7 @@ jest.mock('../QueryBar/Home', () => props => (
         <button onClick={() => props.onLanguageChange('gremlin')}>Generate Gremlin</button>
         <button onClick={() => props.setCodeEditorContent('MATCH (n) RETURN n LIMIT 4')}>Edit Cypher</button>
         <button onClick={() => props.setCodeEditorContent('g.E().limit(3)')}>Edit query</button>
+        <button onClick={() => props.setCodeEditorContent('g.V().limit(10000)')}>Edit large query</button>
         <button onClick={() => props.onExecute(props.activeTab)}>Run current</button>
         <button onClick={() => props.onExecuteModeChange('task')}>Use async</button>
         <button onClick={() => props.setCodeEditorContent(props.codeEditorContent)}>Echo current query</button>
@@ -1791,4 +1792,22 @@ it('hides confirmed old Schema inputs as soon as the selected graph changes', as
     const vertexCalls = api.manage.getMetaVertexList.mock.calls.length;
     await act(async () => pending.resolve(schemaList('disposed')));
     expect(api.manage.getMetaVertexList).toHaveBeenCalledTimes(vertexCalls);
+});
+
+it('blocks a large synchronous read before POST and permits explicit async submission', async () => {
+    render(<GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
+        <AnalysisHome />
+    </GraphAnalysisContext.Provider>);
+    await act(async () => Promise.resolve());
+    fireEvent.click(screen.getByRole('button', {name: 'Edit large query'}));
+    fireEvent.click(screen.getByRole('button', {name: 'Run current'}));
+    expect(api.analysis.getExecutionQuery).not.toHaveBeenCalled();
+    expect(api.analysis.getExecutionTask).not.toHaveBeenCalled();
+    expect(screen.getByTestId('query-status')).toHaveTextContent('failed');
+    await act(async () => Promise.resolve());
+    fireEvent.click(screen.getByRole('button', {name: 'Use async'}));
+    fireEvent.click(screen.getByRole('button', {name: 'Run current'}));
+    await waitFor(() => expect(api.analysis.getExecutionTask).toHaveBeenCalledWith(
+        'DEFAULT', 'hugegraph', {content: 'g.V().limit(10000)'}));
+    expect(api.analysis.getExecutionQuery).not.toHaveBeenCalled();
 });

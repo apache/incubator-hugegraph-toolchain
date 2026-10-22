@@ -28,6 +28,44 @@ public class GremlinUtilTest {
     private static final int LIMIT = 250;
 
     @Test
+    public void testPreviewCapUsesReadGrammarAndPreservesComments() {
+        Assert.assertEquals("g.V().path().limit(12000).limit(1001) // preview",
+                            GremlinUtil.optimizePreviewLimit(
+                            "g.V().path().limit(12000) // preview", 1001));
+        Assert.assertEquals("g.V().count()",
+                            GremlinUtil.optimizePreviewLimit("g.V().count()", 1001));
+        Assert.assertEquals("g.V().property('x', 1).out()",
+                            GremlinUtil.optimizePreviewLimit("g.V().property('x', 1).out()", 1001));
+    }
+
+    @Test
+    public void testDefaultLimitForOrdinaryReads() {
+        for (String query : new String[]{
+                "g.V().has('name', 'x')",
+                "g.V().local(__.out().limit(2))",
+                "g.V().limit(2).out()",
+                "g.V().limit(1).local(__.out())",
+                "g.V().limit(1).values('a', 'b')",
+                "g.V().valueMap().limit(local, 1)",
+                "g.V().valueMap().range(Scope.local, 0, 1)"}) {
+            Assert.assertEquals(query + ".limit(300)",
+                                GremlinUtil.optimizeLimit(query, 300));
+        }
+    }
+
+    @Test
+    public void testDefaultLimitPreservesExplicitLimitsAndSemantics() {
+        for (String query : new String[]{
+                "g.V().limit(10000)", "g.V().limit(10000).hasLabel('person')",
+                "g.V().range(10, 10000)", "g.V().count()",
+                "g.V().groupCount().by(label)", "g.V().values('age').sum()",
+                "g.V().property('x', 1).out()", "g.V().drop()",
+                "g.addV('person').out()", "def x = g.V().out()"}) {
+            Assert.assertEquals(query, GremlinUtil.optimizeLimit(query, 300));
+        }
+    }
+
+    @Test
     public void testSuffixAppend() {
         // Matched suffixes get '.limit(N)' appended
         Assert.assertEquals("g.V().limit(250)",
