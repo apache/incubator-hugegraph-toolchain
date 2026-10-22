@@ -53,7 +53,6 @@ public class HubbleDateTimeTest {
             TimeZone.setDefault(TimeZone.getTimeZone("America/Los_Angeles"));
             Date date = date("2024-01-31T20:00:00Z");
             Assert.assertEquals("20240201", HubbleUtil.dateFormatDay(date));
-            Assert.assertEquals("202402", HubbleUtil.dateFormatMonth(date));
             Assert.assertEquals("2024-02-01", HubbleUtil.dateFormatDay("20240201"));
             Assert.assertEquals("America/Los_Angeles", TimeZone.getDefault().getID());
         } finally {
@@ -77,31 +76,9 @@ public class HubbleDateTimeTest {
     }
 
     @Test
-    public void testPreviousMonthAtMonthEndAndNewYear() {
-        Assert.assertEquals("202402", HubbleUtil.dateFormatLastMonth(clock("2024-03-31T04:00:00Z")));
-        Assert.assertEquals("202304", HubbleUtil.dateFormatLastMonth(clock("2023-05-31T04:00:00Z")));
-        Assert.assertEquals("202312", HubbleUtil.dateFormatLastMonth(clock("2024-01-31T04:00:00Z")));
-    }
-
-    @Test
     public void testPreviousDayUsesBusinessMidnight() {
         Assert.assertEquals("20231231", HubbleUtil.dateFormatLastDay(clock("2023-12-31T16:00:00Z")));
         Assert.assertEquals("20240229", HubbleUtil.dateFormatLastDay(clock("2024-02-29T16:00:00Z")));
-    }
-
-    @Test
-    public void testSundayBelongsToThePreviousMonday() {
-        long[] expected = seconds("2024-01-07T16:00:00Z", "2024-01-14T15:59:59Z");
-        Assert.assertArrayEquals(expected, HubbleUtil.getWeekTimestamps(date("2024-01-14T04:00:00Z")));
-        Assert.assertArrayEquals(expected, HubbleUtil.getWeekTimestamps(date("2024-01-07T16:00:00Z")));
-    }
-
-    @Test
-    public void testMonthRangeReturnsSecondsIncludingLeapDay() {
-        Assert.assertArrayEquals(seconds("2024-01-31T16:00:00Z", "2024-02-29T15:59:59Z"),
-                                 HubbleUtil.getMonthTimestamps(date("2024-02-15T04:00:00Z")));
-        Assert.assertArrayEquals(seconds("2024-11-30T16:00:00Z", "2024-12-31T15:59:59Z"),
-                                 HubbleUtil.getMonthTimestamps(date("2024-12-31T04:00:00Z")));
     }
 
     @Test

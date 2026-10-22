@@ -69,7 +69,6 @@ public class HubbleUtilTest {
         Assert.assertEquals("2024-01-15", HubbleUtil.dateFormatDay("20240115"));
         Date day = Date.from(Instant.parse("2024-01-15T04:00:00Z"));
         Assert.assertEquals("20240115", HubbleUtil.dateFormatDay(day));
-        Assert.assertEquals("202401", HubbleUtil.dateFormatMonth(day));
         Assert.assertThrows(RuntimeException.class, () -> {
             HubbleUtil.dateFormatDay("2024/01/15");
         });

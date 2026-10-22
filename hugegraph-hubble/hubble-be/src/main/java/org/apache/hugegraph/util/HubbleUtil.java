@@ -19,16 +19,13 @@
 package org.apache.hugegraph.util;
 
 import java.time.Clock;
-import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.YearMonth;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.ResolverStyle;
-import java.time.temporal.TemporalAdjusters;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Locale;
@@ -43,8 +40,6 @@ public final class HubbleUtil {
     public static final ZoneOffset TIME_ZONE = ZoneOffset.ofHours(8);
     private static final Clock CLOCK = Clock.system(TIME_ZONE);
     private static final DateTimeFormatter DATE_TIME_FORMAT = formatter("uuuu-MM-dd HH:mm:ss");
-    private static final DateTimeFormatter MILLIS_FORMAT = formatter("uuuuMMdd'T'HHmmssSSS");
-    private static final DateTimeFormatter MONTH_FORMAT = formatter("uuuuMM");
     private static final DateTimeFormatter DAY_FORMAT = formatter("uuuuMMdd");
     private static final DateTimeFormatter COMPACT_DATE_TIME_FORMAT = formatter("uuuuMMdd HH:mm:ss");
 
@@ -71,14 +66,6 @@ public final class HubbleUtil {
         return DATE_TIME_FORMAT.format(CLOCK.instant());
     }
 
-    public static String dateFormatMillis() {
-        return MILLIS_FORMAT.format(CLOCK.instant());
-    }
-
-    public static String dateFormatMonth(Date date) {
-        return MONTH_FORMAT.format(date.toInstant());
-    }
-
     public static String dateFormatDay(Date date) {
         return DAY_FORMAT.format(date.toInstant());
     }
@@ -87,27 +74,12 @@ public final class HubbleUtil {
         return LocalDate.parse(date, DAY_FORMAT).format(DateTimeFormatter.ISO_LOCAL_DATE);
     }
 
-    public static String dateFormatLastMonth() {
-        return dateFormatLastMonth(CLOCK);
-    }
-
-    static String dateFormatLastMonth(Clock clock) {
-        return YearMonth.now(clock.withZone(TIME_ZONE)).minusMonths(1).format(MONTH_FORMAT);
-    }
-
     public static String dateFormatLastDay() {
         return dateFormatLastDay(CLOCK);
     }
 
     static String dateFormatLastDay(Clock clock) {
         return LocalDate.now(clock.withZone(TIME_ZONE)).minusDays(1).format(DAY_FORMAT);
-    }
-
-    /**
-     * Return the previous seven days and the current time in epoch seconds.
-     */
-    public static long[] getTimestampsBefore7Days() {
-        return timestampsBefore(CLOCK.instant(), Duration.ofDays(7));
     }
 
     /**
@@ -124,28 +96,6 @@ public final class HubbleUtil {
 
     private static long[] timestampsBefore(Instant end, Duration duration) {
         return new long[]{end.minus(duration).getEpochSecond(), end.getEpochSecond()};
-    }
-
-    /**
-     * Return Monday 00:00:00 through Sunday 23:59:59 in epoch seconds.
-     */
-    public static long[] getWeekTimestamps(Date date) {
-        LocalDate monday = date.toInstant().atOffset(TIME_ZONE).toLocalDate()
-                               .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-        return calendarRange(monday, monday.plusWeeks(1));
-    }
-
-    /**
-     * Return the first through the last second of the month in epoch seconds.
-     */
-    public static long[] getMonthTimestamps(Date date) {
-        LocalDate firstDay = date.toInstant().atOffset(TIME_ZONE).toLocalDate().withDayOfMonth(1);
-        return calendarRange(firstDay, firstDay.plusMonths(1));
-    }
-
-    private static long[] calendarRange(LocalDate start, LocalDate endExclusive) {
-        return new long[]{start.atStartOfDay().toEpochSecond(TIME_ZONE),
-                          endExclusive.atStartOfDay().toEpochSecond(TIME_ZONE) - 1};
     }
 
     public static Date nowDate() {
