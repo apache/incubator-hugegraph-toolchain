@@ -232,6 +232,28 @@ public class HugeClientPoolServiceTest {
     }
 
     @Test
+    public void testStatisticsContextPartitionsActualServerAndIdentity() throws Exception {
+        HttpServer first = this.versionServer(200, "0.80", new AtomicInteger());
+        HttpServer second = this.versionServer(200, "0.80", new AtomicInteger());
+        try {
+            this.cacheCandidates(this.serverUrl(first));
+            try (HugeClient a = this.service.create(this.serverUrl(first), GRAPH_SPACE, SERVICE, "fixture-a");
+                 HugeClient repeated = this.service.create(this.serverUrl(first), GRAPH_SPACE, SERVICE, "fixture-a");
+                 HugeClient otherUser = this.service.create(this.serverUrl(first), GRAPH_SPACE, SERVICE, "fixture-b");
+                 HugeClient otherServer = this.service.create(this.serverUrl(second), GRAPH_SPACE, SERVICE, "fixture-a")) {
+                String key = this.service.statisticsContext(a);
+                Assert.assertTrue(key.matches("[0-9a-f]{64}"));
+                Assert.assertEquals(key, this.service.statisticsContext(repeated));
+                Assert.assertFalse(key.equals(this.service.statisticsContext(otherUser)));
+                Assert.assertFalse(key.equals(this.service.statisticsContext(otherServer)));
+            }
+        } finally {
+            first.stop(0);
+            second.stop(0);
+        }
+    }
+
+    @Test
     public void testRetryRefusedCandidateBeforeLiveServer() throws Exception {
         AtomicInteger calls = new AtomicInteger();
         HttpServer server = this.versionServer(200, "0.80", calls);

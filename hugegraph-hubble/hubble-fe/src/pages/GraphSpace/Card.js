@@ -136,6 +136,7 @@ const GraphSpaceCard = ({
     const memory = showText(item.memory_limit, t('graphspace.unit.memory'), unlimited);
     const storage = showText(item.storage_limit, t('graphspace.unit.memory'), unlimited);
     const statisticDate = item.statistic?.date;
+    const hasStatistics = item.statistic?.vertex != null && item.statistic?.edge != null;
 
     return (
         <Card styles={{header: {
@@ -171,11 +172,11 @@ const GraphSpaceCard = ({
                         <span>{t('graphspace.card.vertex')}: {item.statistic?.vertex ?? '-'}</span>
                         <span>{t('graphspace.card.edge')}: {item.statistic?.edge ?? '-'}</span>
                         <Typography.Text type='secondary'>
-                            {statisticDate
+                            {!hasStatistics ? t('graph.detail.not_collected') : statisticDate
                                 ? t('graphspace.card.daily_snapshot', {date: statisticDate})
                                 : t('graphspace.card.daily_update')}
                         </Typography.Text>
-                        <span aria-label={t('graphspace.card.statistic_help')}>
+                        {hasStatistics && <span aria-label={t('graphspace.card.statistic_help')}>
                             <Tooltip title={(
                                 <>
                                     <div>{t('graphspace.card.daily_update')}</div>
@@ -190,7 +191,7 @@ const GraphSpaceCard = ({
                             >
                                 <InfoCircleOutlined />
                             </Tooltip>
-                        </span>
+                        </span>}
                     </Space>,
                 ]
             }

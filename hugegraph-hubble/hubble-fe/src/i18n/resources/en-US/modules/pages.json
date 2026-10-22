@@ -325,7 +325,7 @@
       "data_status": "Data status",
       "available": "Available",
       "partial": "Partial",
-      "loading": "Loading",
+      "loading": "Loading statistics",
       "retry_page": "Retry graph details",
       "back_to_graphs": "Back to graphs",
       "retry_statistics": "Retry statistics",
@@ -337,14 +337,18 @@
       "empty_title": "This graph has no schema or data yet",
       "empty_description": "Create schema, prepare data, or run a safe query to get started",
       "create_schema": "Create schema",
-      "prepare_data": "Prepare data"
+      "prepare_data": "Prepare data",
+      "not_collected": "Not collected",
+      "collect_statistics": "Collect statistics",
+      "snapshot_hint": "Recorded snapshot; counts may be approximate and are not real-time totals",
+      "bounded_statistics_hint": "Counts use at most {{limit}} vertices and {{limit}} edges and may be approximate"
     },
     "card": {
       "more_actions": "More actions for {{graph}}",
       "storage": "Storage",
       "schema_types": "{{vertices}} vertex types · {{edges}} edge types",
       "element_counts": "Vertices: {{vertices}} / Edges: {{edges}}",
-      "counts_tooltip": "Actual vertex and edge counts reported by the graph list API",
+      "counts_tooltip": "Last recorded vertex and edge counts; they may be out of date",
       "overview": "Overview",
       "schema_info": "Schema Info",
       "view_schema": "View Schema for {{graph}}",
@@ -352,7 +356,9 @@
       "empty_schema_help": "Model this graph or run a safe query",
       "open_schema": "Create schema",
       "query_graph": "Query graph",
-      "detail_tooltip": "View the current vertex and edge counts for this graph"
+      "detail_tooltip": "View the current vertex and edge counts for this graph",
+      "schema_loading": "Loading schema",
+      "schema_unavailable": "Schema preview is unavailable"
     },
     "empty": {
       "description": "This GraphSpace is ready but has no graphs yet. Create the first graph to model, import, and query data",

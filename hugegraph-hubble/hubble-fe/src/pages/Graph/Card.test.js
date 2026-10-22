@@ -18,9 +18,15 @@
 
 import fs from 'fs';
 import path from 'path';
-import {fireEvent, render, screen} from '@testing-library/react';
+import {act, fireEvent, render, screen} from '@testing-library/react';
 import {MemoryRouter, useLocation} from 'react-router-dom';
 import GraphCard from './Card';
+import * as api from '../../api';
+
+jest.mock('../../api', () => ({
+    manage: {getGraphView: jest.fn(() => new Promise(() => {}))},
+    analysis: {getGraphData: jest.fn(() => new Promise(() => {}))},
+}));
 
 const mockT = (key, values) => {
     if (key === 'graph.card.element_counts') {
@@ -254,4 +260,25 @@ test('does not invent point and edge counts when the list API omits them', () =>
     );
 
     expect(screen.queryByText(/graph\.card\.element_counts/)).not.toBeInTheDocument();
+});
+
+
+test('renders core graph actions before schema and snapshot statistics complete', async () => {
+    let resolveSchema;
+    let resolveSnapshot;
+    api.manage.getGraphView.mockReturnValueOnce(new Promise(resolve => { resolveSchema = resolve; }));
+    api.analysis.getGraphData.mockReturnValueOnce(new Promise(resolve => { resolveSnapshot = resolve; }));
+    render(<MemoryRouter><GraphCard item={{name: 'g', graphspace: 'space'}} menus={[]} /></MemoryRouter>);
+    expect(screen.getByRole('link', {name: 'graph.card.overview'})).toHaveAttribute('href', '/graphspace/space/graph/g/detail');
+    expect(screen.getByRole('link', {name: 'graph.card.query_graph'})).toHaveAttribute('href', '/gremlin/space/g');
+    expect(screen.getByText('graph.card.schema_loading', {selector: 'span'})).toBeInTheDocument();
+    expect(screen.queryByText('graph.card.empty_schema')).not.toBeInTheDocument();
+    await act(async () => {
+        resolveSnapshot({status: 200, data: {vertexcount: null, edgecount: null}});
+    });
+    expect(screen.getByText('graph.detail.not_collected')).toBeInTheDocument();
+    await act(async () => {
+        resolveSchema({status: 200, data: {vertices: [{id: 'person', label: 'person'}], edges: []}});
+    });
+    expect(screen.getByTestId('preview-contract')).toBeInTheDocument();
 });

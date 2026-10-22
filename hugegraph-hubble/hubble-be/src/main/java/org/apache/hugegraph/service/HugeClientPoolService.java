@@ -24,11 +24,13 @@ import static org.apache.hugegraph.driver.factory.PDHugeClientFactory.DEFAULT_SE
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -41,6 +43,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hugegraph.config.HugeConfig;
 import org.apache.hugegraph.driver.HugeClient;
@@ -50,6 +53,7 @@ import org.apache.hugegraph.exception.ParameterizedException;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.options.HubbleOptions;
 import org.apache.hugegraph.util.HugeClientUtil;
+import org.apache.hugegraph.util.JsonUtil;
 import org.apache.hugegraph.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -68,6 +72,12 @@ public final class HugeClientPoolService {
     private PDHugeClientFactory pdHugeClientFactory;
 
     private final Map<String, HugeClient> clients = new ConcurrentHashMap<>();
+    private final Map<HugeClient, String> statisticsContexts =
+            Collections.synchronizedMap(new WeakHashMap<>());
+
+    public String statisticsContext(HugeClient client) {
+        return this.statisticsContexts.get(client);
+    }
 
     private Cache<String, List<String>> urlCache = CacheBuilder.newBuilder()
             .maximumSize(HubbleOptions.CLIENT_URL_CACHE_MAX_ENTRIES.defaultValue())
@@ -214,6 +224,9 @@ public final class HugeClientPoolService {
         }
         this.sslService.configSSL(this.config, connection);
         HugeClient client = HugeClientUtil.tryConnect(connection);
+        String authType = token != null ? "bearer" : username != null ? "basic" : "anonymous";
+        this.statisticsContexts.put(client, DigestUtils.sha256Hex(JsonUtil.toJson(
+                Arrays.asList(url, authType, token, username, password))));
 
         return client;
     }

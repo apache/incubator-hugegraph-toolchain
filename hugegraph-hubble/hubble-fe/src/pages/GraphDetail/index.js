@@ -18,8 +18,8 @@
 
 import PageHeader from '../../components/PageHeader';
 import {
-    Alert, Row, Col, Button, Spin, message, Space, Table,
-    Card, Empty, Statistic, Tag,
+    Alert, Row, Col, Button, Spin, Space, Table,
+    Card, Empty, Statistic, Tag, Tooltip,
 } from 'antd';
 import {
     NodeIndexOutlined, ReloadOutlined, SearchOutlined, ShareAltOutlined,
@@ -34,7 +34,6 @@ import {useTranslation} from 'react-i18next';
 const GraphDetail = () => {
     const [pageLoading, setPageLoading] = useState(true);
     const [statisticsLoading, setStatisticsLoading] = useState(true);
-    const [updating, setUpdating] = useState(false);
     const [statistic, setStatistic] = useState({});
     const [statisticsStatus, setStatisticsStatus] = useState('loading');
     const [pageDataRoute, setPageDataRoute] = useState(null);
@@ -42,7 +41,6 @@ const GraphDetail = () => {
     const [pageError, setPageError] = useState(false);
     const pageRequest = useRef(null);
     const statisticsRequest = useRef(null);
-    const updateRequest = useRef(null);
     const {graphspace, graph} = useParams();
     const navigate = useNavigate();
     const {t} = useTranslation();
@@ -111,7 +109,7 @@ const GraphDetail = () => {
         }
     }, [graphspace, graph, routeKey]);
 
-    const loadStatistics = useCallback(async () => {
+    const loadStatistics = useCallback(async (full = false) => {
         const token = Symbol('graph-detail-statistics');
         statisticsRequest.current = token;
         setStatisticsLoading(true);
@@ -119,17 +117,25 @@ const GraphDetail = () => {
         setStatistic({});
         const inlineErrorConfig = {suppressBusinessErrorToast: true};
         try {
-            const res = await api.manage.getGraphStatistic(
-                graphspace,
-                graph,
-                inlineErrorConfig
-            );
+            // The initial read only uses an existing snapshot. Full graph
+            // statistics are requested explicitly and never block core metadata.
+            const res = full
+                ? await api.manage.getGraphStatistic(graphspace, graph, inlineErrorConfig)
+                : await api.analysis.getGraphData(graphspace, graph);
             if (statisticsRequest.current !== token) {
                 return;
             }
             if (res.status === 200) {
-                setStatistic(res.data);
-                setStatisticsStatus('success');
+                const data = full ? res.data : {
+                    vertex_count: res.data?.vertexcount,
+                    edge_count: res.data?.edgecount,
+                    update_time: res.data?.date,
+                    approximate: res.data?.approximate,
+                    scan_limit: res.data?.scan_limit,
+                };
+                setStatistic(data);
+                setStatisticsStatus(data?.vertex_count != null && data?.edge_count != null
+                    ? 'success' : 'idle');
                 setStatisticsDataRoute(routeKey);
                 return;
             }
@@ -152,38 +158,6 @@ const GraphDetail = () => {
         }
     }, [graphspace, graph, routeKey]);
 
-    const handleUpdate = useCallback(async () => {
-        const token = Symbol('graph-detail-update');
-        const requestedRoute = routeKey;
-        updateRequest.current = token;
-        setUpdating(true);
-        try {
-            const res = await api.manage.updateGraphStatistic(graphspace, graph);
-            if (updateRequest.current !== token
-                || currentRoute.current !== requestedRoute) {
-                return;
-            }
-            if (res.status !== 200) {
-                message.error(t('graph.detail.update_failed'));
-                return;
-            }
-            message.success(t('graph.detail.update_success'));
-            await loadStatistics();
-        }
-        catch {
-            if (updateRequest.current === token
-                && currentRoute.current === requestedRoute) {
-                message.error(t('graph.detail.update_failed'));
-            }
-        }
-        finally {
-            if (updateRequest.current === token
-                && currentRoute.current === requestedRoute) {
-                setUpdating(false);
-            }
-        }
-    }, [graphspace, graph, loadStatistics, routeKey, t]);
-
     useEffect(() => {
         if (!graphspace || !graph) {
             return undefined;
@@ -193,8 +167,6 @@ const GraphDetail = () => {
         return () => {
             pageRequest.current = null;
             statisticsRequest.current = null;
-            updateRequest.current = null;
-            setUpdating(false);
         };
     }, [graphspace, graph, loadPage, loadStatistics]);
 
@@ -260,6 +232,9 @@ const GraphDetail = () => {
                                 <div className={style.statusBar}>
                                     <Space size='middle'>
                                         <span>{t('graph.detail.data_status')}</span>
+                                        <Tooltip title={t(visibleStatistic.scan_limit != null
+                                            ? 'graph.detail.bounded_statistics_hint' : 'graph.detail.snapshot_hint',
+                                            {limit: visibleStatistic.scan_limit ?? 100000})}>
                                         <Tag
                                             color={visibleStatisticsStatus === 'error'
                                                 ? 'gold'
@@ -271,8 +246,11 @@ const GraphDetail = () => {
                                                 ? t('graph.detail.partial')
                                                 : visibleStatisticsStatus === 'success'
                                                     ? t('graph.detail.available')
-                                                    : t('graph.detail.loading')}
+                                                    : visibleStatisticsStatus === 'loading'
+                                                        ? t('graph.detail.loading')
+                                                        : t('graph.detail.not_collected')}
                                         </Tag>
+                                        </Tooltip>
                                         <span className={style.updatedAt}>
                                             {t('graph.detail.last_update')}
                                             {visibleStatistic.update_time ?? '--/--'}
@@ -280,10 +258,10 @@ const GraphDetail = () => {
                                     </Space>
                                     <Button
                                         icon={<ReloadOutlined />}
-                                        loading={updating}
-                                        onClick={handleUpdate}
+                                        loading={statisticsLoading}
+                                        onClick={() => loadStatistics(true)}
                                     >
-                                        {t('graph.detail.update_data')}
+                                        {t('graph.detail.collect_statistics')}
                                     </Button>
                                 </div>
 
@@ -297,7 +275,7 @@ const GraphDetail = () => {
                                             <Button
                                                 size='small'
                                                 loading={statisticsLoading}
-                                                onClick={loadStatistics}
+                                                onClick={() => loadStatistics(true)}
                                             >
                                                 {t('graph.detail.retry_statistics')}
                                             </Button>

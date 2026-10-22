@@ -179,6 +179,28 @@ public class GraphSpaceServiceTest {
         Assert.assertFalse(response.get(0).containsKey("dpUserName"));
         Assert.assertFalse(response.get(0).containsKey("dpPassWord"));
         Assert.assertFalse(response.get(0).containsKey("configs"));
+        Assert.assertEquals(java.util.Collections.emptyMap(),
+                            response.get(0).get("statistic"));
+        Mockito.verifyNoInteractions(this.graphsService);
+    }
+
+    @Test
+    public void testGraphSpaceDetailDoesNotLoadGraphStatistics() {
+        GraphSpaceManager manager = Mockito.mock(GraphSpaceManager.class);
+        AuthManager auth = Mockito.mock(AuthManager.class);
+        Mockito.when(this.client.graphSpace()).thenReturn(manager);
+        Mockito.when(this.client.auth()).thenReturn(auth);
+        Mockito.when(manager.getGraphSpace("public"))
+               .thenReturn(graphSpace("public", false, "20260712"));
+
+        Map<String, Object> anonymous = this.service.getAnonymous(this.client, "public");
+        GraphSpaceEntity managed = this.service.getWithAdmins(this.client, "public");
+
+        Assert.assertEquals("public", anonymous.get("name"));
+        Assert.assertEquals(java.util.Collections.emptyMap(), anonymous.get("statistic"));
+        Assert.assertEquals("public", managed.getName());
+        Assert.assertTrue(managed.getStatistic().isEmpty());
+        Mockito.verifyNoInteractions(this.graphsService);
     }
 
     @Test
@@ -384,7 +406,7 @@ public class GraphSpaceServiceTest {
     }
 
     @Test
-    public void testAnonymousGraphSpacesCollectStatisticsAfterPaging() {
+    public void testAnonymousGraphSpacesReturnCoreMetadataWithoutStatistics() {
         GraphSpaceManager manager = Mockito.mock(GraphSpaceManager.class);
         Mockito.when(this.client.graphSpace()).thenReturn(manager);
         Mockito.when(manager.listGraphSpace())
@@ -404,16 +426,13 @@ public class GraphSpaceServiceTest {
         Assert.assertEquals(3L, response.getTotal());
         Assert.assertEquals(1, response.getRecords().size());
         Assert.assertEquals("b", response.getRecords().get(0).get("name"));
-        Mockito.verify(this.graphsService)
-               .listGraphNames(this.client, "b", "");
-        Mockito.verify(this.graphsService, Mockito.never())
-               .listGraphNames(this.client, "a", "");
-        Mockito.verify(this.graphsService, Mockito.never())
-               .listGraphNames(this.client, "c", "");
+        Assert.assertEquals(java.util.Collections.emptyMap(),
+                            response.getRecords().get(0).get("statistic"));
+        Mockito.verifyNoInteractions(this.graphsService);
     }
 
     @Test
-    public void testAccessibleGraphSpacesCollectStatisticsAfterPaging() {
+    public void testAccessibleGraphSpacesReturnCoreMetadataWithoutStatistics() {
         GraphSpaceManager manager = Mockito.mock(GraphSpaceManager.class);
         AuthManager auth = Mockito.mock(AuthManager.class);
         Mockito.when(this.client.graphSpace()).thenReturn(manager);
@@ -434,12 +453,9 @@ public class GraphSpaceServiceTest {
 
         Assert.assertEquals(3L, response.getTotal());
         Assert.assertEquals("b", response.getRecords().get(0).get("name"));
-        Mockito.verify(this.graphsService)
-               .listGraphNames(this.client, "b", "");
-        Mockito.verify(this.graphsService, Mockito.never())
-               .listGraphNames(this.client, "a", "");
-        Mockito.verify(this.graphsService, Mockito.never())
-               .listGraphNames(this.client, "c", "");
+        Assert.assertEquals(java.util.Collections.emptyMap(),
+                            response.getRecords().get(0).get("statistic"));
+        Mockito.verifyNoInteractions(this.graphsService);
     }
 
     @Test

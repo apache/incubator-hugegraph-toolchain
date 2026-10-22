@@ -33,6 +33,7 @@ import org.apache.hugegraph.controller.query.GremlinController;
 import org.apache.hugegraph.driver.GraphsManager;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.entity.GraphConnection;
+import org.apache.hugegraph.service.HugeClientPoolService;
 import org.apache.hugegraph.entity.enums.AsyncTaskStatus;
 import org.apache.hugegraph.entity.enums.ExecuteStatus;
 import org.apache.hugegraph.entity.enums.ExecuteType;
@@ -42,7 +43,6 @@ import org.apache.hugegraph.entity.query.GremlinQuery;
 import org.apache.hugegraph.entity.space.BuiltInEntity;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.loader.util.JsonUtil;
-import org.apache.hugegraph.options.HubbleOptions;
 import org.apache.hugegraph.service.algorithm.AsyncTaskService;
 import org.apache.hugegraph.service.auth.UserService;
 import org.apache.hugegraph.service.auth.AuthModeService;
@@ -50,7 +50,6 @@ import org.apache.hugegraph.service.load.LoadTaskService;
 import org.apache.hugegraph.service.query.ExecuteHistoryService;
 import org.apache.hugegraph.service.query.QueryService;
 import org.apache.hugegraph.service.schema.SchemaService;
-import org.apache.hugegraph.structure.GraphElement;
 import org.apache.hugegraph.structure.Task;
 import org.apache.hugegraph.structure.constant.GraphReadMode;
 import org.apache.hugegraph.structure.gremlin.ResultSet;
@@ -65,13 +64,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.concurrent.ConcurrentHashMap;
+import java.time.Clock;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -103,21 +102,25 @@ public class GraphsService {
     private LoadTaskService loadTaskService;
     @Autowired
     private org.apache.hugegraph.config.HugeConfig config;
+    @Autowired
+    private HugeClientPoolService clientPool;
 
     private static final String GRAPH_STORAGE = "v1/graph/%s/%s/g";
     private static final String RUNNING_TASKS = "running_tasks";
     private static final String STATISTICS = "statistics";
+    private static final String STATISTICS_UPDATED_AT = "statistics_updated_at";
+    private static final long STATISTICS_TTL = TimeUnit.MINUTES.toMillis(5);
     private static final String GREMLIN_STATISTICS_VERTEX =
-            "g.V().groupCount().by(label)";
+            "g.V().limit(100000).groupCount().by(label)";
     private static final String GREMLIN_STATISTICS_EDGE =
-            "g.E().groupCount().by(label)";
-    private static final int SMALL_STATISTICS_LIMIT = 10000;
-    private static final int SMALL_STATISTICS_PAGE_SIZE = 1000;
+            "g.E().limit(100000).groupCount().by(label)";
+    private static final int STATISTICS_SCAN_LIMIT = 100000;
     private static final String GRAPH_HLM = "hlm";
     private static final String GRAPH_COVID19 = "covid19";
 
     private final ConcurrentHashMap<String, Map<String, Object>> graphStatistics =
             new ConcurrentHashMap<>();
+    private Clock statisticsClock = Clock.systemUTC();
 
     public Map<String, Object> get(HugeClient client, String graphSpace,
                                    String graph,
@@ -147,24 +150,10 @@ public class GraphsService {
                                                 int pageNo, int pageSize,
                                                 boolean isVermeerEnabled,
                                                 Map<String, Object> vermeerInfo) {
-        IPage<Map<String, Object>> page = PageUtil.page(
+        return PageUtil.page(
                 sortedGraphsMetadata(client, graphSpace, query, createTime,
                                      isVermeerEnabled, vermeerInfo),
                 pageNo, pageSize);
-
-        for (Map<String, Object> result : page.getRecords()) {
-            String graph = result.get("name").toString();
-            result.put("statistic", evCount(client, graphSpace, graph));
-            try {
-                result.put("schemaview", schemaService.getSchemaView(
-                        client.assignGraph(graphSpace, graph)));
-            } catch (Exception e) {
-                log.warn("Failed to load the schema summary for graph '{}'",
-                         graph, e);
-            }
-        }
-
-        return page;
     }
 
     public IPage<Map<String, Object>> queryBriefPage(
@@ -195,14 +184,9 @@ public class GraphsService {
                                                          String createTime,
                                                          boolean isVermeerEnabled,
                                                          Map<String, Object> vermeerInfo) {
-        List<Map<String, Object>> graphs = sortedGraphsMetadata(
+        return sortedGraphsMetadata(
                 client, graphSpace, query, createTime,
                 isVermeerEnabled, vermeerInfo);
-        for (Map<String, Object> info : graphs) {
-            info.put("statistic", evCount(client, graphSpace,
-                                         info.get("name").toString()));
-        }
-        return graphs;
     }
 
     private List<Map<String, Object>> sortedGraphsMetadata(
@@ -232,6 +216,9 @@ public class GraphsService {
             }
 
             info.put("storage", info.get("data_size"));
+            // Core metadata must not depend on a graph-wide scan or a remote
+            // statistics request. Counts and schema previews load separately.
+            info.put("statistic", Collections.emptyMap());
             // Ensure graphspace field is present for frontend navigation
             info.putIfAbsent("graphspace", graphSpace);
             info.putIfAbsent("graphspace_nickname", graphSpace);
@@ -501,12 +488,31 @@ public class GraphsService {
     public GraphStatisticsEntity getStatistics(HugeClient client,
                                                String graphSpace,
                                                String graph) {
-        GraphStatisticsEntity result;
-        // Only invalidate the cache entry of the current graph
-        this.graphStatistics.remove(getStatisticsKey(graphSpace, graph));
-        result = postSmallStatistics(client, graphSpace, graph);
+        String key = this.statisticsKey(client, graphSpace, graph);
+        if (key == null) {
+            // Unregistered clients have no stable target/identity partition.
+            return this.collectBoundedStatistics(client);
+        }
+        Map<String, Object> cached = this.graphStatistics.compute(key, (ignored, previous) -> {
+            if (this.freshStatistics(previous)) {
+                return previous;
+            }
+            GraphStatisticsEntity result = this.collectBoundedStatistics(client);
+            return Map.of(STATISTICS, result,
+                          STATISTICS_UPDATED_AT, this.statisticsClock.millis());
+        });
+        return (GraphStatisticsEntity) cached.get(STATISTICS);
+    }
 
-        return result;
+    private String statisticsKey(HugeClient client, String graphSpace, String graph) {
+        String context = this.clientPool.statisticsContext(client);
+        return context == null ? null : "bounded:" + context + ":" +
+               JsonUtil.toJson(java.util.Arrays.asList(graphSpace, graph));
+    }
+
+    private boolean freshStatistics(Map<String, Object> cached) {
+        return cached != null && this.statisticsClock.millis() -
+               (Long) cached.get(STATISTICS_UPDATED_AT) < STATISTICS_TTL;
     }
 
     public void postStatistics(RestClient pdClient,
@@ -657,19 +663,7 @@ public class GraphsService {
         return result;
     }
 
-    public GraphStatisticsEntity postSmallStatistics(HugeClient client,
-                                                     String graphSpace,
-                                                     String graph) {
-        try {
-            return this.postSmallGremlinStatistics(client);
-        } catch (RuntimeException e) {
-            log.warn("Gremlin statistics failed for {}/{}, falling back " +
-                     "to bounded graph reads", graphSpace, graph, e);
-            return this.postSmallGraphStatistics(client);
-        }
-    }
-
-    private GraphStatisticsEntity postSmallGremlinStatistics(HugeClient client) {
+    public GraphStatisticsEntity collectBoundedStatistics(HugeClient client) {
         ResultSet vertexResult =
                 queryService.executeQueryCount(client,
                                                GREMLIN_STATISTICS_VERTEX);
@@ -685,6 +679,8 @@ public class GraphsService {
         result.setEdges(edges);
         result.setEdgeCount(getCountFromLabels(edges));
         result.setUpdateTime(HubbleUtil.dateFormat());
+        result.setApproximate(true);
+        result.setScanLimit(STATISTICS_SCAN_LIMIT);
         return result;
     }
 
@@ -695,45 +691,6 @@ public class GraphsService {
                  data.get(0) instanceof Map,
                  "Malformed %s statistics response", elementType);
         return HubbleUtil.uncheckedCast(data.get(0));
-    }
-
-    private GraphStatisticsEntity postSmallGraphStatistics(HugeClient client) {
-        Map<String, Object> vertexCounts = new HashMap<>();
-        int vertexCount = countSmallElements(
-                client.graph().iterateVertices(SMALL_STATISTICS_PAGE_SIZE),
-                vertexCounts);
-        Map<String, Object> edgeCounts = new HashMap<>();
-        int edgeCount = countSmallElements(
-                client.graph().iterateEdges(SMALL_STATISTICS_PAGE_SIZE),
-                edgeCounts);
-
-        GraphStatisticsEntity result = GraphStatisticsEntity.emptyEntity();
-        result.setVertices(vertexCounts);
-        result.setVertexCount(String.valueOf(vertexCount));
-        result.setEdges(edgeCounts);
-        result.setEdgeCount(String.valueOf(edgeCount));
-        result.setUpdateTime(HubbleUtil.dateFormat());
-        return result;
-    }
-
-    private static int countSmallElements(
-            Iterator<? extends GraphElement> elements,
-            Map<String, Object> counts) {
-        int count = 0;
-        while (elements.hasNext()) {
-            GraphElement element = elements.next();
-            count++;
-            Ex.check(count <= SMALL_STATISTICS_LIMIT,
-                     "Small graph statistics fallback exceeds %s elements",
-                     SMALL_STATISTICS_LIMIT);
-            incrementLabel(counts, element.label());
-        }
-        return count;
-    }
-
-    private static void incrementLabel(Map<String, Object> counts, String label) {
-        Number count = (Number) counts.getOrDefault(label, 0L);
-        counts.put(label, Math.addExact(count.longValue(), 1L));
     }
 
     public String getCountFromLabels(Map<String, Object> labels) {
@@ -839,25 +796,38 @@ public class GraphsService {
     }
 
     /**
-     * 统计指定单个图中的顶点总数和边总数
+     * Read recorded element counts without starting a graph-wide count.
+     * A graph without a recent statistics snapshot has unknown counts.
      */
     public Map<String, Object> evCount(HugeClient client,
                                        String graphSpace,
                                        String graph) {
         Map<String, Object> res = new HashMap<>();
+        String key = this.statisticsKey(client, graphSpace, graph);
+        Map<String, Object> cached = key == null ? null : this.graphStatistics.get(key);
+        if (this.freshStatistics(cached)) {
+            GraphStatisticsEntity statistics = (GraphStatisticsEntity) cached.get(STATISTICS);
+            res.put("date", statistics.getUpdateTime().substring(0, 10).replace("-", ""));
+            res.put("vertex", Long.valueOf(statistics.getVertexCount()));
+            res.put("edge", Long.valueOf(statistics.getEdgeCount()));
+            res.put("approximate", true);
+            res.put("scan_limit", statistics.getScanLimit());
+            return res;
+        }
         Long edgeCount = null;
         Long vertexCount = null;
         String statisticDate = HubbleUtil.dateFormatDay(HubbleUtil.nowDate());
         client.assignGraph(graphSpace, graph);
         GraphMetricsAPI.ElementCount statistic = null;
-        boolean pdEnabled = this.config != null &&
-                            this.config.get(HubbleOptions.PD_ENABLED);
-        if (!pdEnabled) {
+        try {
             statistic = client.graph().getEVCount(statisticDate);
             if (statistic == null) {
                 statisticDate = HubbleUtil.dateFormatLastDay();
                 statistic = client.graph().getEVCount(statisticDate);
             }
+        } catch (RuntimeException e) {
+            log.warn("Recorded element counts are unavailable for {}/{}",
+                     graphSpace, graph, e);
         }
 
         if (statistic != null) {
@@ -865,24 +835,12 @@ public class GraphsService {
             edgeCount = statistic.getEdges();
         } else {
             statisticDate = null;
-            try {
-                GraphStatisticsEntity live =
-                        this.postSmallGraphStatistics(client);
-                vertexCount = Long.valueOf(live.getVertexCount());
-                edgeCount = Long.valueOf(live.getEdgeCount());
-                statisticDate = HubbleUtil.dateFormatDay(HubbleUtil.nowDate());
-            } catch (RuntimeException e) {
-                vertexCount = null;
-                edgeCount = null;
-                statisticDate = null;
-                log.warn("Live element counts are unavailable for {}/{}",
-                         graphSpace, graph, e);
-            }
         }
 
         res.put("date", statisticDate);
         res.put("vertex", vertexCount);
         res.put("edge", edgeCount);
+        res.put("approximate", true);
         return res;
     }
 }

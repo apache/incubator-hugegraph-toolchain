@@ -93,7 +93,7 @@ test('ships a localized default GraphSpace name in both languages', () => {
     expect(en.graphspace.default_name).toBe('Default GraphSpace');
 });
 
-test('falls back to the daily-update label when statistics are unavailable', () => {
+test('shows unknown totals as not collected', () => {
     const item = {
         name: 'empty',
         nickname: 'Empty',
@@ -118,7 +118,7 @@ test('falls back to the daily-update label when statistics are unavailable', () 
 
     expect(screen.getByText('graphspace.card.vertex: -')).toBeInTheDocument();
     expect(screen.getByText('graphspace.card.edge: -')).toBeInTheDocument();
-    expect(screen.getByText('graphspace.card.daily_update')).toBeInTheDocument();
+    expect(screen.getByText('graph.detail.not_collected')).toBeInTheDocument();
 });
 
 test('treats a backend nickname echo as an unset alias', () => {

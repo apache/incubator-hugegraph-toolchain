@@ -175,7 +175,7 @@ public class GraphSpaceService {
         String name = info.get("name").toString();
         info.put("graphspace_admin",
                  userService.listGraphSpaceAdmin(client, name));
-        info.put("statistic", evCount(client, name));
+        info.put("statistic", Collections.emptyMap());
         return info;
     }
 
@@ -219,7 +219,6 @@ public class GraphSpaceService {
     private Map<String, Object> accessibleView(HugeClient client,
                                                GraphSpace space) {
         GraphSpaceEntity entity = GraphSpaceEntity.fromGraphSpace(space);
-        entity.setStatistic(evCount(client, space.getName()));
         Map<String, Object> info = toView(entity);
         info.put("authed", true);
         info.put("default", false);
@@ -331,7 +330,6 @@ public class GraphSpaceService {
     private Map<String, Object> anonymousView(HugeClient client,
                                               GraphSpace space) {
         GraphSpaceEntity entity = GraphSpaceEntity.fromGraphSpace(space);
-        entity.setStatistic(evCount(client, space.getName()));
         Map<String, Object> info = toView(entity);
         info.put("authed", true);
         info.put("default", false);
@@ -557,7 +555,6 @@ public class GraphSpaceService {
             entity.graphspaceAdmin =
                     userService.listGraphSpaceAdmin(client, name);
         }
-        entity.setStatistic(evCount(client, graphSpace.getName()));
         return entity;
     }
 
