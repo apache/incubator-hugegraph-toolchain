@@ -250,10 +250,12 @@
                         <artifactId>maven-source-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>create-source-jar</id>
+                                <!-- Merges with the inherited execution that attaches the
+                                     sources jar; adds the test sources jar -->
+                                <id>attach-sources</id>
                                 <goals>
-                                    <goal>jar</goal>
-                                    <goal>test-jar</goal>
+                                    <goal>jar-no-fork</goal>
+                                    <goal>test-jar-no-fork</goal>
                                 </goals>
                             </execution>
                         </executions>
@@ -283,12 +285,10 @@
                         <artifactId>maven-javadoc-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>create-javadoc-jar</id>
+                                <id>attach-javadocs</id>
                                 <goals>
-                                    <goal>javadoc</goal>
                                     <goal>jar</goal>
                                 </goals>
-                                <phase>package</phase>
                             </execution>
                         </executions>
                         <configuration>

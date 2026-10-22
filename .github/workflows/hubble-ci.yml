@@ -151,6 +151,7 @@ jobs:
 
       - name: Verify frontend third-party notices
         run: |
+          python3 hugegraph-dist/release-docs/licenses/fe-licenses/test_generate.py
           python3 hugegraph-dist/release-docs/licenses/fe-licenses/generate.py
           git diff --exit-code -- hugegraph-dist/release-docs/licenses/fe-licenses
 

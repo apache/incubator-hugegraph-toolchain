@@ -49,8 +49,7 @@ def sha256(data):
 
 def installed_packages():
     expected_manager = json.loads((FRONTEND / 'package.json').read_text())['packageManager']
-    # Corepack selects packageManager from its working directory before pnpm
-    # processes --dir, so invoke it inside the pinned frontend project.
+    # Corepack selects the pinned manager before pnpm processes its arguments.
     actual_manager = subprocess.check_output([
         'pnpm', '--version'], cwd=FRONTEND).decode().strip()
     if expected_manager != 'pnpm@' + actual_manager:

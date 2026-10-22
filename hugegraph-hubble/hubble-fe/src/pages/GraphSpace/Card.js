@@ -24,14 +24,21 @@ import style from './index.module.scss';
 import {useCallback} from 'react';
 import {useTranslation} from 'react-i18next';
 import {getResourceDisplayName} from '../../utils/displayName';
-
-const showText = (val, suffix, unlimited, empty) => (
-    val > 99999 ? (empty === undefined ? unlimited : empty) : `${val}${suffix}`
-);
+import {formatResourceLimit, formatStorageUsed, formatStorageLimit,
+    storageUsagePercent, formatComputeLimit} from './storageUsage';
 
 const formatPercent = percent => {
-    return percent >= 100 ? <InfoOutlined /> : `${percent}%`;
+    if (percent >= 100) {
+        return <InfoOutlined />;
+    }
+    if (percent > 0 && percent < 0.01) {
+        return '<0.01%';
+    }
+    const rounded = Number(percent.toFixed(2));
+    return rounded === 100 ? '<100%' : `${rounded}%`;
 };
+
+const formatUnlimitedPercent = () => '--';
 
 const TitleField = ({item, onClick, onKeyDown}) => {
     const {t} = useTranslation();
@@ -73,6 +80,7 @@ const GraphSpaceCard = ({
 }) => {
     const navigate = useNavigate();
     const {t} = useTranslation();
+    const storagePercent = storageUsagePercent(item);
 
     const handleGotoGraph = useCallback(() => {
         navigate(`/graphspace/${item.name}`);
@@ -132,9 +140,9 @@ const GraphSpaceCard = ({
     };
 
     const unlimited = t('graphspace.unit.unlimited');
-    const cpu = showText(item.cpu_limit, t('graphspace.unit.cpu'), unlimited);
-    const memory = showText(item.memory_limit, t('graphspace.unit.memory'), unlimited);
-    const storage = showText(item.storage_limit, t('graphspace.unit.memory'), unlimited);
+    const cpu = formatResourceLimit(item.cpu_limit, t('graphspace.unit.cpu'), unlimited);
+    const memory = formatResourceLimit(item.memory_limit, t('graphspace.unit.memory'), unlimited);
+    const storage = formatStorageLimit(item.storage_limit, unlimited);
     const statisticDate = item.statistic?.date;
 
     return (
@@ -212,10 +220,17 @@ const GraphSpaceCard = ({
                             </li>
                             <li>
                                 {t('graphspace.card.max_graph')}
-                                {showText(item.max_graph_number, '', t('graphspace.unit.unlimited'))}
+                                {formatResourceLimit(item.max_graph_number, '', t('graphspace.unit.unlimited'))}
                             </li>
                             <li>{t('graphspace.card.cpu', {val: cpu})}</li>
                             <li>{t('graphspace.card.memory', {val: memory})}</li>
+                            <li>{t('graphspace.card.compute')}{' '}
+                                {formatComputeLimit(item.compute_cpu_limit, item.cpu_limit,
+                                    t('graphspace.unit.cpu'), t)}
+                                {' / '}
+                                {formatComputeLimit(item.compute_memory_limit, item.memory_limit,
+                                    t('graphspace.unit.memory'), t)}
+                            </li>
                             <li>{t('graphspace.card.storage')}
                                 {storage}
                             </li>
@@ -226,9 +241,9 @@ const GraphSpaceCard = ({
                             <Progress
                                 type='circle'
                                 width={96}
-                                percent={item.storage_percent * 100}
-                                format={formatPercent}
-                                status={item.storage_percent >= 1
+                                percent={storagePercent ?? 0}
+                                format={storagePercent === null ? formatUnlimitedPercent : formatPercent}
+                                status={storagePercent >= 100
                                     ? 'exception' : 'normal'}
                             />
                             <div
@@ -236,11 +251,10 @@ const GraphSpaceCard = ({
                             >
                                 <div>{t('graphspace.card.used')}</div>
                                 <div>
-                                    {item.storage_used}{t('graphspace.unit.memory')}
+                                    {formatStorageUsed(item)}
                                     {' / '}
-                                    {showText(
+                                    {formatStorageLimit(
                                         item.storage_limit,
-                                        t('graphspace.unit.memory'),
                                         t('graphspace.unit.unlimited'),
                                         '--'
                                     )}

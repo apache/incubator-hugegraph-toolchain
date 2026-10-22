@@ -25,7 +25,8 @@ import * as user from '../../utils/user';
 let mockAuthContext;
 
 jest.mock('react-i18next', () => ({
-    useTranslation: () => ({t: key => key}),
+    useTranslation: () => ({t: (key, options) => key === 'graphspace.unit.inherited'
+        ? `Inherited (${options.value})` : key}),
 }));
 
 jest.mock('../../api', () => ({
@@ -241,4 +242,15 @@ test('keeps the eleven-card image page size fixed without a size selector', asyn
         expect.objectContaining({page_size: 11}),
         expect.anything()
     );
+});
+
+test('list view labels raw zero compute as inheritance of current graph-service limits', async () => {
+    api.manage.getGraphSpaceList.mockResolvedValue({status: 200, data: {records: [{
+        name: 'inherited', cpu_limit: 4, memory_limit: 8,
+        compute_cpu_limit: 0, compute_memory_limit: 0,
+    }], total: 1}});
+    render(<GraphSpace />);
+    fireEvent.click(screen.getByLabelText('common.label.list_mode'));
+    expect(await screen.findByText(/Inherited \(4graphspace.unit.cpu\)/)).toBeInTheDocument();
+    expect(screen.getByText(/Inherited \(8graphspace.unit.memory\)/)).toBeInTheDocument();
 });
