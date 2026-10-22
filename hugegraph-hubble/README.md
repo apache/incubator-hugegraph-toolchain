@@ -24,6 +24,15 @@ updates, omitted compute fields stay omitted through the Java client, so Server
 preserves their existing setting atomically. Explicit zero restores inheritance.
 Existing positive settings are not migrated.
 
+Upgrade the Java Client with this paired Server change before using partial
+GraphSpace updates. The client preserves omitted compute fields, explicit zero
+and explicit positive values, including values read back from Server. Older
+clients serialize an unset compute limit as zero; the new Server interprets
+that explicit zero as restoring inheritance. If a client cannot be upgraded,
+read the existing GraphSpace before updating it or explicitly send its current
+compute limits to preserve them. Server cannot distinguish those legacy default
+zeros from an intentional request to restore inheritance.
+
 Cards and tables label zero compute limits as `Inherited (current effective limit)`.
 The editor accepts zero, shows its effective limit, and preserves zero when only
 graph-service CPU or memory changes. The creation form still starts all four

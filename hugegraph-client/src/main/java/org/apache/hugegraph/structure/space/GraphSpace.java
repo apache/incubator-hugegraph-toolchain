@@ -17,7 +17,9 @@
 
 package org.apache.hugegraph.structure.space;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.HashMap;
@@ -42,10 +44,13 @@ public class GraphSpace {
     private int cpuLimit;
     @JsonProperty("memory_limit")
     private int memoryLimit; // GB
+    // Null preserves omission in requests; explicit zero selects inheritance.
     @JsonProperty("compute_cpu_limit")
-    private int computeCpuLimit;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Integer computeCpuLimit;
     @JsonProperty("compute_memory_limit")
-    private int computeMemoryLimit; // GB
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Integer computeMemoryLimit; // GB
     @JsonProperty("max_graph_number")
     private int maxGraphNumber;
     @JsonProperty("max_role_number")
@@ -245,18 +250,22 @@ public class GraphSpace {
         return this;
     }
 
+    @JsonIgnore
     public int getComputeCpuLimit() {
-        return computeCpuLimit;
+        return computeCpuLimit == null ? 0 : computeCpuLimit;
     }
 
+    @JsonProperty("compute_cpu_limit")
     public void setComputeCpuLimit(int computeCpuLimit) {
         this.computeCpuLimit = computeCpuLimit;
     }
 
+    @JsonIgnore
     public int getComputeMemoryLimit() {
-        return computeMemoryLimit;
+        return computeMemoryLimit == null ? 0 : computeMemoryLimit;
     }
 
+    @JsonProperty("compute_memory_limit")
     public void setComputeMemoryLimit(int computeMemoryLimit) {
         this.computeMemoryLimit = computeMemoryLimit;
     }
@@ -356,8 +365,12 @@ public class GraphSpace {
             this.setDescription(graphSpace.getDescription());
             this.setCpuLimit(graphSpace.getCpuLimit());
             this.setMemoryLimit(graphSpace.getMemoryLimit());
-            this.setComputeCpuLimit(graphSpace.getComputeCpuLimit());
-            this.setComputeMemoryLimit(graphSpace.getComputeMemoryLimit());
+            if (graphSpace.computeCpuLimit != null) {
+                this.setComputeCpuLimit(graphSpace.computeCpuLimit);
+            }
+            if (graphSpace.computeMemoryLimit != null) {
+                this.setComputeMemoryLimit(graphSpace.computeMemoryLimit);
+            }
             this.setOperatorImagePath(graphSpace.getOperatorImagePath());
             this.setInternalAlgorithmImageUrl(graphSpace.getInternalAlgorithmImageUrl());
             this.setStorageLimit(graphSpace.getStorageLimit());
