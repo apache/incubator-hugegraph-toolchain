@@ -123,6 +123,23 @@ public class QueryPropertyPreviewTest {
     }
 
     @Test
+    public void testOversizedPropertyKeysAreOmittedWithoutChangingIdentity() {
+        String longName = "key".repeat(100000);
+        Vertex original = new Vertex(longName);
+        original.id(longName);
+        original.property(longName, "omitted");
+        original.property("normal", 7L);
+        QueryPropertyPreview preview = new QueryPropertyPreview();
+        Vertex copy = (Vertex) preview.project(new TypedResult(Type.VERTEX, List.of(original)))
+                                     .getData().get(0);
+        Assert.assertEquals(Map.of("normal", 7L), copy.properties());
+        Assert.assertSame(longName, copy.id());
+        Assert.assertSame(longName, copy.label());
+        Assert.assertTrue(original.properties().containsKey(longName));
+        Assert.assertTrue(preview.truncated());
+    }
+
+    @Test
     public void testNestedCollectionsAndScalarStringsAreBounded() {
         Vertex original = new Vertex("person");
         original.id(1);

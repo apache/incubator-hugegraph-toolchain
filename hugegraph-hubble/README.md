@@ -21,6 +21,26 @@ Run Gremlin queries and inspect their graph, table, or JSON results without leav
 
 ![Hubble GQL traversal and graph visualization](docs/images/g6/query.png)
 
+### Bounded interactive previews
+
+Ordinary Gremlin reads without a bound default to 300 rows. Interactive previews
+return at most 1,000 rows and display at most 1,000 vertices with the configured
+edge budget. Common explicit large limits prompt users to select the existing
+asynchronous mode before a query is submitted.
+
+Large preview properties show a bounded prefix and their original length. Clipped
+properties are read-only; exported previews retain that marker and cannot be
+imported as complete graph data. No full-property request runs automatically.
+
+The [local performance report](https://github.com/hugegraph/hugegraph-toolchain/pull/80)
+retains Chromium evidence for defaults, partial results, preflight, context
+switching and anonymous account/login visibility. Enabled-auth browser integration
+is listed separately as pending; service/controller tests cover those roles.
+
+![Interactive 1,000-vertex preview](https://github.com/hugegraph/hugegraph-toolchain/blob/06561300277881bd4310434b6ee1adfefdbddbbb/docs/performance/2026-10-22-hubble-hstore/screenshots/comparison/after-perf_large8192-vertices1000.png?raw=true)
+
+![Read-only large-property preview](https://github.com/hugegraph/hugegraph-toolchain/blob/06561300277881bd4310434b6ee1adfefdbddbbb/docs/performance/2026-10-22-hubble-hstore/screenshots/comparison/after-large-property-readonly.png?raw=true)
+
 ### Natural-language graph queries (Text2GQL)
 
 Open **Graph Query → GQL Traversal** and ask a question in the **Text2GQL**

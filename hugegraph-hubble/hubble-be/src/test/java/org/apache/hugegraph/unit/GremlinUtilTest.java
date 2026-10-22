@@ -28,6 +28,22 @@ public class GremlinUtilTest {
     private static final int LIMIT = 250;
 
     @Test
+    public void testExpansionAfterBarrierReceivesFinalLimits() {
+        for (String query : new String[]{"g.V().fold().unfold().out()",
+                                         "g.V().groupCount().by(label).unfold()",
+                                         "g.V().fold().limit(1).unfold().out()"}) {
+            Assert.assertEquals(query + ".limit(300)", GremlinUtil.optimizeLimit(query, 300));
+            Assert.assertEquals(query + ".limit(1001)", GremlinUtil.optimizePreviewLimit(query, 1001));
+        }
+        for (String query : new String[]{"g.V().count()", "g.V().fold()",
+                                         "g.V().groupCount().by(label)", "g.V().values('age').sum()",
+                                         "g.V().property('x', 1).fold().unfold().out()"}) {
+            Assert.assertEquals(query, GremlinUtil.optimizeLimit(query, 300));
+            Assert.assertEquals(query, GremlinUtil.optimizePreviewLimit(query, 1001));
+        }
+    }
+
+    @Test
     public void testPreviewCapUsesReadGrammarAndPreservesComments() {
         Assert.assertEquals("g.V().path().limit(12000).limit(1001) // preview",
                             GremlinUtil.optimizePreviewLimit(

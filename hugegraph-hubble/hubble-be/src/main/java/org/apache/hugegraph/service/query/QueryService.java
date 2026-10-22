@@ -691,6 +691,8 @@ public class QueryService {
         boolean truncated = false;
         for (List<Object> batch : Iterables.partition(vertexIds, batchSize)) {
             if (edges.size() >= edgeLimit) {
+                // Do not query further batches just to prove completeness.
+                truncated = true;
                 break;
             }
             List<String> escapedIds = batch.stream()
@@ -699,9 +701,9 @@ public class QueryService {
             String ids = StringUtils.join(escapedIds, ",");
             int batchLimit = edgeLimit - edges.size();
             String gremlin = String.format("g.V(%s).bothE().dedup().limit(%s)",
-                                           ids, batchLimit);
+                                           ids, batchLimit + 1);
             ResultSet resultSet = client.gremlin().gremlin(gremlin).execute();
-            truncated |= resultSet.size() >= batchLimit;
+            truncated |= resultSet.size() > batchLimit;
             for (Iterator<Result> iter = resultSet.iterator();
                  iter.hasNext() && edges.size() < edgeLimit;) {
                 Object object = iter.next().getObject();
@@ -728,7 +730,7 @@ public class QueryService {
                 degrees.merge(target, 1, Integer::sum);
             }
         }
-        return new EdgePreview(edges, truncated || edges.size() >= edgeLimit);
+        return new EdgePreview(edges, truncated);
     }
 
     private Map<Object, Vertex> verticesOfEdge(Map<String, Edge> edges,

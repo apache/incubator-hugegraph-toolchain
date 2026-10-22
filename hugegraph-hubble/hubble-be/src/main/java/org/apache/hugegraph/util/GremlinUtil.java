@@ -478,18 +478,22 @@ public final class GremlinUtil {
 
         Matcher steps = OUTER_STEP.matcher(outerSteps(code));
         boolean bounded = false;
+        boolean terminal = false;
         while (steps.find()) {
             String step = steps.group(1);
             if (TERMINAL_STEPS.contains(step)) {
-                return statement;
+                terminal = true;
+                bounded = true;
+                continue;
             }
             if (RESULT_LIMIT_STEPS.contains(step)) {
                 bounded = !LOCAL_SCOPE.matcher(code.substring(steps.end())).find();
             } else if (!FILTER_STEPS.contains(step)) {
+                terminal = false;
                 bounded = false;
             }
         }
-        if (bounded && !preview) {
+        if (terminal || bounded && !preview) {
             return statement;
         }
         return statement.substring(0, codeEnd) + ".limit(" + limit + ")" +

@@ -132,10 +132,14 @@ final class QueryPropertyPreview {
         if (value instanceof Map) {
             Map<Object, Object> copy = new LinkedHashMap<>();
             Map<?, ?> original = (Map<?, ?>) value;
+            int visited = 0;
             for (Map.Entry<?, ?> entry : original.entrySet()) {
-                if (copy.size() == COLLECTION_LIMIT) {
+                if (visited++ == COLLECTION_LIMIT) {
                     this.truncated = true;
                     break;
+                }
+                if (this.omitKey(entry.getKey())) {
+                    continue;
                 }
                 copy.put(entry.getKey(), this.value(entry.getValue(), depth + 1));
             }
@@ -167,16 +171,29 @@ final class QueryPropertyPreview {
         return value;
     }
 
+    private boolean omitKey(Object key) {
+        if (key instanceof String && ((String) key).length() > STRING_LIMIT) {
+            // Renaming a map key changes its meaning and can merge distinct
+            // entries. Omit it explicitly instead of manufacturing a new key.
+            this.truncated = true;
+            return true;
+        }
+        return false;
+    }
+
     private GraphElement element(GraphElement original, GraphElement copy) {
         this.copies.put(original, copy);
         // SDK query elements have an attached manager: property() on them can
         // write to Server. Only populate the detached copy's property map.
+        int visited = 0;
         for (Map.Entry<String, Object> entry : original.properties().entrySet()) {
-            if (copy.properties().size() == COLLECTION_LIMIT) {
+            if (visited++ == COLLECTION_LIMIT) {
                 this.truncated = true;
                 break;
             }
-            copy.properties().put(entry.getKey(), this.value(entry.getValue(), 0));
+            if (!this.omitKey(entry.getKey())) {
+                copy.properties().put(entry.getKey(), this.value(entry.getValue(), 0));
+            }
         }
         return copy;
     }

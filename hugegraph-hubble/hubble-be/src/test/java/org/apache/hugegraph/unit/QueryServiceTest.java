@@ -22,6 +22,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Collections;
 
@@ -241,8 +242,8 @@ public class QueryServiceTest {
     public void testEdgeBudgetStopsRemainingBatches() throws Exception {
         List<Vertex> vertices = this.vertices(300);
         List<Edge> edges = new ArrayList<>();
-        for (int i = 0; i < 500; i++) {
-            edges.add(this.edge("e" + i, i % 300, (i + 1) % 300));
+        for (int i = 0; i < 501; i++) {
+            edges.add(this.edge("e" + i, i % 100, (i + 1) % 100));
         }
         GremlinManager gremlin = this.mockGremlin(this.resultSet(vertices.toArray()),
                                                   this.resultSet(edges.toArray()));
@@ -254,10 +255,10 @@ public class QueryServiceTest {
     }
 
     @Test
-    public void testFullEnrichmentBatchReportsPartialEvenWhenEdgesAreFiltered()
+    public void testExtraEnrichmentCandidateReportsPartialEvenWhenEdgesAreFiltered()
            throws Exception {
         List<Edge> externalEdges = new ArrayList<>();
-        for (int i = 0; i < 500; i++) {
+        for (int i = 0; i < 501; i++) {
             externalEdges.add(this.edge("e" + i, 0, 2000 + i));
         }
         GremlinManager gremlin = this.mockGremlin(this.resultSet(this.vertices(1).toArray()),
@@ -267,6 +268,40 @@ public class QueryServiceTest {
         Assert.assertEquals(0, result.getGraphView().getEdges().size());
         Assert.assertTrue(result.isGraphTruncated());
         Mockito.verify(gremlin, Mockito.times(2)).gremlin(Mockito.anyString());
+    }
+
+    @Test
+    public void testExactlyFullSingleEnrichmentBatchIsNotTruncated() throws Exception {
+        List<Edge> edges = new ArrayList<>();
+        for (int i = 0; i < 500; i++) {
+            edges.add(this.edge("e" + i, i % 100, (i + 1) % 100));
+        }
+        GremlinManager gremlin = this.mockGremlin(this.resultSet(this.vertices(100).toArray()),
+                                                  this.resultSet(edges.toArray()));
+        GremlinResult result = this.serviceWithConfig().executeGremlinQuery(
+                               this.mockClient(gremlin), new GremlinQuery("g.V().limit(100)"));
+        Assert.assertEquals(500, result.getGraphView().getEdges().size());
+        Assert.assertFalse(result.isGraphTruncated());
+        Mockito.verify(gremlin).gremlin(Mockito.argThat(query ->
+                query.contains(".bothE()") && query.endsWith(".limit(501)")));
+        Mockito.verify(gremlin, Mockito.times(2)).gremlin(Mockito.anyString());
+    }
+
+    @Test
+    public void testOversizedMapKeysAreOmittedWithoutMergingOtherEntries() throws Exception {
+        String prefix = "x".repeat(1024 * 1024 - 1);
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put(prefix + "a", 1L);
+        map.put(prefix + "b", 2L);
+        map.put("ordinary", 3L);
+        GremlinManager gremlin = this.mockGremlin(this.resultSet(map));
+        GremlinQuery query = new GremlinQuery("g.V().groupCount().by('payload')");
+        query.setPreview(true);
+        GremlinResult result = this.serviceWithConfig().executeGremlinQuery(this.mockClient(gremlin), query);
+        Assert.assertEquals(Map.of("ordinary", 3L), result.getJsonView().getData().get(0));
+        Assert.assertTrue(result.isPropertiesTruncated());
+        Assert.assertEquals(3, map.size());
+        Mockito.verify(gremlin).gremlin(query.getContent());
     }
 
     @Test

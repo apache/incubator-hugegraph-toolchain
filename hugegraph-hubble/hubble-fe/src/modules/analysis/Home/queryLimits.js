@@ -67,7 +67,7 @@ const hasLargeExplicitReadLimit = (text, language = 'gremlin', maximum = 1000) =
     }
     if (language.toLowerCase() === 'cypher') {
         if (!/^\s*(?:MATCH|OPTIONAL\s+MATCH)\b/i.test(code)
-            || /\b(?:CREATE|MERGE|SET|DELETE|REMOVE|CALL|COUNT|SUM|AVG|MIN|MAX|COLLECT)\b/i.test(code)) {
+            || /\b(?:CREATE|MERGE|SET|DELETE|REMOVE|CALL)\b/i.test(code)) {
             return false;
         }
         const match = code.match(/\bLIMIT\s+(\d+)\s*$/i);

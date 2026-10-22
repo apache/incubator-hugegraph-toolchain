@@ -144,7 +144,7 @@
       "large_query_use_async": "This query explicitly requests more than {{limit}} results. Select asynchronous task mode to run it without downloading the complete result into the canvas.",
       "json_preview_truncated": "This JSON preview is limited in items, depth and property length. Use an asynchronous task for complete large results.",
       "result_preview_truncated": "Showing at most {{limit}} result items. Use an asynchronous task for complete large results.",
-      "properties_preview": "Long properties show only the first {{limit}} characters and their original length. Preview properties cannot be edited.",
+      "properties_preview": "Some properties are partial or omitted. Long text shows the first {{limit}} characters and its original length. Preview properties cannot be edited.",
       "properties_preview_read_only": "These properties contain truncated previews and cannot be edited. Use the original data for changes."
     },
     "canvas": {

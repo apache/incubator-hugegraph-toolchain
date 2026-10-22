@@ -39,7 +39,11 @@ test.each([
 test.each([
     ['MATCH (n) RETURN n LIMIT 10000', true],
     ['MATCH (n) RETURN n LIMIT 300', false],
-    ['MATCH (n) RETURN count(n) LIMIT 10000', false],
+    ['MATCH (n) RETURN count(n) LIMIT 10000', true],
+    ['MATCH (n) RETURN n.city, count(*) LIMIT 10000', true],
+    ['MATCH (n) RETURN n.city, sum(n.amount) LIMIT 10000', true],
+    ['MATCH (n) RETURN count(n)', false],
+    ['MATCH (n) RETURN n.city, count(*) LIMIT 1000', false],
     ['MATCH (n) SET n.x = 1 RETURN n LIMIT 10000', false],
     ['MATCH (n) RETURN "LIMIT 10000"', false],
 ])('preflights simple Cypher reads: %s', (code, expected) => {
