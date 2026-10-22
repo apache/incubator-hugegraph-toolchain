@@ -83,6 +83,52 @@ public class DefaultOperationsDataServiceTest {
 
     @SuppressWarnings("unchecked")
     @Test
+    public void testNodeDiagnosticsIgnorePaginationAndFiltersWithoutCopyingMetrics() {
+        java.util.List<Node> nodes = new java.util.ArrayList<>();
+        for (int i = 0; i < 25; i++) {
+            nodes.add(node(String.format("store-%012d", i), "STORE", "healthy-" + i, "UP"));
+        }
+        Map<String, MetricStatus> statuses = new LinkedHashMap<>();
+        statuses.put("system", new MetricStatus("UNAVAILABLE", 2000L, null,
+                false, false, "upstream_rejected")
+                .withDiagnostics(Map.of("request_path", "/metrics/system", "http_status", 503)));
+        statuses.put("raft", new MetricStatus("UNSUPPORTED", 2000L, null,
+                false, false, "unsupported_version"));
+        statuses.put("drive", new MetricStatus("AVAILABLE", 2000L, 2000L, true, false, null));
+        nodes.add(new Node("store-ffffffffffff", "STORE", "z-failing", null, "1.7.0",
+                "UP", 2000L, Map.of("drive", Map.of("private_metric", "private-value")), statuses));
+        SourceStatus source = new SourceStatus("PARTIAL", "UP", 2000L, 1000L,
+                                               false, false, "store_metrics_partial");
+        Snapshot snapshot = new Snapshot("DEGRADED", 2000L, false, null,
+                Map.of("stores", source), nodes, Collections.emptyMap());
+        DefaultOperationsDataService service = service(snapshot, 5);
+        HugeClient client = client("token-a");
+        Set<String> capabilities = Set.of(OperationsCapabilityService.TOPOLOGY_READ);
+
+        Map<String, Object> first = service.nodes(client, capabilities,
+                "STORE", null, null, 1, 20, "name", "asc");
+        Assert.assertEquals(20, ((java.util.List<?>) first.get("items")).size());
+        java.util.List<Map<String, Object>> diagnostics =
+                (java.util.List<Map<String, Object>>) first.get("diagnostic_nodes");
+        Assert.assertEquals(1, diagnostics.size());
+        Assert.assertEquals(Set.of("id", "type", "name", "status", "metric_statuses"),
+                            diagnostics.get(0).keySet());
+        Assert.assertEquals("store-ffffffffffff", diagnostics.get(0).get("id"));
+        Map<String, MetricStatus> failures =
+                (Map<String, MetricStatus>) diagnostics.get(0).get("metric_statuses");
+        Assert.assertEquals(Set.of("system", "raft"), failures.keySet());
+        Assert.assertEquals(Map.of("request_path", "/metrics/system", "http_status", 503),
+                            failures.get("system").getDiagnostics());
+        Assert.assertFalse(diagnostics.toString().contains("private"));
+
+        Map<String, Object> filtered = service.nodes(client, capabilities,
+                "PD", "DOWN", "no-match", 9, 20, "name", "asc");
+        Assert.assertTrue(((java.util.List<?>) filtered.get("items")).isEmpty());
+        Assert.assertEquals(diagnostics, filtered.get("diagnostic_nodes"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
     public void testEmptyNodeListRetainsSourceFailureDiagnostics() {
         Map<String, Object> diagnostics = Map.of(
                 "request_path", "/v1/stores", "max_response_bytes", 8192L,

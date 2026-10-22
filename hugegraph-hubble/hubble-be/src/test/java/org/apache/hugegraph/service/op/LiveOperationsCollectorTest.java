@@ -562,6 +562,8 @@ public class LiveOperationsCollectorTest {
 
         Assert.assertEquals("MALFORMED",
                             snapshot.getSources().get("stores").getAvailability());
+        Assert.assertEquals(Map.of("request_path", "/v1/stores"),
+                            snapshot.getSources().get("stores").getDiagnostics());
         Assert.assertTrue(snapshot.getNodes().stream()
                                   .anyMatch(node -> "PD".equals(node.getType())));
         Assert.assertEquals(2L, snapshot.getFacts().get("graphs"));
@@ -1076,6 +1078,8 @@ public class LiveOperationsCollectorTest {
                             snapshot.getSources().get("pd").getAvailability());
         Assert.assertEquals("malformed_response",
                             snapshot.getSources().get("pd").getReason());
+        Assert.assertEquals(Map.of("request_path", "/v1/cluster"),
+                            snapshot.getSources().get("pd").getDiagnostics());
     }
 
     private static LiveOperationsCollector collector(boolean pdEnabled,

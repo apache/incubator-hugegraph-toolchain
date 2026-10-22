@@ -69,7 +69,7 @@ const displayHealthStatus = (status, t) => (
 const sourceHealthSummary = (source, t) => {
     const status = source.status ?? 'UNKNOWN';
     const availability = source.availability ?? 'UNSUPPORTED';
-    if (availability === 'UNSUPPORTED' && status !== 'DOWN') {
+    if (availability === 'UNSUPPORTED' && !['DOWN', 'DEGRADED'].includes(status)) {
         return t('operations.source_health_not_applicable');
     }
     if (sourceHealthStatus(source) === 'UP') {

@@ -132,6 +132,7 @@ public class DefaultOperationsDataService implements OperationsDataService {
         int to = Math.min(from + pageSize, filtered.size());
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("sources", snapshot.getSources());
+        result.put("diagnostic_nodes", diagnosticNodes(snapshot));
         result.put("items", new ArrayList<>(filtered.subList(from, to)));
         result.put("total", filtered.size());
         result.put("page", page);
@@ -139,6 +140,33 @@ public class DefaultOperationsDataService implements OperationsDataService {
         result.put("observed_at", snapshot.getObservedAt());
         result.put("stale", snapshot.isStale());
         return result;
+    }
+
+    private static List<Map<String, Object>> diagnosticNodes(Snapshot snapshot) {
+        List<Map<String, Object>> diagnostics = new ArrayList<>();
+        for (Node node : snapshot.getNodes()) {
+            String sourceName = "SERVER".equals(node.getType()) ? "server" :
+                                "STORE".equals(node.getType()) ? "stores" : "pd";
+            SourceStatus source = snapshot.getSources().get(sourceName);
+            Map<String, MetricStatus> failures = new LinkedHashMap<>();
+            node.getMetricStatuses().forEach((group, status) -> {
+                if (metricFailed(status) || status.isStale() ||
+                    "UNSUPPORTED".equals(status.getAvailability()) && source != null &&
+                    "PARTIAL".equals(source.getAvailability())) {
+                    failures.put(group, status);
+                }
+            });
+            if (!failures.isEmpty()) {
+                Map<String, Object> diagnostic = new LinkedHashMap<>();
+                diagnostic.put("id", node.getId());
+                diagnostic.put("type", node.getType());
+                diagnostic.put("name", node.getName());
+                diagnostic.put("status", node.getStatus());
+                diagnostic.put("metric_statuses", failures);
+                diagnostics.add(diagnostic);
+            }
+        }
+        return diagnostics;
     }
 
     private Comparator<Node> nodeComparator(String sort, String order) {

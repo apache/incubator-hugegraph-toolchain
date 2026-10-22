@@ -23,10 +23,13 @@ export const sourceHealthStatus = (source = {}) => {
     if (status === 'DOWN') {
         return 'DOWN';
     }
+    if (status === 'DEGRADED') {
+        return 'DEGRADED';
+    }
     if (availability === 'UNSUPPORTED') {
         return 'UNKNOWN';
     }
-    if (status === 'DEGRADED' || availability === 'PARTIAL' || stale) {
+    if (availability === 'PARTIAL' || stale) {
         return 'DEGRADED';
     }
     if (status !== 'UP') {

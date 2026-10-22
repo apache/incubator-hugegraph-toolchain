@@ -454,7 +454,7 @@ public class LiveOperationsCollector implements OperationsCollector {
                                      now);
                 clusterParsed = true;
             } catch (MalformedUpstreamException e) {
-                pdStatus = malformed(now);
+                pdStatus = malformed(now).withDiagnostics(Map.of("request_path", "/v1/cluster"));
             }
         }
         if (stores != null) {
@@ -468,7 +468,7 @@ public class LiveOperationsCollector implements OperationsCollector {
                 this.reconcileStoreFacts(nodes, facts);
                 storesParsed = true;
             } catch (MalformedUpstreamException e) {
-                storesStatus = malformed(now);
+                storesStatus = malformed(now).withDiagnostics(Map.of("request_path", "/v1/stores"));
             }
         }
         if (includeMetrics && clusterParsed) {
