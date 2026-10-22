@@ -19,6 +19,7 @@ package org.apache.hugegraph.unit;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,9 +44,12 @@ import org.apache.hugegraph.options.HubbleOptions;
 import org.apache.hugegraph.service.graphs.GraphsService;
 import org.apache.hugegraph.service.auth.AuthModeService;
 import org.apache.hugegraph.service.query.QueryService;
+import org.apache.hugegraph.service.schema.SchemaService;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.gremlin.ResultSet;
+
+import com.baomidou.mybatisplus.core.metadata.IPage;
 
 public class GraphsServiceDefaultTest {
 
@@ -63,6 +67,67 @@ public class GraphsServiceDefaultTest {
         this.authMode = Mockito.mock(AuthModeService.class);
         Mockito.when(this.authMode.enabled()).thenReturn(true);
         ReflectionTestUtils.setField(this.service, "authModeService", this.authMode);
+    }
+
+    @Test
+    public void testGraphListOnlyEnrichesTheRequestedPageAfterSorting() {
+        GraphsService service = Mockito.spy(this.service);
+        SchemaService schema = Mockito.mock(SchemaService.class);
+        ReflectionTestUtils.setField(service, "schemaService", schema);
+        Map<String, Object> first = profile("z", true);
+        Map<String, Object> second = profile("b", false);
+        Map<String, Object> third = profile("a", false);
+        Mockito.when(this.graphs.listProfile(""))
+               .thenReturn(Arrays.asList(second, first, third));
+        Mockito.doReturn(Collections.emptyMap()).when(service)
+               .evCount(this.client, "space", "a");
+        Mockito.when(this.client.assignGraph("space", "a"))
+               .thenReturn(this.client);
+
+        IPage<Map<String, Object>> result = service.queryPage(
+                this.client, "space", "", "", "", 2, 1,
+                false, Collections.emptyMap());
+
+        Assert.assertEquals(3L, result.getTotal());
+        Assert.assertEquals("a", result.getRecords().get(0).get("name"));
+        Mockito.verify(service).evCount(this.client, "space", "a");
+        Mockito.verify(service, Mockito.never())
+               .evCount(this.client, "space", "b");
+        Mockito.verify(service, Mockito.never())
+               .evCount(this.client, "space", "z");
+        Mockito.verify(schema).getSchemaView(this.client);
+        Mockito.verify(this.client).assignGraph("space", "a");
+    }
+
+    @Test
+    public void testBriefGraphListOnlyReturnsNamesWithoutStatisticsOrSchema() {
+        GraphsService service = Mockito.spy(this.service);
+        SchemaService schema = Mockito.mock(SchemaService.class);
+        ReflectionTestUtils.setField(service, "schemaService", schema);
+        Map<String, Object> graph = profile("graph", false);
+        graph.put("nickname", "Graph");
+        graph.put("pd.peers", "private");
+        Mockito.when(this.graphs.listProfile(""))
+               .thenReturn(Collections.singletonList(graph));
+
+        IPage<Map<String, Object>> result = service.queryBriefPage(
+                this.client, "space", "", "", 1, -1);
+
+        Assert.assertEquals(1L, result.getTotal());
+        Assert.assertEquals("Graph", result.getRecords().get(0).get("nickname"));
+        Assert.assertEquals(2, result.getRecords().get(0).size());
+        Mockito.verify(service, Mockito.never())
+               .evCount(Mockito.any(), Mockito.anyString(), Mockito.anyString());
+        Mockito.verifyNoInteractions(schema);
+        Mockito.verify(this.client, Mockito.never())
+               .assignGraph(Mockito.anyString(), Mockito.anyString());
+    }
+
+    private static Map<String, Object> profile(String name, boolean isDefault) {
+        Map<String, Object> graph = new HashMap<>();
+        graph.put("name", name);
+        graph.put("default", isDefault);
+        return graph;
     }
 
     @Test

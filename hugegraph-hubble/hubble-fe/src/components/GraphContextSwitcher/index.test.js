@@ -119,7 +119,7 @@ describe('GraphContextSwitcher', () => {
         await waitFor(() => {
             expect(api.manage.getGraphList).toHaveBeenCalledWith(
                 'DEFAULT',
-                {page_no: 1, page_size: -1},
+                {brief: true, page_no: 1, page_size: -1},
                 expect.any(Object)
             );
         });
@@ -143,7 +143,7 @@ describe('GraphContextSwitcher', () => {
         expect(screen.getByRole('combobox', {name: 'workbench.context.graphspace'}))
             .toHaveValue('demo_space');
         expect(api.manage.getGraphSpaceList).toHaveBeenCalledWith(
-            {all: true},
+            {brief: true, page_no: 1, page_size: -1},
             expect.any(Object)
         );
     });
@@ -383,7 +383,7 @@ describe('GraphContextSwitcher', () => {
         await waitFor(() => {
             expect(api.manage.getGraphList).toHaveBeenCalledWith(
                 'space_b',
-                {page_no: 1, page_size: -1},
+                {brief: true, page_no: 1, page_size: -1},
                 expect.any(Object)
             );
         });

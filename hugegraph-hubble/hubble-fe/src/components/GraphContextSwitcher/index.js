@@ -33,8 +33,8 @@ import {
 import style from './index.module.scss';
 import {getResourceDisplayName} from '../../utils/displayName';
 
-const GRAPHSPACE_LIST_PARAMS = {all: true};
-const GRAPH_LIST_PARAMS = {page_no: 1, page_size: -1};
+const GRAPHSPACE_LIST_PARAMS = {brief: true, page_no: 1, page_size: -1};
+const GRAPH_LIST_PARAMS = {brief: true, page_no: 1, page_size: -1};
 const INLINE_ERROR_CONFIG = {suppressBusinessErrorToast: true};
 const SELECT_MIN_WIDTH = 112;
 const SELECT_MAX_WIDTH = 240;

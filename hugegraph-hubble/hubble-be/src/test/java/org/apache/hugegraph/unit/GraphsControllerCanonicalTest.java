@@ -72,6 +72,18 @@ public class GraphsControllerCanonicalTest {
     }
 
     @Test
+    public void testBriefListUsesMetadataRoute() throws Exception {
+        this.mvc.perform(get("/api/v1.3/graphspaces/DEFAULT/graphs")
+                         .param("brief", "true")
+                         .with(this.withClient))
+                .andExpect(status().isOk());
+
+        Mockito.verify(this.graphsService)
+               .queryBriefPage(this.client, "DEFAULT", "", "", 1, -1);
+        Mockito.verifyNoMoreInteractions(this.graphsService);
+    }
+
+    @Test
     public void testCanonicalCreateGraphUsesPathNameAndJsonBody()
            throws Exception {
         Mockito.when(this.graphsService.create(Mockito.eq(this.client),

@@ -175,6 +175,18 @@ public class GraphsController extends BaseController {
         return ImmutableMap.of("graphs", sortedGraphs);
     }
 
+    @GetMapping(params = "brief=true")
+    public Object queryBriefPage(
+            @PathVariable("graphspace") String graphspace,
+            @RequestParam(name = "query", defaultValue = "") String query,
+            @RequestParam(name = "create_time", defaultValue = "") String createTime,
+            @RequestParam(name = "page_no", defaultValue = "1") int pageNo,
+            @RequestParam(name = "page_size", defaultValue = "-1") int pageSize) {
+        return this.graphsService.queryBriefPage(
+                this.authClient(graphspace, null), graphspace,
+                query, createTime, pageNo, pageSize);
+    }
+
     @GetMapping
     public Object queryPage(@PathVariable("graphspace") String graphspace,
                             @RequestParam(name = "query", required = false,

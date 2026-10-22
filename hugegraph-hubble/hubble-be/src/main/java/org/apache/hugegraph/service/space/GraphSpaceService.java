@@ -133,6 +133,29 @@ public class GraphSpaceService {
                 .collect(Collectors.toList());
     }
 
+    public IPage<Map<String, Object>> queryBriefPage(
+            HugeClient client, String query, String createTime,
+            int pageNo, int pageSize, boolean anonymous, boolean administrator) {
+        if (administrator && !anonymous) {
+            return pageAndMap(queryAllGsMetadata(client, query, createTime),
+                              pageNo, pageSize, info -> briefView(
+                                      info.get("name"), info.get("nickname")));
+        }
+        List<GraphSpace> spaces = anonymous ?
+                queryAnonymousSpaces(client, query, createTime) :
+                queryAccessibleSpaces(client, query, createTime);
+        return pageAndMap(spaces, pageNo, pageSize,
+                          space -> briefView(space.getName(),
+                                             space.getNickname()));
+    }
+
+    private static Map<String, Object> briefView(Object name, Object nickname) {
+        Map<String, Object> info = new HashMap<>();
+        info.put("name", name);
+        info.put("nickname", nickname == null ? name : nickname);
+        return info;
+    }
+
     private List<Map<String, Object>> queryAllGsMetadata(
             HugeClient client, String query, String createTime) {
         List<Map<String, Object>> results = client.graphSpace()

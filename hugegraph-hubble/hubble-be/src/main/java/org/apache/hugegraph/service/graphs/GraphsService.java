@@ -144,12 +144,14 @@ public class GraphsService {
                                                 int pageNo, int pageSize,
                                                 boolean isVermeerEnabled,
                                                 Map<String, Object> vermeerInfo) {
-        List<Map<String, Object>> results =
-                sortedGraphsProfile(client, graphSpace, query, createTime,
-                                    isVermeerEnabled, vermeerInfo);
+        IPage<Map<String, Object>> page = PageUtil.page(
+                sortedGraphsMetadata(client, graphSpace, query, createTime,
+                                     isVermeerEnabled, vermeerInfo),
+                pageNo, pageSize);
 
-        for (Map<String, Object> result : results) {
+        for (Map<String, Object> result : page.getRecords()) {
             String graph = result.get("name").toString();
+            result.put("statistic", evCount(client, graphSpace, graph));
             try {
                 result.put("schemaview", schemaService.getSchemaView(
                         client.assignGraph(graphSpace, graph)));
@@ -159,7 +161,29 @@ public class GraphsService {
             }
         }
 
-        return PageUtil.page(results, pageNo, pageSize);
+        return page;
+    }
+
+    public IPage<Map<String, Object>> queryBriefPage(
+            HugeClient client, String graphSpace, String query,
+            String createTime, int pageNo, int pageSize) {
+        List<Map<String, Object>> graphs = sortedGraphsMetadata(
+                client, graphSpace, query, createTime,
+                false, Collections.emptyMap());
+        if (pageSize == -1 && graphs.size() > PageUtil.HARD_CAP) {
+            throw new IllegalArgumentException(
+                      "Graph list exceeds the maximum all-record limit of " +
+                      PageUtil.HARD_CAP);
+        }
+        IPage<Map<String, Object>> page = PageUtil.page(graphs, pageNo, pageSize);
+        page.setRecords(page.getRecords().stream().map(source -> {
+            Map<String, Object> brief = new HashMap<>();
+            brief.put("name", source.get("name"));
+            Object nickname = source.get("nickname");
+            brief.put("nickname", nickname == null ? source.get("name") : nickname);
+            return brief;
+        }).collect(Collectors.toList()));
+        return page;
     }
 
     public List<Map<String, Object>> sortedGraphsProfile(HugeClient client,
@@ -168,6 +192,20 @@ public class GraphsService {
                                                          String createTime,
                                                          boolean isVermeerEnabled,
                                                          Map<String, Object> vermeerInfo) {
+        List<Map<String, Object>> graphs = sortedGraphsMetadata(
+                client, graphSpace, query, createTime,
+                isVermeerEnabled, vermeerInfo);
+        for (Map<String, Object> info : graphs) {
+            info.put("statistic", evCount(client, graphSpace,
+                                         info.get("name").toString()));
+        }
+        return graphs;
+    }
+
+    private List<Map<String, Object>> sortedGraphsMetadata(
+            HugeClient client, String graphSpace, String query,
+            String createTime, boolean isVermeerEnabled,
+            Map<String, Object> vermeerInfo) {
         // Get authorized graphs
         List<Map<String, Object>> graphs = listGraphProfiles(client.graphs(), query);
         log.info("Query all graphs in '{}' ", graphSpace);
@@ -194,7 +232,6 @@ public class GraphsService {
             // Ensure graphspace field is present for frontend navigation
             info.putIfAbsent("graphspace", graphSpace);
             info.putIfAbsent("graphspace_nickname", graphSpace);
-            info.put("statistic", evCount(client, graphSpace, name));
         }
 
         List<Map<String, Object>> results =

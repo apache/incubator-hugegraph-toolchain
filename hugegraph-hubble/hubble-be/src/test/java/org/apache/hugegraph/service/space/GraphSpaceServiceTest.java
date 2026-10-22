@@ -62,6 +62,75 @@ public class GraphSpaceServiceTest {
     }
 
     @Test
+    public void testAnonymousBriefListFiltersBeforePagingWithoutStatistics() {
+        GraphSpaceManager manager = Mockito.mock(GraphSpaceManager.class);
+        Mockito.when(this.client.graphSpace()).thenReturn(manager);
+        Mockito.when(manager.listGraphSpace())
+               .thenReturn(java.util.Arrays.asList("a", "protected", "b"));
+        GraphSpace first = graphSpace("a", false, "20260712");
+        first.setDpPassWord("secret");
+        GraphSpace second = graphSpace("b", false, "20260712");
+        second.setNickname("Bee");
+        Mockito.when(manager.getGraphSpace("a")).thenReturn(first);
+        Mockito.when(manager.getGraphSpace("b")).thenReturn(second);
+        Mockito.when(manager.getGraphSpace("protected"))
+               .thenReturn(graphSpace("protected", true, "20260712"));
+
+        IPage<Map<String, Object>> result = this.service.queryBriefPage(
+                this.client, "", "", 2, 1, true, false);
+
+        Assert.assertEquals(2L, result.getTotal());
+        Assert.assertEquals("b", result.getRecords().get(0).get("name"));
+        Assert.assertEquals("Bee", result.getRecords().get(0).get("nickname"));
+        Assert.assertEquals(2, result.getRecords().get(0).size());
+        Mockito.verifyNoInteractions(this.graphsService, this.userService);
+        Mockito.verify(manager, Mockito.never()).listProfile(Mockito.anyString());
+    }
+
+    @Test
+    public void testAdministratorBriefListDoesNotLoadStatisticsOrAdmins() {
+        GraphSpaceManager manager = Mockito.mock(GraphSpaceManager.class);
+        Mockito.when(this.client.graphSpace()).thenReturn(manager);
+        Map<String, Object> profile = new HashMap<>();
+        profile.put("name", "public");
+        profile.put("create_time", "20260712");
+        profile.put("dp_password", "secret");
+        Mockito.when(manager.listProfile(""))
+               .thenReturn(java.util.Collections.singletonList(profile));
+
+        IPage<Map<String, Object>> result = this.service.queryBriefPage(
+                this.client, "", "", 1, -1, false, true);
+
+        Assert.assertEquals("public", result.getRecords().get(0).get("name"));
+        Assert.assertEquals(2, result.getRecords().get(0).size());
+        Mockito.verifyNoInteractions(this.graphsService, this.userService);
+        Mockito.verify(manager, Mockito.never()).listGraphSpace();
+    }
+
+    @Test
+    public void testRegularBriefListKeepsPermissionFiltering() {
+        GraphSpaceManager manager = Mockito.mock(GraphSpaceManager.class);
+        AuthManager auth = Mockito.mock(AuthManager.class);
+        Mockito.when(this.client.graphSpace()).thenReturn(manager);
+        Mockito.when(this.client.auth()).thenReturn(auth);
+        Mockito.when(manager.listGraphSpace())
+               .thenReturn(java.util.Arrays.asList("public", "protected"));
+        Mockito.when(manager.getGraphSpace("public"))
+               .thenReturn(graphSpace("public", false, "20260712"));
+        Mockito.when(manager.getGraphSpace("protected"))
+               .thenReturn(graphSpace("protected", true, "20260712"));
+
+        IPage<Map<String, Object>> result = this.service.queryBriefPage(
+                this.client, "", "", 1, -1, false, false);
+
+        Assert.assertEquals(1L, result.getTotal());
+        Assert.assertEquals("public", result.getRecords().get(0).get("name"));
+        Mockito.verify(auth).isSpaceMember("protected");
+        Mockito.verifyNoInteractions(this.graphsService);
+        Mockito.verify(manager, Mockito.never()).listProfile(Mockito.anyString());
+    }
+
+    @Test
     public void testViewNeverContainsDataPlaneSecrets() {
         GraphSpaceEntity entity = new GraphSpaceEntity();
         entity.setName("public");
