@@ -57,6 +57,21 @@ test('keeps OLAP and Vermeer configs outside mutation bodies', () => {
     );
 });
 
+test('requests only brief graph metadata when opted in and preserves request configuration', () => {
+    const config = {
+        suppressBusinessErrorToast: true,
+        signal: new AbortController().signal,
+        params: {query: 'person'},
+    };
+
+    analysis.getGraphList('DEFAULT', config, true);
+
+    expect(request.get).toHaveBeenCalledWith('/graphspaces/DEFAULT/graphs', {
+        ...config,
+        params: {query: 'person', brief: true, page_no: 1, page_size: -1},
+    });
+});
+
 test('lets the async query page own business error feedback', () => {
     const params = {content: 'g.V()'};
 

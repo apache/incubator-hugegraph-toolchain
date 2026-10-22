@@ -60,8 +60,7 @@ const TopBar = props => {
     } = useParams();
 
     const {isVermeer} = useContext(GraphAnalysisContext);
-    const [graphSpaceList, setGraphSpaceList] = useState([]);
-    const [currentGraphSpace, setCurrentGraphSpace] = useState();
+    const [currentGraphSpace, setCurrentGraphSpace] = useState(graphSpaceFromParam);
     const [, setGraphSpaceLoading] = useState(false);
     const [graphSpaceError, setGraphSpaceError] = useState(false);
     const [currentGraph, setCurrentGraph] = useState({});
@@ -117,7 +116,6 @@ const TopBar = props => {
                     throw new Error('graphspaces unavailable');
                 }
                 const {graphspaces} = data;
-                setGraphSpaceList(graphspaces);
                 const routeGraphSpace = graphspaces.includes(graphSpaceFromParam)
                     ? graphSpaceFromParam
                     : undefined;
@@ -145,17 +143,39 @@ const TopBar = props => {
             setGraphError(false);
             try {
                 const response = await api.analysis.getGraphList(
-                    currentGraphSpace, INLINE_ERROR_CONFIG
+                    currentGraphSpace, INLINE_ERROR_CONFIG, true
                 );
                 if (graphRequest.current !== request) {
                     return;
                 }
                 const {status, data} = response || {};
-                if (status !== 200 || !Array.isArray(data?.graphs)) {
+                if (status !== 200 || !Array.isArray(data?.records)) {
                     throw new Error('graphs unavailable');
                 }
-                const {graphs = []} = data;
-                const graph = _.find(graphs, {name: graphFromParam}) || graphs[0] || {};
+                const graphs = data.records;
+                let graph = graphFromParam
+                    ? _.find(graphs, {name: graphFromParam})
+                    : graphs[0];
+                if (graphFromParam && !graph) {
+                    throw new Error('selected graph unavailable');
+                }
+                graph = graph || {};
+                if (isVermeer && graph.name) {
+                    const detail = await api.manage.getGraph(
+                        currentGraphSpace, graph.name, INLINE_ERROR_CONFIG
+                    );
+                    if (graphRequest.current !== request) {
+                        return;
+                    }
+                    if (detail?.status !== 200 || !detail.data ||
+                        typeof detail.data !== 'object' || Array.isArray(detail.data)) {
+                        throw new Error('graph details unavailable');
+                    }
+                    graph = {
+                        ...graph, ...detail.data, name: graph.name,
+                        status: detail.data.status || CREATED,
+                    };
+                }
                 setCurrentGraph(current => (
                     _.isEmpty(graph) && _.isEmpty(current) ? current : graph
                 ));
@@ -172,7 +192,7 @@ const TopBar = props => {
                 }
             }
         },
-        [currentGraphSpace, graphFromParam]
+        [currentGraphSpace, graphFromParam, isVermeer]
     );
 
     useEffect(() => () => {
@@ -259,14 +279,12 @@ const TopBar = props => {
 
     useEffect(() => {
         if (graphSpaceFromParam
-            && graphSpaceList.includes(graphSpaceFromParam)
             && graphSpaceFromParam !== currentGraphSpace) {
             handleGraphSpaceChange(graphSpaceFromParam);
         }
     }, [
         currentGraphSpace,
         graphSpaceFromParam,
-        graphSpaceList,
         handleGraphSpaceChange,
     ]);
 

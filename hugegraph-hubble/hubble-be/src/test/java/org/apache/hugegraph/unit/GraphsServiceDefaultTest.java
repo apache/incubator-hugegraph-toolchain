@@ -70,6 +70,22 @@ public class GraphsServiceDefaultTest {
     }
 
     @Test
+    public void testSelectedGraphKeepsVermeerLoadTime() {
+        Mockito.when(this.graphs.getGraph("graph"))
+               .thenReturn(Collections.singletonMap("backend", "hstore"));
+        Map<String, String> vermeer = new HashMap<>();
+        vermeer.put("status", "loaded");
+        vermeer.put("last_load_time", "2026-10-22T01:02:03Z");
+
+        Map<String, Object> result = this.service.get(
+                this.client, "space", "graph", vermeer);
+
+        Assert.assertEquals("loaded", result.get("status"));
+        Assert.assertEquals("2026-10-22T01:02:03Z", result.get("last_load_time"));
+        Assert.assertEquals("graph", result.get("nickname"));
+    }
+
+    @Test
     public void testGraphListOnlyEnrichesTheRequestedPageAfterSorting() {
         GraphsService service = Mockito.spy(this.service);
         SchemaService schema = Mockito.mock(SchemaService.class);

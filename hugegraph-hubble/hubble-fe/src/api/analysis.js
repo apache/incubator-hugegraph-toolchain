@@ -28,7 +28,13 @@ const getGraphSpaceList = config => {
         : request.get('/graphspaces/list');
 };
 
-const getGraphList = (graphSpace, config) => {
+const getGraphList = (graphSpace, config, brief = false) => {
+    if (brief) {
+        return request.get(`/graphspaces/${graphSpace}/graphs`, {
+            ...config,
+            params: {...config?.params, brief: true, page_no: 1, page_size: -1},
+        });
+    }
     const url = `/graphspaces/${graphSpace}/graphs/list`;
     return config ? request.get(url, config) : request.get(url);
 };
