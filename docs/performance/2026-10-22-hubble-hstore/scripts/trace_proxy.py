@@ -23,7 +23,7 @@ def emit(obj):
     with LOCK, (ROOT / 'trace.jsonl').open('a') as f:
         f.write(json.dumps(dict(ts=time.time(), **obj)) + '\n')
 
-def http_proxy(port, upstream, kind):
+def create_http_proxy(port, upstream, kind):
     class Handler(http.server.BaseHTTPRequestHandler):
         protocol_version = 'HTTP/1.1'
         def setup(self):
@@ -37,6 +37,7 @@ def http_proxy(port, upstream, kind):
             conn = http.client.HTTPConnection('127.0.0.1', upstream, timeout=310)
             status = 502
             size = 0
+            response_started = False
             try:
                 conn.request(self.command, self.path, body=body, headers=headers)
                 response = conn.getresponse()
@@ -48,15 +49,30 @@ def http_proxy(port, upstream, kind):
                     if k.lower() not in ('transfer-encoding', 'content-length', 'connection'):
                         self.send_header(k, v)
                 self.send_header('Content-Length', str(size))
+                # end_headers() can partially write before raising. Once it is
+                # attempted, a second HTTP status line would corrupt the reply.
+                response_started = True
                 self.end_headers()
                 self.wfile.write(data)
             except Exception as e:
-                emit(dict(kind=kind, error=str(e), path=self.path))
+                self.close_connection = True
+                if not response_started:
+                    status = 502
+                    try:
+                        self.send_error(502, 'Bad Gateway')
+                    except OSError:
+                        pass  # The downstream peer may already be gone.
+                emit(dict(kind=kind, error=str(e), path=self.path,
+                          response_started=response_started))
             finally:
                 conn.close()
                 emit(dict(kind=kind, method=self.command, path=self.path, status=status, bytes=size, ms=(time.perf_counter()-start)*1000))
         do_GET = do_POST = do_PUT = do_DELETE = do_PATCH = forward
-    http.server.ThreadingHTTPServer(('127.0.0.1', port), Handler).serve_forever()
+    return http.server.ThreadingHTTPServer(('127.0.0.1', port), Handler)
+
+def http_proxy(port, upstream, kind):
+    with create_http_proxy(port, upstream, kind) as server:
+        server.serve_forever()
 
 class Frames:
     def __init__(self, request, streams):

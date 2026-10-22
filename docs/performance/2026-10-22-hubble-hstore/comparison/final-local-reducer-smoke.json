@@ -1,0 +1,53 @@
+{
+  "performance_sample": false,
+  "records": [
+    {
+      "name": "local_default",
+      "query": "g.V().valueMap().count(local)",
+      "http_status": 200,
+      "rows": 300,
+      "response_bytes": 4958,
+      "default_limit_applied": true,
+      "result_truncated": false
+    },
+    {
+      "name": "local_qualified",
+      "query": "g.V().valueMap().count(Scope.local)",
+      "http_status": 200,
+      "rows": 300,
+      "response_bytes": 4958,
+      "default_limit_applied": true,
+      "result_truncated": false
+    },
+    {
+      "name": "local_bounded",
+      "query": "g.V().limit(10).valueMap().count(local)",
+      "http_status": 200,
+      "rows": 10,
+      "response_bytes": 609,
+      "default_limit_applied": false,
+      "result_truncated": false
+    },
+    {
+      "name": "local_large_preview",
+      "query": "g.V().valueMap().count(local).limit(12000)",
+      "http_status": 200,
+      "rows": 1000,
+      "response_bytes": 15458,
+      "default_limit_applied": false,
+      "result_truncated": true
+    },
+    {
+      "name": "global_count",
+      "query": "g.V().count()",
+      "http_status": 200,
+      "rows": 1,
+      "response_bytes": 482,
+      "default_limit_applied": false,
+      "result_truncated": false
+    }
+  ],
+  "passed": 5,
+  "property_budget_verified_by_unit_tests": true,
+  "note": "10,000-value projection budget is covered by nested/repeated-object unit tests; these live requests verify reducer semantics only"
+}

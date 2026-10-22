@@ -16,6 +16,20 @@
 """Measure bounded property previews and confirm original data stays unchanged."""
 import argparse,hashlib,json,pathlib,re,time
 import requests
+
+def verify_original_edges(session, url, expected):
+    response = session.get(url, timeout=30)
+    response.raise_for_status()
+    edges = response.json()['edges']
+    assert len(expected) == 1 and len(edges) == 1, 'Expected exactly one original fixture edge'
+    edge = edges[0]
+    original = expected[0]
+    assert edge['id'] == original['id'], 'Original edge identity changed'
+    assert edge['outV'] == original['outV'] and edge['inV'] == original['inV'], 'Original edge endpoints changed'
+    assert len(edge['properties']['payload']) == original['payload_length'], 'Original edge payload length changed'
+    digest = hashlib.sha256(edge['properties']['payload'].encode()).hexdigest()
+    assert digest == original['sha256'], 'Original edge payload changed'
+
 ROOT=pathlib.Path('/workspace/hubble-perf');F=json.loads((ROOT/'large-property-fixture.json').read_text());S=requests.Session();S.trust_env=False;S.headers['Accept-Encoding']='identity'
 parser=argparse.ArgumentParser();parser.add_argument('phase');parser.add_argument('--assert-trim',action='store_true');args=parser.parse_args()
 base=f"/graphspaces/{F['space']}/graphs/{F['graph']}";records=[]
@@ -46,6 +60,5 @@ for v in F['vertices']:
  r=S.get('http://127.0.0.1:18080'+base+'/graph/vertices/'+str(v['id']),timeout=30);r.raise_for_status();d=r.json()
  assert d['id']==v['id']
  for k,digest in v['sha256'].items():assert hashlib.sha256(d['properties'][k].encode()).hexdigest()==digest,(v['id'],k)
-for e in S.get('http://127.0.0.1:18080'+base+'/graph/edges?limit=10',timeout=30).json()['edges']:
- assert hashlib.sha256(e['properties']['payload'].encode()).hexdigest()==F['edges'][0]['sha256']
+verify_original_edges(S,'http://127.0.0.1:18080'+base+'/graph/edges?limit=10',F['edges'])
 (ROOT/f'large-property-{args.phase}.json').write_text(json.dumps(dict(fixture=F,records=records,original_data_sha256_unchanged=True),indent=2,ensure_ascii=False)+'\n')

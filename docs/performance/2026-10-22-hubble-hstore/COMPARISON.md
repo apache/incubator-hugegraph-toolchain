@@ -155,7 +155,9 @@ Server默认任务结果上限为压缩后16 MiB；异步执行不等于可以�
 
 ## Review 边界与真实认证补充
 
-后续 Review 修复了中间 `fold()` 后继续展开漏加上限、Cypher 分组聚合绕过显式大 LIMIT 提示、超长 Map 键绕过属性预览，以及恰好达到边预算的误报。超长字符串 Map 键直接省略整项并标记不完整，不改名、不合并键；边补查最多多取一条候选，收满后继续全局停止。51 项后端查询测试及独立代码审查通过。
+后续 Review 修复了中间 `fold()` 后继续展开漏加上限、Cypher 分组聚合绕过显式大 LIMIT 提示、超长 Map 键绕过属性预览，以及恰好达到边预算的误报。超长字符串 Map 键直接省略整项并标记不完整，不改名、不合并键；边补查最多多取一条候选，收满后继续全局停止。后端查询/投影55项专项及独立代码审查通过；最终逐行转换界限补丁另经20项 limiter 回归（与前述组重叠，不累加）。
+
+属性与通用值投影另共享每次查询10,000值预算，跨行、JSON/Table和Graph投影共同消耗，耗尽后明确省略。多层分支及重复对象不能逐层/逐行重置额度；ID、标签、端点和路径结构保持，因此这仍不是任意完整响应的总字节硬上限。实际局部归约 `count(local)` / `count(Scope.local)` 默认300；已有全局limit经过valueMap等明确逐行转换仍有效，后续out/unfold扩行则重新限制。最后5项真实API断言见[记录](comparison/final-local-reducer-smoke.json)和[脚本](scripts/final_local_reducer_smoke.py)。
 
 真实 1 MiB Map 键仍受 SDK JSON 字段名长度限制，返回 HTTP400。此前错误消息把原始大响应带回浏览器；现在查询错误消息最多2048字符，保留原状态码和脱敏规则。实际错误响应 **1,151,232→2,121字节**，消息1,151,156→2048字符。19 项异常/历史测试和原属性 SHA 校验通过。完整断言及边界见 [最终功能补测](comparison/final-followup/review-followup.md)、[原始结果](comparison/final-followup/review-followup-assertions.json) 和 [复现脚本](comparison/final-followup/review_followup_assertions.py)。这些单次功能断言不覆盖前述性能采样。
 
@@ -174,4 +176,4 @@ Server默认任务结果上限为压缩后16 MiB；异步执行不等于可以�
 - [Server补丁后任务](comparison/async-large-result-check-after-server-fix.json)、[Server部署清单](comparison/server-struct-deployment.json)、[类差异](comparison/server-struct-diff.json)、[压缩微基准源码](scripts/CompressionGrowthBenchmark.java)、[精确复现命令](scripts/COMPRESSION.md)、[原始记录](comparison/compression-growth-before.jsonl)、[修复后](comparison/compression-growth-after.jsonl)。
 - [大属性异步任务记录](comparison/async-large-result-check.json)、[压缩时任务线程栈](comparison/async-large-compression-thread.txt)。中间的预览失败、布局修复前观测和浏览器选择器/调试缓存错误分别保留为`comparison/intermediate-*`；最终浏览器文件使用真实选项点击切换空间/图。属性裁剪前浏览器和预览断言另外保留，避免覆盖阶段历史。最后Server补丁及导入保护部署后，[功能冒烟](comparison/browser-final-stack-smoke.json)再次验证默认300点、提示及实际空间/图切换，超长属性详情只读也再次通过；此阶段只做功能冒烟，不将新Server上的观察混入原Hubble性能表。
 - [API脚本](scripts/comparison_benchmark.py)、[执行断言](scripts/comparison_assertions.py)、[浏览器脚本](scripts/browser_comparison.py)、[CPU剖析](scripts/profile_canvas.py)、[异步结果验证](scripts/async_result_check.py)。[大属性夹具](scripts/large_property_fixture.py)、[属性完整性](scripts/large_property_probe.py)、[详情只读浏览器](scripts/browser_large_properties.py)、[安全导入拒绝](scripts/preview_import_check.py)。属性夹具脚本会新增专用测试图，默认拒绝覆盖已有图；其余脚本复用本机`/workspace/hubble-perf`和保留的数据集，运行会新增读取历史及只读异步任务；不会重新导入数据或修改容量限制。
-- 构建、单测及分阶段TODO见[任务清单](TODO.md)。本轮未使用Helm，也没有把复杂脚本、任意聚合或超大单属性变成全面的资源隔离能力；现有完整查询API仍保留兼容行为。
+- 构建/测试的完整结果、旧UI测试超时与定向重跑见[验证记录](VALIDATION.md)；分阶段TODO见[任务清单](TODO.md)。本轮未使用Helm，也没有把复杂脚本、任意聚合或超大单属性变成全面的资源隔离能力；现有完整查询API仍保留兼容行为。
