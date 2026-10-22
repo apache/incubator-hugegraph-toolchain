@@ -76,17 +76,23 @@ test.each([true, false])('describes missing node details at the correct scope (c
         : /No per-node failure details were reported on this page/)).toBeInTheDocument();
 });
 
-test.each(['PARTIAL', 'UNSUPPORTED'])(
-    'shows unsupported metric request details only for a partial source (%s)', availability => {
+test.each([
+    ['UP', 'PARTIAL', true],
+    ['DOWN', 'UNSUPPORTED', true],
+    ['DEGRADED', 'UNSUPPORTED', true],
+    ['UP', 'UNSUPPORTED', false],
+])(
+    'shows unsupported request details when source topology requires attention (%s/%s)',
+    (status, availability, showDetails) => {
         render(<SourceDiagnostics sourceName='stores' sources={{stores: {
-            status: 'UP', availability, reason: 'unsupported_version',
+            status, availability, reason: 'unsupported_version',
         }}} nodes={[{id: 'store-1', type: 'STORE', name: 'Store A', metric_statuses: {
             system: {availability: 'AVAILABLE'},
             raft: {availability: 'UNSUPPORTED', reason: 'unsupported_version',
                 diagnostics: {request_path: '/metrics/raft', http_status: 404}},
         }}]} />);
 
-        if (availability === 'PARTIAL') {
+        if (showDetails) {
             expect(screen.getByText(/Store A · raft/)).toBeInTheDocument();
             expect(screen.getByText('/metrics/raft')).toBeInTheDocument();
             expect(screen.getByText('404')).toBeInTheDocument();

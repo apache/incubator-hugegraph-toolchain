@@ -651,6 +651,38 @@ public class LiveOperationsCollectorTest {
     }
 
     @Test
+    public void testMalformedMetricDiscoveryResponsesRetainPaths()
+           throws IOException {
+        for (String path : new String[]{"/actuator/prometheus", "/v1/prom/targets-all"}) {
+            HttpServer pd = pdServer(200, cluster(), 200, stores());
+            if ("/actuator/prometheus".equals(path)) {
+                pd.removeContext(path);
+            }
+            context(pd, path, 200, "private-malformed-response");
+            Snapshot snapshot;
+            try {
+                snapshot = collector(true, pd).collect(serverClient(), true);
+            } finally {
+                pd.stop(0);
+            }
+
+            String type = "/actuator/prometheus".equals(path) ? "PD" : "STORE";
+            String source = "PD".equals(type) ? "pd" : "stores";
+            Assert.assertEquals("malformed_response", snapshot.getSources().get(source).getReason());
+            Assert.assertEquals(Map.of("request_path", path),
+                                snapshot.getSources().get(source).getDiagnostics());
+            snapshot.getNodes().stream().filter(node -> type.equals(node.getType()))
+                    .flatMap(node -> node.getMetricStatuses().values().stream())
+                    .filter(status -> "MALFORMED".equals(status.getAvailability()))
+                    .forEach(status -> Assert.assertEquals(Map.of("request_path", path),
+                                                          status.getDiagnostics()));
+            Assert.assertTrue(snapshot.getNodes().stream().filter(node -> type.equals(node.getType()))
+                    .flatMap(node -> node.getMetricStatuses().values().stream())
+                    .anyMatch(status -> "MALFORMED".equals(status.getAvailability())));
+        }
+    }
+
+    @Test
     public void testOversizedDiscoveryResponsesKeepSourceDiagnostics()
            throws IOException {
         for (String path : new String[]{"/v1/stores", "/v1/cluster",

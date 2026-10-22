@@ -583,7 +583,9 @@ public class LiveOperationsCollector implements OperationsCollector {
                                   Collections.emptySet(), "text/plain"));
             selectedStatus = availableMetric(now);
         } catch (RuntimeException e) {
-            selectedStatus = metricStatus(e, now, true);
+            Map<String, Object> details = new LinkedHashMap<>(diagnostics(e));
+            details.putIfAbsent("request_path", "/actuator/prometheus");
+            selectedStatus = metricStatus(e, now, true).withDiagnostics(details);
             failureReason = selectedStatus.getReason();
         }
         for (int i = 0; i < nodes.size(); i++) {
@@ -647,8 +649,15 @@ public class LiveOperationsCollector implements OperationsCollector {
         try {
             Map<String, String> restAddresses =
                     this.parser.parseStoreRestAddresses(stores);
-            Map<String, URI> targets = this.parser.parseStoreMetricTargets(
-                                       this.get("/v1/prom/targets-all"));
+            String targetPayload = this.get("/v1/prom/targets-all");
+            Map<String, URI> targets;
+            try {
+                targets = this.parser.parseStoreMetricTargets(targetPayload);
+            } catch (MalformedUpstreamException e) {
+                Map<String, Object> details = Map.of("request_path", "/v1/prom/targets-all");
+                this.applyStoreMetricStatus(nodes, metricStatus(e, now, true).withDiagnostics(details));
+                return metricFailureStatus(status, now, 0, metricReason(e)).withDiagnostics(details);
+            }
             Set<String> allowedTargets = new java.util.LinkedHashSet<>();
             boolean partial = false;
             int successfulGroups = 0;

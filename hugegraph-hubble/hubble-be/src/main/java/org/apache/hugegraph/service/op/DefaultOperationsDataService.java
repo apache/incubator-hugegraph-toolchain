@@ -152,7 +152,8 @@ public class DefaultOperationsDataService implements OperationsDataService {
             node.getMetricStatuses().forEach((group, status) -> {
                 if (metricFailed(status) || status.isStale() ||
                     "UNSUPPORTED".equals(status.getAvailability()) && source != null &&
-                    "PARTIAL".equals(source.getAvailability())) {
+                    ("PARTIAL".equals(source.getAvailability()) ||
+                     "DOWN".equals(source.getStatus()) || "DEGRADED".equals(source.getStatus()))) {
                     failures.put(group, status);
                 }
             });
