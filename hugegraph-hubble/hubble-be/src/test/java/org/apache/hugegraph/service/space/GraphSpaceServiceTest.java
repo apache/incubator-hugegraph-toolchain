@@ -17,23 +17,30 @@
 
 package org.apache.hugegraph.service.space;
 
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import org.apache.hugegraph.api.task.TasksWithPage;
 import org.apache.hugegraph.driver.AuthManager;
 import org.apache.hugegraph.driver.GraphSpaceManager;
 import org.apache.hugegraph.driver.HugeClient;
+import org.apache.hugegraph.driver.TaskManager;
 import org.apache.hugegraph.entity.space.GraphSpaceEntity;
 import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.service.auth.UserService;
 import org.apache.hugegraph.service.graphs.GraphsService;
+import org.apache.hugegraph.structure.Task;
 import org.apache.hugegraph.structure.space.GraphSpace;
 import org.apache.hugegraph.util.PageUtil;
 import org.junit.Assert;
@@ -585,6 +592,41 @@ public class GraphSpaceServiceTest {
 
         Assert.assertEquals(Long.valueOf(2L), result.get("vCount"));
         Assert.assertEquals(Long.valueOf(3L), result.get("eCount"));
+    }
+
+    @Test
+    public void testPreviousDayTaskCountUsesBusinessTimezoneAndIncludesLastMillisecond() {
+        TimeZone original = TimeZone.getDefault();
+        try {
+            ZoneOffset businessZone = ZoneOffset.ofHours(8);
+            LocalDate yesterday = LocalDate.now(businessZone).minusDays(1);
+            long start = yesterday.atStartOfDay().toInstant(businessZone).toEpochMilli();
+            long end = yesterday.plusDays(1).atStartOfDay().toInstant(businessZone).toEpochMilli();
+            TaskManager tasks = Mockito.mock(TaskManager.class);
+            TasksWithPage page = Mockito.mock(TasksWithPage.class);
+            Task task = Mockito.mock(Task.class);
+            Mockito.when(this.graphsService.listGraphNames(this.client, "space", ""))
+                   .thenReturn(Set.of("graph"));
+            Mockito.when(this.client.task()).thenReturn(tasks);
+            Mockito.when(tasks.list(null, "", 1000)).thenReturn(page);
+            Mockito.when(page.tasks()).thenReturn(List.of(task));
+            Mockito.when(page.page()).thenReturn(null);
+
+            for (String zone : List.of("UTC", "GMT+08:00")) {
+                TimeZone.setDefault(TimeZone.getTimeZone(zone));
+                for (long[] boundary : new long[][]{{start - 1, 0}, {start, 1}, {end - 1, 1}, {end, 0}}) {
+                    Mockito.when(task.createTime()).thenReturn(boundary[0]);
+
+                    Map<String, Object> result = ReflectionTestUtils.invokeMethod(
+                            this.service, "preDayTaskCount", this.client, "space");
+
+                    Assert.assertEquals("Task boundary in JVM timezone " + zone,
+                                        boundary[1], result.get("task"));
+                }
+            }
+        } finally {
+            TimeZone.setDefault(original);
+        }
     }
 
     @Test

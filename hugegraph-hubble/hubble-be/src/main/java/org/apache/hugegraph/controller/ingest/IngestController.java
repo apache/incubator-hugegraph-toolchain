@@ -19,9 +19,6 @@ package org.apache.hugegraph.controller.ingest;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.io.FileUtils;
@@ -52,6 +49,7 @@ import org.apache.hugegraph.loader.source.file.FileFormat;
 import org.apache.hugegraph.options.HubbleOptions;
 import org.apache.hugegraph.service.load.DatasourceService;
 import org.apache.hugegraph.service.load.FileMappingService;
+import org.apache.hugegraph.service.load.FilePreviewReader;
 import org.apache.hugegraph.service.load.JobManagerService;
 import org.apache.hugegraph.service.load.LoadTaskService;
 import org.apache.hugegraph.util.Ex;
@@ -70,17 +68,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -93,10 +88,6 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping(Constant.API_VERSION + "ingest")
 public class IngestController extends BaseController {
-
-    private static final ObjectMapper JSON_MAPPER =
-            new ObjectMapper().disable(
-                    JsonParser.Feature.INCLUDE_SOURCE_IN_LOCATION);
 
     @Autowired
     private JobManagerService jobManagerService;
@@ -207,10 +198,10 @@ public class IngestController extends BaseController {
         boolean hasPhysicalHeader = this.hasPhysicalHeader(config);
         FileSetting setting = this.buildFileSetting(config, Collections.emptyList(),
                                                     hasPhysicalHeader);
-        ColumnInfo columns = this.readColumns(this.requireUploadFile(config),
-                                             setting, hasPhysicalHeader);
+        FilePreviewReader.Columns columns = FilePreviewReader.read(
+                this.requireUploadFile(config).toPath(), setting);
         return Response.builder().status(Constant.STATUS_OK)
-                       .data(columns.names).build();
+                       .data(columns.names()).build();
     }
 
     @PostMapping("/jdbc/check")
@@ -251,10 +242,9 @@ public class IngestController extends BaseController {
                                                     hasPhysicalHeader);
         if (setting.getColumnNames() == null ||
             setting.getColumnNames().isEmpty()) {
-            ColumnInfo columns = this.readColumns(sourceFile, setting,
-                                                 hasPhysicalHeader);
-            setting.setColumnNames(columns.names);
-            setting.setColumnValues(columns.values);
+            FilePreviewReader.Columns columns = FilePreviewReader.read(sourceFile.toPath(), setting);
+            setting.setColumnNames(columns.names());
+            setting.setColumnValues(columns.values());
         }
 
         Set<VertexMapping> vertexMappings = this.vertexMappings(struct.vertices);
@@ -676,70 +666,6 @@ public class IngestController extends BaseController {
                this.stringList(config.get("header")).isEmpty();
     }
 
-    private ColumnInfo readColumns(File file, FileSetting setting,
-                                   boolean hasPhysicalHeader) {
-        try (BufferedReader reader = Files.newBufferedReader(file.toPath())) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (!line.matches(setting.getSkippedLine())) {
-                    break;
-                }
-            }
-            Ex.check(line != null, "The file has no data line can treat as header");
-
-            if (FileFormat.JSON.name().equals(setting.getFormat())) {
-                return this.readJsonColumns(line, file);
-            }
-
-            List<String> firstLine = this.splitLine(line, setting.getDelimiter());
-            if (hasPhysicalHeader) {
-                String sample = reader.readLine();
-                List<String> values = sample == null ? Collections.emptyList() :
-                                      this.splitLine(sample,
-                                                     setting.getDelimiter());
-                return new ColumnInfo(firstLine, values);
-            }
-
-            List<String> names = new ArrayList<>();
-            for (int i = 1; i <= firstLine.size(); i++) {
-                names.add("col-" + i);
-            }
-            return new ColumnInfo(names, firstLine);
-        } catch (IOException e) {
-            throw new InternalException("Failed to read columns from file %s",
-                                        e, file);
-        }
-    }
-
-    private ColumnInfo readJsonColumns(String line, File file) {
-        try {
-            Map<String, Object> fields = JSON_MAPPER.readValue(
-                    line, new TypeReference<LinkedHashMap<String, Object>>() {
-                    });
-            List<String> names = new ArrayList<>(fields.keySet());
-            List<String> values = names.stream()
-                                       .map(fields::get)
-                                       .map(String::valueOf)
-                                       .collect(Collectors.toList());
-            return new ColumnInfo(names, values);
-        } catch (IOException ignored) {
-            throw new InternalException(
-                    "Failed to read JSON fields from file %s", file);
-        }
-    }
-
-    private List<String> splitLine(String line, String delimiter) {
-        if (line == null) {
-            return Collections.emptyList();
-        }
-        String[] values = StringUtils.split(line, delimiter);
-        List<String> list = new ArrayList<>();
-        if (values != null) {
-            Collections.addAll(list, values);
-        }
-        return list;
-    }
-
     private Set<VertexMapping> vertexMappings(List<Map<String, Object>> raw) {
         Set<VertexMapping> mappings = new LinkedHashSet<>();
         if (raw == null) {
@@ -968,13 +894,4 @@ public class IngestController extends BaseController {
         @JsonProperty("edges") List<Map<String, Object>> edges;
     }
 
-    static class ColumnInfo {
-        private final List<String> names;
-        private final List<String> values;
-
-        ColumnInfo(List<String> names, List<String> values) {
-            this.names = names;
-            this.values = values;
-        }
-    }
 }

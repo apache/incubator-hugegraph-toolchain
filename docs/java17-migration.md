@@ -91,6 +91,10 @@ Hubble uses Spring Boot 3, Jakarta APIs and H2 metadata. Start with a new metada
 
 Retain the new database and configuration across restarts. Local H2 file URL shorthand and encrypted files are supported; `INIT` settings are rejected before opening the database. The full initial schema includes the release marker. Packaging excludes runtime data from archives without deleting local data. See the [Hubble guide](../hugegraph-hubble/README.md) for configuration and UI validation evidence.
 
+Hubble's standalone entry point retains UTC+08:00 for existing metadata. Date helpers use immutable `java.time` formatters with that explicit offset; loading a helper no longer changes the JVM timezone. Calendar ranges include the complete day, and invalid dates are rejected instead of silently rolling into another month.
+
+File previews use the configured charset and the Loader's CSV/TEXT parsers, including quoted CSV cells and skipped lines. Graph import previews retain the Loader's one-record-per-physical-line constraint. Account CSV imports support quoted multiline values and validate all row widths and headers before requesting batch creation.
+
 ## Compatibility and peripheral engines
 
 The compatibility scope below distinguishes supported operations from validation that must be repeated for each release. Use Java 17 for new Toolchain applications; released servers and original clients retain their supported JVMs.

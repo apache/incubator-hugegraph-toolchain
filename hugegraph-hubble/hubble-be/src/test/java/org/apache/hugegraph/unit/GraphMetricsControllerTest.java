@@ -18,17 +18,60 @@
 
 package org.apache.hugegraph.unit;
 
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 
 import org.junit.Test;
 
+import org.apache.hugegraph.api.graph.GraphMetricsAPI.TypeCount;
 import org.apache.hugegraph.controller.saas.GraphMetricsController;
 import org.apache.hugegraph.controller.saas.GraphMetricsController.SchemaCount;
 import org.apache.hugegraph.testutil.Assert;
 
 public class GraphMetricsControllerTest {
+
+    @Test
+    public void testGrowthRatesAreIndependentOfLocaleAndAcceptPartialSchemas() {
+        Locale previous = Locale.getDefault(Locale.Category.FORMAT);
+        try {
+            Locale.setDefault(Locale.Category.FORMAT, Locale.GERMANY);
+            List<String> dates = GraphMetricsController.getRangeDate("20260714", -13);
+            Map<String, TypeCount> counts = new HashMap<>();
+            counts.put(dates.get(0), TypeCount.builder().schemas(
+                    Map.of("pk_count", 8L, "vl_count", 4L, "el_count", 3L)).build());
+            counts.put(dates.get(1), new TypeCount());
+            counts.put(dates.get(7), TypeCount.builder().schemas(Map.of("pk_count", 2L)).build());
+            SchemaCount<Double> result = GraphMetricsController.weeklyGrowthRate(
+                    counts, dates, new SchemaCount<>(8, 3, 2, 1));
+
+            Assert.assertEquals(0.25, result.pk, 0.0);
+            Assert.assertEquals(-0.25, result.vl, 0.0);
+            Assert.assertEquals(-0.33, result.el, 0.0);
+            Assert.assertEquals(1.0, result.il, 0.0);
+        } finally {
+            Locale.setDefault(Locale.Category.FORMAT, previous);
+        }
+    }
+
+    @Test
+    public void testDateRangesCrossLeapDayAndYearBoundary() {
+        Assert.assertEquals(List.of("20240228", "20240229", "20240301"),
+                            GraphMetricsController.getRangeDate("20240301", -2));
+        Assert.assertEquals(List.of("20251231", "20260101", "20260102"),
+                            GraphMetricsController.getRangeDate("20251231", 2));
+        Assert.assertEquals(List.of("20260101"),
+                            GraphMetricsController.getRangeDate("20260101", 0));
+    }
+
+    @Test(expected = DateTimeParseException.class)
+    public void testInvalidDateIsRejected() {
+        GraphMetricsController.getRangeDate("20260229", -1);
+    }
 
     @Test
     public void testWeeklyGrowthRateAcceptsSparseTypeCounts() {

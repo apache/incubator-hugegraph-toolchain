@@ -43,6 +43,7 @@ avro-1.7.7.jar
 bolt-1.6.4.jar
 cache-api-1.1.1.jar
 caffeine-2.8.0.jar
+caffeine-3.2.4.jar
 calcite-core-1.16.0.jar
 calcite-druid-1.16.0.jar
 calcite-linq4j-1.16.0.jar
