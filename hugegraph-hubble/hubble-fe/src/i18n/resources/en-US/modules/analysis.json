@@ -141,7 +141,7 @@
       "graph_limit_title": "Showing a partial graph preview",
       "graph_limit_description": "The canvas shows at most {{nodeLimit}} nodes and {{edgeLimit}} edges; Use an asynchronous task for large complete results",
       "default_limit_applied": "No result limit was set; This query defaults to at most {{limit}} results",
-      "large_query_use_async": "The configured result limit exceeds {{limit}}; select asynchronous task mode to avoid downloading the complete result into the canvas",
+      "large_query_use_async": "The query's explicit result limit exceeds {{limit}}; select asynchronous task mode to avoid downloading the complete result into the canvas",
       "json_preview_truncated": "This JSON preview is limited in items, depth and property length; Use an asynchronous task for complete large results",
       "result_preview_truncated": "Showing at most {{limit}} result items; Use an asynchronous task for complete large results",
       "properties_preview": "Some properties are partial or omitted; Long text shows the first {{limit}} characters and its original length; Preview properties cannot be edited",
