@@ -89,10 +89,13 @@ const hasLargeExplicitReadLimit = (text, language = 'gremlin', maximum = 1000) =
         if (/\b(?:CREATE|MERGE|SET|DELETE|REMOVE|CALL)\b/i.test(code)) {
             return false;
         }
-        const match = code.match(/\bLIMIT\s+(\d+)\s*$/i);
+        // A property named `limit` is not a result-limit clause, including
+        // whitespace or masked comments between the dot and property name.
+        const limitCode = code.replace(/\.\s*LIMIT\b/gi, '.');
+        const match = limitCode.match(/\bLIMIT\s+(\d+)\s*$/i);
         // Keep expressions and parameters in async mode rather than evaluating
         // user code to guess their result bound.
-        return match ? Number(match[1]) > maximum : /\bLIMIT\s+\S/i.test(code);
+        return match ? Number(match[1]) > maximum : /\bLIMIT\s+\S/i.test(limitCode);
     }
     if (!/^\s*g\s*\.\s*[VE]\s*\(/.test(code)
         || /\.\s*(?:addV|addE|property|drop|iterate)\s*\(/.test(code)) {
