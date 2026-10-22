@@ -634,6 +634,41 @@ public class LiveOperationsCollectorTest {
     }
 
     @Test
+    public void testMalformedTargetDiscoveryRetainsActualPreferredOrFallbackPath()
+           throws IOException {
+        for (boolean preferred : new boolean[]{true, false}) {
+            HttpServer pd = pdServer(200, cluster(), 200, stores());
+            context(pd, "/v1/prom/targets/store", preferred ? 200 : 404, "{bad");
+            AtomicInteger legacyRequests = new AtomicInteger();
+            pd.createContext("/v1/prom/targets-all", exchange -> {
+                legacyRequests.incrementAndGet();
+                byte[] bytes = "{bad".getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(200, bytes.length);
+                exchange.getResponseBody().write(bytes);
+                exchange.close();
+            });
+            Snapshot snapshot;
+            try {
+                snapshot = collector(true, pd).collect(serverClient(), true);
+            } finally {
+                pd.stop(0);
+            }
+
+            String path = preferred ? "/v1/prom/targets/store" : "/v1/prom/targets-all";
+            Assert.assertEquals(preferred ? 0 : 1, legacyRequests.get());
+            OperationsModels.SourceStatus source = snapshot.getSources().get("stores");
+            Assert.assertEquals("PARTIAL", source.getAvailability());
+            Assert.assertEquals("malformed_response", source.getReason());
+            Assert.assertEquals(Collections.singletonMap("request_path", path), source.getDiagnostics());
+            for (String group : new String[]{"system", "drive", "raft"}) {
+                MetricStatus status = store(snapshot).getMetricStatuses().get(group);
+                Assert.assertEquals("MALFORMED", status.getAvailability());
+                Assert.assertEquals(Collections.singletonMap("request_path", path), status.getDiagnostics());
+            }
+        }
+    }
+
+    @Test
     public void testStoreTargetsFallbackOnlyWhenEndpointIsUnsupported()
            throws IOException {
         for (int status : new int[]{404, 405, 401, 403, 500, 200}) {
@@ -860,6 +895,38 @@ public class LiveOperationsCollectorTest {
         Assert.assertEquals("UNSUPPORTED", metric.getAvailability());
         Assert.assertEquals(Map.of("request_path", "/metrics/raft", "http_status", 404,
                                    "metric_group", "raft"), metric.getDiagnostics());
+    }
+
+    @Test
+    public void testMalformedMetricDiscoveryResponsesRetainPaths()
+           throws IOException {
+        for (String path : new String[]{"/actuator/prometheus", "/v1/prom/targets-all"}) {
+            HttpServer pd = pdServer(200, cluster(), 200, stores());
+            if ("/actuator/prometheus".equals(path)) {
+                pd.removeContext(path);
+            }
+            context(pd, path, 200, "private-malformed-response");
+            Snapshot snapshot;
+            try {
+                snapshot = collector(true, pd).collect(serverClient(), true);
+            } finally {
+                pd.stop(0);
+            }
+
+            String type = "/actuator/prometheus".equals(path) ? "PD" : "STORE";
+            String source = "PD".equals(type) ? "pd" : "stores";
+            Assert.assertEquals("malformed_response", snapshot.getSources().get(source).getReason());
+            Assert.assertEquals(Map.of("request_path", path),
+                                snapshot.getSources().get(source).getDiagnostics());
+            snapshot.getNodes().stream().filter(node -> type.equals(node.getType()))
+                    .flatMap(node -> node.getMetricStatuses().values().stream())
+                    .filter(status -> "MALFORMED".equals(status.getAvailability()))
+                    .forEach(status -> Assert.assertEquals(Map.of("request_path", path),
+                                                          status.getDiagnostics()));
+            Assert.assertTrue(snapshot.getNodes().stream().filter(node -> type.equals(node.getType()))
+                    .flatMap(node -> node.getMetricStatuses().values().stream())
+                    .anyMatch(status -> "MALFORMED".equals(status.getAvailability())));
+        }
     }
 
     @Test

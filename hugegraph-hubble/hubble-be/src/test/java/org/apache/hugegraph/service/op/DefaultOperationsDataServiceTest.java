@@ -238,6 +238,36 @@ public class DefaultOperationsDataServiceTest {
 
     @SuppressWarnings("unchecked")
     @Test
+    public void testUnsupportedDiagnosticsRemainVisibleForUnhealthyTopology() {
+        for (String health : new String[]{"DOWN", "DEGRADED", "UP"}) {
+            Map<String, Object> details = Map.of("request_path", "/metrics/raft", "http_status", 404);
+            MetricStatus metric = new MetricStatus("UNSUPPORTED", 2000L, null,
+                    false, false, "unsupported_version").withDiagnostics(details);
+            Node node = new Node("store-old", "STORE", "Store old", null, "1.7.0", health,
+                    2000L, Collections.emptyMap(), Map.of("raft", metric));
+            SourceStatus source = new SourceStatus("UNSUPPORTED", health, 2000L, null,
+                    false, false, "unsupported_version");
+            Snapshot snapshot = new Snapshot(health, 2000L, false, null,
+                    Map.of("stores", source), Collections.singletonList(node), Collections.emptyMap());
+            Map<String, Object> result = service(snapshot, 5).nodes(client("token-a"),
+                    Set.of(OperationsCapabilityService.TOPOLOGY_READ),
+                    "PD", "UP", "no-match", 1, 20, "name", "asc");
+            Assert.assertTrue(((java.util.List<?>) result.get("items")).isEmpty());
+            java.util.List<Map<String, Object>> diagnostics =
+                    (java.util.List<Map<String, Object>>) result.get("diagnostic_nodes");
+            if ("UP".equals(health)) {
+                Assert.assertTrue(diagnostics.isEmpty());
+            } else {
+                Assert.assertEquals(1, diagnostics.size());
+                Map<String, MetricStatus> statuses =
+                        (Map<String, MetricStatus>) diagnostics.get(0).get("metric_statuses");
+                Assert.assertEquals(details, statuses.get("raft").getDiagnostics());
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
     public void testEmptyNodeListRetainsSourceFailureDiagnostics() {
         Map<String, Object> diagnostics = Map.of(
                 "request_path", "/v1/stores", "max_response_bytes", 8192L,

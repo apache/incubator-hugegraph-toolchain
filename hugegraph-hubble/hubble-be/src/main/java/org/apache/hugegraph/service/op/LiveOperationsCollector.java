@@ -608,7 +608,9 @@ public class LiveOperationsCollector implements OperationsCollector {
                                   Collections.emptySet(), "text/plain"));
             selectedStatus = availableMetric(now);
         } catch (RuntimeException e) {
-            selectedStatus = metricStatus(e, now, true);
+            Map<String, Object> details = new LinkedHashMap<>(diagnostics(e));
+            details.putIfAbsent("request_path", "/actuator/prometheus");
+            selectedStatus = metricStatus(e, now, true).withDiagnostics(details);
             failureReason = selectedStatus.getReason();
         }
         for (int i = 0; i < nodes.size(); i++) {
@@ -660,26 +662,32 @@ public class LiveOperationsCollector implements OperationsCollector {
         return -1;
     }
 
-    private String storeMetricTargets() {
-        try {
-            return this.get("/v1/prom/targets/store");
-        } catch (UpstreamRequestException e) {
-            if (!"upstream_http_status_404".equals(e.getMessage()) &&
-                !"upstream_http_status_405".equals(e.getMessage())) {
-                throw e;
-            }
-            return this.get("/v1/prom/targets-all");
-        }
-    }
-
     private SourceStatus collectStoreMetrics(String stores, long now,
                                              SourceStatus status,
                                              List<Node> nodes) {
         try {
             Map<String, String> restAddresses =
                     this.parser.parseStoreRestAddresses(stores);
-            Map<String, URI> targets = this.parser.parseStoreMetricTargets(
-                                       this.storeMetricTargets());
+            String targetPath = "/v1/prom/targets/store";
+            String targetPayload;
+            try {
+                targetPayload = this.get(targetPath);
+            } catch (UpstreamRequestException e) {
+                if (!"upstream_http_status_404".equals(e.getMessage()) &&
+                    !"upstream_http_status_405".equals(e.getMessage())) {
+                    throw e;
+                }
+                targetPath = "/v1/prom/targets-all";
+                targetPayload = this.get(targetPath);
+            }
+            Map<String, URI> targets;
+            try {
+                targets = this.parser.parseStoreMetricTargets(targetPayload);
+            } catch (MalformedUpstreamException e) {
+                Map<String, Object> details = Map.of("request_path", targetPath);
+                this.applyStoreMetricStatus(nodes, metricStatus(e, now, true).withDiagnostics(details));
+                return metricFailureStatus(status, now, 0, metricReason(e)).withDiagnostics(details);
+            }
             Set<String> allowedTargets = new java.util.LinkedHashSet<>();
             boolean partial = false;
             int successfulGroups = 0;
