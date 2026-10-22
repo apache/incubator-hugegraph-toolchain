@@ -86,7 +86,7 @@ const ExecuteOnNavigation = ({action}) => {
     return null;
 };
 const graphs = [{name: 'hugegraph'}, {name: 'java17_legacy17_ui'}];
-const graphResponse = {status: 200, data: {graphs}};
+const graphResponse = {status: 200, data: {records: graphs}};
 const records = {status: 200, data: {records: [], total: 0}};
 
 it.each(['button', 'shortcut'])(
@@ -136,6 +136,9 @@ it.each(['button', 'shortcut'])(
             </MemoryRouter>
         );
         await waitFor(() => expect(api.analysis.getGraphList).toHaveBeenCalled());
+        expect(api.analysis.getGraphList).toHaveBeenCalledWith(
+            'DEFAULT', {suppressBusinessErrorToast: true}, true
+        );
         const run = () => screen.getByRole('button', {name: 'analysis.query.execute_query'});
         expect(run()).toBeDisabled();
         fireEvent.click(run());
