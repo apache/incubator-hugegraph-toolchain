@@ -49,8 +49,9 @@ def sha256(data):
 
 def installed_packages():
     expected_manager = json.loads((FRONTEND / 'package.json').read_text())['packageManager']
+    # Corepack selects the pinned manager before pnpm processes its arguments.
     actual_manager = subprocess.check_output([
-        'pnpm', '--dir', str(FRONTEND), '--version']).decode().strip()
+        'pnpm', '--version'], cwd=FRONTEND).decode().strip()
     if expected_manager != 'pnpm@' + actual_manager:
         raise ValueError(f'Use the pinned package manager: {expected_manager}')
     source_lock = (FRONTEND / 'pnpm-lock.yaml').read_bytes()
@@ -61,7 +62,7 @@ def installed_packages():
     if package_lock != installed_lock:
         raise ValueError('Installed lock differs from source; run a frozen pnpm install first')
     tree = json.loads(subprocess.check_output([
-        'pnpm', '--dir', str(FRONTEND), 'list', '--prod', '--depth', 'Infinity', '--json']))[0]
+        'pnpm', 'list', '--prod', '--depth', 'Infinity', '--json'], cwd=FRONTEND))[0]
     packages = {}
 
     def visit(item):
