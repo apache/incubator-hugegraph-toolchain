@@ -114,7 +114,8 @@
     "unit": {
       "cpu": "核",
       "memory": "G",
-      "unlimited": "未限制"
+      "unlimited": "未限制",
+      "inherited": "继承（{{value}}）"
     },
     "form": {
       "title_edit": "编辑图空间",
@@ -139,9 +140,9 @@
       "admin_placeholder": "选择图空间管理员",
       "description": "描述",
       "description_placeholder": "图空间描述，可选",
-      "cpu_placeholder": "例如：64",
+      "cpu_placeholder": "例如：128",
       "memory_placeholder": "例如：128",
-      "storage_placeholder": "例如：1000000",
+      "storage_placeholder": "例如：10240",
       "max_graph_placeholder": "例如：100",
       "image_placeholder": "例如：example.com/hugegraph/image:1.0.0",
       "image_example": "例如：example.com/org/image:1.0.0",
@@ -152,17 +153,19 @@
       "name_help": "可选的显示别名或备注名，可使用中文；不参与 URL 或权限匹配，留空时显示 GraphSpace 名称",
       "auth_help": "开启后，该图空间内的访问需要通过 HugeGraph 权限校验；创建后不可修改",
       "max_graph_help": "该图空间允许创建的图数量上限，默认 100",
-      "graph_cpu_help": "图查询与写入服务可使用的 CPU 上限，默认 64 核",
+      "graph_cpu_help": "图查询与写入服务可使用的 CPU 上限，默认 128 核",
       "graph_memory_help": "图查询与写入服务可使用的内存上限，默认 128 GB",
-      "compute_cpu_help": "异步计算任务可使用的 CPU 上限，默认 64 核",
-      "compute_memory_help": "异步计算任务可使用的内存上限，默认 128 GB",
+      "compute_cpu_help": "异步计算任务的 CPU 上限。表单默认 128 核；0 表示持续继承图服务 CPU 上限",
+      "compute_memory_help": "异步计算任务的内存上限。表单默认 128 GB；0 表示持续继承图服务内存上限",
       "oltp_namespace_help": "部署图查询与写入服务的 Kubernetes 命名空间；非 Kubernetes 环境可留空",
       "olap_namespace_help": "部署异步计算任务的 Kubernetes 命名空间；不运行计算任务时可留空",
-      "storage_limit_help": "该图空间可使用的存储容量上限，默认 1000000 GB",
+      "storage_limit_help": "该图空间可使用的存储容量上限，默认 10240 GB",
       "image_format_error": "请输入正确的镜像地址格式(ie: example.com/org_1/xx_img:1.0.0)!",
       "id_rule": "以字母开头,只能包含小写字母、数字、_, 最长48位",
       "name_rule": "必须以中文或字母开头，可包含常用符号，最长 48 位",
-      "k8s_rule": "以字母开头,只能包含小写字母、数字、-,最长48位"
+      "k8s_rule": "以字母开头,只能包含小写字母、数字、-,最长48位",
+      "compute_inheritance_help": "填 0 或清空表示持续继承对应的图服务配额；正数表示独立配额。编辑时恢复继承需要 Server 包含 apache/hugegraph#3391 修复",
+      "compute_nonnegative": "填 0 继承，或填写正数配额"
     },
     "card": {
       "enter": "进入图空间",
@@ -180,7 +183,8 @@
       "storage": "最大存储空间限制：",
       "used": "已使用：",
       "set_default": "默认图空间",
-      "created": "创建"
+      "created": "创建",
+      "compute": "计算资源："
     }
   },
   "graph": {

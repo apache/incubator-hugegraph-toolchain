@@ -17,9 +17,18 @@
 
 package org.apache.hugegraph.structure.space;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+import java.io.IOException;
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -42,10 +51,13 @@ public class GraphSpace {
     private int cpuLimit;
     @JsonProperty("memory_limit")
     private int memoryLimit; // GB
+    // Null preserves omission in requests; explicit zero selects inheritance.
     @JsonProperty("compute_cpu_limit")
-    private int computeCpuLimit;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Integer computeCpuLimit;
     @JsonProperty("compute_memory_limit")
-    private int computeMemoryLimit; // GB
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Integer computeMemoryLimit; // GB
     @JsonProperty("max_graph_number")
     private int maxGraphNumber;
     @JsonProperty("max_role_number")
@@ -66,6 +78,9 @@ public class GraphSpace {
     private int memoryUsed; // GB
     @JsonProperty("storage_used")
     private int storageUsed; // GB
+    @JsonProperty("storage_used_kb")
+    @JsonDeserialize(using = StorageUsedKbDeserializer.class)
+    private Long storageUsedKb;
     @JsonProperty("storage_percent")
     private double storagePercent;
     @JsonProperty("graph_number_used")
@@ -243,18 +258,22 @@ public class GraphSpace {
         return this;
     }
 
+    @JsonIgnore
     public int getComputeCpuLimit() {
-        return computeCpuLimit;
+        return computeCpuLimit == null ? 0 : computeCpuLimit;
     }
 
+    @JsonProperty("compute_cpu_limit")
     public void setComputeCpuLimit(int computeCpuLimit) {
         this.computeCpuLimit = computeCpuLimit;
     }
 
+    @JsonIgnore
     public int getComputeMemoryLimit() {
-        return computeMemoryLimit;
+        return computeMemoryLimit == null ? 0 : computeMemoryLimit;
     }
 
+    @JsonProperty("compute_memory_limit")
     public void setComputeMemoryLimit(int computeMemoryLimit) {
         this.computeMemoryLimit = computeMemoryLimit;
     }
@@ -265,6 +284,15 @@ public class GraphSpace {
 
     public GraphSpace setStorageUsed(int storageUsed) {
         this.storageUsed = storageUsed;
+        return this;
+    }
+
+    public Long getStorageUsedKb() {
+        return this.storageUsedKb;
+    }
+
+    public GraphSpace setStorageUsedKb(Long storageUsedKb) {
+        this.storageUsedKb = storageUsedKb;
         return this;
     }
 
@@ -333,7 +361,22 @@ public class GraphSpace {
         return new GraphSpaceReq(this);
     }
 
-    @JsonIgnoreProperties({"cpu_used", "memory_used", "storage_used",
+    // Old Servers can echo stale unknown configuration values as strings after rollback.
+    // Only the numeric metric supplied by current Servers is authoritative.
+    public static final class StorageUsedKbDeserializer extends JsonDeserializer<Long> {
+
+        @Override
+        public Long deserialize(JsonParser parser, DeserializationContext context) throws IOException {
+            if (parser.currentToken() == JsonToken.VALUE_NUMBER_INT) {
+                BigInteger value = parser.getBigIntegerValue();
+                return value.signum() >= 0 && value.bitLength() <= 63 ? value.longValue() : null;
+            }
+            parser.skipChildren();
+            return null;
+        }
+    }
+
+    @JsonIgnoreProperties({"cpu_used", "memory_used", "storage_used", "storage_used_kb",
                            "storage_percent", "graph_number_used", "role_number_used",
                            "create_time", "update_time"})
     public static class GraphSpaceReq extends GraphSpace {
@@ -345,8 +388,12 @@ public class GraphSpace {
             this.setDescription(graphSpace.getDescription());
             this.setCpuLimit(graphSpace.getCpuLimit());
             this.setMemoryLimit(graphSpace.getMemoryLimit());
-            this.setComputeCpuLimit(graphSpace.getComputeCpuLimit());
-            this.setComputeMemoryLimit(graphSpace.getComputeMemoryLimit());
+            if (graphSpace.computeCpuLimit != null) {
+                this.setComputeCpuLimit(graphSpace.computeCpuLimit);
+            }
+            if (graphSpace.computeMemoryLimit != null) {
+                this.setComputeMemoryLimit(graphSpace.computeMemoryLimit);
+            }
             this.setOperatorImagePath(graphSpace.getOperatorImagePath());
             this.setInternalAlgorithmImageUrl(graphSpace.getInternalAlgorithmImageUrl());
             this.setStorageLimit(graphSpace.getStorageLimit());
