@@ -330,7 +330,7 @@ const EditLayer = ({visible, detail, onCancel, refresh}) => {
                         label={t('graphspace.form.cpu')}
                         help={t('graphspace.form.compute_cpu_help')}
                         unit={t('graphspace.unit.cpu')}
-                        extra={computeCpu === 0
+                        extra={computeCpu === null || computeCpu === 0
                             ? formatComputeLimit(0, cpu, t('graphspace.unit.cpu'), t) : null}
                     >
                         <Form.Item
@@ -350,7 +350,7 @@ const EditLayer = ({visible, detail, onCancel, refresh}) => {
                         label={t('graphspace.form.memory')}
                         help={t('graphspace.form.compute_memory_help')}
                         unit={t('graphspace.unit.memory')}
-                        extra={computeMemory === 0
+                        extra={computeMemory === null || computeMemory === 0
                             ? formatComputeLimit(0, memory, t('graphspace.unit.memory'), t) : null}
                     >
                         <Form.Item

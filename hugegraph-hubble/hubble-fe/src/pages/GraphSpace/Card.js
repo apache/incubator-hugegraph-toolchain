@@ -24,7 +24,8 @@ import style from './index.module.scss';
 import {useCallback} from 'react';
 import {useTranslation} from 'react-i18next';
 import {getResourceDisplayName} from '../../utils/displayName';
-import {formatResourceLimit, formatStorageUsed, storageUsagePercent, formatComputeLimit} from './storageUsage';
+import {formatResourceLimit, formatStorageUsed, formatStorageLimit,
+    storageUsagePercent, formatComputeLimit} from './storageUsage';
 
 const formatPercent = percent => {
     if (percent >= 100) {
@@ -141,7 +142,7 @@ const GraphSpaceCard = ({
     const unlimited = t('graphspace.unit.unlimited');
     const cpu = formatResourceLimit(item.cpu_limit, t('graphspace.unit.cpu'), unlimited);
     const memory = formatResourceLimit(item.memory_limit, t('graphspace.unit.memory'), unlimited);
-    const storage = formatResourceLimit(item.storage_limit, t('graphspace.unit.memory'), unlimited);
+    const storage = formatStorageLimit(item.storage_limit, unlimited);
     const statisticDate = item.statistic?.date;
 
     return (
@@ -252,9 +253,8 @@ const GraphSpaceCard = ({
                                 <div>
                                     {formatStorageUsed(item)}
                                     {' / '}
-                                    {formatResourceLimit(
+                                    {formatStorageLimit(
                                         item.storage_limit,
-                                        t('graphspace.unit.memory'),
                                         t('graphspace.unit.unlimited'),
                                         '--'
                                     )}

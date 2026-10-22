@@ -40,7 +40,7 @@ import {useTranslation} from 'react-i18next';
 import {EditLayer} from './EditLayer';
 import {Link} from 'react-router-dom';
 import GraphSpaceCard from './Card';
-import {formatResourceLimit, formatComputeLimit} from './storageUsage';
+import {formatResourceLimit, formatComputeLimit, formatStorageLimit} from './storageUsage';
 import style from './index.module.scss';
 import * as api from '../../api/index';
 import {useAuthContext} from '../../auth/AuthContext';
@@ -204,7 +204,7 @@ const GraphSpace = () => {
             dataIndex: 'storage_limit',
             width: 150,
             align: 'center',
-            render: val => formatResourceLimit(val, t('graphspace.unit.memory'), t('graphspace.unit.unlimited')),
+            render: val => formatStorageLimit(val, t('graphspace.unit.unlimited')),
         },
         {
             title: t('graphspace.col.operation'),

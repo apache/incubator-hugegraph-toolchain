@@ -102,6 +102,7 @@ test('shows nonzero precise usage when the legacy ratio is rounded to zero', () 
 
     expect(screen.getByText('<0.01%')).toBeInTheDocument();
     expect(screen.getByText(/1 MB/)).toBeInTheDocument();
+    expect(screen.getByText('1 MB / 10240 GB')).toBeInTheDocument();
 });
 
 test.each([

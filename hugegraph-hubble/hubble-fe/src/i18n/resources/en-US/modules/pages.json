@@ -164,7 +164,7 @@
       "id_rule": "Start with a letter, lowercase letters/digits/underscore, max 48 chars",
       "name_rule": "Start with a letter or Chinese character; common symbols are allowed; max 48 characters",
       "k8s_rule": "Start with a letter, lowercase letters/digits/hyphen, max 48 chars",
-      "compute_inheritance_help": "Set 0 to keep inheriting the corresponding graph-service limit as it changes. Positive values stay independent. Saving preserves inheritance",
+      "compute_inheritance_help": "Set 0 or clear the field to inherit the corresponding graph-service limit continuously; positive values stay independent. Restoring inheritance while editing requires the Server fix apache/hugegraph#3391",
       "compute_nonnegative": "Use 0 to inherit or enter a positive limit"
     },
     "card": {

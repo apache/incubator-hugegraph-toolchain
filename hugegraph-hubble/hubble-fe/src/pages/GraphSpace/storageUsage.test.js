@@ -16,7 +16,8 @@
  * under the License.
  */
 
-import {formatResourceLimit, formatStorageUsed, storageUsagePercent, formatComputeLimit} from './storageUsage';
+import {formatResourceLimit, formatStorageLimit, formatStorageUsed,
+    storageUsagePercent, formatComputeLimit} from './storageUsage';
 
 test.each([
     [1, '1 KB'],
@@ -25,7 +26,8 @@ test.each([
     [512 * 1024, '512 MB'],
     [1024 * 1024, '1 GB'],
     [1536 * 1024, '1.5 GB'],
-    [0, '0 GB'],
+    [1024 * 1024 * 1024, '1 TB'],
+    [0, '0 KB'],
 ])('formats %s KB without truncating sub-GB usage', (kb, expected) => {
     expect(formatStorageUsed({storage_used_kb: kb, storage_used: 0})).toBe(expected);
 });
@@ -33,6 +35,13 @@ test.each([
 test('uses legacy GB when the server does not supply precise usage', () => {
     expect(formatStorageUsed({storage_used: 2})).toBe('2 GB');
     expect(formatStorageUsed({storage_used_kb: null, storage_used: 2})).toBe('2 GB');
+    expect(formatStorageUsed({storage_used_kb: '524288', storage_used: 3})).toBe('3 GB');
+});
+
+test('keeps finite storage quotas numeric with the same unit style as usage', () => {
+    expect(formatStorageLimit(10240, 'Unlimited')).toBe('10240 GB');
+    expect(formatStorageLimit(2147483647, 'Unlimited')).toBe('Unlimited');
+    expect(formatStorageLimit(2147483647, 'Unlimited', '--')).toBe('--');
 });
 
 test('finite quotas above 99999 stay numeric and legacy sentinel stays unlimited', () => {

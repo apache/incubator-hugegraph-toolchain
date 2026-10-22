@@ -37,10 +37,17 @@ Cards and tables label zero compute limits as `Inherited (current effective limi
 The editor accepts zero, shows its effective limit, and preserves zero when only
 graph-service CPU or memory changes. The creation form still starts all four
 fields at an explicit 128 and submits the values shown in the form.
+Clearing a compute field has the same inheritance meaning as zero and shows its
+effective limit before saving. Restoring inheritance while editing requires the
+paired [Server fix](https://github.com/apache/hugegraph/pull/3391); older Servers
+can acknowledge zero while retaining the existing positive limit. The legacy
+storage-usage fallback remains available with older Servers.
 
 With a Server that supplies `storage_used_kb`, cards show approximate usage in
-KB, MB or GB, including amounts below one GB. The Java client and Hubble preserve
-this optional field; older Servers continue using integer-GB `storage_used`.
+KB, MB, GB or larger units, including amounts below one GB. The Java client and
+Hubble preserve this optional field only for nonnegative integer JSON numbers.
+Quoted or invalid values, including stale configuration strings echoed after a
+Server rollback, fall back to integer-GB `storage_used` and the legacy ratio.
 Usage follows Store heartbeat and PD quota-check refreshes rather than individual
 writes. Cards calculate percentages from precise KB usage and the GB quota when
 available, so ratios below 0.01% remain visible as `<0.01%` even when the legacy
@@ -53,7 +60,8 @@ visibility, creation defaults, and switching `ecommerce/orders` → `DEFAULT/peo
 → `ecommerce/orders` through the header selectors, then returning to the usage cards.
 They also exercise editing an inherited space: changing CPU from 4 to 16 keeps
 both compute fields at raw zero in the saved request and updates the displayed
-effective CPU limit to 16.
+effective CPU limit to 16. Clearing both compute inputs displays the same effective
+limits before saving; the backend converts their explicit null values to zero.
 This UI selects GraphSpace/graph context within one deployment connection; it has
 no Server connection selector. The deployment uses `server.direct_url` or PD
 discovery. Switching real Server deployments and validating Store/PD refreshes

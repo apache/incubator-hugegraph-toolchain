@@ -39,6 +39,7 @@ import org.apache.hugegraph.entity.space.GraphSpaceEntity;
 import org.apache.hugegraph.exception.ForbiddenException;
 import org.apache.hugegraph.handler.ExceptionAdvisor;
 import org.apache.hugegraph.options.HubbleOptions;
+import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.service.auth.UserService;
 import org.apache.hugegraph.service.auth.AuthModeService;
 import org.apache.hugegraph.service.graphs.GraphsService;
@@ -53,6 +54,24 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 public class GraphSpaceControllerTest {
+
+    @Test
+    public void testHttpStoragePrecisionSurvivesEntityWireWithoutCoercingLegacyConfigs() throws Exception {
+        String[] values = {"524288", "\"524288\"", "null", "-1", "{}"};
+        for (int i = 0; i < values.length; i++) {
+            okhttp3.Response response = Mockito.mock(okhttp3.Response.class, Mockito.RETURNS_DEEP_STUBS);
+            Mockito.when(response.code()).thenReturn(200);
+            Mockito.when(response.body().string()).thenReturn(
+                    "{\"name\":\"shop\",\"storage_used_kb\":" + values[i] +
+                    ",\"storage_used\":3,\"storage_percent\":0.03}");
+            GraphSpace space = new RestResult(response).readObject(GraphSpace.class);
+            GraphSpaceEntity entity = GraphSpaceEntity.fromGraphSpace(space);
+            Map<?, ?> wire = JsonUtil.fromJson(JsonUtil.toJson(entity), Map.class);
+            Assert.assertEquals(i == 0 ? 524288 : null, wire.get("storage_used_kb"));
+            Assert.assertEquals(3, wire.get("storage_used"));
+            Assert.assertEquals(0.03, (Double) wire.get("storage_percent"), 0.000001);
+        }
+    }
 
     @Test
     public void testStandaloneDetailNeverContainsDataPlaneSecrets() {
@@ -257,6 +276,7 @@ public class GraphSpaceControllerTest {
     @Test
     public void testUpdateComputePresenceAndSdkWireSerialization() throws Exception {
         assertComputeUpdate("", null, null);
+        assertComputeUpdate(",\"compute_cpu_limit\":null,\"compute_memory_limit\":null", 0, 0);
         assertComputeUpdate(",\"compute_cpu_limit\":0", 0, null);
         assertComputeUpdate(",\"compute_cpu_limit\":0,\"compute_memory_limit\":0", 0, 0);
         assertComputeUpdate(",\"compute_cpu_limit\":8,\"compute_memory_limit\":16", 8, 16);

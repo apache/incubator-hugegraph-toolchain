@@ -55,6 +55,26 @@ public class GraphSpaceAPITest extends BaseUnitTest {
     }
 
     @Test
+    public void testHttpPrecisionAcceptsOnlyNonnegativeIntegerMetrics() throws Exception {
+        String[] values = {"0", "524288", "9223372036854775807", "null", "\"524288\"",
+                           "\"invalid\"", "-1", "1.5", "524288.0", "9223372036854775808",
+                           "{}", "[]", "true"};
+        for (int i = 0; i < values.length; i++) {
+            okhttp3.Response response = Mockito.mock(okhttp3.Response.class, Mockito.RETURNS_DEEP_STUBS);
+            Mockito.when(response.code()).thenReturn(200);
+            Mockito.when(response.body().string()).thenReturn(
+                    "{\"name\":\"shop\",\"storage_used_kb\":" + values[i] +
+                    ",\"storage_used\":3,\"storage_percent\":0.03}");
+            RestResult result = new RestResult(response);
+            Mockito.when(this.mockClient.get("graphspaces", "shop")).thenReturn(result);
+            GraphSpace space = this.graphSpaceAPI.get("shop");
+            Assert.assertEquals(i < 3 ? Long.valueOf(values[i]) : null, space.getStorageUsedKb());
+            Assert.assertEquals(3, space.getStorageUsed());
+            Assert.assertEquals(0.03, space.getStoragePercent(), 0.000001);
+        }
+    }
+
+    @Test
     public void testPartialUpdateOmitsUnsetComputeLimits() {
         GraphSpace update = new GraphSpace("shop").setCpuLimit(4).setMemoryLimit(8);
         update.setDescription("updated");

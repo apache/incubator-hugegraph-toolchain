@@ -21,7 +21,14 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+import java.io.IOException;
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -72,6 +79,7 @@ public class GraphSpace {
     @JsonProperty("storage_used")
     private int storageUsed; // GB
     @JsonProperty("storage_used_kb")
+    @JsonDeserialize(using = StorageUsedKbDeserializer.class)
     private Long storageUsedKb;
     @JsonProperty("storage_percent")
     private double storagePercent;
@@ -351,6 +359,21 @@ public class GraphSpace {
 
     public Object convertReq() {
         return new GraphSpaceReq(this);
+    }
+
+    // Old Servers can echo stale unknown configuration values as strings after rollback.
+    // Only the numeric metric supplied by current Servers is authoritative.
+    public static final class StorageUsedKbDeserializer extends JsonDeserializer<Long> {
+
+        @Override
+        public Long deserialize(JsonParser parser, DeserializationContext context) throws IOException {
+            if (parser.currentToken() == JsonToken.VALUE_NUMBER_INT) {
+                BigInteger value = parser.getBigIntegerValue();
+                return value.signum() >= 0 && value.bitLength() <= 63 ? value.longValue() : null;
+            }
+            parser.skipChildren();
+            return null;
+        }
     }
 
     @JsonIgnoreProperties({"cpu_used", "memory_used", "storage_used", "storage_used_kb",

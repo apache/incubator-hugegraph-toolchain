@@ -315,3 +315,31 @@ test('creation can explicitly select zero compute inheritance without changing f
         cpu_limit: 128, memory_limit: 128, compute_cpu_limit: 0, compute_memory_limit: 0,
     });
 });
+
+test('clearing positive compute fields shows inheritance before submitting null', async () => {
+    api.manage.getGraphSpace.mockResolvedValue({status: 200, data: {
+        name: 'cleared', auth: false, cpu_limit: 4, memory_limit: 8,
+        compute_cpu_limit: 6, compute_memory_limit: 7,
+    }});
+    render(<EditLayer visible detail={{name: 'cleared'}} onCancel={jest.fn()} refresh={jest.fn()} />);
+    const cpu = document.querySelector('#control-hooks_compute_cpu_limit');
+    const memory = document.querySelector('#control-hooks_compute_memory_limit');
+    await waitFor(() => expect(cpu).toHaveValue('6'));
+    expect(screen.queryByText('Inherited (4graphspace.unit.cpu)')).not.toBeInTheDocument();
+    fireEvent.change(cpu, {target: {value: ''}});
+    fireEvent.change(memory, {target: {value: ''}});
+    expect(await screen.findByText('Inherited (4graphspace.unit.cpu)')).toBeInTheDocument();
+    expect(await screen.findByText('Inherited (8graphspace.unit.memory)')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', {name: 'common.action.save'}));
+    await waitFor(() => expect(api.manage.updateGraphSpace).toHaveBeenCalled());
+    expect(api.manage.updateGraphSpace.mock.calls[0][1]).toMatchObject({
+        compute_cpu_limit: null, compute_memory_limit: null,
+    });
+});
+
+test('both locales explain clearing and the paired Server requirement', () => {
+    for (const locale of ['en-US', 'zh-CN']) {
+        const pages = require(`../../i18n/resources/${locale}/modules/pages.json`);
+        expect(pages.graphspace.form.compute_inheritance_help).toContain('apache/hugegraph#3391');
+    }
+});
