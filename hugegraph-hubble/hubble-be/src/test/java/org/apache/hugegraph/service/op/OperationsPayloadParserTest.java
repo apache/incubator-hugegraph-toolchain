@@ -18,6 +18,7 @@
 package org.apache.hugegraph.service.op;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -79,6 +80,57 @@ public class OperationsPayloadParserTest {
         Assert.assertFalse(serialized.contains("store-a:8500"));
         Assert.assertFalse(serialized.contains("pd-a:8620"));
         Assert.assertFalse(serialized.contains("/secret"));
+    }
+
+    @Test
+    public void testPdMetricIdentityCanonicalizesEndpointWithoutChangingStableNodeId() {
+        OperationsPayloadParser parser = new OperationsPayloadParser(MAPPER);
+        String[][] equivalent = {
+                {"HTTP://PD.EXAMPLE:80", "http://pd.example:80"},
+                {"http://pd.example", "http://PD.EXAMPLE:80/"},
+                {"https://pd.example:443", "HTTPS://PD.EXAMPLE/"},
+                {"http://pd.example:8620/pd", "HTTP://PD.EXAMPLE:8620/pd/"},
+                {"http://pd.example:8620", "pd.example:8620"},
+                {"https://pd.example:8620", "PD.EXAMPLE:8620"},
+                {"https://pd.example", "pd.example:443"},
+                {"http://[::1]:8620", "[::1]:8620"},
+                {"https://pd.example:8620/pd", "pd.example:8620/pd"}
+        };
+        for (String[] urls : equivalent) {
+            String cluster = pdCluster(urls[1]);
+            String expectedId = parser.parseTopology(cluster,
+                    "{\"status\":0,\"data\":{\"stores\":[]}}")
+                    .getNodes().get(0).getId();
+
+            Assert.assertEquals(expectedId, parser.pdMetricNodeId(cluster, urls[0]));
+        }
+    }
+
+    @Test
+    public void testPdMetricIdentityDoesNotGuessAliasesOrDifferentEndpoints() {
+        OperationsPayloadParser parser = new OperationsPayloadParser(MAPPER);
+        String cluster = pdCluster("http://pd.example:8620/pd");
+        for (String configured : new String[]{"http://pd-alias.example:8620/pd",
+                                             "https://pd.example:8620/pd",
+                                             "http://pd.example:8621/pd",
+                                             "http://pd.example:8620/other",
+                                             "http://pd.example:8620/pd?token=private"}) {
+            Assert.assertNull(parser.pdMetricNodeId(cluster, configured));
+        }
+        Assert.assertNull(parser.pdMetricNodeId(
+                pdCluster("http://pd.example:8620", "HTTP://PD.EXAMPLE:8620"),
+                "http://pd.example:8620"));
+        Assert.assertNull(parser.pdMetricNodeId(pdCluster("not-a-uri"), "http://pd.example:8620"));
+        Assert.assertNull(parser.pdMetricNodeId(pdCluster("pd.example:8620"), "https://pd-alias.example:8620"));
+        Assert.assertNull(parser.pdMetricNodeId(pdCluster("http://pd.example:8620"), "https://pd.example:8620"));
+    }
+
+    private static String pdCluster(String... addresses) {
+        List<Map<String, String>> members = new ArrayList<>();
+        for (String address : addresses) {
+            members.add(Map.of("restUrl", address, "state", "Up"));
+        }
+        return MAPPER.valueToTree(Map.of("status", 0, "data", Map.of("pdList", members))).toString();
     }
 
     @Test
@@ -209,6 +261,33 @@ public class OperationsPayloadParserTest {
                 "\"pdLeader\":{\"restUrl\":\"http://pd-b:8620\"}}}",
                 stores).getNodes().get(0).getId();
         Assert.assertEquals(expectedId, leader.getId());
+    }
+
+    @Test
+    public void testCombinesDataAndClusterHealthWithoutChangingNodeStatus() {
+        OperationsPayloadParser parser = new OperationsPayloadParser(MAPPER);
+        String stores = "{\"status\":0,\"data\":{\"stores\":[]}}";
+        String[][] states = {
+                {"Cluster_OK", "PState_Normal", "UP", null},
+                {"Cluster_OK", "PState_Warn", "DEGRADED", "data_warn"},
+                {"Cluster_OK", "PState_Offline", "DEGRADED", "data_offline"},
+                {"Cluster_OK", "PState_Fault", "DOWN", "data_fault"},
+                {"Cluster_OK", "PState_None", "DEGRADED", "data_state_unknown"},
+                {"Cluster_OK", "PState_Future", "DEGRADED", "data_state_unknown"},
+                {"Cluster_Fault", "PState_Warn", "DOWN", "cluster_fault"}
+        };
+        for (String[] state : states) {
+            String cluster = "{\"status\":0,\"data\":{\"state\":\"" + state[0] +
+                             "\",\"dataState\":\"" + state[1] + "\",\"pdList\":[{" +
+                             "\"restUrl\":\"http://pd:8620\",\"state\":\"Up\"}]}}";
+            OperationsModels.Topology topology = parser.parseTopology(cluster, stores);
+
+            Assert.assertEquals(state[2], topology.getStatus());
+            Assert.assertEquals(state[3], topology.getReason());
+            Assert.assertEquals(state[0], topology.getClusterState());
+            Assert.assertEquals(state[1], topology.getDataState());
+            Assert.assertEquals("UP", topology.getNodes().get(0).getStatus());
+        }
     }
 
     @Test

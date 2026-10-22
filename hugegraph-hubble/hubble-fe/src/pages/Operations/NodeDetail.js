@@ -335,8 +335,12 @@ const SystemMetricContent = ({values = {}}) => {
 
 const MetricGroup = ({group, name, values, status = {}, emptyMessage}) => {
     const {t, i18n} = useTranslation();
-    const entries = values && typeof values === 'object' && !Array.isArray(values)
-        ? Object.entries(values) : [];
+    const metricValues = values && typeof values === 'object' && !Array.isArray(values)
+        ? values : {};
+    const failedGraphs = status.diagnostics?.failed_graphs;
+    const entries = Object.entries(group === 'backend'
+        && Number.isSafeInteger(failedGraphs) && failedGraphs >= 0
+        ? {...metricValues, failed_graphs: failedGraphs} : metricValues);
     const visibleEntries = entries.filter(([key]) =>
         !HIDDEN_METRIC_KEYS[group]?.has(key)
     );

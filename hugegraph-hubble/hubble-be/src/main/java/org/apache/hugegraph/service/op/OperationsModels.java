@@ -182,6 +182,8 @@ public final class OperationsModels {
         private final String reason;
         private final List<Node> nodes;
         private final Map<String, Long> facts;
+        private final String clusterState;
+        private final String dataState;
 
         public Topology(String status, List<Node> nodes,
                         Map<String, Long> facts) {
@@ -190,6 +192,14 @@ public final class OperationsModels {
 
         public Topology(String status, String reason, List<Node> nodes,
                         Map<String, Long> facts) {
+            this(status, reason, nodes, facts, null, null);
+        }
+
+        public Topology(String status, String reason, List<Node> nodes,
+                        Map<String, Long> facts, String clusterState,
+                        String dataState) {
+            this.clusterState = clusterState;
+            this.dataState = dataState;
             this.status = status;
             this.reason = reason;
             this.nodes = Collections.unmodifiableList(nodes);
@@ -208,6 +218,14 @@ public final class OperationsModels {
             return this.nodes;
         }
 
+        public String getClusterState() {
+            return this.clusterState;
+        }
+
+        public String getDataState() {
+            return this.dataState;
+        }
+
         public Map<String, Long> getFacts() {
             return this.facts;
         }
@@ -224,6 +242,8 @@ public final class OperationsModels {
         private final boolean stale;
         private final String reason;
         private final Map<String, Object> diagnostics;
+        private final String clusterState;
+        private final String dataState;
 
         public SourceStatus(String availability, String status, Long observedAt,
                             Long lastSuccessAt, boolean fresh, boolean stale,
@@ -235,6 +255,14 @@ public final class OperationsModels {
         public SourceStatus(String availability, String status, Long observedAt,
                             Long lastSuccessAt, boolean fresh, boolean stale,
                             String reason, Map<String, Object> diagnostics) {
+            this(availability, status, observedAt, lastSuccessAt, fresh, stale,
+                 reason, diagnostics, null, null);
+        }
+
+        private SourceStatus(String availability, String status, Long observedAt,
+                             Long lastSuccessAt, boolean fresh, boolean stale,
+                             String reason, Map<String, Object> diagnostics,
+                             String clusterState, String dataState) {
             this.availability = availability;
             this.status = status;
             this.observedAt = observedAt;
@@ -243,6 +271,8 @@ public final class OperationsModels {
             this.stale = stale;
             this.reason = reason;
             this.diagnostics = immutableMap(diagnostics);
+            this.clusterState = clusterState;
+            this.dataState = dataState;
         }
 
         public String getAvailability() {
@@ -277,16 +307,33 @@ public final class OperationsModels {
             return this.diagnostics;
         }
 
+        public String getClusterState() {
+            return this.clusterState;
+        }
+
+        public String getDataState() {
+            return this.dataState;
+        }
+
         public SourceStatus withDiagnostics(Map<String, Object> details) {
             return new SourceStatus(this.availability, this.status, this.observedAt,
                                     this.lastSuccessAt, this.fresh, this.stale,
-                                    this.reason, details);
+                                    this.reason, details, this.clusterState, this.dataState);
+        }
+
+        public SourceStatus withClusterHealth(String clusterState,
+                                               String dataState) {
+            return new SourceStatus(this.availability, this.status,
+                                    this.observedAt, this.lastSuccessAt,
+                                    this.fresh, this.stale, this.reason,
+                                    this.diagnostics, clusterState, dataState);
         }
 
         public SourceStatus stale(String staleReason) {
             return new SourceStatus(this.availability, this.status,
                                     this.observedAt, this.lastSuccessAt,
-                                    false, true, staleReason, this.diagnostics);
+                                    false, true, staleReason, this.diagnostics,
+                                    this.clusterState, this.dataState);
         }
     }
 

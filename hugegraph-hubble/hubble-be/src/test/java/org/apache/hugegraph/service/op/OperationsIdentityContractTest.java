@@ -45,9 +45,28 @@ public class OperationsIdentityContractTest {
 
     @Test
     public void testPdAndStoreRequestsUseOnlyTheirOwnIdentities() {
-        IdentityCapturingHttpClient http = new IdentityCapturingHttpClient();
+        assertDiscoveryIdentities(200);
+    }
+
+    @Test
+    public void testLegacyTargetFallbackKeepsPdAndStoreIdentitiesSeparate() {
+        assertDiscoveryIdentities(404);
+        assertDiscoveryIdentities(405);
+    }
+
+    @Test
+    public void testSchemeLessAdvertisedPdUsesConfiguredHttpsIdentity() {
+        assertDiscoveryIdentities(200, "https");
+    }
+
+    private static void assertDiscoveryIdentities(int dedicatedStatus) {
+        assertDiscoveryIdentities(dedicatedStatus, "http");
+    }
+
+    private static void assertDiscoveryIdentities(int dedicatedStatus, String pdScheme) {
+        IdentityCapturingHttpClient http = new IdentityCapturingHttpClient(dedicatedStatus, pdScheme);
         LiveOperationsCollector collector = new LiveOperationsCollector(
-                true, "http://pd.internal:8620", PD_USER, PD_SECRET,
+                true, pdScheme + "://pd.internal:8620", PD_USER, PD_SECRET,
                 STORE_USER, STORE_SECRET, "server-under-test", http,
                 new OperationsPayloadParser(new ObjectMapper()), CLOCK,
                 2, 1000, Set.of("http://store.internal:8520"));
@@ -58,6 +77,9 @@ public class OperationsIdentityContractTest {
         }
 
         Assert.assertTrue(http.pdRequests > 0);
+        Assert.assertEquals(1, http.dedicatedRequests);
+        Assert.assertEquals(1, http.pdMetricRequests);
+        Assert.assertEquals(dedicatedStatus == 200 ? 0 : 1, http.legacyRequests);
         Assert.assertEquals(3, http.storeRequests);
         Assert.assertFalse(http.captures.isEmpty());
         for (Capture capture : http.captures) {
@@ -91,9 +113,16 @@ public class OperationsIdentityContractTest {
         private final List<Capture> captures = new ArrayList<>();
         private int pdRequests;
         private int storeRequests;
+        private int dedicatedRequests;
+        private int legacyRequests;
+        private int pdMetricRequests;
+        private final int dedicatedStatus;
+        private final String pdScheme;
 
-        private IdentityCapturingHttpClient() {
+        private IdentityCapturingHttpClient(int dedicatedStatus, String pdScheme) {
             super(1000, 1000, 8192);
+            this.dedicatedStatus = dedicatedStatus;
+            this.pdScheme = pdScheme;
         }
 
         @Override
@@ -131,14 +160,23 @@ public class OperationsIdentityContractTest {
                 return "{\"heap\":{\"used\":1}}";
             }
             this.pdRequests++;
+            Assert.assertEquals(this.pdScheme, target.getScheme());
             switch (target.getPath()) {
                 case "/v1/cluster":
                     return cluster();
                 case "/v1/stores":
                     return stores();
+                case "/v1/prom/targets/store":
+                    this.dedicatedRequests++;
+                    if (this.dedicatedStatus != 200) {
+                        throw new UpstreamRequestException("upstream_http_status_" + this.dedicatedStatus);
+                    }
+                    return targets();
                 case "/v1/prom/targets-all":
+                    this.legacyRequests++;
                     return targets();
                 case "/actuator/prometheus":
+                    this.pdMetricRequests++;
                     return "process_uptime_seconds 1\n";
                 default:
                     throw new AssertionError("Unexpected PD path");
@@ -147,7 +185,7 @@ public class OperationsIdentityContractTest {
 
         private static String cluster() {
             return "{\"status\":0,\"data\":{\"state\":\"Cluster_OK\"," +
-                   "\"pdList\":[],\"stores\":[]}}";
+                   "\"pdList\":[{\"restUrl\":\"pd.internal:8620\",\"state\":\"Up\"}],\"stores\":[]}}";
         }
 
         private static String stores() {

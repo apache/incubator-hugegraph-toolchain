@@ -163,6 +163,44 @@ test('does not show a green UP beside the Chinese partial-availability warning',
     expect(source).toHaveAccessibleName(/节点状态: UP/);
 });
 
+test.each([
+    ['en-US', 'Cluster state', 'Data state', 'PD reports a data fault'],
+    ['zh-CN', '集群状态', '数据状态', 'PD 上报数据故障'],
+])('shows raw cluster and data health in %s', async (
+    language, clusterLabel, dataLabel, dataReason
+) => {
+    await i18n.changeLanguage(language);
+    render(
+        <SourceStrip
+            detailed
+            sourceNames={['pd']}
+            sources={{pd: {
+                status: 'UP',
+                availability: 'PARTIAL',
+                cluster_state: 'Cluster_OK',
+                data_state: 'PState_Fault',
+                reason: 'data_fault',
+            }}}
+        />
+    );
+
+    const source = screen.getByText('PD').closest('.operations-source');
+    expect(source).toHaveTextContent(`${clusterLabel}: Cluster_OK`);
+    expect(source).toHaveTextContent(`${dataLabel}: PState_Fault`);
+    expect(source).toHaveTextContent(dataReason);
+    expect(source.querySelector('.operations-health')).not.toHaveClass('status-down');
+});
+
+test.each([
+    ['en-US', 'Some graph backend metrics failed'],
+    ['zh-CN', '部分图的后端指标获取失败'],
+])('localizes backend collection failures in %s', async (language, message) => {
+    await i18n.changeLanguage(language);
+    render(<HealthStatus status='DEGRADED' reason='backend_metrics_failed' size='large' />);
+
+    expect(screen.getByText(new RegExp(message))).toBeInTheDocument();
+});
+
 test('uses a concise Attention label and explains the degraded state', () => {
     render(<HealthStatus status='DEGRADED' reason='refresh_failed' />);
 

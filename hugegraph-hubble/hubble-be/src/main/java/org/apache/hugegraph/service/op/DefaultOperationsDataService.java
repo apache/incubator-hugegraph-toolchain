@@ -292,7 +292,9 @@ public class DefaultOperationsDataService implements OperationsDataService {
                     sources.put(sourceName, new SourceStatus(
                                 source.getAvailability(), source.getStatus(),
                                 source.getObservedAt(), source.getLastSuccessAt(),
-                                false, true, source.getReason(), source.getDiagnostics()));
+                                false, true, source.getReason(), source.getDiagnostics())
+                            .withClusterHealth(source.getClusterState(),
+                                               source.getDataState()));
                 }
                 continue;
             }
@@ -304,7 +306,11 @@ public class DefaultOperationsDataService implements OperationsDataService {
             sources.put(sourceName, new SourceStatus(
                     source.getAvailability(), old.getStatus(),
                     source.getObservedAt(), old.getLastSuccessAt(), false,
-                    true, source.getReason(), source.getDiagnostics()));
+                    true, source.getReason(), source.getDiagnostics())
+                            .withClusterHealth(source.getClusterState() == null ?
+                                               old.getClusterState() : source.getClusterState(),
+                                               source.getDataState() == null ?
+                                               old.getDataState() : source.getDataState()));
             String nodeType = nodeType(sourceName);
             if (nodeType != null) {
                 nodes.removeIf(node -> nodeType.equals(node.getType()));
