@@ -74,7 +74,10 @@ public class VermeerService {
     public Map<String, Object> getVermeer(HugeClient client, String token,
                                           boolean throwIfNoConfig) {
         if (this.directConfigured()) {
-            return ImmutableMap.of("enable", this.direct.permitted(client) && this.direct.available());
+            boolean permitted = this.direct.permitted(client);
+            boolean available = permitted && this.direct.available();
+            return ImmutableMap.of("enable", available,
+                                   "retryable", permitted && !available);
         }
         return this.getVermeer(token, throwIfNoConfig);
     }

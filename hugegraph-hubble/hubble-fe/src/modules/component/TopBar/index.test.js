@@ -288,3 +288,112 @@ it('tracks the accepted load task while graph metadata still reports loaded', as
         jest.useRealTimers();
     }
 });
+
+it('resumes a queued load after switching away and back to its graph', async () => {
+    jest.useFakeTimers();
+    try {
+        Object.assign(mockParams, {graphSpace: 'A', graph: 'graph-a'});
+        api.analysis.getGraphSpaceList.mockResolvedValue({
+            status: 200, data: {graphspaces: ['A']},
+        });
+        api.analysis.getGraphList.mockResolvedValue({
+            status: 200,
+            data: {graphs: [
+                {name: 'graph-a', status: 'loaded'},
+                {name: 'graph-b', status: 'loaded'},
+            ]},
+        });
+        api.analysis.loadVermeerTask.mockResolvedValue({status: 200, data: {task_id: -10}});
+        api.analysis.fetchAsyncTaskResult.mockResolvedValue({
+            status: 200, data: {task_status: 'queued'},
+        });
+        const onGraphInfoChange = jest.fn();
+        const topBar = () => (
+            <GraphAnalysisContext.Provider value={{isVermeer: true}}>
+                <TopBar
+                    moduleName='algorithms'
+                    onGraphInfoChange={onGraphInfoChange}
+                    showOlapSwitch={false}
+                    showNavigationButton={false}
+                    isOlapModeEnable={false}
+                    isOlapModeLoading={false}
+                    onOlapModeChange={jest.fn()}
+                />
+            </GraphAnalysisContext.Provider>
+        );
+        const view = render(topBar());
+        await act(async () => {});
+        fireEvent.click(screen.getByRole('button', {name: 'analysis.topbar.reload_to_vermeer'}));
+        await act(async () => {});
+        await act(async () => jest.advanceTimersByTime(2000));
+        expect(api.analysis.fetchAsyncTaskResult).toHaveBeenCalledWith('A', 'graph-a', -10);
+
+        Object.assign(mockParams, {graph: 'graph-b'});
+        view.rerender(topBar());
+        await act(async () => {});
+        expect(screen.getByRole('button', {name: 'analysis.topbar.reload_to_vermeer'})).toBeEnabled();
+        const requests = api.analysis.fetchAsyncTaskResult.mock.calls.length;
+        await act(async () => jest.advanceTimersByTime(4000));
+        expect(api.analysis.fetchAsyncTaskResult).toHaveBeenCalledTimes(requests);
+
+        Object.assign(mockParams, {graph: 'graph-a'});
+        view.rerender(topBar());
+        await act(async () => {});
+        const loading = screen.getByRole('button', {name: 'analysis.topbar.load_to_vermeer'});
+        expect(loading).toBeDisabled();
+        expect(screen.getByText('analysis.topbar.loading')).toBeInTheDocument();
+        expect(onGraphInfoChange).toHaveBeenLastCalledWith(
+            'A', expect.objectContaining({name: 'graph-a', status: 'loading'})
+        );
+        fireEvent.click(loading);
+        expect(api.analysis.loadVermeerTask).toHaveBeenCalledTimes(1);
+        await act(async () => jest.advanceTimersByTime(2000));
+        expect(api.analysis.fetchAsyncTaskResult).toHaveBeenCalledTimes(requests + 1);
+        expect(api.analysis.fetchAsyncTaskResult).toHaveBeenLastCalledWith('A', 'graph-a', -10);
+        expect(loading).toBeDisabled();
+
+        api.analysis.fetchAsyncTaskResult.mockResolvedValue({
+            status: 200, data: {task_status: 'success'},
+        });
+        await act(async () => jest.advanceTimersByTime(2000));
+        expect(screen.getByRole('button', {name: 'analysis.topbar.reload_to_vermeer'})).toBeEnabled();
+        expect(onGraphInfoChange).toHaveBeenLastCalledWith(
+            'A', expect.objectContaining({name: 'graph-a', status: 'loaded'})
+        );
+        view.unmount();
+    }
+    finally {
+        jest.useRealTimers();
+    }
+});
+
+it('refreshes graph status when Vermeer becomes available again', async () => {
+    api.analysis.getGraphList.mockResolvedValueOnce({
+        status: 200, data: {graphs: [{name: 'hugegraph', status: ''}]},
+    }).mockResolvedValue({
+        status: 200, data: {graphs: [{name: 'hugegraph', status: 'loaded'}]},
+    });
+    const onGraphInfoChange = jest.fn();
+    const view = renderTopBar({isVermeer: false}, {onGraphInfoChange});
+    await waitFor(() => expect(onGraphInfoChange).toHaveBeenCalledWith(
+        'DEFAULT', expect.objectContaining({name: 'hugegraph', status: ''})
+    ));
+    view.rerender(
+        <GraphAnalysisContext.Provider value={{isVermeer: true}}>
+            <TopBar
+                moduleName='algorithms'
+                onGraphInfoChange={onGraphInfoChange}
+                showOlapSwitch={false}
+                showNavigationButton={false}
+                isOlapModeEnable={false}
+                isOlapModeLoading={false}
+                onOlapModeChange={jest.fn()}
+            />
+        </GraphAnalysisContext.Provider>
+    );
+    expect(await screen.findByText('analysis.topbar.loaded')).toBeInTheDocument();
+    expect(api.analysis.getGraphList).toHaveBeenCalledTimes(2);
+    expect(onGraphInfoChange).toHaveBeenLastCalledWith(
+        'DEFAULT', expect.objectContaining({name: 'hugegraph', status: 'loaded'})
+    );
+});

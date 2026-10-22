@@ -156,10 +156,13 @@ not create accounts or change permissions.
 
 Recorded verification uses the rebuilt local services, with no mocked API
 responses: all nine supported algorithms returned six vertex values; Chrome
-verified anonymous/admin/observer flows and a delayed Worker load. The final complete Hubble backend suite passed 869 tests, including the direct
+verified anonymous/admin/observer flows and a delayed Worker load. The final complete Hubble backend suite passed 874 tests, including the direct
 Vermeer permission and task regressions. The focused
 frontend suites, lint, i18n, TypeScript and production build passed. The separate
 Go regression includes deterministic storage-initialization failure and retry.
+The page rechecks temporarily unavailable direct integration as services start,
+and retains an accepted load task when switching away from a graph and back.
+Result pagination peeks ahead so an exactly full final page has no extra next page.
 
 ![Slow Worker load remains visible until the submitted task finishes](images/vermeer/slow-load.png)
 

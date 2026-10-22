@@ -177,9 +177,14 @@ public class DirectVermeerService {
                         "Invalid result cursor or limit");
         Map<String, Object> result = new HashMap<>(this.backend.request(
                 "GET", "tasks/value/" + nativeId(id) +
-                "?cursor=" + cursor + "&limit=" + limit, null));
+                "?cursor=" + cursor + "&limit=" + (limit + 1), null));
         List<?> vertices = HubbleUtil.uncheckedCast(result.getOrDefault("vertices", List.of()));
-        result.put("has_more", vertices.size() == limit);
+        int count = Math.min(vertices.size(), limit);
+        // Native pages have no total or continuation flag. Peek one value ahead,
+        // then leave it at the next cursor so an exact final page has no phantom successor.
+        result.put("vertices", new ArrayList<>(vertices.subList(0, count)));
+        result.put("cursor", cursor + count);
+        result.put("has_more", vertices.size() > limit);
         return result;
     }
 

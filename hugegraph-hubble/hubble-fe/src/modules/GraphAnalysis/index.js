@@ -50,6 +50,7 @@ const GraphAnalysisHome = props => {
     const [vermeerError, setVermeerError] = useState(false);
     const olapRequest = useRef(null);
     const vermeerRequest = useRef(null);
+    const vermeerRetry = useRef(null);
     const [context, setContext] = useState(
         {
             graphSpace: null,
@@ -157,7 +158,8 @@ const GraphAnalysisHome = props => {
         [getCurrentOlapMode]
     );
 
-    const getVermeer = useCallback(async () => {
+    const getVermeer = useCallback(async function refreshVermeer() {
+        clearTimeout(vermeerRetry.current);
         const request = Symbol('get-vermeer');
         vermeerRequest.current = request;
         setVermeerLoading(true);
@@ -177,6 +179,9 @@ const GraphAnalysisHome = props => {
                 isVermeer: Boolean(enable),
             }));
             setVermeerReady(true);
+            if (!enable && data.retryable) {
+                vermeerRetry.current = setTimeout(refreshVermeer, 5000);
+            }
         }
         catch {
             if (vermeerRequest.current === request) {
@@ -195,6 +200,7 @@ const GraphAnalysisHome = props => {
         getVermeer();
         return () => {
             vermeerRequest.current = null;
+            clearTimeout(vermeerRetry.current);
             olapRequest.current = null;
         };
     }, [getVermeer]);

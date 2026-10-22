@@ -178,16 +178,29 @@ public class DirectVermeerServiceTest {
     }
 
     @Test
-    public void testResultPagesKeepNativeCursorAndExposeContinuation() {
+    public void testResultPagesPreserveLookaheadAndStopAtExactFinalPage() {
         VermeerClient backend = Mockito.mock(VermeerClient.class);
         Mockito.when(backend.request("GET", "task/12", null)).thenReturn(
                 Map.of("task", Map.of("graph_name", "DEFAULT-graph-with-dash")));
-        Mockito.when(backend.request("GET", "tasks/value/12?cursor=2&limit=2", null))
-               .thenReturn(Map.of("vertices", List.of(Map.of("ID", "third"), Map.of("ID", "fourth")),
-                                  "cursor", 4));
-        Map<String, Object> page = service(backend).results(graphClient(), -12, 2, 2);
+        Mockito.when(backend.request("GET", "tasks/value/12?cursor=2&limit=3", null))
+               .thenReturn(Map.of("vertices", List.of("third", "fourth", "fifth"), "cursor", 5));
+        DirectVermeerService direct = service(backend);
+        Map<String, Object> page = direct.results(graphClient(), -12, 2, 2);
+        Assert.assertEquals(List.of("third", "fourth"), page.get("vertices"));
         Assert.assertEquals(4, page.get("cursor"));
         Assert.assertEquals(true, page.get("has_more"));
+        Mockito.when(backend.request("GET", "tasks/value/12?cursor=4&limit=3", null))
+               .thenReturn(Map.of("vertices", List.of("fifth"), "cursor", 5));
+        Map<String, Object> next = direct.results(graphClient(), -12, 4, 2);
+        Assert.assertEquals(List.of("fifth"), next.get("vertices"));
+        Assert.assertEquals(false, next.get("has_more"));
+
+        Mockito.when(backend.request("GET", "tasks/value/12?cursor=2&limit=3", null))
+               .thenReturn(Map.of("vertices", List.of("third", "fourth"), "cursor", 4));
+        Map<String, Object> last = direct.results(graphClient(), -12, 2, 2);
+        Assert.assertEquals(List.of("third", "fourth"), last.get("vertices"));
+        Assert.assertEquals(4, last.get("cursor"));
+        Assert.assertEquals(false, last.get("has_more"));
     }
 
     @Test
@@ -204,6 +217,25 @@ public class DirectVermeerServiceTest {
         Mockito.verifyNoInteractions(backend);
         Mockito.when(client.auth().isSuperAdmin()).thenReturn(true);
         Assert.assertTrue(direct.permitted(client));
+    }
+
+    @Test
+    public void testWorkerStartupIsRetryableWithoutPollingDeniedCapability() {
+        DirectVermeerService direct = Mockito.mock(DirectVermeerService.class);
+        Mockito.when(direct.configured()).thenReturn(true);
+        HugeClient client = graphClient();
+        Mockito.when(direct.permitted(client)).thenReturn(true);
+        Mockito.when(direct.available()).thenReturn(false, true);
+        VermeerService service = new VermeerService();
+        ReflectionTestUtils.setField(service, "direct", direct);
+        Assert.assertEquals(Map.of("enable", false, "retryable", true),
+                            service.getVermeer(client, "login-token", false));
+        Assert.assertEquals(Map.of("enable", true, "retryable", false),
+                            service.getVermeer(client, "login-token", false));
+        Mockito.when(direct.permitted(client)).thenReturn(false);
+        Assert.assertEquals(Map.of("enable", false, "retryable", false),
+                            service.getVermeer(client, "login-token", false));
+        Mockito.verify(direct, Mockito.times(2)).available();
     }
 
     @Test

@@ -30,7 +30,12 @@ jest.mock('../../api', () => ({
     },
 }));
 jest.mock('../analysis/Home', () => ({toolbarExtra}) => <div>analysis module{toolbarExtra}</div>);
-jest.mock('../algorithm/Home', () => () => <div>algorithm module</div>);
+jest.mock('../algorithm/Home', () => function MockAlgorithmHome() {
+    const {useContext} = require('react');
+    const Context = require('../Context').default;
+    const {isVermeer} = useContext(Context);
+    return <div>algorithm module<span>{isVermeer ? 'Vermeer enabled' : 'Vermeer disabled'}</span></div>;
+});
 jest.mock('../asyncTasks/Home', () => () => <div>async module</div>);
 jest.mock('../component/TopBar', () => props => (
     <div>
@@ -160,4 +165,47 @@ it('ignores a late OLAP response after the selected graph changes', async () => 
     await act(async () => oldMode.resolve({status: 200, data: {status: '1'}}));
     expect(screen.getByText('olap on')).toBeInTheDocument();
     expect(screen.getByText('olap idle')).toBeInTheDocument();
+});
+
+
+it('discovers a Worker that starts after mount without reloading the page', async () => {
+    jest.useFakeTimers();
+    try {
+        api.auth.getVermeer
+            .mockResolvedValueOnce({status: 200, data: {enable: false, retryable: true}})
+            .mockResolvedValue({status: 200, data: {enable: true, retryable: false}});
+        const view = render(<GraphAnalysisHome moduleName='algorithms' />);
+        await act(async () => {});
+        expect(screen.getByText('Vermeer disabled')).toBeInTheDocument();
+        await act(async () => jest.advanceTimersByTime(5000));
+        expect(screen.getByText('Vermeer enabled')).toBeInTheDocument();
+        const count = api.auth.getVermeer.mock.calls.length;
+        await act(async () => jest.advanceTimersByTime(15000));
+        expect(api.auth.getVermeer).toHaveBeenCalledTimes(count);
+        view.unmount();
+    }
+    finally {
+        jest.useRealTimers();
+    }
+});
+
+it('cancels transient discovery on unmount and does not poll disabled capability', async () => {
+    jest.useFakeTimers();
+    try {
+        api.auth.getVermeer.mockResolvedValue({status: 200, data: {enable: false, retryable: true}});
+        const waiting = render(<GraphAnalysisHome moduleName='gremlin' />);
+        await act(async () => {});
+        waiting.unmount();
+        await act(async () => jest.advanceTimersByTime(10000));
+        expect(api.auth.getVermeer).toHaveBeenCalledTimes(1);
+        api.auth.getVermeer.mockResolvedValue({status: 200, data: {enable: false, retryable: false}});
+        const disabled = render(<GraphAnalysisHome moduleName='gremlin' />);
+        await act(async () => {});
+        await act(async () => jest.advanceTimersByTime(10000));
+        expect(api.auth.getVermeer).toHaveBeenCalledTimes(2);
+        disabled.unmount();
+    }
+    finally {
+        jest.useRealTimers();
+    }
 });
