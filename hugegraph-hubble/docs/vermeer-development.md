@@ -13,6 +13,12 @@ database images by digest. Vermeer was checked out from
 `b5c1693f27779aeefc0098833368fbfc5448d544` ([Computer PR #19](https://github.com/hugegraph/hugegraph-computer/pull/19)); local edits are retained when refreshing
 the environment.
 
+Reuse the prepared checkout and toolchains above. Initial source/toolchain setup
+is outside this helper: `prepare` checks the existing Computer directory and Go
+binary, writes integration configuration and builds. It does not clone or reset
+source, install Go, or pre-pull images. `start` reuses existing containers; Docker
+may pull the pinned image when creating a missing container.
+
 Run these commands from `/workspace/hugegraph-toolchain`:
 
 ```bash
@@ -166,12 +172,9 @@ and reuses it. It also allocates Worker group `default` to service space
 
 Environment variables may set `VERMEER_SOURCE_DIR`, `VERMEER_URL`,
 `VERMEER_PD_PASSWORD_FILE`, `VERMEER_GRAPH`, `GOPATH`, `GOMODCACHE`, and `GOCACHE`.
-The helper defaults to paths under `/workspace/.onboarding`. Go archive checksum,
-module checksums, TLS verification, and the existing SDK provenance checks remain
-enabled. Large Go proxy archives may require `storage.googleapis.com` in the
-environment allowlist. The prepared module cache includes checksum-verified
-dependencies fetched from their official GitHub source where object-storage
-access was unavailable.
+The helper defaults to paths under `/workspace/.onboarding`. Go module checksum
+verification and the existing SDK provenance checks remain enabled. Toolchain
+installation and network policy belong to environment setup, outside this helper.
 
 
 ## Browser verification

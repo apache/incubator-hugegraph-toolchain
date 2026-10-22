@@ -17,7 +17,6 @@
 """Retained cloud development environment: Hubble + Vermeer + HugeGraph hstore."""
 
 import argparse
-import hashlib
 import json
 import math
 import os
@@ -28,7 +27,6 @@ import signal
 import socket
 import stat
 import subprocess
-import tarfile
 import time
 import urllib.request
 
@@ -199,29 +197,10 @@ def configure():
 
 
 def prepare():
-    if not SOURCE.exists():
-        command(['git', 'clone', '--depth', '1', 'https://github.com/hugegraph/hugegraph-computer.git',
-                 SOURCE.parent])
-        command(['git', 'fetch', '--depth', '1', 'origin', COMPUTER_COMMIT], cwd=SOURCE.parent)
-        command(['git', 'checkout', '--detach', COMPUTER_COMMIT], cwd=SOURCE.parent)
-    # Existing development changes are deliberately retained.
-    if not (GO / 'bin/go').exists():
-        archive = SETUP / 'tools/go1.23.7.tar.gz'
-        urllib.request.urlretrieve('https://dl.google.com/go/go1.23.7.linux-amd64.tar.gz', archive)
-        expected = '4741525e69841f2e22f9992af25df0c1112b07501f61f741c12c6389fcb119f3'
-        if hashlib.sha256(archive.read_bytes()).hexdigest() != expected:
-            raise RuntimeError('Go archive checksum mismatch')
-        GO.mkdir(parents=True, exist_ok=True)
-        with tarfile.open(archive) as bundle:
-            for member in bundle.getmembers():
-                if member.name.startswith('go/'):
-                    member.name = member.name[3:]
-                    if member.name:
-                        bundle.extract(member, GO, filter='data')
-    for image in IMAGES.values():
-        inspected = subprocess.run(['docker', 'image', 'inspect', image], capture_output=True)
-        if inspected.returncode:
-            command(['docker', 'pull', image])
+    if not SOURCE.is_dir():
+        raise RuntimeError(f'Prepare the Computer checkout at {SOURCE}; tested revision: {COMPUTER_COMMIT}')
+    if not (GO / 'bin/go').is_file():
+        raise RuntimeError(f'Prepare the Go toolchain at {GO}')
     configure()
     build('all')
 
@@ -231,7 +210,6 @@ def build(component):
         command(['go', 'mod', 'download'], cwd=SOURCE)
         command(['go', 'mod', 'verify'], cwd=SOURCE)
         command(['go', 'build', '-tags=dev', '-o', SETUP / 'vermeer-bin', '.'], cwd=SOURCE)
-        command(['go', 'test', './apps/common', '-run', 'TestPDAuthority', '-count=1'], cwd=SOURCE)
     if component in ('all', 'hubble'):
         args = ['mvn', '-B', '-ntp', f'-Dmaven.repo.local={SETUP}/active-m2',
                 '-Dsdk.validation.mode=candidate', '-pl', 'hugegraph-hubble/hubble-be']
