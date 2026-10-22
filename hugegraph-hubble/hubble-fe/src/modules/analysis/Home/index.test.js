@@ -46,6 +46,8 @@ jest.mock('../../../api', () => ({
 jest.mock('../QueryBar/Home', () => props => (
     <div>
         <span data-testid='query-content'>{props.codeEditorContent}</span>
+        <input aria-label='Query fixture' value={props.codeEditorContent}
+            onChange={event => props.setCodeEditorContent(event.target.value)} />
         <span data-testid='source-question'>{props.text2gql.question}</span>
         <span data-testid='query-language'>{props.language}</span>
         <span data-testid='editor-source'>{props.editorSource}</span>
@@ -1814,4 +1816,26 @@ it.each(['10000', '10000L', '100_000'])('blocks a large synchronous read (%s) be
     await waitFor(() => expect(api.analysis.getExecutionTask).toHaveBeenCalledWith(
         'DEFAULT', 'hugegraph', {content: `g.V().limit(${limit})`}));
     expect(api.analysis.getExecutionQuery).not.toHaveBeenCalled();
+});
+
+it.each([
+    ['MATCH (n) WITH n LIMIT 10 RETURN n', false],
+    ['MATCH (n) WITH n ORDER BY n.age LIMIT 5 RETURN n.name', false],
+    ['MATCH (n) WITH n LIMIT 10 RETURN n LIMIT 10000', true],
+])('dispatches Cypher with intermediate limits and gates only excessive result limits: %s', async (cypher, blocked) => {
+    api.analysis.getCypherExecutionQuery.mockResolvedValue({status: 200, data: {}});
+    render(<GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
+        <AnalysisHome />
+    </GraphAnalysisContext.Provider>);
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Cypher'})));
+    fireEvent.change(screen.getByRole('textbox', {name: 'Query fixture'}), {target: {value: cypher}});
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
+    if (blocked) {
+        expect(api.analysis.getCypherExecutionQuery).not.toHaveBeenCalled();
+        expect(screen.getByTestId('query-status')).toHaveTextContent('failed');
+    }
+    else {
+        expect(api.analysis.getCypherExecutionQuery).toHaveBeenCalledWith('DEFAULT', 'hugegraph', {cypher});
+    }
+    expect(api.analysis.getCypherTask).not.toHaveBeenCalled();
 });

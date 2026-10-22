@@ -23,14 +23,26 @@ Run Gremlin queries and inspect their graph, table, or JSON results without leav
 
 ### Bounded interactive previews
 
-Ordinary Gremlin reads without a bound default to 300 rows. Interactive previews
+Recognized Gremlin and Cypher reads without a bound default to 300 rows. Interactive previews
 return at most 1,000 rows and display at most 1,000 vertices with the configured
 edge budget. Common explicit large limits prompt users to select the existing
 asynchronous mode before a query is submitted.
 
+The existing read grammars cover common queries. Unrecognized manual scripts,
+including unsupported aggregate or UNION syntax, retain their native execution
+path and may not receive a default limit. Unbounded collection results from reducers such as
+fold, group and groupCount (including label histograms) require asynchronous
+mode or an explicitly bounded input. Preview edges use a bounded incident-edge
+sample and do not guarantee the complete induced subgraph of the displayed nodes.
+
 Large preview properties show a bounded prefix and their original length. Clipped
 properties are read-only; exported previews retain that marker and cannot be
 imported as complete graph data. No full-property request runs automatically.
+The property map is also limited to 20 entries, so even short properties beyond
+that width make the element partial and read-only. Complete individual properties
+are received by the SDK before projection; this includes collections returned by
+expressions such as Cypher split. These previews are not an upstream byte or
+execution budget.
 
 The [local performance report](https://github.com/hugegraph/hugegraph-toolchain/pull/80)
 retains Chromium evidence for defaults, partial results, preflight, context

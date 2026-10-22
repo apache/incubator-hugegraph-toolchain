@@ -91,11 +91,35 @@ const hasLargeExplicitReadLimit = (text, language = 'gremlin', maximum = 1000) =
         }
         // A property named `limit` is not a result-limit clause, including
         // whitespace or masked comments between the dot and property name.
-        const limitCode = code.replace(/\.\s*LIMIT\b/gi, '.');
-        const match = limitCode.match(/\bLIMIT\s+(\d+)\s*$/i);
+        const limitCode = code.replace(/\.\s*(?:LIMIT|RETURN)\b/gi, '.');
+        // WITH limits constrain intermediate rows. Only the final RETURN can
+        // set the browser result limit; the backend supplies its default.
+        let depth = 0;
+        let resultStart = -1;
+        let limitStart = -1;
+        for (let i = 0; i < limitCode.length; i++) {
+            const ch = limitCode[i];
+            if ('([{'.includes(ch)) {
+                depth++;
+            }
+            else if (')]}'.includes(ch)) {
+                depth--;
+            }
+            else if (depth === 0 && !/[\w$]/.test(limitCode[i - 1] || '')
+                && /^RETURN\b/i.test(limitCode.slice(i))) {
+                resultStart = i;
+                limitStart = -1;
+            }
+            else if (depth === 0 && resultStart >= 0 && !/[\w$]/.test(limitCode[i - 1] || '')
+                && /^LIMIT\b/i.test(limitCode.slice(i))) {
+                limitStart = i;
+            }
+        }
+        const resultCode = limitStart < 0 ? '' : limitCode.slice(limitStart);
+        const match = resultCode.match(/\bLIMIT\s+(\d+)\s*$/i);
         // Keep expressions and parameters in async mode rather than evaluating
         // user code to guess their result bound.
-        return match ? Number(match[1]) > maximum : /\bLIMIT\s+\S/i.test(limitCode);
+        return match ? Number(match[1]) > maximum : /\bLIMIT\s+\S/i.test(resultCode);
     }
     if (!/^\s*g\s*\.\s*[VE]\s*\(/.test(code)
         || /\.\s*(?:addV|addE|property|drop|iterate)\s*\(/.test(code)) {

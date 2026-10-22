@@ -289,6 +289,43 @@ public class GremlinUtilTest {
     }
 
     @Test
+    public void testGroupEntryValuesKeepTheirCollectionBoundsAfterUnfold() throws Exception {
+        try (TinkerGraph graph = TinkerGraph.open()) {
+            for (int i = 0; i < 1500; i++) {
+                graph.addVertex(T.label, "person");
+            }
+            Bindings bindings = new SimpleBindings();
+            bindings.put("g", graph.traversal());
+            GremlinLangScriptEngine engine = new GremlinLangScriptEngine();
+            String grouped = "g.V().group().by(label)";
+            String entryQuery = grouped + ".unfold().limit(1)";
+            List<?> raw = execute(engine, bindings, GremlinUtil.optimizeLimit(entryQuery, 300));
+            Assert.assertEquals(1, raw.size());
+            Map.Entry<?, ?> entry = (Map.Entry<?, ?>) raw.get(0);
+            Assert.assertEquals("person", entry.getKey());
+            Assert.assertEquals(1500, ((List<?>) entry.getValue()).size());
+            ExternalException error = (ExternalException) Assert.assertThrows(
+                    ExternalException.class, () -> GremlinUtil.optimizePreviewLimit(entryQuery, 1001));
+            Assert.assertEquals("gremlin.preview.collection_requires_async", error.getMessage());
+
+            String bounded = "g.V().limit(10).group().by(label).unfold().limit(1)";
+            List<?> boundedRaw = execute(engine, bindings, bounded);
+            List<?> boundedPreview = execute(engine, bindings, GremlinUtil.optimizePreviewLimit(bounded, 1001));
+            Assert.assertEquals(boundedRaw, boundedPreview);
+            Assert.assertEquals(10, ((List<?>) ((Map.Entry<?, ?>) boundedPreview.get(0)).getValue()).size());
+            String counted = "g.V().groupCount().by(label).unfold().limit(1)";
+            List<?> counts = execute(engine, bindings, GremlinUtil.optimizePreviewLimit(counted, 1001));
+            Assert.assertEquals(1500L, ((Map.Entry<?, ?>) counts.get(0)).getValue());
+            String scalar = grouped + ".count()";
+            Assert.assertEquals(scalar, GremlinUtil.optimizePreviewLimit(scalar, 1001));
+            Assert.assertEquals(List.of(1L), execute(engine, bindings, scalar));
+            String hasNext = grouped + ".hasNext()";
+            Assert.assertEquals(hasNext, GremlinUtil.optimizePreviewLimit(hasNext, 1001));
+            Assert.assertEquals(true, engine.eval(hasNext, bindings));
+        }
+    }
+
+    @Test
     public void testChildCollectionsRequireTheirOwnInputBounds() throws Exception {
         for (String child : new String[]{"__.both().fold()", "both().fold()",
                                          "__.both().limit(1001).fold()",

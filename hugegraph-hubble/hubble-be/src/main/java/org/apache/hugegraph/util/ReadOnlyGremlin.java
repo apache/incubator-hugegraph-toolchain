@@ -224,6 +224,9 @@ public final class ReadOnlyGremlin {
                             // A single List/Map can still download an entire
                             // graph. A later outer limit cannot shrink its input.
                             largeCollection |= bound == null || bound.compareTo(previewSize) > 0;
+                            // group() values are collections; unfolding its Map
+                            // returns entries that retain those complete values.
+                            nestedCollection |= "group".equals(step.name) && largeCollection;
                             bound = BigInteger.ONE;
                             singleResult = true;
                         }
