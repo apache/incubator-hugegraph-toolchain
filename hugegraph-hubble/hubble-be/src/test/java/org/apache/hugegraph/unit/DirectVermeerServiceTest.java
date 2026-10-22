@@ -314,6 +314,20 @@ public class DirectVermeerServiceTest {
     }
 
     @Test
+    public void testReadinessUsesCurrentSpaceAvailability() {
+        VermeerClient backend = Mockito.mock(VermeerClient.class);
+        Mockito.when(backend.configured()).thenReturn(true);
+        Mockito.when(backend.request("GET", "workers", null))
+               .thenReturn(Map.of("workers", List.of(Map.of("name", "other-space-worker"))));
+        Mockito.when(backend.request("GET", "workers/availability", null))
+               .thenReturn(Map.of("available", false), Map.of("available", true));
+        DirectVermeerService direct = service(backend);
+        Assert.assertFalse(direct.available());
+        Assert.assertTrue(direct.available());
+        Mockito.verify(backend, Mockito.never()).request("GET", "workers", null);
+    }
+
+    @Test
     public void testStandaloneDisablesNativeCapabilityAndRejectsSubmissions() {
         VermeerClient backend = Mockito.mock(VermeerClient.class);
         Mockito.when(backend.configured()).thenReturn(true);

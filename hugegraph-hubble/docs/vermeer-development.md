@@ -10,7 +10,7 @@ at `86c05ef9c5d417bd37eab21d4ecd5af82bab17ef`, and separately running PD, Store,
 Server, Vermeer Master/Worker, and Hubble. The development helper pins all three
 database images by digest. Vermeer was checked out from
 `hugegraph/hugegraph-computer` at
-`3ad48638bc631650570bff3516cab9233675d9d7` ([Computer PR #19](https://github.com/hugegraph/hugegraph-computer/pull/19)); local edits are retained when refreshing
+`16afc7fa910499e286eeb19bde6c462b4b25ae41` ([Computer PR #19](https://github.com/hugegraph/hugegraph-computer/pull/19)); local edits are retained when refreshing
 the environment.
 
 Run these commands from `/workspace/hugegraph-toolchain`:
@@ -85,11 +85,14 @@ The direct adapter uses the routes implemented by Vermeer:
 | Task status | `GET /api/v1/task/{id}` |
 | Result values | `GET /api/v1/tasks/value/{id}?cursor=0&limit=1000` |
 | Graph status | `GET /api/v1/graphs` |
+| Space worker readiness | `GET /api/v1/workers/availability` |
 | Cancel | `GET /api/v1/task/cancel/{id}` |
 
 Hubble's graph name is encoded as `graphspace-graph` within the configured Vermeer
 service space. Direct task IDs are negative in Hubble; native Vermeer IDs remain
-positive. Server task IDs retain their original meaning. All direct task and
+positive. Readiness follows the authenticated service space's worker allocations
+and common worker pool; unrelated registered workers do not enable the adapter.
+Server task IDs retain their original meaning. All direct task and
 result operations check the selected graph. Because raw Store scans bypass
 Server's per-label permissions, authenticated direct access requires a HugeGraph
 super administrator; anonymous mode follows the Server's anonymous graph access.
@@ -166,7 +169,7 @@ not create accounts or change permissions.
 
 Recorded verification uses the rebuilt local services, with no mocked API
 responses: all nine supported algorithms returned six vertex values; Chrome
-verified anonymous/admin/observer flows and a delayed Worker load. The final complete Hubble backend suite passed 881 tests, including the direct
+verified anonymous/admin/observer flows and a delayed Worker load. The final complete Hubble backend suite passed 882 tests, including the direct
 Vermeer permission and task regressions. The focused
 frontend suites, lint, i18n, TypeScript and production build passed. The separate
 Go regression includes deterministic storage-initialization failure and retry.

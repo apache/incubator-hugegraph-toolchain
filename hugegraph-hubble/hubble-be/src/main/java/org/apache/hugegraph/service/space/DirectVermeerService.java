@@ -72,11 +72,9 @@ public class DirectVermeerService {
             return false;
         }
         try {
-            // Graphs requires authentication; healthcheck alone does not.
-            this.backend.request("GET", "graphs", null);
-            Map<String, Object> workers = this.backend.request("GET", "workers", null);
-            List<?> active = HubbleUtil.uncheckedCast(workers.get("workers"));
-            return active != null && !active.isEmpty();
+            // Readiness is scoped by the authenticated service credential.
+            Map<String, Object> workers = this.backend.request("GET", "workers/availability", null);
+            return Boolean.TRUE.equals(workers.get("available"));
         } catch (RuntimeException e) {
             return false;
         }
