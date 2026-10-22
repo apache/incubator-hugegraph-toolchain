@@ -449,6 +449,107 @@ class ReproductionCliTest(unittest.TestCase):
             incomplete = {key: value for key, value in valid.items() if key != 'requested_url'}
             self.assertEqual(BROWSER.browser_exit_code([incomplete]), 2)
 
+    def test_query_response_requires_the_exact_submitted_content_and_graph(self):
+        query = 'g.V().outE().inV().path().limit(1000)'
+        request = mock.Mock(method='POST', post_data_json={'content': query, 'preview': True})
+        response = mock.Mock(url='http://localhost/api/v1.3/graphspaces/s/graphs/g/gremlin-query',
+                             request=request)
+        self.assertTrue(BROWSER.matches_query_response(response, query, 's', 'g'))
+        with mock.patch.object(request, 'post_data_json', query):
+            self.assertTrue(BROWSER.matches_query_response(response, query, 's', 'g'))
+        for body in [None, [], {}, 'g.V().limit(1000)', {'content': 'g.V().limit(1000)'}]:
+            with self.subTest(body=body), mock.patch.object(request, 'post_data_json', body):
+                self.assertFalse(BROWSER.matches_query_response(response, query, 's', 'g'))
+        for path in ['/graphspaces/s/graphs/other/gremlin-query',
+                     '/graphspaces/s/graphs/g/gremlin-query/async-task', '/gremlin-query']:
+            with self.subTest(path=path), mock.patch.object(response, 'url', 'http://localhost' + path):
+                self.assertFalse(BROWSER.matches_query_response(response, query, 's', 'g'))
+        with mock.patch.object(request, 'method', 'GET'):
+            self.assertFalse(BROWSER.matches_query_response(response, query, 's', 'g'))
+
+    def test_canvas_fallback_requires_an_explicit_visible_notice(self):
+        valid = {'stage': 'query', 'render_mode': 'table_fallback', 'http_status': 200,
+                 'canvas_limit_notice': True, 'canvas_limit_details': 'mounted text'}
+        self.assertEqual(BROWSER.browser_exit_code([valid]), 0)
+        for value in [False, None, 0, '', 'true']:
+            with self.subTest(value=value):
+                self.assertEqual(BROWSER.browser_exit_code([{**valid, 'canvas_limit_notice': value}]), 2)
+        self.assertEqual(BROWSER.browser_exit_code([
+            {key: value for key, value in valid.items() if key != 'canvas_limit_notice'}]), 2)
+        self.assertEqual(BROWSER.browser_exit_code([{'canvas_limit_notice': False}]), 2)
+
+    @unittest.skipUnless(shutil.which('chromium') and importlib.util.find_spec('playwright'),
+                         'Chromium and Playwright required for graph-generation check')
+    def test_graph_result_rejects_stale_unsettled_or_wrong_graph_in_browser(self):
+        from playwright.sync_api import sync_playwright, TimeoutError as BrowserTimeout
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(executable_path=shutil.which('chromium'),
+                headless=True, args=['--no-sandbox', '--disable-dev-shm-usage'])
+            page = browser.new_page()
+            page.set_default_timeout(250)
+            page.set_content('<div data-hubble-graph></div>')
+            page.evaluate(BROWSER.INIT)
+            page.evaluate("""() => {
+                window.installGraph = (state='ready', bad=null) => {
+                    window.graphState={status:state,error:bad==='error'?'layout failed':null,data:{
+                      nodes:[{data:{raw:{id:bad==='node'?'wrong':'a'}}},{data:{raw:{id:'b'}}}],
+                      edges:[{data:{raw:{id:bad==='edge'?'wrong':'e',source:'a',
+                        target:bad==='endpoint'?'wrong':'b'}}}]}};
+                };
+                window.installGraph();
+                document.querySelector('[data-hubble-graph]').__reactFiber$probe={
+                  memoizedState:{memoizedState:{getSnapshot:()=>window.graphState}}};
+            }""")
+            previous = page.evaluate('window.__graphSnapshot()')
+            payload = {'status': 200, 'data': {'type': 'PATH', 'json_view': {'data': [1, 2]},
+                'graph_view': {'vertices': [{'id': 'a'}, {'id': 'b'}],
+                               'edges': [{'id': 'e', 'source': 'a', 'target': 'b'}]}}}
+            arguments = {'expected_nodes': 2, 'expected_type': 'PATH', 'expected_rows': 2}
+            # The old ready-only predicate accepts this unchanged preceding result.
+            page.wait_for_function("() => window.__graphSnapshot().status==='ready'")
+            with self.assertRaises(BrowserTimeout):
+                BROWSER.wait_for_graph_result(page, payload, previous, **arguments)
+            for state, bad in [('ready', 'node'), ('ready', 'edge'), ('ready', 'endpoint'),
+                               ('ready', 'error'), ('updating', None), ('disposed', None)]:
+                with self.subTest(state=state, bad=bad):
+                    page.evaluate('([state,bad])=>window.installGraph(state,bad)', [state, bad])
+                    with self.assertRaises(BrowserTimeout):
+                        BROWSER.wait_for_graph_result(page, payload, previous, **arguments)
+            for changed in [{'type': 'VERTEX'}, {'json_view': {'data': [1]}},
+                            {'graph_view': {'vertices': [], 'edges': []}}]:
+                wrong = copy.deepcopy(payload)
+                wrong['data'].update(changed)
+                with self.subTest(response=changed), self.assertRaises(AssertionError):
+                    BROWSER.wait_for_graph_result(page, wrong, previous, **arguments)
+            page.evaluate("setTimeout(()=>window.installGraph('ready'),100)")
+            result = BROWSER.wait_for_graph_result(page, payload, previous, **arguments)
+            self.assertGreater(result['snapshot']['data_generation'], previous['data_generation'])
+            self.assertEqual(result['snapshot']['status'], 'ready')
+            self.assertEqual(result['response_edges'], 1)
+            browser.close()
+
+    @unittest.skipUnless(shutil.which('chromium') and importlib.util.find_spec('playwright'),
+                         'Chromium and Playwright required for visible canvas notice check')
+    def test_hidden_mounted_canvas_notice_fails_in_browser(self):
+        from playwright.sync_api import sync_playwright, TimeoutError as BrowserTimeout
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(executable_path=shutil.which('chromium'),
+                headless=True, args=['--no-sandbox', '--disable-dev-shm-usage'])
+            page = browser.new_page()
+            page.set_default_timeout(250)
+            page.set_content('<section role="tabpanel" style="display:none">'
+                '<p>Graph canvas collapsed for readability</p><p>Limit 1000</p></section>')
+            notice = page.get_by_text('Graph canvas collapsed for readability', exact=True)
+            self.assertFalse(notice.is_visible())
+            self.assertIn('Limit 1000', page.locator('[role="tabpanel"]').inner_text())
+            with self.assertRaises(BrowserTimeout):
+                BROWSER.wait_for_canvas_limit_notice(page)
+            page.locator('section').evaluate("panel=>panel.style.display='block'")
+            result = BROWSER.wait_for_canvas_limit_notice(page)
+            self.assertTrue(result['canvas_limit_notice'])
+            self.assertIn('Limit 1000', result['canvas_limit_details'])
+            browser.close()
+
     def test_async_submission_requires_matching_nonempty_task_id(self):
         for task_id in [1, '138']:
             valid = {'stage': 'async_submission', 'http_status': 200, 'task_id': task_id,

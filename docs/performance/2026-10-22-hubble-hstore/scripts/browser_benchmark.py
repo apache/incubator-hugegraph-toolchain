@@ -15,7 +15,8 @@
 
 """Exercise the production UI in Chromium; observe renderer state without changing app code."""
 import argparse, json, pathlib, time, traceback, re
-from browser_probe import INIT, add_browser_arguments, prepare_browser_args, put_query, browser_exit_code
+from browser_probe import (INIT, add_browser_arguments, prepare_browser_args, put_query, browser_exit_code,
+                           matches_query_response, wait_for_graph_result, wait_for_canvas_limit_notice)
 ROOT=pathlib.Path('hubble-results')
 RECORDS=[]
 
@@ -49,10 +50,10 @@ def main(argv=None):
                 for label,query,expected in [('default','g.V()',250),('paths12000','g.V().outE().inV().path().limit(12000)',12000)]:
                     put_query(page,query)
                     page.get_by_role('button',name='Run Query',exact=True).wait_for(state='visible')
-                    marker=page.evaluate('performance.now()');start=time.perf_counter();started=time.time()
+                    previous=page.evaluate('window.__graphSnapshot()');marker=page.evaluate('performance.now()');start=time.perf_counter();started=time.time()
                     record=dict(stage='query',graph=graph,label=label,query=query,ts=started)
                     try:
-                        with page.expect_response(lambda r:'/gremlin-query' in r.url and r.request.method=='POST',timeout=args.timeout_ms) as info:
+                        with page.expect_response(lambda r:matches_query_response(r,query,space,graph),timeout=args.timeout_ms) as info:
                             page.get_by_role('button',name='Run Query',exact=True).click()
                         response=info.value;response.finished();record['http_ms']=(time.perf_counter()-start)*1000
                         record['http_status']=response.status
@@ -62,7 +63,7 @@ def main(argv=None):
                             page.get_by_text(re.compile(r'12,?000 result rows, displayed with pagination')).wait_for(timeout=args.timeout_ms)
                             record['render_mode']='table_fallback'
                         else:
-                            page.wait_for_function("n=>{const s=window.__graphSnapshot();return s&&s.status==='ready'&&s.nodes===n;}",arg=expected,timeout=args.timeout_ms)
+                            record['graph_result']=wait_for_graph_result(page,response.json(),previous,expected_nodes=expected)
                             record['render_mode']='canvas'
                         record['ready_ms']=(time.perf_counter()-start)*1000
                         record['snapshot']=page.evaluate('window.__graphSnapshot()')
@@ -77,8 +78,7 @@ def main(argv=None):
                         page.screenshot(path=str(ROOT/'screenshots'/f'{graph}-{label}.png'))
                         if expected > 300:
                             page.get_by_role('tab',name=re.compile(r'Graph$')).click(timeout=args.timeout_ms)
-                            record['canvas_limit_notice']=page.get_by_text('Graph canvas collapsed for readability',exact=True).is_visible()
-                            record['canvas_limit_details']=page.locator('[role="tabpanel"]').filter(has_text='Graph canvas collapsed for readability').inner_text()
+                            record.update(wait_for_canvas_limit_notice(page))
                             page.screenshot(path=str(ROOT/'screenshots'/f'{graph}-{label}-canvas-limit.png'))
                     except Exception as e:
                         record['error']=str(e)[:500];record['elapsed_ms']=(time.perf_counter()-start)*1000

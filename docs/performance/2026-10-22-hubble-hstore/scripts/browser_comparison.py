@@ -16,7 +16,8 @@
 """Exercise bounded query previews and the pre-submit async gate in local Chromium."""
 import argparse, json, pathlib, re, time
 from browser_probe import (INIT, add_browser_arguments, prepare_browser_args, put_query,
-                           browser_exit_code, wait_for_count_result, async_submission_task_id)
+                           browser_exit_code, wait_for_count_result, async_submission_task_id,
+                           matches_query_response, wait_for_graph_result)
 ROOT=pathlib.Path('hubble-results')
 RECORDS=[]
 
@@ -41,19 +42,20 @@ def main(argv=None):
             page.get_by_role('button',name='Run Query',exact=True).wait_for();page.wait_for_load_state('networkidle',timeout=args.timeout_ms)
             save(args.phase,dict(stage='navigation',graph=graph,ms=(time.perf_counter()-nav)*1000,url=page.url,auth_mode='anonymous',account_visible=page.get_by_text('Accounts',exact=True).count(),resources=page.evaluate("performance.getEntriesByType('resource').filter(e=>e.name.includes('/api/')).map(e=>({url:e.name,ms:e.duration,bytes:e.decodedBodySize}))"),errors=errors[:]))
             for label,query,expected in [('default','g.V()',300 if args.phase=='after' else 250),('vertices1000','g.V().limit(1000)',1000),('paths1000','g.V().outE().inV().path().limit(1000)',None),('count','g.V().count()',None)]:
-                put_query(page,query);marker=page.evaluate('performance.now()');started=time.perf_counter();record=dict(stage='query',label=label,graph=graph,query=query)
+                put_query(page,query);previous=page.evaluate('window.__graphSnapshot()');marker=page.evaluate('performance.now()');started=time.perf_counter();record=dict(stage='query',label=label,graph=graph,query=query)
                 try:
-                    with page.expect_response(lambda r:'/gremlin-query' in r.url and r.request.method=='POST',timeout=args.timeout_ms) as info:page.get_by_role('button',name='Run Query',exact=True).click()
+                    with page.expect_response(lambda r:matches_query_response(r,query,space,graph),timeout=args.timeout_ms) as info:page.get_by_role('button',name='Run Query',exact=True).click()
                     response=info.value;response.finished();record['http_ms']=(time.perf_counter()-started)*1000;record['http_status']=response.status
                     assert response.status==200 and response.json().get('status')==200, 'Query returned an HTTP or application error'
                     if label=='default' or (args.phase=='after' and label=='vertices1000'):
-                        page.wait_for_function("n=>{let s=window.__graphSnapshot();return s&&s.status==='ready'&&s.nodes===n;}",arg=expected,timeout=args.timeout_ms)
+                        record['graph_result']=wait_for_graph_result(page,response.json(),previous,expected_nodes=expected)
                     elif label=='count':
                         record['count_result']=wait_for_count_result(page,response.json())
                     elif args.phase=='before':
                         page.get_by_text(re.compile('1,?000 result rows, displayed with pagination')).wait_for()
                     else:
-                        page.wait_for_function("()=>{let s=window.__graphSnapshot();return s&&s.status==='ready';}")
+                        record['graph_result']=wait_for_graph_result(page,response.json(),previous,
+                            expected_nodes=1000,expected_type='PATH',expected_rows=1000)
                     record['ready_ms']=(time.perf_counter()-started)*1000;record['snapshot']=page.evaluate('window.__graphSnapshot()');record['text']=page.locator('body').inner_text()[-2000:]
                     record['metrics']=page.evaluate("start=>({heap_used:performance.memory?.usedJSHeapSize,long_tasks:window.__perfLongTasks.filter(t=>t.start>=start),resources:performance.getEntriesByType('resource').filter(e=>e.startTime>=start&&e.name.includes('/gremlin-query')).map(e=>({ms:e.duration,bytes:e.decodedBodySize}))})",marker)
                     page.screenshot(path=str(shots/f'{args.phase}-{graph}-{label}.png'))
