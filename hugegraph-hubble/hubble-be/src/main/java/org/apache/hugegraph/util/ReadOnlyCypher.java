@@ -256,7 +256,9 @@ public final class ReadOnlyCypher {
         private int finalLimitStart = -1;
         private int finalLimitEnd = -1;
         private int insertionPosition;
-        private boolean currentInputBounded;
+        // A query starts with one implicit row. Negative means the row bound
+        // is unknown or exceeds the preview collection limit.
+        private long currentInputRows = 1L;
         private boolean collectionRequiresAsync;
 
         private Parser(List<Token> tokens, int collectionInputLimit) {
@@ -267,12 +269,12 @@ public final class ReadOnlyCypher {
         private void query() {
             while (!this.at("RETURN")) {
                 if (this.consume("MATCH")) {
-                    this.currentInputBounded = false;
+                    this.currentInputRows = -1L;
                     this.patterns();
                     this.where();
                 } else if (this.consume("OPTIONAL")) {
                     this.expect("MATCH");
-                    this.currentInputBounded = false;
+                    this.currentInputRows = -1L;
                     this.patterns();
                     this.where();
                 } else if (this.consume("WITH")) {
@@ -280,8 +282,13 @@ public final class ReadOnlyCypher {
                     this.modifiers(false);
                     this.where();
                 } else if (this.consume("UNWIND")) {
-                    this.currentInputBounded = false;
-                    this.expression(0, 0);
+                    long size = this.expression(0, 0);
+                    if (size < 0 || this.currentInputRows < 0 ||
+                        size > 0 && this.currentInputRows > this.collectionInputLimit / size) {
+                        this.currentInputRows = -1L;
+                    } else {
+                        this.currentInputRows *= size;
+                    }
                     this.expect("AS");
                     this.identifier();
                 } else {
@@ -339,7 +346,10 @@ public final class ReadOnlyCypher {
                     // This bounds later projections, not a collect already
                     // evaluated by this WITH. A larger limit cannot expand input.
                     Long limit = this.literalLimit(start, this.position);
-                    this.currentInputBounded |= limit != null && limit <= this.collectionInputLimit;
+                    if (limit != null && limit <= this.collectionInputLimit) {
+                        this.currentInputRows = this.currentInputRows < 0 ? limit :
+                                                Math.min(this.currentInputRows, limit);
+                    }
                 }
             }
         }
@@ -373,15 +383,15 @@ public final class ReadOnlyCypher {
             return this.literalLimit(start, end);
         }
 
-        private boolean boundedRange(List<Long> arguments) {
+        private long boundedRangeSize(List<Long> arguments) {
             if (arguments.size() < 2 || arguments.size() > 3 || arguments.contains(null)) {
-                return false;
+                return -1L;
             }
             long start = arguments.get(0);
             long end = arguments.get(1);
             long step = arguments.size() == 3 ? arguments.get(2) : 1L;
             if (step == 0) {
-                return false;
+                return -1L;
             }
             try {
                 long distance = Math.subtractExact(end, start);
@@ -391,9 +401,13 @@ public final class ReadOnlyCypher {
                 }
                 // range includes both endpoints; compare the last index to
                 // the limit without allocating or adding to a large count.
-                return distance < 0 || distance / step < this.collectionInputLimit;
+                if (distance < 0) {
+                    return 0L;
+                }
+                long lastIndex = distance / step;
+                return lastIndex < this.collectionInputLimit ? lastIndex + 1L : -1L;
             } catch (ArithmeticException ignored) {
-                return false;
+                return -1L;
             }
         }
 
@@ -490,16 +504,19 @@ public final class ReadOnlyCypher {
             }
         }
 
-        private void expression(int minimum, int depth) {
+        // Only literal collections expose a size; operators and lookups leave
+        // UNWIND's expansion unknown rather than guessing its cardinality.
+        private long expression(int minimum, int depth) {
             if (depth > MAX_DEPTH) {
                 throw invalid();
             }
-            this.atom(depth);
+            long collectionSize = this.atom(depth);
             while (true) {
                 int precedence = this.precedence();
                 if (precedence < minimum) {
-                    return;
+                    return collectionSize;
                 }
+                collectionSize = -1L;
                 String operator = this.current().text.toUpperCase(Locale.ROOT);
                 this.position++;
                 if ("IS".equals(operator)) {
@@ -554,26 +571,29 @@ public final class ReadOnlyCypher {
             }
         }
 
-        private void atom(int depth) {
+        private long atom(int depth) {
             if (depth > MAX_DEPTH) {
                 throw invalid();
             }
             if (this.consume("NOT")) {
                 this.expression(4, depth + 1);
-                return;
+                return -1L;
             }
             if (this.consume("+") || this.consume("-")) {
                 this.expression(8, depth + 1);
-                return;
+                return -1L;
             }
             Token token = this.current();
+            long collectionSize = -1L;
             if (this.consume("(")) {
-                this.expression(0, depth + 1);
+                collectionSize = this.expression(0, depth + 1);
                 this.expect(")");
             } else if (this.consume("[")) {
+                collectionSize = 0L;
                 if (!this.consume("]")) {
                     do {
                         this.expression(0, depth + 1);
+                        collectionSize++;
                     } while (this.consume(","));
                     this.expect("]");
                 }
@@ -583,18 +603,20 @@ public final class ReadOnlyCypher {
                        this.at("TRUE") || this.at("FALSE") || this.at("NULL")) {
                 this.position++;
             } else if (token.kind == Kind.WORD && this.tokens.get(this.position + 1).text.equals("(")) {
-                this.function(depth + 1);
+                collectionSize = this.function(depth + 1);
             } else {
                 this.identifier();
             }
             while (true) {
                 if (this.consume(".")) {
+                    collectionSize = -1L;
                     this.schemaName();
                 } else if (this.consume("[")) {
+                    collectionSize = -1L;
                     this.expression(0, depth + 1);
                     this.expect("]");
                 } else {
-                    return;
+                    return collectionSize;
                 }
             }
         }
@@ -610,12 +632,13 @@ public final class ReadOnlyCypher {
             }
         }
 
-        private void function(int depth) {
+        private long function(int depth) {
             String name = this.current().text.toLowerCase(Locale.ROOT);
             if (!FUNCTIONS.contains(name)) {
                 throw invalid();
             }
-            if ("collect".equals(name) && !this.currentInputBounded) {
+            if ("collect".equals(name) &&
+                (this.currentInputRows < 0 || this.currentInputRows > this.collectionInputLimit)) {
                 this.collectionRequiresAsync = true;
             }
             List<Long> rangeArguments = "range".equals(name) ? new ArrayList<>() : null;
@@ -626,7 +649,7 @@ public final class ReadOnlyCypher {
                     throw invalid();
                 }
                 this.expect(")");
-                return;
+                return -1L;
             }
             if (!this.consume(")")) {
                 this.consume("DISTINCT");
@@ -639,9 +662,14 @@ public final class ReadOnlyCypher {
                 } while (this.consume(","));
                 this.expect(")");
             }
-            if (rangeArguments != null && !this.boundedRange(rangeArguments)) {
-                this.collectionRequiresAsync = true;
+            if (rangeArguments != null) {
+                long size = this.boundedRangeSize(rangeArguments);
+                if (size < 0) {
+                    this.collectionRequiresAsync = true;
+                }
+                return size;
             }
+            return -1L;
         }
 
         private boolean isIdentifier() {

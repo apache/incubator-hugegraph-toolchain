@@ -27,6 +27,7 @@ import javax.script.SimpleBindings;
 
 import org.apache.tinkerpop.gremlin.jsr223.GremlinLangScriptEngine;
 import org.apache.tinkerpop.gremlin.process.traversal.Traversal;
+import org.apache.tinkerpop.gremlin.structure.T;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph;
 import org.junit.Test;
@@ -284,6 +285,50 @@ public class GremlinUtilTest {
                                 GremlinUtil.optimizePreviewLimit("g.V().count()", 1001)));
             Assert.assertEquals(List.of(1500L), execute(engine, bindings,
                                 GremlinUtil.optimizePreviewLimit("g.V().fold().count(local)", 1001)));
+        }
+    }
+
+    @Test
+    public void testChildCollectionsRequireTheirOwnInputBounds() throws Exception {
+        for (String child : new String[]{"__.both().fold()", "both().fold()",
+                                         "__.both().limit(1001).fold()",
+                                         "__.both().fold().limit(1)",
+                                         "__.project('nested').by(__.both().fold())"}) {
+            String query = "g.V(1).project('neighbors').by(" + child + ")";
+            Assert.assertEquals(query + ".limit(300)", GremlinUtil.optimizeLimit(query, 300));
+            ExternalException error = (ExternalException) Assert.assertThrows(
+                    ExternalException.class, () -> GremlinUtil.optimizePreviewLimit(query, 1001));
+            Assert.assertEquals("gremlin.preview.collection_requires_async", error.getMessage());
+        }
+        try (TinkerGraph graph = TinkerGraph.open()) {
+            Vertex center = graph.addVertex(T.id, "center");
+            for (int i = 0; i < 1500; i++) {
+                center.addEdge("neighbor", graph.addVertex());
+            }
+            Bindings bindings = new SimpleBindings();
+            bindings.put("g", graph.traversal());
+            GremlinLangScriptEngine engine = new GremlinLangScriptEngine();
+            String start = "g.V('center').project('neighbors').by(";
+            String unbounded = start + "__.both().fold())";
+            Map<?, ?> raw = (Map<?, ?>) execute(engine, bindings, unbounded).get(0);
+            Assert.assertEquals(1500, ((List<?>) raw.get("neighbors")).size());
+            String unfolded = unbounded + ".unfold()";
+            Map.Entry<?, ?> entry = (Map.Entry<?, ?>) execute(engine, bindings, unfolded).get(0);
+            Assert.assertEquals(1500, ((List<?>) entry.getValue()).size());
+            Assert.assertThrows(ExternalException.class,
+                                () -> GremlinUtil.optimizePreviewLimit(unfolded, 1001));
+            String bounded = start + "__.both().limit(10).fold())";
+            String limited = GremlinUtil.optimizePreviewLimit(bounded, 1001);
+            Assert.assertEquals(bounded + ".limit(1001)", limited);
+            Assert.assertEquals(execute(engine, bindings, bounded), execute(engine, bindings, limited));
+            Map<?, ?> preview = (Map<?, ?>) execute(engine, bindings, limited).get(0);
+            Assert.assertEquals(10, ((List<?>) preview.get("neighbors")).size());
+            String childCount = start + "__.both().count())";
+            Assert.assertEquals(List.of(Map.of("neighbors", 1500L)), execute(engine, bindings,
+                                GremlinUtil.optimizePreviewLimit(childCount, 1001)));
+            String outerCount = unbounded + ".count()";
+            Assert.assertEquals(outerCount, GremlinUtil.optimizePreviewLimit(outerCount, 1001));
+            Assert.assertEquals(List.of(1L), execute(engine, bindings, outerCount));
         }
     }
 

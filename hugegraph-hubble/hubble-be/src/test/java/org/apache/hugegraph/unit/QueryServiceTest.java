@@ -261,6 +261,50 @@ public class QueryServiceTest {
     }
 
     @Test
+    public void testBoundedUnwindCollectionsReachCypherWithOutputLimit() throws Exception {
+        String content = "UNWIND range(1, 10) AS n RETURN collect(n) AS values";
+        List<Integer> values = List.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+        Map<String, Object> row = Map.of("values", values);
+        CypherManager cypher = Mockito.mock(CypherManager.class);
+        Mockito.when(cypher.cypher(content + " LIMIT 300")).thenReturn(this.resultSet(row));
+        HugeClient client = this.mockClient(this.mockGremlin());
+        Mockito.when(client.cypher()).thenReturn(cypher);
+
+        GremlinResult preview = this.serviceWithConfig().executeCypherQuery(client, content, true);
+
+        Assert.assertEquals(row, preview.getJsonView().getData().get(0));
+        Assert.assertFalse(preview.isPropertiesTruncated());
+        Assert.assertTrue(preview.isDefaultLimitApplied());
+        Mockito.verify(cypher).cypher(content + " LIMIT 300");
+        this.assertCypherPreview("UNWIND [1, 2, 3] AS n RETURN collect(n)",
+                                 "UNWIND [1, 2, 3] AS n RETURN collect(n) LIMIT 300", true);
+        this.assertCypherPreview("UNWIND range(1, 10) AS n UNWIND range(1, 100) AS m RETURN collect(m)",
+                                 "UNWIND range(1, 10) AS n UNWIND range(1, 100) AS m RETURN collect(m) LIMIT 300",
+                                 true);
+        this.assertCypherPreview("MATCH (n) WITH n LIMIT 5 UNWIND range(1, 10) AS m RETURN collect(m)",
+                                 "MATCH (n) WITH n LIMIT 5 UNWIND range(1, 10) AS m RETURN collect(m) LIMIT 300",
+                                 true);
+    }
+
+    @Test
+    public void testUnwindCannotHideUnknownOrExpandedCollectionInput() throws Exception {
+        CypherManager cypher = Mockito.mock(CypherManager.class);
+        HugeClient client = this.mockClient(this.mockGremlin());
+        Mockito.when(client.cypher()).thenReturn(cypher);
+        QueryService service = this.serviceWithConfig();
+        for (String content : new String[]{
+                "MATCH (n) UNWIND range(1, 10) AS m RETURN collect(m)",
+                "UNWIND range(1, 10) AS n UNWIND range(1, 101) AS m RETURN collect(m)",
+                "MATCH (n) WITH n LIMIT 1000 UNWIND range(1, 10) AS m RETURN collect(m)",
+                "UNWIND range(1, 10) AS n UNWIND n.items AS m RETURN collect(m)"}) {
+            ExternalException error = (ExternalException) Assert.assertThrows(ExternalException.class,
+                    () -> service.executeCypherQuery(client, content, true));
+            Assert.assertEquals("gremlin.preview.collection_requires_async", error.getMessage());
+        }
+        Mockito.verifyNoInteractions(cypher);
+    }
+
+    @Test
     public void testRawAndAsyncCypherCollectionsKeepTheirOriginalQuery() throws Exception {
         for (String content : new String[]{"MATCH (n) RETURN collect(n) AS nodes",
                                            "RETURN range(1, 1000000000) AS nodes"}) {
@@ -389,6 +433,48 @@ public class QueryServiceTest {
             service.executeGremlinAsyncTask(this.mockClient(gremlin), query);
             Mockito.verify(gremlin).executeAsTask(Mockito.argThat(request -> content.equals(request.gremlin)));
         }
+    }
+
+    @Test
+    public void testUnboundedChildCollectionsFailBeforeDispatchAndKeepRawAndAsyncSemantics() throws Exception {
+        for (String suffix : new String[]{"", ".unfold()"}) {
+            String content = "g.V(1).project('neighbors').by(__.both().fold())" + suffix;
+            GremlinManager gremlin = this.mockGremlin();
+            QueryService service = this.serviceWithConfig();
+            HugeClient client = this.mockClient(gremlin);
+            GremlinQuery query = new GremlinQuery(content);
+            query.setPreview(true);
+            ExternalException error = (ExternalException) Assert.assertThrows(ExternalException.class,
+                    () -> service.executeGremlinQuery(client, query));
+            Assert.assertEquals("gremlin.preview.collection_requires_async", error.getMessage());
+            Mockito.verifyNoInteractions(gremlin);
+
+            query.setPreview(false);
+            service.executeGremlinQuery(client, query);
+            Mockito.verify(gremlin).gremlin(content + ".limit(300)");
+            query.setPreview(true);
+            Mockito.when(gremlin.executeAsTask(Mockito.any())).thenReturn(7L);
+            service.executeGremlinAsyncTask(client, query);
+            Mockito.verify(gremlin).executeAsTask(Mockito.argThat(request -> content.equals(request.gremlin)));
+        }
+    }
+
+    @Test
+    public void testBoundedChildCollectionsAndScalarReducersStillDispatch() throws Exception {
+        for (String child : new String[]{"__.both().limit(10).fold()", "__.both().count()"}) {
+            String content = "g.V(1).project('neighbors').by(" + child + ")";
+            GremlinManager gremlin = this.mockGremlin();
+            GremlinQuery query = new GremlinQuery(content);
+            query.setPreview(true);
+            this.serviceWithConfig().executeGremlinQuery(this.mockClient(gremlin), query);
+            Mockito.verify(gremlin).gremlin(content + ".limit(300).limit(1001)");
+        }
+        String count = "g.V(1).project('neighbors').by(__.both().fold()).count()";
+        GremlinManager gremlin = this.mockGremlin();
+        GremlinQuery query = new GremlinQuery(count);
+        query.setPreview(true);
+        this.serviceWithConfig().executeGremlinQuery(this.mockClient(gremlin), query);
+        Mockito.verify(gremlin).gremlin(count);
     }
 
     @Test

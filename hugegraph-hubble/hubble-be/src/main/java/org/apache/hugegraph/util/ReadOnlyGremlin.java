@@ -169,11 +169,20 @@ public final class ReadOnlyGremlin {
         }
 
         int limitPosition(boolean preview, int limit) {
+            // Preview limits include the sentinel row used to report truncation.
+            BigInteger previewSize = BigInteger.valueOf((long) limit - 1);
+            Analysis result = this.analyze(previewSize);
+            if (preview && result.largeCollection) {
+                throw new ExternalException("gremlin.preview.collection_requires_async", previewSize);
+            }
+            return !result.singleResult && (preview || result.bound == null) ? result.position : -1;
+        }
+
+        private Analysis analyze(BigInteger previewSize) {
             BigInteger bound = null;
             boolean singleResult = false;
             boolean largeCollection = false;
-            // Preview limits include the sentinel row used to report truncation.
-            BigInteger previewSize = BigInteger.valueOf((long) limit - 1);
+            boolean nestedCollection = false;
             int position = this.endPosition;
             for (int i = 0; i < this.steps.size(); i++) {
                 Step step = this.steps.get(i);
@@ -183,11 +192,12 @@ public final class ReadOnlyGremlin {
                         // the List/Set/value/boolean result type. Further methods
                         // would operate on materialized results, outside this grammar.
                         if (i != this.steps.size() - 1) {
-                            return -1;
+                            return new Analysis(-1, bound, true, false);
                         }
                         position = step.dotPosition;
                         if ("hasNext".equals(step.name)) {
                             largeCollection = false;
+                            nestedCollection = false;
                         }
                         break;
                     case EXPAND:
@@ -197,6 +207,7 @@ public final class ReadOnlyGremlin {
                         break;
                     case REDUCE:
                         largeCollection = false;
+                        nestedCollection = false;
                         if (!step.localScope()) {
                             bound = BigInteger.ONE;
                             singleResult = true;
@@ -226,12 +237,21 @@ public final class ReadOnlyGremlin {
                     default:
                         break;
                 }
+                // Child traversals can put a large List/Map inside one outer
+                // row. An outer limit cannot bound those collection inputs.
+                for (Argument argument : step.arguments) {
+                    if (argument.traversal != null) {
+                        // Unfolding an outer Map can still return entries with
+                        // unbounded child Lists; only scalar reducers clear this.
+                        nestedCollection |= argument.traversal.analyze(previewSize).largeCollection;
+                    }
+                }
             }
-            if (preview && largeCollection) {
-                throw new ExternalException("gremlin.preview.collection_requires_async", previewSize);
-            }
-            return !singleResult && (preview || bound == null) ? position : -1;
+            return new Analysis(position, bound, singleResult, largeCollection || nestedCollection);
         }
+    }
+
+    private record Analysis(int position, BigInteger bound, boolean singleResult, boolean largeCollection) {
     }
 
     private static final class Step {
@@ -278,14 +298,16 @@ public final class ReadOnlyGremlin {
 
     private static final class Argument {
 
-        private static final Argument OTHER = new Argument(null, null);
+        private static final Argument OTHER = new Argument(null, null, null);
 
         private final String constant;
         private final BigInteger integer;
+        private final Traversal traversal;
 
-        private Argument(String constant, BigInteger integer) {
+        private Argument(String constant, BigInteger integer, Traversal traversal) {
             this.constant = constant;
             this.integer = integer;
+            this.traversal = traversal;
         }
 
         private boolean localScope() {
@@ -365,9 +387,9 @@ public final class ReadOnlyGremlin {
                 this.whitespace();
                 if ("__".equals(name)) {
                     this.expect('.');
-                    this.anonymousTraversal(this.identifier(), depth);
+                    return this.anonymousTraversal(this.identifier(), depth);
                 } else if (STEPS.containsKey(name) && this.next('(')) {
-                    this.anonymousTraversal(name, depth);
+                    return this.anonymousTraversal(name, depth);
                 } else if ("P".equals(name) || "TextP".equals(name) || "Text".equals(name)) {
                     this.expect('.');
                     this.predicate(this.identifier(), depth,
@@ -381,18 +403,20 @@ public final class ReadOnlyGremlin {
                     if (!CONSTANTS.contains(name)) {
                         throw invalid();
                     }
-                    return new Argument(name, null);
+                    return new Argument(name, null, null);
                 }
             }
             return Argument.OTHER;
         }
 
-        private void anonymousTraversal(String name, int depth) {
+        private Argument anonymousTraversal(String name, int depth) {
             if (!STEPS.containsKey(name)) {
                 throw invalid();
             }
-            this.arguments(depth);
-            this.chain(STEPS.keySet(), depth, null);
+            List<Step> steps = new ArrayList<>();
+            steps.add(new Step(name, this.arguments(depth), 0));
+            this.chain(STEPS.keySet(), depth, steps);
+            return new Argument(null, null, new Traversal(steps, this.position));
         }
 
         private void predicate(String name, int depth, Set<String> methods) {
@@ -482,7 +506,7 @@ public final class ReadOnlyGremlin {
                 } else if (suffix == 'l') {
                     value.longValueExact();
                 }
-                return new Argument(null, value);
+                return new Argument(null, value, null);
             } catch (NumberFormatException | ArithmeticException ignored) {
                 throw invalid();
             }

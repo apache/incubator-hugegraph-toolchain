@@ -119,6 +119,40 @@ public class ReadOnlyCypherTest {
     }
 
     @Test
+    public void preservesTotalInputBoundsThroughLiteralUnwind() {
+        String[] queries = {
+            "UNWIND range(1, 10) AS n RETURN collect(n)",
+            "UNWIND [1, 2, 3] AS n RETURN collect(n)",
+            "UNWIND range(1, 10) AS n UNWIND range(1, 100) AS m RETURN collect(m)",
+            "MATCH (n) WITH n LIMIT 5 UNWIND range(1, 10) AS m RETURN collect(m)",
+            "MATCH (n) WITH n LIMIT 500 UNWIND [1, 2] AS m RETURN collect(m)",
+            "MATCH (n) WITH n LIMIT 5 WITH n LIMIT 2000 UNWIND range(1, 10) AS m RETURN collect(m)"
+        };
+        for (String query : queries) {
+            ReadOnlyCypher.validate(query);
+            this.assertPreview(query, query + " LIMIT 300", true);
+        }
+    }
+
+    @Test
+    public void requiresAsyncWhenLiteralUnwindExpandsUnknownOrExcessiveInput() {
+        String[] queries = {
+            "MATCH (n) UNWIND range(1, 10) AS m RETURN collect(m)",
+            "MATCH (n) UNWIND [1, 2] AS m RETURN collect(m)",
+            "UNWIND range(1, 10) AS n UNWIND range(1, 101) AS m RETURN collect(m)",
+            "MATCH (n) WITH n LIMIT 1000 UNWIND range(1, 10) AS m RETURN collect(m)",
+            "MATCH (n) WITH n LIMIT 501 UNWIND [1, 2] AS m RETURN collect(m)"
+        };
+        for (String query : queries) {
+            ReadOnlyCypher.validate(query);
+            ExternalException error = (ExternalException) Assert.assertThrows(
+                                      ExternalException.class, () -> ReadOnlyCypher.preview(query, 300, 1001));
+            Assert.assertEquals("gremlin.preview.collection_requires_async", error.getMessage());
+            Assert.assertEquals(1000, error.args()[0]);
+        }
+    }
+
+    @Test
     public void preservesUnsupportedManualQueriesAndLimitExpressions() {
         String[] queries = {
             "MATCH (n) RETURN n LIMIT $limit",
