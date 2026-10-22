@@ -299,6 +299,31 @@ it('stops projecting JSON before touching omitted rows and truncates large prope
     expect(preview.content).toHaveLength(3);
 });
 
+it('omits oversized JSON keys before reading their values without renaming entries', () => {
+    const read = jest.fn(() => {throw new Error('omitted property read');});
+    const prefix = 'x'.repeat(1024 * 1024);
+    const source = {before: 1};
+    Object.defineProperty(source, `${prefix}a`, {enumerable: true, get: read});
+    Object.defineProperty(source, `${prefix}b`, {enumerable: true, get: read});
+    source.after = 2;
+    const preview = getBoundedJsonPreview(source);
+    expect(preview.content).toEqual({before: 1, after: 2});
+    expect(preview.truncated).toBe(true);
+    expect(read).not.toHaveBeenCalled();
+    expect(JSON.stringify(preview.content).length).toBeLessThan(100);
+    expect(Object.getOwnPropertyDescriptor(source, `${prefix}a`).get).toBe(read);
+});
+
+it('charges JSON keys to the remaining character budget before accessing their values', () => {
+    const source = {ordinary: 1};
+    const read = jest.fn(() => {throw new Error('over-budget property read');});
+    Object.defineProperty(source, 'x'.repeat(100), {enumerable: true, get: read});
+    const preview = getBoundedJsonPreview(source, {characters: 100});
+    expect(preview.content).toEqual({ordinary: 1});
+    expect(preview.truncated).toBe(true);
+    expect(read).not.toHaveBeenCalled();
+});
+
 it('does not traverse raw JSON before its tab is selected for a graph result', () => {
     const read = jest.fn(() => 7);
     const raw = {};

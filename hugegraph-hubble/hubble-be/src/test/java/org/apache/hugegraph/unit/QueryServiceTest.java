@@ -19,6 +19,7 @@
 package org.apache.hugegraph.unit;
 
 import java.lang.reflect.Field;
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -49,6 +50,7 @@ import org.apache.hugegraph.structure.constant.IdStrategy;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Path;
 import org.apache.hugegraph.structure.graph.Vertex;
+import org.apache.hugegraph.structure.gremlin.Result;
 import org.apache.hugegraph.structure.gremlin.ResultSet;
 import org.apache.hugegraph.testutil.Assert;
 
@@ -216,6 +218,55 @@ public class QueryServiceTest {
         Assert.assertEquals(2, result.getGraphView().getVertices().size());
         Assert.assertEquals(1, result.getGraphView().getEdges().size());
         Assert.assertFalse(result.isGraphTruncated());
+        Mockito.verify(gremlin, Mockito.times(1)).gremlin(Mockito.anyString());
+    }
+
+    @Test
+    public void testPreviewBoundsPathBeforeBuildingAnyViewOrEnrichingIt() throws Exception {
+        List<Object> objects = new AbstractList<>() {
+            @Override
+            public Object get(int index) {
+                Assert.assertTrue("Omitted path objects must never be read", index < 1000);
+                Vertex vertex = new Vertex("person");
+                vertex.id(index);
+                vertex.property("payload", "x".repeat(100000));
+                return vertex;
+            }
+
+            @Override
+            public int size() {
+                return 100000;
+            }
+        };
+        Path original = Mockito.mock(Path.class);
+        Mockito.when(original.objects()).thenReturn(objects);
+        Mockito.when(original.labels()).thenReturn(List.of());
+        // Mock the ResultSet boundary: SDK attachment itself traverses a Path,
+        // while this regression targets work performed by the Hubble service.
+        ResultSet results = Mockito.mock(ResultSet.class);
+        Result row = Mockito.mock(Result.class);
+        Mockito.when(row.getObject()).thenReturn(original);
+        Mockito.when(results.iterator()).thenAnswer(invocation -> List.of(row).iterator());
+        Mockito.when(results.size()).thenReturn(1);
+        GremlinManager gremlin = this.mockGremlin(results);
+        GremlinQuery query = new GremlinQuery("g.V().path().limit(1)");
+        query.setPreview(true);
+        GremlinResult result = this.serviceWithConfig().executeGremlinQuery(this.mockClient(gremlin), query);
+
+        Path json = (Path) result.getJsonView().getData().get(0);
+        Assert.assertEquals(1000, json.objects().size());
+        List<?> tableIds = (List<?>) ((Map<?, ?>) result.getTableView().getRows().get(0)).get("path");
+        Assert.assertEquals(1000, tableIds.size());
+        Assert.assertEquals(999, tableIds.get(999));
+        Assert.assertEquals(1000, result.getGraphView().getVertices().size());
+        Vertex graphVertex = result.getGraphView().getVertices().iterator().next();
+        Vertex jsonVertex = (Vertex) json.objects().get(0);
+        Assert.assertSame(jsonVertex.properties(), graphVertex.properties());
+        Assert.assertEquals("x".repeat(256) + "… [preview 256/100000 chars]",
+                            graphVertex.property("payload"));
+        Assert.assertTrue(result.isResultTruncated());
+        Assert.assertTrue(result.isGraphTruncated());
+        Assert.assertTrue(result.isPropertiesTruncated());
         Mockito.verify(gremlin, Mockito.times(1)).gremlin(Mockito.anyString());
     }
 

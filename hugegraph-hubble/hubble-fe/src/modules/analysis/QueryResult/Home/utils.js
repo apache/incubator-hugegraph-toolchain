@@ -110,6 +110,13 @@ const getBoundedJsonPreview = (value, {items = 100, characters = 20000, depth = 
                 truncated = true;
                 break;
             }
+            // Keys cannot be shortened without changing their meaning or
+            // merging entries. Omit an unreadable key before accessing its
+            // value or allocating a property that JSON.stringify must copy.
+            if (key.length > Math.min(remaining, 1000)) {
+                truncated = true;
+                continue;
+            }
             remaining -= key.length;
             Object.defineProperty(output, key, {enumerable: true, configurable: true,
                 writable: true, value: project(input[key], level + 1)});

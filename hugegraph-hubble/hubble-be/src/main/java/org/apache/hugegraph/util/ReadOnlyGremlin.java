@@ -17,6 +17,10 @@
 
 package org.apache.hugegraph.util;
 
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.hugegraph.exception.ExternalException;
@@ -28,16 +32,84 @@ import org.apache.hugegraph.exception.ExternalException;
  */
 public final class ReadOnlyGremlin {
 
-    private static final Set<String> STEPS = Set.of(
-            "V", "E", "has", "hasId", "hasLabel", "hasKey", "hasValue", "hasNot",
-            "out", "in", "both", "outE", "inE", "bothE", "outV", "inV", "bothV", "otherV",
-            "values", "valueMap", "elementMap", "properties", "propertyMap", "label", "id", "key", "value",
-            "count", "sum", "min", "max", "mean", "fold", "unfold", "dedup", "order", "by",
-            "limit", "range", "tail", "skip", "sample", "group", "groupCount", "select", "project",
-            "path", "simplePath", "cyclicPath", "repeat", "until", "emit", "times", "loops",
-            "local", "union", "coalesce", "choose", "optional", "and", "or", "not", "where",
-            "filter", "map", "flatMap", "identity", "constant", "as", "match", "is",
-            "toList", "toSet", "next", "hasNext");
+    // The grammar and result analysis share one definition of each supported step.
+    // PRESERVE means at most one output per input; EXPAND is deliberately conservative.
+    private static final Map<String, Output> STEPS = Map.ofEntries(
+            Map.entry("V", Output.EXPAND),
+            Map.entry("E", Output.EXPAND),
+            Map.entry("out", Output.EXPAND),
+            Map.entry("in", Output.EXPAND),
+            Map.entry("both", Output.EXPAND),
+            Map.entry("outE", Output.EXPAND),
+            Map.entry("inE", Output.EXPAND),
+            Map.entry("bothE", Output.EXPAND),
+            Map.entry("bothV", Output.EXPAND),
+            Map.entry("values", Output.EXPAND),
+            Map.entry("properties", Output.EXPAND),
+            Map.entry("unfold", Output.EXPAND),
+            Map.entry("repeat", Output.EXPAND),
+            Map.entry("local", Output.EXPAND),
+            Map.entry("union", Output.EXPAND),
+            Map.entry("coalesce", Output.EXPAND),
+            Map.entry("choose", Output.EXPAND),
+            Map.entry("optional", Output.EXPAND),
+            Map.entry("flatMap", Output.EXPAND),
+            Map.entry("match", Output.EXPAND),
+            Map.entry("has", Output.PRESERVE),
+            Map.entry("hasId", Output.PRESERVE),
+            Map.entry("hasLabel", Output.PRESERVE),
+            Map.entry("hasKey", Output.PRESERVE),
+            Map.entry("hasValue", Output.PRESERVE),
+            Map.entry("hasNot", Output.PRESERVE),
+            Map.entry("outV", Output.PRESERVE),
+            Map.entry("inV", Output.PRESERVE),
+            Map.entry("otherV", Output.PRESERVE),
+            Map.entry("valueMap", Output.PRESERVE),
+            Map.entry("elementMap", Output.PRESERVE),
+            Map.entry("propertyMap", Output.PRESERVE),
+            Map.entry("label", Output.PRESERVE),
+            Map.entry("id", Output.PRESERVE),
+            Map.entry("key", Output.PRESERVE),
+            Map.entry("value", Output.PRESERVE),
+            Map.entry("dedup", Output.PRESERVE),
+            Map.entry("order", Output.PRESERVE),
+            Map.entry("by", Output.PRESERVE),
+            Map.entry("skip", Output.PRESERVE),
+            Map.entry("select", Output.PRESERVE),
+            Map.entry("project", Output.PRESERVE),
+            Map.entry("path", Output.PRESERVE),
+            Map.entry("simplePath", Output.PRESERVE),
+            Map.entry("cyclicPath", Output.PRESERVE),
+            Map.entry("until", Output.PRESERVE),
+            Map.entry("emit", Output.PRESERVE),
+            Map.entry("times", Output.PRESERVE),
+            Map.entry("loops", Output.PRESERVE),
+            Map.entry("and", Output.PRESERVE),
+            Map.entry("or", Output.PRESERVE),
+            Map.entry("not", Output.PRESERVE),
+            Map.entry("where", Output.PRESERVE),
+            Map.entry("filter", Output.PRESERVE),
+            Map.entry("map", Output.PRESERVE),
+            Map.entry("identity", Output.PRESERVE),
+            Map.entry("constant", Output.PRESERVE),
+            Map.entry("as", Output.PRESERVE),
+            Map.entry("is", Output.PRESERVE),
+            Map.entry("count", Output.REDUCE),
+            Map.entry("sum", Output.REDUCE),
+            Map.entry("min", Output.REDUCE),
+            Map.entry("max", Output.REDUCE),
+            Map.entry("mean", Output.REDUCE),
+            Map.entry("fold", Output.REDUCE),
+            Map.entry("group", Output.REDUCE),
+            Map.entry("groupCount", Output.REDUCE),
+            Map.entry("limit", Output.LIMIT),
+            Map.entry("range", Output.LIMIT),
+            Map.entry("tail", Output.LIMIT),
+            Map.entry("sample", Output.LIMIT),
+            Map.entry("toList", Output.CONSUME),
+            Map.entry("toSet", Output.CONSUME),
+            Map.entry("next", Output.CONSUME),
+            Map.entry("hasNext", Output.CONSUME));
 
     private static final Set<String> PREDICATES = Set.of(
             "eq", "neq", "gt", "gte", "lt", "lte", "inside", "outside", "between", "within", "without",
@@ -55,6 +127,10 @@ public final class ReadOnlyGremlin {
     }
 
     public static void validate(String query) {
+        parse(query);
+    }
+
+    static Traversal parse(String query) {
         if (query == null || query.isBlank() || query.length() > 10000) {
             throw invalid();
         }
@@ -65,12 +141,120 @@ public final class ReadOnlyGremlin {
         if (!"V".equals(start) && !"E".equals(start)) {
             throw invalid();
         }
-        parser.arguments(0);
-        parser.chain(STEPS, 0);
+        List<Step> steps = new ArrayList<>();
+        steps.add(new Step(start, parser.arguments(0), 0));
+        parser.chain(STEPS.keySet(), 0, steps);
         parser.consume(';');
         parser.whitespace();
         if (parser.position != query.length()) {
             throw invalid();
+        }
+        return new Traversal(steps, query.length());
+    }
+
+    private enum Output {
+        PRESERVE, EXPAND, REDUCE, LIMIT, CONSUME
+    }
+
+    static final class Traversal {
+
+        private final List<Step> steps;
+        private final int endPosition;
+
+        private Traversal(List<Step> steps, int endPosition) {
+            this.steps = List.copyOf(steps);
+            this.endPosition = endPosition;
+        }
+
+        int limitPosition(boolean preview) {
+            boolean bounded = false;
+            boolean singleResult = false;
+            int position = this.endPosition;
+            for (int i = 0; i < this.steps.size(); i++) {
+                Step step = this.steps.get(i);
+                switch (STEPS.get(step.name)) {
+                    case CONSUME:
+                        // Cap the traversal before its final consumer, preserving
+                        // the List/Set/value/boolean result type. Further methods
+                        // would operate on materialized results, outside this grammar.
+                        if (i != this.steps.size() - 1) {
+                            return -1;
+                        }
+                        position = step.dotPosition;
+                        break;
+                    case EXPAND:
+                        bounded = false;
+                        singleResult = false;
+                        break;
+                    case REDUCE:
+                        if (!step.localScope()) {
+                            bounded = true;
+                            singleResult = true;
+                        }
+                        break;
+                    case LIMIT:
+                        bounded = bounded || step.finiteGlobalLimit();
+                        break;
+                    default:
+                        break;
+                }
+            }
+            return !singleResult && (preview || !bounded) ? position : -1;
+        }
+    }
+
+    private static final class Step {
+
+        private final String name;
+        private final List<Argument> arguments;
+        private final int dotPosition;
+
+        private Step(String name, List<Argument> arguments, int dotPosition) {
+            this.name = name;
+            this.arguments = List.copyOf(arguments);
+            this.dotPosition = dotPosition;
+        }
+
+        private boolean localScope() {
+            return !this.arguments.isEmpty() && this.arguments.get(0).localScope();
+        }
+
+        private boolean finiteGlobalLimit() {
+            if (this.localScope()) {
+                return false;
+            }
+            int offset = !this.arguments.isEmpty() && this.arguments.get(0).globalScope() ? 1 : 0;
+            if ("tail".equals(this.name) && this.arguments.size() == offset) {
+                return true;
+            }
+            int index = offset + ("range".equals(this.name) ? 1 : 0);
+            if (index >= this.arguments.size()) {
+                return false;
+            }
+            BigInteger value = this.arguments.get(index).integer;
+            // In particular, range(0, -1) and limit(-1) are not finite bounds.
+            return value != null && value.signum() >= 0 && value.bitLength() < Long.SIZE;
+        }
+    }
+
+    private static final class Argument {
+
+        private static final Argument OTHER = new Argument(null, null);
+
+        private final String constant;
+        private final BigInteger integer;
+
+        private Argument(String constant, BigInteger integer) {
+            this.constant = constant;
+            this.integer = integer;
+        }
+
+        private boolean localScope() {
+            return "local".equals(this.constant) || "Scope.local".equals(this.constant);
+        }
+
+        private boolean globalScope() {
+            return "global".equals(this.constant) || "Scope.global".equals(this.constant);
         }
     }
 
@@ -87,29 +271,36 @@ public final class ReadOnlyGremlin {
             this.text = text;
         }
 
-        private void chain(Set<String> methods, int depth) {
+        private void chain(Set<String> methods, int depth, List<Step> steps) {
             while (this.consume('.')) {
-                if (!methods.contains(this.identifier())) {
+                int dotPosition = this.position - 1;
+                String name = this.identifier();
+                if (!methods.contains(name)) {
                     throw invalid();
                 }
-                this.arguments(depth);
+                List<Argument> arguments = this.arguments(depth);
+                if (steps != null) {
+                    steps.add(new Step(name, arguments, dotPosition));
+                }
             }
         }
 
-        private void arguments(int depth) {
+        private List<Argument> arguments(int depth) {
             if (depth > 40) {
                 throw invalid();
             }
             this.expect('(');
+            List<Argument> arguments = new ArrayList<>();
             if (!this.consume(')')) {
                 do {
-                    this.expression(depth + 1);
+                    arguments.add(this.expression(depth + 1));
                 } while (this.consume(','));
                 this.expect(')');
             }
+            return arguments;
         }
 
-        private void expression(int depth) {
+        private Argument expression(int depth) {
             if (depth > 40 || this.position >= this.text.length()) {
                 throw invalid();
             }
@@ -128,17 +319,17 @@ public final class ReadOnlyGremlin {
                     } while (this.consume(','));
                     this.expect(']');
                 }
-            } else if (Character.isDigit(next) || next == '-') {
-                this.number();
+            } else if (Character.isDigit(next) || next == '-' || next == '+') {
+                return this.number();
             } else {
                 String name = this.identifier();
                 if ("__".equals(name)) {
                     this.expect('.');
-                    if (!STEPS.contains(this.identifier())) {
+                    if (!STEPS.containsKey(this.identifier())) {
                         throw invalid();
                     }
                     this.arguments(depth);
-                    this.chain(STEPS, depth);
+                    this.chain(STEPS.keySet(), depth, null);
                 } else if ("P".equals(name) || "TextP".equals(name)) {
                     this.expect('.');
                     this.predicate(this.identifier(), depth);
@@ -151,8 +342,10 @@ public final class ReadOnlyGremlin {
                     if (!CONSTANTS.contains(name)) {
                         throw invalid();
                     }
+                    return new Argument(name, null);
                 }
             }
+            return Argument.OTHER;
         }
 
         private void predicate(String name, int depth) {
@@ -160,7 +353,7 @@ public final class ReadOnlyGremlin {
                 throw invalid();
             }
             this.arguments(depth);
-            this.chain(PREDICATES, depth);
+            this.chain(PREDICATES, depth, null);
         }
 
         private void string(char quote) {
@@ -183,37 +376,92 @@ public final class ReadOnlyGremlin {
             throw invalid();
         }
 
-        private void number() {
+        private Argument number() {
             int start = this.position;
-            if (this.text.charAt(this.position) == '-') {
+            if (this.next('-') || this.next('+')) {
                 this.position++;
             }
-            this.digits();
-            if (this.consume('.')) {
-                this.digits();
-            }
-            if (this.position < this.text.length() &&
-                (this.text.charAt(this.position) == 'e' || this.text.charAt(this.position) == 'E')) {
-                this.position++;
-                if (!this.consume('-')) {
-                    this.consume('+');
+            int digitsStart = this.position;
+            int radix = 10;
+            boolean decimal = false;
+            if (this.next('0') && this.position + 1 < this.text.length()) {
+                char prefix = Character.toLowerCase(this.text.charAt(this.position + 1));
+                if (prefix == 'x' || prefix == 'b') {
+                    radix = prefix == 'x' ? 16 : 2;
+                    this.position += 2;
+                    digitsStart = this.position;
                 }
-                this.digits();
             }
-            if (this.position == start) {
+            this.digits(radix);
+            int digitsEnd = this.position;
+            if (radix == 10 && this.next('.')) {
+                decimal = true;
+                this.position++;
+                this.digits(10);
+            }
+            if (radix == 10 && (this.next('e') || this.next('E'))) {
+                decimal = true;
+                this.position++;
+                if (this.next('-') || this.next('+')) {
+                    this.position++;
+                }
+                this.digits(10);
+            }
+            char suffix = 0;
+            if (this.position < this.text.length()) {
+                char next = Character.toLowerCase(this.text.charAt(this.position));
+                if ("ilg".indexOf(next) >= 0 || radix == 10 && "df".indexOf(next) >= 0) {
+                    suffix = next;
+                    this.position++;
+                }
+            }
+            if (decimal && (suffix == 'i' || suffix == 'l')) {
+                throw invalid();
+            }
+            if (decimal || suffix == 'd' || suffix == 'f') {
+                return Argument.OTHER;
+            }
+            String digits = this.text.substring(digitsStart, digitsEnd).replace("_", "");
+            if (radix == 10 && digits.length() > 1 && digits.charAt(0) == '0') {
+                radix = 8;
+            }
+            try {
+                BigInteger value = new BigInteger(digits, radix);
+                if (this.text.charAt(start) == '-') {
+                    value = value.negate();
+                }
+                if (suffix == 'i') {
+                    value.intValueExact();
+                } else if (suffix == 'l') {
+                    value.longValueExact();
+                }
+                return new Argument(null, value);
+            } catch (NumberFormatException | ArithmeticException ignored) {
                 throw invalid();
             }
         }
 
-        private void digits() {
+        private void digits(int radix) {
             int start = this.position;
-            while (this.position < this.text.length() &&
-                   Character.isDigit(this.text.charAt(this.position))) {
+            boolean lastDigit = false;
+            while (this.position < this.text.length()) {
+                char next = this.text.charAt(this.position);
+                if (Character.digit(next, radix) >= 0 && next < 128) {
+                    lastDigit = true;
+                } else if (next == '_' && this.position > start) {
+                    lastDigit = false;
+                } else {
+                    break;
+                }
                 this.position++;
             }
-            if (start == this.position) {
+            if (start == this.position || !lastDigit) {
                 throw invalid();
             }
+        }
+
+        private boolean next(char expected) {
+            return this.position < this.text.length() && this.text.charAt(this.position) == expected;
         }
 
         private String identifier() {

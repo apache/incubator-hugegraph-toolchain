@@ -18,6 +18,16 @@
 
 package org.apache.hugegraph.unit;
 
+import java.util.List;
+import java.util.Set;
+
+import javax.script.Bindings;
+import javax.script.SimpleBindings;
+
+import org.apache.tinkerpop.gremlin.jsr223.GremlinLangScriptEngine;
+import org.apache.tinkerpop.gremlin.process.traversal.Traversal;
+import org.apache.tinkerpop.gremlin.structure.Vertex;
+import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph;
 import org.junit.Test;
 
 import org.apache.hugegraph.testutil.Assert;
@@ -28,9 +38,61 @@ public class GremlinUtilTest {
     private static final int LIMIT = 250;
 
     @Test
+    public void testRewrittenQueriesOnAnActualTraversalEngine() throws Exception {
+        try (TinkerGraph graph = TinkerGraph.open()) {
+            for (int i = 0; i < 1500; i++) {
+                graph.addVertex("number", i);
+            }
+            Bindings bindings = new SimpleBindings();
+            bindings.put("g", graph.traversal());
+            GremlinLangScriptEngine engine = new GremlinLangScriptEngine();
+            Assert.assertEquals(300, execute(engine, bindings, GremlinUtil.optimizeLimit("g.V()", 300)).size());
+            String explicit = "g.V().limit(10000L)";
+            Assert.assertEquals(1500, execute(engine, bindings, GremlinUtil.optimizeLimit(explicit, 300)).size());
+            Assert.assertEquals(1001, execute(engine, bindings,
+                                            GremlinUtil.optimizePreviewLimit(explicit, 1001)).size());
+            String unboundedRange = "g.V().range(0, -1)";
+            Assert.assertEquals(1500, execute(engine, bindings, unboundedRange).size());
+            Assert.assertEquals(300, execute(engine, bindings,
+                                           GremlinUtil.optimizeLimit(unboundedRange, 300)).size());
+            String localCount = "g.V().valueMap().count(Scope.local)";
+            Assert.assertEquals(1500, execute(engine, bindings, localCount).size());
+            Assert.assertEquals(300, execute(engine, bindings, GremlinUtil.optimizeLimit(localCount, 300)).size());
+            Assert.assertEquals(1001, execute(engine, bindings,
+                                            GremlinUtil.optimizePreviewLimit(localCount, 1001)).size());
+            String boundedLocalCount = "g.V().limit(1000).valueMap().count(Scope.local)";
+            Assert.assertEquals(1000, execute(engine, bindings,
+                                            GremlinUtil.optimizeLimit(boundedLocalCount, 300)).size());
+            String expanded = "g.V().fold().unfold()";
+            Assert.assertEquals(300, execute(engine, bindings, GremlinUtil.optimizeLimit(expanded, 300)).size());
+            Assert.assertEquals(List.of(1500L), execute(engine, bindings,
+                                                       GremlinUtil.optimizeLimit("g.V().count()", 300)));
+            Object materialized = engine.eval(GremlinUtil.optimizeLimit("g.V().toList()", 300), bindings);
+            Assert.assertEquals(300, ((List<?>) materialized).size());
+            Object preview = engine.eval(GremlinUtil.optimizePreviewLimit(explicit + ".toList()", 1001), bindings);
+            Assert.assertEquals(1001, ((List<?>) preview).size());
+            Object set = engine.eval(GremlinUtil.optimizeLimit("g.V().toSet()", 300), bindings);
+            Assert.assertEquals(300, ((Set<?>) set).size());
+            Object next = engine.eval(GremlinUtil.optimizeLimit("g.V().next()", 300), bindings);
+            Assert.assertTrue(next instanceof Vertex);
+            Object batch = engine.eval(GremlinUtil.optimizeLimit("g.V().next(10000)", 300), bindings);
+            Assert.assertEquals(300, ((List<?>) batch).size());
+            Assert.assertEquals(true, engine.eval(GremlinUtil.optimizeLimit("g.V().hasNext()", 300), bindings));
+            Assert.assertEquals(List.of(1500L),
+                                engine.eval(GremlinUtil.optimizeLimit("g.V().count().toList()", 300), bindings));
+        }
+    }
+
+    private static List<?> execute(GremlinLangScriptEngine engine, Bindings bindings,
+                                   String query) throws Exception {
+        return ((Traversal<?, ?>) engine.eval(query, bindings)).toList();
+    }
+
+    @Test
     public void testOneToOneMappersAndLocalLimitsPreserveAnEarlierGlobalBound() {
         for (String mapper : new String[]{"id()", "label()", "path()", "project('name').by('name')",
-                                          "select('x')", "valueMap()", "elementMap()"}) {
+                                          "select('x')", "valueMap()", "elementMap()", "propertyMap()",
+                                          "key()", "value()", "constant(1)", "map(__.out())", "skip(1)"}) {
             String query = "g.V().as('x').limit(1000)." + mapper;
             Assert.assertEquals(query, GremlinUtil.optimizeLimit(query, 300));
             Assert.assertEquals(query + ".limit(1001)", GremlinUtil.optimizePreviewLimit(query, 1001));
@@ -46,6 +108,62 @@ public class GremlinUtilTest {
             Assert.assertEquals(query + ".limit(1001)", GremlinUtil.optimizePreviewLimit(query, 1001));
             String unbounded = "g.V()." + local;
             Assert.assertEquals(unbounded + ".limit(300)", GremlinUtil.optimizeLimit(unbounded, 300));
+        }
+    }
+
+    @Test
+    public void testGroovyIntegerBoundsAndNumericArgumentsUseTheSameGrammar() {
+        for (String literal : new String[]{"10000L", "100_000", "100__000", "10_000G", "10_000I",
+                                            "0x2710L", "0b1_0000", "023420", "0_10", "10000l",
+                                            "10000g", "10000i", "+10000"}) {
+            String bounded = "g.V().limit(" + literal + ")";
+            Assert.assertEquals(bounded, GremlinUtil.optimizeLimit(bounded, 300));
+            Assert.assertEquals(bounded + ".limit(1001)",
+                                GremlinUtil.optimizePreviewLimit(bounded, 1001));
+            // A large numeric filter value must not bypass either limit.
+            String filtered = "g.V().has('number', " + literal + ")";
+            Assert.assertEquals(filtered + ".limit(300)", GremlinUtil.optimizeLimit(filtered, 300));
+            Assert.assertEquals(filtered + ".limit(1001)", GremlinUtil.optimizePreviewLimit(filtered, 1001));
+        }
+    }
+
+    @Test
+    public void testOnlyFiniteOuterBoundsSuppressTheDefault() {
+        for (String step : new String[]{"limit(-1)", "range(0, -1)", "range(Scope.global, 0L, -1L)",
+                                         "sample(-1)", "tail(-1)", "limit(local, 10_000)",
+                                         "range(Scope.local, 0, 10_000)"}) {
+            String unbounded = "g.V()." + step;
+            Assert.assertEquals(unbounded + ".limit(300)", GremlinUtil.optimizeLimit(unbounded, 300));
+            String bounded = "g.V().limit(20)." + step;
+            Assert.assertEquals(bounded, GremlinUtil.optimizeLimit(bounded, 300));
+        }
+        for (String step : new String[]{"tail()", "tail(Scope.global)", "range(0, 10_000L)",
+                                         "limit(global, 10_000)", "sample(10_000I)"}) {
+            String query = "g.V()." + step;
+            Assert.assertEquals(query, GremlinUtil.optimizeLimit(query, 300));
+            Assert.assertEquals(query + ".limit(1001)", GremlinUtil.optimizePreviewLimit(query, 1001));
+        }
+        String nested = "g.V().where(__.out().limit(10_000))";
+        Assert.assertEquals(nested + ".limit(300)", GremlinUtil.optimizeLimit(nested, 300));
+    }
+
+    @Test
+    public void testFinalConsumersReceiveLimitsBeforeMaterialization() {
+        for (String consumer : new String[]{"toList()", "toSet()", "next()", "next(10_000)", "hasNext()"}) {
+            String query = "g.V()." + consumer;
+            Assert.assertEquals("g.V().limit(300)." + consumer, GremlinUtil.optimizeLimit(query, 300));
+            Assert.assertEquals("g.V().limit(1001)." + consumer, GremlinUtil.optimizePreviewLimit(query, 1001));
+            String bounded = "g.V().limit(10000L)." + consumer;
+            Assert.assertEquals(bounded, GremlinUtil.optimizeLimit(bounded, 300));
+            Assert.assertEquals("g.V().limit(10000L).limit(1001)." + consumer,
+                                GremlinUtil.optimizePreviewLimit(bounded, 1001));
+            String count = "g.V().count()." + consumer;
+            Assert.assertEquals(count, GremlinUtil.optimizeLimit(count, 300));
+            Assert.assertEquals(count, GremlinUtil.optimizePreviewLimit(count, 1001));
+        }
+        for (String query : new String[]{"g.V().toList().size()", "g.V().next().value('name')"}) {
+            Assert.assertEquals(query, GremlinUtil.optimizeLimit(query, 300));
+            Assert.assertEquals(query, GremlinUtil.optimizePreviewLimit(query, 1001));
         }
     }
 

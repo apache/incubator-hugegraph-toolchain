@@ -19,6 +19,7 @@
 package org.apache.hugegraph.service.query;
 
 import java.math.BigInteger;
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.LinkedHashMap;
@@ -35,6 +36,8 @@ import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Path;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.testutil.Assert;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class QueryPropertyPreviewTest {
 
@@ -94,6 +97,147 @@ public class QueryPropertyPreviewTest {
         Assert.assertSame(id, copy.crosspoint());
         Assert.assertTrue(((String) copiedEdge.property("payload")).endsWith("/1048576 chars]"));
         Assert.assertEquals(1024 * 1024, ((String) edge.property("payload")).length());
+    }
+
+    @Test
+    public void testLongPathStopsBeforeReadingOmittedObjectsAndLabels() throws Exception {
+        Path original = Mockito.mock(Path.class);
+        List<Object> objects = new AbstractList<>() {
+            @Override
+            public Object get(int index) {
+                Assert.assertTrue(index < QueryPropertyPreview.PATH_LIMIT);
+                Vertex vertex = new Vertex("person");
+                vertex.id(index);
+                return vertex;
+            }
+
+            @Override
+            public int size() {
+                return 1000000;
+            }
+        };
+        List<Object> labels = new AbstractList<>() {
+            @Override
+            public Object get(int index) {
+                Assert.assertTrue(index < QueryPropertyPreview.PATH_LIMIT);
+                return List.of("step" + index);
+            }
+
+            @Override
+            public int size() {
+                return 1000000;
+            }
+        };
+        Mockito.when(original.objects()).thenReturn(objects);
+        Mockito.when(original.labels()).thenReturn(labels);
+        QueryPropertyPreview preview = new QueryPropertyPreview();
+        TypedResult result = preview.project(new TypedResult(Type.PATH, List.of(original)));
+        Path copy = (Path) result.getData().get(0);
+        Assert.assertEquals(1000, copy.objects().size());
+        Assert.assertEquals(1000, copy.labels().size());
+        Assert.assertEquals(999, ((Vertex) copy.objects().get(999)).id());
+        Assert.assertEquals(List.of("step999"), copy.labels().get(999));
+        Assert.assertTrue(result.isTruncated());
+        Assert.assertTrue(preview.truncated());
+        Assert.assertEquals(1000000, original.objects().size());
+        Assert.assertEquals(1000000, original.labels().size());
+        String json = new ObjectMapper().writeValueAsString(copy);
+        Assert.assertTrue(json.length() < 200000);
+        Assert.assertEquals(1000, new ObjectMapper().readTree(json).get("objects").size());
+        Assert.assertEquals(1000, new ObjectMapper().readTree(json).get("labels").size());
+    }
+
+    @Test
+    public void testShortPathRetainsCollectionTypesAndLabelOrder() {
+        Path original = new Path(List.of(List.of("Beijing", "Wuhan"), List.of(1L, 2L)));
+        original.labels(List.of("start", "city"), List.of());
+        QueryPropertyPreview preview = new QueryPropertyPreview();
+        TypedResult result = preview.project(new TypedResult(Type.PATH, List.of(original)));
+        Path copy = (Path) result.getData().get(0);
+        Assert.assertEquals(original, copy);
+        Assert.assertFalse(result.isTruncated());
+        Assert.assertFalse(preview.truncated());
+    }
+
+    @Test
+    public void testPathLabelsAndRepeatedPathsShareTheValueBudget() {
+        List<Object> objects = new ArrayList<>();
+        for (int i = 0; i < 1000; i++) {
+            objects.add(i);
+        }
+        Path original = new Path(objects);
+        original.labels(objects.toArray());
+        List<Object> rows = new ArrayList<>();
+        for (int i = 0; i < 1000; i++) {
+            rows.add(original);
+        }
+        QueryPropertyPreview preview = new QueryPropertyPreview();
+        TypedResult result = preview.project(new TypedResult(Type.PATH, rows));
+        int values = 0;
+        for (Object row : result.getData()) {
+            Path copy = (Path) row;
+            values += copy.objects().size() + copy.labels().size();
+        }
+        Assert.assertTrue(values < QueryPropertyPreview.VALUE_LIMIT);
+        Assert.assertTrue(((Path) result.getData().get(999)).objects().isEmpty());
+        Assert.assertEquals(1000, original.objects().size());
+        Assert.assertEquals(1000, original.labels().size());
+        Assert.assertTrue(result.isTruncated());
+        Assert.assertTrue(preview.truncated());
+    }
+
+    @Test
+    public void testPathDepthAndLabelsCannotResetNestedValueBudget() {
+        Path original = new Path();
+        original.objects(original);
+        original.labels(List.of("x".repeat(1000000)));
+        QueryPropertyPreview preview = new QueryPropertyPreview();
+        TypedResult result = preview.project(new TypedResult(Type.PATH, List.of(original)));
+        Path copy = (Path) result.getData().get(0);
+        for (int depth = 0; depth < 4; depth++) {
+            Assert.assertEquals(1, copy.objects().size());
+            copy = (Path) copy.objects().get(0);
+        }
+        Assert.assertTrue(copy.objects().isEmpty());
+        Assert.assertTrue(result.isTruncated());
+        Assert.assertTrue(preview.truncated());
+        Assert.assertSame(original, original.objects().get(0));
+        Path outer = (Path) result.getData().get(0);
+        Assert.assertTrue(((String) ((List<?>) outer.labels().get(0)).get(0))
+                          .endsWith("/1000000 chars]"));
+    }
+
+    @Test
+    public void testEnrichedGraphReusesDetachedObjectsWithoutChargingOrTruncatingTwice() {
+        Vertex original = new Vertex("person");
+        original.id(1);
+        original.property("payload", "x".repeat(1000000));
+        QueryPropertyPreview preview = new QueryPropertyPreview();
+        Vertex copy = (Vertex) preview.project(new TypedResult(Type.VERTEX, List.of(original)))
+                                     .getData().get(0);
+        Vertex graphCopy = preview.project(new GraphView(List.of(copy), List.of()))
+                                  .getVertices().iterator().next();
+        Assert.assertSame(copy.properties(), graphCopy.properties());
+        Assert.assertEquals("x".repeat(256) + "… [preview 256/1000000 chars]",
+                            graphCopy.property("payload"));
+        Assert.assertEquals(1000000, ((String) original.property("payload")).length());
+    }
+
+    @Test
+    public void testNestedGraphPropertiesCannotResetDepthOrMutateTheSource() {
+        Vertex original = new Vertex("person");
+        original.id(1);
+        original.properties().put("self", original);
+        QueryPropertyPreview preview = new QueryPropertyPreview();
+        Vertex copy = (Vertex) preview.project(new TypedResult(Type.VERTEX, List.of(original)))
+                                     .getData().get(0);
+        for (int depth = 0; depth < 4; depth++) {
+            Assert.assertEquals(1, copy.id());
+            copy = (Vertex) copy.property("self");
+        }
+        Assert.assertTrue(copy.properties().isEmpty());
+        Assert.assertSame(original, original.property("self"));
+        Assert.assertTrue(preview.truncated());
     }
 
     @Test

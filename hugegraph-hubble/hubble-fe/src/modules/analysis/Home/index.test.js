@@ -56,7 +56,11 @@ jest.mock('../QueryBar/Home', () => props => (
         <button onClick={() => props.onLanguageChange('gremlin')}>Generate Gremlin</button>
         <button onClick={() => props.setCodeEditorContent('MATCH (n) RETURN n LIMIT 4')}>Edit Cypher</button>
         <button onClick={() => props.setCodeEditorContent('g.E().limit(3)')}>Edit query</button>
-        <button onClick={() => props.setCodeEditorContent('g.V().limit(10000)')}>Edit large query</button>
+        {['10000', '10000L', '100_000'].map(limit => (
+            <button key={limit} onClick={() => props.setCodeEditorContent(`g.V().limit(${limit})`)}>
+                Edit large query {limit}
+            </button>
+        ))}
         <button onClick={() => props.onExecute(props.activeTab)}>Run current</button>
         <button onClick={() => props.onExecuteModeChange('task')}>Use async</button>
         <button onClick={() => props.setCodeEditorContent(props.codeEditorContent)}>Echo current query</button>
@@ -1794,12 +1798,12 @@ it('hides confirmed old Schema inputs as soon as the selected graph changes', as
     expect(api.manage.getMetaVertexList).toHaveBeenCalledTimes(vertexCalls);
 });
 
-it('blocks a large synchronous read before POST and permits explicit async submission', async () => {
+it.each(['10000', '10000L', '100_000'])('blocks a large synchronous read (%s) before POST and permits explicit async submission', async limit => {
     render(<GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
         <AnalysisHome />
     </GraphAnalysisContext.Provider>);
     await act(async () => Promise.resolve());
-    fireEvent.click(screen.getByRole('button', {name: 'Edit large query'}));
+    fireEvent.click(screen.getByRole('button', {name: `Edit large query ${limit}`}));
     fireEvent.click(screen.getByRole('button', {name: 'Run current'}));
     expect(api.analysis.getExecutionQuery).not.toHaveBeenCalled();
     expect(api.analysis.getExecutionTask).not.toHaveBeenCalled();
@@ -1808,6 +1812,6 @@ it('blocks a large synchronous read before POST and permits explicit async submi
     fireEvent.click(screen.getByRole('button', {name: 'Use async'}));
     fireEvent.click(screen.getByRole('button', {name: 'Run current'}));
     await waitFor(() => expect(api.analysis.getExecutionTask).toHaveBeenCalledWith(
-        'DEFAULT', 'hugegraph', {content: 'g.V().limit(10000)'}));
+        'DEFAULT', 'hugegraph', {content: `g.V().limit(${limit})`}));
     expect(api.analysis.getExecutionQuery).not.toHaveBeenCalled();
 });

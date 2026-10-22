@@ -77,6 +77,24 @@ public class ReadOnlyGremlinTest {
     }
 
     @Test
+    public void acceptsGroovyNumericLiteralsWithoutAcceptingExpressions() {
+        // Checked against the Groovy runtime used by HugeGraph Server. Numeric
+        // syntax is validated here; the Server still validates step overloads.
+        for (String literal : new String[]{"10000L", "100_000", "100__000", "10_000G", "10_000I",
+                                            "0x2710L", "0b1_0000", "023420", "0_10", "10000l",
+                                            "10000g", "10000i", "+10000", "-9223372036854775808L",
+                                            "1e4", "1.0G", "10000D", "1_000.5_0e+1_0F"}) {
+            ReadOnlyGremlin.validate("g.V().has('number', " + literal + ")");
+        }
+        for (String literal : new String[]{"08", "1_L", "1L0", "2147483648I", "9223372036854775808L",
+                                            "1_", "0x_1", "0b2", "1e_2", "1.0L", "1 + 2",
+                                            "Long.MAX_VALUE", "10000L.toString()"}) {
+            Assert.assertThrows(ExternalException.class,
+                                () -> ReadOnlyGremlin.validate("g.V().limit(" + literal + ")"));
+        }
+    }
+
+    @Test
     public void boundsInputAndNesting() {
         Assert.assertThrows(ExternalException.class,
                      () -> ReadOnlyGremlin.validate("g.V().has('name','" + "x".repeat(10000) + "')"));

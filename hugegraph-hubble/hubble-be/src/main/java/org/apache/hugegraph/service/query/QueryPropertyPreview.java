@@ -19,6 +19,8 @@
 package org.apache.hugegraph.service.query;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -36,12 +38,20 @@ final class QueryPropertyPreview {
 
     static final int STRING_LIMIT = 256;
     static final int VALUE_LIMIT = 10000;
+    static final int PATH_LIMIT = 1000;
     private static final String VALUE_OMITTED = "[preview: value budget exhausted]";
+    private static final String NESTED_OMITTED = "[preview: nested value omitted]";
     private static final int COLLECTION_LIMIT = 20;
     private static final int DEPTH_LIMIT = 4;
 
     private boolean truncated;
+    private boolean structureTruncated;
     private int remainingValues = VALUE_LIMIT;
+    // GraphView wraps vertices but retains their property map. Recognize only
+    // maps created for our detached copies, including through those wrappers.
+    // Caching original SDK objects/maps would let repeated rows evade the budget.
+    private final Set<Map<String, Object>> detachedProperties =
+            Collections.newSetFromMap(new IdentityHashMap<>());
 
     boolean truncated() {
         return this.truncated;
@@ -55,7 +65,8 @@ final class QueryPropertyPreview {
         for (Object value : result.getData()) {
             data.add(this.value(value, 0));
         }
-        return new TypedResult(result.getType(), data, result.isTruncated());
+        return new TypedResult(result.getType(), data,
+                               result.isTruncated() || this.structureTruncated);
     }
 
     GraphView project(GraphView graph) {
@@ -72,11 +83,16 @@ final class QueryPropertyPreview {
     }
 
     private Object value(Object value, int depth) {
+        if (value instanceof GraphElement &&
+            this.detachedProperties.contains(((GraphElement) value).properties())) {
+            return value;
+        }
+        boolean available = this.takeValue();
         if (value instanceof Vertex) {
             Vertex original = (Vertex) value;
             Vertex copy = new Vertex(original.label());
             copy.id(original.id());
-            return this.element(original, copy);
+            return this.element(original, copy, depth);
         }
         if (value instanceof Edge) {
             Edge original = (Edge) value;
@@ -86,26 +102,14 @@ final class QueryPropertyPreview {
             copy.targetId(original.targetId());
             copy.sourceLabel(original.sourceLabel());
             copy.targetLabel(original.targetLabel());
-            return this.element(original, copy);
+            return this.element(original, copy, depth);
         }
         if (value instanceof Path) {
-            Path original = (Path) value;
-            Path copy = new Path();
-            copy.labels(original.labels().toArray());
-            Object crosspoint = original.crosspoint();
-            copy.crosspoint(crosspoint instanceof GraphElement ? this.value(crosspoint, 0) : crosspoint);
-            for (Object object : original.objects()) {
-                copy.objects(this.value(object, 0));
-            }
-            return copy;
+            return this.path((Path) value, depth, available);
         }
-        // Identity and path structure above are retained even after the
-        // shared property/general-value budget is exhausted.
-        if (this.remainingValues == 0) {
-            this.truncated = true;
+        if (!available) {
             return VALUE_OMITTED;
         }
-        this.remainingValues--;
         if (value instanceof byte[]) {
             byte[] bytes = (byte[]) value;
             if (bytes.length > STRING_LIMIT) {
@@ -130,7 +134,7 @@ final class QueryPropertyPreview {
         if (value instanceof Map || value instanceof List || value instanceof Set) {
             if (depth >= DEPTH_LIMIT) {
                 this.truncated = true;
-                return "[preview: nested value omitted]";
+                return NESTED_OMITTED;
             }
         }
         if (value instanceof Map) {
@@ -145,7 +149,7 @@ final class QueryPropertyPreview {
                 if (this.omitKey(entry.getKey())) {
                     continue;
                 }
-                boolean exhausted = this.exhausted(entry.getValue());
+                boolean exhausted = this.remainingValues == 0;
                 copy.put(entry.getKey(), this.value(entry.getValue(), depth + 1));
                 if (exhausted) {
                     break;
@@ -160,7 +164,7 @@ final class QueryPropertyPreview {
                     this.truncated = true;
                     break;
                 }
-                boolean exhausted = this.exhausted(item);
+                boolean exhausted = this.remainingValues == 0;
                 copy.add(this.value(item, depth + 1));
                 if (exhausted) {
                     break;
@@ -176,7 +180,7 @@ final class QueryPropertyPreview {
                     this.truncated = true;
                     break;
                 }
-                boolean exhausted = this.exhausted(item);
+                boolean exhausted = this.remainingValues == 0;
                 copy.add(this.value(item, depth + 1));
                 if (exhausted) {
                     break;
@@ -187,9 +191,53 @@ final class QueryPropertyPreview {
         return value;
     }
 
-    private boolean exhausted(Object value) {
-        return this.remainingValues == 0 &&
-               !(value instanceof GraphElement) && !(value instanceof Path);
+    private boolean takeValue() {
+        if (this.remainingValues == 0) {
+            this.truncated = true;
+            return false;
+        }
+        this.remainingValues--;
+        return true;
+    }
+
+    private Path path(Path original, int depth, boolean available) {
+        Object crosspoint = original.crosspoint();
+        boolean nestedCrosspoint = crosspoint instanceof Path || crosspoint instanceof Map ||
+                                   crosspoint instanceof List ||
+                                   crosspoint instanceof Set || crosspoint instanceof byte[];
+        boolean descend = available && depth < DEPTH_LIMIT;
+        if (crosspoint instanceof GraphElement) {
+            crosspoint = this.value(crosspoint, depth + 1);
+        } else if (nestedCrosspoint) {
+            // Crosspoint IDs remain exact; arbitrary nested values share the
+            // same depth and work budget as the path objects and labels.
+            crosspoint = descend ? this.value(crosspoint, depth + 1) : NESTED_OMITTED;
+            if (!descend) {
+                this.truncated = true;
+            }
+        }
+        List<Object> objects = new ArrayList<>();
+        List<Object> labels = new ArrayList<>();
+        List<Object> originalObjects = original.objects();
+        List<Object> originalLabels = original.labels();
+        int slots = Math.min(PATH_LIMIT, Math.max(originalObjects.size(), originalLabels.size()));
+        for (int i = 0; descend && i < slots && this.remainingValues > 0; i++) {
+            if (i < originalObjects.size()) {
+                objects.add(this.value(originalObjects.get(i), depth + 1));
+            }
+            if (i < originalLabels.size() && this.remainingValues > 0) {
+                labels.add(this.value(originalLabels.get(i), depth + 1));
+            }
+        }
+        if (objects.size() < originalObjects.size() || labels.size() < originalLabels.size()) {
+            this.truncated = true;
+            this.structureTruncated = true;
+        }
+        // SDK Path stores CopyOnWriteArrayLists. Build each prefix in one batch
+        // rather than copying its growing backing array for every object.
+        Path copy = new Path(crosspoint, objects);
+        copy.labels(labels.toArray());
+        return copy;
     }
 
     private boolean omitKey(Object key) {
@@ -202,9 +250,14 @@ final class QueryPropertyPreview {
         return false;
     }
 
-    private GraphElement element(GraphElement original, GraphElement copy) {
+    private GraphElement element(GraphElement original, GraphElement copy, int depth) {
         // SDK query elements have an attached manager: property() on them can
         // write to Server. Only populate the detached copy's property map.
+        this.detachedProperties.add(copy.properties());
+        if (depth >= DEPTH_LIMIT) {
+            this.truncated |= !original.properties().isEmpty();
+            return copy;
+        }
         int visited = 0;
         for (Map.Entry<String, Object> entry : original.properties().entrySet()) {
             if (visited++ == COLLECTION_LIMIT) {
@@ -212,8 +265,8 @@ final class QueryPropertyPreview {
                 break;
             }
             if (!this.omitKey(entry.getKey())) {
-                boolean exhausted = this.exhausted(entry.getValue());
-                copy.properties().put(entry.getKey(), this.value(entry.getValue(), 0));
+                boolean exhausted = this.remainingValues == 0;
+                copy.properties().put(entry.getKey(), this.value(entry.getValue(), depth + 1));
                 if (exhausted) {
                     break;
                 }

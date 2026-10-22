@@ -18,29 +18,9 @@
 
 package org.apache.hugegraph.util;
 
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import org.apache.commons.lang3.StringUtils;
 
-import com.google.common.collect.ImmutableSet;
-
 public final class GremlinUtil {
-
-    private static final Pattern OUTER_STEP = Pattern.compile("\\.\\s*(\\w+)\\s*\\(");
-    private static final Pattern LOCAL_SCOPE = Pattern.compile(
-            "^\\s*(?:Scope\\s*\\.\\s*)?local\\s*(?:,|\\))");
-    private static final Set<String> RESULT_LIMIT_STEPS = ImmutableSet.of(
-            "limit", "range", "tail", "sample");
-    private static final Set<String> FILTER_STEPS = ImmutableSet.of(
-            "has", "hasId", "hasLabel", "hasKey", "hasValue", "hasNot", "dedup",
-            "order", "by", "where", "filter", "is", "not", "and", "or",
-            "simplePath", "cyclicPath", "as", "identity", "valueMap", "elementMap",
-            "id", "label", "path", "project", "select");
-    private static final Set<String> TERMINAL_STEPS = ImmutableSet.of(
-            "count", "sum", "min", "max", "mean", "fold", "group", "groupCount",
-            "next", "hasNext", "toList", "toSet");
 
     private static final String[] ESCAPE_SEARCH_LIST = new String[]{
         "\\", "\"", "'", "\r", "\n"
@@ -469,69 +449,21 @@ public final class GremlinUtil {
             codeEnd--;
         }
         String code = matchable.substring(0, codeEnd);
+        int position;
         try {
-            // Reuse the existing literal-only read grammar. General Groovy and
-            // mutations are left untouched, rather than guessed from a suffix.
-            ReadOnlyGremlin.validate(code.replace('\n', ' ').replace('\r', ' '));
+            // Parse once: validation, scopes, literal bounds and cardinality use
+            // the same traversal representation. Scripts and mutations retain
+            // their existing execution semantics.
+            ReadOnlyGremlin.Traversal traversal = ReadOnlyGremlin.parse(
+                    code.replace('\n', ' ').replace('\r', ' '));
+            position = traversal.limitPosition(preview);
+            if (position < 0) {
+                return statement;
+            }
         } catch (RuntimeException ignored) {
             return statement;
         }
-
-        Matcher steps = OUTER_STEP.matcher(outerSteps(code));
-        boolean bounded = false;
-        boolean terminal = false;
-        while (steps.find()) {
-            String step = steps.group(1);
-            boolean localScope = LOCAL_SCOPE.matcher(code.substring(steps.end())).find();
-            if (TERMINAL_STEPS.contains(step)) {
-                terminal = !localScope;
-                if (!localScope) {
-                    bounded = true;
-                }
-                continue;
-            }
-            if (RESULT_LIMIT_STEPS.contains(step)) {
-                bounded = bounded || !localScope;
-            } else if (!FILTER_STEPS.contains(step)) {
-                terminal = false;
-                bounded = false;
-            }
-        }
-        if (terminal || bounded && !preview) {
-            return statement;
-        }
-        return statement.substring(0, codeEnd) + ".limit(" + limit + ")" +
-               statement.substring(codeEnd);
-    }
-
-    private static String outerSteps(String code) {
-        StringBuilder outer = new StringBuilder(code.length());
-        int depth = 0;
-        char quote = 0;
-        boolean escaped = false;
-        for (int i = 0; i < code.length(); i++) {
-            char ch = code.charAt(i);
-            if (quote != 0) {
-                if (escaped) {
-                    escaped = false;
-                } else if (ch == '\\') {
-                    escaped = true;
-                } else if (ch == quote) {
-                    quote = 0;
-                }
-                outer.append(' ');
-            } else if (ch == '\'' || ch == '"') {
-                quote = ch;
-                outer.append(' ');
-            } else if (ch == '(') {
-                outer.append(depth++ == 0 ? ch : ' ');
-            } else if (ch == ')') {
-                depth--;
-                outer.append(' ');
-            } else {
-                outer.append(depth == 0 ? ch : ' ');
-            }
-        }
-        return outer.toString();
+        return statement.substring(0, position) + ".limit(" + limit + ")" +
+               statement.substring(position);
     }
 }

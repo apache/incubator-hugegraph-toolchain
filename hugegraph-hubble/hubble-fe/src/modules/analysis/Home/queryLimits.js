@@ -60,6 +60,26 @@ const maskLiterals = text => {
     return quote || comment === 'block' ? '' : output.trim().replace(/;\s*$/, '');
 };
 
+// Decode integer literals without evaluating user code. Groovy accepts radix prefixes,
+// repeated interior underscores and I/L/G type suffixes; floating point is not a row bound.
+const integerBound = argument => {
+    const match = argument.trim().match(/^([+-]?)\s*(0[xX][\da-fA-F](?:[\da-fA-F_]*[\da-fA-F])?|0[bB][01](?:[01_]*[01])?|0(?:[0-7_]*[0-7])?|[1-9](?:[\d_]*\d)?)([iIlLgG]?)$/);
+    if (!match) {
+        return null;
+    }
+    let digits = match[2].replace(/_/g, '');
+    if (/^0\d/.test(digits)) {
+        digits = `0o${digits.slice(1)}`;
+    }
+    const value = BigInt(digits) * (match[1] === '-' ? -1n : 1n);
+    const suffix = match[3].toLowerCase();
+    if ((suffix === 'i' && (value < -2147483648n || value > 2147483647n))
+        || value < 0n || value > 9223372036854775807n) {
+        return null;
+    }
+    return value;
+};
+
 const hasLargeExplicitReadLimit = (text, language = 'gremlin', maximum = 1000) => {
     const code = maskLiterals(String(text ?? ''));
     if (code.includes(';')) {
@@ -81,9 +101,12 @@ const hasLargeExplicitReadLimit = (text, language = 'gremlin', maximum = 1000) =
     const limits = [];
     for (let i = 0; i < code.length; i++) {
         if (depth === 0 && code[i] === '.') {
-            const match = code.slice(i).match(/^\.\s*limit\s*\(\s*(\d+)\s*\)/);
+            const match = code.slice(i).match(/^\.\s*limit\s*\((?:\s*(?:Scope\s*\.\s*)?global\s*,)?([^()]*)\)/);
             if (match) {
-                limits.push(Number(match[1]));
+                const bound = integerBound(match[1]);
+                if (bound !== null) {
+                    limits.push(bound);
+                }
             }
         }
         if (code[i] === '(') {
@@ -93,7 +116,7 @@ const hasLargeExplicitReadLimit = (text, language = 'gremlin', maximum = 1000) =
             depth--;
         }
     }
-    return limits.length > 0 && limits[limits.length - 1] > maximum;
+    return limits.length > 0 && limits[limits.length - 1] > BigInt(maximum);
 };
 
 export {hasLargeExplicitReadLimit};
