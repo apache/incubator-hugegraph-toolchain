@@ -127,7 +127,8 @@ public class QueryService {
         ResultSet resultSet = this.executeGremlin(gremlin, client);
         GremlinResult result = this.buildQueryResult(resultSet, client, query.isPreview());
         result.setDefaultLimitApplied(defaultLimitApplied);
-        result.setDefaultLimit(this.config.get(HubbleOptions.GREMLIN_SUFFIX_LIMIT));
+        int defaultLimit = this.config.get(HubbleOptions.GREMLIN_SUFFIX_LIMIT);
+        result.setDefaultLimit(query.isPreview() ? Math.min(defaultLimit, GRAPH_VERTEX_LIMIT) : defaultLimit);
         return result;
     }
 
@@ -157,7 +158,7 @@ public class QueryService {
         GremlinResult result = this.buildQueryResult(resultSet, client, preview);
         if (limited != null) {
             result.setDefaultLimitApplied(limited.defaultLimitApplied());
-            result.setDefaultLimit(defaultLimit);
+            result.setDefaultLimit(Math.min(defaultLimit, GRAPH_VERTEX_LIMIT));
         }
         return result;
     }

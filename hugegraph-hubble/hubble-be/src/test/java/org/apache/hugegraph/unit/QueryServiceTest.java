@@ -72,6 +72,58 @@ public class QueryServiceTest {
     }
 
     @Test
+    public void testConfiguredGremlinDefaultReportsEffectivePreviewLimit() throws Exception {
+        for (int configured : new int[]{300, 5000}) {
+            QueryService service = this.serviceWithConfig(configured);
+            Object[] rows = Collections.nCopies(Math.min(configured, 1001), "value").toArray();
+            GremlinManager gremlin = this.mockGremlin(this.resultSet(rows));
+            GremlinQuery query = new GremlinQuery("g.V()");
+            query.setPreview(true);
+            GremlinResult preview = service.executeGremlinQuery(this.mockClient(gremlin), query);
+
+            Mockito.verify(gremlin).gremlin("g.V().limit(" + configured + ").limit(1001)");
+            Assert.assertTrue(preview.isDefaultLimitApplied());
+            Assert.assertEquals(Math.min(configured, 1000), preview.getDefaultLimit());
+            Assert.assertEquals(Math.min(configured, 1000), preview.getJsonView().getData().size());
+            Assert.assertEquals(configured > 1000, preview.isResultTruncated());
+
+            GremlinManager rawGremlin = this.mockGremlin();
+            query.setPreview(false);
+            GremlinResult raw = service.executeGremlinQuery(this.mockClient(rawGremlin), query);
+            Mockito.verify(rawGremlin).gremlin("g.V().limit(" + configured + ")");
+            Assert.assertTrue(raw.isDefaultLimitApplied());
+            Assert.assertEquals(configured, raw.getDefaultLimit());
+        }
+    }
+
+    @Test
+    public void testConfiguredCypherDefaultReportsEffectivePreviewLimit() throws Exception {
+        for (int configured : new int[]{300, 5000}) {
+            QueryService service = this.serviceWithConfig(configured);
+            String query = "MATCH (n) RETURN n";
+            String dispatched = query + " LIMIT " + Math.min(configured, 1001);
+            Object[] rows = Collections.nCopies(Math.min(configured, 1001), "value").toArray();
+            CypherManager cypher = Mockito.mock(CypherManager.class);
+            Mockito.when(cypher.cypher(dispatched)).thenReturn(this.resultSet(rows));
+            Mockito.when(cypher.cypher(query)).thenReturn(this.resultSet());
+            HugeClient client = this.mockClient(this.mockGremlin());
+            Mockito.when(client.cypher()).thenReturn(cypher);
+            GremlinResult preview = service.executeCypherQuery(client, query, true);
+
+            Mockito.verify(cypher).cypher(dispatched);
+            Assert.assertTrue(preview.isDefaultLimitApplied());
+            Assert.assertEquals(Math.min(configured, 1000), preview.getDefaultLimit());
+            Assert.assertEquals(Math.min(configured, 1000), preview.getJsonView().getData().size());
+            Assert.assertEquals(configured > 1000, preview.isResultTruncated());
+
+            GremlinResult raw = service.executeCypherQuery(client, query, false);
+            Mockito.verify(cypher).cypher(query);
+            Assert.assertFalse(raw.isDefaultLimitApplied());
+            Assert.assertEquals(0, raw.getDefaultLimit());
+        }
+    }
+
+    @Test
     public void testPropertyPreviewCoversAllViewsWithoutChangingLegacyResults() throws Exception {
         Vertex vertex = this.vertices(1).get(0);
         String payload = "x".repeat(1024 * 1024);
@@ -859,10 +911,14 @@ public class QueryServiceTest {
     }
 
     private QueryService serviceWithConfig() throws Exception {
+        return this.serviceWithConfig(300);
+    }
+
+    private QueryService serviceWithConfig(int defaultLimit) throws Exception {
         QueryService service = new QueryService();
         HugeConfig config = Mockito.mock(HugeConfig.class);
         Mockito.when(config.get(HubbleOptions.GREMLIN_SUFFIX_LIMIT))
-               .thenReturn(300);
+               .thenReturn(defaultLimit);
         Mockito.when(config.get(HubbleOptions.GREMLIN_VERTEX_DEGREE_LIMIT))
                .thenReturn(100);
         Mockito.when(config.get(HubbleOptions.GREMLIN_BATCH_QUERY_IDS))
