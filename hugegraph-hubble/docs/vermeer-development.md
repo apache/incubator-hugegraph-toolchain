@@ -67,6 +67,38 @@ results. Master/Worker in-memory result caches are temporary. Database data,
 Vermeer metadata, and local output files are retained, but historical task status
 alone does not guarantee its in-memory query results remain available.
 
+## Local development credentials
+
+This Linux/POSIX helper is for a trusted single-user development environment with
+trusted parent directories. It creates one random PD service secret, not a Hubble
+user password, at `integration/pd-password` under `VERMEER_DEV_HOME`. The secret is
+persisted and reused by later `prepare`/`start` calls and process restarts; `stop`
+does not remove credentials. Removal or rotation requires deliberate coordination
+with the dependent development services.
+
+The managed runtime directories use mode `0700`; generated credential files use
+`0600` before any write, including replacement contents. Symlinks and unsafe file
+types/ownership are rejected. An existing tools/cache home is checked for ownership
+and group/other write access without recursively changing its contents. Parent
+directories and the current user remain part of the trusted boundary.
+
+If `VERMEER_PD_PASSWORD_FILE` is supplied, it must already be a current-user-owned
+regular file, without a final symlink, with mode `0400` or `0600` and one nonempty
+UTF-8 line. The helper validates the opened file before reading it, and neither
+creates nor changes permissions on this external file. Unsafe inputs are rejected.
+
+PD and Server consume generated `pd.env` and `server.env` through Docker's
+`--env-file` interface. These are intentionally plaintext runtime inputs, and
+Docker administrators can inspect container configuration. File permissions are
+not encryption and do not establish protection from the same user, root or Docker
+administrators. Use development-only values; never supply or commit production
+credentials. The CodeQL context remains subject to separate review.
+
+The default home is outside the repository. For an in-repository home, use the
+ignored `.vermeer-dev/` directory. Generated `integration/pd-password`, `pd.env`
+and `server.env` are also ignored under other custom homes; arbitrary external
+credential filenames are not covered by these rules and should stay outside Git.
+
 ## Connection and task contracts
 
 Set `vermeer.url` in Hubble's properties to the Master HTTP origin. If Master uses

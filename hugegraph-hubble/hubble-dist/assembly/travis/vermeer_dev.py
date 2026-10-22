@@ -26,6 +26,7 @@ import secrets
 import shutil
 import signal
 import socket
+import stat
 import subprocess
 import tarfile
 import time
@@ -99,23 +100,78 @@ def wait_ready(check, name, seconds=120):
     raise RuntimeError(f'{name} did not become ready: {error}; inspect {RUN}')
 
 
-def private_file(path, value):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, 'w', opener=lambda p, flags: os.open(p, flags, 0o600)) as output:
-        output.write(value)
-    path.chmod(0o600)
+def owned_directory(path, private=False):
+    path.mkdir(mode=0o700, parents=True, exist_ok=True)
+    fd = os.open(path, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC)
+    try:
+        info = os.fstat(fd)
+        if info.st_uid != os.getuid():
+            raise RuntimeError('Development directory must be owned by the current user')
+        if private:
+            os.fchmod(fd, 0o700)
+        elif stat.S_IMODE(info.st_mode) & 0o022:
+            raise RuntimeError('Development directory must not be writable by other users')
+    finally:
+        os.close(fd)
+
+
+def private_file(path, value, exclusive=False):
+    owned_directory(path.parent)
+    flags = os.O_WRONLY | os.O_CREAT | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC
+    if exclusive:
+        flags |= os.O_EXCL
+    fd = os.open(path, flags, 0o600)
+    try:
+        info = os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid() or info.st_nlink != 1:
+            raise RuntimeError('Private output must be a singly linked regular file owned by the current user')
+        # Creation mode does not restrict an existing file. Protect this inode
+        # before truncating or writing, without following a path for chmod.
+        os.fchmod(fd, 0o600)
+        os.ftruncate(fd, 0)
+        with os.fdopen(fd, 'w', encoding='utf-8') as output:
+            fd = None
+            output.write(value)
+    finally:
+        if fd is not None:
+            os.close(fd)
+
+
+def read_private_secret(path):
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC)
+    try:
+        info = os.fstat(fd)
+        if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid() or
+                stat.S_IMODE(info.st_mode) not in (0o400, 0o600)):
+            raise RuntimeError('PD password must be an owned regular file with mode 0400 or 0600')
+        with os.fdopen(fd, encoding='utf-8') as source:
+            fd = None
+            try:
+                value = source.read().strip()
+            except UnicodeError:
+                raise RuntimeError('PD password must be UTF-8 text') from None
+        if not value or any(character in value for character in '\r\n\0'):
+            raise RuntimeError('PD password must contain one nonempty line')
+        return value
+    finally:
+        if fd is not None:
+            os.close(fd)
 
 
 def configure():
-    RUN.mkdir(parents=True, exist_ok=True)
-    (RUN / 'vermeer').mkdir(exist_ok=True)
-    (RUN / 'hubble-home/conf/graphs').mkdir(parents=True, exist_ok=True)
-    password = Path(os.environ.get('VERMEER_PD_PASSWORD_FILE', str(RUN / 'pd-password')))
-    if not password.exists():
-        private_file(password, secrets.token_hex(24) + '\n')
-    secret = password.read_text().strip()
-    if not secret:
-        raise RuntimeError('Empty PD password file')
+    # SETUP can already contain shared tools/cache. Do not recursively chmod it.
+    owned_directory(SETUP)
+    for directory in (RUN, RUN / 'vermeer', RUN / 'hubble-home',
+                      RUN / 'hubble-home/conf', RUN / 'hubble-home/conf/graphs'):
+        owned_directory(directory, private=True)
+    supplied_password = os.environ.get('VERMEER_PD_PASSWORD_FILE')
+    password = Path(supplied_password) if supplied_password is not None else RUN / 'pd-password'
+    if supplied_password is None and not password.exists():
+        try:
+            private_file(password, secrets.token_hex(24) + '\n', exclusive=True)
+        except FileExistsError:
+            pass
+    secret = read_private_secret(password)
     private_file(RUN / 'pd.env', f'HG_PD_AUTH_SECRET_KEY={secret}\n')
     private_file(RUN / 'server.env', f'PD_AUTH_PASSWORD={secret}\n' +
                  'HG_SERVER_BACKEND=hstore\nHG_SERVER_PD_PEERS=127.0.0.1:8686\n'
