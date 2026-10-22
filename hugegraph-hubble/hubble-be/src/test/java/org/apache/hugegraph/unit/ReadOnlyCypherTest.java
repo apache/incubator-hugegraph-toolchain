@@ -25,160 +25,44 @@ import org.junit.Test;
 public class ReadOnlyCypherTest {
 
     @Test
-    public void addsPreviewDefaultOnlyAfterTheFinalReturn() {
+    public void previewAddsOnlyFinalOutputLimits() {
         this.assertPreview("MATCH (n) RETURN n", "MATCH (n) RETURN n LIMIT 300", true);
-        this.assertPreview("MATCH (n) WITH n LIMIT 7 RETURN n",
-                           "MATCH (n) WITH n LIMIT 7 RETURN n LIMIT 300", true);
-        this.assertPreview("MATCH (n) RETURN n;  ", "MATCH (n) RETURN n LIMIT 300;  ", true);
-        this.assertPreview("UNWIND [1, 2, 3] AS n RETURN n",
-                           "UNWIND [1, 2, 3] AS n RETURN n LIMIT 300", true);
-        this.assertPreview("MATCH (n) RETURN n.count, n.collect, n.limit",
-                           "MATCH (n) RETURN n.count, n.collect, n.limit LIMIT 300", true);
+        this.assertPreview("MATCH (n) WITH n LIMIT 5 RETURN n;",
+                           "MATCH (n) WITH n LIMIT 5 RETURN n LIMIT 300;", true);
+        this.assertPreview("MATCH (n) RETURN n LIMIT 10000", "MATCH (n) RETURN n LIMIT 1001", false);
+        this.assertPreview("MATCH (n) RETURN n LIMIT 10", "MATCH (n) RETURN n LIMIT 10", false);
+        this.assertPreview("MATCH (n) RETURN count(n)", "MATCH (n) RETURN count(n) LIMIT 300", true);
+        this.assertPreview("UNWIND [1, 2] AS n RETURN n", "UNWIND [1, 2] AS n RETURN n LIMIT 300", true);
+        this.assertPreview("MATCH (n) RETURN n.limit", "MATCH (n) RETURN n.limit LIMIT 300", true);
     }
 
     @Test
-    public void capsOnlyTheFinalLiteralReturnLimit() {
-        this.assertPreview("MATCH (n) WITH n LIMIT 20000 RETURN n LIMIT 10000",
-                           "MATCH (n) WITH n LIMIT 20000 RETURN n LIMIT 1001", false);
-        this.assertPreview("MATCH (n) WITH n LIMIT 20000 RETURN n LIMIT 7",
-                           "MATCH (n) WITH n LIMIT 20000 RETURN n LIMIT 7", false);
-        this.assertPreview("MATCH (n)\nRETURN n LIMIT 10000;  ",
-                           "MATCH (n)\nRETURN n LIMIT 1001;  ", false);
-        this.assertPreview("RETURN 'LIMIT 10000' AS text LIMIT 10000",
-                           "RETURN 'LIMIT 10000' AS text LIMIT 1001", false);
-    }
-
-    @Test
-    public void limitsAggregateOutputWithoutChangingItsInput() {
-        this.assertPreview("MATCH (n) RETURN count(n) AS total",
-                           "MATCH (n) RETURN count(n) AS total LIMIT 300", true);
-        this.assertPreview("MATCH (n) RETURN n.city, count(*) AS total ORDER BY total DESC",
-                           "MATCH (n) RETURN n.city, count(*) AS total ORDER BY total DESC LIMIT 300", true);
-        this.assertPreview("MATCH (n) RETURN n.city, count(*) LIMIT 10000",
-                           "MATCH (n) RETURN n.city, count(*) LIMIT 1001", false);
-        this.assertPreview("MATCH (n) WITH count(n) AS total RETURN total",
-                           "MATCH (n) WITH count(n) AS total RETURN total LIMIT 300", true);
-    }
-
-    @Test
-    public void requiresBoundedInputBeforeCollectingPreviewResults() {
-        String[] queries = {
-            "MATCH (n) RETURN collect(n)",
-            "MATCH (n) RETURN collect(n) LIMIT 1",
-            "MATCH (n) WITH collect(n) AS nodes RETURN nodes",
-            "MATCH (n) WITH n LIMIT 1001 RETURN collect(n)",
-            "MATCH (n) WITH n LIMIT 1000 MATCH (n)-->(m) RETURN collect(m)",
-            "MATCH (n) WITH n LIMIT 1000 OPTIONAL MATCH (n)-->(m) RETURN collect(m)",
-            "MATCH (n) WITH n LIMIT 1000 UNWIND n.items AS item RETURN collect(item)"
-        };
-        for (String query : queries) {
+    public void collectionPreviewsUseAsyncWithoutProvingInputBounds() {
+        for (String query : new String[]{"MATCH (n) RETURN collect(n)",
+                                          "MATCH (n) WITH n LIMIT 10 RETURN collect(n)",
+                                          "UNWIND [1, 2] AS n RETURN collect(n)"}) {
             ReadOnlyCypher.validate(query);
-            ExternalException error = (ExternalException) Assert.assertThrows(
-                                      ExternalException.class, () -> ReadOnlyCypher.preview(query, 300, 1001));
+            ExternalException error = (ExternalException) Assert.assertThrows(ExternalException.class,
+                    () -> ReadOnlyCypher.preview(query, 300, 1001));
             Assert.assertEquals("gremlin.preview.collection_requires_async", error.getMessage());
-            Assert.assertEquals(1000, error.args()[0]);
         }
     }
 
     @Test
-    public void acceptsCollectAfterAnUpstreamWithLimitAndPreservesNonExpandingBounds() {
-        this.assertPreview("MATCH (n) WITH n LIMIT 1000 RETURN collect(n)",
-                           "MATCH (n) WITH n LIMIT 1000 RETURN collect(n) LIMIT 300", true);
-        this.assertPreview("MATCH (n) WITH n LIMIT 1000 WITH collect(n) AS nodes RETURN nodes",
-                           "MATCH (n) WITH n LIMIT 1000 WITH collect(n) AS nodes RETURN nodes LIMIT 300", true);
-        this.assertPreview("MATCH (n) WITH n LIMIT 1000 WITH n.name AS name RETURN collect(name) LIMIT 1",
-                           "MATCH (n) WITH n LIMIT 1000 WITH n.name AS name RETURN collect(name) LIMIT 1", false);
-        this.assertPreview("MATCH (n) WITH n LIMIT 1000 WITH n LIMIT 2000 RETURN collect(n)",
-                           "MATCH (n) WITH n LIMIT 1000 WITH n LIMIT 2000 RETURN collect(n) LIMIT 300", true);
-    }
-
-    @Test
-    public void requiresAsyncForLargeOrUnprovenRangeValues() {
-        String[] queries = {
-            "RETURN range(1, 1000000000)",
-            "RETURN range(1, 1000000000) LIMIT 1",
-            "UNWIND range(1, 1000000000) AS item RETURN item",
-            "MATCH (n) WITH n LIMIT 10 RETURN range(1, 1000000000)",
-            "MATCH (n) RETURN range(1, n.count)",
-            "RETURN range(1, 2 + 3)"
-        };
-        for (String query : queries) {
-            ReadOnlyCypher.validate(query);
-            ExternalException error = (ExternalException) Assert.assertThrows(
-                                      ExternalException.class, () -> ReadOnlyCypher.preview(query, 300, 1001));
-            Assert.assertEquals("gremlin.preview.collection_requires_async", error.getMessage());
-            Assert.assertEquals(1000, error.args()[0]);
-        }
-    }
-
-    @Test
-    public void acceptsProvablyBoundedRangesIncludingDescendingSteps() {
+    public void previewDoesNotEvaluateExpressionsOrClassifyRangeFunctions() {
         this.assertPreview("RETURN range(1, 10)", "RETURN range(1, 10) LIMIT 300", true);
-        this.assertPreview("RETURN range(1, 1000)", "RETURN range(1, 1000) LIMIT 300", true);
-        this.assertPreview("RETURN range(10, 1, -1)", "RETURN range(10, 1, -1) LIMIT 300", true);
+        this.assertPreview("RETURN range(1, 2 + 3)", "RETURN range(1, 2 + 3) LIMIT 300", true);
+        this.assertPreview("MATCH (n) RETURN n LIMIT 2 + 3", "MATCH (n) RETURN n LIMIT 2 + 3", false);
+        this.assertPreview("MATCH (n) SET n.name = 'Alice' RETURN n",
+                           "MATCH (n) SET n.name = 'Alice' RETURN n", false);
+        this.assertPreview("MATCH (n) RETURN n UNION MATCH (m) RETURN m",
+                           "MATCH (n) RETURN n UNION MATCH (m) RETURN m", false);
     }
 
-    @Test
-    public void preservesTotalInputBoundsThroughLiteralUnwind() {
-        String[] queries = {
-            "UNWIND range(1, 10) AS n RETURN collect(n)",
-            "UNWIND [1, 2, 3] AS n RETURN collect(n)",
-            "UNWIND range(1, 10) AS n UNWIND range(1, 100) AS m RETURN collect(m)",
-            "MATCH (n) WITH n LIMIT 5 UNWIND range(1, 10) AS m RETURN collect(m)",
-            "MATCH (n) WITH n LIMIT 500 UNWIND [1, 2] AS m RETURN collect(m)",
-            "MATCH (n) WITH n LIMIT 5 WITH n LIMIT 2000 UNWIND range(1, 10) AS m RETURN collect(m)"
-        };
-        for (String query : queries) {
-            ReadOnlyCypher.validate(query);
-            this.assertPreview(query, query + " LIMIT 300", true);
-        }
-    }
-
-    @Test
-    public void requiresAsyncWhenLiteralUnwindExpandsUnknownOrExcessiveInput() {
-        String[] queries = {
-            "MATCH (n) UNWIND range(1, 10) AS m RETURN collect(m)",
-            "MATCH (n) UNWIND [1, 2] AS m RETURN collect(m)",
-            "UNWIND range(1, 10) AS n UNWIND range(1, 101) AS m RETURN collect(m)",
-            "MATCH (n) WITH n LIMIT 1000 UNWIND range(1, 10) AS m RETURN collect(m)",
-            "MATCH (n) WITH n LIMIT 501 UNWIND [1, 2] AS m RETURN collect(m)"
-        };
-        for (String query : queries) {
-            ReadOnlyCypher.validate(query);
-            ExternalException error = (ExternalException) Assert.assertThrows(
-                                      ExternalException.class, () -> ReadOnlyCypher.preview(query, 300, 1001));
-            Assert.assertEquals("gremlin.preview.collection_requires_async", error.getMessage());
-            Assert.assertEquals(1000, error.args()[0]);
-        }
-    }
-
-    @Test
-    public void preservesUnsupportedManualQueriesAndLimitExpressions() {
-        String[] queries = {
-            "MATCH (n) RETURN n LIMIT $limit",
-            "MATCH (n) RETURN n LIMIT 10 * 2000",
-            "MATCH (n) RETURN n LIMIT coalesce(10000, 1)",
-            "CALL db.labels() YIELD label RETURN label",
-            "MATCH (n) RETURN n UNION MATCH (m) RETURN m",
-            "CREATE (n) RETURN n",
-            "MATCH (n) SET n.name = 'Alice' RETURN n",
-            "MATCH (n) WITH collect(n) AS nodes CREATE (m) RETURN nodes",
-            "MATCH (n) RETURN collect(customReadFunction(n))"
-        };
-        for (String query : queries) {
-            this.assertPreview(query, query, false);
-        }
-    }
-
-    @Test
-    public void acceptsUnwindReadsButStillRejectsWrites() {
-        ReadOnlyCypher.validate("UNWIND [1, 2] AS item RETURN item");
-        ReadOnlyCypher.validate("MATCH (n) UNWIND n.items AS item RETURN item");
-        ReadOnlyCypher.validate("UNWIND range(1, 10) AS n WITH n LIMIT 5 RETURN n");
-        this.assertRejected(new String[]{
-            "UNWIND [1, 2] AS item CREATE (n) RETURN n",
-            "MATCH (n) UNWIND n.items AS item SET n.name = item RETURN n"
-        });
+    private void assertPreview(String query, String expected, boolean defaulted) {
+        ReadOnlyCypher.PreviewQuery result = ReadOnlyCypher.preview(query, 300, 1001);
+        Assert.assertEquals(expected, result.query());
+        Assert.assertEquals(defaulted, result.defaultLimitApplied());
     }
 
     @Test
@@ -334,11 +218,5 @@ public class ReadOnlyCypherTest {
             Assert.assertEquals("text2gql.cypher.read-only", error.getMessage());
             Assert.assertNull(error.getCause());
         }
-    }
-
-    private void assertPreview(String query, String expected, boolean defaultApplied) {
-        ReadOnlyCypher.PreviewQuery preview = ReadOnlyCypher.preview(query, 300, 1001);
-        Assert.assertEquals(expected, preview.query());
-        Assert.assertEquals(defaultApplied, preview.defaultLimitApplied());
     }
 }

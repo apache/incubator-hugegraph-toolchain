@@ -19,6 +19,7 @@
 package org.apache.hugegraph.util;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hugegraph.exception.ExternalException;
 
 public final class GremlinUtil {
 
@@ -467,18 +468,20 @@ public final class GremlinUtil {
             codeEnd--;
         }
         String code = matchable.substring(0, codeEnd);
-        ReadOnlyGremlin.Traversal traversal;
+        ReadOnlyGremlin.Syntax syntax;
         try {
-            // Parse once: validation, scopes, literal bounds and cardinality use
-            // the same traversal representation. Scripts and mutations retain
-            // their existing execution semantics.
-            traversal = ReadOnlyGremlin.parse(
+            // Reuse read-only validation and shallow call positions. Unknown
+            // manual syntax and mutations retain their native execution path.
+            syntax = ReadOnlyGremlin.parse(
                     code.replace('\n', ' ').replace('\r', ' '));
         } catch (RuntimeException ignored) {
             return statement;
         }
-        int position = traversal.limitPosition(preview, limit);
-        if (position < 0) {
+        if (preview && syntax.collection()) {
+            throw new ExternalException("gremlin.preview.collection_requires_async");
+        }
+        int position = syntax.limitPosition();
+        if (position < 0 || !preview && (syntax.explicitLimit() || syntax.collection())) {
             return statement;
         }
         return statement.substring(0, position) + ".limit(" + limit + ")" +
