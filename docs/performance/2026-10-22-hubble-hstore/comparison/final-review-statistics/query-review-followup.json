@@ -1,0 +1,123 @@
+{
+  "performance_sample": false,
+  "ordinary_query_checks": [
+    {
+      "case": "cypher_default",
+      "rows": 300,
+      "http_status": 200,
+      "default_limit_applied": true,
+      "result_truncated": false
+    },
+    {
+      "case": "cypher_explicit",
+      "rows": 1000,
+      "http_status": 200,
+      "default_limit_applied": false,
+      "result_truncated": true
+    },
+    {
+      "case": "cypher_count",
+      "rows": 1,
+      "http_status": 200,
+      "default_limit_applied": true,
+      "result_truncated": false
+    },
+    {
+      "case": "cypher_with",
+      "rows": 7,
+      "http_status": 200,
+      "default_limit_applied": true,
+      "result_truncated": false
+    },
+    {
+      "case": "gremlin_bounded_fold",
+      "rows": 1,
+      "http_status": 200,
+      "default_limit_applied": false,
+      "result_truncated": false
+    },
+    {
+      "case": "gremlin_collection_async",
+      "query": "g.V().fold()",
+      "http_status": 400,
+      "specific_async_hint": true
+    },
+    {
+      "case": "gremlin_collection_async",
+      "query": "g.V().groupCount().by(label)",
+      "http_status": 400,
+      "specific_async_hint": true
+    },
+    {
+      "case": "gremlin_collection_async",
+      "query": "g.V().group().by(label)",
+      "http_status": 400,
+      "specific_async_hint": true
+    }
+  ],
+  "collection_and_formatting_checks": [
+    {
+      "language": "cypher",
+      "query": "MATCH (n) RETURN collect(n) AS nodes",
+      "http_status": 400,
+      "async_hint": true
+    },
+    {
+      "language": "cypher",
+      "query": "MATCH (n) RETURN collect(n) AS nodes LIMIT 1",
+      "http_status": 400,
+      "async_hint": true
+    },
+    {
+      "language": "cypher",
+      "query": "MATCH (n) WITH collect(n) AS nodes RETURN nodes",
+      "http_status": 400,
+      "async_hint": true
+    },
+    {
+      "language": "cypher",
+      "query": "MATCH (n) WITH n LIMIT 10 RETURN collect(n) AS nodes",
+      "http_status": 200,
+      "collection_size": 10
+    },
+    {
+      "language": "gremlin",
+      "query": "g.V().groupCount('counts').by(label)",
+      "http_status": 200,
+      "rows": 300
+    },
+    {
+      "language": "gremlin",
+      "query": "g.V().group('groups').by(label).limit(12000)",
+      "http_status": 200,
+      "rows": 1000
+    },
+    {
+      "language": "gremlin",
+      "query": "g.V().\n identity()",
+      "http_status": 200,
+      "rows": 300
+    },
+    {
+      "language": "gremlin",
+      "query": "g.V(). /* comment */\n identity()",
+      "http_status": 200,
+      "rows": 300
+    }
+  ],
+  "script_checks": {
+    "preview_import": {
+      "empty_control_http_status": 200,
+      "root_marker_http_status": 400,
+      "element_marker_http_status": 400,
+      "dedicated_guard_messages_verified": true,
+      "original_vertex_sha256_unchanged": true
+    },
+    "async_result": {
+      "final_status": "failed",
+      "expected_limit_rejection": true,
+      "retained_limit_bytes": 16777216,
+      "reported_result_bytes": 99665305
+    }
+  }
+}
