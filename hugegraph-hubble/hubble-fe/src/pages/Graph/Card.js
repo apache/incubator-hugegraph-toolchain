@@ -101,9 +101,9 @@ const GraphCard = ({item, menus, canMutate = true}) => {
             api.analysis.getGraphData(graphspace, item.name, {suppressBusinessErrorToast: true}).then(res => {
                 if (active) setSnapshot({key, data: res.status === 200 ? {
                     ...res.data, vertex: res.data?.vertexcount, edge: res.data?.edgecount,
-                } : null});
+                } : null, error: res.status !== 200});
             }).catch(() => {
-                if (active) setSnapshot({key, data: null});
+                if (active) setSnapshot({key, data: null, error: true});
             });
         }
         return () => { active = false; };
@@ -179,7 +179,8 @@ const GraphCard = ({item, menus, canMutate = true}) => {
                         </span>
                     </Tooltip>
                 ) : <span key='counts'>{t(snapshot?.key === key
-                    ? 'graph.detail.not_collected' : 'graph.detail.loading')}</span>,
+                    ? snapshot.error ? 'graph.detail.statistics_unavailable' : 'graph.detail.not_collected'
+                    : 'graph.detail.loading')}</span>,
                 <Link key='overview' to={overviewPath}>{t('graph.card.overview')}</Link>,
                 <Link key='query' to={`/gremlin/${graphspace}/${item.name}`}>
                     {t('graph.card.query_graph')}

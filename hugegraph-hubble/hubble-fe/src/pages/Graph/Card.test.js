@@ -282,6 +282,7 @@ test('renders core graph actions before schema and snapshot statistics complete'
         resolveSnapshot({status: 200, data: {vertexcount: null, edgecount: null}});
     });
     expect(screen.getByText('graph.detail.not_collected')).toBeInTheDocument();
+    expect(screen.queryByText('graph.detail.statistics_unavailable')).not.toBeInTheDocument();
     await act(async () => {
         resolveSchema({status: 200, data: {vertices: [{id: 'person', label: 'person'}], edges: []}});
     });
@@ -298,4 +299,22 @@ test('shows a capped snapshot as a lower bound with its scan limit', async () =>
     const counts = await screen.findByText('graph.card.element_counts:≥100000/≈20');
     fireEvent.mouseEnter(counts);
     expect(await screen.findByText('graph.detail.bounded_statistics_hint:100000')).toBeInTheDocument();
+});
+
+test.each([
+    ['network failure', () => Promise.reject(new Error('network failure'))],
+    ['non-success response', () => Promise.resolve({status: 503})],
+])('shows a snapshot error for %s while keeping core actions available', async (_, response) => {
+    const calls = api.analysis.getGraphData.mock.calls.length;
+    api.analysis.getGraphData.mockImplementationOnce(response);
+    render(<MemoryRouter><GraphCard item={{name: 'g', graphspace: 'space',
+        schemaview: {vertices: [], edges: []}}} menus={[]} /></MemoryRouter>);
+
+    expect(await screen.findByText('graph.detail.statistics_unavailable')).toBeInTheDocument();
+    expect(screen.queryByText('graph.detail.not_collected')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', {name: 'graph.card.overview'}))
+        .toHaveAttribute('href', '/graphspace/space/graph/g/detail');
+    expect(screen.getByRole('link', {name: 'graph.card.query_graph'}))
+        .toHaveAttribute('href', '/gremlin/space/g');
+    expect(api.analysis.getGraphData).toHaveBeenCalledTimes(calls + 1);
 });
