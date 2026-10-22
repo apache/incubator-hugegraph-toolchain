@@ -32,6 +32,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Log4j2
@@ -167,6 +168,10 @@ public class VermeerService {
 
     public void cleanupDirectGraph(HugeClient client) {
         this.direct.deleteGraphIfPresent(client);
+    }
+
+    public void cleanupDirectGraphs(HugeClient client, List<String> graphs) {
+        this.direct.deleteGraphsIfPresent(client, graphs);
     }
 
     public String convert2VG(String space, String graph) {

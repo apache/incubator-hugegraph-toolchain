@@ -287,10 +287,28 @@ public class DirectVermeerServiceTest {
                         Map.of("id", 1, "graph_name", "DEFAULT-graph-with-dash",
                                "task_type", "compute", "status", "complete"),
                         Map.of("id", 2, "graph_name", "other-graph"))));
-        var tasks = service(backend).tasks(graphClient());
+        DirectVermeerService direct = service(backend);
+        ReflectionTestUtils.setField(direct, "authMode", Mockito.mock(AuthModeService.class));
+        HugeClient client = graphClient();
+        Mockito.when(client.auth().isSuperAdmin()).thenReturn(true);
+        var tasks = direct.tasks(client);
         Assert.assertEquals(1, tasks.size());
         Assert.assertEquals(-1L, tasks.get(0).id());
         Assert.assertEquals("success", tasks.get(0).status());
+        Mockito.verify(client.auth()).isSuperAdmin();
+        Mockito.verify(client.graph(), Mockito.never()).listVertices(Mockito.anyInt());
+    }
+
+    @Test
+    public void testServerTaskListFailurePreventsNativeHistoryRead() {
+        VermeerClient backend = Mockito.mock(VermeerClient.class);
+        Mockito.when(backend.configured()).thenReturn(true);
+        HugeClient client = graphClient();
+        Mockito.when(client.task().list((String) null)).thenThrow(new ExternalException("Source graph unavailable"));
+        AsyncTaskService tasks = new AsyncTaskService();
+        ReflectionTestUtils.setField(tasks, "vermeer", service(backend));
+        expect(ExternalException.class, () -> tasks.list(client, 1, 10, "", "", ""));
+        Mockito.verifyNoInteractions(backend);
     }
 
     @Test
@@ -432,7 +450,7 @@ public class DirectVermeerServiceTest {
             HugeClient client = graphClient();
             Assert.assertEquals(Map.of("enable", false, "retryable", true),
                                 service.getVermeer(client, "login-token", false));
-            for (int denied : List.of(401, 403)) {
+            for (int denied : List.of(401, 403, 404)) {
                 status.set(denied);
                 Assert.assertEquals(Map.of("enable", false, "retryable", false, "error", true),
                                     service.getVermeer(client, "login-token", false));
@@ -443,6 +461,12 @@ public class DirectVermeerServiceTest {
             body.set("{\"available\":true}");
             Assert.assertEquals(Map.of("enable", true, "retryable", false),
                                 service.getVermeer(client, "login-token", false));
+            try {
+                backend.request("GET", "graphs", null);
+                Assert.fail("Expected the unrelated route to be missing");
+            } catch (ExternalException error) {
+                Assert.assertFalse(error instanceof VermeerClient.ConfigurationException);
+            }
             Mockito.when(config.get(HubbleOptions.VERMEER_TOKEN_FILE)).thenReturn(token.toString());
             Assert.assertEquals(Map.of("enable", false, "retryable", false, "error", true),
                                 service.getVermeer(client, "login-token", false));

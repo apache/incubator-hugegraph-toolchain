@@ -88,6 +88,11 @@ public class VermeerClient {
                 if (response.statusCode() == 401 || response.statusCode() == 403) {
                     throw new ConfigurationException("Vermeer service authentication failed");
                 }
+                if (response.statusCode() == 404 && "GET".equals(method) &&
+                    "workers/availability".equals(path)) {
+                    throw new ConfigurationException(
+                            "Vermeer readiness endpoint is unavailable; check version and URL");
+                }
                 if (this.valuesNotFound(method, path, response)) {
                     throw new ValuesNotFoundException();
                 }

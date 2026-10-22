@@ -278,10 +278,8 @@ public class GraphSpaceController extends BaseController {
 
         if (this.vermeerService.directConfigured()) {
             try {
-                List<String> graphs = this.authClient(graphspace, null).graphs().listGraph();
-                for (String graph : graphs) {
-                    this.vermeerService.cleanupDirectGraph(this.authClient(graphspace, graph));
-                }
+                HugeClient source = this.authClient(graphspace, null);
+                this.vermeerService.cleanupDirectGraphs(source, source.graphs().listGraph());
             } finally {
                 // authClient reuses the request's client; restore its global scope.
                 this.authClient(null, null);

@@ -117,6 +117,8 @@ An empty `vermeer.url` retains the existing Dashboard/Server-proxy path and its
 token-output capability restriction.
 The native adapter requires `pd.enabled=true` because its loader reads PD/Store
 partitions. Standalone Server deployments keep native load/compute disabled.
+A missing readiness endpoint (HTTP 404) reports a Vermeer version or URL
+configuration error. Correct the endpoint and retry manually.
 
 The direct adapter uses the routes implemented by Vermeer:
 
@@ -145,11 +147,13 @@ not verify every Worker acknowledgement or removal of saved files; those remain
 native deletion limitations. Graphs without a copy retain Server's original
 deletion permissions.
 
-GraphSpace deletion checks its Server member graphs and performs the same cleanup
-before changing administrator bindings or deleting the source space. Accepted
+GraphSpace deletion checks the queue once for all exact Server member graph names
+before unloading any copy, changing administrator bindings or deleting the source space. Accepted
 native load/reload tasks must finish or be cancelled before source deletion;
 failure to verify the task queue also prevents deletion. These checks do not
 provide an atomic transaction against concurrent new submissions.
+An HTTP failure during a later unload can still leave earlier copies unloaded;
+the source space and its administrator bindings are retained in that case.
 
 The Hubble direct adapter supports the nine algorithms shown by its Vermeer
 forms. Results are queried through the task API and are not written back to

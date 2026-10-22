@@ -20,6 +20,7 @@ package org.apache.hugegraph.unit;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.hugegraph.config.HugeConfig;
 import org.apache.hugegraph.controller.space.GraphSpaceController;
@@ -76,6 +77,14 @@ public class GraphSpaceVermeerDeletionTest {
         this.administrator = Mockito.mock(HugeClient.class, Mockito.RETURNS_DEEP_STUBS);
         this.space = Mockito.mock(HugeClient.class, Mockito.RETURNS_DEEP_STUBS);
         Mockito.when(this.space.graphs().listGraph()).thenReturn(List.of("first", "second", "plain"));
+        AtomicReference<String> selectedGraph = new AtomicReference<>();
+        Mockito.when(this.space.getGraphSpaceName()).thenReturn("shop");
+        Mockito.when(this.space.getGraphName()).thenAnswer(call -> selectedGraph.get());
+        Mockito.when(this.space.assignGraph(Mockito.eq("shop"), Mockito.any())).thenAnswer(call -> {
+            selectedGraph.set(call.getArgument(1));
+            return this.space;
+        });
+        Mockito.when(this.space.auth().isSuperAdmin()).thenReturn(true);
         this.spaces = Mockito.mock(GraphSpaceService.class);
         this.users = Mockito.mock(UserService.class);
         Mockito.when(this.users.listGraphSpaceAdmin(this.administrator, "shop")).thenReturn(List.of("owner"));
@@ -131,6 +140,8 @@ public class GraphSpaceVermeerDeletionTest {
         Mockito.verify(this.backend, Mockito.never()).request("DELETE", "graphs/shop-plain", null);
         Mockito.verify(this.backend, Mockito.never()).request("DELETE", "graphs/shop-orphan", null);
         Mockito.verify(this.backend, Mockito.never()).request("DELETE", "graphs/OTHER-first", null);
+        Mockito.verify(this.backend).request("GET", "tasks?type=todo&limit=10000", null);
+        Assert.assertNull(this.space.getGraphName());
         Assert.assertEquals(1, this.restored);
     }
 
@@ -154,6 +165,31 @@ public class GraphSpaceVermeerDeletionTest {
         expect(ExternalException.class, () -> this.controller.delete("shop"));
         Mockito.verifyNoInteractions(this.users, this.spaces);
         Assert.assertEquals(1, this.restored);
+    }
+
+    @Test
+    public void testPendingSecondMemberPreventsEveryUnload() {
+        Mockito.when(this.backend.request("GET", "tasks?type=todo&limit=10000", null)).thenReturn(
+                Map.of("tasks", List.of(Map.of("graph_name", "shop-second",
+                                               "task_type", "reload", "status", "loading"))));
+        expect(ExternalException.class, () -> this.controller.delete("shop"));
+        Mockito.verify(this.backend, Mockito.never()).request(
+                Mockito.eq("DELETE"), Mockito.anyString(), Mockito.isNull());
+        Mockito.verify(this.backend).request("GET", "tasks?type=todo&limit=10000", null);
+        Mockito.verifyNoInteractions(this.users, this.spaces);
+        Assert.assertNull(this.space.getGraphName());
+    }
+
+    @Test
+    public void testSimilarSpacePrefixIsNotAMember() {
+        Mockito.when(this.backend.request("GET", "tasks?type=todo&limit=10000", null)).thenReturn(
+                Map.of("tasks", List.of(Map.of("graph_name", "shop-eu-first",
+                                               "task_type", "load", "status", "waiting"))));
+        this.controller.delete("shop");
+        Mockito.verify(this.backend).request("DELETE", "graphs/shop-first", null);
+        Mockito.verify(this.backend).request("DELETE", "graphs/shop-second", null);
+        Mockito.verify(this.backend).request("GET", "tasks?type=todo&limit=10000", null);
+        Mockito.verify(this.spaces).delete(this.administrator, "shop");
     }
 
     @Test
