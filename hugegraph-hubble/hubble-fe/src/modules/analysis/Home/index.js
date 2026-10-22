@@ -29,6 +29,7 @@ import useText2Gql from './useText2Gql';
 import {hasLargeExplicitReadLimit} from './queryLimits';
 import {DEFAULT_QUERY_LANGUAGE, QUERY_LANGUAGES} from '../../../utils/text2gql';
 import QueryResult from '../QueryResult/Home';
+import {GRAPH_NODE_LIMIT} from '../QueryResult/Home/utils';
 import LogsDetail from '../LogsDetail/Home';
 import ResultsLayout from '../ResultsLayout';
 import {GREMLIN_EXECUTES_MODE, ANALYSIS_TYPE, GRAPH_STATUS, PANEL_TYPE,
@@ -441,7 +442,7 @@ const AnalysisHome = ({toolbarExtra}) => {
             const content = generated?.content ?? codeEditorContent;
             const language = generated?.language ?? (tabKey === CYPHER ? 'cypher' : 'gremlin');
             if (hasLargeExplicitReadLimit(content, language)) {
-                const message = t('analysis.query_result.large_query_use_async', {limit: 1000});
+                const message = t('analysis.query_result.large_query_use_async', {limit: GRAPH_NODE_LIMIT});
                 queryRequest.current = null;
                 stopExecutionTimer();
                 setExecutionDurationMs(null);

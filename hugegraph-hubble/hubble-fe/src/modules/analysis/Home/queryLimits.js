@@ -15,7 +15,9 @@
  * under the License.
  */
 
-// A convenience preflight for common reads, not a Gremlin parser or server safety boundary.
+import {GRAPH_NODE_LIMIT} from '../QueryResult/Home/utils';
+
+// Mask quoted text and comments before the small, literal-only convenience check.
 const maskLiterals = text => {
     let output = '';
     let quote = '';
@@ -60,105 +62,25 @@ const maskLiterals = text => {
     return quote || comment === 'block' ? '' : output.trim().replace(/;\s*$/, '');
 };
 
-// Decode integer literals without evaluating user code. Groovy accepts radix prefixes,
-// repeated interior underscores and I/L/G type suffixes; floating point is not a row bound.
-const integerBound = argument => {
-    const match = argument.trim().match(/^([+-]?)\s*(0[xX][\da-fA-F](?:[\da-fA-F_]*[\da-fA-F])?|0[bB][01](?:[01_]*[01])?|0(?:[0-7_]*[0-7])?|[1-9](?:[\d_]*\d)?)([iIlLgG]?)$/);
-    if (!match) {
-        return null;
-    }
-    let digits = match[2].replace(/_/g, '');
-    if (/^0\d/.test(digits)) {
-        digits = `0o${digits.slice(1)}`;
-    }
-    const value = BigInt(digits) * (match[1] === '-' ? -1n : 1n);
-    const suffix = match[3].toLowerCase();
-    if ((suffix === 'i' && (value < -2147483648n || value > 2147483647n))
-        || value < 0n || value > 9223372036854775807n) {
-        return null;
-    }
-    return value;
-};
-
-const hasLargeExplicitReadLimit = (text, language = 'gremlin', maximum = 1000) => {
+// This only recognizes a common terminal decimal limit, without inferring result
+// cardinality or evaluating expressions. Unmatched manual scripts go unchanged to
+// the backend/render preview budgets; this does not guarantee bounded fetching.
+const hasLargeExplicitReadLimit = (text, language = 'gremlin', maximum = GRAPH_NODE_LIMIT) => {
     const code = maskLiterals(String(text ?? ''));
     if (code.includes(';')) {
         return false;
     }
+    let match;
     if (language.toLowerCase() === 'cypher') {
-        if (/\b(?:CREATE|MERGE|SET|DELETE|REMOVE|CALL)\b/i.test(code)) {
-            return false;
-        }
-        // A property named `limit` is not a result-limit clause, including
-        // whitespace or masked comments between the dot and property name.
-        const limitCode = code.replace(/\.\s*(?:LIMIT|RETURN)\b/gi, '.');
-        // WITH limits constrain intermediate rows. Only the final RETURN can
-        // set the browser result limit; the backend supplies its default.
-        let depth = 0;
-        let resultStart = -1;
-        let limitStart = -1;
-        for (let i = 0; i < limitCode.length; i++) {
-            const ch = limitCode[i];
-            if ('([{'.includes(ch)) {
-                depth++;
-            }
-            else if (')]}'.includes(ch)) {
-                depth--;
-            }
-            else if (depth === 0 && !/[\w$]/.test(limitCode[i - 1] || '')
-                && /^RETURN\b/i.test(limitCode.slice(i))) {
-                resultStart = i;
-                limitStart = -1;
-            }
-            else if (depth === 0 && resultStart >= 0 && !/[\w$]/.test(limitCode[i - 1] || '')
-                && /^LIMIT\b/i.test(limitCode.slice(i))) {
-                limitStart = i;
-            }
-        }
-        const resultCode = limitStart < 0 ? '' : limitCode.slice(limitStart);
-        const match = resultCode.match(/\bLIMIT\s+(\d+)\s*$/i);
-        // Keep expressions and parameters in async mode rather than evaluating
-        // user code to guess their result bound.
-        return match ? Number(match[1]) > maximum : /\bLIMIT\s+\S/i.test(resultCode);
+        // Dotted identifiers are properties, and a WITH input limit before RETURN
+        // is not the final result-limit spelling recognized here.
+        const clauses = code.replace(/\.\s*(?:RETURN|LIMIT)\b/gi, '.');
+        match = clauses.match(/(?:^|[^\w$])RETURN\b[\s\S]*\bLIMIT\s+(0|[1-9]\d*)\s*$/i);
     }
-    if (!/^\s*g\s*\.\s*[VE]\s*\(/.test(code)
-        || /\.\s*(?:addV|addE|property|drop|iterate)\s*\(/.test(code)) {
-        return false;
+    else if (/^g\s*\.\s*[VE]\s*\(/.test(code)) {
+        match = code.match(/\.\s*limit\s*\(\s*(0|[1-9]\d*)\s*\)\s*$/);
     }
-    // Only a final scalar consumer proves that a large upstream limit is not
-    // a large browser result. Pass-through steps do not establish that bound.
-    if (/\.\s*(?:hasNext|next)\s*\(\s*\)\s*$/.test(code)
-        || /\.\s*(?:count|sum|min|max|mean)\s*\(\s*(?:(?:Scope\s*\.\s*)?global)?\s*\)\s*$/.test(code)) {
-        return false;
-    }
-    const range = code.match(/\.\s*range\s*\((?:\s*(?:Scope\s*\.\s*)?global\s*,)?([^(),]+),([^(),]+)\)\s*(?:\.\s*(?:toList|toSet)\s*\(\s*\))?\s*$/);
-    if (range) {
-        const low = integerBound(range[1]);
-        const high = integerBound(range[2]);
-        if (low !== null && high !== null && high >= low && high - low <= BigInt(maximum)) {
-            return false;
-        }
-    }
-    let depth = 0;
-    const limits = [];
-    for (let i = 0; i < code.length; i++) {
-        if (depth === 0 && code[i] === '.') {
-            const match = code.slice(i).match(/^\.\s*limit\s*\((?:\s*(?:Scope\s*\.\s*)?global\s*,)?([^()]*)\)/);
-            if (match) {
-                const bound = integerBound(match[1]);
-                if (bound !== null) {
-                    limits.push(bound);
-                }
-            }
-        }
-        if (code[i] === '(') {
-            depth++;
-        }
-        else if (code[i] === ')') {
-            depth--;
-        }
-    }
-    return limits.length > 0 && limits[limits.length - 1] > BigInt(maximum);
+    return Boolean(match && Number(match[1]) > maximum);
 };
 
 export {hasLargeExplicitReadLimit};

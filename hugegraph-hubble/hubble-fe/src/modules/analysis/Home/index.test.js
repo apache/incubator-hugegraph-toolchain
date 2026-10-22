@@ -1801,7 +1801,8 @@ it('hides confirmed old Schema inputs as soon as the selected graph changes', as
     expect(api.manage.getMetaVertexList).toHaveBeenCalledTimes(vertexCalls);
 });
 
-it.each(['10000', '10000L', '100_000'])('blocks a large synchronous read (%s) before POST and permits explicit async submission', async limit => {
+it('blocks an obvious large decimal limit before POST and permits explicit async submission', async () => {
+    const limit = '10000';
     render(<GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
         <AnalysisHome />
     </GraphAnalysisContext.Provider>);
@@ -1820,9 +1821,28 @@ it.each(['10000', '10000L', '100_000'])('blocks a large synchronous read (%s) be
 });
 
 it.each([
+    'g.V().limit(10000L)',
+    'g.V().limit(100_000)',
+    'g.V().limit(rows)',
+])('dispatches an unmatched manual Gremlin statement unchanged: %s', async content => {
+    api.analysis.getExecutionQuery.mockResolvedValue({status: 200, data: {}});
+    render(<GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
+        <AnalysisHome />
+    </GraphAnalysisContext.Provider>);
+    await act(async () => Promise.resolve());
+    fireEvent.change(screen.getByRole('textbox', {name: 'Query fixture'}), {target: {value: content}});
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
+    expect(api.analysis.getExecutionQuery).toHaveBeenCalledWith('DEFAULT', 'hugegraph', content);
+    expect(api.analysis.getExecutionTask).not.toHaveBeenCalled();
+    expect(screen.getByTestId('query-content')).toHaveTextContent(content);
+});
+
+it.each([
     ['MATCH (n) WITH n LIMIT 10 RETURN n', false],
     ['MATCH (n) WITH n ORDER BY n.age LIMIT 5 RETURN n.name', false],
     ['MATCH (n) WITH n LIMIT 10 RETURN n LIMIT 10000', true],
+    ['MATCH (n) RETURN n.limit + 1', false],
+    ['MATCH (n) RETURN n LIMIT $rows', false],
 ])('dispatches Cypher with intermediate limits and gates only excessive result limits: %s', async (cypher, blocked) => {
     api.analysis.getCypherExecutionQuery.mockResolvedValue({status: 200, data: {}});
     render(<GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
@@ -1839,4 +1859,5 @@ it.each([
         expect(api.analysis.getCypherExecutionQuery).toHaveBeenCalledWith('DEFAULT', 'hugegraph', {cypher});
     }
     expect(api.analysis.getCypherTask).not.toHaveBeenCalled();
+    expect(screen.getByTestId('query-content')).toHaveTextContent(cypher);
 });
