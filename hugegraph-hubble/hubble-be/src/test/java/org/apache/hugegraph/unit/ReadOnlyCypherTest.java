@@ -25,6 +25,103 @@ import org.junit.Test;
 public class ReadOnlyCypherTest {
 
     @Test
+    public void addsPreviewDefaultOnlyAfterTheFinalReturn() {
+        this.assertPreview("MATCH (n) RETURN n", "MATCH (n) RETURN n LIMIT 300", true);
+        this.assertPreview("MATCH (n) WITH n LIMIT 7 RETURN n",
+                           "MATCH (n) WITH n LIMIT 7 RETURN n LIMIT 300", true);
+        this.assertPreview("MATCH (n) RETURN n;  ", "MATCH (n) RETURN n LIMIT 300;  ", true);
+        this.assertPreview("UNWIND [1, 2, 3] AS n RETURN n",
+                           "UNWIND [1, 2, 3] AS n RETURN n LIMIT 300", true);
+        this.assertPreview("MATCH (n) RETURN n.count, n.collect, n.limit",
+                           "MATCH (n) RETURN n.count, n.collect, n.limit LIMIT 300", true);
+    }
+
+    @Test
+    public void capsOnlyTheFinalLiteralReturnLimit() {
+        this.assertPreview("MATCH (n) WITH n LIMIT 20000 RETURN n LIMIT 10000",
+                           "MATCH (n) WITH n LIMIT 20000 RETURN n LIMIT 1001", false);
+        this.assertPreview("MATCH (n) WITH n LIMIT 20000 RETURN n LIMIT 7",
+                           "MATCH (n) WITH n LIMIT 20000 RETURN n LIMIT 7", false);
+        this.assertPreview("MATCH (n)\nRETURN n LIMIT 10000;  ",
+                           "MATCH (n)\nRETURN n LIMIT 1001;  ", false);
+        this.assertPreview("RETURN 'LIMIT 10000' AS text LIMIT 10000",
+                           "RETURN 'LIMIT 10000' AS text LIMIT 1001", false);
+    }
+
+    @Test
+    public void limitsAggregateOutputWithoutChangingItsInput() {
+        this.assertPreview("MATCH (n) RETURN count(n) AS total",
+                           "MATCH (n) RETURN count(n) AS total LIMIT 300", true);
+        this.assertPreview("MATCH (n) RETURN n.city, count(*) AS total ORDER BY total DESC",
+                           "MATCH (n) RETURN n.city, count(*) AS total ORDER BY total DESC LIMIT 300", true);
+        this.assertPreview("MATCH (n) RETURN n.city, count(*) LIMIT 10000",
+                           "MATCH (n) RETURN n.city, count(*) LIMIT 1001", false);
+        this.assertPreview("MATCH (n) WITH count(n) AS total RETURN total",
+                           "MATCH (n) WITH count(n) AS total RETURN total LIMIT 300", true);
+    }
+
+    @Test
+    public void requiresBoundedInputBeforeCollectingPreviewResults() {
+        String[] queries = {
+            "MATCH (n) RETURN collect(n)",
+            "MATCH (n) RETURN collect(n) LIMIT 1",
+            "MATCH (n) WITH collect(n) AS nodes RETURN nodes",
+            "MATCH (n) WITH n LIMIT 1001 RETURN collect(n)",
+            "MATCH (n) WITH n LIMIT 1000 MATCH (n)-->(m) RETURN collect(m)",
+            "MATCH (n) WITH n LIMIT 1000 OPTIONAL MATCH (n)-->(m) RETURN collect(m)",
+            "MATCH (n) WITH n LIMIT 1000 UNWIND n.items AS item RETURN collect(item)"
+        };
+        for (String query : queries) {
+            ReadOnlyCypher.validate(query);
+            ExternalException error = (ExternalException) Assert.assertThrows(
+                                      ExternalException.class, () -> ReadOnlyCypher.preview(query, 300, 1001));
+            Assert.assertEquals("gremlin.preview.collection_requires_async", error.getMessage());
+            Assert.assertEquals(1000, error.args()[0]);
+        }
+    }
+
+    @Test
+    public void acceptsCollectAfterAnUpstreamWithLimitAndPreservesNonExpandingBounds() {
+        this.assertPreview("MATCH (n) WITH n LIMIT 1000 RETURN collect(n)",
+                           "MATCH (n) WITH n LIMIT 1000 RETURN collect(n) LIMIT 300", true);
+        this.assertPreview("MATCH (n) WITH n LIMIT 1000 WITH collect(n) AS nodes RETURN nodes",
+                           "MATCH (n) WITH n LIMIT 1000 WITH collect(n) AS nodes RETURN nodes LIMIT 300", true);
+        this.assertPreview("MATCH (n) WITH n LIMIT 1000 WITH n.name AS name RETURN collect(name) LIMIT 1",
+                           "MATCH (n) WITH n LIMIT 1000 WITH n.name AS name RETURN collect(name) LIMIT 1", false);
+        this.assertPreview("MATCH (n) WITH n LIMIT 1000 WITH n LIMIT 2000 RETURN collect(n)",
+                           "MATCH (n) WITH n LIMIT 1000 WITH n LIMIT 2000 RETURN collect(n) LIMIT 300", true);
+    }
+
+    @Test
+    public void preservesUnsupportedManualQueriesAndLimitExpressions() {
+        String[] queries = {
+            "MATCH (n) RETURN n LIMIT $limit",
+            "MATCH (n) RETURN n LIMIT 10 * 2000",
+            "MATCH (n) RETURN n LIMIT coalesce(10000, 1)",
+            "CALL db.labels() YIELD label RETURN label",
+            "MATCH (n) RETURN n UNION MATCH (m) RETURN m",
+            "CREATE (n) RETURN n",
+            "MATCH (n) SET n.name = 'Alice' RETURN n",
+            "MATCH (n) WITH collect(n) AS nodes CREATE (m) RETURN nodes",
+            "MATCH (n) RETURN collect(customReadFunction(n))"
+        };
+        for (String query : queries) {
+            this.assertPreview(query, query, false);
+        }
+    }
+
+    @Test
+    public void acceptsUnwindReadsButStillRejectsWrites() {
+        ReadOnlyCypher.validate("UNWIND [1, 2] AS item RETURN item");
+        ReadOnlyCypher.validate("MATCH (n) UNWIND n.items AS item RETURN item");
+        ReadOnlyCypher.validate("UNWIND range(1, 10) AS n WITH n LIMIT 5 RETURN n");
+        this.assertRejected(new String[]{
+            "UNWIND [1, 2] AS item CREATE (n) RETURN n",
+            "MATCH (n) UNWIND n.items AS item SET n.name = item RETURN n"
+        });
+    }
+
+    @Test
     public void acceptsReadClausesPatternsAndAggregations() {
         String[] queries = {
             "MATCH (n) RETURN n LIMIT 10",
@@ -177,5 +274,11 @@ public class ReadOnlyCypherTest {
             Assert.assertEquals("text2gql.cypher.read-only", error.getMessage());
             Assert.assertNull(error.getCause());
         }
+    }
+
+    private void assertPreview(String query, String expected, boolean defaultApplied) {
+        ReadOnlyCypher.PreviewQuery preview = ReadOnlyCypher.preview(query, 300, 1001);
+        Assert.assertEquals(expected, preview.query());
+        Assert.assertEquals(defaultApplied, preview.defaultLimitApplied());
     }
 }

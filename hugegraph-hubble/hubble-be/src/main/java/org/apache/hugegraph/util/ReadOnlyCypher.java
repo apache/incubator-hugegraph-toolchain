@@ -66,7 +66,45 @@ public final class ReadOnlyCypher {
         if (query == null || query.length() > MAX_LENGTH || query.isBlank()) {
             throw invalid();
         }
-        new Parser(tokenize(query)).query();
+        new Parser(tokenize(query), 0).query();
+    }
+
+    /**
+     * Bound recognized read-query output without making this restricted grammar
+     * an execution gate for manually entered Cypher.
+     */
+    public static PreviewQuery preview(String query, int defaultLimit, int maximum) {
+        PreviewQuery unchanged = new PreviewQuery(query, false);
+        if (query == null || query.isBlank() || query.length() > MAX_LENGTH ||
+            defaultLimit <= 0 || maximum <= 0) {
+            return unchanged;
+        }
+        Parser parser;
+        try {
+            parser = new Parser(tokenize(query), maximum - 1);
+            parser.query();
+        } catch (ExternalException ignored) {
+            // Unknown manual-query syntax still belongs to the Server parser.
+            return unchanged;
+        }
+        if (parser.unboundedCollect) {
+            throw new ExternalException("gremlin.preview.collection_requires_async", maximum - 1);
+        }
+        if (parser.finalLimitStart < 0) {
+            int insertion = parser.insertionPosition;
+            return new PreviewQuery(query.substring(0, insertion) + " LIMIT " + Math.min(defaultLimit, maximum) +
+                                    query.substring(insertion), true);
+        }
+        Long limit = parser.literalLimit(parser.finalLimitStart, parser.finalLimitEnd);
+        if (limit != null && limit > maximum) {
+            Token literal = parser.tokens.get(parser.finalLimitStart);
+            return new PreviewQuery(query.substring(0, literal.offset) + maximum +
+                                    query.substring(literal.offset + literal.text.length()), false);
+        }
+        return unchanged;
+    }
+
+    public record PreviewQuery(String query, boolean defaultLimitApplied) {
     }
 
     private static ExternalException invalid() {
@@ -116,12 +154,12 @@ public final class ReadOnlyCypher {
                 position++;
                 kind = Kind.SYMBOL;
             }
-            tokens.add(new Token(kind, query.substring(start, position)));
+            tokens.add(new Token(kind, query.substring(start, position), start));
             if (tokens.size() > MAX_TOKENS) {
                 throw invalid();
             }
         }
-        tokens.add(new Token(Kind.END, ""));
+        tokens.add(new Token(Kind.END, "", query.length()));
         return tokens;
     }
 
@@ -201,42 +239,59 @@ public final class ReadOnlyCypher {
 
         private final Kind kind;
         private final String text;
+        private final int offset;
 
-        private Token(Kind kind, String text) {
+        private Token(Kind kind, String text, int offset) {
             this.kind = kind;
             this.text = text;
+            this.offset = offset;
         }
     }
 
     private static final class Parser {
 
         private final List<Token> tokens;
+        private final int collectionInputLimit;
         private int position;
+        private int finalLimitStart = -1;
+        private int finalLimitEnd = -1;
+        private int insertionPosition;
+        private boolean currentInputBounded;
+        private boolean unboundedCollect;
 
-        private Parser(List<Token> tokens) {
+        private Parser(List<Token> tokens, int collectionInputLimit) {
             this.tokens = tokens;
+            this.collectionInputLimit = collectionInputLimit;
         }
 
         private void query() {
             while (!this.at("RETURN")) {
                 if (this.consume("MATCH")) {
+                    this.currentInputBounded = false;
                     this.patterns();
                     this.where();
                 } else if (this.consume("OPTIONAL")) {
                     this.expect("MATCH");
+                    this.currentInputBounded = false;
                     this.patterns();
                     this.where();
                 } else if (this.consume("WITH")) {
                     this.projections();
-                    this.modifiers();
+                    this.modifiers(false);
                     this.where();
+                } else if (this.consume("UNWIND")) {
+                    this.currentInputBounded = false;
+                    this.expression(0, 0);
+                    this.expect("AS");
+                    this.identifier();
                 } else {
                     throw invalid();
                 }
             }
             this.expect("RETURN");
             this.projections();
-            this.modifiers();
+            this.modifiers(true);
+            this.insertionPosition = this.current().offset;
             this.consume(";");
             if (this.current().kind != Kind.END) {
                 throw invalid();
@@ -261,7 +316,7 @@ public final class ReadOnlyCypher {
             } while (this.consume(","));
         }
 
-        private void modifiers() {
+        private void modifiers(boolean finalReturn) {
             if (this.consume("ORDER")) {
                 this.expect("BY");
                 do {
@@ -275,8 +330,29 @@ public final class ReadOnlyCypher {
                 this.expression(0, 0);
             }
             if (this.consume("LIMIT")) {
+                int start = this.position;
                 this.expression(0, 0);
+                if (finalReturn) {
+                    this.finalLimitStart = start;
+                    this.finalLimitEnd = this.position;
+                } else {
+                    // This bounds later projections, not a collect already
+                    // evaluated by this WITH. A larger limit cannot expand input.
+                    Long limit = this.literalLimit(start, this.position);
+                    this.currentInputBounded |= limit != null && limit <= this.collectionInputLimit;
+                }
             }
+        }
+
+        private Long literalLimit(int start, int end) {
+            if (start >= 0 && end == start + 1 && this.tokens.get(start).kind == Kind.NUMBER) {
+                try {
+                    return Long.parseLong(this.tokens.get(start).text);
+                } catch (NumberFormatException ignored) {
+                    // Expressions and non-integer literals retain Server semantics.
+                }
+            }
+            return null;
         }
 
         private void patterns() {
@@ -496,6 +572,9 @@ public final class ReadOnlyCypher {
             String name = this.current().text.toLowerCase(Locale.ROOT);
             if (!FUNCTIONS.contains(name)) {
                 throw invalid();
+            }
+            if ("collect".equals(name) && !this.currentInputBounded) {
+                this.unboundedCollect = true;
             }
             this.position++;
             this.expect("(");

@@ -19,6 +19,7 @@
 package org.apache.hugegraph.unit;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.script.Bindings;
@@ -31,11 +32,62 @@ import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph;
 import org.junit.Test;
 
 import org.apache.hugegraph.testutil.Assert;
+import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.util.GremlinUtil;
 
 public class GremlinUtilTest {
 
     private static final int LIMIT = 250;
+
+    @Test
+    public void testKeyedGroupsPassThroughAndReceiveResultLimits() throws Exception {
+        try (TinkerGraph graph = TinkerGraph.open()) {
+            for (int i = 0; i < 1500; i++) {
+                graph.addVertex("kind", i);
+            }
+            Bindings bindings = new SimpleBindings();
+            bindings.put("g", graph.traversal());
+            GremlinLangScriptEngine engine = new GremlinLangScriptEngine();
+            for (String step : new String[]{"group('groups')", "groupCount('counts')"}) {
+                String query = "g.V()." + step + ".by('kind')";
+                Assert.assertEquals(1500, execute(engine, bindings, query).size());
+                String defaulted = GremlinUtil.optimizeLimit(query, 300);
+                Assert.assertEquals(query + ".limit(300)", defaulted);
+                Assert.assertEquals(300, execute(engine, bindings, defaulted).size());
+                String preview = GremlinUtil.optimizePreviewLimit(query, 1001);
+                Assert.assertEquals(query + ".limit(1001)", preview);
+                Assert.assertEquals(1001, execute(engine, bindings, preview).size());
+                String bounded = "g.V().limit(10)." + step + ".by('kind')";
+                Assert.assertEquals(bounded, GremlinUtil.optimizeLimit(bounded, 300));
+            }
+        }
+    }
+
+    @Test
+    public void testTrailingDotContinuesTheTraversalAcrossNewlines() throws Exception {
+        try (TinkerGraph graph = TinkerGraph.open()) {
+            for (int i = 0; i < 1500; i++) {
+                graph.addVertex();
+            }
+            Bindings bindings = new SimpleBindings();
+            bindings.put("g", graph.traversal());
+            GremlinLangScriptEngine engine = new GremlinLangScriptEngine();
+            for (String query : new String[]{"g.V().\n  identity()", "g.V(). // continue\n identity()"}) {
+                String defaulted = GremlinUtil.optimizeLimit(query, 300);
+                Assert.assertEquals(query + ".limit(300)", defaulted);
+                Assert.assertEquals(300, execute(engine, bindings, defaulted).size());
+                String preview = GremlinUtil.optimizePreviewLimit(query, 1001);
+                Assert.assertEquals(query + ".limit(1001)", preview);
+                Assert.assertEquals(1001, execute(engine, bindings, preview).size());
+            }
+        }
+        String blockComment = "g.V(). /* comment */\n identity()";
+        Assert.assertEquals(blockComment + ".limit(300)", GremlinUtil.optimizeLimit(blockComment, 300));
+        Assert.assertEquals("g.V().has('text', 'a.').limit(300)\ng.V().limit(300)",
+                            GremlinUtil.optimizeLimit("g.V().has('text', 'a.')\ng.V()", 300));
+        Assert.assertEquals("g.V().limit(300) // .\ng.V().limit(300)",
+                            GremlinUtil.optimizeLimit("g.V() // .\ng.V()", 300));
+    }
 
     @Test
     public void testRewrittenQueriesOnAnActualTraversalEngine() throws Exception {
@@ -169,6 +221,73 @@ public class GremlinUtilTest {
     }
 
     @Test
+    public void testLargeCollectionPreviewsRequireAsyncWithoutChangingOrdinaryQueries() {
+        for (String query : new String[]{"g.V().fold()", "g.V().group().by(label)",
+                                         "g.V().groupCount().by(label)", "g.V().limit(10000).fold()",
+                                         "g.V().range(0, 1001).groupCount().by(label)",
+                                         "g.V().limit(1000).out().fold()", "g.V().fold().limit(1)",
+                                         "g.V().fold().fold()", "g.V().fold().toList()",
+                                         "g.V().groupCount().by(label).next()"}) {
+            Assert.assertEquals(query, GremlinUtil.optimizeLimit(query, 300));
+            ExternalException error = (ExternalException) Assert.assertThrows(
+                    ExternalException.class, () -> GremlinUtil.optimizePreviewLimit(query, 1001));
+            Assert.assertEquals("gremlin.preview.collection_requires_async", error.getMessage());
+            Assert.assertEquals("1000", error.args()[0].toString());
+        }
+    }
+
+    @Test
+    public void testSmallCollectionInputsAndScalarTerminalsKeepTheirSemantics() {
+        for (String query : new String[]{"g.V().limit(1000).fold()",
+                                         "g.V().range(1000, 2000).fold()",
+                                         "g.V().sample(1000).group().by(label)",
+                                         "g.V().tail(1000).groupCount().by(label)",
+                                         "g.V().fold().count(local)", "g.V().groupCount().by(label).sum(local)",
+                                         "g.V().fold().count()", "g.V().fold().hasNext()",
+                                         "g.V().count().fold()", "g.V().count()", "g.V().values('age').sum()"}) {
+            Assert.assertEquals(query, GremlinUtil.optimizeLimit(query, 300));
+            Assert.assertEquals(query, GremlinUtil.optimizePreviewLimit(query, 1001));
+        }
+    }
+
+    @Test
+    public void testCollectionPreviewDecisionsOnAnActualTraversalEngine() throws Exception {
+        try (TinkerGraph graph = TinkerGraph.open()) {
+            for (int i = 0; i < 1500; i++) {
+                graph.addVertex("kind", i);
+            }
+            Bindings bindings = new SimpleBindings();
+            bindings.put("g", graph.traversal());
+            GremlinLangScriptEngine engine = new GremlinLangScriptEngine();
+            for (String reducer : new String[]{"fold()", "group().by('kind')", "groupCount().by('kind')"}) {
+                String unbounded = "g.V()." + reducer;
+                List<?> ordinary = execute(engine, bindings, GremlinUtil.optimizeLimit(unbounded, 300));
+                Assert.assertEquals(1, ordinary.size());
+                Object collection = ordinary.get(0);
+                Assert.assertEquals(1500, collection instanceof List ? ((List<?>) collection).size() :
+                                         ((Map<?, ?>) collection).size());
+                Assert.assertThrows(ExternalException.class,
+                                    () -> GremlinUtil.optimizePreviewLimit(unbounded, 1001));
+                String bounded = "g.V().limit(1000)." + reducer;
+                Assert.assertEquals(bounded, GremlinUtil.optimizePreviewLimit(bounded, 1001));
+                List<?> expected = execute(engine, bindings, bounded);
+                Assert.assertEquals(expected, execute(engine, bindings,
+                                    GremlinUtil.optimizePreviewLimit(bounded, 1001)));
+                Object boundedCollection = expected.get(0);
+                Assert.assertEquals(1000, boundedCollection instanceof List ? ((List<?>) boundedCollection).size() :
+                                         ((Map<?, ?>) boundedCollection).size());
+            }
+            String flattened = "g.V().fold().unfold().limit(10)";
+            Assert.assertEquals(10, execute(engine, bindings,
+                                GremlinUtil.optimizePreviewLimit(flattened, 1001)).size());
+            Assert.assertEquals(List.of(1500L), execute(engine, bindings,
+                                GremlinUtil.optimizePreviewLimit("g.V().count()", 1001)));
+            Assert.assertEquals(List.of(1500L), execute(engine, bindings,
+                                GremlinUtil.optimizePreviewLimit("g.V().fold().count(local)", 1001)));
+        }
+    }
+
+    @Test
     public void testOneToOneMappersAndLocalLimitsPreserveAnEarlierGlobalBound() {
         for (String mapper : new String[]{"id()", "label()", "path()", "project('name').by('name')",
                                           "select('x')", "valueMap()", "elementMap()", "propertyMap()",
@@ -283,8 +402,7 @@ public class GremlinUtilTest {
             Assert.assertEquals(query + ".limit(300)", GremlinUtil.optimizeLimit(query, 300));
             Assert.assertEquals(query + ".limit(1001)", GremlinUtil.optimizePreviewLimit(query, 1001));
         }
-        for (String query : new String[]{"g.V().count()", "g.V().fold()",
-                                         "g.V().groupCount().by(label)", "g.V().values('age').sum()",
+        for (String query : new String[]{"g.V().count()", "g.V().values('age').sum()",
                                          "g.V().property('x', 1).fold().unfold().out()"}) {
             Assert.assertEquals(query, GremlinUtil.optimizeLimit(query, 300));
             Assert.assertEquals(query, GremlinUtil.optimizePreviewLimit(query, 1001));

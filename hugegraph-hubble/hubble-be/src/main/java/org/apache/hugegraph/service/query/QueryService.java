@@ -53,6 +53,7 @@ import org.apache.hugegraph.structure.gremlin.Result;
 import org.apache.hugegraph.structure.gremlin.ResultSet;
 import org.apache.hugegraph.util.Ex;
 import org.apache.hugegraph.util.GremlinUtil;
+import org.apache.hugegraph.util.ReadOnlyCypher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -149,8 +150,16 @@ public class QueryService {
     }
 
     public GremlinResult executeCypherQuery(HugeClient client, String query, boolean preview) {
-        ResultSet resultSet = this.executeCypher(query, client);
-        return this.buildQueryResult(resultSet, client, preview);
+        int defaultLimit = preview ? this.config.get(HubbleOptions.GREMLIN_SUFFIX_LIMIT) : 0;
+        ReadOnlyCypher.PreviewQuery limited = preview ?
+                ReadOnlyCypher.preview(query, defaultLimit, GRAPH_VERTEX_LIMIT + 1) : null;
+        ResultSet resultSet = this.executeCypher(limited == null ? query : limited.query(), client);
+        GremlinResult result = this.buildQueryResult(resultSet, client, preview);
+        if (limited != null) {
+            result.setDefaultLimitApplied(limited.defaultLimitApplied());
+            result.setDefaultLimit(defaultLimit);
+        }
+        return result;
     }
 
     private GremlinResult buildQueryResult(ResultSet resultSet, HugeClient client, boolean preview) {

@@ -183,9 +183,10 @@ public class QueryServiceTest {
         for (int i = 0; i < 1001; i++) {
             rows.add(Map.of("n", Map.of("_type", "node", "_label", "person", "_id", i, "payload", payload)));
         }
-        String content = "MATCH (n) RETURN n";
+        String content = "MATCH (n) RETURN n LIMIT 10000";
+        String limited = "MATCH (n) RETURN n LIMIT 1001";
         CypherManager cypher = Mockito.mock(CypherManager.class);
-        Mockito.when(cypher.cypher(content)).thenReturn(this.resultSet(rows.toArray()));
+        Mockito.when(cypher.cypher(limited)).thenReturn(this.resultSet(rows.toArray()));
         GremlinManager gremlin = this.mockGremlin();
         HugeClient client = this.mockClient(gremlin);
         Mockito.when(client.cypher()).thenReturn(cypher);
@@ -205,18 +206,77 @@ public class QueryServiceTest {
         Assert.assertEquals(1000, preview.getPropertyPreviewVertexIds().size());
         Assert.assertEquals(List.of(), preview.getPropertyPreviewEdgeIds());
         Assert.assertTrue(this.serializedQuery(preview).toString().length() < 2 * 1024 * 1024);
-        Mockito.verify(cypher).cypher(content);
+        Assert.assertFalse(preview.isDefaultLimitApplied());
+        Mockito.verify(cypher).cypher(limited);
         Mockito.verify(gremlin, Mockito.never()).gremlin(Mockito.anyString());
 
         String scalarQuery = "MATCH (n) RETURN n.payload AS payload";
         Map<String, Object> scalarRow = Map.of("payload", payload);
-        Mockito.when(cypher.cypher(scalarQuery)).thenReturn(this.resultSet(scalarRow));
+        Mockito.when(cypher.cypher(scalarQuery + " LIMIT 300")).thenReturn(this.resultSet(scalarRow));
         GremlinResult scalar = service.executeCypherQuery(client, scalarQuery, true);
         Map<?, ?> jsonRow = (Map<?, ?>) scalar.getJsonView().getData().get(0);
         Map<?, ?> tableRow = (Map<?, ?>) scalar.getTableView().getRows().get(0);
         Assert.assertEquals(expected, jsonRow.get("payload"));
         Assert.assertSame(jsonRow, tableRow.get("result"));
         Assert.assertEquals(1024 * 1024, ((String) scalarRow.get("payload")).length());
+        Assert.assertTrue(scalar.isDefaultLimitApplied());
+        Assert.assertEquals(300, scalar.getDefaultLimit());
+    }
+
+    @Test
+    public void testCypherPreviewAddsOnlyFinalOutputLimitsBeforeDispatch() throws Exception {
+        this.assertCypherPreview("MATCH (n) RETURN n", "MATCH (n) RETURN n LIMIT 300", true);
+        this.assertCypherPreview("MATCH (n) WITH n LIMIT 5 RETURN n;",
+                                 "MATCH (n) WITH n LIMIT 5 RETURN n LIMIT 300;", true);
+        this.assertCypherPreview("UNWIND range(1, 10000) AS value RETURN value;",
+                                 "UNWIND range(1, 10000) AS value RETURN value LIMIT 300;", true);
+        this.assertCypherPreview("MATCH (n) RETURN n LIMIT 10000;",
+                                 "MATCH (n) RETURN n LIMIT 1001;", false);
+        this.assertCypherPreview("MATCH (n) RETURN n.city, count(*) AS total",
+                                 "MATCH (n) RETURN n.city, count(*) AS total LIMIT 300", true);
+        this.assertCypherPreview("MATCH (n) RETURN count(n) AS total LIMIT 12000",
+                                 "MATCH (n) RETURN count(n) AS total LIMIT 1001", false);
+        this.assertCypherPreview("MATCH (n) SET n.name = 'Alice' RETURN n",
+                                 "MATCH (n) SET n.name = 'Alice' RETURN n", false);
+        this.assertCypherPreview("CALL db.labels() YIELD label RETURN label",
+                                 "CALL db.labels() YIELD label RETURN label", false);
+    }
+
+    @Test
+    public void testUnboundedCypherCollectionsRequireAsyncBeforeDispatch() throws Exception {
+        CypherManager cypher = Mockito.mock(CypherManager.class);
+        HugeClient client = this.mockClient(this.mockGremlin());
+        Mockito.when(client.cypher()).thenReturn(cypher);
+        QueryService service = this.serviceWithConfig();
+        for (String content : new String[]{"MATCH (n) RETURN collect(n)",
+                                           "MATCH (n) RETURN collect(n) LIMIT 1",
+                                           "MATCH (n) WITH collect(n) AS nodes RETURN nodes"}) {
+            ExternalException error = (ExternalException) Assert.assertThrows(ExternalException.class,
+                    () -> service.executeCypherQuery(client, content, true));
+            Assert.assertEquals("gremlin.preview.collection_requires_async", error.getMessage());
+        }
+        Mockito.verifyNoInteractions(cypher);
+        this.assertCypherPreview("MATCH (n) WITH n LIMIT 1000 RETURN collect(n)",
+                                 "MATCH (n) WITH n LIMIT 1000 RETURN collect(n) LIMIT 300", true);
+    }
+
+    @Test
+    public void testRawAndAsyncCypherCollectionsKeepTheirOriginalQuery() throws Exception {
+        String content = "MATCH (n) RETURN collect(n) AS nodes";
+        Map<String, Object> row = Map.of("nodes", List.of("Alice", "Bob"));
+        CypherManager cypher = Mockito.mock(CypherManager.class);
+        Mockito.when(cypher.cypher(content)).thenReturn(this.resultSet(row));
+        Mockito.when(cypher.executeAsTask(content)).thenReturn(7L);
+        HugeClient client = this.mockClient(this.mockGremlin());
+        Mockito.when(client.cypher()).thenReturn(cypher);
+        QueryService service = this.serviceWithConfig();
+
+        GremlinResult raw = service.executeCypherQuery(client, content);
+        Assert.assertEquals(row, raw.getJsonView().getData().get(0));
+        Assert.assertFalse(raw.isPropertiesTruncated());
+        Assert.assertEquals(Long.valueOf(7L), service.executeCypherAsyncTask(client, content));
+        Mockito.verify(cypher).cypher(content);
+        Mockito.verify(cypher).executeAsTask(content);
     }
 
     @Test
@@ -243,6 +303,7 @@ public class QueryServiceTest {
         Assert.assertFalse(raw.isPropertiesTruncated());
         Assert.assertNull(raw.getPropertyPreviewVertexIds());
         Assert.assertEquals(Long.valueOf(7L), service.executeCypherAsyncTask(client, content));
+        Mockito.verify(cypher).cypher(content);
         Mockito.verify(cypher).executeAsTask(content);
     }
 
@@ -272,7 +333,7 @@ public class QueryServiceTest {
 
     @Test
     public void testPreviewDoesNotRewriteAggregatesOrMutations() throws Exception {
-        for (String content : new String[]{"g.V().count()", "g.V().groupCount().by(label)",
+        for (String content : new String[]{"g.V().count()", "g.V().limit(1000).groupCount().by(label)",
                                            "g.V().property('x', 1).out()", "g.V().drop()"}) {
             GremlinManager gremlin = this.mockGremlin();
             GremlinQuery query = new GremlinQuery(content);
@@ -281,6 +342,29 @@ public class QueryServiceTest {
                                    this.mockClient(gremlin), query);
             Mockito.verify(gremlin).gremlin(content);
             Assert.assertFalse(result.isDefaultLimitApplied());
+        }
+    }
+
+    @Test
+    public void testLargeCollectionPreviewsFailBeforeExecutionAndAsyncKeepsTheOriginalQuery() throws Exception {
+        for (String content : new String[]{"g.V().fold()", "g.V().group().by(label)",
+                                           "g.V().groupCount().by(label)"}) {
+            GremlinManager gremlin = this.mockGremlin();
+            QueryService service = this.serviceWithConfig();
+            GremlinQuery query = new GremlinQuery(content);
+            query.setPreview(true);
+            ExternalException error = (ExternalException) Assert.assertThrows(ExternalException.class,
+                    () -> service.executeGremlinQuery(this.mockClient(gremlin), query));
+            Assert.assertEquals("gremlin.preview.collection_requires_async", error.getMessage());
+            Mockito.verify(gremlin, Mockito.never()).gremlin(Mockito.anyString());
+
+            query.setPreview(false);
+            service.executeGremlinQuery(this.mockClient(gremlin), query);
+            Mockito.verify(gremlin).gremlin(content);
+            query.setPreview(true);
+            Mockito.when(gremlin.executeAsTask(Mockito.any())).thenReturn(7L);
+            service.executeGremlinAsyncTask(this.mockClient(gremlin), query);
+            Mockito.verify(gremlin).executeAsTask(Mockito.argThat(request -> content.equals(request.gremlin)));
         }
     }
 
@@ -470,7 +554,7 @@ public class QueryServiceTest {
         map.put(prefix + "b", 2L);
         map.put("ordinary", 3L);
         GremlinManager gremlin = this.mockGremlin(this.resultSet(map));
-        GremlinQuery query = new GremlinQuery("g.V().groupCount().by('payload')");
+        GremlinQuery query = new GremlinQuery("g.V().limit(1000).groupCount().by('payload')");
         query.setPreview(true);
         GremlinResult result = this.serviceWithConfig().executeGremlinQuery(this.mockClient(gremlin), query);
         Assert.assertEquals(Map.of("ordinary", 3L), result.getJsonView().getData().get(0));
@@ -741,6 +825,17 @@ public class QueryServiceTest {
         Assert.assertEquals(502, cypherError.status());
         Assert.assertEquals("gremlin.server.authentication-failed",
                             cypherError.getMessage());
+    }
+
+    private void assertCypherPreview(String query, String dispatched, boolean defaultApplied) throws Exception {
+        CypherManager cypher = Mockito.mock(CypherManager.class);
+        Mockito.when(cypher.cypher(dispatched)).thenReturn(this.resultSet());
+        HugeClient client = this.mockClient(this.mockGremlin());
+        Mockito.when(client.cypher()).thenReturn(cypher);
+        GremlinResult result = this.serviceWithConfig().executeCypherQuery(client, query, true);
+        Mockito.verify(cypher).cypher(dispatched);
+        Assert.assertEquals(defaultApplied, result.isDefaultLimitApplied());
+        Assert.assertEquals(300, result.getDefaultLimit());
     }
 
     private JsonNode serializedQuery(GremlinResult result) throws Exception {

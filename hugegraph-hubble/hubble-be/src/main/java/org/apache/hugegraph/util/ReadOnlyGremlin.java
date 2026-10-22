@@ -99,9 +99,9 @@ public final class ReadOnlyGremlin {
             Map.entry("min", Output.REDUCE),
             Map.entry("max", Output.REDUCE),
             Map.entry("mean", Output.REDUCE),
-            Map.entry("fold", Output.REDUCE),
-            Map.entry("group", Output.REDUCE),
-            Map.entry("groupCount", Output.REDUCE),
+            Map.entry("fold", Output.COLLECT),
+            Map.entry("group", Output.COLLECT),
+            Map.entry("groupCount", Output.COLLECT),
             Map.entry("limit", Output.LIMIT),
             Map.entry("range", Output.LIMIT),
             Map.entry("tail", Output.LIMIT),
@@ -155,7 +155,7 @@ public final class ReadOnlyGremlin {
     }
 
     private enum Output {
-        PRESERVE, EXPAND, REDUCE, LIMIT, CONSUME
+        PRESERVE, EXPAND, REDUCE, COLLECT, LIMIT, CONSUME
     }
 
     static final class Traversal {
@@ -168,9 +168,12 @@ public final class ReadOnlyGremlin {
             this.endPosition = endPosition;
         }
 
-        int limitPosition(boolean preview) {
-            boolean bounded = false;
+        int limitPosition(boolean preview, int limit) {
+            BigInteger bound = null;
             boolean singleResult = false;
+            boolean largeCollection = false;
+            // Preview limits include the sentinel row used to report truncation.
+            BigInteger previewSize = BigInteger.valueOf((long) limit - 1);
             int position = this.endPosition;
             for (int i = 0; i < this.steps.size(); i++) {
                 Step step = this.steps.get(i);
@@ -183,25 +186,51 @@ public final class ReadOnlyGremlin {
                             return -1;
                         }
                         position = step.dotPosition;
+                        if ("hasNext".equals(step.name)) {
+                            largeCollection = false;
+                        }
                         break;
                     case EXPAND:
-                        bounded = false;
+                        bound = null;
                         singleResult = false;
+                        largeCollection = false;
                         break;
                     case REDUCE:
+                        largeCollection = false;
                         if (!step.localScope()) {
-                            bounded = true;
+                            bound = BigInteger.ONE;
+                            singleResult = true;
+                        }
+                        break;
+                    case COLLECT:
+                        // The keyed group overloads accumulate a side effect
+                        // while passing each input traverser through.
+                        if (("group".equals(step.name) || "groupCount".equals(step.name)) &&
+                            !step.arguments.isEmpty()) {
+                            break;
+                        }
+                        if (!step.localScope()) {
+                            // A single List/Map can still download an entire
+                            // graph. A later outer limit cannot shrink its input.
+                            largeCollection |= bound == null || bound.compareTo(previewSize) > 0;
+                            bound = BigInteger.ONE;
                             singleResult = true;
                         }
                         break;
                     case LIMIT:
-                        bounded = bounded || step.finiteGlobalLimit();
+                        BigInteger stepBound = step.finiteGlobalLimit();
+                        if (stepBound != null) {
+                            bound = bound == null ? stepBound : bound.min(stepBound);
+                        }
                         break;
                     default:
                         break;
                 }
             }
-            return !singleResult && (preview || !bounded) ? position : -1;
+            if (preview && largeCollection) {
+                throw new ExternalException("gremlin.preview.collection_requires_async", previewSize);
+            }
+            return !singleResult && (preview || bound == null) ? position : -1;
         }
     }
 
@@ -221,21 +250,29 @@ public final class ReadOnlyGremlin {
             return !this.arguments.isEmpty() && this.arguments.get(0).localScope();
         }
 
-        private boolean finiteGlobalLimit() {
+        private BigInteger finiteGlobalLimit() {
             if (this.localScope()) {
-                return false;
+                return null;
             }
             int offset = !this.arguments.isEmpty() && this.arguments.get(0).globalScope() ? 1 : 0;
             if ("tail".equals(this.name) && this.arguments.size() == offset) {
-                return true;
+                return BigInteger.ONE;
             }
             int index = offset + ("range".equals(this.name) ? 1 : 0);
             if (index >= this.arguments.size()) {
-                return false;
+                return null;
             }
             BigInteger value = this.arguments.get(index).integer;
             // In particular, range(0, -1) and limit(-1) are not finite bounds.
-            return value != null && value.signum() >= 0 && value.bitLength() < Long.SIZE;
+            if (value == null || value.signum() < 0 || value.bitLength() >= Long.SIZE) {
+                return null;
+            }
+            if ("range".equals(this.name)) {
+                BigInteger low = this.arguments.get(offset).integer;
+                return low != null && low.signum() >= 0 && low.compareTo(value) <= 0 ?
+                       value.subtract(low) : null;
+            }
+            return value;
         }
     }
 

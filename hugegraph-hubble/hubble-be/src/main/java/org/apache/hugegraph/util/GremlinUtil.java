@@ -314,7 +314,7 @@ public final class GremlinUtil {
             }
             if (inLineComment) {
                 if (ch == '\n') {
-                    if (delimiterDepth != 0 || chainContinues(gremlin, i)) {
+                    if (delimiterDepth != 0 || chainContinues(gremlin, i, matchable)) {
                         statement.append(ch);
                         matchable.append(ch);
                     } else {
@@ -396,7 +396,7 @@ public final class GremlinUtil {
             }
             boolean separator = delimiterDepth == 0 &&
                                 (ch == ';' || ch == '\n' &&
-                                 !chainContinues(gremlin, i));
+                                 !chainContinues(gremlin, i, matchable));
             if (separator && !inSingleQuote && !inDoubleQuote) {
                 result.append(optimizeStatement(statement.toString(),
                                                 matchable.toString(), limit, preview));
@@ -418,7 +418,17 @@ public final class GremlinUtil {
         return result.toString();
     }
 
-    private static boolean chainContinues(String gremlin, int newline) {
+    private static boolean chainContinues(String gremlin, int newline, CharSequence code) {
+        // Comments have already been masked in code, so a trailing dot is
+        // significant even when a comment follows it before the newline.
+        for (int i = code.length() - 1; i >= 0; i--) {
+            if (!Character.isWhitespace(code.charAt(i))) {
+                if (code.charAt(i) == '.') {
+                    return true;
+                }
+                break;
+            }
+        }
         for (int i = newline + 1; i < gremlin.length(); i++) {
             char next = gremlin.charAt(i);
             if (Character.isWhitespace(next)) {
@@ -457,18 +467,18 @@ public final class GremlinUtil {
             codeEnd--;
         }
         String code = matchable.substring(0, codeEnd);
-        int position;
+        ReadOnlyGremlin.Traversal traversal;
         try {
             // Parse once: validation, scopes, literal bounds and cardinality use
             // the same traversal representation. Scripts and mutations retain
             // their existing execution semantics.
-            ReadOnlyGremlin.Traversal traversal = ReadOnlyGremlin.parse(
+            traversal = ReadOnlyGremlin.parse(
                     code.replace('\n', ' ').replace('\r', ' '));
-            position = traversal.limitPosition(preview);
-            if (position < 0) {
-                return statement;
-            }
         } catch (RuntimeException ignored) {
+            return statement;
+        }
+        int position = traversal.limitPosition(preview, limit);
+        if (position < 0) {
             return statement;
         }
         return statement.substring(0, position) + ".limit(" + limit + ")" +
