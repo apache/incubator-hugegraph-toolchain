@@ -250,7 +250,10 @@ test('tooltip identity rejects typed ID display collisions rather than picking a
 test('query input waits for ready scope, checks actual editor text and observes the first matching request', async () => {
   const {executeQuery} = require('./run_ui_graph_acceptance');
   const query = "g.V().hasLabel('person')\n.bothE()";
-  for (const body of ["g.V('old')", {query}, query]) {
+  const acceptedBody = {content: query, preview: true};
+  for (const body of ["g.V('old')", {query}, query,
+    {content: "g.V('old')", preview: true}, {content: query},
+    {content: query, preview: false}, acceptedBody]) {
     const calls = [];
     let text = 'g.V().limit(10)';
     let readiness = 0;
@@ -276,9 +279,9 @@ test('query input waits for ready scope, checks actual editor text and observes 
       getByRole: () => ({isEnabled: async () => {calls.push('run.enabled'); return ++readiness > 1;},
         click: async () => {calls.push('run.click');}})};
     await assert.rejects(executeQuery(page, {}, {graphspace: 'S', graph: 'g', query}, 'unit', false),
-      body === query ? /unit-stop-after-post-contract/ : /exact requested Gremlin query string/);
+      body === acceptedBody ? /unit-stop-after-post-contract/ : /exact requested Gremlin query string/);
     assert.deepEqual(calls, ['run.enabled', 'wait.ready', 'run.enabled', 'editor.click', 'ControlOrMeta+A', query,
-      'editor.text', 'run.enabled', 'editor.text', 'observe.request', 'run.click', ...(body === query ? ['request.response'] : [])]);
+      'editor.text', 'run.enabled', 'editor.text', 'observe.request', 'run.click', ...(body === acceptedBody ? ['request.response'] : [])]);
   }
 });
 
