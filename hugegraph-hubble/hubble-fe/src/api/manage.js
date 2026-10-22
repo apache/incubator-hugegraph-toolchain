@@ -111,8 +111,9 @@ const delGraph = (graphspace, graph) => {
     return request.delete(`/graphspaces/${graphspace}/graphs/${graph}`);
 };
 
-const getGraphView = (graphspace, graph) => {
-    return request.get(`/graphspaces/${graphspace}/graphs/${graph}/schema/graphview`);
+const getGraphView = (graphspace, graph, config) => {
+    const url = `/graphspaces/${graphspace}/graphs/${graph}/schema/graphview`;
+    return config ? request.get(url, config) : request.get(url);
 };
 
 const setDefaultGraph = (graphspace, graph, config) => {

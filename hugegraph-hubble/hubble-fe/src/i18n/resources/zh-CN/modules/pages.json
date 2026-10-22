@@ -329,7 +329,7 @@
       "data_status": "数据状态",
       "available": "可用",
       "partial": "部分可用",
-      "loading": "加载中",
+      "loading": "统计中",
       "retry_page": "重试图详情",
       "back_to_graphs": "返回图列表",
       "retry_statistics": "重试统计数据",
@@ -341,14 +341,18 @@
       "empty_title": "当前图还没有 Schema 或数据",
       "empty_description": "创建 Schema、准备数据或运行安全查询，即可开始使用",
       "create_schema": "创建 Schema",
-      "prepare_data": "准备数据"
+      "prepare_data": "准备数据",
+      "not_collected": "未统计",
+      "collect_statistics": "统计点边",
+      "snapshot_hint": "已有统计快照，可能为近似值，并非实时精确总量，可复用30分钟缓存",
+      "bounded_statistics_hint": "最多扫描 {{limit}} 个点和 {{limit}} 条边，统计可能为近似值，可复用30分钟缓存"
     },
     "card": {
       "more_actions": "{{graph}} 的更多操作",
       "storage": "存储空间",
       "schema_types": "{{vertices}} 个顶点类型 · {{edges}} 个边类型",
       "element_counts": "点：{{vertices}} / 边：{{edges}}",
-      "counts_tooltip": "来自图列表 API 的实际点边统计",
+      "counts_tooltip": "最近一次记录的点边数，可能不是实时值",
       "overview": "概览",
       "schema_info": "Schema 信息",
       "view_schema": "查看 {{graph}} 的 Schema",
@@ -356,7 +360,9 @@
       "empty_schema_help": "可以先建立模型，或运行安全查询",
       "open_schema": "创建 Schema",
       "query_graph": "查询此图",
-      "detail_tooltip": "点击可以查看本图目前存储的点边的数量"
+      "detail_tooltip": "点击可以查看本图目前存储的点边的数量",
+      "schema_loading": "Schema 加载中",
+      "schema_unavailable": "Schema 预览暂不可用"
     },
     "empty": {
       "description": "这个 GraphSpace 已可用，但还没有图。创建第一张图后即可配置 Schema、导入和查询数据",

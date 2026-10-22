@@ -31,6 +31,7 @@ import {useNavigate, useParams} from 'react-router-dom';
 import {useTranslation} from 'react-i18next';
 import _ from 'lodash';
 import c from './index.module.scss';
+import {loadGraphOptions} from '../../../utils/graphOptions';
 
 const {
     LOADED,
@@ -60,8 +61,7 @@ const TopBar = props => {
     } = useParams();
 
     const {isVermeer} = useContext(GraphAnalysisContext);
-    const [graphSpaceList, setGraphSpaceList] = useState([]);
-    const [currentGraphSpace, setCurrentGraphSpace] = useState();
+    const [currentGraphSpace, setCurrentGraphSpace] = useState(graphSpaceFromParam);
     const [, setGraphSpaceLoading] = useState(false);
     const [graphSpaceError, setGraphSpaceError] = useState(false);
     const [currentGraph, setCurrentGraph] = useState({});
@@ -73,7 +73,6 @@ const TopBar = props => {
     const graphRequest = useRef(null);
     const loadRequest = useRef(null);
     const pendingLoadRequests = useRef(new Map());
-    const previousVermeer = useRef(isVermeer);
 
     const graphKey = JSON.stringify([currentGraphSpace, currentGraph.name]);
     const isLoadRequestLoading = Boolean(pendingLoads[graphKey]);
@@ -84,7 +83,8 @@ const TopBar = props => {
     } = currentGraph;
     const currentGraphStatus = loadTask === undefined ? metadataGraphStatus : LOADING;
 
-    const showVermeerGraphInfo = isVermeer && !_.isEmpty(currentGraph);
+    const showVermeerGraphInfo = isVermeer && !_.isEmpty(currentGraph) &&
+                                Boolean(currentGraphStatus);
 
     const renderLoadTime = () => {
         return format(Date.parse(currentGraphLoadTime), 'yyyy-MM-dd');
@@ -124,7 +124,6 @@ const TopBar = props => {
                     throw new Error('graphspaces unavailable');
                 }
                 const {graphspaces} = data;
-                setGraphSpaceList(graphspaces);
                 const routeGraphSpace = graphspaces.includes(graphSpaceFromParam)
                     ? graphSpaceFromParam
                     : undefined;
@@ -151,18 +150,33 @@ const TopBar = props => {
             setGraphLoading(true);
             setGraphError(false);
             try {
-                const response = await api.analysis.getGraphList(
-                    currentGraphSpace, INLINE_ERROR_CONFIG
+                const options = await loadGraphOptions(
+                    currentGraphSpace, {selected: graphFromParam}, INLINE_ERROR_CONFIG
                 );
                 if (graphRequest.current !== request) {
                     return;
                 }
-                const {status, data} = response || {};
-                if (status !== 200 || !Array.isArray(data?.graphs)) {
-                    throw new Error('graphs unavailable');
+                let graph = graphFromParam ? options.selected : options.records[0];
+                if (graphFromParam && !graph) {
+                    throw new Error('selected graph unavailable');
                 }
-                const {graphs = []} = data;
-                const graph = _.find(graphs, {name: graphFromParam}) || graphs[0] || {};
+                graph = graph || {};
+                if (isVermeer && graph.name) {
+                    const detail = await api.manage.getGraph(
+                        currentGraphSpace, graph.name, INLINE_ERROR_CONFIG
+                    );
+                    if (graphRequest.current !== request) {
+                        return;
+                    }
+                    if (detail?.status !== 200 || !detail.data ||
+                        typeof detail.data !== 'object' || Array.isArray(detail.data)) {
+                        throw new Error('graph details unavailable');
+                    }
+                    graph = {
+                        ...graph, ...detail.data, name: graph.name,
+                        status: detail.data.status || CREATED,
+                    };
+                }
                 setCurrentGraph(current => (
                     _.isEmpty(graph) && _.isEmpty(current) ? current : graph
                 ));
@@ -179,18 +193,8 @@ const TopBar = props => {
                 }
             }
         },
-        [currentGraphSpace, graphFromParam]
+        [currentGraphSpace, graphFromParam, isVermeer]
     );
-
-    useEffect(() => {
-        if (!isVermeer) {
-            previousVermeer.current = false;
-        }
-        else if (!previousVermeer.current && currentGraphSpace && currentGraph.name) {
-            previousVermeer.current = true;
-            getGraphs();
-        }
-    }, [currentGraph.name, currentGraphSpace, getGraphs, isVermeer]);
 
     useEffect(() => () => {
         graphSpaceRequest.current = null;
@@ -280,11 +284,21 @@ const TopBar = props => {
 
     useEffect(
         () => {
-            if (currentGraphSpace && _.isEmpty(currentGraph)) {
-                getGraphs();
+            if (!currentGraphSpace || (
+                graphSpaceFromParam && graphSpaceFromParam !== currentGraphSpace
+            )) {
+                return undefined;
             }
+            setCurrentGraph(current => (
+                graphFromParam && current.name && current.name !== graphFromParam
+                    ? {} : current
+            ));
+            getGraphs();
+            return () => {
+                graphRequest.current = null;
+            };
         },
-        [currentGraph, currentGraphSpace, getGraphs]
+        [currentGraphSpace, graphFromParam, graphSpaceFromParam, getGraphs]
     );
 
     useEffect(
@@ -294,23 +308,6 @@ const TopBar = props => {
         },
         [currentGraph, currentGraphSpace, loadTask, onGraphInfoChange]
     );
-
-    useEffect(() => {
-        if (!graphFromParam
-            || !currentGraph?.name
-            || graphSpaceFromParam !== currentGraphSpace
-            || graphFromParam === currentGraph.name) {
-            return;
-        }
-        graphRequest.current = null;
-        setCurrentGraph({});
-        setGraphError(false);
-    }, [
-        currentGraph?.name,
-        currentGraphSpace,
-        graphFromParam,
-        graphSpaceFromParam,
-    ]);
 
     useEffect(
         () => {
@@ -348,14 +345,12 @@ const TopBar = props => {
 
     useEffect(() => {
         if (graphSpaceFromParam
-            && graphSpaceList.includes(graphSpaceFromParam)
             && graphSpaceFromParam !== currentGraphSpace) {
             handleGraphSpaceChange(graphSpaceFromParam);
         }
     }, [
         currentGraphSpace,
         graphSpaceFromParam,
-        graphSpaceList,
         handleGraphSpaceChange,
     ]);
 

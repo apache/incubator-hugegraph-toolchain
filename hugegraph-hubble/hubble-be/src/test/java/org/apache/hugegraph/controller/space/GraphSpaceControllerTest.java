@@ -49,11 +49,60 @@ import org.apache.hugegraph.testutil.Assert;
 import org.apache.hugegraph.util.JsonUtil;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 public class GraphSpaceControllerTest {
+
+    @Test
+    public void testAnonymousBriefListUsesMetadataRoute() throws Exception {
+        HugeClient client = Mockito.mock(HugeClient.class);
+        GraphSpaceService service = Mockito.mock(GraphSpaceService.class);
+        TestGraphSpaceController controller = new TestGraphSpaceController(client);
+        HugeConfig config = Mockito.mock(HugeConfig.class);
+        Mockito.when(config.get(HubbleOptions.PD_ENABLED)).thenReturn(true);
+        AuthModeService authMode = Mockito.mock(AuthModeService.class);
+        Mockito.when(authMode.anonymous()).thenReturn(true);
+        controller.config = config;
+        ReflectionTestUtils.setField(controller, "authMode", authMode);
+        ReflectionTestUtils.setField(controller, "graphSpaceService", service);
+
+        MockMvcBuilders.standaloneSetup(controller).build()
+                       .perform(get("/api/v1.3/graphspaces")
+                                .param("brief", "true"))
+                       .andExpect(status().isOk());
+
+        Mockito.verify(service).queryBriefPage(client, "", "", 1, 100,
+                                               true, false, "");
+        Mockito.verifyNoMoreInteractions(service);
+    }
+
+    @Test
+    public void testBriefListForwardsSearchPageAndSelectedSpace() throws Exception {
+        HugeClient client = Mockito.mock(HugeClient.class);
+        GraphSpaceService service = Mockito.mock(GraphSpaceService.class);
+        TestGraphSpaceController controller = new TestGraphSpaceController(client);
+        HugeConfig config = Mockito.mock(HugeConfig.class);
+        Mockito.when(config.get(HubbleOptions.PD_ENABLED)).thenReturn(true);
+        AuthModeService authMode = Mockito.mock(AuthModeService.class);
+        Mockito.when(authMode.anonymous()).thenReturn(true);
+        controller.config = config;
+        ReflectionTestUtils.setField(controller, "authMode", authMode);
+        ReflectionTestUtils.setField(controller, "graphSpaceService", service);
+
+        MockMvcBuilders.standaloneSetup(controller).build()
+                       .perform(get("/api/v1.3/graphspaces")
+                                .param("brief", "true").param("query", "alias")
+                                .param("page_no", "2").param("page_size", "100")
+                                .param("selected", "late_space"))
+                       .andExpect(status().isOk());
+
+        Mockito.verify(service).queryBriefPage(client, "alias", "", 2, 100,
+                                               true, false, "late_space");
+        Mockito.verifyNoMoreInteractions(service);
+    }
 
     @Test
     public void testHttpStoragePrecisionSurvivesEntityWireWithoutCoercingLegacyConfigs() throws Exception {

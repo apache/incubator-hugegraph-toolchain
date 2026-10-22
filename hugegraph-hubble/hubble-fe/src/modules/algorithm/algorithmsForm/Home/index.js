@@ -33,6 +33,7 @@ import c from './index.module.scss';
 import _ from 'lodash';
 import {useTranslation} from 'react-i18next';
 import {clearPersistedAlgorithmForms} from '../algorithmFormPersistence';
+import {isKnownZeroCount} from '../../../../utils/graphStatistics';
 
 const AlgorithmFormHome = props => {
     const {
@@ -60,7 +61,7 @@ const AlgorithmFormHome = props => {
     const isListEmpty = _.isEmpty(
         Object.values(ALGORITHM_NAME).filter(item => isAlgorithmNameMatched(item, search, t))
     );
-    const canRunLouvain = Number(graphNums?.edgeCount) > 0;
+    const canRunLouvain = !isKnownZeroCount(graphNums?.edgeCount, graphNums);
 
     return (
         <div className={c.algorithmSidebar}>

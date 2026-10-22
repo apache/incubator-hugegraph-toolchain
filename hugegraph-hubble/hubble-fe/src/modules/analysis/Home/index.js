@@ -33,6 +33,7 @@ import ResultsLayout from '../ResultsLayout';
 import {GREMLIN_EXECUTES_MODE, ANALYSIS_TYPE, GRAPH_STATUS, PANEL_TYPE,
     FAVORITE_TYPE, EXECUTION_LOGS_TYPE, GRAPH_RENDER_MODE} from '../../../utils/constants';
 import * as api from '../../../api';
+import {toGraphCounts} from '../../../utils/graphStatistics';
 import _ from 'lodash';
 import {scopedStorageKey, USER_CHANGE_EVENT} from '../../../utils/user';
 import {queryFailure} from '../../../utils/queryFailure';
@@ -334,7 +335,7 @@ const AnalysisHome = ({toolbarExtra}) => {
             graphNumsRequest.current = request;
             let response;
             try {
-                response = await api.analysis.getGraphData(graphSpace, graph);
+                response = await api.analysis.getGraphData(graphSpace, graph, {suppressBusinessErrorToast: true});
             } catch {
                 response = null;
             }
@@ -345,8 +346,7 @@ const AnalysisHome = ({toolbarExtra}) => {
                 setGraphNums({vertexCount: null, edgeCount: null});
                 return {status: 'unavailable'};
             }
-            const {vertexcount, edgecount} = response.data || {};
-            setGraphNums({vertexCount: vertexcount, edgeCount: edgecount});
+            setGraphNums(toGraphCounts(response.data));
             return {status: 'refreshed'};
         },
         [graph, graphSpace, graphNumsScope]

@@ -23,10 +23,10 @@ import * as api from '../../api';
 jest.mock('../../api', () => ({
     analysis: {
         getGraphSpaceList: jest.fn(),
-        getGraphList: jest.fn(),
         getOlapMode: jest.fn(),
         switchOlapMode: jest.fn(),
     },
+    manage: {getGraphList: jest.fn(), getGraph: jest.fn()},
     auth: {getVermeer: jest.fn()},
 }));
 jest.mock('react-router-dom', () => ({
@@ -44,9 +44,8 @@ it('retains a successful user switch when loading metadata polls before its resp
     const switching = new Promise(resolve => { resolveSwitch = resolve; });
     api.auth.getVermeer.mockResolvedValue({status: 200, data: {enable: true}});
     api.analysis.getGraphSpaceList.mockResolvedValue({status: 200, data: {graphspaces: ['DEFAULT']}});
-    api.analysis.getGraphList.mockImplementation(async () => ({
-        status: 200, data: {graphs: [{name: 'g', status: 'loading'}]},
-    }));
+    api.manage.getGraphList.mockResolvedValue({status: 200, data: {records: [{name: 'g'}]}});
+    api.manage.getGraph.mockResolvedValue({status: 200, data: {name: 'g', status: 'loading'}});
     api.analysis.getOlapMode.mockResolvedValue({status: 200, data: {status: '1'}});
     api.analysis.switchOlapMode.mockReturnValue(switching);
     const view = render(<GraphAnalysisHome moduleName='gremlin' />);
@@ -57,9 +56,7 @@ it('retains a successful user switch when loading metadata polls before its resp
         fireEvent.click(toggle);
         expect(api.analysis.switchOlapMode).toHaveBeenCalledTimes(1);
         // Native loading completes during the pending independent Server PUT.
-        api.analysis.getGraphList.mockImplementation(async () => ({
-            status: 200, data: {graphs: [{name: 'g', status: 'loaded'}]},
-        }));
+        api.manage.getGraph.mockResolvedValue({status: 200, data: {name: 'g', status: 'loaded'}});
         await act(async () => jest.advanceTimersByTime(2000));
         expect(screen.getByText('analysis.topbar.loaded')).toBeVisible();
         await act(async () => resolveSwitch({status: 200}));

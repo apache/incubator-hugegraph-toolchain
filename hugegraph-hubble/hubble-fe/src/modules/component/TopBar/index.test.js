@@ -32,10 +32,10 @@ jest.mock('react-router-dom', () => ({
 jest.mock('../../../api', () => ({
     analysis: {
         getGraphSpaceList: jest.fn(),
-        getGraphList: jest.fn(),
         loadVermeerTask: jest.fn(),
         fetchAsyncTaskResult: jest.fn(),
     },
+    manage: {getGraph: jest.fn(), getGraphList: jest.fn()},
 }));
 jest.mock('react-i18next', () => ({
     useTranslation: () => ({t: key => key}),
@@ -69,7 +69,8 @@ beforeEach(() => {
         status: 200,
         data: {graphspaces: ['DEFAULT']},
     });
-    api.analysis.getGraphList.mockResolvedValue({status: 200, data: {graphs: []}});
+    api.manage.getGraphList.mockResolvedValue({status: 200, data: {records: []}});
+    api.manage.getGraph.mockResolvedValue({status: 200, data: {status: 'loaded'}});
 });
 
 const deferred = () => {
@@ -87,6 +88,224 @@ it('does not repeat the global GraphSpace and graph selectors', async () => {
         .not.toBeInTheDocument();
     expect(screen.queryByText('analysis.topbar.current_graph')).not.toBeInTheDocument();
     await waitFor(() => expect(api.analysis.getGraphSpaceList).toHaveBeenCalledTimes(1));
+});
+
+it('uses route context and brief authorized graph metadata without enumerating all spaces', async () => {
+    Object.assign(mockParams, {graphSpace: 'A', graph: 'graph-b'});
+    api.manage.getGraphList.mockResolvedValue({
+        status: 200,
+        data: {records: [{name: 'graph-a'}, {name: 'graph-b'}]},
+    });
+    const onGraphInfoChange = jest.fn();
+
+    renderTopBar({isVermeer: false}, {onGraphInfoChange});
+
+    await waitFor(() => expect(onGraphInfoChange).toHaveBeenCalledWith(
+        'A', expect.objectContaining({name: 'graph-b'})
+    ));
+    expect(api.manage.getGraphList).toHaveBeenCalledWith(
+        'A', expect.objectContaining({brief: true, page_no: 1, page_size: 100}), {suppressBusinessErrorToast: true}
+    );
+    expect(api.analysis.getGraphSpaceList).not.toHaveBeenCalled();
+    expect(api.manage.getGraph).not.toHaveBeenCalled();
+    expect(mockNavigate).not.toHaveBeenCalled();
+});
+
+it('does not select a fallback graph when route access is forbidden', async () => {
+    Object.assign(mockParams, {graphSpace: 'protected', graph: 'private'});
+    api.manage.getGraphList.mockRejectedValueOnce(
+        Object.assign(new Error('forbidden'), {status: 403})
+    );
+    const onGraphInfoChange = jest.fn();
+
+    renderTopBar({isVermeer: false}, {onGraphInfoChange});
+
+    expect(await screen.findByText('analysis.topbar.graphs_failed')).toBeInTheDocument();
+    expect(api.analysis.getGraphSpaceList).not.toHaveBeenCalled();
+    expect(api.manage.getGraph).not.toHaveBeenCalled();
+    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(onGraphInfoChange.mock.calls.some(([, graph]) => graph?.name)).toBe(false);
+});
+
+it('does not replace a missing route-selected graph with another graph', async () => {
+    Object.assign(mockParams, {graphSpace: 'A', graph: 'missing'});
+    api.manage.getGraphList.mockResolvedValue({
+        status: 200, data: {records: [{name: 'other'}]},
+    });
+    const onGraphInfoChange = jest.fn();
+
+    renderTopBar({isVermeer: false}, {onGraphInfoChange});
+
+    expect(await screen.findByText('analysis.topbar.graphs_failed')).toBeInTheDocument();
+    expect(api.manage.getGraphList).toHaveBeenCalledTimes(1);
+    expect(onGraphInfoChange.mock.calls.some(([, graph]) => graph?.name)).toBe(false);
+    expect(mockNavigate).not.toHaveBeenCalled();
+});
+
+it('loads status only for the selected Vermeer graph and respects its loading state', async () => {
+    Object.assign(mockParams, {graphSpace: 'A', graph: 'graph-b'});
+    api.manage.getGraphList.mockResolvedValue({
+        status: 200,
+        data: {records: [{name: 'graph-a'}, {name: 'graph-b'}]},
+    });
+    api.manage.getGraph.mockResolvedValue({status: 200, data: {status: 'loading'}});
+
+    renderTopBar({isVermeer: true});
+
+    expect(await screen.findByRole('button', {
+        name: 'analysis.topbar.load_to_vermeer',
+    })).toBeDisabled();
+    expect(api.manage.getGraph).toHaveBeenCalledTimes(1);
+    expect(api.manage.getGraph).toHaveBeenCalledWith(
+        'A', 'graph-b', {suppressBusinessErrorToast: true}
+    );
+    expect(api.analysis.getGraphSpaceList).not.toHaveBeenCalled();
+});
+
+it('retains the selected loaded graph status and load date', async () => {
+    Object.assign(mockParams, {graphSpace: 'A', graph: 'graph-a'});
+    api.manage.getGraphList.mockResolvedValue({
+        status: 200, data: {records: [{name: 'graph-a'}]},
+    });
+    api.manage.getGraph.mockResolvedValue({
+        status: 200,
+        data: {status: 'loaded', last_load_time: '2026-10-22T12:00:00Z'},
+    });
+
+    renderTopBar({isVermeer: true});
+
+    expect(await screen.findByRole('button', {
+        name: 'analysis.topbar.reload_to_vermeer',
+    })).toBeEnabled();
+    expect(screen.getByText('2026-10-22')).toBeInTheDocument();
+});
+
+it('refreshes selected graph details when the Vermeer capability resolves after the brief list', async () => {
+    Object.assign(mockParams, {graphSpace: 'A', graph: 'graph-a'});
+    api.manage.getGraphList.mockResolvedValue({
+        status: 200, data: {records: [{name: 'graph-a'}]},
+    });
+    api.manage.getGraph.mockResolvedValue({
+        status: 200,
+        data: {status: 'loaded', last_load_time: '2026-10-22T12:00:00Z'},
+    });
+    const onGraphInfoChange = jest.fn();
+    const capability = deferred();
+    const view = renderTopBar({isVermeer: false}, {onGraphInfoChange});
+    const capabilityReady = capability.promise.then(isVermeer => view.rerender(
+        <GraphAnalysisContext.Provider value={{isVermeer}}>
+            <TopBar moduleName='gremlin' onGraphInfoChange={onGraphInfoChange} />
+        </GraphAnalysisContext.Provider>
+    ));
+    await waitFor(() => expect(onGraphInfoChange).toHaveBeenCalledWith(
+        'A', expect.objectContaining({name: 'graph-a'})
+    ));
+    expect(api.manage.getGraph).not.toHaveBeenCalled();
+    onGraphInfoChange.mockClear();
+
+    await act(async () => {
+        capability.resolve(true);
+        await capabilityReady;
+    });
+
+    expect(await screen.findByRole('button', {
+        name: 'analysis.topbar.reload_to_vermeer',
+    })).toBeEnabled();
+    expect(screen.getByText('2026-10-22')).toBeInTheDocument();
+    expect(api.manage.getGraphList).toHaveBeenCalledTimes(2);
+    expect(api.manage.getGraph).toHaveBeenCalledTimes(1);
+    expect(onGraphInfoChange.mock.calls.every(([, graph]) => graph?.name === 'graph-a')).toBe(true);
+});
+
+it('does not automatically retry a forbidden detail request after capability activation', async () => {
+    Object.assign(mockParams, {graphSpace: 'A', graph: 'graph-a'});
+    api.manage.getGraphList.mockResolvedValue({
+        status: 200, data: {records: [{name: 'graph-a'}]},
+    });
+    api.manage.getGraph
+        .mockRejectedValueOnce(Object.assign(new Error('forbidden'), {status: 403}))
+        .mockResolvedValueOnce({status: 200, data: {status: 'loaded'}});
+    const onGraphInfoChange = jest.fn();
+    const view = renderTopBar({isVermeer: false}, {onGraphInfoChange});
+    await waitFor(() => expect(onGraphInfoChange).toHaveBeenCalledWith(
+        'A', expect.objectContaining({name: 'graph-a'})
+    ));
+
+    view.rerender(
+        <GraphAnalysisContext.Provider value={{isVermeer: true}}>
+            <TopBar moduleName='gremlin' onGraphInfoChange={onGraphInfoChange} />
+        </GraphAnalysisContext.Provider>
+    );
+
+    expect(await screen.findByText('analysis.topbar.graphs_failed')).toBeInTheDocument();
+    expect(api.manage.getGraphList).toHaveBeenCalledTimes(2);
+    expect(api.manage.getGraph).toHaveBeenCalledTimes(1);
+    expect(mockNavigate).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', {name: 'analysis.topbar.retry_graphs'}));
+    expect(await screen.findByRole('button', {
+        name: 'analysis.topbar.reload_to_vermeer',
+    })).toBeEnabled();
+    expect(api.manage.getGraph).toHaveBeenCalledTimes(2);
+});
+
+it('ignores pending capability-triggered details after the route selects a different graph', async () => {
+    Object.assign(mockParams, {graphSpace: 'A', graph: 'graph-a'});
+    api.manage.getGraphList.mockResolvedValue({
+        status: 200, data: {records: [{name: 'graph-a'}, {name: 'graph-b'}]},
+    });
+    const oldDetail = deferred();
+    api.manage.getGraph.mockImplementation((space, graph) => (
+        graph === 'graph-a' ? oldDetail.promise : Promise.resolve({
+            status: 200, data: {status: 'loaded', last_load_time: '2026-10-22T12:00:00Z'},
+        })
+    ));
+    const onGraphInfoChange = jest.fn();
+    const view = renderTopBar({isVermeer: false}, {onGraphInfoChange});
+    await waitFor(() => expect(onGraphInfoChange).toHaveBeenCalledWith(
+        'A', expect.objectContaining({name: 'graph-a'})
+    ));
+    const enabledTopBar = (
+        <GraphAnalysisContext.Provider value={{isVermeer: true}}>
+            <TopBar moduleName='gremlin' onGraphInfoChange={onGraphInfoChange} />
+        </GraphAnalysisContext.Provider>
+    );
+    view.rerender(enabledTopBar);
+    await waitFor(() => expect(api.manage.getGraph).toHaveBeenCalledWith(
+        'A', 'graph-a', expect.any(Object)
+    ));
+    onGraphInfoChange.mockClear();
+    Object.assign(mockParams, {graph: 'graph-b'});
+    view.rerender(
+        <GraphAnalysisContext.Provider value={{isVermeer: true}}>
+            <TopBar moduleName='gremlin' onGraphInfoChange={onGraphInfoChange} />
+        </GraphAnalysisContext.Provider>
+    );
+    await waitFor(() => expect(onGraphInfoChange).toHaveBeenCalledWith(
+        'A', expect.objectContaining({name: 'graph-b', status: 'loaded'})
+    ));
+
+    await act(async () => oldDetail.resolve({
+        status: 200, data: {status: 'loading', last_load_time: '2026-10-21T12:00:00Z'},
+    }));
+
+    expect(onGraphInfoChange.mock.calls.some(([, graph]) => graph?.name === 'graph-a')).toBe(false);
+    expect(screen.getByText('2026-10-22')).toBeInTheDocument();
+    expect(screen.queryByText('2026-10-21')).not.toBeInTheDocument();
+});
+
+it('treats a graph without Vermeer status as not yet loaded', async () => {
+    Object.assign(mockParams, {graphSpace: 'A', graph: 'graph-a'});
+    api.manage.getGraphList.mockResolvedValue({
+        status: 200, data: {records: [{name: 'graph-a'}]},
+    });
+    api.manage.getGraph.mockResolvedValue({status: 200, data: {backend: 'hstore'}});
+
+    renderTopBar({isVermeer: true});
+
+    expect(await screen.findByText('analysis.topbar.not_loaded')).toBeInTheDocument();
+    expect(screen.getByRole('button', {
+        name: 'analysis.topbar.load_to_vermeer',
+    })).toBeEnabled();
 });
 
 it('recovers a rejected GraphSpace request without leaving the selector loading', async () => {
@@ -108,9 +327,9 @@ it('recovers a rejected GraphSpace request without leaving the selector loading'
 });
 
 it('recovers a rejected graph request and ignores the failed result', async () => {
-    api.analysis.getGraphList
+    api.manage.getGraphList
         .mockRejectedValueOnce(new Error('offline'))
-        .mockResolvedValueOnce({status: 200, data: {graphs: []}});
+        .mockResolvedValueOnce({status: 200, data: {records: []}});
 
     renderTopBar();
 
@@ -119,7 +338,7 @@ it('recovers a rejected graph request and ignores the failed result', async () =
     });
     fireEvent.click(retry);
 
-    await waitFor(() => expect(api.analysis.getGraphList).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(api.manage.getGraphList).toHaveBeenCalledTimes(2));
     await waitFor(() => expect(screen.queryByText(
         'analysis.topbar.graphs_failed'
     )).not.toBeInTheDocument());
@@ -127,9 +346,9 @@ it('recovers a rejected graph request and ignores the failed result', async () =
 
 it('settles a rejected Vermeer load and lets the user retry', async () => {
     jest.spyOn(message, 'error').mockImplementation(() => undefined);
-    api.analysis.getGraphList.mockResolvedValue({
+    api.manage.getGraphList.mockResolvedValue({
         status: 200,
-        data: {graphs: [{name: 'hugegraph', status: 'loaded'}]},
+        data: {records: [{name: 'hugegraph', status: 'loaded'}]},
     });
     api.analysis.loadVermeerTask
         .mockRejectedValueOnce(new Error('offline'))
@@ -151,7 +370,7 @@ it('settles a rejected Vermeer load and lets the user retry', async () => {
     });
     fireEvent.click(reload);
     await waitFor(() => expect(api.analysis.loadVermeerTask).toHaveBeenCalledTimes(2));
-    await waitFor(() => expect(api.analysis.getGraphList).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(api.manage.getGraphList).toHaveBeenCalledTimes(2));
     await waitFor(() => expect(reload).toBeEnabled());
 });
 
@@ -162,18 +381,18 @@ it('ignores a late graph response after the route switches GraphSpace', async ()
         status: 200,
         data: {graphspaces: ['A', 'B']},
     });
-    api.analysis.getGraphList.mockImplementation(graphSpace => (
+    api.manage.getGraphList.mockImplementation(graphSpace => (
         graphSpace === 'A'
             ? oldGraphs.promise
             : Promise.resolve({
                 status: 200,
-                data: {graphs: [{name: 'graph-b', status: 'created'}]},
+                data: {records: [{name: 'graph-b', status: 'created'}]},
             })
     ));
 
     const view = renderTopBar();
-    await waitFor(() => expect(api.analysis.getGraphList).toHaveBeenCalledWith(
-        'A', expect.any(Object)
+    await waitFor(() => expect(api.manage.getGraphList).toHaveBeenCalledWith(
+        'A', expect.objectContaining({brief: true, page_no: 1, page_size: 100}), expect.any(Object)
     ));
 
     Object.assign(mockParams, {graphSpace: 'B'});
@@ -190,8 +409,8 @@ it('ignores a late graph response after the route switches GraphSpace', async ()
             />
         </GraphAnalysisContext.Provider>
     );
-    await waitFor(() => expect(api.analysis.getGraphList).toHaveBeenCalledWith(
-        'B', expect.any(Object)
+    await waitFor(() => expect(api.manage.getGraphList).toHaveBeenCalledWith(
+        'B', expect.objectContaining({brief: true, page_no: 1, page_size: 100}), expect.any(Object)
     ));
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith(
         '/gremlin/B/graph-b', {replace: true}
@@ -199,7 +418,7 @@ it('ignores a late graph response after the route switches GraphSpace', async ()
 
     await act(async () => oldGraphs.resolve({
         status: 200,
-        data: {graphs: [{name: 'graph-a', status: 'created'}]},
+        data: {records: [{name: 'graph-a', status: 'created'}]},
     }));
     expect(mockNavigate).not.toHaveBeenCalledWith(
         '/gremlin/A/graph-a', expect.any(Object)
@@ -214,9 +433,9 @@ it.each(['gremlin', 'algorithms', 'asyncTasks'])(
             status: 200,
             data: {graphspaces: ['A']},
         });
-        api.analysis.getGraphList.mockResolvedValue({
+        api.manage.getGraphList.mockResolvedValue({
             status: 200,
-            data: {graphs: [
+            data: {records: [
                 {name: 'graph-a', status: 'created'},
                 {name: 'graph-b', status: 'created'},
             ]},
@@ -260,8 +479,8 @@ it.each(['gremlin', 'algorithms', 'asyncTasks'])(
 it('tracks the accepted load task while graph metadata still reports loaded', async () => {
     jest.useFakeTimers();
     try {
-        api.analysis.getGraphList.mockResolvedValue({
-            status: 200, data: {graphs: [{name: 'hugegraph', status: 'loaded'}]},
+        api.manage.getGraphList.mockResolvedValue({
+            status: 200, data: {records: [{name: 'hugegraph', status: 'loaded'}]},
         });
         api.analysis.loadVermeerTask.mockResolvedValue({status: 200, data: {task_id: -10}});
         api.analysis.fetchAsyncTaskResult
@@ -274,7 +493,7 @@ it('tracks the accepted load task while graph metadata still reports loaded', as
         expect(screen.getByText('analysis.topbar.loading')).toBeInTheDocument();
         await act(async () => jest.advanceTimersByTime(2000));
         expect(screen.getByText('analysis.topbar.loading')).toBeInTheDocument();
-        expect(api.analysis.getGraphList).toHaveBeenCalledTimes(1);
+        expect(api.manage.getGraphList).toHaveBeenCalledTimes(1);
         await act(async () => jest.advanceTimersByTime(2000));
         expect(api.analysis.fetchAsyncTaskResult).toHaveBeenCalledWith('DEFAULT', 'hugegraph', -10);
         expect(screen.getByText('analysis.topbar.loaded')).toBeInTheDocument();
@@ -296,9 +515,9 @@ it('resumes a queued load after switching away and back to its graph', async () 
         api.analysis.getGraphSpaceList.mockResolvedValue({
             status: 200, data: {graphspaces: ['A']},
         });
-        api.analysis.getGraphList.mockResolvedValue({
+        api.manage.getGraphList.mockResolvedValue({
             status: 200,
-            data: {graphs: [
+            data: {records: [
                 {name: 'graph-a', status: 'loaded'},
                 {name: 'graph-b', status: 'loaded'},
             ]},
@@ -368,10 +587,10 @@ it('resumes a queued load after switching away and back to its graph', async () 
 });
 
 it('refreshes graph status when Vermeer becomes available again', async () => {
-    api.analysis.getGraphList.mockResolvedValueOnce({
-        status: 200, data: {graphs: [{name: 'hugegraph', status: ''}]},
+    api.manage.getGraphList.mockResolvedValueOnce({
+        status: 200, data: {records: [{name: 'hugegraph', status: ''}]},
     }).mockResolvedValue({
-        status: 200, data: {graphs: [{name: 'hugegraph', status: 'loaded'}]},
+        status: 200, data: {records: [{name: 'hugegraph', status: 'loaded'}]},
     });
     const onGraphInfoChange = jest.fn();
     const view = renderTopBar({isVermeer: false}, {onGraphInfoChange});
@@ -392,7 +611,7 @@ it('refreshes graph status when Vermeer becomes available again', async () => {
         </GraphAnalysisContext.Provider>
     );
     expect(await screen.findByText('analysis.topbar.loaded')).toBeInTheDocument();
-    expect(api.analysis.getGraphList).toHaveBeenCalledTimes(2);
+    expect(api.manage.getGraphList).toHaveBeenCalledTimes(2);
     expect(onGraphInfoChange).toHaveBeenLastCalledWith(
         'DEFAULT', expect.objectContaining({name: 'hugegraph', status: 'loaded'})
     );
@@ -407,7 +626,7 @@ it('preserves an in-flight load guard when switching away and back before its ac
         api.analysis.getGraphSpaceList.mockResolvedValue({status: 200, data: {graphspaces: ['A']}});
         // A1 may already have completed natively while its HTTP acknowledgement
         // is delayed; graph metadata legitimately still reports loaded.
-        api.analysis.getGraphList.mockResolvedValue({status: 200, data: {graphs: [
+        api.manage.getGraphList.mockResolvedValue({status: 200, data: {records: [
             {name: 'graph-a', status: 'loaded'}, {name: 'graph-b', status: 'loaded'},
         ]}});
         api.analysis.loadVermeerTask.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
@@ -453,4 +672,23 @@ it('preserves an in-flight load guard when switching away and back before its ac
     finally {
         jest.useRealTimers();
     }
+});
+
+it('resolves a route-selected late-page graph from the same bounded response', async () => {
+    Object.assign(mockParams, {graphSpace: 'A', graph: 'graph_10000'});
+    const selected = {name: 'graph_10000', nickname: 'Late graph'};
+    api.manage.getGraphList.mockResolvedValue({
+        status: 200,
+        data: {records: [{name: 'graph_00000'}], total: 10001, selected},
+    });
+    const onGraphInfoChange = jest.fn();
+
+    renderTopBar({isVermeer: false}, {onGraphInfoChange});
+
+    await waitFor(() => expect(onGraphInfoChange).toHaveBeenCalledWith('A', selected));
+    expect(api.manage.getGraphList).toHaveBeenCalledTimes(1);
+    expect(api.manage.getGraphList).toHaveBeenCalledWith('A', {
+        brief: true, page_no: 1, page_size: 100, query: '', selected: 'graph_10000',
+    }, expect.any(Object));
+    expect(mockNavigate).not.toHaveBeenCalled();
 });

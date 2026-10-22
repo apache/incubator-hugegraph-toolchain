@@ -166,7 +166,9 @@
         "loading": "Loading",
         "unavailable": "Unavailable",
         "node_summary": "Nodes: {{current}} in this result, {{total}} in the full graph",
-        "edge_summary": "Edges: {{current}} in this result, {{total}} in the full graph"
+        "edge_summary": "Edges: {{current}} in this result, {{total}} in the full graph",
+        "approximate_hint": "Approximate recorded counts; cached statistics may be reused for 30 minutes",
+        "bounded_hint": "At most {{limit}} nodes and {{limit}} edges are scanned; cached statistics may be reused for 30 minutes"
       },
       "import_failed": "Import failed",
       "export_json": "Export JSON",
