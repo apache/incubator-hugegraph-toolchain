@@ -20,11 +20,11 @@
 // not establish that the nodes reported by the source are down.
 export const sourceHealthStatus = (source = {}) => {
     const {status = 'UNKNOWN', availability = 'UNSUPPORTED', stale = false} = source;
-    if (availability === 'UNSUPPORTED') {
-        return 'UNKNOWN';
-    }
     if (status === 'DOWN') {
         return 'DOWN';
+    }
+    if (availability === 'UNSUPPORTED') {
+        return 'UNKNOWN';
     }
     if (status === 'DEGRADED' || availability === 'PARTIAL' || stale) {
         return 'DEGRADED';
