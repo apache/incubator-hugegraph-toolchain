@@ -22,30 +22,13 @@ See [connection and service-token configuration](vermeer-development.md#connecti
 for `vermeer.url` and `vermeer.token_file`; this UI change does not manufacture a
 configured or healthy Vermeer service.
 
-## Verification
+## Browser checks
 
-Based on remote master `eef5afd29762f394667494b726afdce1b938214d`.
-Product code verified at `b1dc8380deb5e5967e568e7318546a2ce54aea48`:
-
-- Four focused Jest suites / 56 tests passed, including graph A→B→A opt-in reset,
-  late A capability after B opted in, all nine engine-specific documentation URLs,
-  supported algorithm sets, and locale copy rules.
-- TypeScript and targeted ESLint passed. Initial implementation also passed six
-  suites / 47 tests, locale consistency, and the Vite production build.
-- Chromium exercised 10 checks with 12 captures: authenticated login, anonymous
-  account/GraphSpace visibility, graph context switching, loaded and unloaded
-  Vermeer, PageRank submission route and payload, unsupported Louvain, collapsed
-  Computer opt-in and unavailable capability, return-to-graph opt-in reset, and
-  both task engine labels.
-  Uncaught page errors, caught error toasts and unexpected API routes were zero.
-
-The browser uses explicit API fixtures against the actual running frontend.
-It verifies interaction and routing, not live-cluster authentication, actual
-Vermeer computation or result persistence. This UI has graph/GraphSpace selectors,
-not a Server deployment selector; real deployment switching remains unverified.
-The [structured receipt](vermeer-first-browser-report.json) records the checks.
-Screenshot files stay outside Git; see [PR #91](https://github.com/hugegraph/hugegraph-toolchain/pull/91)
-for screenshot evidence status.
+The browser runner uses explicit API fixtures against the running frontend to
+check engine selection, graph scope, supported algorithms, task routing, and
+authenticated or anonymous visibility. It checks UI interaction and routing; it
+does not establish live-engine computation, production authentication or result
+persistence. Graph and GraphSpace selectors do not switch Server deployments.
 
 To reproduce, start the frontend with `node node_modules/vite/bin/vite.js --port 3004`
 from `hubble-fe`, then run from the repository root:
