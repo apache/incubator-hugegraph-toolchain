@@ -332,7 +332,7 @@ it('supports negative Vermeer IDs and treats disappearance after discovery as a 
     view.unmount();
 });
 
-it.each([400, 403, 503])('stops discovery on failure %s rather than treating it as a missing task', async status => {
+it.each([400, 403, 404, 503])('stops discovery on failure %s rather than treating it as a missing task', async status => {
     jest.useFakeTimers();
     useSearchParams.mockReturnValue([new URLSearchParams('taskId=80001&submitted=1')]);
     api.analysis.fetchManageTaskById.mockResolvedValue({status});

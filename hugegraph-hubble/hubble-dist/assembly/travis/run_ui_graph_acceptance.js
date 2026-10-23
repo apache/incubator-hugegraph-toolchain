@@ -23,7 +23,7 @@ const path = require('node:path');
 const {authenticateUi, logoutUi} = require('./ui_auth');
 const {
   NeedsInput, argument, redact, publicHttpUrl, sha256, typedId, assertExportMatches, assertFixtureGraph,
-  uniqueDisplayId, gremlinIdLiteral, connectedPair, assertExpandedGraph, assertVisibleGraphStats, assertVisibleGraphPanel,
+  uniqueDisplayId, gremlinIdLiteral, connectedPair, assertExpandedGraph, hasCurrentGraphCount, assertVisibleGraphStats, assertVisibleGraphPanel,
   assertOverallPng, assertOffscreenPan, assertOverallPanInvariant,
   decodeScreenshot, screenshotAxes, screenshotOverlayRect, screenshotFringeRects, assertPngMatchesCanvas, dragTarget, dragEndpoint, assertLiveDragPixels,
   fixtureFromPrefix, loadPlaywright, chromePath, businessPayload, scopePath,
@@ -280,8 +280,8 @@ async function executeQuery(page, config, fixture, prefix, navigate = true) {
   const pixels = await canvasReady(page, region, path.join(config.outputDir, `${prefix}-ready.png`));
   const counts = await page.getByRole('group').allTextContents();
   const descriptions = await page.getByRole('group').evaluateAll(elements => elements.map(element => element.getAttribute('aria-label') || ''));
-  assert.ok(descriptions.some(text => text.startsWith(`Nodes: ${raw.vertices.length} in this result,`)), 'Graph model node count does not match real response');
-  assert.ok(descriptions.some(text => text.startsWith(`Edges: ${raw.edges.length} in this result,`)), 'Graph model edge count does not match real response');
+  assert.ok(hasCurrentGraphCount(descriptions, 'Nodes', raw.vertices.length), 'Graph model node count does not match real response');
+  assert.ok(hasCurrentGraphCount(descriptions, 'Edges', raw.edges.length), 'Graph model edge count does not match real response');
   return {raw, region, evidence: {route: page.url(), endpoint, method: 'POST',
     httpStatus: response.status(), vertexIds: raw.vertices.map(v => v.id), edgeIds: raw.edges.map(e => e.id), pixels, counts}};
 }
@@ -460,8 +460,8 @@ async function doubleClickExpansion(page, config, fixture, original) {
   const pixels = await canvasReady(page, region, path.join(config.outputDir, 'query-double-click-expanded.png'));
   await eventually(page, 'real expanded node/edge counts', async () => {
     const labels = await page.getByRole('group').evaluateAll(elements => elements.map(element => element.getAttribute('aria-label') || ''));
-    return labels.some(text => text.startsWith(`Nodes: ${expanded.vertices.length} in this result,`))
-      && labels.some(text => text.startsWith(`Edges: ${expanded.edges.length} in this result,`));
+    return hasCurrentGraphCount(labels, 'Nodes', expanded.vertices.length)
+      && hasCurrentGraphCount(labels, 'Edges', expanded.edges.length);
   });
   // The click timer is 300 ms; observe beyond it before checking for the old masking drawer.
   await page.waitForTimeout(400);

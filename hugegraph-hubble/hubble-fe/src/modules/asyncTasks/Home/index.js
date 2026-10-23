@@ -110,8 +110,8 @@ const AsyncTaskHome = () => {
                     return;
                 }
                 const {status, data} = response || {};
-                if (submittedTask && (status === 404 || (status === 200 && Array.isArray(data)))) {
-                    const records = (status === 200 ? data : []).filter(task => String(task.id) === taskId);
+                if (submittedTask && status === 200 && Array.isArray(data)) {
+                    const records = data.filter(task => String(task.id) === taskId);
                     setAsyncManageTaskData({records, total: records.length});
                     if (records.length > 0) {
                         submissionDiscovered.current = true;
