@@ -24,6 +24,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -352,7 +353,11 @@ public class OperationsPayloadParser {
                              matched == 0 ? "no_match" : "matched");
         result.put("matched_nodes", matched);
         result.put("discovered_nodes", members.size());
-        result.put("members", members.values().stream().limit(10).toList());
+        result.put("members", members.values().stream()
+                .sorted(Comparator.comparing(member ->
+                        !Boolean.TRUE.equals(member.get("origin_matches")) ||
+                        !Boolean.TRUE.equals(member.get("base_path_matches"))))
+                .limit(10).toList());
         result.put("omitted_members", Math.max(0, members.size() - 10));
         return result;
     }

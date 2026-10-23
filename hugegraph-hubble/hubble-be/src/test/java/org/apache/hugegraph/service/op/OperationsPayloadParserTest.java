@@ -178,6 +178,39 @@ public class OperationsPayloadParserTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    public void testPdMappingDiagnosticsRetainTailMatchesBeforeOtherBoundedMembers() {
+        OperationsPayloadParser parser = new OperationsPayloadParser(MAPPER);
+        String[] addresses = new String[12];
+        for (int i = 0; i < 10; i++) {
+            addresses[i] = "http://pd-" + i + ":8620";
+        }
+        addresses[0] = "http://private-user:private-password@pd-0:8620/path?token=private-query";
+        addresses[10] = "http://pd-node:8620/private-base-path";
+        addresses[11] = "HTTP://PD-NODE:8620/private-base-path/";
+        String cluster = pdCluster(addresses);
+        List<Node> discovered = parser.parseTopology(cluster,
+                "{\"status\":0,\"data\":{\"stores\":[]}}").getNodes();
+        Map<String, Object> result = parser.pdMetricMappingDiagnostics(cluster, addresses[10]);
+
+        Assert.assertEquals("ambiguous", result.get("status"));
+        Assert.assertEquals(2, result.get("matched_nodes"));
+        Assert.assertEquals(12, result.get("discovered_nodes"));
+        Assert.assertEquals(2, result.get("omitted_members"));
+        List<Map<String, Object>> members = (List<Map<String, Object>>) result.get("members");
+        Assert.assertEquals(10, members.size());
+        for (int i = 0; i < 2; i++) {
+            Assert.assertEquals(discovered.get(10 + i).getId(), members.get(i).get("node_id"));
+            Assert.assertEquals(true, members.get(i).get("origin_matches"));
+            Assert.assertEquals(true, members.get(i).get("base_path_matches"));
+        }
+        Assert.assertEquals(discovered.get(0).getId(), members.get(2).get("node_id"));
+        Assert.assertEquals(discovered.get(7).getId(), members.get(9).get("node_id"));
+        Assert.assertFalse(result.toString().contains("private"));
+        Assert.assertFalse(result.toString().contains("token="));
+    }
+
+    @Test
     public void testOmitsIncompleteOrOverflowingSizeFacts() {
         String cluster = "{\"status\":0,\"data\":{" +
                          "\"pdList\":[],\"dataSize\":9223372036854775807}}";
