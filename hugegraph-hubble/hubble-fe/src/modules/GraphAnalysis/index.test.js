@@ -249,3 +249,12 @@ it('keeps Server tasks visible after a known Vermeer configuration error', async
     expect(screen.getByText('analysis.topbar.get_vermeer_failed')).toBeVisible();
     expect(screen.getByRole('button', {name: 'analysis.topbar.retry_vermeer'})).toBeEnabled();
 });
+
+it('shows submitted-task feedback while optional Vermeer discovery is still pending', async () => {
+    const discovery = deferred();
+    api.auth.getVermeer.mockReturnValue(discovery.promise);
+    render(<GraphAnalysisHome moduleName='asyncTasks' />);
+    expect(screen.getByText('async module')).toBeVisible();
+    await act(async () => discovery.resolve({status: 200, data: {enable: false}}));
+    expect(screen.getByText('async module')).toBeVisible();
+});

@@ -137,12 +137,14 @@ test('marks missing and invalid counts unavailable instead of rendering blanks',
         />
     );
 
-    expect(screen.getAllByText('Unavailable')).toHaveLength(4);
+    expect(screen.getAllByText('Unavailable')).toHaveLength(2);
+    expect(screen.getAllByText('This result')).toHaveLength(2);
+    expect(screen.queryByText('/')).not.toBeInTheDocument();
     expect(screen.getByRole('group', {
-        name: 'Nodes: Unavailable in this result, Unavailable in the full graph',
+        name: 'Nodes: Unavailable in this result; full-graph total not obtained',
     })).toBeInTheDocument();
     expect(screen.getByRole('group', {
-        name: 'Edges: Unavailable in this result, Unavailable in the full graph',
+        name: 'Edges: Unavailable in this result; full-graph total not obtained',
     })).toBeInTheDocument();
 });
 
@@ -187,7 +189,21 @@ test('shows a capped scan as a lower bound instead of an exact denominator', () 
 test('does not add approximate markers to unavailable totals', () => {
     render(<NumberCard data={{...counts, allGraphNodesNum: null, allGraphEdgesNum: -1,
         approximate: true, scan_limit: 100000}} />);
-    expect(screen.getByText('Unavailable')).toBeInTheDocument();
+    expect(screen.getByText('This result')).toBeInTheDocument();
+    expect(screen.queryByText('Unavailable')).not.toBeInTheDocument();
     expect(screen.getByText('Loading')).toBeInTheDocument();
     expect(screen.queryByText(/≈Unavailable|≥Unavailable/)).not.toBeInTheDocument();
+});
+
+
+test('shows current counts without a misleading unavailable denominator when statistics were not obtained', () => {
+    mockLanguage = 'zh';
+    render(<NumberCard data={{currentGraphNodesNum: 100, currentGraphEdgesNum: 0}} />);
+    expect(screen.getByText('100')).toBeInTheDocument();
+    expect(screen.getByText('0')).toBeInTheDocument();
+    expect(screen.getAllByText('当前结果')).toHaveLength(2);
+    expect(screen.queryByText('/')).not.toBeInTheDocument();
+    expect(screen.queryByText('不可用')).not.toBeInTheDocument();
+    expect(screen.getByRole('group', {name: '节点：当前结果 100；全图总数未获取'}))
+        .toHaveAttribute('title', '节点：当前结果 100；全图总数未获取');
 });

@@ -230,7 +230,7 @@ const GraphAnalysisHome = props => {
     );
 
     const renderModule = () => {
-        if (moduleName !== GREMLIN && !vermeerReady) {
+        if (moduleName === ALGORITHMS && !vermeerReady) {
             return vermeerLoading ? <Spin /> : null;
         }
         switch (moduleName) {

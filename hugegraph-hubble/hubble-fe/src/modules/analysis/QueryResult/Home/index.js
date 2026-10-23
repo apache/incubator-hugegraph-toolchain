@@ -22,7 +22,7 @@
 
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {Alert, Button, Tabs} from 'antd';
+import {Alert, Button, Popover, Tabs} from 'antd';
 import JsonView from '../JsonView';
 import GraphResult from '../GraphResult/Home';
 import TableView from '../TableView';
@@ -169,7 +169,49 @@ const QueryResult = props => {
             />
         </div>
     );
-    const graphView = nonGraphResult && !queryProgress ? nonGraphPreview : (
+    const renderPreviewNotice = view => {
+        if (!isQueryMode || queryStatus !== GRAPH_STATUS.SUCCESS || queryProgress) return null;
+        const summaries = [];
+        const details = [];
+        if (queryResult?.result_truncated) {
+            summaries.push(t('analysis.query_result.result_preview_summary'));
+            details.push(t('analysis.query_result.result_preview_truncated', {limit: queryResult.result_limit || 1000}));
+        }
+        if (queryResult?.properties_truncated) {
+            summaries.push(t('analysis.query_result.properties_preview_summary'));
+            details.push(t('analysis.query_result.properties_preview', {limit: queryResult.property_preview_limit || 256}));
+        }
+        if (view === 'graph' && graphTruncated) {
+            summaries.push(t('analysis.query_result.graph_limit_title'));
+            details.push(t('analysis.query_result.graph_limit_description', {nodeLimit: GRAPH_NODE_LIMIT, edgeLimit}));
+        }
+        if (view === 'json' && jsonPreview?.truncated) {
+            summaries.push(t('analysis.query_result.json_preview_summary'));
+            details.push(t('analysis.query_result.json_preview_truncated'));
+        }
+        if (queryResult?.default_limit_applied && !queryResult?.result_truncated) {
+            summaries.push(t('analysis.query_result.default_limit_applied', {limit: queryResult.default_limit || 300}));
+        }
+        if (summaries.length === 0) return null;
+        return (
+            <div className={c.previewStatus}>
+                <span>{summaries.join(' · ')}</span>
+                {details.length > 0 && (
+                    <Popover trigger="click" placement="topLeft" content={(
+                        <div className={c.previewDetails}>
+                            {details.map(detail => <p key={detail}>{detail}</p>)}
+                            <p>{t('analysis.query_result.preview_limits_hint')}</p>
+                        </div>
+                    )}>
+                        <Button type="text" size="small">{t('analysis.query_result.preview_details')}</Button>
+                    </Popover>
+                )}
+            </div>
+        );
+    };
+    const graphView = nonGraphResult && !queryProgress ? (
+        <>{renderPreviewNotice('result')}{nonGraphPreview}</>
+    ) : (
         <>
             <GraphResult
                 fitHeight={height !== undefined}
@@ -179,6 +221,7 @@ const QueryResult = props => {
                 queryMessage={queryMessage}
                 queryProgress={queryProgress}
                 asyncTaskId={asyncTaskResult}
+                previewNotice={renderPreviewNotice('graph')}
                 {...args}
             />
         </>
@@ -189,30 +232,6 @@ const QueryResult = props => {
             className={`${c.queryResult} ${height !== undefined ? c.sized : ''}`}
             style={height !== undefined ? {height, '--analysis-result-height': `${height}px`} : undefined}
         >
-            {queryResult?.properties_truncated && queryStatus === GRAPH_STATUS.SUCCESS && (
-                <Alert showIcon type="info" title={t('analysis.query_result.properties_preview', {
-                    limit: queryResult.property_preview_limit || 256,
-                })} />
-            )}
-            {queryResult?.result_truncated && queryStatus === GRAPH_STATUS.SUCCESS && (
-                <Alert showIcon type="warning"
-                    title={t('analysis.query_result.result_preview_truncated', {limit: queryResult.result_limit || 1000})} />
-            )}
-            {queryResult?.default_limit_applied && queryStatus === GRAPH_STATUS.SUCCESS && (
-                <Alert showIcon type="info"
-                    title={t('analysis.query_result.default_limit_applied', {limit: queryResult.default_limit || 300})} />
-            )}
-            {graphTruncated && !queryProgress && (
-                <Alert
-                    showIcon
-                    type="warning"
-                    title={t('analysis.query_result.graph_limit_title')}
-                    description={t('analysis.query_result.graph_limit_description', {
-                        nodeLimit: GRAPH_NODE_LIMIT,
-                        edgeLimit,
-                    })}
-                />
-            )}
             <Tabs
                 tabPlacement="left"
                 className={c.queryResultTabs}
@@ -227,21 +246,22 @@ const QueryResult = props => {
                     {
                         label: renderTab(TABLE_VIEW),
                         key: 2,
-                        children: <TableView
-                            queryResultTable={queryResultTable}
-                            queryStatus={queryStatus}
-                            isQueryMode={isQueryMode}
-                            queryMessage={queryMessage}
-                            asyncTaskId={asyncTaskResult}
-                        />,
+                        children: <>
+                            {renderPreviewNotice('table')}
+                            <TableView
+                                queryResultTable={queryResultTable}
+                                queryStatus={queryStatus}
+                                isQueryMode={isQueryMode}
+                                queryMessage={queryMessage}
+                                asyncTaskId={asyncTaskResult}
+                            />
+                        </>,
                     },
                     {
                         label: renderTab(JSON_VIEW),
                         key: 3,
                         children: <>
-                            {jsonPreview?.truncated && (
-                                <Alert showIcon type="info" title={t('analysis.query_result.json_preview_truncated')} />
-                            )}
+                            {renderPreviewNotice('json')}
                             <JsonView
                                 jsonViewContent={jsonViewContent}
                                 queryStatus={queryStatus}

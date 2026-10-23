@@ -20,16 +20,18 @@
  * @file TaskNavigateView
  */
 
-import {useCallback} from 'react';
+import {useCallback, useContext} from 'react';
 import {useTranslation} from 'react-i18next';
 import {useNavigate} from 'react-router-dom';
 import {Button} from 'antd';
 import {ArrowRightOutlined, CheckCircleFilled} from '@ant-design/icons';
+import GraphAnalysisContext from '../../Context';
 import c from './index.module.scss';
 
 const TaskNavigateView = props => {
     const {t} = useTranslation();
     const {message, taskId} = props;
+    const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const title = t('analysis.canvas.task_navigation.title');
     const submissionDetail = message && message !== title
         && message !== t('analysis.canvas.task_navigation.success_alt') ? message : null;
@@ -37,9 +39,10 @@ const TaskNavigateView = props => {
 
     const onClickDetail = useCallback(
         () => {
-            navigate(`/asyncTasks/${taskId}`);
+            navigate(`/asyncTasks/${encodeURIComponent(graphSpace)}/${encodeURIComponent(graph)}`
+                + `?taskId=${encodeURIComponent(taskId)}&submitted=1`);
         },
-        [navigate, taskId]
+        [graph, graphSpace, navigate, taskId]
     );
 
     return (
@@ -61,7 +64,12 @@ const TaskNavigateView = props => {
                     <dt>{t('analysis.canvas.task_navigation.task_id')}</dt>
                     <dd>{taskId}</dd>
                 </dl>
-                <Button type='primary' className={c.viewButton} onClick={onClickDetail}>
+                <Button
+                    type='primary'
+                    className={c.viewButton}
+                    onClick={onClickDetail}
+                    disabled={!graphSpace || !graph}
+                >
                     {t('analysis.canvas.task_navigation.view')}
                     <ArrowRightOutlined aria-hidden='true' />
                 </Button>

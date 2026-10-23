@@ -29,6 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.apache.hugegraph.service.space.DirectVermeerService;
 import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.exception.ExternalException;
+import org.apache.hugegraph.exception.ServerException;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -72,11 +73,17 @@ public class AsyncTaskService {
         List<Long> serverIds = taskIds.stream().filter(id -> id >= 0).toList();
         List<Task> tasks = new ArrayList<>();
         if (!serverIds.isEmpty()) {
-            tasks.addAll(client.task().list(serverIds));
+            try {
+                tasks.addAll(client.task().list(serverIds));
+            } catch (ServerException e) {
+                if (e.status() != 404) {
+                    throw e;
+                }
+            }
         }
         for (Long id : taskIds) {
             if (id < 0) {
-                tasks.add(this.vermeer.task(client, Math.toIntExact(id), true));
+                tasks.add(this.vermeer.task(client, Math.toIntExact(id), false));
             }
         }
         for (Task task: tasks) {
@@ -94,6 +101,8 @@ public class AsyncTaskService {
             status = null;
         }
         List<Task> tasks = new ArrayList<>(client.task().list(status));
+        content = content.trim();
+        this.addExactIdTask(client, tasks, content);
         boolean vermeerUnavailable = false;
         if (this.vermeer != null && this.vermeer.configured() && this.vermeer.supported() &&
             (type.isEmpty() || type.startsWith(VERMEER_TASK_TYPE))) {
@@ -120,7 +129,8 @@ public class AsyncTaskService {
             }
             if (!content.isEmpty()) {
                 String taskId = String.valueOf(task.id());
-                if (!content.equals(taskId) && !task.name().contains(content)) {
+                if (!content.equals(taskId) &&
+                    (task.name() == null || !task.name().contains(content))) {
                     continue;
                 }
             }
@@ -128,6 +138,27 @@ public class AsyncTaskService {
         }
         result.sort(Comparator.comparing(Task::createTime).reversed());
         return new TaskPage(PageUtil.page(result, pageNo, pageSize), vermeerUnavailable);
+    }
+
+    private void addExactIdTask(HugeClient client, List<Task> tasks, String content) {
+        final long id;
+        try {
+            id = Long.parseLong(content);
+        } catch (NumberFormatException ignored) {
+            return;
+        }
+        if (id < 0 || tasks.stream().anyMatch(task -> task.id() == id)) {
+            return;
+        }
+        try {
+            // A submitted task may be in the scheduler before its persisted
+            // list entry is visible. The IDs API returns metadata, not results.
+            tasks.addAll(client.task().list(List.of(id)));
+        } catch (ServerException e) {
+            if (e.status() != 404) {
+                throw e;
+            }
+        }
     }
 
     public static class TaskPage extends Page<Task> {

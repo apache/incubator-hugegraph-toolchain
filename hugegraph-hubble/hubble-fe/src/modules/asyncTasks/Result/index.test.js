@@ -29,7 +29,7 @@ jest.mock('react-router-dom', () => ({
     useParams: () => ({graphspace: 'DEFAULT', graph: 'hugegraph', taskId: '9'}),
 }));
 jest.mock('react-i18next', () => ({
-    useTranslation: () => ({t: key => ({
+    useTranslation: () => ({t: (key, values) => ({
         'analysis.async_task.result_load_failed': 'Could not load task result.',
         'analysis.async_task.retry_result': 'Retry result',
         'analysis.async_task.result_loading': 'Loading task result',
@@ -37,6 +37,10 @@ jest.mock('react-i18next', () => ({
         'analysis.async_task.result_title': 'Task result',
         'analysis.async_task.result_back': 'Back to task management',
         'analysis.async_task.result_context': 'DEFAULT / hugegraph / Task 9',
+        'analysis.async_task.result_failure_title': 'Task failed',
+        'analysis.async_task.result_size_limit_title': 'Task result exceeds the server limit',
+        'analysis.async_task.result_size_limit_description': `Result ${values?.size} MiB exceeds ${values?.limit} MiB`,
+        'analysis.async_task.refine_query': 'Refine query',
     })[key] || key}),
 }));
 
@@ -104,4 +108,38 @@ it('pages direct Vermeer values and resets the cursor after a graph change', asy
     view.rerender(<AsyncTaskResultContent graphspace='DEFAULT' graph='two' taskId={-9} />);
     await waitFor(() => expect(api.analysis.fetchAsyncTaskResult).toHaveBeenLastCalledWith('DEFAULT', 'two', -9));
     expect(await screen.findByText('"first"')).toBeInTheDocument();
+});
+
+it.each(['gremlin', 'cypher'])('explains an oversized %s result and links its query language', async taskType => {
+    const failure = 'org.apache.hugegraph.exception.LimitExceedException: '
+        + 'Task result size 77849617 exceeded limit 16777216 bytes';
+    api.analysis.fetchAsyncTaskResult.mockResolvedValue({status: 200, data: {
+        task_status: 'failed', task_type: taskType, task_result: failure,
+    }});
+    renderResult();
+    expect(await screen.findByRole('alert')).toHaveTextContent('Task result exceeds the server limit');
+    expect(screen.getByRole('alert')).toHaveTextContent('Result 74.24 MiB exceeds 16.00 MiB');
+    expect(screen.getByText(failure)).toBeInTheDocument();
+    expect(screen.getByRole('link', {name: 'Refine query'}))
+        .toHaveAttribute('href', `/gremlin/DEFAULT/hugegraph?language=${taskType}`);
+});
+
+it.each(['algorithm', undefined])('does not suggest a query editor for task type %s', async taskType => {
+    api.analysis.fetchAsyncTaskResult.mockResolvedValue({status: 200, data: {
+        task_status: 'failed', task_type: taskType,
+        task_result: 'Task result size 77849617 exceeded limit 16777216 bytes',
+    }});
+    renderResult();
+    expect(await screen.findByRole('alert')).toHaveTextContent('Task result exceeds the server limit');
+    expect(screen.queryByRole('link', {name: 'Refine query'})).not.toBeInTheDocument();
+});
+
+it('does not classify unrelated task failures as a result size limit', async () => {
+    api.analysis.fetchAsyncTaskResult.mockResolvedValue({status: 200, data: {
+        task_status: 'failed', task_result: 'Query timed out',
+    }});
+    renderResult();
+    expect(await screen.findByRole('alert')).toHaveTextContent('Task failed');
+    expect(screen.getByText('Query timed out')).toBeInTheDocument();
+    expect(screen.queryByText('Task result exceeds the server limit')).not.toBeInTheDocument();
 });

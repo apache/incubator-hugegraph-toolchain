@@ -134,3 +134,10 @@ test('lets deferred statistics own business error feedback', () => {
     analysis.getGraphData('DEFAULT', 'g', config);
     expect(request.get).toHaveBeenCalledWith('/graphspaces/DEFAULT/graphs/g/gremlin-query', config);
 });
+
+test('discovers submitted tasks through metadata-only IDs lookup with inline error ownership', () => {
+    analysis.fetchManageTaskById('memory', 'soc_graph', '80001');
+    expect(request.get).toHaveBeenCalledWith('/graphspaces/memory/graphs/soc_graph/async-tasks/ids', {
+        params: {ids: '80001'}, suppressBusinessErrorToast: true,
+    });
+});

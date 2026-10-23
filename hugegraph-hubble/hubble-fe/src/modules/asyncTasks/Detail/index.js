@@ -384,10 +384,14 @@ const AsyncTaskDetail = props => {
                         >
                             <div className={c.inlineResultHeader}>
                                 <strong>
-                                    {t('analysis.async_task.result_title')}
+                                    {t(rowData.task_status === FAILED
+                                        ? 'analysis.async_task.result_failure_title'
+                                        : 'analysis.async_task.result_title')}
                                 </strong>
                                 <Link to={`/asyncTasks/result/${currentGraphSpace}/${currentGraph}/${rowData.id}`}>
-                                    {t('analysis.async_task.result_open_full')}
+                                    {t(rowData.task_status === FAILED
+                                        ? 'analysis.async_task.result_open_error'
+                                        : 'analysis.async_task.result_open_full')}
                                 </Link>
                             </div>
                             <AsyncTaskResultContent

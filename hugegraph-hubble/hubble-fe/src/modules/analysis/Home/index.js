@@ -22,13 +22,13 @@
 
 import {useState, useCallback, useEffect, useContext, useRef, useMemo, useLayoutEffect} from 'react';
 import {useTranslation} from 'react-i18next';
-import {useParams} from 'react-router-dom';
+import {useParams, useSearchParams} from 'react-router-dom';
 import {message} from 'antd';
 import GraphAnalysisContext from '../../Context';
 import QueryBar from '../QueryBar/Home';
 import useText2Gql from './useText2Gql';
 import {hasLargeExplicitReadLimit} from './queryLimits';
-import {DEFAULT_QUERY_LANGUAGE, QUERY_LANGUAGES} from '../../../utils/text2gql';
+import {DEFAULT_QUERY_LANGUAGE, QUERY_LANGUAGES, supportsQueryLanguage} from '../../../utils/text2gql';
 import QueryResult from '../QueryResult/Home';
 import {GRAPH_NODE_LIMIT} from '../QueryResult/Home/utils';
 import LogsDetail from '../LogsDetail/Home';
@@ -87,6 +87,10 @@ const AnalysisHome = ({toolbarExtra}) => {
         && (!routeGraphSpace || routeGraphSpace === graphSpace)
         && (!routeGraph || routeGraph === graph);
     const cypherEnabled = isCypherEnabled();
+    const [searchParams] = useSearchParams();
+    const requestedLanguage = searchParams.get('language');
+    const initialLanguage = supportsQueryLanguage(requestedLanguage, cypherEnabled)
+        ? requestedLanguage : DEFAULT_QUERY_LANGUAGE;
     const [queryStatus, setQueryStatus] = useState(STANDBY);
     const [executionDurationMs, setExecutionDurationMs] = useState(null);
     const [queryMessage, setQueryMessage] = useState();
@@ -97,7 +101,7 @@ const AnalysisHome = ({toolbarExtra}) => {
     const [propertyKeysState, setPropertyKeysState] = useState();
     const [graphNums, setGraphNums] = useState({vertexCount: -1, edgeCount: -1});
     const [executeMode, setExecuteMode] = useState(QUERY);
-    const [queryLanguage, setQueryLanguage] = useState(DEFAULT_QUERY_LANGUAGE);
+    const [queryLanguage, setQueryLanguage] = useState(initialLanguage);
     const analysisMode = QUERY_LANGUAGES[queryLanguage].analysisType;
     const historyMode = analysisMode;
     const [identityVersion, setIdentityVersion] = useState(0);
@@ -111,7 +115,7 @@ const AnalysisHome = ({toolbarExtra}) => {
     const [favoriteQueriesData, setFavoriteQueriesData] = useState({});
     const [executionLogsData, setExecutionLogsData] = useState({});
     const [codeEditorContent, setCodeEditorContent] = useState(
-        () => restoreQuery(graphSpace, graph, GREMLIN)
+        () => restoreQuery(graphSpace, graph, QUERY_LANGUAGES[initialLanguage].analysisType)
     );
     const [pageExecute, setExecutePage] = useState(defaultPageParams.page);
     const [pageFavorite, setFavoritePage] = useState(defaultPageParams.page);
@@ -407,13 +411,13 @@ const AnalysisHome = ({toolbarExtra}) => {
     useEffect(() => {
         queryRequest.current = null;
         executionInFlight.current = null;
-        setQueryLanguage(DEFAULT_QUERY_LANGUAGE);
+        setQueryLanguage(initialLanguage);
         languageDrafts.current = {};
         setEditorSource('manual');
-        setCodeEditorContent(restoreQuery(graphSpace, graph, GREMLIN));
+        setCodeEditorContent(restoreQuery(graphSpace, graph, QUERY_LANGUAGES[initialLanguage].analysisType));
         initQueryResult();
         onResetPage();
-    }, [graph, graphSpace, initQueryResult, onResetPage]);
+    }, [graph, graphSpace, initialLanguage, initQueryResult, onResetPage]);
 
     const onExecuteModeChange = useCallback(
         mode => {
