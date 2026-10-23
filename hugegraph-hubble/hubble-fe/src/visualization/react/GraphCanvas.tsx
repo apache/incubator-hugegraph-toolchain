@@ -171,13 +171,19 @@ export const GraphCanvas = (props: GraphCanvasProps) => {
                 hasDisplayedData: false, datasetGeneration: 0};
             instanceRef.current = instance;
             setController(owned);
+            let hasPositiveHostSize = false;
             const resize = (width: number, height: number, fit = true) => {
                 if (current() && width > 0 && height > 0) {
+                    const recoveredFromHidden = !hasPositiveHostSize;
+                    hasPositiveHostSize = true;
                     setHover(null);
-                    command(() => owned.resize(Math.max(1, Math.round(width)), Math.max(1, Math.round(height))), generation);
-                    if (fit && preset === 'thumbnail') {
-                        command(() => owned.fitView(), generation);
-                    }
+                    const shouldFit = fit && (preset === 'thumbnail' || recoveredFromHidden);
+                    command(async () => {
+                        await owned.resize(Math.max(1, Math.round(width)), Math.max(1, Math.round(height)));
+                        if (shouldFit) {
+                            await owned.fitView();
+                        }
+                    }, generation);
                 }
             };
             // G6 writes pixel dimensions to its surface. Observe the host so

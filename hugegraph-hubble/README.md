@@ -791,6 +791,25 @@ Then we should follow the [hubble workflow doc](https://hugegraph.apache.org/doc
 
 ## Browser acceptance
 
+The [browser regression guide](docs/browser-regression-guide.md) describes
+fixture checks, diagnostic configuration and live verification boundaries. Keep
+one-time reports and screenshots outside Git, in CI artifacts or PR attachments.
+
+The manual deployment regression runner checks the supported flows against an
+already running frontend. Its API responses are fixtures; it
+does not establish real-cluster acceptance and is separate from the distribution
+gate below. From `hugegraph-hubble`, with frontend dependencies installed:
+
+```bash
+HUBBLE_URL=http://127.0.0.1:3000 \
+HUBBLE_UI_EVIDENCE_DIR=/tmp/hubble-deployment-ui \
+  node hubble-dist/assembly/travis/run_ui_deployment_regressions.js
+```
+
+The output directory contains `browser-report.json` and screenshots; keep it outside
+Git. Each invocation replaces the old report and known runner screenshots,
+including on startup failure; unrelated files are preserved.
+
 Query and algorithm canvases, Schema views and graph-card previews share the G6 5.1.1
 visualization module. The screenshots show a running Hubble and Server with a
 small authenticated test dataset: [query](docs/images/g6/query.png),
