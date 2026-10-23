@@ -34,6 +34,7 @@ import {
 } from './components';
 import {formatObservedAt, hasStaleMetrics, metricIssueReason} from './topology';
 import {operationsReturnState} from './navigation';
+import {ReadinessStatus} from './Readiness';
 import './operations.scss';
 
 const stopRowNavigation = event => event.stopPropagation();
@@ -257,11 +258,11 @@ const Nodes = () => {
         {title: t('operations.status'), dataIndex: 'status', key: 'status', width: 140,
             sorter: true, sortOrder: sortOrder('status'),
             render: (value, record) => (
-                <HealthStatus
-                    status={value}
-                    reason={metricIssueReason(record)}
-                    stale={hasStaleMetrics(record)}
-                />
+                <span className='operations-node-status'>
+                    <HealthStatus status={value} reason={metricIssueReason(record)}
+                        stale={hasStaleMetrics(record)} />
+                    <ReadinessStatus readiness={record.readiness} />
+                </span>
             )},
         {title: t('operations.last_observed'), key: 'observed_at', width: 208,
             sorter: true, sortOrder: sortOrder('observed_at'), render: () => observed},

@@ -44,6 +44,7 @@ public final class OperationsModels {
         private final Long observedAt;
         private final Map<String, Object> metrics;
         private final Map<String, MetricStatus> metricStatuses;
+        private final Readiness readiness;
 
         public Node(String id, String type, String name, String role,
                     String version, String status, Long observedAt,
@@ -56,6 +57,15 @@ public final class OperationsModels {
                     String version, String status, Long observedAt,
                     Map<String, Object> metrics,
                     Map<String, MetricStatus> metricStatuses) {
+            this(id, type, name, role, version, status, observedAt, metrics,
+                 metricStatuses, null);
+        }
+
+        private Node(String id, String type, String name, String role,
+                     String version, String status, Long observedAt,
+                     Map<String, Object> metrics,
+                     Map<String, MetricStatus> metricStatuses,
+                     Readiness readiness) {
             this.id = id;
             this.type = type;
             this.name = name;
@@ -65,6 +75,7 @@ public final class OperationsModels {
             this.observedAt = observedAt;
             this.metrics = immutableMap(metrics);
             this.metricStatuses = immutableMap(metricStatuses);
+            this.readiness = readiness;
         }
 
         public String getId() {
@@ -101,6 +112,67 @@ public final class OperationsModels {
 
         public Map<String, MetricStatus> getMetricStatuses() {
             return this.metricStatuses;
+        }
+
+        public Readiness getReadiness() {
+            return this.readiness;
+        }
+
+        public Node withReadiness(Readiness value) {
+            return new Node(this.id, this.type, this.name, this.role,
+                            this.version, this.status, this.observedAt,
+                            this.metrics, this.metricStatuses, value);
+        }
+    }
+
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+    public static final class Readiness {
+
+        private final String status;
+        private final Long observedAt;
+        private final String state;
+        private final String reason;
+        private final boolean stale;
+        private final Map<String, Object> diagnostics;
+
+        public Readiness(String status, Long observedAt, String state,
+                         String reason, boolean stale,
+                         Map<String, Object> diagnostics) {
+            this.status = status;
+            this.observedAt = observedAt;
+            this.state = state;
+            this.reason = reason;
+            this.stale = stale;
+            this.diagnostics = immutableMap(diagnostics);
+        }
+
+        public String getStatus() {
+            return this.status;
+        }
+
+        public Long getObservedAt() {
+            return this.observedAt;
+        }
+
+        public String getState() {
+            return this.state;
+        }
+
+        public String getReason() {
+            return this.reason;
+        }
+
+        public boolean isStale() {
+            return this.stale;
+        }
+
+        public Map<String, Object> getDiagnostics() {
+            return this.diagnostics;
+        }
+
+        public Readiness asStale() {
+            return new Readiness(this.status, this.observedAt, this.state,
+                                 this.reason, true, this.diagnostics);
         }
     }
 
@@ -406,7 +478,9 @@ public final class OperationsModels {
                 staleNodes.add(new Node(
                                node.getId(), node.getType(), node.getName(),
                                node.getRole(), node.getVersion(), node.getStatus(),
-                               node.getObservedAt(), node.getMetrics(), statuses));
+                               node.getObservedAt(), node.getMetrics(), statuses)
+                               .withReadiness(node.getReadiness() == null ? null :
+                                              node.getReadiness().asStale()));
             }
             return new Snapshot("DEGRADED", this.observedAt, true, staleReason,
                                 staleSources, staleNodes, this.facts);

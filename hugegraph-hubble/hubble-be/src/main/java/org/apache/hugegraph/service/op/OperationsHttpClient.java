@@ -81,6 +81,20 @@ public class OperationsHttpClient {
 
     public String get(URI target, String username, String password,
                       Set<String> allowedOrigins, String accept) {
+        return this.request(target, username, password, allowedOrigins, accept,
+                            false).getBody();
+    }
+
+    // Readiness uses 503 with a structured explanation; ordinary GETs still reject it.
+    public ProbeResponse probe(URI target, String username, String password,
+                               Set<String> allowedOrigins) {
+        return this.request(target, username, password, allowedOrigins,
+                            "application/json", true);
+    }
+
+    private ProbeResponse request(URI target, String username, String password,
+                                   Set<String> allowedOrigins, String accept,
+                                   boolean readiness) {
         validateTarget(target, allowedOrigins);
         if (!"application/json".equals(accept) &&
             !"text/plain".equals(accept)) {
@@ -106,7 +120,7 @@ public class OperationsHttpClient {
             try (Response response = requestClient.newCall(request.build())
                                               .execute()) {
                 int status = response.code();
-                if (status < 200 || status >= 300) {
+                if ((status < 200 || status >= 300) && !(readiness && status == 503)) {
                     throw new UpstreamRequestException(
                               "upstream_http_status_" + status, null,
                               Map.of("request_path", target.getRawPath(), "http_status", status));
@@ -121,7 +135,7 @@ public class OperationsHttpClient {
                             target.getRawPath(), this.maxResponseBytes, body.contentLength(), true);
                 }
                 try (InputStream input = body.byteStream()) {
-                    return this.readLimited(input, target.getRawPath());
+                    return new ProbeResponse(status, this.readLimited(input, target.getRawPath()));
                 }
             }
         } catch (UpstreamRequestException e) {
@@ -132,6 +146,25 @@ public class OperationsHttpClient {
         } catch (IOException | IllegalArgumentException e) {
             throw new UpstreamRequestException("upstream_unavailable", e,
                                                Map.of("request_path", target.getRawPath()));
+        }
+    }
+
+    public static final class ProbeResponse {
+
+        private final int status;
+        private final String body;
+
+        private ProbeResponse(int status, String body) {
+            this.status = status;
+            this.body = body;
+        }
+
+        public int getStatus() {
+            return this.status;
+        }
+
+        public String getBody() {
+            return this.body;
         }
     }
 

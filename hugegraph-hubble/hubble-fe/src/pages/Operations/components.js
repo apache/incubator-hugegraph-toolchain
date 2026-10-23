@@ -32,6 +32,7 @@ import {Button, Tooltip} from 'antd';
 import {Link} from 'react-router-dom';
 import {useTranslation} from 'react-i18next';
 import {sourceHealthStatus} from './sourceHealth';
+import {ReadinessStatus, readinessLabel} from './Readiness';
 import {
     formatObservedAge,
     formatObservedAt,
@@ -276,6 +277,9 @@ const nodeRoleLabel = (node, t) => {
 const TierNode = ({node, returnState}) => {
     const {t} = useTranslation();
     const name = node.name;
+    const readiness = readinessLabel(node.readiness, t);
+    const label = [node.type, name, nodeRoleLabel(node, t), displayHealthStatus(node.status, t),
+        readiness ? `${t('operations.readiness_short')}: ${readiness}` : null].filter(Boolean).join(' ');
     return (
         <Link
             className={[
@@ -286,8 +290,7 @@ const TierNode = ({node, returnState}) => {
             ].filter(Boolean).join(' ')}
             to={`/operations/nodes/${node.id}`}
             state={returnState}
-            aria-label={`${node.type} ${name} ${nodeRoleLabel(node, t)} ${
-                displayHealthStatus(node.status, t)}`}
+            aria-label={label}
         >
             <TierIcon type={node.type} />
             <span className='operations-node-copy'>
@@ -303,11 +306,11 @@ const TierNode = ({node, returnState}) => {
                         ? (node.version ?? '—') : nodeRoleLabel(node, t)}
                 </span>
             </span>
-            <HealthStatus
-                status={node.status}
-                reason={metricIssueReason(node)}
-                stale={hasStaleMetrics(node)}
-            />
+            <span className='operations-node-status'>
+                <HealthStatus status={node.status} reason={metricIssueReason(node)}
+                    stale={hasStaleMetrics(node)} />
+                <ReadinessStatus readiness={node.readiness} compact />
+            </span>
         </Link>
     );
 };

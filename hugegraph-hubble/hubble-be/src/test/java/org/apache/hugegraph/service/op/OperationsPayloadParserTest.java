@@ -34,6 +34,38 @@ public class OperationsPayloadParserTest {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Test
+    public void testReadinessRequiresExplicitKnownBodyAndPreservesSafeReasons() throws Exception {
+        OperationsPayloadParser parser = new OperationsPayloadParser(new ObjectMapper());
+        OperationsModels.Readiness ready = parser.parseReadiness("PD",
+                "{\"ready\":true,\"state\":\"STATE_FOLLOWER\",\"isLeader\":false}", 200, 1L, "/probe-prefix/v1/ready");
+        Assert.assertEquals("READY", ready.getStatus());
+        Assert.assertEquals("STATE_FOLLOWER", ready.getState());
+        Assert.assertEquals("/probe-prefix/v1/ready", ready.getDiagnostics().get("request_path"));
+        for (String payload : new String[]{
+                "{}", "[]", "null", "private host=/private-path", "{\"ready\":\"true\"}",
+                "{\"ready\":true,\"state\":\"private-state\"}",
+                "{\"ready\":true,\"state\":\"STATE_ERROR\"}"}) {
+            OperationsModels.Readiness unknown = parser.parseReadiness("PD", payload, 200, 1L, "/probe-prefix/v1/ready");
+            Assert.assertEquals("UNKNOWN", unknown.getStatus());
+            Assert.assertEquals("readiness_response_unrecognized", unknown.getReason());
+            Assert.assertFalse(new ObjectMapper().writeValueAsString(unknown).contains("private"));
+        }
+        OperationsModels.Readiness unauthorized = parser.parseReadiness("PD",
+                "{\"status\":-1,\"error\":\"Unauthorized! private-details\"}", 200, 1L, "/probe-prefix/v1/ready");
+        Assert.assertEquals("UNKNOWN", unauthorized.getStatus());
+        Assert.assertEquals("readiness_auth_rejected", unauthorized.getReason());
+        Assert.assertFalse(new ObjectMapper().writeValueAsString(unauthorized).contains("private"));
+        Assert.assertEquals("UNKNOWN", parser.parseReadiness("PD",
+                "{\"ready\":true,\"state\":\"STATE_LEADER\"}", 503, 1L, "/probe-prefix/v1/ready").getStatus());
+        Assert.assertEquals("pd_quorum_not_ready", parser.parseReadiness("PD",
+                "{\"ready\":false,\"state\":\"STATE_FOLLOWER\"}", 503, 1L, "/probe-prefix/v1/ready").getReason());
+        Assert.assertEquals("NOT_READY", parser.parseReadiness("STORE",
+                "{\"status\":0,\"text\":\"STOPPING\"}", 200, 1L, "/probe-prefix/v1/ready").getStatus());
+        Assert.assertEquals("UNKNOWN", parser.parseReadiness("STORE",
+                "{\"status\":1,\"text\":\"ONLINE\"}", 200, 1L, "/probe-prefix/v1/ready").getStatus());
+    }
+
+    @Test
     public void testParsesPdWrapperAndRedactsInfrastructureFields()
            throws Exception {
         String cluster = "{\"status\":0,\"data\":{" +

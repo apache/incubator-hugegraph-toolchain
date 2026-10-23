@@ -843,6 +843,11 @@ node --test hubble-dist/assembly/travis/ui_auth.test.js \
 python3 hubble-dist/assembly/travis/test_run_live_hubble_smoke.py
 ```
 
+The [service readiness contract](docs/service-readiness-20261023.md) explains
+why registered `UP` nodes can report a service as not ready, the bounded PD/Store
+probes, and the reproducible Chromium checks. Screenshots stay outside Git and
+are linked through the pull request's regression record.
+
 ## Doc
 
 [The hubble homepage](https://hugegraph.apache.org/docs/quickstart/hugegraph-hubble/) contains more information about it.

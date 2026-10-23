@@ -410,14 +410,16 @@ public class DefaultOperationsDataService implements OperationsDataService {
                     source.getDiagnostics());
             statuses.put(group, staleStatus);
         });
-        return copyNode(node, node.getMetrics(), statuses);
+        return copyNode(node, node.getMetrics(), statuses).withReadiness(
+                node.getReadiness() == null ? null : node.getReadiness().asStale());
     }
 
     private static Node copyNode(Node node, Map<String, Object> metrics,
                                  Map<String, MetricStatus> statuses) {
         return new Node(node.getId(), node.getType(), node.getName(),
                         node.getRole(), node.getVersion(), node.getStatus(),
-                        node.getObservedAt(), metrics, statuses);
+                        node.getObservedAt(), metrics, statuses)
+                        .withReadiness(node.getReadiness());
     }
 
     private static boolean failed(SourceStatus source) {

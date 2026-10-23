@@ -33,6 +33,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.hugegraph.service.op.OperationsModels.Node;
+import org.apache.hugegraph.service.op.OperationsModels.Readiness;
 import org.apache.hugegraph.service.op.OperationsModels.MetricStatus;
 import org.apache.hugegraph.service.op.OperationsModels.Topology;
 
@@ -42,6 +43,59 @@ public class OperationsPayloadParser {
 
     public OperationsPayloadParser(ObjectMapper mapper) {
         this.mapper = mapper;
+    }
+
+    Readiness parseReadiness(String type, String payload, int httpStatus,
+                              long observedAt, String requestPath) {
+        Map<String, Object> details = Map.of("request_path", requestPath,
+                                           "http_status", httpStatus);
+        try {
+            JsonNode root = this.mapper.readTree(payload);
+            if (root == null || !root.isObject()) {
+                throw new MalformedUpstreamException("readiness");
+            }
+            if (root.path("status").asInt(0) == -1 &&
+                root.path("error").asText("").toLowerCase(Locale.ROOT).contains("unauthorized")) {
+                return new Readiness("UNKNOWN", observedAt, null,
+                                     "readiness_auth_rejected", false, details);
+            }
+            String state;
+            boolean ready;
+            String reason;
+            if ("PD".equals(type)) {
+                JsonNode flag = root.get("ready");
+                state = this.text(root, "state");
+                if (flag == null || !flag.isBoolean() ||
+                    !List.of("STATE_UNINITIALIZED", "STATE_LEADER", "STATE_FOLLOWER",
+                             "STATE_TRANSFERRING", "STATE_CANDIDATE", "STATE_ERROR",
+                             "STATE_SHUTTING", "STATE_SHUTDOWN").contains(state == null ? "" : state)) {
+                    throw new MalformedUpstreamException("readiness");
+                }
+                ready = flag.booleanValue();
+                if (ready && (httpStatus != 200 ||
+                              !List.of("STATE_LEADER", "STATE_FOLLOWER").contains(state))) {
+                    throw new MalformedUpstreamException("readiness");
+                }
+                reason = ready ? null : "STATE_ERROR".equals(state) ? "pd_raft_error" :
+                         "STATE_SHUTDOWN".equals(state) || "STATE_SHUTTING".equals(state) ?
+                         "pd_raft_shutdown" : "pd_quorum_not_ready";
+            } else {
+                JsonNode code = root.get("status");
+                state = this.text(root, "text");
+                if (httpStatus != 200 || code == null || !code.isIntegralNumber() || code.asInt(-1) != 0 ||
+                    !List.of("ONLINE", "STARTING", "STOPPING").contains(state == null ? "" : state)) {
+                    throw new MalformedUpstreamException("readiness");
+                }
+                ready = "ONLINE".equals(state);
+                reason = ready ? null : "STARTING".equals(state) ? "store_starting" : "store_stopping";
+            }
+            return new Readiness(ready ? "READY" : "NOT_READY", observedAt,
+                                 state, reason, false, details);
+        } catch (Exception e) {
+            // Never expose an upstream error envelope or infer readiness from HTTP 200.
+            return new Readiness("UNKNOWN", observedAt, null,
+                                 "readiness_response_unrecognized", false, details);
+        }
     }
 
     public Topology parseTopology(String clusterPayload, String storesPayload) {
