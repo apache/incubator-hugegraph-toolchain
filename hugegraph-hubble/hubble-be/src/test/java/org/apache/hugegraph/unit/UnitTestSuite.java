@@ -140,7 +140,8 @@ import org.junit.runners.Suite;
     org.apache.hugegraph.util.HubbleDateTimeTest.class,
     HubbleUtilTest.class,
     DirectVermeerServiceTest.class,
-    VermeerCredentialSafetyTest.class
+    VermeerCredentialSafetyTest.class,
+    VermeerClientTest.class
 })
 public class UnitTestSuite {
 }

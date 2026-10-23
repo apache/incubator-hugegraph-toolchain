@@ -117,6 +117,12 @@ credential filenames are not covered by these rules and should stay outside Git.
 Set `vermeer.url` in Hubble's properties to the Master HTTP origin. If Master uses
 token authentication, put its separate service token in a protected file and set
 `vermeer.token_file`. Hubble does not reuse its HugeGraph login token for Vermeer.
+In Vermeer `auth=token` mode, HugeGraph load/reload requires this service token to
+belong to a Vermeer administrator. The HugeGraph administrator who signs in to
+Hubble and the Vermeer service identity are checked separately. A valid token for
+an ordinary Vermeer user can pass worker readiness but cannot load HugeGraph data.
+Hubble reports this specific rejection as a `vermeer.token_file` configuration
+error; changing the Hubble user's login does not change that service token.
 An empty `vermeer.url` retains the existing Dashboard/Server-proxy path and its
 token-output capability restriction.
 The native adapter requires `pd.enabled=true` because its loader reads PD/Store

@@ -96,6 +96,11 @@ public class VermeerClient {
                 if (this.valuesNotFound(method, path, response)) {
                     throw new ValuesNotFoundException();
                 }
+                if (this.loadPermissionDenied(method, path, body, response)) {
+                    throw new ConfigurationException(
+                            "Vermeer HugeGraph loading requires an administrator service token; " +
+                            "check vermeer.token_file");
+                }
                 throw new ExternalException("Vermeer request failed (HTTP " +
                                             response.statusCode() + ")");
             }
@@ -115,6 +120,23 @@ public class VermeerClient {
             // Adapter validation can include URLs, token values or file paths.
             // Preserve the availability boundary without exposing those details.
             throw new ConfigurationException("Invalid Vermeer configuration or request");
+        }
+    }
+
+    private boolean loadPermissionDenied(String method, String path, Map<String, ?> body,
+                                         HttpResponse<String> response) {
+        if (response.statusCode() != 400 || !"POST".equals(method) ||
+            !"tasks/create".equals(path) || body == null ||
+            !("load".equals(body.get("task_type")) || "reload".equals(body.get("task_type")))) {
+            return false;
+        }
+        try {
+            Map<String, Object> error = this.mapper.readValue(response.body(),
+                    new TypeReference<Map<String, Object>>() { });
+            return error != null && "1".equals(String.valueOf(error.get("errcode"))) &&
+                   "admin permission is required to load from HugeGraph".equals(error.get("message"));
+        } catch (IOException e) {
+            return false;
         }
     }
 
