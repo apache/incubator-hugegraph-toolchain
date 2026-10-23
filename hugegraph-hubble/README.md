@@ -115,6 +115,16 @@ without trying to prove which query shapes produce small collections.
 
 ![A large explicit limit runs as a bounded preview with an asynchronous-mode reminder](docs/images/showcase/query-large-limit-preview.png)
 
+The 1,000-vertex ceiling is a resource guard, not a readability target. A controlled
+Chromium comparison in a 1,091 × 507 canvas, with two edges per vertex and two
+25% zoom-in clicks, found 30–50 vertices practical for reading local identifiers
+and relationships. At 100, identifiers were small; at 300–1,000, the current label
+policy hid identifiers at that camera setting. These observations are specific
+to the tested topology, label length, layout and viewport, not a human-user study.
+They do not change the implemented default 300 / ceiling 1,000 settings.
+[Comparison records and screenshot hashes](docs/images/showcase/query-readability-verification.json)
+cover 30, 50, 100, 300, 500 and 1,000 vertices.
+
 Preview edges use a bounded incident-edge sample and do not guarantee the complete
 induced subgraph of the displayed nodes.
 
