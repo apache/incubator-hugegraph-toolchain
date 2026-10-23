@@ -120,7 +120,13 @@ Canvas removal is a view operation; it is not described as persistent data delet
 The acceptance runner also passed with a trailing slash in `HUBBLE_URL`.
 It uses a configured Chromium executable, an available system Chromium, or the
 Playwright-managed browser. A deliberately failed run preserved distinct
-screenshots for two browser contexts instead of overwriting one failure image.
+screenshots for two browser contexts instead of overwriting one failure image. Indexed diagnostic captures were
+also verified with a visible error toast in both contexts; ordinary captures
+still reject unexpected error toasts. The strengthened ten-scenario rerun at
+`f4e79106` actually edits the expanded quota input, waits for the released stale
+response and browser frames, verifies anonymous edit/delete controls in both
+views, requires at least three exact-ID lookups while the task list stays empty,
+and checks all three PD member origins plus the zero-match/affected-node counts.
 
 After adding #93, combined commit `a6157fc1e7a0ba912368cd68555f5ad5f30cac98`
 passed 119 focused visualization tests, production build, TypeScript and locale

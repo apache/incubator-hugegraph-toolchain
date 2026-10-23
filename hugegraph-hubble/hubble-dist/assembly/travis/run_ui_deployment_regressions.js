@@ -104,7 +104,7 @@ async function setup(browser, auth) {
         else if (p.endsWith('/async-tasks/80001'))
             data = taskResult;
         else if (p.endsWith('/async-tasks'))
-            data = pageResult([task]);
+            data = pageResult([]); // The scheduler metadata must discover this task before the list does.
         else if (p === '/operations/nodes')
             data = { items: [node(1), node(2), node(3)], total: 3, page: 1, page_size: 20, observed_at: now, stale: false, sources: { pd: source } };
         else if (p === '/operations/overview')
@@ -133,7 +133,7 @@ async function screenshot(page, name) {
             .forEach(element => element.scrollTo(0, 0));
     });
     await page.waitForTimeout(250);
-    if (name !== 'failure') {
+    if (name !== 'failure' && !name.startsWith('failure-')) {
         const toasts = await page.locator('.ant-message-error').allTextContents();
         assert.deepEqual(toasts, [], 'Unexpected error toast: ' + toasts.join('; '));
     }
@@ -189,6 +189,11 @@ catch (e) {
             await page.getByRole('dialog').waitFor();
             await page.locator('#control-hooks_storage_limit').waitFor({ state: 'attached' });
             await page.waitForFunction(() => document.querySelector('#control-hooks_storage_limit')?.value === '10');
+            await page.getByRole('dialog').getByText('高级部署与资源限制', { exact: true }).click();
+            const quota = page.locator('#control-hooks_storage_limit');
+            assert(await quota.isEditable());
+            await quota.fill('25');
+            assert.equal(await quota.inputValue(), '25');
             assert(new URL(page.url()).pathname === '/graphspace');
             await screenshot(page, 'graphspace-edit');
             await page.getByRole('button', { name: /取\s*消/ }).click();
@@ -197,9 +202,12 @@ catch (e) {
             await page.goto(base + '/graphspace');
             let release;
             state.pendingDetail = new Promise(resolve => release = resolve);
+            const staleResponse = page.waitForResponse(response => new URL(response.url()).pathname.endsWith('/graphspaces/DEFAULT') && response.request().method() === 'GET');
+            const staleRequest = page.waitForRequest(request => new URL(request.url()).pathname.endsWith('/graphspaces/DEFAULT') && request.method() === 'GET');
             const defaultCard = page.locator('.ant-card').filter({ has: page.getByText('默认图空间', { exact: true }) }).first();
             await defaultCard.getByRole('button', { name: '更多' }).click();
             await page.getByRole('menuitem', { name: '编辑', exact: true }).click();
+            await staleRequest;
             assert(await page.getByRole('button', { name: /保\s*存/ }).isDisabled());
             await page.getByRole('button', { name: /取\s*消/ }).click();
             const nextCard = page.locator('.ant-card').filter({ has: page.getByText('记忆库', { exact: true }) }).first();
@@ -207,7 +215,8 @@ catch (e) {
             await page.getByRole('menuitem', { name: '编辑', exact: true }).click();
             await page.waitForFunction(() => document.querySelector('#control-hooks_name')?.value === 'soc_graph');
             release();
-            await page.waitForTimeout(200);
+            await (await staleResponse).finished();
+            await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
             assert.equal(await page.locator('#control-hooks_name').inputValue(), 'soc_graph');
             assert.equal(await page.locator('#control-hooks_storage_limit').inputValue(), '10');
             await page.getByRole('button', { name: /取\s*消/ }).click();
@@ -250,9 +259,12 @@ catch (e) {
             await page.getByRole('button', { name: '提交任务', exact: true }).click();
             await page.getByRole('button', { name: '查看任务进度', exact: true }).click();
             await page.waitForURL('**/asyncTasks/soc_graph/hugegraph?taskId=80001&submitted=1');
-            await page.getByText(/任务.*80001.*已提交/).waitFor();
+            await page.getByText('任务 80001 已提交，正在同步状态', { exact: true }).waitFor();
+            await page.getByText(/服务端已接受任务，正在每秒查询任务状态/).waitFor();
+            assert.equal(await page.getByText('80001', { exact: true }).count(), 0);
             await screenshot(page, 'async-task-submitted');
             await page.getByText('80001', { exact: true }).waitFor();
+            assert(state.taskLookups >= 3, `Expected delayed exact-ID polling, got ${state.taskLookups} lookups`);
             await page.getByText('查看原因', { exact: true }).click();
             await page.getByText('任务执行失败', { exact: true }).waitFor();
             assert.equal(await page.getByText('查看完整结果', { exact: true }).count(), 0);
@@ -266,6 +278,12 @@ catch (e) {
             await page.getByText('尚未采集系统指标', { exact: false }).first().waitFor();
             assert.equal(await page.getByText(/来源可能在发现节点前/).count(), 0);
             await page.getByText('http://pd-service:8620', { exact: true }).waitFor();
+            await page.getByText(/本次快照受影响节点:\s*3/).waitFor();
+            await page.getByText('没有匹配节点', { exact: true }).waitFor();
+            await page.getByText('0 / 3', { exact: true }).waitFor();
+            for (const member of source.diagnostics.pd_metric_mapping.members) {
+                await page.getByText(member.origin, { exact: true }).waitFor();
+            }
             await page.setViewportSize({width: 1440, height: 1600});
             await screenshot(page, 'pd-unmapped-diagnostics');
             await page.setViewportSize({width: 1440, height: 1000});
@@ -276,6 +294,14 @@ catch (e) {
             await anonymous.page.getByTestId('graphspace-page-title').waitFor();
             assert.equal(await anonymous.page.locator('a[href="/account"]').count(), 0);
             assert.equal(await anonymous.page.getByRole('button', { name: '创建图空间', exact: true }).count(), 0);
+            for (const mode of ['图模式', '列表模式']) {
+                await anonymous.page.getByText(mode, { exact: true }).click();
+                await anonymous.page.getByText('记忆库', { exact: true }).waitFor();
+                assert.equal(await anonymous.page.getByRole('button', { name: '更多', exact: true }).count(), 0);
+                assert.equal(await anonymous.page.getByText('编辑', { exact: true }).count(), 0);
+                assert.equal(await anonymous.page.getByText('删除', { exact: true }).count(), 0);
+            }
+            await anonymous.page.getByText('图模式', { exact: true }).click();
             await screenshot(anonymous.page, 'graphspace-anonymous');
         });
     }
