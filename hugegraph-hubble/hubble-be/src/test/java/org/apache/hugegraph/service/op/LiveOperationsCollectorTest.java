@@ -49,6 +49,91 @@ public class LiveOperationsCollectorTest {
             Instant.ofEpochMilli(2000L), ZoneOffset.UTC);
 
     @Test
+    public void testMemberDiscoveryDoesNotReadPartitionSummary()
+           throws IOException {
+        HttpServer pd = pdServer(200, members("Cluster_OK"), 200, stores());
+        AtomicInteger clusterRequests = new AtomicInteger();
+        pd.createContext("/v1/cluster", exchange -> {
+            clusterRequests.incrementAndGet();
+            exchange.sendResponseHeaders(500, -1);
+            exchange.close();
+        });
+        Snapshot snapshot;
+        LiveOperationsCollector collector = collector(true, pd);
+        try {
+            snapshot = collector.collect(serverClient(), false);
+        } finally {
+            collector.close();
+            pd.stop(0);
+        }
+
+        Assert.assertEquals(0, clusterRequests.get());
+        Assert.assertEquals("UP", snapshot.getStatus());
+        Assert.assertEquals("AVAILABLE", snapshot.getSources().get("pd").getAvailability());
+        Assert.assertEquals("Cluster_OK", snapshot.getSources().get("pd").getClusterState());
+        OperationsModels.Node pdNode = snapshot.getNodes().stream()
+                .filter(node -> "PD".equals(node.getType())).findFirst().orElseThrow();
+        Assert.assertEquals("LEADER", pdNode.getRole());
+        Assert.assertEquals("UP", pdNode.getStatus());
+        Assert.assertEquals("1.8.0", pdNode.getVersion());
+        Assert.assertEquals(Long.valueOf(1L), snapshot.getFacts().get("stores"));
+        Assert.assertEquals(Long.valueOf(1L), snapshot.getFacts().get("stores_up"));
+        Assert.assertFalse(snapshot.getFacts().containsKey("graphs"));
+        Assert.assertFalse(snapshot.getFacts().containsKey("partitions"));
+        Assert.assertFalse(snapshot.getFacts().containsKey("replicas"));
+        Assert.assertNull(snapshot.getSources().get("pd").getDataState());
+    }
+
+    @Test
+    public void testMemberDiscoveryPreservesClusterWarningWithUpNodes()
+           throws IOException {
+        HttpServer pd = pdServer(200, members("Cluster_Not_Ready"), 200, stores());
+        LiveOperationsCollector collector = collector(true, pd);
+        Snapshot snapshot;
+        try {
+            snapshot = collector.collect(serverClient(), false);
+        } finally {
+            collector.close();
+            pd.stop(0);
+        }
+
+        Assert.assertEquals("DEGRADED", snapshot.getStatus());
+        Assert.assertEquals("cluster_not_ready", snapshot.getReason());
+        Assert.assertEquals("UP", snapshot.getSources().get("pd").getStatus());
+        Assert.assertEquals("Cluster_Not_Ready", snapshot.getSources().get("pd").getClusterState());
+        Assert.assertTrue(snapshot.getNodes().stream()
+                .filter(node -> "PD".equals(node.getType()))
+                .allMatch(node -> "UP".equals(node.getStatus())));
+    }
+
+    @Test
+    public void testUnavailableMembersDoesNotFallBackToPartitionScan()
+           throws IOException {
+        HttpServer pd = pdServer(503, "unavailable", 200, stores());
+        AtomicInteger clusterRequests = new AtomicInteger();
+        pd.createContext("/v1/cluster", exchange -> {
+            clusterRequests.incrementAndGet();
+            exchange.sendResponseHeaders(200, -1);
+            exchange.close();
+        });
+        LiveOperationsCollector collector = collector(true, pd);
+        Snapshot snapshot;
+        try {
+            snapshot = collector.collect(serverClient(), false);
+        } finally {
+            collector.close();
+            pd.stop(0);
+        }
+
+        Assert.assertEquals(0, clusterRequests.get());
+        Assert.assertEquals("UNAVAILABLE", snapshot.getSources().get("pd").getAvailability());
+        Assert.assertEquals("upstream_rejected", snapshot.getSources().get("pd").getReason());
+        Assert.assertEquals(Map.of("request_path", "/v1/members", "http_status", 503),
+                            snapshot.getSources().get("pd").getDiagnostics());
+        Assert.assertEquals(Long.valueOf(1L), snapshot.getFacts().get("stores"));
+    }
+
+    @Test
     public void testNonPdModeReturnsServerAndUnsupportedPdSources() {
         HugeClient client = serverClient();
         LiveOperationsCollector collector = collector(false, null);
@@ -486,7 +571,7 @@ public class LiveOperationsCollectorTest {
         HttpServer pd = HttpServer.create(new InetSocketAddress(0), 0);
         String storePayload = stores().replace(
                 "PD_TEST_PORT", String.valueOf(pd.getAddress().getPort()));
-        context(pd, "/v1/cluster", 200, notReady.replace(
+        context(pd, "/v1/members", 200, notReady.replace(
                 "http://pd:8620", "http://127.0.0.1:" + pd.getAddress().getPort()));
         context(pd, "/v1/stores", 200, storePayload);
         context(pd, "/actuator/prometheus", 500, "unavailable");
@@ -973,9 +1058,9 @@ public class LiveOperationsCollectorTest {
     @Test
     public void testOversizedDiscoveryResponsesKeepSourceDiagnostics()
            throws IOException {
-        for (String path : new String[]{"/v1/stores", "/v1/cluster",
+        for (String path : new String[]{"/v1/stores", "/v1/members",
                                         "/v1/prom/targets-all"}) {
-            HttpServer pd = pdServer(200, "/v1/cluster".equals(path) ?
+            HttpServer pd = pdServer(200, "/v1/members".equals(path) ?
                                           "x".repeat(9000) : cluster(),
                                      200, "/v1/stores".equals(path) ?
                                           "x".repeat(9000) : stores());
@@ -990,7 +1075,7 @@ public class LiveOperationsCollectorTest {
                 pd.stop(0);
             }
 
-            String source = "/v1/cluster".equals(path) ? "pd" : "stores";
+            String source = "/v1/members".equals(path) ? "pd" : "stores";
             Assert.assertEquals("response_too_large",
                                 snapshot.getSources().get(source).getReason());
             Assert.assertEquals(Map.of("request_path", path,
@@ -1426,7 +1511,7 @@ public class LiveOperationsCollectorTest {
                             snapshot.getSources().get("pd").getAvailability());
         Assert.assertEquals("malformed_response",
                             snapshot.getSources().get("pd").getReason());
-        Assert.assertEquals(Map.of("request_path", "/v1/cluster"),
+        Assert.assertEquals(Map.of("request_path", "/v1/members"),
                             snapshot.getSources().get("pd").getDiagnostics());
     }
 
@@ -1551,7 +1636,7 @@ public class LiveOperationsCollectorTest {
         cluster = cluster.replace("http://pd:8620",
                                   "http://127.0.0.1:" + server.getAddress().getPort())
                          .replace("PD_TEST_AUTHORITY", "127.0.0.1:" + server.getAddress().getPort());
-        context(server, "/v1/cluster", clusterStatus, cluster);
+        context(server, "/v1/members", clusterStatus, cluster);
         context(server, "/v1/stores", storesStatus, stores);
         context(server, "/actuator/prometheus", 200,
                 "process_uptime_seconds{hg=\"pd\"} 12\n" +
@@ -1590,6 +1675,15 @@ public class LiveOperationsCollectorTest {
         return snapshot.getNodes().stream()
                 .filter(node -> "STORE".equals(node.getType()))
                 .findFirst().orElseThrow(AssertionError::new);
+    }
+
+    private static String members(String state) {
+        return "{\"status\":0,\"data\":{\"state\":\"" + state + "\"," +
+               "\"numOfService\":1,\"numOfNormalService\":1,\"stateCountMap\":{\"Up\":1}," +
+               "\"pdList\":[{\"restUrl\":\"http://pd:8620\",\"state\":\"Up\"," +
+               "\"serviceVersion\":\"1.8.0\",\"role\":\"Leader\"}]," +
+               "\"pdLeader\":{\"restUrl\":\"http://pd:8620\",\"state\":\"Up\"," +
+               "\"serviceVersion\":\"1.8.0\",\"role\":\"Leader\"}}}";
     }
 
     private static String cluster() {
@@ -1701,7 +1795,7 @@ public class LiveOperationsCollectorTest {
 
         private String response(java.net.URI target) {
             String path = target.getPath();
-            if ("/v1/cluster".equals(path)) {
+            if ("/v1/members".equals(path)) {
                 return cluster();
             }
             if ("/v1/stores".equals(path)) {
@@ -1798,7 +1892,7 @@ public class LiveOperationsCollectorTest {
         }
 
         private String response(java.net.URI target) {
-            if ("/v1/cluster".equals(target.getPath())) {
+            if ("/v1/members".equals(target.getPath())) {
                 if (!"pd-service".equals(target.getHost())) {
                     this.leaderRequests.incrementAndGet();
                     return leaderCluster("Cluster_OK", this.leaderHost);
