@@ -16,17 +16,17 @@
  * under the License.
  */
 
-import {Table, Row, Col, Space, Button, message, Modal, Tooltip} from 'antd';
+import {Table, Row, Col, Space, Button, message, Tooltip} from 'antd';
 import {EditEdgeLayer} from './EditLayer';
 import {useState, useEffect, useCallback} from 'react';
 import {useParams} from 'react-router-dom';
 import {useTranslation} from 'react-i18next';
 import useMetaTable from '../common/useMetaTable';
 import MetaTableStatus from '../common/MetaTableStatus';
+import confirmSchemaDeletion from '../common/confirmSchemaDeletion';
 import RowActionButton from '../../../components/RowActionButton';
 import * as api from '../../../api';
 
-const DELETE_REQUEST_CONFIG = {suppressBusinessErrorToast: true};
 
 const EdgeTable = ({canWrite = true}) => {
     const [editLayerVisible, setEditLayerVisible] = useState(false);
@@ -46,31 +46,20 @@ const EdgeTable = ({canWrite = true}) => {
     );
 
     const removeEdge = useCallback((names, isBatch) => {
-        Modal.confirm({
+        confirmSchemaDeletion({
+            graphspace, graph, names, t,
             title: t('schema.edge.delete_confirm'),
-            content: (
-                <><div>{t('schema.delete_irreversible')}</div>
-                    <div>{t('schema.delete_task_hint')}</div>
-                </>),
-            onOk: () => api.manage.delMetaEdge(
-                graphspace, graph, {names}, DELETE_REQUEST_CONFIG
-            ).then(res => {
-                if (res.status !== 200) {
-                    message.error(t('schema.delete_failed'));
-                    return;
-                }
-
-                if (isBatch) {
-                    setSelectedItems([]);
-                }
-
-                message.success(t('common.delete_success'));
-                setRefresh(!refresh);
-            }).catch(() => {
-                message.error(t('schema.delete_failed'));
-            }),
+            warning: <><div>{t('schema.delete_irreversible')}</div><div>{t('schema.delete_task_hint')}</div></>,
+            list: api.manage.getMetaEdgeList,
+            remove: api.manage.delMetaEdge,
+            asyncDeletion: true,
+            onRefresh: () => setRefresh(value => !value),
+            onComplete: () => {
+                if (isBatch) setSelectedItems([]);
+                setRefresh(value => !value);
+            },
         });
-    }, [graph, graphspace, refresh, t]);
+    }, [graph, graphspace, t]);
 
     const handleDelete = useCallback(row => {
         removeEdge([row.name]);

@@ -375,6 +375,9 @@ Prepare reusable schemas before configuring data sources and import tasks.
 
 ![Hubble schema template management](docs/images/showcase/schema-templates.jpg)
 
+Schema deletion keeps the selected graph and targets visible, and leaves failed requests
+open for retry or cancellation. See the [schema deletion recovery guide](docs/schema-delete-recovery-20261023.md).
+
 ### Asynchronous Tasks
 
 Track asynchronous queries and algorithms, then expand compact results inline.
