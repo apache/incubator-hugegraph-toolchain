@@ -438,7 +438,8 @@ public class LiveOperationsCollector implements OperationsCollector {
         SourceStatus pdStatus;
         SourceStatus storesStatus;
         try {
-            cluster = this.get("/v1/cluster");
+            // Member discovery must not trigger the partition scan in /v1/cluster.
+            cluster = this.get("/v1/members");
             pdStatus = available("UP", now);
         } catch (RuntimeException e) {
             pdStatus = unavailable(reason(e), now).withDiagnostics(diagnostics(e));
@@ -471,7 +472,7 @@ public class LiveOperationsCollector implements OperationsCollector {
                 }
                 clusterParsed = true;
             } catch (MalformedUpstreamException e) {
-                pdStatus = malformed(now).withDiagnostics(Map.of("request_path", "/v1/cluster"));
+                pdStatus = malformed(now).withDiagnostics(Map.of("request_path", "/v1/members"));
             }
         }
         if (stores != null) {

@@ -522,6 +522,14 @@ TLS SNI and certificate hostname verification.
 
 ### Cluster source diagnostics
 
+PD member discovery uses the lightweight `/v1/members` endpoint for members,
+leader and cluster state. It does not call `/v1/cluster` or fall back to that
+endpoint when discovery fails, so discovering nodes does not scan every graph
+partition. Optional aggregate fields absent from the member response, including
+graph, partition and replica counts and data state, remain unavailable rather
+than zero. Store counts and capacity still come from the existing `/v1/stores`
+response; Hubble does not request the heavy summary to fill the remaining cards.
+
 Cluster Overview distinguishes node reachability from collection quality. A
 Store source with failed or partial collection shows an amber attention status,
 even when its last topology status remains `UP`. **Inspect Store source** opens
