@@ -45,7 +45,6 @@ import lombok.NoArgsConstructor;
 @Builder
 public class GraphView {
 
-    public static final GraphView EMPTY = new GraphView();
     private static final int STATISTICS_ROWS = 10;
     private static final int TOP_DEGREE_NUMBER = 10;
 

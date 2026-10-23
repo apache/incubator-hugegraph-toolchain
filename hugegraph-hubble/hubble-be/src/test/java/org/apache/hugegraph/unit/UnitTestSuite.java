@@ -56,6 +56,7 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
     AccountMutationAuthorizationTest.class,
     AsyncConfigLifecycleTest.class,
+    MaintenanceSchedulingTest.class,
     AsyncLoadShutdownTest.class,
     AuthContextServiceTest.class,
     AuthModeServiceTest.class,
@@ -68,6 +69,7 @@ import org.junit.runners.Suite;
     ConfigControllerTest.class,
     EmptyCatchTest.class,
     FileMappingSchemaTest.class,
+    org.apache.hugegraph.service.load.FilePreviewReaderTest.class,
     FileUploadControllerTest.class,
     FileUtilTest.class,
     GraphServiceImportTest.class,
@@ -77,6 +79,7 @@ import org.junit.runners.Suite;
     HubbleDataSourceTest.class,
     AvaticaRuntimeTest.class,
     JaxbRuntimeTest.class,
+    JacksonConfigTest.class,
     GraphSpaceControllerTest.class,
     GraphSpaceAuthMutationAuthorizationTest.class,
     GraphSpaceAuthOwnershipTest.class,
@@ -115,6 +118,7 @@ import org.junit.runners.Suite;
     LoadTaskCheckpointTest.class,
     LoaderScopeControllerTest.class,
     LoginAttemptGuardTest.class,
+    org.apache.hugegraph.controller.op.LogControllerTest.class,
     OltpAlgoControllerTest.class,
     OltpAlgoServiceTest.class,
     OperationsCapabilityServiceTest.class,
@@ -129,7 +133,9 @@ import org.junit.runners.Suite;
     QueryServiceTest.class,
     ResponseAdvisorStatusTest.class,
     UrlUtilTest.class,
+    UserCsvImportTest.class,
     EntityUtilTest.class,
+    org.apache.hugegraph.util.HubbleDateTimeTest.class,
     HubbleUtilTest.class
 })
 public class UnitTestSuite {

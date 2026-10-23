@@ -20,13 +20,18 @@ package org.apache.hugegraph.util;
 
 import org.apache.commons.lang3.StringUtils;
 
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Map;
 
 public class ESUtil {
+
+    private static final DateTimeFormatter TIMESTAMP_FORMAT =
+            DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss", Locale.ROOT)
+                             .withZone(HubbleUtil.TIME_ZONE);
+
     public static Object getValueByPath(Map<String, Object> map,
                                         String[] keys) {
         if (keys.length == 1) {
@@ -43,18 +48,13 @@ public class ESUtil {
         }
     }
 
-    public static String parseTimestamp(String esTimestatmp) {
-        // 转换ES中的@timestamp为当前时区时间戳
-        if (StringUtils.isEmpty(esTimestatmp)) {
+    public static String parseTimestamp(String esTimestamp) {
+        if (StringUtils.isEmpty(esTimestamp)) {
             return null;
         }
         ZonedDateTime dateTime =
-                ZonedDateTime.parse(esTimestatmp,
+                ZonedDateTime.parse(esTimestamp,
                                     DateTimeFormatter.ISO_DATE_TIME);
-        dateTime = dateTime.withZoneSameInstant(ZoneId.systemDefault());
-
-        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd " +
-                                                                    "HH:mm:ss");
-        return dateTime.format(dtf);
+        return TIMESTAMP_FORMAT.format(dateTime);
     }
 }

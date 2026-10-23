@@ -18,7 +18,6 @@
 
 package org.apache.hugegraph.handler;
 
-import java.util.regex.Pattern;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 
@@ -26,11 +25,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
-//import org.apache.hugegraph.license.LicenseVerifier; // TODO C Remove Licence
 import org.apache.hugegraph.service.HugeClientPoolService;
 import org.apache.hugegraph.service.auth.AuthModeService;
 import org.apache.hugegraph.service.space.GraphSpaceService;
-//import org.apache.hugegraph.service.license.LicenseService;// TODO C Remove Licence
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -49,8 +46,6 @@ import lombok.extern.log4j.Log4j2;
 @Component
 public class CustomInterceptor implements HandlerInterceptor {
 
-    //@Autowired
-    //private LicenseService licenseService;// TODO C Remove Licence
     @Autowired
     protected HugeClientPoolService hugeClientPoolService;
     @Autowired
@@ -59,9 +54,6 @@ public class CustomInterceptor implements HandlerInterceptor {
     protected HugeConfig config;
     @Autowired
     protected GraphSpaceService graphSpaceService;
-
-    private static final Pattern CHECK_API_PATTERN =
-                         Pattern.compile(".*/graph-connections/\\d+/.+");
 
     @Override
     public boolean preHandle(HttpServletRequest request,
@@ -73,21 +65,6 @@ public class CustomInterceptor implements HandlerInterceptor {
         if (url.endsWith("/config")) {
             return true;
         }
-        if (!CHECK_API_PATTERN.matcher(url).matches()) {
-            setHugeClientToRequest(request);
-            return true;
-        }
-
-        // String connIdValue = StringUtils.substringBetween(
-        //                      url, "/graph-connections/", "/");
-        // if (StringUtils.isEmpty(connIdValue)) {
-        //     throw new InternalException("Not found conn id in url");
-        // }
-
-        // int connId = Integer.parseInt(connIdValue);
-        // Check graph connection valid
-        // this.licenseService.checkGraphStatus(connId);
-        //LicenseVerifier.instance().verifyIfNeeded(); // TODO C Remove Licence
         setHugeClientToRequest(request);
         return true;
     }
@@ -116,8 +93,8 @@ public class CustomInterceptor implements HandlerInterceptor {
                                 HttpServletResponse response,
                                 Object handler, Exception exception) {
         Object value = request.getAttribute("hugeClient");
-        if (value instanceof HugeClient) {
-            ((HugeClient) value).close();
+        if (value instanceof HugeClient client) {
+            client.close();
             request.removeAttribute("hugeClient");
         }
     }

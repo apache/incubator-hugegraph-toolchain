@@ -35,7 +35,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.TimeUnit;
@@ -66,8 +66,11 @@ import org.springframework.aop.Advisor;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.interceptor.AsyncExecutionAspectSupport;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.util.function.SingletonSupplier;
 
@@ -171,7 +174,7 @@ public class AsyncConfigLifecycleTest {
     private void closeScheduledMetadata(boolean interruptClose) throws Throwable {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
         DataSourceProperties properties = new DataSourceProperties();
-        properties.setUrl("jdbc:h2:mem:shared-async-drain-" + interruptClose);
+        properties.setUrl("jdbc:h2:mem:maintenance-drain-" + interruptClose);
         properties.setDriverClassName("org.h2.Driver");
         properties.setUsername("sa");
         properties.setPassword("");
@@ -206,7 +209,8 @@ public class AsyncConfigLifecycleTest {
                 writesFinished.countDown();
             }
         };
-        Mockito.when(files.selectList(Mockito.any())).thenAnswer(invocation -> {
+        Mockito.when(files.selectList(null)).thenReturn(Collections.emptyList());
+        Mockito.when(files.selectList(Mockito.isNotNull())).thenAnswer(invocation -> {
             metadataWrite.run();
             return Collections.emptyList();
         });
@@ -225,31 +229,31 @@ public class AsyncConfigLifecycleTest {
         context.getBeanFactory().registerSingleton("vertexLabelService", Mockito.mock(VertexLabelService.class));
         context.getBeanFactory().registerSingleton("edgeLabelService", Mockito.mock(EdgeLabelService.class));
         context.register(HubbleDisposableBean.class, LoadTaskService.class, LoadTaskExecutor.class,
-                         FileMappingService.class, ExecuteHistoryService.class, AsyncConfig.class);
+                         FileMappingService.class, ExecuteHistoryService.class, AsyncConfig.class,
+                         SchedulingTestConfig.class);
         context.refresh();
         ThreadPoolTaskExecutor executor = context.getBean("getAsyncExecutor", ThreadPoolTaskExecutor.class);
+        ThreadPoolTaskScheduler scheduler = context.getBean("maintenanceScheduler", ThreadPoolTaskScheduler.class);
         LoadTaskService loadService = context.getBean(LoadTaskService.class);
-        ThreadPoolExecutor actualPool = executor.getThreadPoolExecutor();
+        ScheduledThreadPoolExecutor actualPool = scheduler.getScheduledThreadPoolExecutor();
         // Delegate every operation to the actual native pool. Only observe entry
         // to its blocking await API; a signal before shutdown is insufficient.
-        ThreadPoolExecutor observedPool = Mockito.mock(ThreadPoolExecutor.class,
+        ScheduledThreadPoolExecutor observedPool = Mockito.mock(ScheduledThreadPoolExecutor.class,
                 AdditionalAnswers.delegatesTo(actualPool));
         Mockito.doAnswer(invocation -> {
             nativeAwaitEntered.countDown();
             return actualPool.awaitTermination(invocation.getArgument(0), invocation.getArgument(1));
         }).when(observedPool).awaitTermination(Mockito.anyLong(), Mockito.any(TimeUnit.class));
-        ReflectionTestUtils.setField(executor, "threadPoolExecutor", observedPool);
-        ReflectionTestUtils.setField(executor, "executor", observedPool);
+        ReflectionTestUtils.setField(scheduler, "scheduledExecutor", observedPool);
+        ReflectionTestUtils.setField(scheduler, "executor", observedPool);
         ExecutorService closer = Executors.newSingleThreadExecutor();
         AtomicReference<Thread> closeThread = new AtomicReference<>();
         AtomicBoolean closeInterrupted = new AtomicBoolean();
         Future<?> closing = null;
         Throwable primary = null;
         try {
-            // Invoke the actual @Scheduled methods through their real @Async
-            // proxies. No timer delays or filesystem deletions are involved.
-            context.getBean(FileMappingService.class).deleteUnfinishedFile();
-            context.getBean(ExecuteHistoryService.class).removeExceedLimit();
+            // The real @Scheduled registration starts both metadata methods
+            // immediately; the other scheduled methods have no records to process.
             assertTrue(writesEntered.await(10, TimeUnit.SECONDS));
             closing = closer.submit(() -> {
                 closeThread.set(Thread.currentThread());
@@ -270,6 +274,7 @@ public class AsyncConfigLifecycleTest {
             assertEquals(interruptClose, closeInterrupted.get());
             assertEquals(null, writeFailure.get());
             assertTrue(actualPool.isTerminated());
+            assertTrue(executor.getThreadPoolExecutor().isTerminated());
             assertTrue(datasource.isClosed());
             // Check the two physical H2 connections actually used by this
             // fixture; Hikari.isClosed alone does not prove physical closure.
@@ -289,8 +294,10 @@ public class AsyncConfigLifecycleTest {
                 } else {
                     closing.get(10, TimeUnit.SECONDS);
                 }
+                scheduler.shutdown();
                 executor.shutdown();
                 assertTrue(actualPool.awaitTermination(10, TimeUnit.SECONDS));
+                assertTrue(executor.getThreadPoolExecutor().awaitTermination(10, TimeUnit.SECONDS));
             } catch (Throwable failure) {
                 cleanupFailure = failure;
             } finally {
@@ -312,6 +319,11 @@ public class AsyncConfigLifecycleTest {
                 primary.addSuppressed(cleanupFailure);
             }
         }
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    @EnableScheduling
+    static class SchedulingTestConfig {
     }
 
     private static ThreadPoolTaskExecutor configuredExecutor(AsyncProbe probe) {

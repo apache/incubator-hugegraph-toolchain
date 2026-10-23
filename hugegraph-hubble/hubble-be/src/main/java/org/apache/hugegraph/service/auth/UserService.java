@@ -18,13 +18,17 @@
 
 package org.apache.hugegraph.service.auth;
 
+import java.io.BufferedReader;
 import java.io.File;
-import java.nio.charset.Charset;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -53,7 +57,6 @@ import org.apache.hugegraph.util.HubbleUtil;
 import org.apache.hugegraph.util.PageUtil;
 
 import com.csvreader.CsvReader;
-
 import org.springframework.web.multipart.MultipartFile;
 
 @Log4j2
@@ -313,9 +316,7 @@ public class UserService extends AuthService {
     public String addbatch(HugeClient client, MultipartFile csvFile) {
         File file = multipartFileToFile(csvFile);
         try {
-            Map<String, Object> csv = readCsvByCsvReader(file);
-            List<Map<String, String>> createBatchBody =
-                    HubbleUtil.uncheckedCast(csv.get("data"));
+            List<Map<String, String>> createBatchBody = this.readUserCsv(file);
             Map<String, List<Map<String, String>>> result =
                     client.auth().createBatch(createBatchBody);
             List<Map<String, String>> resultList = result.get("result");
@@ -366,44 +367,47 @@ public class UserService extends AuthService {
         }
     }
 
-    public Map<String, Object> readCsvByCsvReader(File file) {
+    public List<Map<String, String>> readUserCsv(File file) {
         if (file == null) {
             throw new InternalException("auth.user.import-file.failed");
         }
-        Map<String, Object> mapData = new HashMap<>();
-        String fileName = file.getName();
-        mapData.put("sheetName", fileName);
-
-        List<String> strList = new ArrayList<>();
-        List<Map<String, Object>> list = new ArrayList<>();
-        try {
-            List<String[]> arrList = new ArrayList<String[]>();
-            CsvReader reader = new CsvReader(file.getPath(), ',', Charset.forName("UTF-8"));
-            // 读取表头
-            reader.readHeaders();
-            String[] headArray = reader.getHeaders();
-            while (reader.readRecord()) {
-                // 按行读取，并把每一行的数据添加到list集合
-                arrList.add(reader.getValues());
+        try (BufferedReader reader = Files.newBufferedReader(file.toPath(),
+                                                             StandardCharsets.UTF_8)) {
+            reader.mark(1);
+            if (reader.read() != '\uFEFF') {
+                reader.reset();
             }
-            reader.close();
-            // 如果要返回 String[] 类型的 list 集合，则直接返回 arrList
-            // 以下步骤是把 String[] 类型的 list 集合转化为 String 类型的 list 集合
-            for (int i = 0; i < arrList.size(); i++) {
-                // 组装String字符串
-                // 如果不知道有多少列，则可再加一个循环
-                Map<String, Object> map = new HashMap<>();
-                for (int j = 0; j < arrList.get(0).length; j++) {
-                    map.put("" + headArray[j] + "", arrList.get(i)[j]);
+            // Preserve the distinction between blank lines and quoted empty records.
+            CsvReader csv = new CsvReader(reader, ',');
+            if (!csv.readHeaders()) {
+                throw new InternalException("auth.user.import-csv.failed");
+            }
+            String[] headers = csv.getHeaders();
+            Set<String> names = new HashSet<>();
+            for (String header : headers) {
+                if (header.isBlank() || !names.add(header)) {
+                    throw new InternalException("auth.user.import-csv.failed");
                 }
-                list.add(map);
             }
-        } catch (Exception e) {
-            log.error("Failed to parse the user import CSV file", e);
-            throw new InternalException("auth.user.import-csv.failed", e);
+            List<Map<String, String>> users = new ArrayList<>();
+            while (csv.readRecord()) {
+                String[] values = csv.getValues();
+                if (values.length != headers.length) {
+                    throw new InternalException("auth.user.import-csv.failed");
+                }
+                Map<String, String> user = new LinkedHashMap<>();
+                for (int column = 0; column < headers.length; column++) {
+                    user.put(headers[column], values[column]);
+                }
+                users.add(user);
+            }
+            return users;
+        } catch (IOException | RuntimeException e) {
+            // Parser exceptions can contain CSV cells, including passwords.
+            log.warn("Failed to parse the user import CSV file ({})",
+                     e.getClass().getSimpleName());
+            throw new InternalException("auth.user.import-csv.failed");
         }
-        mapData.put("data", list);
-        return mapData;
     }
 
     public void delete(HugeClient hugeClient, String userId) {

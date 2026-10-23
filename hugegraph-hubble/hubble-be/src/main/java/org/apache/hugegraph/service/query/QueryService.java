@@ -24,8 +24,6 @@ import com.google.common.collect.Iterables;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hugegraph.api.gremlin.GremlinRequest;
-// TODO fix import
-//import org.apache.hugegraph.client.api.gremlin.GremlinRequest;
 import org.apache.hugegraph.config.HugeConfig;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.entity.query.AdjacentQuery;
@@ -383,9 +381,8 @@ public class QueryService {
                 continue;
             }
             Object object = result.getObject();
-            if (object instanceof Map) {
-                List<Object> elements =
-                        unwrapCypherElements((Map<?, ?>) object);
+            if (object instanceof Map<?, ?> row) {
+                List<Object> elements = unwrapCypherElements(row);
                 if (elements != null) {
                     for (Object element : elements) {
                         if (typedData.size() >= limit) {
@@ -430,61 +427,42 @@ public class QueryService {
     private TableView buildTableView(TypedResult typedResult) {
         List<Object> data = typedResult.getData();
         if (CollectionUtils.isEmpty(data)) {
-            return TableView.EMPTY;
+            return new TableView();
         }
 
-        switch (typedResult.getType()) {
-            case EMPTY:
-                return TableView.EMPTY;
-            case GENERAL:
-                // result
-                List<Object> results = new ArrayList<>(data.size());
-                data.forEach(object -> {
-                    results.add(ImmutableMap.of("result", object));
-                });
-                return new TableView(TableView.GENERAL_HEADER, results);
-            case VERTEX:
-                // id, label, properties
-                List<Object> vertices = new ArrayList<>(data.size());
-                data.forEach(object -> {
-                    if (object instanceof Vertex) {
-                        vertices.add(object);
+        return switch (typedResult.getType()) {
+            case EMPTY -> new TableView();
+            case GENERAL -> new TableView(TableView.GENERAL_HEADER,
+                    data.stream().map(object -> ImmutableMap.of("result", object))
+                        .collect(Collectors.toCollection(ArrayList::new)));
+            case VERTEX -> new TableView(TableView.VERTEX_HEADER,
+                    data.stream().filter(Vertex.class::isInstance)
+                        .collect(Collectors.toCollection(ArrayList::new)));
+            case EDGE -> new TableView(TableView.EDGE_HEADER,
+                    data.stream().filter(Edge.class::isInstance)
+                        .collect(Collectors.toCollection(ArrayList::new)));
+            case PATH -> this.buildPathTableView(data);
+        };
+    }
+
+    private TableView buildPathTableView(List<Object> data) {
+        List<Object> paths = new ArrayList<>(data.size());
+        for (Object object : data) {
+            if (object instanceof Path path) {
+                List<Object> ids = new ArrayList<>(path.size());
+                for (Object element : path.objects()) {
+                    if (element instanceof Vertex vertex) {
+                        ids.add(vertex.id());
+                    } else if (element instanceof Edge edge) {
+                        ids.add(edge.id());
+                    } else {
+                        ids.add(element);
                     }
-                });
-                return new TableView(TableView.VERTEX_HEADER, vertices);
-            case EDGE:
-                // id, label, source, target, properties
-                List<Object> edges = new ArrayList<>(data.size());
-                data.forEach(object -> {
-                    if (object instanceof Edge) {
-                        edges.add(object);
-                    }
-                });
-                return new TableView(TableView.EDGE_HEADER, edges);
-            case PATH:
-                // path, only fill vertex/edge id
-                List<Object> paths = new ArrayList<>(data.size());
-                data.forEach(object -> {
-                    if (object instanceof Path) {
-                        Path path = (Path) object;
-                        List<Object> ids = new ArrayList<>();
-                        path.objects().forEach(element -> {
-                            if (element instanceof Vertex) {
-                                ids.add(((Vertex) element).id());
-                            } else if (element instanceof Edge) {
-                                ids.add(((Edge) element).id());
-                            } else {
-                                ids.add(element);
-                            }
-                        });
-                        paths.add(ImmutableMap.of("path", ids));
-                    }
-                });
-                return new TableView(TableView.PATH_HEADER, paths);
-            default:
-                throw new AssertionError(String.format(
-                          "Unknown result type '%s'", typedResult.getType()));
+                }
+                paths.add(ImmutableMap.of("path", ids));
+            }
         }
+        return new TableView(TableView.PATH_HEADER, paths);
     }
 
     /**
@@ -509,10 +487,9 @@ public class QueryService {
     }
 
     private static Object toGraphElement(Object value) {
-        if (!(value instanceof Map)) {
+        if (!(value instanceof Map<?, ?> map)) {
             return null;
         }
-        Map<?, ?> map = (Map<?, ?>) value;
         Object type = map.get("_type");
         if ("node".equals(type)) {
             Vertex vertex = new Vertex(String.valueOf(map.get("_label")));
@@ -546,7 +523,7 @@ public class QueryService {
                                      boolean resultTruncated, boolean preview) {
         List<Object> data = result.getData();
         if (!result.getType().isGraph() || CollectionUtils.isEmpty(data)) {
-            return GraphView.EMPTY;
+            return new GraphView();
         }
 
         int vertexLimit = preview ? GRAPH_VERTEX_LIMIT : Integer.MAX_VALUE;
@@ -555,27 +532,25 @@ public class QueryService {
         Map<String, Edge> edges = new LinkedHashMap<>();
         boolean truncated = resultTruncated;
         for (Object object : data) {
-            List<?> elements = object instanceof Path ?
-                               ((Path) object).objects() :
+            List<?> elements = object instanceof Path path ?
+                               path.objects() :
                                Collections.singletonList(object);
             for (Object element : elements) {
-                if (element instanceof Vertex) {
-                    Vertex vertex = (Vertex) element;
+                if (element instanceof Vertex vertex) {
                     if (vertices.containsKey(vertex.id()) ||
                         vertices.size() < vertexLimit) {
                         vertices.putIfAbsent(vertex.id(), vertex);
                     } else {
                         truncated = true;
                     }
-                } else if (element instanceof Edge) {
-                    Edge edge = (Edge) element;
+                } else if (element instanceof Edge edge) {
                     if (edges.containsKey(edge.id()) || edges.size() < edgeLimit) {
                         edges.putIfAbsent(edge.id(), edge);
                     } else {
                         truncated = true;
                     }
                 } else if (object instanceof Path) {
-                    return GraphView.EMPTY;
+                    return new GraphView();
                 }
             }
         }

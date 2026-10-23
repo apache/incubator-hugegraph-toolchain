@@ -20,32 +20,18 @@ package org.apache.hugegraph.config;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.apache.hugegraph.common.Response;
 import org.apache.hugegraph.entity.graph.VertexQueryEntity;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.springframework.boot.jackson.JsonComponent;
-import org.springframework.context.annotation.Bean;
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
 import java.io.IOException;
 import java.util.Map;
 
 @JsonComponent
 public class JacksonConfig {
-
-    @Bean
-    public ObjectMapper jacksonObjectMapper(Jackson2ObjectMapperBuilder builder) {
-        ObjectMapper mapper = builder.createXmlMapper(false).build();
-
-        SimpleModule module = new SimpleModule();
-        // Add global serializer here
-        mapper.registerModule(module);
-        return mapper;
-    }
 
     public static class ResponseSerailizer extends JsonSerializer<Response> {
 

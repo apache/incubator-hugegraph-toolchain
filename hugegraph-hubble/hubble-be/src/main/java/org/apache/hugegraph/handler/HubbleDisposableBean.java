@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component;
 
 @Log4j2
 @Component
-@DependsOn("getAsyncExecutor")
+@DependsOn({"getAsyncExecutor", "maintenanceScheduler"})
 public class HubbleDisposableBean implements DisposableBean {
 
     @Autowired

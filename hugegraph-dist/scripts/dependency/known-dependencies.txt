@@ -42,11 +42,10 @@ avro-1.10.2.jar
 avro-1.7.7.jar
 bolt-1.6.4.jar
 cache-api-1.1.1.jar
-caffeine-2.8.0.jar
+caffeine-3.2.4.jar
 calcite-core-1.16.0.jar
 calcite-druid-1.16.0.jar
 calcite-linq4j-1.16.0.jar
-checker-qual-2.10.0.jar
 checker-qual-3.5.0.jar
 ci-environment-10.0.1.jar
 commons-beanutils-1.9.4.jar
@@ -112,8 +111,8 @@ eclipse-collections-api-11.1.0.jar
 ehcache-3.10.9.jar
 elasticsearch-java-7.16.1.jar
 elasticsearch-rest-client-7.16.1.jar
-error_prone_annotations-2.3.3.jar
 error_prone_annotations-2.3.4.jar
+error_prone_annotations-2.49.0.jar
 esri-geometry-api-2.2.0.jar
 exp4j-0.4.8.jar
 failsafe-2.4.1.jar

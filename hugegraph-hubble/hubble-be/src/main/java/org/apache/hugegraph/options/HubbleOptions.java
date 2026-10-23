@@ -77,14 +77,6 @@ public class HubbleOptions extends OptionHolder {
                     "data/text2gql-master.key"
             );
 
-    public static final ConfigOption<String> SERVER_ID =
-            new ConfigOption<>(
-                    "server.id",
-                    "The id of hugegraph-hubble server.",
-                    disallowEmpty(),
-                    "hubble-1"
-            );
-
     public static final ConfigOption<String> SERVER_HOST =
             new ConfigOption<>(
                     "server.host",

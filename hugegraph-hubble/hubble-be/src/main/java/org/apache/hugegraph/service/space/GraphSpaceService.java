@@ -44,9 +44,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.Collections;
 import java.util.HashMap;
@@ -497,17 +495,9 @@ public class GraphSpaceService {
     private Map<String, Object> preDayTaskCount(HugeClient client,
                                                 String graphSpace) {
         LOG.info("Task count in [{}]", graphSpace);
-        String lastDay = HubbleUtil.dateFormatLastDay();
-        Date start = null;
-        Date end = null;
-        try {
-            SimpleDateFormat simpleDateFormat =
-                    new SimpleDateFormat("yyyyMMdd HH:mm:ss");
-            start = simpleDateFormat.parse(lastDay + " 00:00:00");
-            end = simpleDateFormat.parse(lastDay + " 23:59:59");
-        } catch (ParseException e) {
-            throw new InternalException("parse date error" + e.getMessage());
-        }
+        LocalDate lastDay = LocalDate.now(HubbleUtil.TIME_ZONE).minusDays(1);
+        long start = lastDay.atStartOfDay().toInstant(HubbleUtil.TIME_ZONE).toEpochMilli();
+        long end = lastDay.plusDays(1).atStartOfDay().toInstant(HubbleUtil.TIME_ZONE).toEpochMilli();
 
         Map<String, Object> result = new HashMap<>();
         Set<String> graphs =
@@ -520,8 +510,7 @@ public class GraphSpaceService {
                 TasksWithPage pageTask =
                         client.task().list(null, page, 1000);
                 for (Task task : pageTask.tasks()) {
-                    if (task.createTime() >= start.getTime() &&
-                        task.createTime() <= end.getTime()) {
+                    if (task.createTime() >= start && task.createTime() < end) {
                         preDayTaskCount += 1;
                     }
                 }
