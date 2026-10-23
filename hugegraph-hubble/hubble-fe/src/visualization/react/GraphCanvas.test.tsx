@@ -129,6 +129,23 @@ test('resizes with its host even when the renderer pins the surface dimensions',
     await flush();
 });
 
+test('ignores hidden host dimensions and resizes the same canvas when it becomes visible', async () => {
+    render(<GraphCanvas data={data} />);
+    await flush();
+    const observer = observers[0];
+    const target = observer.observe.mock.calls[0][0];
+    controllers[0].resize.mockClear();
+    for (const [width, height] of [[0, 0], [640, 0], [0, 240]]) {
+        act(() => observer.callback([{target, contentRect: {width, height}}] as ResizeObserverEntry[], {} as ResizeObserver));
+    }
+    expect(controllers[0].resize).not.toHaveBeenCalled();
+    act(() => observer.callback([{target, contentRect: {width: 640, height: 240}}] as ResizeObserverEntry[], {} as ResizeObserver));
+    expect(controllers[0].resize).toHaveBeenCalledTimes(1);
+    expect(controllers[0].resize).toHaveBeenLastCalledWith(640, 240);
+    expect(factory).toHaveBeenCalledTimes(1);
+    await flush();
+});
+
 test('rebuilds on theme changes, rejects stale callbacks and isolates multiple instances', async () => {
     const click = jest.fn(); const error = jest.fn(); const ready = jest.fn();
     const {rerender, unmount} = render(<><GraphCanvas data={data} onClick={click} onError={error} onReady={ready} /><GraphCanvas data={data} /></>);
