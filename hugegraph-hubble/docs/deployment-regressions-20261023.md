@@ -22,6 +22,7 @@ The separately authorized, bounded GraphSpace notification fix is proposed in
 - [Toolchain #94](https://github.com/hugegraph/hugegraph-toolchain/pull/94): lightweight PD member discovery using the existing `/v1/members` endpoint.
 - [Toolchain #95](https://github.com/hugegraph/hugegraph-toolchain/pull/95): separate service readiness from node registration status.
 - [Server #335](https://github.com/hugegraph/hugegraph/pull/335): configurable quota namespace instead of a fixed `hg` prefix.
+- [Server #336](https://github.com/hugegraph/hugegraph/pull/336): delete the matching PD record with its GraphSpace, reject stale usage recreation and preserve deletion retry.
 
 Screenshots remain outside Git. Browser evidence is linked from the PR
 descriptions and the [issue record](https://chatgpt.com/space/page_62cf6a23a284819196000f124fdd6990).
@@ -162,14 +163,21 @@ After those jobs stopped, all four suites plus the new readiness and task-result
 components passed with the default timeouts: nine suites / 155 checks. This is
 reported as a successful retry, not as an uninterrupted green full-suite run.
 Combined ESLint, locale validation, TypeScript and production build also passed.
+The later combined source `f6c72214bd4e0884d8154e60c9c359b2b6da04d3`
+passed 150 focused backend checks, including lightweight member discovery with
+proxy paths, isolated readiness deadlines and bounded task-ID lookup. Its frontend
+source tree is unchanged from `795f52a3`, so the browser/rendering attribution
+below remains exact.
 
 ## Bounded rendering comparison
 
 The review follow-up compared remote master `eef5afd2` with combined candidate
 `795f52a375718eb0d04972e6b80abe11287bdf6d` after the parallel build jobs stopped.
 The same frozen runner and intercepted API fixtures ran in Chromium
-154.0.8037.57. Each size used two interleaved rounds of five warm queries,
-in baseline/candidate/candidate/baseline order. Timing waits for the exact
+154.0.8037.57. Each of the four runs recorded five timed queries for each size,
+in baseline/candidate/candidate/baseline order: ten samples per version and size.
+Each run first issued one unmeasured `g.V().limit(100)` warm-up query, excluded
+from `samples_action_ms`. Timing waits for the exact
 response, the current query/canvas busy-to-idle cycle, and two animation frames;
 it excludes Server work.
 
