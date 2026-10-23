@@ -245,7 +245,7 @@ it('trims a pasted task ID and still supports legacy task links', async () => {
 it('shows the submitted ID immediately and discovers metadata without waiting for the list', async () => {
     jest.useFakeTimers();
     useSearchParams.mockReturnValue([new URLSearchParams('taskId=80001&submitted=1')]);
-    api.analysis.fetchManageTaskById.mockResolvedValueOnce({status: 404})
+    api.analysis.fetchManageTaskById.mockResolvedValueOnce({status: 200, data: []})
         .mockResolvedValue({status: 200, data: [{id: 80001, task_status: 'failed'}]});
     const {unmount} = render(
         <GraphAnalysisContext.Provider value={{graphSpace: 'memory', graph: 'soc_graph'}}>
@@ -332,10 +332,10 @@ it('supports negative Vermeer IDs and treats disappearance after discovery as a 
     view.unmount();
 });
 
-it('stops discovery on permission failure rather than treating it as a missing task', async () => {
+it.each([400, 403, 503])('stops discovery on failure %s rather than treating it as a missing task', async status => {
     jest.useFakeTimers();
     useSearchParams.mockReturnValue([new URLSearchParams('taskId=80001&submitted=1')]);
-    api.analysis.fetchManageTaskById.mockResolvedValue({status: 403});
+    api.analysis.fetchManageTaskById.mockResolvedValue({status});
     const view = render(
         <GraphAnalysisContext.Provider value={{graphSpace: 'memory', graph: 'soc_graph'}}>
             <AsyncTaskHome />

@@ -83,8 +83,7 @@ public class AsyncTaskServiceTest {
     public void testMissingIdDoesNotHideNumericNameMatches() {
         Task named = task(70001L, "query 80001", "failed");
         Mockito.when(this.tasks.list((String) null)).thenReturn(List.of(named));
-        ServerException missing = new ServerException("Task not found");
-        missing.status(404);
+        ServerException missing = missingTask(80001L);
         Mockito.when(this.tasks.list(List.of(80001L))).thenThrow(missing);
 
         Assert.assertEquals(List.of(named), this.service.list(
@@ -101,17 +100,47 @@ public class AsyncTaskServiceTest {
 
     @Test
     public void testIdsPollingTreatsAnUndiscoveredServerTaskAsEmpty() {
-        ServerException missing = new ServerException("Task not found");
-        missing.status(404);
+        ServerException missing = missingTask(80001L);
+        Task submitted = task(80001L, "g.V()", "running");
+        Mockito.when(this.tasks.list(List.of(80001L))).thenThrow(missing)
+               .thenReturn(List.of(submitted));
+
+        Assert.assertTrue(this.service.list(this.client, List.of(80001L)).isEmpty());
+        Assert.assertEquals(List.of(submitted), this.service.list(this.client, List.of(80001L)));
+    }
+
+    @Test
+    public void testMissingTaskAcceptsExceptionNameWithoutClassPrefix() {
+        ServerException missing = missingTask(80001L);
+        ReflectionTestUtils.setField(missing, "exception",
+                                     "org.apache.hugegraph.exception.NotFoundException");
         Mockito.when(this.tasks.list(List.of(80001L))).thenThrow(missing);
 
         Assert.assertTrue(this.service.list(this.client, List.of(80001L)).isEmpty());
     }
 
     @Test
+    public void testBothIdLookupPathsPreserveUnrelatedNotFoundResponses() {
+        for (String message : List.of("Graph 'hugegraph' does not exist",
+                                      "Graph space 'DEFAULT' does not exist",
+                                      "HTTP 404 Not Found",
+                                      "Can't find task with id '90001'")) {
+            ServerException failure = missingTask(80001L);
+            ReflectionTestUtils.setField(failure, "message", message);
+            this.assertBothLookupsFail(failure);
+        }
+        ServerException untyped = missingTask(80001L);
+        ReflectionTestUtils.setField(untyped, "exception", null);
+        this.assertBothLookupsFail(untyped);
+        ServerException route = missingTask(80001L);
+        ReflectionTestUtils.setField(route, "exception", "class jakarta.ws.rs.NotFoundException");
+        this.assertBothLookupsFail(route);
+    }
+
+    @Test
     public void testIdsPollingPreservesPermissionAndServerFailures() {
         for (int status : List.of(403, 503)) {
-            ServerException failure = new ServerException("Task lookup failed");
+            ServerException failure = missingTask(80001L);
             failure.status(status);
             Mockito.doThrow(failure).when(this.tasks).list(List.of(80001L));
 
@@ -134,6 +163,30 @@ public class AsyncTaskServiceTest {
         Assert.assertEquals(List.of(submitted), this.service.list(this.client, List.of(-7L)));
         Mockito.verify(vermeer, Mockito.never()).task(this.client, -7, true);
         Mockito.verifyNoInteractions(this.tasks);
+    }
+
+    private void assertBothLookupsFail(ServerException failure) {
+        Mockito.doThrow(failure).when(this.tasks).list(List.of(80001L));
+        for (boolean direct : List.of(true, false)) {
+            try {
+                if (direct) {
+                    this.service.list(this.client, List.of(80001L));
+                } else {
+                    this.service.list(this.client, 1, 10, "80001", "", "");
+                }
+                Assert.fail("Expected unrelated lookup failure to propagate");
+            } catch (ServerException e) {
+                Assert.assertSame(failure, e);
+            }
+        }
+    }
+
+    private static ServerException missingTask(long id) {
+        ServerException missing = new ServerException("Can't find task with id '%s'", id);
+        missing.status(404);
+        ReflectionTestUtils.setField(missing, "exception",
+                                     "class org.apache.hugegraph.exception.NotFoundException");
+        return missing;
     }
 
     private static Task task(long id, String name, String status) {

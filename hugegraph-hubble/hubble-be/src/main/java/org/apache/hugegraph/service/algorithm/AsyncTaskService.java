@@ -76,7 +76,7 @@ public class AsyncTaskService {
             try {
                 tasks.addAll(client.task().list(serverIds));
             } catch (ServerException e) {
-                if (e.status() != 404) {
+                if (!isMissingTask(e, serverIds)) {
                     throw e;
                 }
             }
@@ -155,10 +155,23 @@ public class AsyncTaskService {
             // list entry is visible. The IDs API returns metadata, not results.
             tasks.addAll(client.task().list(List.of(id)));
         } catch (ServerException e) {
-            if (e.status() != 404) {
+            if (!isMissingTask(e, List.of(id))) {
                 throw e;
             }
         }
+    }
+
+    private static boolean isMissingTask(ServerException error, List<Long> ids) {
+        String notFound = "org.apache.hugegraph.exception.NotFoundException";
+        if (error.status() != 404 ||
+            (!notFound.equals(error.exception()) &&
+             !("class " + notFound).equals(error.exception()))) {
+            return false;
+        }
+        // Graph and route failures also use 404. Only a scheduler's missing
+        // requested task is an expected discovery delay.
+        return ids.stream().anyMatch(id ->
+                ("Can't find task with id '" + id + "'").equals(error.message()));
     }
 
     public static class TaskPage extends Page<Task> {
