@@ -8,16 +8,20 @@ for this workflow.
 The prepared components are Go 1.23.7, JDK 17, the existing candidate HugeGraph SDK
 at `86c05ef9c5d417bd37eab21d4ecd5af82bab17ef`, and separately running PD, Store,
 Server, Vermeer Master/Worker, and Hubble. The development helper pins all three
-database images by digest. Vermeer was checked out from
-`hugegraph/hugegraph-computer` at
-`b5c1693f27779aeefc0098833368fbfc5448d544` ([Computer PR #19](https://github.com/hugegraph/hugegraph-computer/pull/19)); local edits are retained when refreshing
-the environment.
+database images by digest. The helper expects `hugegraph/hugegraph-computer` at
+`819b34de39bf4c0e26b88b3465d7835f67a5aea9` ([Computer PR #19](https://github.com/hugegraph/hugegraph-computer/pull/19)); local edits are retained when refreshing
+the environment. Earlier retained-stack evidence below was collected at
+`b5c1693f27779aeefc0098833368fbfc5448d544`; the newer discovery and load-send changes
+have focused unit validation, without a new live-stack run.
 
 Reuse the prepared checkout and toolchains above. Initial source/toolchain setup
 is outside this helper: `prepare` checks the existing Computer directory and Go
 binary, writes integration configuration and builds. It does not clone or reset
 source, install Go, or pre-pull images. `start` reuses existing containers; Docker
 may pull the pinned image when creating a missing container.
+Deployment credential files require trusted `pd_peers` on both Master and Worker.
+The helper writes the local PD endpoint into both generated INI files; refresh
+existing configuration before using the newer Vermeer revision.
 Retained process IDs are accepted only when the full expected component command
 matches, including this environment's configuration paths. A mismatch stops the
 operation for inspection; it does not signal that process.

@@ -308,6 +308,9 @@ for operation in (lambda: subject.private_file(Path(sys.argv[2]), ''),
             self.assertEqual(0o700, stat.S_IMODE(path.stat().st_mode))
         self.assertEqual(0o755, stat.S_IMODE(self.setup.stat().st_mode))
         self.assertEqual(0o755, stat.S_IMODE(cache.stat().st_mode))
+        for mode in ('master', 'worker'):
+            config = (self.run / f'vermeer/{mode}.ini').read_text()
+            self.assertIn('pd_peers=["127.0.0.1:8686"]\n', config)
 
     def test_configure_uses_external_file_without_changing_or_creating_it(self):
         self.prepare_configuration_fixture()

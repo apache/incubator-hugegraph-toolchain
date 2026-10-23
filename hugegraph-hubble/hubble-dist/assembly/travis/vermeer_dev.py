@@ -35,7 +35,7 @@ SETUP = Path(os.environ.get('VERMEER_DEV_HOME', '/workspace/.onboarding'))
 RUN = SETUP / 'integration'
 SOURCE = Path(os.environ.get('VERMEER_SOURCE_DIR', str(REPO.parent / 'hugegraph-computer/vermeer')))
 GO = SETUP / 'tools/go1.23.7'
-COMPUTER_COMMIT = 'b5c1693f27779aeefc0098833368fbfc5448d544'
+COMPUTER_COMMIT = '819b34de39bf4c0e26b88b3465d7835f67a5aea9'
 IMAGES = {
     'pd': 'hugegraph/pd@sha256:1ca2c236cba50ac27f47e9db4c9a44f1f50bb9df85a07e837b7c25ba7a2704a8',
     'store': 'hugegraph/store@sha256:1cc8d6a1e1624328b91e5346731b57c68569de435400981ff7287150ae63651c',
@@ -178,7 +178,7 @@ def configure():
                  'HG_SERVER_INIT_STORE_ENABLED=false\nHG_SERVER_STARTUP_TIMEOUT_S=180\n')
     for mode in ('master', 'worker'):
         text = (SOURCE / f'config/{mode}.ini').read_text().replace('0.0.0.0', '127.0.0.1')
-        text += f'\npd_password_file={password}\n'
+        text += f'\npd_password_file={password}\npd_peers=["127.0.0.1:8686"]\n'
         metadata_credentials = os.environ.get('VERMEER_HUGEGRAPH_CREDENTIALS_FILE')
         if metadata_credentials:
             text += f'hugegraph_credentials_file={metadata_credentials}\n'
