@@ -254,3 +254,44 @@ test('list view labels raw zero compute as inheritance of current graph-service 
     expect(await screen.findByText(/Inherited \(4graphspace.unit.cpu\)/)).toBeInTheDocument();
     expect(screen.getByText(/Inherited \(8graphspace.unit.memory\)/)).toBeInTheDocument();
 });
+
+test('searching from a later page returns to the first page of matches', async () => {
+    api.manage.getGraphSpaceList
+        .mockResolvedValueOnce({status: 200, data: {records: [{name: 'first', nickname: 'First'}], total: 12}})
+        .mockResolvedValueOnce({status: 200, data: {records: [{name: 'last', nickname: 'Last'}], total: 12}})
+        .mockResolvedValueOnce({status: 200, data: {records: [{name: 'first', nickname: 'First'}], total: 1}});
+    render(<GraphSpace />);
+    await screen.findByText('First:manage');
+    fireEvent.click(screen.getByTitle('2'));
+    await screen.findByText('Last:manage');
+    await userEvent.type(screen.getByPlaceholderText('graphspace.search_placeholder'), 'First{enter}');
+    await screen.findByText('First:manage');
+    expect(api.manage.getGraphSpaceList).toHaveBeenLastCalledWith(
+        expect.objectContaining({query: 'First', page_no: 1}), expect.anything()
+    );
+});
+
+test('recovers a page removed by a concurrent deletion', async () => {
+    api.manage.getGraphSpaceList
+        .mockResolvedValueOnce({status: 200, data: {records: [{name: 'first', nickname: 'First'}], total: 12}})
+        .mockResolvedValueOnce({status: 200, data: {records: [], total: 11}})
+        .mockResolvedValueOnce({status: 200, data: {records: [{name: 'first', nickname: 'Recovered'}], total: 11}});
+    render(<GraphSpace />);
+    await screen.findByText('First:manage');
+    fireEvent.click(screen.getByTitle('2'));
+    await screen.findByText('Recovered:manage');
+    expect(api.manage.getGraphSpaceList).toHaveBeenLastCalledWith(
+        expect.objectContaining({page_no: 1}), expect.anything()
+    );
+    expect(screen.queryByText('graphspace.empty')).not.toBeInTheDocument();
+});
+
+test('table view distinguishes a filtered empty result from no GraphSpaces', async () => {
+    api.manage.getGraphSpaceList.mockResolvedValue({status: 200, data: {records: [], total: 0}});
+    render(<GraphSpace />);
+    fireEvent.click(screen.getByLabelText('common.label.list_mode'));
+    await screen.findByText('graphspace.empty');
+    await userEvent.type(screen.getByPlaceholderText('graphspace.search_placeholder'), 'missing{enter}');
+    expect(await screen.findByText('graphspace.no_matches')).toBeInTheDocument();
+    expect(screen.queryByText('graphspace.empty')).not.toBeInTheDocument();
+});

@@ -26,7 +26,7 @@ import {
     Space,
     Typography,
 } from 'antd';
-import {useState, useEffect, useMemo, useCallback} from 'react';
+import {useState, useEffect, useMemo, useCallback, useRef} from 'react';
 import {useTranslation} from 'react-i18next';
 import * as api from '../../api/index';
 import FormHelpLabel from '../../components/FormHelpLabel';
@@ -56,6 +56,9 @@ const EditLayer = ({visible, detail, onCancel, refresh}) => {
     const [userList, setUserList] = useState([]);
     const [loading, setLoading] = useState(false);
     const [existingAuth, setExistingAuth] = useState();
+    const [loadedSpace, setLoadedSpace] = useState(null);
+    const detailRequest = useRef(null);
+    const submitRequest = useRef(null);
     const {t} = useTranslation();
     const cpu = Form.useWatch('cpu_limit', form);
     const memory = Form.useWatch('memory_limit', form);
@@ -79,45 +82,53 @@ const EditLayer = ({visible, detail, onCancel, refresh}) => {
         return false;
     }, [detail]);
 
-    const onFinish = useCallback(() => {
-        form.validateFields().then(values => {
+    const onFinish = useCallback(async () => {
+        if (submitRequest.current
+            || (detail.name && (loadedSpace !== detail.name || existingAuth === undefined))) {
+            return;
+        }
+        const token = Symbol('graphspace-save');
+        const editor = detailRequest.current;
+        submitRequest.current = token;
+        const isCurrent = () => submitRequest.current === token && detailRequest.current === editor;
+        try {
+            const values = await form.validateFields();
+            if (!isCurrent()) {
+                return;
+            }
             setLoading(true);
-
-            const thenCallBack = res => {
-                setLoading(false);
-                if (res && res.status === 200) {
-                    message.success(t('common.msg.success'));
-                    refresh();
-                    onCancel();
-                    return;
-                }
-                message.error(t('common.msg.operation_failed'));
-            };
-            const catchCallback = () => {
-                setLoading(false);
-                message.error(t('common.msg.operation_failed'));
-            };
-
-            if (isDisabled) {
-                api.manage.updateGraphSpace(detail.name, {
+            const res = isDisabled
+                ? await api.manage.updateGraphSpace(detail.name, {
                     ...values,
                     auth: existingAuth,
                 }, PAGE_ERROR_CONFIG)
-                    .then(thenCallBack).catch(catchCallback);
-            }
-            else {
-                api.manage.addGraphSpace({
+                : await api.manage.addGraphSpace({
                     ...values,
                     auth: isAuthEnabled(),
-                }, PAGE_ERROR_CONFIG)
-                    .then(thenCallBack).catch(catchCallback);
+                }, PAGE_ERROR_CONFIG);
+            if (!isCurrent()) {
+                return;
             }
-        }).catch(error => {
-            if (!error?.errorFields) {
+            if (res?.status === 200) {
+                message.success(t('common.msg.success'));
+                refresh();
+                onCancel();
+            } else {
                 message.error(t('common.msg.operation_failed'));
             }
-        });
-    }, [detail.name, existingAuth, isDisabled, onCancel, refresh, form, t]);
+        } catch (error) {
+            if (isCurrent() && !error?.errorFields) {
+                message.error(t('common.msg.operation_failed'));
+            }
+        } finally {
+            if (submitRequest.current === token) {
+                submitRequest.current = null;
+                if (detailRequest.current === editor) {
+                    setLoading(false);
+                }
+            }
+        }
+    }, [detail.name, loadedSpace, existingAuth, isDisabled, onCancel, refresh, form, t]);
 
     const serviceValidator = (_, value) => {
         if (value === 'DEFAULT') {
@@ -161,17 +172,32 @@ const EditLayer = ({visible, detail, onCancel, refresh}) => {
         }
         form.resetFields();
         setExistingAuth(undefined);
+        setLoadedSpace(null);
+        setLoading(false);
+        submitRequest.current = null;
+        const token = Symbol('graphspace-detail');
+        detailRequest.current = token;
 
         api.auth.getUserList(undefined, PAGE_ERROR_CONFIG).then(res => {
+            if (detailRequest.current !== token) {
+                return;
+            }
             if (res && res.status === 200) {
                 setUserList(res.data.users);
                 return;
             }
             message.error(t('common.msg.load_failed'));
-        }).catch(() => message.error(t('common.msg.load_failed')));
+        }).catch(() => {
+            if (detailRequest.current === token) {
+                message.error(t('common.msg.load_failed'));
+            }
+        });
 
         if (detail.name) {
             api.manage.getGraphSpace(detail.name, PAGE_ERROR_CONFIG).then(res => {
+                if (detailRequest.current !== token) {
+                    return;
+                }
                 if (res.status === 200) {
                     setExistingAuth(res.data.auth);
                     form.setFieldsValue({
@@ -181,11 +207,20 @@ const EditLayer = ({visible, detail, onCancel, refresh}) => {
                                              || res.data['internal_'
                                                          + 'algorithm_image_url'],
                     });
+                    setLoadedSpace(detail.name);
                     return;
                 }
                 message.error(t('common.msg.load_failed'));
-            }).catch(() => message.error(t('common.msg.load_failed')));
+            }).catch(() => {
+                if (detailRequest.current === token) {
+                    message.error(t('common.msg.load_failed'));
+                }
+            });
         }
+        return () => {
+            detailRequest.current = null;
+            submitRequest.current = null;
+        };
     }, [visible, form, detail.name, t]);
 
     return (
@@ -196,9 +231,13 @@ const EditLayer = ({visible, detail, onCancel, refresh}) => {
             okText={t(Object.keys(detail).length === 0
                 ? 'common.action.create'
                 : 'common.action.save')}
-            loading={loading}
+            confirmLoading={loading}
+            cancelButtonProps={{disabled: loading}}
+            closable={!loading}
+            keyboard={!loading}
             onOk={onFinish}
-            okButtonProps={{disabled: isDisabled && existingAuth === undefined}}
+            okButtonProps={{disabled: isDisabled
+                && (loadedSpace !== detail.name || existingAuth === undefined)}}
             width={680}
             destroyOnHidden
             mask={{closable: false}}
@@ -210,6 +249,7 @@ const EditLayer = ({visible, detail, onCancel, refresh}) => {
                 wrapperCol={{flex: '1 1 0'}}
                 labelWrap
                 form={form}
+                disabled={loading || Boolean(detail.name && loadedSpace !== detail.name)}
                 name="control-hooks"
                 // onFinish={onFinish}
                 // preserve={false}

@@ -16,9 +16,11 @@
  * under the License.
  */
 
-import {render, screen} from '@testing-library/react';
+import {fireEvent, render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import GraphSpaceCard from './Card';
+
+const mockNavigate = jest.fn();
 
 jest.mock('react-i18next', () => ({
     useTranslation: () => ({t: (key, options) => key === 'graphspace.unit.inherited'
@@ -32,11 +34,12 @@ jest.mock('react-router-dom', () => {
     return {
         ...router,
         Link: ({children, to}) => React.createElement('a', {href: to}, children),
-        useNavigate: () => jest.fn(),
+        useNavigate: () => mockNavigate,
     };
 });
 
 beforeEach(() => {
+    mockNavigate.mockClear();
     window.matchMedia = jest.fn().mockImplementation(query => ({
         matches: false,
         media: query,
@@ -47,6 +50,37 @@ beforeEach(() => {
         removeEventListener: jest.fn(),
         dispatchEvent: jest.fn(),
     }));
+});
+
+test('opens the GraphSpace from header whitespace, creation date, body and enter button once', async () => {
+    const {container} = render(<GraphSpaceCard item={{
+        name: 'space', nickname: 'Space', create_time: '2026-10-23',
+    }} />);
+    for (const target of [
+        container.querySelector('.ant-card-head'),
+        screen.getByText(/2026-10-23 graphspace.card.created/),
+        screen.getByRole('button', {name: 'Space'}),
+        container.querySelector('.card_content'),
+        screen.getByRole('button', {name: 'graphspace.card.enter'}),
+    ]) {
+        mockNavigate.mockClear();
+        await userEvent.click(target);
+        expect(mockNavigate).toHaveBeenCalledTimes(1);
+        expect(mockNavigate).toHaveBeenCalledWith('/graphspace/space');
+    }
+    mockNavigate.mockClear();
+    fireEvent.keyDown(screen.getByRole('button', {name: 'Space'}), {key: 'Enter'});
+    expect(mockNavigate).toHaveBeenCalledTimes(1);
+});
+
+test('does not navigate when opening the menu or editing through its portal', async () => {
+    const item = {name: 'space', nickname: 'Space'};
+    const editGraphspace = jest.fn();
+    render(<GraphSpaceCard item={item} editGraphspace={editGraphspace} />);
+    await userEvent.click(screen.getByRole('button', {name: 'common.action.more'}));
+    await userEvent.click(await screen.findByText('common.action.edit'));
+    expect(editGraphspace).toHaveBeenCalledWith(item);
+    expect(mockNavigate).not.toHaveBeenCalled();
 });
 
 test('does not expose a default GraphSpace mutation action', async () => {

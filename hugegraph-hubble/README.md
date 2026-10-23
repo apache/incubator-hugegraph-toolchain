@@ -9,6 +9,10 @@ graph data load, schema management, graph relationship analysis, and graphical d
 
 ## Graph-space quotas and usage
 
+The [GraphSpace CRUD audit](docs/graphspace-crud-audit-20261023.md) records card
+navigation, editing, failure recovery and pagination fixes with Chromium screenshots
+and a repeatable stateful API fixture.
+
 New graph spaces start with 128 CPU cores, 128 GB memory, 128 compute CPU cores,
 128 GB compute memory, 10240 GB storage and 100 graphs. Server also defaults the
 role limit to 100. Existing spaces retain their configured limits. Large finite

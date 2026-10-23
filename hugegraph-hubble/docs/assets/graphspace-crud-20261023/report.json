@@ -1,0 +1,262 @@
+{
+  "scope": "Chromium with stateful mocked APIs; not live-cluster or production performance validation",
+  "viewport": "1440x1000",
+  "checks": [
+    {
+      "id": "01-list",
+      "description": "Authenticated graphspace card list and keyboard create entry",
+      "status": "passed",
+      "screenshot": "01-list.png",
+      "interaction_ms": 1390,
+      "focused_control": "<div role=\"button\" aria-label=\"创建图空间\" tabindex=\"0\" class=\"ant-card ant-card-bordered _add_card_1tzsi_18 css-dev-only-do-not-override-jdb7z4 css-var-root\"><div class=\"ant-card-body\"><div class=\"ant-space css-dev-only-do-not-override-jdb7z4 ant-space-horizontal ant-space-align-center ant-space-gap-row-small ant-space-gap-col-small css-var-root\"><div "
+    },
+    {
+      "id": "02-invalid-create",
+      "description": "Keyboard create opens modal; invalid name is rejected inline",
+      "status": "passed",
+      "screenshot": "02-invalid-create.png",
+      "interaction_ms": 805,
+      "focused_control": "<button type=\"button\" class=\"ant-btn css-dev-only-do-not-override-jdb7z4 css-var-root ant-btn-primary ant-btn-color-primary ant-btn-variant-solid\"><div style=\"position: absolute; left: 0px; top: 0px;\"><div class=\"ant-wave css-dev-only-do-not-override-jdb7z4 wave-motion-appear wave-motion-appear-active wave-motion\" style=\"left: -1px; top: -1px; widt"
+    },
+    {
+      "id": "03-create-failure",
+      "description": "Create API failure preserves editable values",
+      "status": "passed",
+      "screenshot": "03-create-failure.png",
+      "interaction_ms": 629,
+      "focused_control": "<button type=\"button\" class=\"ant-btn css-dev-only-do-not-override-jdb7z4 css-var-root ant-btn-primary ant-btn-color-primary ant-btn-variant-solid\"><div style=\"position: absolute; left: 0px; top: 0px;\"><div class=\"ant-wave css-dev-only-do-not-override-jdb7z4 wave-motion-appear wave-motion-appear-active wave-motion\" style=\"left: -1px; top: -1px; widt"
+    },
+    {
+      "id": "04-created",
+      "description": "Retry creates once and immediately returns to the card list",
+      "status": "passed",
+      "screenshot": "04-created.png",
+      "interaction_ms": 337,
+      "focused_control": "<body>\n    <noscript>You need to enable JavaScript to run this app.</noscript>\n    <div id=\"root\"><div class=\"css-dev-only-do-not-override-jdb7z4 ant-app css-var-root\"><div><div class=\"ant-layout css-dev-only-do-not-override-jdb7z4 css-var-root\"><a class=\"workbench-skip-link\" href=\"#workbench-main\">跳到主工作区</a><header class=\"ant-layout-header _header"
+    },
+    {
+      "id": "05-edit-resources",
+      "description": "Edit alias and quota with current metadata loaded",
+      "status": "passed",
+      "screenshot": "05-edit-resources.png",
+      "interaction_ms": 1214,
+      "focused_control": "<input id=\"control-hooks_graphspace_admin\" autocomplete=\"new-password\" class=\"ant-select-input\" role=\"combobox\" aria-expanded=\"false\" aria-haspopup=\"listbox\" aria-autocomplete=\"list\" type=\"text\" value=\"\" style=\"--select-input-width: 4;\">"
+    },
+    {
+      "id": "06-save-failure",
+      "description": "Save API failure preserves changes for retry",
+      "status": "passed",
+      "screenshot": "06-save-failure.png",
+      "interaction_ms": 204,
+      "focused_control": "<button type=\"button\" class=\"ant-btn css-dev-only-do-not-override-jdb7z4 css-var-root ant-btn-primary ant-btn-color-primary ant-btn-variant-solid\"><div style=\"position: absolute; left: 0px; top: 0px;\"><div class=\"ant-wave css-dev-only-do-not-override-jdb7z4 wave-motion-appear wave-motion-appear-active wave-motion\" style=\"left: -1px; top: -1px; widt"
+    },
+    {
+      "id": "07a-saving",
+      "description": "Pending save keeps the form visible and prevents duplicate submissions",
+      "status": "passed",
+      "screenshot": "07a-saving.png",
+      "interaction_ms": 178,
+      "focused_control": "<button type=\"button\" class=\"ant-btn css-dev-only-do-not-override-jdb7z4 css-var-root ant-btn-primary ant-btn-color-primary ant-btn-variant-solid ant-btn-loading\"><div style=\"position: absolute; left: 0px; top: 0px;\"><div class=\"ant-wave css-dev-only-do-not-override-jdb7z4 wave-motion-appear wave-motion-appear-active wave-motion\" style=\"left: -1px;"
+    },
+    {
+      "id": "07-saved",
+      "description": "Save retry updates alias and quota in the list",
+      "status": "passed",
+      "screenshot": "07-saved.png",
+      "interaction_ms": 128,
+      "focused_control": "<body>\n    <noscript>You need to enable JavaScript to run this app.</noscript>\n    <div id=\"root\"><div class=\"css-dev-only-do-not-override-jdb7z4 ant-app css-var-root\"><div><div class=\"ant-layout css-dev-only-do-not-override-jdb7z4 css-var-root\"><a class=\"workbench-skip-link\" href=\"#workbench-main\">跳到主工作区</a><header class=\"ant-layout-header _header"
+    },
+    {
+      "id": "08-cancel-edit",
+      "description": "Cancel discards alias and quota edits",
+      "status": "passed",
+      "screenshot": "08-cancel-edit.png",
+      "interaction_ms": 1152,
+      "focused_control": "<body>\n    <noscript>You need to enable JavaScript to run this app.</noscript>\n    <div id=\"root\"><div class=\"css-dev-only-do-not-override-jdb7z4 ant-app css-var-root\"><div><div class=\"ant-layout css-dev-only-do-not-override-jdb7z4 css-var-root\"><a class=\"workbench-skip-link\" href=\"#workbench-main\">跳到主工作区</a><header class=\"ant-layout-header _header"
+    },
+    {
+      "id": "09-table-mode",
+      "description": "Table mode retains updated values and actions",
+      "status": "passed",
+      "screenshot": "09-table-mode.png",
+      "interaction_ms": 115,
+      "focused_control": "<input class=\"ant-radio-button-input\" type=\"radio\" value=\"list\" name=\"_r_11_\" style=\"\">"
+    },
+    {
+      "id": "10-filter-empty",
+      "description": "Search shows an explicit filtered empty state",
+      "status": "passed",
+      "screenshot": "10-filter-empty.png",
+      "interaction_ms": 76,
+      "focused_control": "<input placeholder=\"请输入图空间名称\" class=\"ant-input css-dev-only-do-not-override-jdb7z4\" type=\"search\" value=\"不存在\" style=\"\">"
+    },
+    {
+      "id": "11-filter-recovery",
+      "description": "Clear search recovers records and return to card mode",
+      "status": "passed",
+      "screenshot": "11-filter-recovery.png",
+      "interaction_ms": 172,
+      "focused_control": "<input class=\"ant-radio-button-input\" type=\"radio\" value=\"image\" checked=\"\" name=\"_r_11_\" style=\"\">"
+    },
+    {
+      "id": "12-delete-cancel",
+      "description": "Deletion has a confirmation and cancel preserves the space",
+      "status": "passed",
+      "screenshot": "12-delete-cancel.png",
+      "interaction_ms": 160,
+      "focused_control": "<button type=\"button\" class=\"ant-btn css-dev-only-do-not-override-jdb7z4 css-var-root ant-btn-primary ant-btn-color-primary ant-btn-variant-solid\"><span>确 定</span></button>"
+    },
+    {
+      "id": "13-delete-failure",
+      "description": "Delete API failure preserves the item and allows retry",
+      "status": "passed",
+      "screenshot": "13-delete-failure.png",
+      "interaction_ms": 583,
+      "focused_control": "<button type=\"button\" class=\"ant-btn css-dev-only-do-not-override-jdb7z4 css-var-root ant-btn-primary ant-btn-color-primary ant-btn-variant-solid\"><div style=\"position: absolute; left: 0px; top: 0px;\"><div class=\"ant-wave css-dev-only-do-not-override-jdb7z4 wave-motion-appear wave-motion-appear-active wave-motion\" style=\"left: -1px; top: -1px; widt"
+    },
+    {
+      "id": "14-deleted",
+      "description": "Confirmed retry removes the selected space",
+      "status": "passed",
+      "screenshot": "14-deleted.png",
+      "interaction_ms": 72,
+      "focused_control": "<body>\n    <noscript>You need to enable JavaScript to run this app.</noscript>\n    <div id=\"root\"><div class=\"css-dev-only-do-not-override-jdb7z4 ant-app css-var-root\"><div><div class=\"ant-layout css-dev-only-do-not-override-jdb7z4 css-var-root\"><a class=\"workbench-skip-link\" href=\"#workbench-main\">跳到主工作区</a><header class=\"ant-layout-header _header"
+    },
+    {
+      "id": "15-page-two",
+      "description": "Second page with one record is reachable",
+      "status": "passed",
+      "screenshot": "15-page-two.png",
+      "interaction_ms": 1706,
+      "focused_control": "<li title=\"2\" class=\"ant-pagination-item ant-pagination-item-2 ant-pagination-item-active\" tabindex=\"0\"><a rel=\"nofollow\">2</a></li>"
+    },
+    {
+      "id": "16-search-resets-page",
+      "description": "Search from page two returns the matching first-page space",
+      "status": "passed",
+      "screenshot": "16-search-resets-page.png",
+      "interaction_ms": 80,
+      "focused_control": "<input placeholder=\"请输入图空间名称\" class=\"ant-input css-dev-only-do-not-override-jdb7z4\" type=\"search\" value=\"记忆库\" style=\"\">"
+    },
+    {
+      "id": "17-list-failure",
+      "description": "List API failure is distinct from an empty list and offers retry",
+      "status": "passed",
+      "screenshot": "17-list-failure.png",
+      "interaction_ms": 72,
+      "focused_control": "<input placeholder=\"请输入图空间名称\" class=\"ant-input css-dev-only-do-not-override-jdb7z4\" type=\"search\" value=\"\" style=\"\">"
+    },
+    {
+      "id": "18-list-retry",
+      "description": "List retry restores cards",
+      "status": "passed",
+      "screenshot": "18-list-retry.png",
+      "interaction_ms": 143,
+      "focused_control": "<body>\n    <noscript>You need to enable JavaScript to run this app.</noscript>\n    <div id=\"root\"><div class=\"css-dev-only-do-not-override-jdb7z4 ant-app css-var-root\"><div><div class=\"ant-layout css-dev-only-do-not-override-jdb7z4 css-var-root\"><a class=\"workbench-skip-link\" href=\"#workbench-main\">跳到主工作区</a><header class=\"ant-layout-header _header"
+    },
+    {
+      "id": "19-delete-last-page",
+      "description": "Deleting the only item on page two returns to the previous page",
+      "status": "passed",
+      "screenshot": "19-delete-last-page.png",
+      "interaction_ms": 497,
+      "focused_control": "<body>\n    <noscript>You need to enable JavaScript to run this app.</noscript>\n    <div id=\"root\"><div class=\"css-dev-only-do-not-override-jdb7z4 ant-app css-var-root\"><div><div class=\"ant-layout css-dev-only-do-not-override-jdb7z4 css-var-root\"><a class=\"workbench-skip-link\" href=\"#workbench-main\">跳到主工作区</a><header class=\"ant-layout-header _header"
+    }
+  ],
+  "errors": [],
+  "unexpected": [],
+  "writes": [
+    {
+      "method": "POST",
+      "name": "/graphspaces",
+      "values": {
+        "name": "crud_demo",
+        "nickname": "审计测试空间",
+        "max_graph_number": 100,
+        "cpu_limit": 128,
+        "memory_limit": 128,
+        "compute_cpu_limit": 128,
+        "compute_memory_limit": 128,
+        "storage_limit": 10240,
+        "description": "",
+        "auth": true
+      }
+    },
+    {
+      "method": "PUT",
+      "name": "/graphspaces/crud_demo",
+      "values": {
+        "name": "crud_demo",
+        "nickname": "已更新空间",
+        "max_graph_number": 100,
+        "cpu_limit": 128,
+        "memory_limit": 128,
+        "compute_cpu_limit": 128,
+        "compute_memory_limit": 128,
+        "storage_limit": 25,
+        "graphspace_admin": [],
+        "description": "",
+        "auth": true
+      }
+    },
+    {
+      "method": "DELETE",
+      "name": "/graphspaces/crud_demo"
+    },
+    {
+      "method": "DELETE",
+      "name": "/graphspaces/filler_11"
+    }
+  ],
+  "final_document_long_tasks": [
+    {
+      "start": 985,
+      "duration": 149
+    },
+    {
+      "start": 1179,
+      "duration": 98
+    },
+    {
+      "start": 1287,
+      "duration": 101
+    },
+    {
+      "start": 1397.5,
+      "duration": 85
+    },
+    {
+      "start": 1590.8999999999069,
+      "duration": 64
+    },
+    {
+      "start": 34908.69999999972,
+      "duration": 73
+    },
+    {
+      "start": 42422.69999999972,
+      "duration": 63
+    },
+    {
+      "start": 42810.39999999991,
+      "duration": 63
+    }
+  ],
+  "request_counts": {
+    "GET /config": 19,
+    "POST /auth/login": 1,
+    "GET /auth/context": 10,
+    "GET /graphspaces?brief=true&page_no=1&page_size=100&query=&selected=": 2,
+    "GET /auth/status": 2,
+    "GET /graphspaces?create_time=&query=&page_no=1&page_size=11": 12,
+    "GET /auth/users/list": 3,
+    "POST /graphspaces": 2,
+    "GET /graphspaces/crud_demo": 2,
+    "PUT /graphspaces/crud_demo": 2,
+    "GET /graphspaces?create_time=&query=%E4%B8%8D%E5%AD%98%E5%9C%A8&page_no=1&page_size=11": 1,
+    "DELETE /graphspaces/crud_demo": 2,
+    "GET /graphspaces?create_time=&query=&page_no=2&page_size=11": 3,
+    "GET /graphspaces?create_time=&query=%E8%AE%B0%E5%BF%86%E5%BA%93&page_no=1&page_size=11": 1,
+    "DELETE /graphspaces/filler_11": 1
+  }
+}
