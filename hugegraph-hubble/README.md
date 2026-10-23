@@ -787,6 +787,20 @@ The [2026-10-23 deployment regression report](docs/deployment-regressions-202610
 links the split fixes, browser fixture coverage and bounded rendering comparison.
 Screenshots are kept outside Git and referenced from the PR descriptions.
 
+The manual deployment regression runner checks the combined fixes linked in that
+report against an already running frontend. Its API responses are fixtures; it
+does not establish real-cluster acceptance and is separate from the distribution
+gate below. From `hugegraph-hubble`, with frontend dependencies installed:
+
+```bash
+HUBBLE_URL=http://127.0.0.1:3000 \
+HUBBLE_UI_EVIDENCE_DIR=/tmp/hubble-deployment-ui \
+  node hubble-dist/assembly/travis/run_ui_deployment_regressions.js
+```
+
+The output directory contains `browser-report.json` and screenshots; keep it outside
+Git. Each invocation replaces any old report, including on startup failure.
+
 Query and algorithm canvases, Schema views and graph-card previews share the G6 5.1.1
 visualization module. The screenshots show a running Hubble and Server with a
 small authenticated test dataset: [query](docs/images/g6/query.png),

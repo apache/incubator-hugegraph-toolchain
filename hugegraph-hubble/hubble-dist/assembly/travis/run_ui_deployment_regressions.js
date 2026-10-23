@@ -26,15 +26,19 @@ const output = process.env.HUBBLE_UI_EVIDENCE_DIR ||
     fs.mkdtempSync(path.join(os.tmpdir(), 'hubble-deployment-ui-'));
 fs.mkdirSync(output, {recursive: true});
 
+const reportPath = path.join(output, 'browser-report.json');
+// A reused evidence directory must never make this invocation look successful.
+fs.rmSync(reportPath, {force: true});
+
 const implementation = path.join(__dirname, 'run_ui_deployment_regressions_impl.js');
 const result = spawnSync(process.execPath, [implementation, ...process.argv.slice(2)], {
     cwd: process.cwd(),
     env: {...process.env, HUBBLE_UI_EVIDENCE_DIR: output},
     stdio: 'inherit',
 });
-const reportPath = path.join(output, 'browser-report.json');
+const missingReport = !fs.existsSync(reportPath);
 
-if (!fs.existsSync(reportPath)) {
+if (missingReport) {
     const reason = result.error?.message || (result.signal
         ? `Runner terminated by signal ${result.signal}`
         : `Runner exited before reporting with status ${result.status ?? 'unknown'}`);
@@ -57,5 +61,5 @@ if (result.error || result.signal) {
     process.exitCode = 1;
 }
 else {
-    process.exitCode = result.status ?? 1;
+    process.exitCode = missingReport && result.status === 0 ? 1 : (result.status ?? 1);
 }

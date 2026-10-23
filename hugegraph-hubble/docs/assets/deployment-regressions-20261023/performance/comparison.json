@@ -30,7 +30,10 @@
     "original_sha256": "e6881f4f7292c18d55eaf4339b6dd36abedb8dc698c3f5ea0ff572d75ba35de3",
     "source_git_blob": "5222b02618be02ca3631610c504d517234b6b220",
     "runner_sha256": "83c712127330a761b10a0753cc86c984d6af343fd9f5931a6f51a5ad203f9047",
-    "playwright": "/workspace/hugegraph-toolchain/hugegraph-hubble/hubble-fe/node_modules/.pnpm/playwright@1.64.1/node_modules/playwright"
+    "playwright": "/workspace/hugegraph-toolchain/hugegraph-hubble/hubble-fe/node_modules/.pnpm/playwright@1.64.1/node_modules/playwright",
+    "source_repository": "hugegraph/hugegraph-toolchain",
+    "source_commit": "63a19ca404b572f23c92c402cd4e326b8a6b856c",
+    "source_url": "https://github.com/hugegraph/hugegraph-toolchain/blob/63a19ca404b572f23c92c402cd4e326b8a6b856c/hugegraph-hubble/hubble-dist/assembly/travis/run_ui_data_crud.js"
   },
   "runtime": {
     "node": "v24.22.0",

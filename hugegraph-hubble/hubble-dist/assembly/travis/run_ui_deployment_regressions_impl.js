@@ -34,7 +34,12 @@ const spaces = [
     { name: 'DEFAULT', nickname: '默认图空间', create_time: '2026-10-13', auth: false, max_graph_number: 100, cpu_limit: 64, memory_limit: 128, compute_cpu_limit: 64, compute_memory_limit: 128, storage_limit: 100, storage_used_kb: 10752 },
     { name: 'soc_graph', nickname: '记忆库', create_time: '2026-10-15', auth: false, max_graph_number: 100, cpu_limit: 64, memory_limit: 128, compute_cpu_limit: 64, compute_memory_limit: 128, storage_limit: 10, storage_used_kb: 252590 },
 ];
-const graphs = [{ name: 'hugegraph', nickname: '记忆图', status: 'CREATED' }, { name: 'second', nickname: '测试图', status: 'CREATED' }];
+const graph = (name, nickname) => ({ name, nickname, status: 'CREATED' });
+// The destination graph must not exist in DEFAULT: stale selector data cannot pass.
+const graphsBySpace = {
+    DEFAULT: [graph('hugegraph', '记忆图'), graph('default_only', '默认空间专属图')],
+    soc_graph: [graph('hugegraph', '记忆图'), graph('second', '测试图')],
+};
 const now = 1792757451000;
 const node = (n) => ({ id: `pd-${n}`, name: `PD ${n}`, type: 'PD', role: n === 1 ? 'LEADER' : 'FOLLOWER', status: 'UP', observed_at: now, metrics: {}, metric_statuses: { system: { availability: 'UNAVAILABLE', reason: 'pd_metrics_unmapped', observed_at: now, fresh: false, stale: false } } });
 const source = { status: 'UP', availability: 'PARTIAL', reason: 'pd_metrics_unmapped', observed_at: now, last_success_at: now, fresh: false, stale: false, diagnostics: { affected_node_count: 3, failed_metric_groups: ['system'], pd_metric_mapping: { configured_origin: 'http://pd-service:8620', status: 'no_match', matched_nodes: 0, discovered_nodes: 3, omitted_members: 0, members: [1, 2, 3].map(n => ({ node_id: 'pd-' + n, origin: 'http://pd-' + n + ':8620', endpoint_valid: true, origin_matches: false, base_path_matches: true })) } }, cluster_state: 'Cluster_Not_Ready', data_state: 'PState_Normal' };
@@ -44,7 +49,7 @@ function pageResult(records, selected) { return { records, total: records.length
 async function setup(browser, auth) {
     const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, timezoneId: 'Asia/Taipei' });
     await context.addInitScript(() => localStorage.setItem('languageType', 'zh-CN'));
-    const state = { auth, truncation: false, pendingDetail: null, taskLookups: 0 };
+    const state = { auth, loggedIn: false, loginRequests: [], truncation: false, pendingDetail: null, taskLookups: 0 };
     const capabilities = ['graphspaces_read', 'operations_health_read', 'operations_topology_read', ...(auth ? ['accounts_manage', 'model_settings_manage'] : [])];
     await context.route('**/api/v*/**', async (route) => {
         const req = route.request();
@@ -54,10 +59,22 @@ async function setup(browser, auth) {
         let data;
         if (p === '/config')
             data = { pd_enabled: true, auth_enabled: auth, server_capabilities_verified: true, graph_create_enabled: true, cypher_enabled: false };
-        else if (p === '/auth/login')
+        else if (p === '/auth/login') {
+            const credentials = method === 'POST' ? req.postDataJSON() : null;
+            state.loginRequests.push({method, credentials});
+            state.loggedIn = method === 'POST' && credentials?.user_name === 'smoke_admin' &&
+                credentials?.user_password === 'fixture-only-password';
+            if (!state.loggedIn) {
+                await route.fulfill({status: 401, contentType: 'application/json',
+                    body: JSON.stringify({status: 401, message: 'Invalid fixture login'})});
+                return;
+            }
             data = { id: 'smoke-admin', user_name: 'smoke_admin', user_nickname: '测试管理员', is_superadmin: true };
-        else if (p === '/auth/context')
-            data = { mode: auth ? 'AUTH' : 'NON_AUTH', role: auth ? 'SUPERADMIN' : 'ANONYMOUS', capabilities, actions: { graphspaces: auth ? ['create', 'read', 'update', 'delete'] : ['read'] }, scopes: { all_graphspaces: auth } };
+        }
+        else if (p === '/auth/context') {
+            const admin = auth && state.loggedIn;
+            data = { mode: auth ? 'AUTH' : 'NON_AUTH', role: admin ? 'SUPERADMIN' : 'ANONYMOUS', capabilities: auth && !admin ? [] : capabilities, actions: { graphspaces: admin ? ['create', 'read', 'update', 'delete'] : auth ? [] : ['read'] }, scopes: { all_graphspaces: admin } };
+        }
         else if (p === '/auth/status')
             data = {};
         else if (p === '/auth/users/list')
@@ -81,8 +98,11 @@ async function setup(browser, auth) {
             else
                 data = s;
         }
-        else if (p.endsWith('/graphs'))
-            data = pageResult(graphs, url.searchParams.get('selected'));
+        else if (p.endsWith('/graphs')) {
+            const graphSpace = p.split('/')[2];
+            assert(graphsBySpace[graphSpace], `Unexpected graph-list scope: ${graphSpace}`);
+            data = pageResult(graphsBySpace[graphSpace], url.searchParams.get('selected'));
+        }
         else if (p.endsWith('/graph_read_mode'))
             data = { status: '1' };
         else if (p === '/vermeer')
@@ -159,7 +179,13 @@ catch (e) {
             await page.goto(base + '/graphspace');
             await page.getByRole('textbox', { name: '用户名', exact: true }).fill('smoke_admin');
             await page.locator('input[type=password]').fill('fixture-only-password');
+            const loginResponse = page.waitForResponse(response => new URL(response.url()).pathname.endsWith('/auth/login') && response.request().method() === 'POST');
             await page.getByRole('button', { name: /登\s*录/ }).click();
+            const response = await loginResponse;
+            await response.finished();
+            assert.equal(response.status(), 200);
+            assert.deepEqual(state.loginRequests, [{method: 'POST', credentials: {user_name: 'smoke_admin', user_password: 'fixture-only-password'}}]);
+            assert.equal(state.loggedIn, true);
             await page.getByTestId('graphspace-page-title').waitFor();
             assert(await page.locator('a[href="/account"]').isVisible());
             await screenshot(page, 'graphspace-authenticated');
@@ -236,6 +262,8 @@ catch (e) {
             await page.locator('.cm-content').fill('g.V()');
             await page.getByRole('button', { name: '执行查询', exact: true }).click();
             await page.getByText('已自动限制为 300 条', { exact: true }).waitFor();
+            await page.getByRole('group', { name: '节点：当前结果 1；全图总数未获取', exact: true }).waitFor();
+            await page.getByRole('group', { name: '边：当前结果 0；全图总数未获取', exact: true }).waitFor();
             assert.equal(await page.getByRole('alert').count(), 0);
             assert.equal(await page.getByText('/不可用', { exact: false }).count(), 0);
             await screenshot(page, 'query-routine-limit');
@@ -244,9 +272,11 @@ catch (e) {
             state.truncation = true;
             await page.getByRole('button', { name: '执行查询', exact: true }).click();
             await page.getByText(/部分属性为只读预览/).waitFor();
+            assert.equal(await page.getByRole('alert').count(), 0);
             await screenshot(page, 'query-truncated');
             await page.getByRole('button', { name: '预览说明', exact: true }).click();
             await page.getByText('可缩小查询范围或仅返回所需属性。异步任务也受 Server 结果大小限制', {exact:true}).waitFor();
+            assert.equal(await page.getByRole('alert').count(), 0);
             await screenshot(page, 'query-preview-details');
             await page.getByText('表格', {exact:true}).click();
             assert.equal(await page.getByText(/关联图为部分预览/).isVisible(), false);
@@ -269,12 +299,19 @@ catch (e) {
             await page.getByText('任务执行失败', { exact: true }).waitFor();
             assert.equal(await page.getByText('查看完整结果', { exact: true }).count(), 0);
             await page.getByText('任务结果超过服务端限制', { exact: true }).waitFor();
+            await page.getByText(/结果大小为 74\.24 MiB，服务端上限为 16\.00 MiB/).waitFor();
+            await page.getByText(/减少返回条数或仅返回需要的属性后重新提交/).waitFor();
+            await page.getByRole('button', { name: '调整查询', exact: true }).waitFor();
             await screenshot(page, 'async-task-result-limit');
         });
         await check('PD unmapped metrics have localized three-node source diagnostics', async () => {
             await page.goto(base + '/operations/nodes?type=PD&source=pd#operations-source-diagnostics');
             await page.locator('summary').filter({hasText: '检查地址与修复方法'}).click();
             await page.getByText('最近拓扑采集成功', { exact: false }).waitFor();
+            const repair = await page.getByText(/hugegraph-hubble\.properties/).innerText();
+            for (const detail of ['pd.server', 'server.protocol', 'restUrl', '修改 Hubble 配置后需重启']) {
+                assert(repair.includes(detail), `Missing actionable PD repair detail: ${detail}`);
+            }
             await page.getByText('尚未采集系统指标', { exact: false }).first().waitFor();
             assert.equal(await page.getByText(/来源可能在发现节点前/).count(), 0);
             await page.getByText('http://pd-service:8620', { exact: true }).waitFor();
@@ -296,7 +333,11 @@ catch (e) {
             assert.equal(await anonymous.page.getByRole('button', { name: '创建图空间', exact: true }).count(), 0);
             for (const mode of ['图模式', '列表模式']) {
                 await anonymous.page.getByText(mode, { exact: true }).click();
-                await anonymous.page.getByText('记忆库', { exact: true }).waitFor();
+                const container = mode === '图模式' ? '.ant-card' : 'tbody tr';
+                for (const nickname of ['默认图空间', '记忆库']) {
+                    const item = anonymous.page.locator(container).filter({has: anonymous.page.getByText(nickname, {exact: true})});
+                    await item.waitFor({state: 'visible'});
+                }
                 assert.equal(await anonymous.page.getByRole('button', { name: '更多', exact: true }).count(), 0);
                 assert.equal(await anonymous.page.getByText('编辑', { exact: true }).count(), 0);
                 assert.equal(await anonymous.page.getByText('删除', { exact: true }).count(), 0);
