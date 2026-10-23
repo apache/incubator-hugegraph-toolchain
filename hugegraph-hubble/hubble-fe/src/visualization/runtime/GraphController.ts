@@ -353,7 +353,7 @@ export class GraphController {
     }, null);
     resize = (width: number, height: number): Promise<UpdateResult<void>> => this.command(async () => {
         if (width > 0 && height > 0 && Number.isFinite(width) && Number.isFinite(height)) {
-            this.runtime.resize(width, height);
+            await this.runtime.resize(width, height);
         }
     }, null);
     exportPng = (): Promise<UpdateResult<string>> => this.command(async () => this.runtime.exportPng(), null);
