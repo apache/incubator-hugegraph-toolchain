@@ -41,5 +41,6 @@
     }
   ],
   "unexpectedApi": [],
-  "pageErrors": []
+  "pageErrors": [],
+  "runnerError": null
 }

@@ -23,6 +23,7 @@ const base = process.env.HUBBLE_UI_BASE || 'http://127.0.0.1:3004';
 const output = '/tmp/hubble-vermeer-first-evidence';
 fs.mkdirSync(output, {recursive:true});
 const checks = [];
+let runnerError = null;
 const unexpected = new Set();
 const errors = [];
 const spaces = [
@@ -163,8 +164,8 @@ async function check(name,fn){try{await fn();checks.push({name,status:'passed'})
   await anonymous.page.getByText('通过 Vermeer 执行；图已加载，可运行下方算法。',{exact:true}).waitFor();
   assert.equal(anonymous.state.capabilityCalls,0); await screenshot(anonymous.page,'11-context-switched');
  });
- }catch(e){console.error(e.stack);for(const ctx of browser.contexts()){for(const p of ctx.pages()){console.log('PAGE',p.url(),await p.locator('body').innerText());await p.screenshot({path:path.join(output,'failure.png'),fullPage:true});}}}finally{
-  fs.writeFileSync(path.join(output,'browser-report.json'),JSON.stringify({scope:'Actual Chromium UI with explicit API fixtures; not live-engine end-to-end acceptance',codeCommit:'4b2596d9188920d653686390ba80690a0f3e0295',screenshotLocation:'Outside Git; see PR description for screenshot evidence status',checks,unexpectedApi:[...unexpected],pageErrors:errors},null,2)+'\n');
+ }catch(e){runnerError=e.message;process.exitCode=1;console.error(e.stack);for(const ctx of browser.contexts()){for(const p of ctx.pages()){console.log('PAGE',p.url(),await p.locator('body').innerText());await p.screenshot({path:path.join(output,'failure.png'),fullPage:true});}}}finally{
+  fs.writeFileSync(path.join(output,'browser-report.json'),JSON.stringify({scope:'Actual Chromium UI with explicit API fixtures; not live-engine end-to-end acceptance',codeCommit:'4b2596d9188920d653686390ba80690a0f3e0295',screenshotLocation:'Outside Git; see PR description for screenshot evidence status',checks,runnerError,unexpectedApi:[...unexpected],pageErrors:errors},null,2)+'\n');
   await browser.close();
  }
  if(checks.some(x=>x.status==='failed')||unexpected.size||errors.length)process.exitCode=1;
