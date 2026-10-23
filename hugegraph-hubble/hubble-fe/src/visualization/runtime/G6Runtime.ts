@@ -427,7 +427,16 @@ export class G6Runtime implements GraphRuntime {
         if (this.alive && this.graph.getZoom() > this.fitZoomLimit) await this.graph.zoomTo(this.fitZoomLimit, false);
     }
     async zoomBy(factor: number): Promise<void> { if (this.initialized) await this.graph.zoomBy(factor, false); }
-    resize(width: number, height: number): void { this.graph.resize(width, height); }
+    async resize(width: number, height: number): Promise<void> {
+        const [previousWidth, previousHeight] = this.graph.getSize();
+        if (width === previousWidth && height === previousHeight) return;
+        this.graph.resize(width, height);
+        // G6's minimap listens to viewport transforms, not size changes. Reapply
+        // the current zoom without animation to refresh its mask without fitting the graph.
+        if (this.initialized && this.graph.getPluginInstance('minimap')) {
+            await this.graph.zoomTo(this.graph.getZoom(), false);
+        }
+    }
     async exportPng(): Promise<string> {
         const image = new Image();
         image.src = await this.graph.toDataURL({type: 'image/png', mode: 'overall'});
