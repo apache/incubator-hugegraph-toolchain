@@ -94,7 +94,7 @@ async function check(name,fn){try{await fn();checks.push({name,status:'passed'})
  });
  await check('Vermeer loaded: correct docs and PageRank submission route',async()=>{
   await goAlgorithms();
-  await page.getByText('通过 Vermeer 执行；图已加载，可运行下方算法。',{exact:true}).waitFor();
+  await page.getByText('通过 Vermeer 执行；图已加载，可运行下方算法',{exact:true}).waitFor();
   assert.equal(state.capabilityCalls,0);
   assert.equal(await page.getByText('Vermeer · OLAP 全图计算',{exact:true}).locator('..').locator('.ant-collapse-item').count(),9);
   assert.equal(await page.getByText('Computer 兼容入口（按需展开）',{exact:true}).count(),0);
@@ -113,13 +113,13 @@ async function check(name,fn){try{await fn();checks.push({name,status:'passed'})
  });
  await check('native-only Louvain is not presented as a supported Vermeer algorithm',async()=>{
   await search().fill('Louvain');
-  await page.getByText('当前 Hubble 的 Vermeer 接口未提供匹配的算法。',{exact:true}).waitFor();
+  await page.getByText('当前 Hubble 的 Vermeer 接口未提供匹配的算法',{exact:true}).waitFor();
   assert.equal(await page.locator('.ant-collapse-item').count(),0);
   await screenshot(page,'04-unsupported-vermeer');
  });
  await check('Vermeer unloaded graph explains loading and disables execution',async()=>{
   state.loaded=false; await goAlgorithms(); await searchFor('PageRank');
-  await page.getByText('通过 Vermeer 执行。请先在顶部将当前图加载到 Vermeer。',{exact:true}).waitFor();
+  await page.getByText('通过 Vermeer 执行。请先在顶部将当前图加载到 Vermeer',{exact:true}).waitFor();
   assert(await pagerank().locator('.ant-collapse-header button').isDisabled());
   await pagerank().scrollIntoViewIfNeeded(); await screenshot(page,'05-vermeer-unloaded');
  });
@@ -130,7 +130,7 @@ async function check(name,fn){try{await fn();checks.push({name,status:'passed'})
   assert.equal(state.capabilityCalls,0); assert.equal(await pagerank().count(),0);
   await screenshot(page,'06-computer-collapsed');
   await toggle.click(); await pagerank().waitFor();
-  await page.getByText('下方算法使用 Computer 兼容接口，任务不会发送到 Vermeer。',{exact:false}).waitFor();
+  await page.getByText('下方算法使用 Computer 兼容接口，任务不会发送到 Vermeer',{exact:false}).waitFor();
   assert.equal(state.capabilityCalls,1);
   assert((await pagerank().getByRole('link').getAttribute('href')).includes('/quickstart/hugegraph-computer/'));
   await screenshot(page,'07-computer-opt-in');
@@ -138,7 +138,7 @@ async function check(name,fn){try{await fn();checks.push({name,status:'passed'})
  await check('unavailable Computer capability stays non-runnable after opt-in',async()=>{
   state.computerAvailable=false; await goAlgorithms(); await searchFor('PageRank');
   await page.getByRole('button',{name:'Computer 兼容入口（按需展开）',exact:true}).click();
-  await page.getByText('当前图无法使用 Computer 兼容接口。请检查已有 Computer 部署。',{exact:false}).waitFor();
+  await page.getByText('当前图无法使用 Computer 兼容接口。请检查已有 Computer 部署',{exact:false}).waitFor();
   assert.equal(await pagerank().count(),0); await screenshot(page,'08-computer-unavailable');
  });
  await check('task types identify the real Vermeer and compatibility Computer engines',async()=>{
@@ -161,7 +161,7 @@ async function check(name,fn){try{await fn();checks.push({name,status:'passed'})
   await anonymous.page.getByRole('combobox',{name:'当前图',exact:true}).click();
   await anonymous.page.locator('.ant-select-item-option').filter({hasText:'测试图'}).click();
   await anonymous.page.waitForURL('**/algorithms/soc_graph/second');
-  await anonymous.page.getByText('通过 Vermeer 执行；图已加载，可运行下方算法。',{exact:true}).waitFor();
+  await anonymous.page.getByText('通过 Vermeer 执行；图已加载，可运行下方算法',{exact:true}).waitFor();
   assert.equal(anonymous.state.capabilityCalls,0); await screenshot(anonymous.page,'11-context-switched');
  });
  }catch(e){runnerError=e.message;process.exitCode=1;console.error(e.stack);for(const ctx of browser.contexts()){for(const p of ctx.pages()){console.log('PAGE',p.url(),await p.locator('body').innerText());await p.screenshot({path:path.join(output,'failure.png'),fullPage:true});}}}finally{
