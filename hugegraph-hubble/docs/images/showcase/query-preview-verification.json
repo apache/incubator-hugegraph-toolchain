@@ -72,7 +72,7 @@
   ],
   "query_cases": [
     {
-      "image": "query-default.png",
+      "image": "query-preview-default.png",
       "language": "Gremlin",
       "query": "g.V()",
       "http": 200,
@@ -90,7 +90,7 @@
       "async_hint": true
     },
     {
-      "image": "query-scalar-output.png",
+      "image": "query-preview-scalar-output.png",
       "language": "Gremlin",
       "query": "g.V().limit(10).out().count()",
       "http": 200,
@@ -101,7 +101,7 @@
       "scalar_value": 10
     },
     {
-      "image": "query-explicit-range.png",
+      "image": "query-preview-explicit-range.png",
       "language": "Gremlin",
       "query": "g.V().range(0,5)",
       "http": 200,
@@ -111,7 +111,7 @@
       "execution_requests": 1
     },
     {
-      "image": "query-explicit-tail.png",
+      "image": "query-preview-explicit-tail.png",
       "language": "Gremlin",
       "query": "g.V().limit(10).tail(5)",
       "http": 200,
@@ -121,7 +121,7 @@
       "execution_requests": 1
     },
     {
-      "image": "query-canvas-1000.png",
+      "image": "query-preview-canvas-1000.png",
       "language": "Gremlin",
       "query": "g.V().limit(1000)",
       "http": 200,
@@ -131,7 +131,7 @@
       "execution_requests": 1
     },
     {
-      "image": "query-cypher-default.png",
+      "image": "query-preview-cypher-default.png",
       "language": "Cypher",
       "query": "MATCH (n) RETURN n",
       "http": 200,
