@@ -35,15 +35,6 @@
         display: none;
     }
     
-    :global(.g6-minimap) {
-        position: absolute !important;
-        bottom: 0px;
-        border: 1px solid rgba(0, 0, 0, 0.1);
-        left: 0px;
-        background-color: #FFF;
-        margin: 0 0 -1px -1px;
-    }
-
     :global(.hiddenMiniMap) {
         display: none;
     }
