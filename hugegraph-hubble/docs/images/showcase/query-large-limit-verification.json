@@ -1,0 +1,64 @@
+{
+  "kind": "functional browser verification; not a performance sample or hosted CI result",
+  "frontend": "current source working tree based on caf16f81634a6f2b98ddb217fc24203b9b54282d",
+  "backend": "existing local backend; this patch does not change production backend limiting; current source also verified with six targeted backend tests",
+  "fixtures": [
+    "one selected GraphSpace record for older backend metadata compatibility",
+    "unavailable counts instead of any statistics scans"
+  ],
+  "query_responses_mocked": false,
+  "cases": [
+    {
+      "name": "gremlin-single",
+      "query": "g.V().limit(1).limit(1000000)",
+      "http": 200,
+      "status": 200,
+      "result_rows": 1,
+      "result_limit": 1000,
+      "result_truncated": false,
+      "editor_unchanged": true,
+      "reminder_visible": true
+    },
+    {
+      "name": "gremlin-large",
+      "query": "g.V().limit(1000000)",
+      "http": 200,
+      "status": 200,
+      "result_rows": 1000,
+      "result_limit": 1000,
+      "result_truncated": true,
+      "editor_unchanged": true,
+      "reminder_visible": true
+    },
+    {
+      "name": "cypher-single",
+      "query": "MATCH (n) WITH n LIMIT 1 RETURN n LIMIT 1000000",
+      "http": 200,
+      "status": 200,
+      "result_rows": 1,
+      "result_limit": 1000,
+      "result_truncated": false,
+      "editor_unchanged": true,
+      "reminder_visible": true
+    },
+    {
+      "name": "cypher-normal",
+      "query": "MATCH (n) RETURN n LIMIT 3",
+      "http": 200,
+      "status": 200,
+      "result_rows": 3,
+      "result_limit": 1000,
+      "result_truncated": false,
+      "editor_unchanged": true,
+      "reminder_visible": false
+    }
+  ],
+  "execution_request_count": 4,
+  "page_errors": [],
+  "status": "passed",
+  "screenshot": {
+    "file": "query-large-limit-preview.png",
+    "sha256": "e9eb5e95c5ac10a415ee8f9d22de97dc48282c65e8fce29634f50894a3303f2a"
+  },
+  "limits": "Anonymous query-page interaction only; login mode and connection switching were not reaccepted. No graph statistics scans, exports, async jobs or load tests were triggered."
+}

@@ -23,6 +23,7 @@
 import {useState, useCallback, useEffect, useContext, useRef, useMemo, useLayoutEffect} from 'react';
 import {useTranslation} from 'react-i18next';
 import {useParams} from 'react-router-dom';
+import {message} from 'antd';
 import GraphAnalysisContext from '../../Context';
 import QueryBar from '../QueryBar/Home';
 import useText2Gql from './useText2Gql';
@@ -442,15 +443,7 @@ const AnalysisHome = ({toolbarExtra}) => {
             const content = generated?.content ?? codeEditorContent;
             const language = generated?.language ?? (tabKey === CYPHER ? 'cypher' : 'gremlin');
             if (hasLargeExplicitReadLimit(content, language)) {
-                const message = t('analysis.query_result.large_query_use_async', {limit: GRAPH_NODE_LIMIT});
-                queryRequest.current = null;
-                stopExecutionTimer();
-                setExecutionDurationMs(null);
-                setQueryMode(true);
-                setQueryResult();
-                setQueryMessage(message);
-                setQueryStatus(FAILED);
-                return {ok: false, message, retryable: false};
+                message.info(t('analysis.query_result.large_query_preview', {limit: GRAPH_NODE_LIMIT}));
             }
             const request = Symbol('query');
             const startedAt = Date.now();

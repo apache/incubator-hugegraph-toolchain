@@ -18,11 +18,14 @@
 
 import {act, fireEvent, render, screen, waitFor} from '@testing-library/react';
 import AnalysisHome, {extractQueryErrorMessage} from './index';
+import {message} from 'antd';
 import GraphAnalysisContext from '../../Context';
 import * as api from '../../../api';
 import {EXECUTION_LOGS_TYPE} from '../../../utils/constants';
 import {setConfig} from '../../../utils/config';
 import {setUser} from '../../../utils/user';
+
+jest.mock('antd', () => ({message: {info: jest.fn()}}));
 
 jest.mock('../../../api', () => ({
     analysis: {
@@ -1801,23 +1804,27 @@ it('hides confirmed old Schema inputs as soon as the selected graph changes', as
     expect(api.manage.getMetaVertexList).toHaveBeenCalledTimes(vertexCalls);
 });
 
-it('blocks an obvious large decimal limit before POST and permits explicit async submission', async () => {
-    const limit = '10000';
+it.each(['10000', '1000000'])('previews a large limit %s successfully and keeps the original async query', async limit => {
+    const content = `g.V().limit(${limit})`;
+    const singleResult = {json_view: {data: [{id: 'only-one'}]}, result_limit: 1000};
+    api.analysis.getExecutionQuery.mockResolvedValue({status: 200, data: singleResult});
     render(<GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
         <AnalysisHome />
     </GraphAnalysisContext.Provider>);
     await act(async () => Promise.resolve());
-    fireEvent.click(screen.getByRole('button', {name: `Edit large query ${limit}`}));
-    fireEvent.click(screen.getByRole('button', {name: 'Run current'}));
-    expect(api.analysis.getExecutionQuery).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByRole('textbox', {name: 'Query fixture'}), {target: {value: content}});
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
+    expect(api.analysis.getExecutionQuery).toHaveBeenCalledWith('DEFAULT', 'hugegraph', content);
     expect(api.analysis.getExecutionTask).not.toHaveBeenCalled();
-    expect(screen.getByTestId('query-status')).toHaveTextContent('failed');
-    await act(async () => Promise.resolve());
+    expect(screen.getByTestId('query-status')).toHaveTextContent('success');
+    expect(screen.getByTestId('query-result')).toHaveTextContent('only-one');
+    expect(screen.getByTestId('query-content')).toHaveTextContent(content);
+    expect(message.info).toHaveBeenCalledWith('analysis.query_result.large_query_preview');
     fireEvent.click(screen.getByRole('button', {name: 'Use async'}));
     fireEvent.click(screen.getByRole('button', {name: 'Run current'}));
     await waitFor(() => expect(api.analysis.getExecutionTask).toHaveBeenCalledWith(
-        'DEFAULT', 'hugegraph', {content: `g.V().limit(${limit})`}));
-    expect(api.analysis.getExecutionQuery).not.toHaveBeenCalled();
+        'DEFAULT', 'hugegraph', {content}));
+    expect(api.analysis.getExecutionQuery).toHaveBeenCalledTimes(1);
 });
 
 it.each([
@@ -1843,7 +1850,7 @@ it.each([
     ['MATCH (n) WITH n LIMIT 10 RETURN n LIMIT 10000', true],
     ['MATCH (n) RETURN n.limit + 1', false],
     ['MATCH (n) RETURN n LIMIT $rows', false],
-])('dispatches Cypher with intermediate limits and gates only excessive result limits: %s', async (cypher, blocked) => {
+])('dispatches Cypher with intermediate or large limits and only hints for large limits: %s', async (cypher, large) => {
     api.analysis.getCypherExecutionQuery.mockResolvedValue({status: 200, data: {}});
     render(<GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
         <AnalysisHome />
@@ -1851,13 +1858,9 @@ it.each([
     await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Cypher'})));
     fireEvent.change(screen.getByRole('textbox', {name: 'Query fixture'}), {target: {value: cypher}});
     await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
-    if (blocked) {
-        expect(api.analysis.getCypherExecutionQuery).not.toHaveBeenCalled();
-        expect(screen.getByTestId('query-status')).toHaveTextContent('failed');
-    }
-    else {
-        expect(api.analysis.getCypherExecutionQuery).toHaveBeenCalledWith('DEFAULT', 'hugegraph', {cypher});
-    }
+    expect(api.analysis.getCypherExecutionQuery).toHaveBeenCalledWith('DEFAULT', 'hugegraph', {cypher});
+    expect(screen.getByTestId('query-status')).toHaveTextContent('success');
+    expect(message.info).toHaveBeenCalledTimes(large ? 1 : 0);
     expect(api.analysis.getCypherTask).not.toHaveBeenCalled();
     expect(screen.getByTestId('query-content')).toHaveTextContent(cypher);
 });

@@ -491,6 +491,31 @@ public class QueryServiceTest {
     }
 
     @Test
+    public void testLargeExplicitLimitsStillReturnSmallPreviews() throws Exception {
+        GremlinManager gremlin = this.mockGremlin(this.resultSet(1));
+        HugeClient client = this.mockClient(gremlin);
+        CypherManager cypher = Mockito.mock(CypherManager.class);
+        Mockito.when(client.cypher()).thenReturn(cypher);
+        Mockito.when(cypher.cypher("RETURN 1 LIMIT 1001")).thenReturn(this.resultSet(1));
+        QueryService service = this.serviceWithConfig();
+        GremlinQuery query = new GremlinQuery("g.V().limit(1000000)");
+        query.setPreview(true);
+
+        GremlinResult gremlinPreview = service.executeGremlinQuery(client, query);
+        GremlinResult cypherPreview = service.executeCypherQuery(client, "RETURN 1 LIMIT 1000000", true);
+
+        for (GremlinResult result : List.of(gremlinPreview, cypherPreview)) {
+            Assert.assertEquals(List.of(1), result.getJsonView().getData());
+            Assert.assertFalse(result.isResultTruncated());
+            Assert.assertFalse(result.isDefaultLimitApplied());
+            Assert.assertEquals(1000, result.getResultLimit());
+        }
+        Assert.assertEquals("g.V().limit(1000000)", query.getContent());
+        Mockito.verify(gremlin).gremlin("g.V().limit(1000000).limit(1001)");
+        Mockito.verify(cypher).cypher("RETURN 1 LIMIT 1001");
+    }
+
+    @Test
     public void testInteractivePreviewIsOptInAndBounded() throws Exception {
         List<Vertex> vertices = this.vertices(12000);
         GremlinManager gremlin = this.mockGremlin(this.resultSet(vertices.toArray()));

@@ -92,8 +92,9 @@ Run Gremlin queries and inspect their graph, table, or JSON results without leav
 Common Gremlin traversals and Cypher reads without an explicit bound receive the
 configured default limit (300). Interactive previews keep at most 1,000 result rows
 and display at most 1,000 vertices with the configured edge budget. A common terminal
-decimal limit above that budget prompts users to select the existing asynchronous
-mode before submission; the frontend leaves the query text unchanged.
+decimal limit above that budget still runs as a bounded preview, with a nonblocking
+reminder to use asynchronous mode for complete large results. Small results return
+normally even with a large requested limit; the editor query stays unchanged.
 
 Automatic limiting is syntax sugar for common reads. It does not evaluate numeric
 expressions, infer traversal cardinality or track nested collection shapes. Existing
@@ -112,7 +113,7 @@ use the existing asynchronous mode in interactive previews, including queries wi
 an explicit input bound. This uniform rule keeps the full aggregation semantics
 without trying to prove which query shapes produce small collections.
 
-![A large explicit limit prompts asynchronous execution before submission](docs/images/showcase/query-limit-hint.png)
+![A large explicit limit runs as a bounded preview with an asynchronous-mode reminder](docs/images/showcase/query-large-limit-preview.png)
 
 Preview edges use a bounded incident-edge sample and do not guarantee the complete
 induced subgraph of the displayed nodes.
