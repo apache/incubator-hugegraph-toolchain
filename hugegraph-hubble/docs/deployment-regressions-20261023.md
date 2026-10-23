@@ -19,12 +19,16 @@ The separately authorized, bounded GraphSpace notification fix is proposed in
 - [Toolchain #90](https://github.com/hugegraph/hugegraph-toolchain/pull/90): recoverable property/vertex-label/edge-label deletion.
 - [Toolchain #91](https://github.com/hugegraph/hugegraph-toolchain/pull/91): explicit Vermeer-first OLAP entry and optional Computer compatibility entry.
 - [Toolchain #93](https://github.com/hugegraph/hugegraph-toolchain/pull/93): minimap bounds and viewport-mask synchronization after canvas resize.
+- [Toolchain #94](https://github.com/hugegraph/hugegraph-toolchain/pull/94): lightweight PD member discovery using the existing `/v1/members` endpoint.
+- [Toolchain #95](https://github.com/hugegraph/hugegraph-toolchain/pull/95): separate service readiness from node registration status.
+- [Server #335](https://github.com/hugegraph/hugegraph/pull/335): configurable quota namespace instead of a fixed `hg` prefix.
 
 Screenshots remain outside Git. Browser evidence is linked from the PR
 descriptions and the [issue record](https://chatgpt.com/space/page_62cf6a23a284819196000f124fdd6990).
 The runners write temporary output unless an evidence directory is supplied.
 The combined acceptance runner requires the relevant split fixes together;
-this documentation PR alone does not change application behavior.
+this PR also includes the shared canvas correction from #93; the other product
+fixes remain in their linked PRs.
 
 ## Findings and changes
 
@@ -69,7 +73,7 @@ does not prove that an online PD member is down. `Cluster_Not_Ready` is a separa
 cluster readiness signal and is shown separately from collection status.
 
 The diagnostic page compares the configured PD origin with member REST origins
-from `/v1/cluster`, shows whether origin and base path match, and distinguishes
+from the PD member list, shows whether origin and base path match, and distinguishes
 no match from multiple matching nodes. It displays at most ten members, prioritizing exact origin/base-path matches;
 counts still use the complete deduplicated set. Each failed Server or Store
 request retains its owning node, metric group, request path and HTTP status. It
@@ -135,12 +139,35 @@ query, panel toggles, settled layout, larger/smaller viewport and Table → Grap
 navigation. The independent #93 branch also verified that a zoomed minimap mask
 updates immediately after resize without changing the camera. The existing
 minimap failure in #88/#89 CI reproduces on master and is addressed by #93;
-those independent branches do not themselves contain #93.
+the split branches now normally merge the same canonical #93 commit,
+`fa17196e77cc8ceb4984170c1216d15b8f75e4e3`, including its public GraphCanvas
+anchoring and zero-size recovery follow-up. Its exact-head CI
+[39984795180](https://github.com/hugegraph/hugegraph-toolchain/actions/runs/39984795180)
+passed the real single-graph query/minimap gate. This gate does not establish the
+full anonymous/PD/multi-Server acceptance matrix.
+
+## Review follow-up validation
+
+The combined browser rerun at `795f52a375718eb0d04972e6b80abe11287bdf6d`
+passed all ten strengthened scenarios with the committed runner. It verifies
+actual login POST success, destination-only graph options, visible anonymous
+cards and rows, current node/edge counts, compact notices in Graph view, result
+sizes and recovery guidance, and expanded PD configuration instructions.
+Five injected launcher cases cover stale output, early exit, signal, spawn error
+and zero exit without a report. Screenshots remain outside Git.
+
+A 217-suite sweep at the preceding combined version passed 213 suites / 2,315
+checks and hit six timeouts in four suites while other builds were running.
+After those jobs stopped, all four suites plus the new readiness and task-result
+components passed with the default timeouts: nine suites / 155 checks. This is
+reported as a successful retry, not as an uninterrupted green full-suite run.
+Combined ESLint, locale validation, TypeScript and production build also passed.
 
 ## Bounded rendering comparison
 
-Identical intercepted API fixtures ran against remote master `eef5afd2` and the
-combined candidate `a6157fc1e7a0ba912368cd68555f5ad5f30cac98` in Chromium
+The review follow-up compared remote master `eef5afd2` with combined candidate
+`795f52a375718eb0d04972e6b80abe11287bdf6d` after the parallel build jobs stopped.
+The same frozen runner and intercepted API fixtures ran in Chromium
 154.0.8037.57. Each size used two interleaved rounds of five warm queries,
 in baseline/candidate/candidate/baseline order. Timing waits for the exact
 response, the current query/canvas busy-to-idle cycle, and two animation frames;
@@ -155,12 +182,14 @@ comparison that lacked an exact candidate revision.
 
 | Vertices | Master median | Candidate median | Master maximum | Candidate maximum |
 | --- | --- | --- | --- | --- |
-| 100 | 396.55 ms | 339.45 ms | 519.0 ms | 453.0 ms |
-| 300 | 506.50 ms | 465.55 ms | 659.9 ms | 608.9 ms |
+| 100 | 382.20 ms | 349.10 ms | 520.1 ms | 405.1 ms |
+| 300 | 488.70 ms | 447.80 ms | 576.3 ms | 578.5 ms |
 
-No rendering regression was observed in these bounded scenarios. Shared executor
-load was uncontrolled, so these numbers do not establish a production speedup
-or cluster-throughput guarantee. See the [comparison record](assets/deployment-regressions-20261023/performance/comparison.json).
+No median rendering regression was observed in these bounded scenarios. Ten
+samples per version/size do not establish a production speedup, tail-latency or
+cluster-throughput guarantee. See the [review comparison record](assets/deployment-regressions-20261023/performance/review-comparison.json).
+The [earlier comparison](assets/deployment-regressions-20261023/performance/comparison.json)
+retains its original `a6157fc1` attribution; it is not relabelled as this review run.
 
 ## Vermeer branch compatibility
 

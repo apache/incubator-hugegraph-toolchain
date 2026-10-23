@@ -1,6 +1,6 @@
 {
   "status": "passed",
-  "observedAt": "2026-10-23T16:25:42.975Z",
+  "observedAt": "2026-10-23T16:41:19.860Z",
   "browserVersion": "154.0.8037.57",
   "timezone": "Asia/Taipei",
   "scope": "Actual Chromium UI against mocked API responses; not real-cluster acceptance",
@@ -49,9 +49,21 @@
   "unexpectedApi": [],
   "pageErrors": [],
   "failure": null,
+  "sourceCommit": "795f52a375718eb0d04972e6b80abe11287bdf6d",
+  "frontendSourceTree": "f1efba9cee3454acfb6f2f78a5ffed337b6d55be",
+  "runnerSourceCommit": "6ff337fef0b0ffeaf5138e50ad4b0a26e1194187",
   "runnerGitBlob": "1dcc1bc8942a530a8bdbdbd18f9d0eb1a1a46388",
   "launcherGitBlob": "43c043c07658ce4d560464901ba4f5d1a7b1fe76",
-  "sourceCommit": "8b1019a3f8616d2e5cc0056ed2884eca3ca791e7",
-  "frontendSourceTree": "c68f61779142ead4b62ac66add3cd0c2ff2c233c",
-  "runnerSourceCommit": "6ff337fef0b0ffeaf5138e50ad4b0a26e1194187"
+  "splitPrHeads": {
+    "86": "656f1bc7834756b57b0f0de5811cf91805ed5580",
+    "87": "8d8756455d49d78f349ccb362b32d244c32e053c",
+    "88": "1597ad22ce8b26ecc8574cd630f6565e41e5fc63",
+    "89": "3996be68258f4b2072e012b1998e9d9db11da34a",
+    "90": "8a05cf35fedca0bcc85126e9ecb9b7a007f19b1a",
+    "91": "276954da2f54d7465589550428ee279938a28220",
+    "92": "afaaafb87f9ab6557fdca53174c00378ed36fbb3",
+    "93": "fa17196e77cc8ceb4984170c1216d15b8f75e4e3",
+    "94": "55202d64e9c5b29f2cf322cba86ddc4bc4a7510a",
+    "95": "2154a24faa18f486667589817ddc42a5424e0747"
+  }
 }
