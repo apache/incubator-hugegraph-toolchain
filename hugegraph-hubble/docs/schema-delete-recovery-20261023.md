@@ -73,3 +73,21 @@ set `HUBBLE_UI_EVIDENCE_DIR` to preserve a run. Performance uses five repeats pe
 and waits for the current query/canvas busy-to-idle cycle, response completion and two
 animation frames. It includes Playwright and browser rendering overhead against in-memory responses.
 It does not measure Server query performance, storage I/O or cluster throughput.
+
+
+## Review follow-up: trusted schema snapshots
+
+Review `5630665125` identified that a throwing completion callback could leave an
+already completed confirmation open; commit `cc3540f9` fixed that behavior. The
+follow-up also rejects duplicated or missing schema identities before interpreting
+absence or sending a deletion. Missing totals, truncated lists and failed requests
+remain untrusted. This avoids treating a malformed full-list response as proof that
+a selected target has already disappeared.
+
+The focused review run passed 17 tests in three suites, targeted ESLint, locale
+validation, TypeScript and the production build. The schema-only Chromium rerun
+passed 13 scenarios, including malformed-list rejection followed by a successful
+explicit retry, with zero page errors or unexpected API routes. The final run is
+recorded in [the review receipt](assets/schema-delete-20261023/review-followup-browser-report.json).
+These 13 scenarios do not rerun the broader canvas/performance cases above.
+Screenshots remain outside Git; the review evidence is intended for the PR description.

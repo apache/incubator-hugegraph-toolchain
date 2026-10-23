@@ -113,9 +113,15 @@ test.each(['accepted', 'lost', 'partial failure'])('async %s deletion checks sta
     expect(options.remove).toHaveBeenCalledTimes(2);
 });
 
-test.each(['failed', 'incomplete'])('untrusted %s listing cannot imply absence or permit writes', async mode => {
-    options.list.mockResolvedValue(mode === 'failed' ? {status: 500} :
-        {status: 200, data: {records: [], total: 10}});
+test.each([
+    ['failed', {status: 500}],
+    ['truncated', {status: 200, data: {records: [], total: 10}}],
+    ['missing total', {status: 200, data: {records: []}}],
+    ['duplicate names', {status: 200, data: {records: [{name: 'other'}, {name: 'other'}], total: 2}}],
+    ['missing name', {status: 200, data: {records: [{}], total: 1}}],
+    ['invalid record', {status: 200, data: {records: [null], total: 1}}],
+])('untrusted %s listing cannot imply absence or permit writes', async (_mode, response) => {
+    options.list.mockResolvedValue(response);
     confirmSchemaDeletion(options);
     act(() => onOk(close));
     await finishAttempt();

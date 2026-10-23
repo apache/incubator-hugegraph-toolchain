@@ -19,8 +19,10 @@ import {Button, Modal, message} from 'antd';
 
 export const DELETE_REQUEST_CONFIG = {suppressBusinessErrorToast: true};
 
-// A DELETE can apply before its response is lost. Resolve the remaining targets
-// from a complete, fresh list before every attempt and after every response.
+/**
+ * Reconcile deletion against complete, fresh schema snapshots before retrying.
+ * Only verified absence completes the operation; async retries remain explicit.
+ */
 export default function confirmSchemaDeletion({graphspace, graph, names, title, warning,
     list, checkUsage, remove, inUseKey, asyncDeletion = false, onComplete, onRefresh, t}) {
     const feedbackKey = `schema-delete:${graphspace}:${graph}:${names.join(',')}`;
@@ -36,7 +38,11 @@ export default function confirmSchemaDeletion({graphspace, graph, names, title, 
             || !Number.isFinite(page.total) || page.total !== page.records.length) {
             throw new Error('Schema list is incomplete');
         }
-        const existing = new Set(page.records.map(item => item.name));
+        const recordNames = page.records.map(item => item?.name);
+        const existing = new Set(recordNames);
+        if (recordNames.some(name => typeof name !== 'string' || !name) || existing.size !== page.total) {
+            throw new Error('Schema list identities are incomplete');
+        }
         return names.filter(name => existing.has(name));
     };
     const content = (remaining, close) => {

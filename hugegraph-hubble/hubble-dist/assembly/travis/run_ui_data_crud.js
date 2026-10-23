@@ -128,6 +128,9 @@ async function setup(browser, auth) {
             unexpected.add(`${method} ${p}`);
             data = {};
         }
+        if (state.invalidSchemaList && method === 'GET' && /\/schema\/(propertykeys|vertexlabels|edgelabels)$/.test(p)) {
+            data = {records: [{name: 'other'}, {name: 'other'}], total: 2};
+        }
         await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ status: 200, data }) });
     });
     const page = await context.newPage();
@@ -229,6 +232,26 @@ catch (e) {
                 assert.equal(mutations.filter(x => x.operation === 'property-delete').length, 1);
                 await page.waitForFunction(() => !document.querySelector('.ant-message-error'));
                 await screenshot(page, '04-schema-delete-complete');
+            });
+            await check('02 duplicate schema snapshots keep deletion pending until a trusted retry', async () => {
+                properties.push({name: 'UntrustedProperty', data_type: 'TEXT', cardinality: 'SINGLE'});
+                await page.getByRole('button', {name: /刷\s*新/, exact: true}).click();
+                const row = page.getByRole('row').filter({hasText: 'UntrustedProperty'});
+                await row.getByRole('button', {name: '删除', exact: true}).click();
+                const before = state.calls.filter(x => x.method === 'DELETE').length;
+                await page.waitForFunction(() => !document.querySelector('.ant-message-success'));
+                state.invalidSchemaList = true;
+                await page.getByRole('dialog').getByRole('button', {name: /确\s*定/}).click();
+                await page.locator('.ant-message-error').waitFor();
+                assert.equal(state.calls.filter(x => x.method === 'DELETE').length, before);
+                assert.equal(await page.getByRole('dialog').count(), 1);
+                await screenshot(page, '04-untrusted-schema-list', true);
+                state.invalidSchemaList = false;
+                await page.getByRole('dialog').getByRole('button', {name: /确\s*定/}).click();
+                await page.getByRole('dialog').waitFor({state: 'hidden'});
+                await row.waitFor({state: 'hidden'});
+                assert.equal(state.calls.filter(x => x.method === 'DELETE').length, before + 1);
+                await page.waitForFunction(() => !document.querySelector('.ant-message-error'));
             });
             for (const [tab, labelName, operation, name] of [
                 ['顶点类型', 'AuditVertex', 'vertexlabels-delete', 'vertex'],

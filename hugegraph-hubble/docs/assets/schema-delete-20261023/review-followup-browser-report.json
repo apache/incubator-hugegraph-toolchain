@@ -1,0 +1,179 @@
+{
+  "status": "passed",
+  "observedAt": "2026-10-23T16:12:42.748Z",
+  "base": "http://127.0.0.1:3020",
+  "browserVersion": "154.0.8037.57",
+  "scope": "Actual Chromium UI with intercepted in-memory API fixtures. Performance measures warm UI action through response completion and the current query/canvas busy-to-idle cycle plus two animation frames; does not measure Server or cluster throughput.",
+  "checks": [
+    {
+      "name": "00 authenticated GraphSpace/account visibility and graph context switching",
+      "status": "passed"
+    },
+    {
+      "name": "01 schema create validates required name and supports keyboard submission",
+      "status": "passed"
+    },
+    {
+      "name": "02 schema delete cancel does not mutate; failed delete stays retryable",
+      "status": "passed"
+    },
+    {
+      "name": "02 duplicate schema snapshots keep deletion pending until a trusted retry",
+      "status": "passed"
+    },
+    {
+      "name": "02 vertex schema delete failure stays open and retries successfully",
+      "status": "passed"
+    },
+    {
+      "name": "02 edge schema delete failure stays open and retries successfully",
+      "status": "passed"
+    },
+    {
+      "name": "02 propertykeys lost response reconciles completed deletion without repeat",
+      "status": "passed"
+    },
+    {
+      "name": "02 vertexlabels lost response reconciles completed deletion without repeat",
+      "status": "passed"
+    },
+    {
+      "name": "02 edgelabels lost response reconciles completed deletion without repeat",
+      "status": "passed"
+    },
+    {
+      "name": "02 partial batch retries remaining names and revalidates newly used properties",
+      "status": "passed"
+    },
+    {
+      "name": "02 asynchronous pending deletion checks status and requires explicit retry",
+      "status": "passed"
+    },
+    {
+      "name": "02 asynchronous pending-lost deletion checks status and requires explicit retry",
+      "status": "passed"
+    },
+    {
+      "name": "02 anonymous mode keeps GraphSpaces and schema CRUD, hides accounts",
+      "status": "passed"
+    }
+  ],
+  "mutations": [
+    {
+      "operation": "property-create",
+      "value": {
+        "name": "ui_audit_property",
+        "data_type": "TEXT",
+        "cardinality": "SINGLE"
+      }
+    },
+    {
+      "operation": "property-delete",
+      "names": [
+        "ui_audit_property"
+      ]
+    },
+    {
+      "operation": "property-delete",
+      "names": [
+        "UntrustedProperty"
+      ]
+    },
+    {
+      "operation": "vertexlabels-delete",
+      "names": [
+        "AuditVertex"
+      ]
+    },
+    {
+      "operation": "edgelabels-delete",
+      "names": [
+        "AuditEdge"
+      ]
+    },
+    {
+      "operation": "property-delete",
+      "names": [
+        "LostProperty"
+      ]
+    },
+    {
+      "operation": "vertexlabels-delete",
+      "names": [
+        "LostVertex"
+      ]
+    },
+    {
+      "operation": "edgelabels-delete",
+      "names": [
+        "LostEdge"
+      ]
+    },
+    {
+      "operation": "property-delete",
+      "names": [
+        "PartialA"
+      ]
+    },
+    {
+      "operation": "property-delete",
+      "names": [
+        "PartialB"
+      ]
+    },
+    {
+      "operation": "vertexlabels-delete",
+      "names": [
+        "PendingVertex"
+      ]
+    },
+    {
+      "operation": "vertexlabels-delete",
+      "names": [
+        "PendingVertex"
+      ]
+    },
+    {
+      "operation": "vertexlabels-delete",
+      "names": [
+        "PendingVertex"
+      ]
+    },
+    {
+      "operation": "vertexlabels-delete",
+      "names": [
+        "PendingVertex"
+      ]
+    },
+    {
+      "operation": "property-create",
+      "value": {
+        "name": "AnonymousProperty",
+        "data_type": "TEXT",
+        "cardinality": "SINGLE"
+      }
+    },
+    {
+      "operation": "property-delete",
+      "names": [
+        "AnonymousProperty"
+      ]
+    }
+  ],
+  "metrics": [
+    {
+      "count": 100,
+      "samples": 0,
+      "maxLongTaskMs": 0
+    },
+    {
+      "count": 300,
+      "samples": 0,
+      "maxLongTaskMs": 0
+    }
+  ],
+  "performanceSamples": [],
+  "pageErrors": [],
+  "unexpectedApi": [],
+  "failure": null
+}
