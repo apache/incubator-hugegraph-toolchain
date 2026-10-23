@@ -350,6 +350,41 @@ const partial = {vertices: [{id: 1, label: 'person'}], edges: [
     {id: 'waiting', source: 1, target: 'later', label: 'knows', properties: {kept: true}},
 ]};
 
+test('partial expansions preserve complete records and complete responses upgrade partial typed IDs', async () => {
+    const complete = {vertices: [
+        {id: 1, label: 'person', properties: {name: 'Alice'}},
+        {id: '1', label: 'person', properties: {name: 'old prefix'}, '~hubble_properties_preview': true},
+    ], edges: [
+        {id: 7, source: 1, target: '1', label: 'knows', properties: {weight: 42}},
+        {id: '7', source: '1', target: 1, label: 'knows', properties: {weight: 'old prefix'},
+            '~hubble_properties_preview': true},
+    ]};
+    const responseGraph = {vertices: [
+        {id: 1, label: 'person', properties: {name: 'prefix'}},
+        {id: '1', label: 'person', properties: {name: 'Bob'}},
+    ], edges: [
+        {id: 7, source: 1, target: '1', label: 'knows', properties: {weight: 'prefix'}},
+        {id: '7', source: '1', target: 1, label: 'knows', properties: {weight: 99}},
+    ]};
+    api.analysis.putExecutionQuery.mockResolvedValue({status: 200, data: {
+        graph_view: responseGraph, property_preview_vertex_ids: [1], property_preview_edge_ids: [7],
+    }});
+    const owner = observableController(complete);
+    const view = renderHook(() => useAnalysisGraph({...initial, data: complete}));
+    act(() => view.result.current.onReady(owner));
+
+    await act(async () => { await view.result.current.expand({vertex_id: 1}); });
+
+    const exported = view.result.current.currentRawData();
+    expect(exported.vertices.find(vertex => vertex.id === 1)).toEqual(complete.vertices[0]);
+    expect(exported.edges.find(edge => edge.id === 7)).toEqual(complete.edges[0]);
+    expect(exported.vertices.find(vertex => vertex.id === '1')).toEqual(responseGraph.vertices[1]);
+    expect(exported.edges.find(edge => edge.id === '7')).toEqual(responseGraph.edges[1]);
+    expect(exported.vertices.every(vertex => !vertex['~hubble_properties_preview'])).toBe(true);
+    expect(exported.edges.every(edge => !edge['~hubble_properties_preview'])).toBe(true);
+    expect(responseGraph.vertices[0]['~hubble_properties_preview']).toBeUndefined();
+});
+
 test('renders the valid partial graph while preserving detached dangling raw edges in JSON exports', () => {
     const input = JSONbig.parse('{"vertices":[{"id":1},{"id":"1"},{"id":900719925474099312345}],'
         + '"edges":[{"id":1,"source":1,"target":"1"},{"id":"1","source":1,"target":"later"},'

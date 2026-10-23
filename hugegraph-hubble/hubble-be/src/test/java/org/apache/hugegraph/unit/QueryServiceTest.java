@@ -280,8 +280,8 @@ public class QueryServiceTest {
         this.assertCypherPreview("MATCH (n) RETURN n", "MATCH (n) RETURN n LIMIT 300", true);
         this.assertCypherPreview("MATCH (n) WITH n LIMIT 5 RETURN n;",
                                  "MATCH (n) WITH n LIMIT 5 RETURN n LIMIT 300;", true);
-        this.assertCypherPreview("UNWIND range(1, 1000) AS value RETURN value;",
-                                 "UNWIND range(1, 1000) AS value RETURN value LIMIT 300;", true);
+        this.assertCypherPreview("UNWIND [1, 2] AS value RETURN value;",
+                                 "UNWIND [1, 2] AS value RETURN value LIMIT 300;", true);
         this.assertCypherPreview("MATCH (n) RETURN n LIMIT 10000;",
                                  "MATCH (n) RETURN n LIMIT 1001;", false);
         this.assertCypherPreview("MATCH (n) RETURN n.city, count(*) AS total",
@@ -304,7 +304,10 @@ public class QueryServiceTest {
                                            "MATCH (n) RETURN collect(n) LIMIT 1",
                                            "MATCH (n) WITH collect(n) AS nodes RETURN nodes",
                                            "MATCH (n) WITH n LIMIT 10 RETURN collect(n)",
-                                           "UNWIND [1, 2] AS n RETURN collect(n)"}) {
+                                           "UNWIND [1, 2] AS n RETURN collect(n)",
+                                           "RETURN range(1, 1000000000)",
+                                           "RETURN range(1, 10) LIMIT 1",
+                                           "UNWIND range(1, 10) AS n RETURN n"}) {
             ExternalException error = (ExternalException) Assert.assertThrows(ExternalException.class,
                     () -> service.executeCypherQuery(client, content, true));
             Assert.assertEquals("gremlin.preview.collection_requires_async", error.getMessage());
@@ -814,6 +817,43 @@ public class QueryServiceTest {
         Assert.assertEquals(payload, partial.property("payload"));
         Assert.assertEquals(payload, partialEdge.property("payload"));
         Mockito.verifyNoInteractions(manager);
+    }
+
+    @Test
+    public void testExpansionDeduplicatesVerticesBeforePropertyPreview() throws Exception {
+        Vertex start = new Vertex("person");
+        start.id("start");
+        Vertex neighbor = new Vertex("person");
+        neighbor.id(7L);
+        List<List<String>> payload = Collections.nCopies(20, Collections.nCopies(20, "value"));
+        neighbor.property("payload", payload);
+        Vertex stringIdNeighbor = new Vertex("person");
+        stringIdNeighbor.id("7");
+        stringIdNeighbor.property("payload", payload);
+        List<Path> paths = new ArrayList<>();
+        for (int i = 0; i < 31; i++) {
+            Vertex target = i < 30 ? neighbor : stringIdNeighbor;
+            Edge edge = new Edge("knows");
+            edge.id("edge-" + i);
+            edge.sourceId(start.id());
+            edge.targetId(target.id());
+            paths.add(new Path(List.of(start, edge, target)));
+        }
+        GremlinManager gremlin = this.mockGremlin(this.resultSet(paths.toArray()));
+        AdjacentQuery query = AdjacentQuery.builder().vertexId("start").vertexLabel("person").build();
+
+        GremlinResult result = this.serviceWithConfig().expandVertex(this.mockClient(gremlin), query);
+
+        List<Vertex> vertices = new ArrayList<>(result.getGraphView().getVertices());
+        Assert.assertEquals(2, vertices.size());
+        Assert.assertEquals(7L, vertices.get(0).id());
+        Assert.assertEquals("7", vertices.get(1).id());
+        Assert.assertEquals(payload, vertices.get(0).property("payload"));
+        Assert.assertEquals(payload, vertices.get(1).property("payload"));
+        Assert.assertEquals(31, result.getGraphView().getEdges().size());
+        Assert.assertFalse(result.isPropertiesTruncated());
+        Assert.assertEquals(List.of(), result.getPropertyPreviewVertexIds());
+        Assert.assertEquals(List.of(), result.getPropertyPreviewEdgeIds());
     }
 
     @Test

@@ -554,7 +554,7 @@ public final class ReadOnlyCypher {
             if (!FUNCTIONS.contains(name)) {
                 throw invalid();
             }
-            this.collection |= "collect".equals(name);
+            this.collection |= "collect".equals(name) || "range".equals(name);
             this.position++;
             this.expect("(");
             if (this.consume("*")) {

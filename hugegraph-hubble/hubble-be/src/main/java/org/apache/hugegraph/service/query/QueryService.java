@@ -261,7 +261,7 @@ public class QueryService {
         // Execute gremlin query
         ResultSet resultSet = this.executeGremlin(gremlin, client);
 
-        List<Vertex> vertices = new ArrayList<>(resultSet.size());
+        Map<Object, Vertex> vertices = new LinkedHashMap<>();
         List<Edge> edges = new ArrayList<>(resultSet.size());
         for (Iterator<Result> iter = resultSet.iterator(); iter.hasNext();) {
             Path path = iter.next().getPath();
@@ -276,12 +276,12 @@ public class QueryService {
                 edges.add(edge);
             }
             if (query.retainVertex(vertex)) {
-                vertices.add(vertex);
+                vertices.putIfAbsent(vertex.id(), vertex);
             }
         }
-        // Build graph view
+        // Parallel edges share a neighbor; spend its property budget only once.
         QueryPropertyPreview propertyPreview = new QueryPropertyPreview();
-        GraphView graphView = propertyPreview.project(new GraphView(vertices, edges));
+        GraphView graphView = propertyPreview.project(new GraphView(vertices.values(), edges));
         return GremlinResult.builder()
                             .type(Type.PATH)
                             .graphView(graphView)

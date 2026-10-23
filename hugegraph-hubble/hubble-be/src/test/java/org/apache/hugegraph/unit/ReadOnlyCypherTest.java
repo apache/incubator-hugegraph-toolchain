@@ -40,7 +40,10 @@ public class ReadOnlyCypherTest {
     public void collectionPreviewsUseAsyncWithoutProvingInputBounds() {
         for (String query : new String[]{"MATCH (n) RETURN collect(n)",
                                           "MATCH (n) WITH n LIMIT 10 RETURN collect(n)",
-                                          "UNWIND [1, 2] AS n RETURN collect(n)"}) {
+                                          "UNWIND [1, 2] AS n RETURN collect(n)",
+                                          "RETURN range(1, 10)",
+                                          "RETURN range(1, 1000000000) LIMIT 1",
+                                          "UNWIND range(1, 10) AS n RETURN n"}) {
             ReadOnlyCypher.validate(query);
             ExternalException error = (ExternalException) Assert.assertThrows(ExternalException.class,
                     () -> ReadOnlyCypher.preview(query, 300, 1001));
@@ -49,9 +52,9 @@ public class ReadOnlyCypherTest {
     }
 
     @Test
-    public void previewDoesNotEvaluateExpressionsOrClassifyRangeFunctions() {
-        this.assertPreview("RETURN range(1, 10)", "RETURN range(1, 10) LIMIT 300", true);
-        this.assertPreview("RETURN range(1, 2 + 3)", "RETURN range(1, 2 + 3) LIMIT 300", true);
+    public void previewDoesNotEvaluateExpressions() {
+        this.assertPreview("MATCH (n) RETURN n.range, 'range(1, 10)' AS range",
+                           "MATCH (n) RETURN n.range, 'range(1, 10)' AS range LIMIT 300", true);
         this.assertPreview("MATCH (n) RETURN n LIMIT 2 + 3", "MATCH (n) RETURN n LIMIT 2 + 3", false);
         this.assertPreview("MATCH (n) SET n.name = 'Alice' RETURN n",
                            "MATCH (n) SET n.name = 'Alice' RETURN n", false);
