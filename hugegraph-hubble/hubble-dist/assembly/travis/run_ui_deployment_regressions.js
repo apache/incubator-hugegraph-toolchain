@@ -23,7 +23,7 @@ const os = require('os');
 const assert = require('node:assert/strict');
 const hubbleRoot = path.resolve(__dirname, '../../..');
 const { chromium } = require(path.join(hubbleRoot, 'hubble-fe/node_modules/playwright'));
-const base = process.env.HUBBLE_URL || 'http://127.0.0.1:3000';
+const base = (process.env.HUBBLE_URL || 'http://127.0.0.1:3000').replace(/\/+$/, '');
 const output = process.env.HUBBLE_UI_EVIDENCE_DIR || fs.mkdtempSync(path.join(os.tmpdir(), 'hubble-deployment-ui-'));
 fs.mkdirSync(output, { recursive: true });
 const checks = [];
@@ -150,7 +150,9 @@ catch (e) {
     throw e;
 } }
 (async () => {
-    const browser = await chromium.launch({ headless: true, executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || '/usr/bin/chromium', args: ['--no-sandbox'] });
+    const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ||
+        (fs.existsSync('/usr/bin/chromium') ? '/usr/bin/chromium' : undefined);
+    const browser = await chromium.launch({ headless: true, executablePath, args: ['--no-sandbox'] });
     try {
         const { page, state } = await setup(browser, true);
         await check('authenticated login and GraphSpace/account visibility', async () => {
@@ -235,7 +237,7 @@ catch (e) {
             await page.getByText(/部分属性为只读预览/).waitFor();
             await screenshot(page, 'query-truncated');
             await page.getByRole('button', { name: '预览说明', exact: true }).click();
-            await page.getByText('可缩小查询范围或仅返回所需属性。异步任务也受 Server 结果大小限制。', {exact:true}).waitFor();
+            await page.getByText('可缩小查询范围或仅返回所需属性。异步任务也受 Server 结果大小限制', {exact:true}).waitFor();
             await screenshot(page, 'query-preview-details');
             await page.getByText('表格', {exact:true}).click();
             assert.equal(await page.getByText(/关联图为部分预览/).isVisible(), false);
@@ -280,10 +282,10 @@ catch (e) {
     catch (e) {
         failure = e.message;
         console.error(e.stack);
-        for (const ctx of browser.contexts()) {
-            for (const p of ctx.pages()) {
+        for (const [contextIndex, ctx] of browser.contexts().entries()) {
+            for (const [pageIndex, p] of ctx.pages().entries()) {
                 console.log('PAGE', p.url(), await p.locator('body').innerText());
-                await screenshot(p, 'failure');
+                await screenshot(p, `failure-context-${contextIndex}-page-${pageIndex}`);
             }
         }
     }
