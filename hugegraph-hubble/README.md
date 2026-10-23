@@ -843,16 +843,18 @@ node --test hubble-dist/assembly/travis/ui_auth.test.js \
 python3 hubble-dist/assembly/travis/test_run_live_hubble_smoke.py
 ```
 
-The [Operations diagnostics audit](docs/operations-diagnostics-20261023.md) covers
-Cluster Overview, Server/Store node details and PD address matching. Before/after
-Chromium screenshot evidence is linked from [PR #87](https://github.com/hugegraph/hugegraph-toolchain/pull/87),
-not stored in the repository. Run its [browser fixture](hubble-dist/assembly/travis/run_ui_operations_diagnostics.js)
-against the running frontend with `node hubble-dist/assembly/travis/run_ui_operations_diagnostics.js`;
-configure `HUBBLE_URL`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` and `HUBBLE_UI_EVIDENCE_DIR`
-as needed. The [browser report](docs/assets/operations-diagnostics-20261023/after/browser-report.json),
-[Server count check](docs/assets/operations-diagnostics-20261023/after/server-report.json),
-and [PD disclosure check](docs/assets/operations-diagnostics-20261023/after/PD-report.json)
-use deterministic API fixtures; they do not establish deployment or multi-Server acceptance.
+The [Operations diagnostics guide](docs/operations-diagnostics-20261023.md) explains
+collection health, Server/Store request evidence and PD address matching. Run its
+[browser fixture](hubble-dist/assembly/travis/run_ui_operations_diagnostics.js)
+against a running frontend, keeping generated reports and screenshots outside Git:
+
+```bash
+HUBBLE_UI_EVIDENCE_DIR=/tmp/hubble-operations-diagnostics \
+node hubble-dist/assembly/travis/run_ui_operations_diagnostics.js
+```
+
+Set `HUBBLE_URL` and `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` as needed. The runner uses
+deterministic API fixtures; it does not establish deployment or multi-Server acceptance.
 
 ## Doc
 

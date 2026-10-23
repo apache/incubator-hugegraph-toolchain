@@ -1,24 +1,17 @@
-# Operations diagnostics: 2026-10-23
+# Operations diagnostics
 
-The review covers the path from Cluster Overview to Server/Store node details and
-PD source diagnostics. The goal is to identify what failed, inspect concrete
-evidence, and find the next recovery step without treating a collection failure
-as a process outage.
+Use Cluster Overview, Server/Store node details and PD source diagnostics to
+identify what failed, inspect concrete evidence, and find the next recovery step
+without treating a collection failure as a process outage.
 
-Screenshots were captured from the running frontend in Chromium with deterministic
-API fixtures. They are UI evidence, not observations of the user's deployed cluster.
-Before/after image evidence is linked from [PR #87](https://github.com/hugegraph/hugegraph-toolchain/pull/87)
-rather than stored in the repository.
-
-## Flow and findings
+## Reading the views
 
 1. **Cluster Overview — clearer collection failures.**
-   The previous view repeated large warning blocks and showed green UP rows without
-   naming the missing metrics. Source issues now use compact rows with direct
-   diagnostic links; the attention table names the affected metric groups while
-   preserving the node's actual registration status.
+   Source issues use compact rows with direct diagnostic links. The attention
+   table names affected metric groups while preserving the node's actual
+   registration status.
 2. **Server details — failure count before supporting details.**
-   The page now shows only the selected node's source. The current failed-graph
+   The page shows only the selected node's source. The current failed-graph
    count remains visible, while repeated context and recovery instructions are
    available through a disclosure. Stale metric timestamps are labeled as the
    last successful collection, not the latest observation.
@@ -51,7 +44,7 @@ or load-balancer origin is not treated as an alias of its backend member.
 Bracketed IPv6 literals are supported and host case is normalized; equivalent
 compressed/expanded IPv6 spellings are not resolved to guess a member identity.
 
-A missing, null or non-array `pdList` is a malformed `/v1/cluster` response. The
+A missing, null or non-array `pdList` is a malformed PD member-list response. The
 collector preserves that source diagnosis and skips PD metric matching, rather
 than trying to recover a topology from `pdLeader` alone. Other healthy sources
 remain available. The strict parser is retained so malformed data cannot appear
@@ -67,12 +60,25 @@ as a successful but empty PD topology.
 - A single failed metric shown before disclosure includes its owning node and
   metric group. With multiple failures, every request/status or failed-graph count
   stays inside its own node/group row; no arbitrary first value appears source-wide.
-- [Browser report](assets/operations-diagnostics-20261023/after/browser-report.json)
-  and [reproducible runner](../hubble-dist/assembly/travis/run_ui_operations_diagnostics.js)
-  cover the four flows above and multiple Server/Store diagnostic ownership.
-  The native disclosure controls support keyboard
+- The [browser fixture](../hubble-dist/assembly/travis/run_ui_operations_diagnostics.js)
+  covers the four views above and multiple Server/Store diagnostic ownership using
+  deterministic API responses. Native disclosure controls support keyboard
   interaction; these checks do not establish complete accessibility conformance.
 - Actual PD connection addresses, cluster readiness, authentication enforcement,
   upstream recovery and multi-Server behavior still require deployment validation.
   A screenshot showing `pd_metrics_unmapped` does not identify which address differs;
   the new diagnostic response exposes that comparison safely.
+
+## Run the browser fixture
+
+Against a running frontend, choose an output directory outside the repository:
+
+```bash
+HUBBLE_UI_EVIDENCE_DIR=/tmp/hubble-operations-diagnostics \
+node hubble-dist/assembly/travis/run_ui_operations_diagnostics.js
+```
+
+Set `HUBBLE_URL` for the frontend address and
+`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` for a custom Chromium executable. Generated
+reports and screenshots are temporary outputs; keep them outside Git. The fixture
+does not contact a deployed cluster or establish deployment acceptance.
