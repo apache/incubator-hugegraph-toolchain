@@ -85,7 +85,7 @@ const AsyncTaskHome = () => {
                 if (status !== 200) {
                     throw new Error('async task list unavailable');
                 }
-                setAsyncManageTaskData({records: data.records, total: data.total});
+                setAsyncManageTaskData(data);
                 listFailed.current = false;
             }
             catch {
@@ -202,6 +202,14 @@ const AsyncTaskHome = () => {
                                 {t('analysis.async_task.retry_list')}
                             </Button>
                         )}
+                    />
+                )}
+                {asyncManageTaskData.vermeerUnavailable && (
+                    <Alert
+                        showIcon
+                        type='warning'
+                        title={t('analysis.async_task.vermeer_unavailable')}
+                        action={<Button size='small' onClick={retryList}>{t('common.action.retry')}</Button>}
                     />
                 )}
                 <div className={c.queryBar}>

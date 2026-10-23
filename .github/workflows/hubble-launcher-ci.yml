@@ -41,3 +41,6 @@ jobs:
           persist-credentials: false
       - name: Exercise launcher process identity guards
         run: python3 hugegraph-hubble/hubble-dist/assembly/travis/test_hubble_launchers.py -v
+      - name: Exercise isolated Vermeer development file boundaries
+        if: runner.os == 'Linux'
+        run: python3 hugegraph-hubble/hubble-dist/assembly/travis/test_vermeer_dev.py -v

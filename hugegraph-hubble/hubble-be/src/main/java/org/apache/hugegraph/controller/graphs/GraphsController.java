@@ -33,6 +33,7 @@ import org.apache.hugegraph.entity.graphs.GraphStatisticsEntity;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.service.space.VermeerService;
 import org.apache.hugegraph.util.HubbleUtil;
+import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.structure.constant.GraphReadMode;
 import com.google.common.collect.ImmutableMap;
 
@@ -78,12 +79,12 @@ public class GraphsController extends BaseController {
     @Autowired
     HugeConfig config;
 
-    public boolean isVermeerEnabled() {
-        return vermeerService.isVermeerEnabled(this.getToken());
+    public boolean isVermeerEnabled(HugeClient client) {
+        return vermeerService.isVermeerEnabled(client, this.getToken());
     }
 
     public String getGraphFromVermeer(String vermeer) {
-        return vermeer.split("-")[1];
+        return vermeer.substring(vermeer.indexOf('-') + 1);
     }
 
     private Map<String, Object> getVermeerGraphs(String graphspace,
@@ -93,10 +94,9 @@ public class GraphsController extends BaseController {
             List<Map<String, Object>> graphinfos;
             try {
                 graphinfos = HubbleUtil.uncheckedCast(
-                        client.vermeer().getGraphsInfo().get("graphs"));
-            } catch (ServerException e) {
-                log.info("Failed to connect to the Vermeer service",
-                         e.cause());
+                        vermeerService.graphs(client).get("graphs"));
+            } catch (ServerException | ExternalException e) {
+                log.info("Failed to connect to the Vermeer service");
                 graphinfos = null;
             }
             if (graphinfos == null || graphinfos.size() == 0) {
@@ -126,7 +126,7 @@ public class GraphsController extends BaseController {
 
     private Map<String, String> getVermeerGraph(String graphspace,
                                                 String graph) {
-        boolean enable = isVermeerEnabled();
+        boolean enable = isVermeerEnabled(this.authClient(graphspace, graph));
         if (enable) {
             String prefix = graphspace + "-";
             Map<String, Object> graphInfo = null;
@@ -134,13 +134,12 @@ public class GraphsController extends BaseController {
                 HugeClient client = this.authClient(graphspace, null);
 
                 graphInfo = HubbleUtil.uncheckedCast(
-                        client.vermeer().getGraphInfoByName(prefix + graph)
+                        vermeerService.graph(client, graphspace, graph)
                               .get("graph"));
-            } catch (ServerException e) {
+            } catch (ServerException | ExternalException e) {
                 // if dashboard enables vermeer but server sets wrong vermeer 
                 // address, return null
-                log.info("Failed to connect to the Vermeer service",
-                         e.cause());
+                log.info("Failed to connect to the Vermeer service");
                 return ImmutableMap.of();
             }
 
@@ -166,7 +165,7 @@ public class GraphsController extends BaseController {
         // Get list of authorized graphs
         HugeClient client = this.authClient(graphspace, null);
 
-        boolean enable = isVermeerEnabled();
+        boolean enable = isVermeerEnabled(client);
         Map<String, Object> vermeerInfo = getVermeerGraphs(graphspace, enable);
         List<Map<String, Object>> sortedGraphs =
                 graphsService.sortedGraphsProfile(client, graphspace, "", "",
@@ -199,7 +198,7 @@ public class GraphsController extends BaseController {
                             @RequestParam(name = "page_size", required = false,
                                     defaultValue = "10") int pageSize) {
         HugeClient client = this.authClient(graphspace, null);
-        boolean enable = isVermeerEnabled();
+        boolean enable = isVermeerEnabled(client);
         Map<String, Object> vermeerInfo = getVermeerGraphs(graphspace, enable);
         Object result = this.graphsService.queryPage(client, graphspace,
                                                      getUser(), query,
@@ -268,9 +267,14 @@ public class GraphsController extends BaseController {
                                defaultValue = "I'm sure to drop the graph")
                                String message) {
 
-        Map<String, String> vermeer = getVermeerGraph(graphspace, graph);
-        if (!vermeer.isEmpty()) {
-            HugeClient client = this.authClient(null, null);
+        E.checkArgument("I'm sure to drop the graph".equals(message),
+                        "Invalid graph drop confirmation");
+        HugeClient client = this.authClient(graphspace, graph);
+        if (this.vermeerService.directConfigured()) {
+            // Missing caller permission or failure reported by the native HTTP
+            // API must stop source deletion; success does not verify Worker files.
+            this.vermeerService.cleanupDirectGraph(client);
+        } else if (!getVermeerGraph(graphspace, graph).isEmpty()) {
             try {
                 vermeerService.deleteGraph(client, graphspace, graph);
             } catch (Exception e) {
@@ -283,8 +287,7 @@ public class GraphsController extends BaseController {
             }
         }
 
-        this.graphsService.delete(this.authClient(graphspace, graph), graph,
-                                  message);
+        this.graphsService.delete(client, graph, message);
 
         // Clean Local DB Data
         executeHistoryService.deleteByGraph(graphspace, graph);

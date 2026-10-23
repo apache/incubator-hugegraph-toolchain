@@ -175,3 +175,16 @@ it('distinguishes filtered no-results from the first-use empty journey', async (
     fireEvent.click(screen.getByRole('button', {name: 'Clear filters'}));
     expect(await screen.findByText('No async tasks yet')).toBeInTheDocument();
 });
+
+it('shows source unavailability even when no Server tasks exist', async () => {
+    api.analysis.fetchManageTaskList.mockResolvedValue({
+        status: 200, data: {records: [], total: 0, vermeerUnavailable: true},
+    });
+    render(
+        <GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
+            <AsyncTaskHome />
+        </GraphAnalysisContext.Provider>
+    );
+    expect(await screen.findByRole('alert')).toHaveTextContent('analysis.async_task.vermeer_unavailable');
+    expect(screen.getByRole('button', {name: 'common.action.retry'})).toBeInTheDocument();
+});

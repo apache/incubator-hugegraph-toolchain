@@ -44,7 +44,7 @@ beforeAll(() => {
     }));
 });
 
-const renderDetail = () => render(
+const renderDetail = (record = {}) => render(
     <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
         <GraphAnalysisContext.Provider
             value={{
@@ -66,6 +66,7 @@ const renderDetail = () => render(
                         task_status: 'success',
                         task_create: 1787991956000,
                         task_update: 1787991957000,
+                        ...record,
                     }],
                     total: 1,
                 }}
@@ -74,6 +75,17 @@ const renderDetail = () => render(
         </GraphAnalysisContext.Provider>
     </MemoryRouter>
 );
+
+it('opens Vermeer results and disables unsupported task deletion', () => {
+    renderDetail({id: -12, task_type: 'vermeer-task:compute'});
+    fireEvent.click(screen.getByRole('button', {
+        name: 'analysis.async_task.action.check_result',
+    }));
+    expect(screen.getByTestId('inline-result')).toHaveTextContent('result -12');
+    expect(screen.queryByRole('button', {
+        name: 'analysis.async_task.action.delete',
+    })).not.toBeInTheDocument();
+});
 
 it('controls row expansion without opening a new browser tab', () => {
     window.open = jest.fn();

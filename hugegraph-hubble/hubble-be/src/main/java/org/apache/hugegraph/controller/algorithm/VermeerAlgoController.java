@@ -22,6 +22,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.controller.BaseController;
 import org.apache.hugegraph.exception.ServerCapabilityUnavailableException;
+import org.apache.hugegraph.service.space.VermeerService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -35,10 +37,17 @@ import java.util.Map;
         "/{graph}/algorithms/vermeer")
 public class VermeerAlgoController extends BaseController {
 
+    @Autowired
+    private VermeerService service;
+
     @PostMapping
     public Map<String, Object> olapView(@PathVariable("graphspace") String graphspace,
                                         @PathVariable("graph") String graph,
                                         @RequestBody VParams body) {
+        if (this.service != null && this.service.directConfigured()) {
+            return this.service.compute(this.authClient(graphspace, graph),
+                                        graphspace, graph, body.params);
+        }
         throw new ServerCapabilityUnavailableException(
                 "server.capability.vermeer-compute-token-auth.unavailable",
                 null);

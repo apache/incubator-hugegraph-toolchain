@@ -40,6 +40,10 @@ export const AsyncTaskResultContent = ({
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
     const requestRef = useRef(null);
+    const context = JSON.stringify([graphspace, graph, taskId]);
+    const [page, setPage] = useState({context, cursors: [0]});
+    const cursors = page.context === context ? page.cursors : [0];
+    const cursor = cursors[cursors.length - 1];
 
     const getResult = useCallback(
         async () => {
@@ -49,16 +53,17 @@ export const AsyncTaskResultContent = ({
             setError(false);
             setAsyncTaskResultJson();
             try {
-                const response = await api.analysis.fetchAsyncTaskResult(
-                    graphspace, graph, taskId
-                );
+                const response = cursor === 0
+                    ? await api.analysis.fetchAsyncTaskResult(graphspace, graph, taskId)
+                    : await api.analysis.fetchVermeerTaskValues(graphspace, graph, taskId, cursor);
                 if (requestRef.current !== request) {
                     return;
                 }
                 if (response?.status !== 200) {
                     throw new Error('task result unavailable');
                 }
-                setAsyncTaskResultJson(response.data?.task_result);
+                setAsyncTaskResultJson(cursor === 0
+                    ? response.data?.task_result : JSON.stringify(response.data));
             }
             catch {
                 if (requestRef.current === request) {
@@ -71,7 +76,7 @@ export const AsyncTaskResultContent = ({
                 }
             }
         },
-        [graph, graphspace, taskId]
+        [cursor, graph, graphspace, taskId]
     );
 
     useEffect(
@@ -113,6 +118,20 @@ export const AsyncTaskResultContent = ({
                         value={resultForJSON}
                     />
                 )
+            )}
+            {taskId < 0 && !loading && !error && hasResult && (
+                <div>
+                    {cursors.length > 1 && (
+                        <Button onClick={() => setPage({context, cursors: cursors.slice(0, -1)})}>
+                            {t('analysis.async_task.result_previous')}
+                        </Button>
+                    )}
+                    {resultForJSON?.has_more && resultForJSON.cursor > cursor && (
+                        <Button onClick={() => setPage({context, cursors: [...cursors, resultForJSON.cursor]})}>
+                            {t('analysis.async_task.result_next')}
+                        </Button>
+                    )}
+                </div>
             )}
         </div>
     );

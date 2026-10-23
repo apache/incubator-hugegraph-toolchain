@@ -67,15 +67,21 @@ const TopBar = props => {
     const [currentGraph, setCurrentGraph] = useState({});
     const [, setGraphLoading] = useState(false);
     const [graphError, setGraphError] = useState(false);
-    const [isLoadRequestLoading, setLoadRequestLoading] = useState(false);
+    const [pendingLoads, setPendingLoads] = useState({});
+    const [loadTasks, setLoadTasks] = useState({});
     const graphSpaceRequest = useRef(null);
     const graphRequest = useRef(null);
     const loadRequest = useRef(null);
+    const pendingLoadRequests = useRef(new Map());
 
+    const graphKey = JSON.stringify([currentGraphSpace, currentGraph.name]);
+    const isLoadRequestLoading = Boolean(pendingLoads[graphKey]);
+    const loadTask = loadTasks[graphKey];
     const {
-        status: currentGraphStatus,
+        status: metadataGraphStatus,
         last_load_time: currentGraphLoadTime,
     } = currentGraph;
+    const currentGraphStatus = loadTask === undefined ? metadataGraphStatus : LOADING;
 
     const showVermeerGraphInfo = isVermeer && !_.isEmpty(currentGraph) &&
                                 Boolean(currentGraphStatus);
@@ -194,7 +200,78 @@ const TopBar = props => {
         graphSpaceRequest.current = null;
         graphRequest.current = null;
         loadRequest.current = null;
+        pendingLoadRequests.current.clear();
     }, []);
+
+    useEffect(() => {
+        loadRequest.current = pendingLoadRequests.current.get(graphKey) || null;
+    }, [graphKey]);
+
+    useEffect(() => {
+        if (!isVermeer || loadTask !== undefined || currentGraphStatus !== LOADING) {
+            return;
+        }
+        let active = true;
+        let timer;
+        const refresh = async () => {
+            await getGraphs();
+            if (active) {
+                timer = setTimeout(refresh, 2000);
+            }
+        };
+        timer = setTimeout(refresh, 2000);
+        return () => {
+            active = false;
+            clearTimeout(timer);
+            graphRequest.current = null;
+        };
+    }, [currentGraphStatus, getGraphs, isVermeer, loadTask]);
+
+    useEffect(() => {
+        if (loadTask === undefined) {
+            return;
+        }
+        let active = true;
+        let timer;
+        const poll = async () => {
+            try {
+                const response = await api.analysis.fetchAsyncTaskResult(
+                    currentGraphSpace, currentGraph.name, loadTask
+                );
+                if (!active) {
+                    return;
+                }
+                if (response?.status !== 200) {
+                    throw new Error('load task unavailable');
+                }
+                setGraphError(false);
+                if (['success', 'failed', 'cancelled'].includes(response.data?.task_status)) {
+                    await getGraphs();
+                    if (active) {
+                        setLoadTasks(current => {
+                            const pending = {...current};
+                            delete pending[graphKey];
+                            return pending;
+                        });
+                    }
+                    return;
+                }
+            }
+            catch {
+                if (active) {
+                    setGraphError(true);
+                }
+            }
+            if (active) {
+                timer = setTimeout(poll, 2000);
+            }
+        };
+        timer = setTimeout(poll, 2000);
+        return () => {
+            active = false;
+            clearTimeout(timer);
+        };
+    }, [currentGraph.name, currentGraphSpace, getGraphs, graphKey, loadTask]);
 
     useEffect(
         () => {
@@ -226,9 +303,10 @@ const TopBar = props => {
 
     useEffect(
         () => {
-            onGraphInfoChange && onGraphInfoChange(currentGraphSpace, currentGraph);
+            onGraphInfoChange && onGraphInfoChange(currentGraphSpace, loadTask === undefined
+                ? currentGraph : {...currentGraph, status: LOADING});
         },
-        [currentGraph, currentGraphSpace, onGraphInfoChange]
+        [currentGraph, currentGraphSpace, loadTask, onGraphInfoChange]
     );
 
     useEffect(
@@ -288,7 +366,7 @@ const TopBar = props => {
     }, [navigate]);
 
     const onLoadBtnClick = useCallback(async () => {
-        if (isLoadRequestLoading) {
+        if (pendingLoadRequests.current.has(graphKey) || loadTask !== undefined) {
             return;
         }
         const params = {
@@ -299,9 +377,16 @@ const TopBar = props => {
 
         const request = Symbol('load-vermeer');
         loadRequest.current = request;
-        setLoadRequestLoading(true);
+        pendingLoadRequests.current.set(graphKey, request);
+        setPendingLoads(current => ({...current, [graphKey]: true}));
         try {
             const res = await api.analysis.loadVermeerTask(params, INLINE_ERROR_CONFIG);
+            if (pendingLoadRequests.current.get(graphKey) !== request) {
+                return;
+            }
+            if (res?.status === 200 && res.data?.task_id < 0) {
+                setLoadTasks(current => ({...current, [graphKey]: res.data.task_id}));
+            }
             if (loadRequest.current !== request) {
                 return;
             }
@@ -309,7 +394,9 @@ const TopBar = props => {
                 message.error(t('analysis.topbar.load_vermeer_failed'));
                 return;
             }
-            await getGraphs();
+            if (!(res.data?.task_id < 0)) {
+                await getGraphs();
+            }
         }
         catch {
             if (loadRequest.current === request) {
@@ -317,8 +404,13 @@ const TopBar = props => {
             }
         }
         finally {
-            if (loadRequest.current === request) {
-                setLoadRequestLoading(false);
+            if (pendingLoadRequests.current.get(graphKey) === request) {
+                pendingLoadRequests.current.delete(graphKey);
+                setPendingLoads(current => {
+                    const pending = {...current};
+                    delete pending[graphKey];
+                    return pending;
+                });
             }
         }
     }, [
@@ -326,7 +418,8 @@ const TopBar = props => {
         currentGraphSpace,
         currentGraphStatus,
         getGraphs,
-        isLoadRequestLoading,
+        graphKey,
+        loadTask,
         t,
     ]);
 

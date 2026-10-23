@@ -32,6 +32,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Log4j2
@@ -40,14 +41,53 @@ public class VermeerService {
     @Autowired
     private HugeConfig config;
 
+    @Autowired
+    private DirectVermeerService direct;
+
+    public boolean directConfigured() {
+        return this.direct != null && this.direct.configured();
+    }
+
+    public Map<String, Object> graphs(HugeClient client) {
+        return this.directConfigured() ? this.direct.graphs() : client.vermeer().getGraphsInfo();
+    }
+
+    public Map<String, Object> graph(HugeClient client, String space, String graph) {
+        return this.directConfigured() ? this.direct.graph(space, graph) :
+               client.vermeer().getGraphInfoByName(convert2VG(space, graph));
+    }
+
+    public Map<String, Object> loadDirect(HugeClient client, boolean force,
+                                          Map<String, Object> params) {
+        return this.direct.load(client, force, params);
+    }
+
     private static final String GET_SYS_CFG = "api/v1.0/memt_clu/config/getsyscfg";
 
-    public boolean isVermeerEnabled(String token) {
-        Map<String, Object> vermeer = this.getVermeer(token, false);
+    public boolean isVermeerEnabled(HugeClient client, String token) {
+        Map<String, Object> vermeer = this.getVermeer(client, token, false);
         if (vermeer != null) {
             return (Boolean) vermeer.get("enable");
         }
         return false;
+    }
+
+    public Map<String, Object> getVermeer(HugeClient client, String token,
+                                          boolean throwIfNoConfig) {
+        if (this.directConfigured()) {
+            if (!this.direct.supported()) {
+                return ImmutableMap.of("enable", false, "retryable", false);
+            }
+            boolean permitted = this.direct.permitted(client);
+            try {
+                boolean available = permitted && this.direct.available();
+                return ImmutableMap.of("enable", available,
+                                       "retryable", permitted && !available);
+            } catch (VermeerClient.ConfigurationException e) {
+                return ImmutableMap.of("enable", false, "retryable", false, "error", true);
+            }
+        }
+        return this.getVermeer(token, throwIfNoConfig);
     }
 
     public Map<String, Object> getVermeer(String token,
@@ -107,6 +147,9 @@ public class VermeerService {
     public Map<String, Object> compute(HugeClient client,
                                     String graphspace, String graph,
                                     Map<String, Object> params) {
+        if (this.directConfigured()) {
+            return this.direct.compute(client, params);
+        }
         Map<String, Object> jsonTask = new HashMap<>();
         jsonTask.put("task_type", "compute");
         jsonTask.put("graph", convert2VG(graphspace, graph));
@@ -116,7 +159,19 @@ public class VermeerService {
 
     public void deleteGraph(HugeClient client, String graphspace,
                             String graph) {
+        if (this.directConfigured()) {
+            this.direct.deleteGraph(client);
+            return;
+        }
         client.vermeer().deleteGraphByName(convert2VG(graphspace, graph));
+    }
+
+    public void cleanupDirectGraph(HugeClient client) {
+        this.direct.deleteGraphIfPresent(client);
+    }
+
+    public void cleanupDirectGraphs(HugeClient client, List<String> graphs) {
+        this.direct.deleteGraphsIfPresent(client, graphs);
     }
 
     public String convert2VG(String space, String graph) {

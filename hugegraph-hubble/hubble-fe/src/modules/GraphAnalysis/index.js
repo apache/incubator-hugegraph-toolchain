@@ -25,7 +25,6 @@ import AsyncTaskHome from '../asyncTasks/Home';
 import GraphAnalysisContext from '../Context';
 import TopBar from '../component/TopBar';
 import {GRAPH_ANALYSIS_MODULE} from '../../utils/constants';
-import _ from 'lodash';
 import * as api from '../../api';
 import {useTranslation} from 'react-i18next';
 
@@ -49,7 +48,9 @@ const GraphAnalysisHome = props => {
     const [vermeerLoading, setVermeerLoading] = useState(true);
     const [vermeerError, setVermeerError] = useState(false);
     const olapRequest = useRef(null);
+    const olapGraph = useRef(null);
     const vermeerRequest = useRef(null);
+    const vermeerRetry = useRef(null);
     const [context, setContext] = useState(
         {
             graphSpace: null,
@@ -137,14 +138,21 @@ const GraphAnalysisHome = props => {
     const onGraphInfoChange = useCallback(
         (graphSpace, graph) => {
             const {name: currentGraph, last_load_time, status} = graph || {};
-            if (graphSpace && !_.isEmpty(graph)) {
-                getCurrentOlapMode(graphSpace, currentGraph);
-            }
-            else {
-                olapRequest.current = null;
-                setCurrentOlapMode(false);
-                setOlapModeLoading(false);
-                setOlapError(false);
+            const graphKey = graphSpace && currentGraph
+                ? JSON.stringify([graphSpace, currentGraph]) : null;
+            // Loading metadata can change while a mode write is in flight.
+            // Only selecting a different graph should start a new mode read.
+            if (olapGraph.current !== graphKey) {
+                olapGraph.current = graphKey;
+                if (graphKey) {
+                    getCurrentOlapMode(graphSpace, currentGraph);
+                }
+                else {
+                    olapRequest.current = null;
+                    setCurrentOlapMode(false);
+                    setOlapModeLoading(false);
+                    setOlapError(false);
+                }
             }
             setContext(context => ({
                 ...context,
@@ -157,7 +165,8 @@ const GraphAnalysisHome = props => {
         [getCurrentOlapMode]
     );
 
-    const getVermeer = useCallback(async () => {
+    const getVermeer = useCallback(async function refreshVermeer() {
+        clearTimeout(vermeerRetry.current);
         const request = Symbol('get-vermeer');
         vermeerRequest.current = request;
         setVermeerLoading(true);
@@ -177,6 +186,10 @@ const GraphAnalysisHome = props => {
                 isVermeer: Boolean(enable),
             }));
             setVermeerReady(true);
+            setVermeerError(Boolean(data?.error));
+            if (!enable && data.retryable) {
+                vermeerRetry.current = setTimeout(refreshVermeer, 5000);
+            }
         }
         catch {
             if (vermeerRequest.current === request) {
@@ -195,6 +208,7 @@ const GraphAnalysisHome = props => {
         getVermeer();
         return () => {
             vermeerRequest.current = null;
+            clearTimeout(vermeerRetry.current);
             olapRequest.current = null;
         };
     }, [getVermeer]);

@@ -87,6 +87,8 @@ import org.junit.runners.Suite;
     GraphSpaceUserServiceTest.class,
     StandaloneAccountPermissionServiceTest.class,
     GraphsControllerCanonicalTest.class,
+    GraphsVermeerDeletionTest.class,
+    GraphSpaceVermeerDeletionTest.class,
     GremlinUtilTest.class,
     ReadOnlyGremlinTest.class,
     ReadOnlyCypherTest.class,
@@ -136,7 +138,9 @@ import org.junit.runners.Suite;
     UserCsvImportTest.class,
     EntityUtilTest.class,
     org.apache.hugegraph.util.HubbleDateTimeTest.class,
-    HubbleUtilTest.class
+    HubbleUtilTest.class,
+    DirectVermeerServiceTest.class,
+    VermeerCredentialSafetyTest.class
 })
 public class UnitTestSuite {
 }

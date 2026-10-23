@@ -218,6 +218,12 @@ const fetchAsyncTaskResult = (graphspace, graph, taskId) => {
     return request.get(`/graphspaces/${graphspace}/graphs/${graph}/async-tasks/${taskId}`);
 };
 
+const fetchVermeerTaskValues = (graphspace, graph, taskId, cursor) => {
+    return request.get(`/graphspaces/${graphspace}/graphs/${graph}/async-tasks/${taskId}/values`, {
+        params: {cursor, limit: 1000},
+    });
+};
+
 const deleteAsyncTask = (graphspace, graph, selectedTaskIds) => {
     const params  = qs.stringify(selectedTaskIds, {arrayFormat: 'repeat'});
     return request.delete(`/graphspaces/${graphspace}/graphs/${graph}/async-tasks?` + params);
@@ -258,6 +264,7 @@ export {
     runOltpInfo,
     runOlapVermeer,
     fetchAsyncTaskResult,
+    fetchVermeerTaskValues,
     addGraphNode,
     deleteAsyncTask,
     abortAsyncTask,

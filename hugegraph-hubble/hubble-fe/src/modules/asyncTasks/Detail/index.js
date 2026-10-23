@@ -89,7 +89,7 @@ const AsyncTaskDetail = props => {
         getCheckboxProps: record => {
             const checkboxProps = ['scheduling', 'scheduled', 'queued', 'running', 'restoring', 'deleting'];
             return {
-                disabled: checkboxProps.includes(record.task_status),
+                disabled: record.id < 0 || checkboxProps.includes(record.task_status),
                 task_status: record.task_status,
             };
 
@@ -271,7 +271,7 @@ const AsyncTaskDetail = props => {
             dataIndex: 'manipulation',
             render: (result, rowData, _index) => {
                 const {'task_status': status, 'task_type': type, id: taskId}  = rowData;
-                const allowCheckResTypeArr = ['gremlin', 'computer-dis', 'cypher'];
+                const allowCheckResTypeArr = ['gremlin', 'computer-dis', 'cypher', 'vermeer-task:compute'];
                 const isAllowCheckRes = status === SUCCESS && allowCheckResTypeArr.includes(type);
                 const isResultExpanded = expandedTaskId === taskId;
                 const allowAbortStatusArr = ['scheduling', 'scheduled', 'queued', 'running', 'restoring'];
@@ -308,7 +308,7 @@ const AsyncTaskDetail = props => {
                                     : resultText}
                             </TaskAction>
                         )}
-                        {!isAllowAbort && (
+                        {!isAllowAbort && taskId >= 0 && (
                             status === DELETING
                                 ? <Spin type="strong" />
                                 : (
@@ -371,6 +371,7 @@ const AsyncTaskDetail = props => {
                             'gremlin',
                             'computer-dis',
                             'cypher',
+                            'vermeer-task:compute',
                         ];
                         return rowData.task_status === FAILED
                                || (rowData.task_status === SUCCESS

@@ -124,6 +124,12 @@ superpowers/
 # Locally generated encryption key for managed Text2GQL credentials
 text2gql-master.key
 
+# Local Vermeer development home and generated service credentials.
+/.vermeer-dev/
+**/integration/pd-password
+**/integration/pd.env
+**/integration/server.env
+
 # Local dependency analysis reports
 /hugegraph-dist/scripts/dependency/current-dependencies.txt
 /hugegraph-dist/scripts/dependency/result.txt

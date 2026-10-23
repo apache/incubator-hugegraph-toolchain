@@ -20,6 +20,8 @@ package org.apache.hugegraph.unit;
 
 import java.lang.reflect.Field;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -42,6 +44,7 @@ import org.apache.hugegraph.entity.graphs.GraphStatisticsEntity;
 import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.options.HubbleOptions;
 import org.apache.hugegraph.service.graphs.GraphsService;
+import org.apache.hugegraph.service.space.VermeerService;
 import org.apache.hugegraph.testutil.Assert;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -57,6 +60,7 @@ public class GraphsControllerCanonicalTest {
     private GraphsController controller;
     private HugeClient client;
     private GraphsService graphsService;
+    private VermeerService vermeerService;
     private RequestPostProcessor withClient;
 
     @Before
@@ -65,6 +69,8 @@ public class GraphsControllerCanonicalTest {
         this.controller = controller;
         this.graphsService = Mockito.mock(GraphsService.class);
         this.setField(controller, "graphsService", this.graphsService);
+        this.vermeerService = Mockito.mock(VermeerService.class);
+        this.setField(controller, "vermeerService", this.vermeerService);
         HugeConfig config = Mockito.mock(HugeConfig.class);
         Mockito.when(config.get(HubbleOptions.PD_ENABLED)).thenReturn(false);
         this.setField(controller, "config", config);
@@ -76,6 +82,33 @@ public class GraphsControllerCanonicalTest {
             return request;
         };
         this.mvc = MockMvcBuilders.standaloneSetup(controller).build();
+    }
+
+    @Test
+    public void testGraphListSurvivesDirectVermeerFailureAfterCapabilityCheck() throws Exception {
+        Mockito.when(this.vermeerService.isVermeerEnabled(this.client, null)).thenReturn(true);
+        Mockito.when(this.vermeerService.graphs(this.client))
+               .thenThrow(new ExternalException("Vermeer became unavailable"));
+        Mockito.when(this.graphsService.sortedGraphsProfile(this.client, "DEFAULT", "", "",
+                                                             true, Collections.emptyMap()))
+               .thenReturn(List.of(Map.of("name", "graph_a")));
+        String body = this.mvc.perform(get("/api/v1.3/graphspaces/DEFAULT/graphs/list")
+                                      .with(this.withClient))
+                              .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        Assert.assertTrue(body.contains("graph_a"));
+    }
+
+    @Test
+    public void testGraphDetailSurvivesDirectVermeerFailureAfterCapabilityCheck() throws Exception {
+        Mockito.when(this.vermeerService.isVermeerEnabled(this.client, null)).thenReturn(true);
+        Mockito.when(this.vermeerService.graph(this.client, "DEFAULT", "graph_a"))
+               .thenThrow(new ExternalException("Vermeer became unavailable"));
+        Mockito.when(this.graphsService.get(this.client, "DEFAULT", "graph_a", Collections.emptyMap()))
+               .thenReturn(Map.of("name", "graph_a"));
+        String body = this.mvc.perform(get("/api/v1.3/graphspaces/DEFAULT/graphs/graph_a/get")
+                                      .with(this.withClient))
+                              .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        Assert.assertTrue(body.contains("graph_a"));
     }
 
     @Test
