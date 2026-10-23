@@ -29,6 +29,17 @@ fs.mkdirSync(output, {recursive: true});
 const reportPath = path.join(output, 'browser-report.json');
 // A reused evidence directory must never make this invocation look successful.
 fs.rmSync(reportPath, {force: true});
+const screenshotNames = new Set([
+    'graphspace-authenticated', 'graphspace-edit', 'graph-context-switch',
+    'query-routine-limit', 'query-truncated', 'query-preview-details',
+    'async-task-submitted', 'async-task-result-limit', 'pd-unmapped-diagnostics',
+    'graphspace-anonymous', 'failure',
+].map(name => `${name}.png`));
+for (const name of fs.readdirSync(output)) {
+    if (screenshotNames.has(name) || /^failure-context-\d+-page-\d+\.png$/.test(name)) {
+        fs.rmSync(path.join(output, name), {force: true});
+    }
+}
 
 const implementation = path.join(__dirname, 'run_ui_deployment_regressions_impl.js');
 const result = spawnSync(process.execPath, [implementation, ...process.argv.slice(2)], {

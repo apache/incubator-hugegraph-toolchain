@@ -799,7 +799,8 @@ HUBBLE_UI_EVIDENCE_DIR=/tmp/hubble-deployment-ui \
 ```
 
 The output directory contains `browser-report.json` and screenshots; keep it outside
-Git. Each invocation replaces any old report, including on startup failure.
+Git. Each invocation replaces the old report and known runner screenshots,
+including on startup failure; unrelated files are preserved.
 
 Query and algorithm canvases, Schema views and graph-card previews share the G6 5.1.1
 visualization module. The screenshots show a running Hubble and Server with a
