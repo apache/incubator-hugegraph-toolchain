@@ -27,6 +27,8 @@ import {useTranslation} from 'react-i18next';
 import * as api from '../../../api/index';
 import JsonViewer from '../../../components/JsonViewer';
 import convertStringToJSON from '../../../utils/convertStringToJSON';
+import {isCypherEnabled} from '../../../utils/config';
+import {supportsQueryLanguage} from '../../../utils/text2gql';
 import c from './index.module.scss';
 
 export const AsyncTaskResultContent = ({
@@ -102,7 +104,7 @@ export const AsyncTaskResultContent = ({
     const resultSizeLimit = failed && typeof asyncTaskResultJson === 'string'
         ? asyncTaskResultJson.match(/Task result size (\d+) exceeded limit (\d+) bytes/)
         : null;
-    const queryLanguage = ['gremlin', 'cypher'].includes(taskType) ? taskType : null;
+    const queryLanguage = supportsQueryLanguage(taskType, isCypherEnabled()) ? taskType : null;
 
     return (
         <div className={compact ? c.inlineResultBody : c.resultBody}>

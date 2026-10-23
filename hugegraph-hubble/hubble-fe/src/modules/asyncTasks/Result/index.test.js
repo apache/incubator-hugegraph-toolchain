@@ -20,10 +20,12 @@ import {fireEvent, render, screen, waitFor} from '@testing-library/react';
 import {MemoryRouter} from 'react-router-dom';
 import AsyncTaskResult, {AsyncTaskResultContent} from './index';
 import * as api from '../../../api/index';
+import {isCypherEnabled} from '../../../utils/config';
 
 jest.mock('../../../api/index', () => ({
     analysis: {fetchAsyncTaskResult: jest.fn(), fetchVermeerTaskValues: jest.fn()},
 }));
+jest.mock('../../../utils/config', () => ({isCypherEnabled: jest.fn(() => true)}));
 jest.mock('react-router-dom', () => ({
     ...jest.requireActual('react-router-dom'),
     useParams: () => ({graphspace: 'DEFAULT', graph: 'hugegraph', taskId: '9'}),
@@ -49,6 +51,8 @@ const renderResult = () => render(
         <AsyncTaskResult />
     </MemoryRouter>
 );
+
+beforeEach(() => isCypherEnabled.mockReturnValue(true));
 
 it('keeps result failure visible and retries the same task', async () => {
     api.analysis.fetchAsyncTaskResult
@@ -132,6 +136,24 @@ it.each(['algorithm', undefined])('does not suggest a query editor for task type
     renderResult();
     expect(await screen.findByRole('alert')).toHaveTextContent('Task result exceeds the server limit');
     expect(screen.queryByRole('link', {name: 'Refine query'})).not.toBeInTheDocument();
+});
+
+it.each(['gremlin', 'cypher'])('respects disabled Cypher when recovering a %s task', async taskType => {
+    isCypherEnabled.mockReturnValue(false);
+    api.analysis.fetchAsyncTaskResult.mockResolvedValue({status: 200, data: {
+        task_status: 'failed', task_type: taskType,
+        task_result: 'Task result size 77849617 exceeded limit 16777216 bytes',
+    }});
+    renderResult();
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Task result exceeds the server limit');
+    const link = screen.queryByRole('link', {name: 'Refine query'});
+    if (taskType === 'gremlin') {
+        expect(link).toHaveAttribute('href', '/gremlin/DEFAULT/hugegraph?language=gremlin');
+    }
+    else {
+        expect(link).not.toBeInTheDocument();
+    }
 });
 
 it('does not classify unrelated task failures as a result size limit', async () => {

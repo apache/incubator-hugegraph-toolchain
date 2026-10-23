@@ -18,6 +18,7 @@
 package org.apache.hugegraph.service.algorithm;
 
 import java.util.List;
+import java.util.stream.LongStream;
 
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.driver.TaskManager;
@@ -162,6 +163,36 @@ public class AsyncTaskServiceTest {
 
         Assert.assertEquals(existing, this.service.list(this.client, ids));
         Mockito.verify(this.tasks).list(ids);
+        Mockito.verifyNoMoreInteractions(this.tasks);
+    }
+
+    @Test
+    public void testOversizedIdBatchesAreRejectedBeforeAnyUpstreamRequest() {
+        DirectVermeerService vermeer = Mockito.mock(DirectVermeerService.class);
+        ReflectionTestUtils.setField(this.service, "vermeer", vermeer);
+        for (boolean negative : List.of(false, true)) {
+            List<Long> ids = LongStream.rangeClosed(1, 33)
+                    .map(id -> negative ? -id : id).boxed().toList();
+            try {
+                this.service.list(this.client, ids);
+                Assert.fail("Expected oversized batch to be rejected");
+            } catch (IllegalArgumentException failure) {
+                Assert.assertTrue(failure.getMessage().contains("At most 32 task IDs"));
+            }
+        }
+        Mockito.verifyNoInteractions(this.tasks, vermeer);
+    }
+
+    @Test
+    public void testMaximumMissingBatchUsesAtMostThirtyTwoRequests() {
+        List<Long> ids = LongStream.rangeClosed(1, 32).boxed().toList();
+        Mockito.when(this.tasks.list(Mockito.<List<Long>>any())).thenAnswer(invocation -> {
+            List<Long> remaining = invocation.getArgument(0);
+            throw missingTask(remaining.get(0));
+        });
+
+        Assert.assertTrue(this.service.list(this.client, ids).isEmpty());
+        Mockito.verify(this.tasks, Mockito.times(32)).list(Mockito.<List<Long>>any());
         Mockito.verifyNoMoreInteractions(this.tasks);
     }
 

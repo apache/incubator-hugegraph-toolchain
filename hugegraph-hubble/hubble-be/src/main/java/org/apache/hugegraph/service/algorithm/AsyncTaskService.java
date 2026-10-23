@@ -46,6 +46,7 @@ public class AsyncTaskService {
     private static final String VERMEER_TASK_TYPE = "vermeer-task";
     private static final String VERMEER_TASK_LOAD = "vermeer-task:load";
     private static final String VERMEER_TASK_COMPUTE = "vermeer-task:compute";
+    private static final int MAX_TASK_ID_BATCH_SIZE = 32;
 
     public Task get(HugeClient client, int id) {
         if (id < 0) {
@@ -70,6 +71,8 @@ public class AsyncTaskService {
     }
 
     public List<Task> list(HugeClient client, List<Long> taskIds) {
+        E.checkArgument(taskIds.size() <= MAX_TASK_ID_BATCH_SIZE,
+                        "At most %s task IDs can be queried at once", MAX_TASK_ID_BATCH_SIZE);
         List<Long> serverIds = taskIds.stream().filter(id -> id >= 0).toList();
         List<Task> tasks = new ArrayList<>();
         tasks.addAll(this.listServerTasks(client, serverIds));
@@ -157,8 +160,8 @@ public class AsyncTaskService {
                 if (missing == null) {
                     throw e;
                 }
-                // Each fallback removes a confirmed missing ID, so discovery
-                // is bounded and preserves the other requested metadata.
+                // The batch limit bounds upstream requests to 32. Each fallback
+                // removes a confirmed missing ID and preserves other metadata.
                 remaining = remaining.stream().filter(id -> !id.equals(missing)).toList();
             }
         }
