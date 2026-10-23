@@ -46,9 +46,8 @@ public class OperationsPayloadParser {
     }
 
     Readiness parseReadiness(String type, String payload, int httpStatus,
-                              long observedAt) {
-        String path = "PD".equals(type) ? "/v1/ready" : "/-/state";
-        Map<String, Object> details = Map.of("request_path", path,
+                              long observedAt, String requestPath) {
+        Map<String, Object> details = Map.of("request_path", requestPath,
                                            "http_status", httpStatus);
         try {
             JsonNode root = this.mapper.readTree(payload);

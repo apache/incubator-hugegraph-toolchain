@@ -1519,7 +1519,8 @@ public class LiveOperationsCollectorTest {
 
     @Test
     public void testMetricDeadlineRetainsAlreadyCompletedStoreReadiness() throws Exception {
-        HttpServer pd = pdServer(200, cluster(), 200, stores());
+        java.util.concurrent.ExecutorService upstream = java.util.concurrent.Executors.newCachedThreadPool();
+        HttpServer pd = pdServer(200, cluster(), 200, stores(), upstream);
         context(pd, "/v1/ready", 200, "{\"ready\":true,\"state\":\"STATE_FOLLOWER\"}");
         context(pd, "/-/state", 200, "{\"status\":0,\"text\":\"ONLINE\"}");
         context(pd, "/v1/prom/targets/store", 200,
@@ -1536,28 +1537,69 @@ public class LiveOperationsCollectorTest {
         } finally {
             collector.close();
             pd.stop(0);
+            upstream.shutdownNow();
         }
     }
 
     @Test
-    public void testSlowStoreReadinessSharesExistingCollectionDeadline() throws Exception {
-        HttpServer pd = pdServer(200, cluster(), 200, stores());
+    public void testSlowStoreReadinessDoesNotConsumeMetricWorkersOrDeadline() throws Exception {
+        java.util.concurrent.ExecutorService upstream = java.util.concurrent.Executors.newCachedThreadPool();
+        HttpServer pd = pdServer(200, cluster(), 200, stores(), upstream);
         context(pd, "/v1/ready", 200, "{\"ready\":true,\"state\":\"STATE_FOLLOWER\"}");
         delayedContext(pd, "/-/state", 200, "{\"status\":0,\"text\":\"ONLINE\"}", 1000L);
         context(pd, "/v1/prom/targets/store", 200,
                 targets("127.0.0.1:" + pd.getAddress().getPort()));
-        LiveOperationsCollector collector = collector(true, pd, null, 100);
+        storeMetricContexts(pd);
+        String base = "http://127.0.0.1:" + pd.getAddress().getPort();
+        LiveOperationsCollector collector = new LiveOperationsCollector(
+                true, base, "hubble", "secret", "store-hubble", "store-secret",
+                "server-under-test", new OperationsHttpClient(1000, 2000, 8192),
+                new OperationsPayloadParser(new ObjectMapper()), CLOCK,
+                1, 500, Set.of(base));
         try {
             long started = System.nanoTime();
             OperationsModels.Node node = store(collector.collect(serverClient(), true));
             long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
             Assert.assertTrue("Readiness must share the bounded Store collection budget", elapsed < 900L);
+            for (String group : new String[]{"system", "drive", "raft"}) {
+                Assert.assertEquals("AVAILABLE", node.getMetricStatuses().get(group).getAvailability());
+            }
             Assert.assertEquals("UP", node.getStatus());
             Assert.assertEquals("UNKNOWN", node.getReadiness().getStatus());
             Assert.assertEquals("upstream_deadline", node.getReadiness().getReason());
         } finally {
             collector.close();
             pd.stop(0);
+            upstream.shutdownNow();
+        }
+    }
+
+    @Test
+    public void testPdReadinessReportsActualProxyPathForSuccessAndStructured503() throws Exception {
+        for (int status : new int[]{200, 503}) {
+            HttpServer pd = pdServer(200, cluster(), 200, "{\"status\":0,\"data\":{\"stores\":[]}}");
+            String base = "http://127.0.0.1:" + pd.getAddress().getPort();
+            String payload = cluster().replace("http://pd:8620", base + "/pd");
+            context(pd, "/pd/v1/cluster", 200, payload);
+            context(pd, "/pd/v1/stores", 200, "{\"status\":0,\"data\":{\"stores\":[]}}");
+            context(pd, "/pd/v1/prom/targets/store", 200, "[]");
+            context(pd, "/pd/actuator/prometheus", 200, "process_uptime_seconds 12\n");
+            context(pd, "/pd/v1/ready", status,
+                    "{\"ready\":" + (status == 200) + ",\"state\":\"STATE_FOLLOWER\"}");
+            LiveOperationsCollector collector = new LiveOperationsCollector(
+                    true, base + "/pd", "hubble", "secret", "store-hubble", "store-secret",
+                    "server-under-test", new OperationsHttpClient(1000, 1000, 8192),
+                    new OperationsPayloadParser(new ObjectMapper()), CLOCK, 1, 1000, Set.of(base));
+            try {
+                OperationsModels.Readiness result = collector.collect(serverClient(), true).getNodes().stream()
+                        .filter(node -> "PD".equals(node.getType())).findFirst().orElseThrow().getReadiness();
+                Assert.assertEquals(status == 200 ? "READY" : "NOT_READY", result.getStatus());
+                Assert.assertEquals("/pd/v1/ready", result.getDiagnostics().get("request_path"));
+                Assert.assertEquals(status, result.getDiagnostics().get("http_status"));
+            } finally {
+                collector.close();
+                pd.stop(0);
+            }
         }
     }
 
@@ -1649,7 +1691,17 @@ public class LiveOperationsCollectorTest {
     private static HttpServer pdServer(int clusterStatus, String cluster,
                                        int storesStatus, String stores)
                                        throws IOException {
+        return pdServer(clusterStatus, cluster, storesStatus, stores, null);
+    }
+
+    private static HttpServer pdServer(int clusterStatus, String cluster,
+                                       int storesStatus, String stores,
+                                       java.util.concurrent.Executor executor)
+                                       throws IOException {
         HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        if (executor != null) {
+            server.setExecutor(executor);
+        }
         cluster = cluster.replace("PD_TEST_PORT",
                                   String.valueOf(server.getAddress().getPort()));
         stores = stores.replace("PD_TEST_PORT",
