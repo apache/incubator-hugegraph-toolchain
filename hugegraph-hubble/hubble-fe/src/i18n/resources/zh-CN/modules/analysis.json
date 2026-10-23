@@ -128,8 +128,8 @@
       "no_graph_result": "无图结果，请查看表格或 JSON 数据",
       "non_graph_title": "查询结果预览",
       "non_graph_description": "查询已成功执行；当前结果不满足图渲染，以下为 JSON 预览",
-      "preview_truncated": "当前仅展示前 3 项结果",
-      "view_full_json": "查看原始 JSON",
+      "preview_truncated": "当前预览已限制条数、深度及属性长度",
+      "view_full_json": "查看 JSON 预览",
       "empty_success": "查询成功，结果为空",
       "empty_success_description": "查询已成功执行，但没有返回可展示的数据",
       "no_table_result": "无表格结果，请查看图或 JSON 数据",
@@ -138,8 +138,14 @@
       "no_json_result": "无 JSON 结果，请查看图或表格数据",
       "expand_failed": "展开失败",
       "no_more_neighbors": "不存在更多邻接点",
-      "graph_limit_title": "结果过大，已默认收起图画布",
-      "graph_limit_description": "当前结果包含 {{nodes}} 个节点、{{edges}} 条边，画布上限为 {{nodeLimit}} 个节点、{{edgeLimit}} 条边。请使用表格或 JSON 查看完整结果"
+      "graph_limit_title": "当前为部分图预览",
+      "graph_limit_description": "画布最多展示 {{nodeLimit}} 个点、{{edgeLimit}} 条边；完整大结果请使用异步任务",
+      "default_limit_applied": "已为本次查询自动添加输出行数上限：{{limit}} 条",
+      "large_query_preview": "本次同步查询最多预览 {{limit}} 条结果；如需完整大结果，请使用异步任务。编辑器中的原语句保持不变",
+      "json_preview_truncated": "当前 JSON 仅为条数、深度及属性长度受限的预览，完整大结果请使用异步任务",
+      "result_preview_truncated": "当前最多预览 {{limit}} 条结果，完整大结果请使用异步任务",
+      "properties_preview": "部分属性已截断或省略；长文本仅展示前 {{limit}} 个字符及原始长度；预览属性不可编辑",
+      "properties_preview_read_only": "当前属性包含截断预览，已禁止编辑；请基于原始数据进行修改"
     },
     "canvas": {
       "graph_canvas": "图画布",

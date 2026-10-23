@@ -18,11 +18,14 @@
 
 import {act, fireEvent, render, screen, waitFor} from '@testing-library/react';
 import AnalysisHome, {extractQueryErrorMessage} from './index';
+import {message} from 'antd';
 import GraphAnalysisContext from '../../Context';
 import * as api from '../../../api';
 import {EXECUTION_LOGS_TYPE} from '../../../utils/constants';
 import {setConfig} from '../../../utils/config';
 import {setUser} from '../../../utils/user';
+
+jest.mock('antd', () => ({message: {info: jest.fn()}}));
 
 jest.mock('../../../api', () => ({
     analysis: {
@@ -46,6 +49,8 @@ jest.mock('../../../api', () => ({
 jest.mock('../QueryBar/Home', () => props => (
     <div>
         <span data-testid='query-content'>{props.codeEditorContent}</span>
+        <input aria-label='Query fixture' value={props.codeEditorContent}
+            onChange={event => props.setCodeEditorContent(event.target.value)} />
         <span data-testid='source-question'>{props.text2gql.question}</span>
         <span data-testid='query-language'>{props.language}</span>
         <span data-testid='editor-source'>{props.editorSource}</span>
@@ -56,6 +61,11 @@ jest.mock('../QueryBar/Home', () => props => (
         <button onClick={() => props.onLanguageChange('gremlin')}>Generate Gremlin</button>
         <button onClick={() => props.setCodeEditorContent('MATCH (n) RETURN n LIMIT 4')}>Edit Cypher</button>
         <button onClick={() => props.setCodeEditorContent('g.E().limit(3)')}>Edit query</button>
+        {['10000', '10000L', '100_000'].map(limit => (
+            <button key={limit} onClick={() => props.setCodeEditorContent(`g.V().limit(${limit})`)}>
+                Edit large query {limit}
+            </button>
+        ))}
         <button onClick={() => props.onExecute(props.activeTab)}>Run current</button>
         <button onClick={() => props.onExecuteModeChange('task')}>Use async</button>
         <button onClick={() => props.setCodeEditorContent(props.codeEditorContent)}>Echo current query</button>
@@ -1792,4 +1802,65 @@ it('hides confirmed old Schema inputs as soon as the selected graph changes', as
     const vertexCalls = api.manage.getMetaVertexList.mock.calls.length;
     await act(async () => pending.resolve(schemaList('disposed')));
     expect(api.manage.getMetaVertexList).toHaveBeenCalledTimes(vertexCalls);
+});
+
+it.each(['10000', '1000000'])('previews a large limit %s successfully and keeps the original async query', async limit => {
+    const content = `g.V().limit(${limit})`;
+    const singleResult = {json_view: {data: [{id: 'only-one'}]}, result_limit: 1000};
+    api.analysis.getExecutionQuery.mockResolvedValue({status: 200, data: singleResult});
+    render(<GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
+        <AnalysisHome />
+    </GraphAnalysisContext.Provider>);
+    await act(async () => Promise.resolve());
+    fireEvent.change(screen.getByRole('textbox', {name: 'Query fixture'}), {target: {value: content}});
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
+    expect(api.analysis.getExecutionQuery).toHaveBeenCalledWith('DEFAULT', 'hugegraph', content);
+    expect(api.analysis.getExecutionTask).not.toHaveBeenCalled();
+    expect(screen.getByTestId('query-status')).toHaveTextContent('success');
+    expect(screen.getByTestId('query-result')).toHaveTextContent('only-one');
+    expect(screen.getByTestId('query-content')).toHaveTextContent(content);
+    expect(message.info).toHaveBeenCalledWith('analysis.query_result.large_query_preview');
+    fireEvent.click(screen.getByRole('button', {name: 'Use async'}));
+    fireEvent.click(screen.getByRole('button', {name: 'Run current'}));
+    await waitFor(() => expect(api.analysis.getExecutionTask).toHaveBeenCalledWith(
+        'DEFAULT', 'hugegraph', {content}));
+    expect(api.analysis.getExecutionQuery).toHaveBeenCalledTimes(1);
+});
+
+it.each([
+    'g.V().limit(10000L)',
+    'g.V().limit(100_000)',
+    'g.V().limit(rows)',
+])('dispatches an unmatched manual Gremlin statement unchanged: %s', async content => {
+    api.analysis.getExecutionQuery.mockResolvedValue({status: 200, data: {}});
+    render(<GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
+        <AnalysisHome />
+    </GraphAnalysisContext.Provider>);
+    await act(async () => Promise.resolve());
+    fireEvent.change(screen.getByRole('textbox', {name: 'Query fixture'}), {target: {value: content}});
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
+    expect(api.analysis.getExecutionQuery).toHaveBeenCalledWith('DEFAULT', 'hugegraph', content);
+    expect(api.analysis.getExecutionTask).not.toHaveBeenCalled();
+    expect(screen.getByTestId('query-content')).toHaveTextContent(content);
+});
+
+it.each([
+    ['MATCH (n) WITH n LIMIT 10 RETURN n', false],
+    ['MATCH (n) WITH n ORDER BY n.age LIMIT 5 RETURN n.name', false],
+    ['MATCH (n) WITH n LIMIT 10 RETURN n LIMIT 10000', true],
+    ['MATCH (n) RETURN n.limit + 1', false],
+    ['MATCH (n) RETURN n LIMIT $rows', false],
+])('dispatches Cypher with intermediate or large limits and only hints for large limits: %s', async (cypher, large) => {
+    api.analysis.getCypherExecutionQuery.mockResolvedValue({status: 200, data: {}});
+    render(<GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
+        <AnalysisHome />
+    </GraphAnalysisContext.Provider>);
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Cypher'})));
+    fireEvent.change(screen.getByRole('textbox', {name: 'Query fixture'}), {target: {value: cypher}});
+    await act(async () => fireEvent.click(screen.getByRole('button', {name: 'Run current'})));
+    expect(api.analysis.getCypherExecutionQuery).toHaveBeenCalledWith('DEFAULT', 'hugegraph', {cypher});
+    expect(screen.getByTestId('query-status')).toHaveTextContent('success');
+    expect(message.info).toHaveBeenCalledTimes(large ? 1 : 0);
+    expect(api.analysis.getCypherTask).not.toHaveBeenCalled();
+    expect(screen.getByTestId('query-content')).toHaveTextContent(cypher);
 });

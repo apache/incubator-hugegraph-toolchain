@@ -55,6 +55,9 @@ public class GraphView {
     @JsonProperty("statistics")
     private Map<String, Object> statistics = new HashMap<>();
 
+    @JsonProperty("truncated")
+    private boolean truncated;
+
     public GraphView(Collection<Vertex> vertices,
                      Collection<Edge> edges) {
         Collection<VertexQueryEntity> vertexQueryEntities =

@@ -36,6 +36,11 @@ public class ReadOnlyGremlinTest {
                 "g.V().has('age', between(-2.5, 3e2)).order().by('age', Order.desc)",
                 "g.V().project('name', 'friends').by('name').by(__.out('knows').count())",
                 "g.V().repeat(__.out('knows')).times(2).path().by('name')",
+                "g.V().repeat(out()).times(2).path()",
+                "g.V().where(out().count().is(gt(2))).out()",
+                "g.V().project('name').by(values ('name'))",
+                "g.V().has('name', Text.contains('x')).out()",
+                "g.V().has('name', Text.contains('x').and(P.neq('y'))).out()",
                 "g.V().groupCount().by('name').order(Scope.local).by(Column.values, desc)",
                 "g.V().order().by(label).by(id)",
                 "g.V().group().by(key).by(value)",
@@ -53,6 +58,9 @@ public class ReadOnlyGremlinTest {
         String[] queries = {
                 "g.addV('person')", "g.V().drop()", "g.V().property('name','bad')",
                 "g.V().sideEffect(__.drop())", "g.V().map(__.addV())",
+                "g.V().repeat(drop()).times(2)", "g.V().where(out().drop())",
+                "g.V().map(addV('person'))", "g.V().where(out().property('x', 1))",
+                "g.V().has('name', Text.uuid('x'))", "g.V().has('name', Text.execute('x'))",
                 "g.V(); g.V().drop()", "g.V()\ng.V().drop()",
                 "g.V().filter{it.get().remove()}", "g.V().map({System.exit(0)})",
                 "g.V().by(label.class)", "g.V().by(id.getClass())", "g.V().order().by(key.class)",
@@ -74,6 +82,24 @@ public class ReadOnlyGremlinTest {
             Assert.assertThrows(ExternalException.class, () -> ReadOnlyGremlin.validate(query));
         }
         Assert.assertThrows(ExternalException.class, () -> ReadOnlyGremlin.validate(null));
+    }
+
+    @Test
+    public void acceptsGroovyNumericLiteralsWithoutAcceptingExpressions() {
+        // Checked against the Groovy runtime used by HugeGraph Server. Numeric
+        // syntax is validated here; the Server still validates step overloads.
+        for (String literal : new String[]{"10000L", "100_000", "100__000", "10_000G", "10_000I",
+                                            "0x2710L", "0b1_0000", "023420", "0_10", "10000l",
+                                            "10000g", "10000i", "+10000", "-9223372036854775808L",
+                                            "1e4", "1.0G", "10000D", "1_000.5_0e+1_0F"}) {
+            ReadOnlyGremlin.validate("g.V().has('number', " + literal + ")");
+        }
+        for (String literal : new String[]{"08", "1_L", "1L0", "2147483648I", "9223372036854775808L",
+                                            "1_", "0x_1", "0b2", "1e_2", "1.0L", "1 + 2",
+                                            "Long.MAX_VALUE", "10000L.toString()"}) {
+            Assert.assertThrows(ExternalException.class,
+                                () -> ReadOnlyGremlin.validate("g.V().limit(" + literal + ")"));
+        }
     }
 
     @Test

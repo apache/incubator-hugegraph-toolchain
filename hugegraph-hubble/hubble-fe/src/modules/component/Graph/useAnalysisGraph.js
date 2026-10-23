@@ -297,6 +297,27 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
         prunePending(owner);
         const pending = pendingRaw.current?.owner === scopeOwner ? pendingRaw.current.edges : [];
         const responseGraph = rawGraph(response.data?.graph_view);
+        const partialVertices = new Set((response.data?.property_preview_vertex_ids ?? [])
+            .map(id => hubbleRenderId('node', id)));
+        const partialEdges = new Set((response.data?.property_preview_edge_ids ?? [])
+            .map(id => hubbleRenderId('edge', id)));
+        const snapshot = owner.getSnapshot().data;
+        const existing = new Map([
+            ...pending.map(edge => [hubbleRenderId('edge', edge.id), edge]),
+            ...snapshot.nodes.map(node => [node.id, node.data.raw]),
+            ...snapshot.edges.map(edge => [edge.id, edge.data.raw]),
+        ]);
+        // Expansion merges directly into the controller, outside the initial query preview.
+        const markPreview = (element, kind, partialIds) => {
+            const id = hubbleRenderId(kind, element.id);
+            if (!partialIds.has(id)) return element;
+            const previous = existing.get(id);
+            // A clipped expansion must not replace properties we already have in full.
+            return previous && !previous['~hubble_properties_preview']
+                ? previous : {...element, '~hubble_properties_preview': true};
+        };
+        responseGraph.vertices = responseGraph.vertices.map(vertex => markPreview(vertex, 'node', partialVertices));
+        responseGraph.edges = responseGraph.edges.map(edge => markPreview(edge, 'edge', partialEdges));
         const edges = new Map(pending.map(edge => [hubbleRenderId('edge', edge.id), edge]));
         const responseIds = new Set();
         responseGraph.edges.forEach(edge => {
@@ -306,7 +327,7 @@ export const useAnalysisGraph = ({data = EMPTY_RAW, metaData = EMPTY_META, optio
             edges.set(id, edge);
         });
         const projection = project({...responseGraph, edges: [...edges.values()]},
-            {existingNodeIds: new Set(owner.getSnapshot().data.nodes.map(node => node.id))});
+            {existingNodeIds: new Set(snapshot.nodes.map(node => node.id))});
         const result = await owner.mergeData(projection.data, {preserveAppearance: true});
         if (current(token, owner) && result.status === 'applied') {
             pendingRaw.current = {owner: scopeOwner, edges: projection.pendingEdges,

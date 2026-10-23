@@ -19,6 +19,8 @@
 .queryResult {
     --analysis-result-height: clamp(360px, calc(100vh - 305px), 640px);
 
+    display: flex;
+    flex-direction: column;
     margin-top: 10px;
     min-width: 0;
     overflow: hidden;
@@ -196,4 +198,9 @@
 .viewNotice {
     height: var(--analysis-result-height);
     overflow: auto;
+}
+
+.sized > :global(.ant-tabs) {
+    flex: 1;
+    height: 0;
 }

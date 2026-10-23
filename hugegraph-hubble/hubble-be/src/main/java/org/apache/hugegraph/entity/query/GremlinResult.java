@@ -18,6 +18,8 @@
 
 package org.apache.hugegraph.entity.query;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -44,6 +46,39 @@ public class GremlinResult {
 
     @JsonProperty("pathnum")
     private Integer pathnum;
+
+    @JsonProperty("default_limit_applied")
+    private boolean defaultLimitApplied;
+
+    @JsonProperty("default_limit")
+    private int defaultLimit;
+
+    @JsonProperty("graph_truncated")
+    private boolean graphTruncated;
+
+    @JsonProperty("graph_vertex_limit")
+    private int graphVertexLimit;
+
+    @JsonProperty("graph_edge_limit")
+    private int graphEdgeLimit;
+
+    @JsonProperty("result_truncated")
+    private boolean resultTruncated;
+
+    @JsonProperty("result_limit")
+    private int resultLimit;
+
+    @JsonProperty("properties_truncated")
+    private boolean propertiesTruncated;
+
+    @JsonProperty("property_preview_limit")
+    private int propertyPreviewLimit;
+
+    @JsonProperty("property_preview_vertex_ids")
+    private List<String> propertyPreviewVertexIds;
+
+    @JsonProperty("property_preview_edge_ids")
+    private List<String> propertyPreviewEdgeIds;
 
     public enum Type {
 

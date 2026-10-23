@@ -1,0 +1,94 @@
+{
+  "kind": "controlled visual comparison, not a latency benchmark or a human-subject study",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "counts": [
+    30,
+    50,
+    100,
+    300,
+    500,
+    1000
+  ],
+  "fixture": "deterministic Person-NNNN identifiers; ring plus offset-7 edges, exactly two directed edges per vertex; average undirected degree four",
+  "query_responses_mocked": true,
+  "statistics_scans": false,
+  "zoom": "Fit Center, then two Zoom In clicks (1.25 squared = 1.5625 times fitted zoom)",
+  "cases": [
+    {
+      "vertices": 30,
+      "edges": 60,
+      "canvas_css_pixels": {
+        "width": 1091.078125,
+        "height": 507
+      },
+      "zoom_screenshot": "query-readability-30-zoom.png",
+      "sha256": "d86170427532c559a875f3656248f2f6ce762aa665fc4887af2fc95e8fe7ca74"
+    },
+    {
+      "vertices": 50,
+      "edges": 100,
+      "canvas_css_pixels": {
+        "width": 1091.078125,
+        "height": 507
+      },
+      "zoom_screenshot": "query-readability-50-zoom.png",
+      "sha256": "68e7740b857d89275613bbf471fe69321a4c9355617ee04df3cf75063c0600b0"
+    },
+    {
+      "vertices": 100,
+      "edges": 200,
+      "canvas_css_pixels": {
+        "width": 1091.078125,
+        "height": 507
+      },
+      "zoom_screenshot": "query-readability-100-zoom.png",
+      "sha256": "87646f1d51785ed3038c5fe71e5cc684036efd48e93fa9ea6e3a3185b589f89a"
+    },
+    {
+      "vertices": 300,
+      "edges": 600,
+      "canvas_css_pixels": {
+        "width": 1091.078125,
+        "height": 507
+      },
+      "zoom_screenshot": "query-readability-300-zoom.png",
+      "sha256": "d1f3a12d33c6aaa5aeadca30429ae2fb76ce2cda0402668d4bd4f9972130b6d5"
+    },
+    {
+      "vertices": 500,
+      "edges": 1000,
+      "canvas_css_pixels": {
+        "width": 1091.078125,
+        "height": 507
+      },
+      "zoom_screenshot": "query-readability-500-zoom.png",
+      "sha256": "b3088bab8d010a26f5866ec597382c9acecc3df1b1bd8b40b2d5ea22a8cc43db"
+    },
+    {
+      "vertices": 1000,
+      "edges": 2000,
+      "canvas_css_pixels": {
+        "width": 1091.078125,
+        "height": 507
+      },
+      "zoom_screenshot": "query-readability-1000-zoom.png",
+      "sha256": "50f0018e4714fbec90b8feead43eb27a4add2c76ad29d5e4f69de4a3eff13b19"
+    }
+  ],
+  "page_errors": [],
+  "status": "passed",
+  "source": "57c01639d6083ec67bd879de8ee1d1bb9a4cbd20; unchanged production code during comparison",
+  "observations": {
+    "30": "Node identifiers and relationship labels are readable in a local view; zoom crops the overview.",
+    "50": "Node identifiers remain readable in a local view; some edge/label crossings require attention.",
+    "100": "Identifiers are visibly small; suitable for orientation, not comfortable reading at this camera setting.",
+    "300": "Node labels are hidden after the same two zoom clicks; view communicates topology rather than identities.",
+    "500": "Node labels remain hidden and edges are denser.",
+    "1000": "Node labels remain hidden and local crossings are substantially denser."
+  },
+  "recommendation": "For this viewport, label length and degree-four fixture, use about 30-50 vertices for everyday detailed reading; 100 is an expanded overview. The current 1000 ceiling is a resource guard, not a readability guarantee. This comparison does not change the implemented default 300 / ceiling 1000 settings.",
+  "limitations": "One deterministic synthetic topology, one viewport, one layout and label policy; no human participants. Current automatic label visibility also depends on total node+edge count and absolute zoom. Results cannot establish a universal limit for every graph."
+}

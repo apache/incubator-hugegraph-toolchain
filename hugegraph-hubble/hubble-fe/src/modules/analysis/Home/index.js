@@ -23,11 +23,14 @@
 import {useState, useCallback, useEffect, useContext, useRef, useMemo, useLayoutEffect} from 'react';
 import {useTranslation} from 'react-i18next';
 import {useParams} from 'react-router-dom';
+import {message} from 'antd';
 import GraphAnalysisContext from '../../Context';
 import QueryBar from '../QueryBar/Home';
 import useText2Gql from './useText2Gql';
+import {hasLargeExplicitReadLimit} from './queryLimits';
 import {DEFAULT_QUERY_LANGUAGE, QUERY_LANGUAGES} from '../../../utils/text2gql';
 import QueryResult from '../QueryResult/Home';
+import {GRAPH_NODE_LIMIT} from '../QueryResult/Home/utils';
 import LogsDetail from '../LogsDetail/Home';
 import ResultsLayout from '../ResultsLayout';
 import {GREMLIN_EXECUTES_MODE, ANALYSIS_TYPE, GRAPH_STATUS, PANEL_TYPE,
@@ -437,6 +440,11 @@ const AnalysisHome = ({toolbarExtra}) => {
 
     const onExecuteQuery = useCallback(
         async (tabKey, generated) => {
+            const content = generated?.content ?? codeEditorContent;
+            const language = generated?.language ?? (tabKey === CYPHER ? 'cypher' : 'gremlin');
+            if (hasLargeExplicitReadLimit(content, language)) {
+                message.info(t('analysis.query_result.large_query_preview', {limit: GRAPH_NODE_LIMIT}));
+            }
             const request = Symbol('query');
             const startedAt = Date.now();
             const isCurrent = () => queryRequest.current === request

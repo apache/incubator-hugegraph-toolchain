@@ -65,6 +65,7 @@ test('lets the async query page own business error feedback', () => {
         params,
         {suppressBusinessErrorToast: true}
     );
+    expect(params).not.toHaveProperty('preview');
     expect(request.post).toHaveBeenNthCalledWith(
         2,
         '/graphspaces/DEFAULT/graphs/g/cypher/async-task',
@@ -95,7 +96,7 @@ test('forwards cancellation and generation timeout without changing execution re
         '/graphspaces/DEFAULT/graphs/g/text2gql', modelRequest,
         {...config, timeout: 65000, suppressBusinessErrorToast: true});
     expect(request.post).toHaveBeenNthCalledWith(2,
-        '/graphspaces/DEFAULT/graphs/g/gremlin-query', {content: 'g.V()', text: 'Find people'},
+        '/graphspaces/DEFAULT/graphs/g/gremlin-query', {content: 'g.V()', text: 'Find people', preview: true},
         {...config, suppressBusinessErrorToast: true});
 });
 
@@ -107,11 +108,26 @@ test.each([
     const config = {signal: new AbortController().signal};
     const body = {content, text: 'Find people', read_only: true};
     analysis.executeText2Gql('DEFAULT', 'g', language, body, config);
-    expect(request.post).toHaveBeenCalledWith(`/graphspaces/DEFAULT/graphs/g/${endpoint}`, body,
+    expect(request.post).toHaveBeenCalledWith(`/graphspaces/DEFAULT/graphs/g/${endpoint}`,
+        {...body, preview: true},
         {...config, suppressBusinessErrorToast: true});
     expect(request.get).not.toHaveBeenCalled();
 });
 
+test('opts manual synchronous Gremlin and Cypher reads into preview without changing async bodies', () => {
+    analysis.getExecutionQuery('DEFAULT', 'g', 'g.V()');
+    expect(request.post).toHaveBeenCalledWith('/graphspaces/DEFAULT/graphs/g/gremlin-query',
+        {content: 'g.V()', preview: true}, {suppressBusinessErrorToast: true});
+    const params = {content: 'MATCH (n) RETURN n LIMIT 10000'};
+    analysis.getCypherExecutionQuery('DEFAULT', 'g', params);
+    expect(request.get).toHaveBeenCalledWith('/graphspaces/DEFAULT/graphs/g/cypher', {
+        params: {...params, preview: true}, suppressBusinessErrorToast: true,
+    });
+    analysis.getCypherTask('DEFAULT', 'g', params);
+    expect(request.post).toHaveBeenLastCalledWith('/graphspaces/DEFAULT/graphs/g/cypher/async-task',
+        params, {suppressBusinessErrorToast: true});
+    expect(params).not.toHaveProperty('preview');
+});
 
 test('lets deferred statistics own business error feedback', () => {
     const config = {suppressBusinessErrorToast: true};

@@ -30,8 +30,8 @@ import {
     GRAPH_EDGE_LIMIT,
     GRAPH_NODE_LIMIT,
     getGraphViewLimitStatus,
-    getJsonViewContent,
-    projectJsonValue,
+    getBoundedGraphView,
+    getBoundedJsonPreview,
 } from './utils';
 import c from './index.module.scss';
 import {GRAPH_STATUS} from '../../../../utils/constants';
@@ -39,33 +39,17 @@ import {GRAPH_STATUS} from '../../../../utils/constants';
 const PREVIEW_ITEM_LIMIT = 3;
 const PREVIEW_CHAR_LIMIT = 1200;
 
-const getPreviewContent = (tableView, jsonViewContent) => {
+const getPreviewContent = (tableView, jsonView) => {
     const rows = Array.isArray(tableView?.rows) ? tableView.rows : [];
-    const content = rows.length > 0 ? projectJsonValue(rows) : jsonViewContent;
-    if (Array.isArray(content)) {
-        return {
-            content: content.slice(0, PREVIEW_ITEM_LIMIT),
-            truncated: content.length > PREVIEW_ITEM_LIMIT,
-        };
-    }
-    if (content && typeof content === 'object') {
-        const entries = Object.entries(content);
-        return {
-            content: Object.fromEntries(entries.slice(0, PREVIEW_ITEM_LIMIT)),
-            truncated: entries.length > PREVIEW_ITEM_LIMIT,
-        };
-    }
-    return {content, truncated: false};
+    return getBoundedJsonPreview(rows.length > 0 ? rows : jsonView?.data ?? [],
+        {items: PREVIEW_ITEM_LIMIT, characters: PREVIEW_CHAR_LIMIT, depth: 4});
 };
 
 const serializePreview = preview => {
     const text = JSON.stringify(preview.content, null, 2) ?? '';
-    if (text.length <= PREVIEW_CHAR_LIMIT) {
-        return {text, truncated: preview.truncated};
-    }
     return {
-        text: `${text.slice(0, PREVIEW_CHAR_LIMIT)}\n…`,
-        truncated: true,
+        text: text.length > PREVIEW_CHAR_LIMIT ? `${text.slice(0, PREVIEW_CHAR_LIMIT)}\n…` : text,
+        truncated: preview.truncated || text.length > PREVIEW_CHAR_LIMIT,
     };
 };
 
@@ -98,26 +82,39 @@ const QueryResult = props => {
         table_view: queryResultTable = {},
     } = queryResult || {};
 
-    const jsonViewContent = useMemo(
-        () => getJsonViewContent(queryResultJson),
-        [queryResultJson]
-    );
+    const edgeLimit = Number.isInteger(queryResult?.graph_edge_limit) && queryResult.graph_edge_limit > 0
+        ? queryResult.graph_edge_limit : GRAPH_EDGE_LIMIT;
     const graphLimit = useMemo(
-        () => getGraphViewLimitStatus(queryResultGraph),
-        [queryResultGraph]
+        () => getGraphViewLimitStatus(queryResultGraph, edgeLimit),
+        [queryResultGraph, edgeLimit]
     );
-    const [activeView, setActiveView] = useState(graphLimit.exceeded ? 2 : 1);
+    const graphPreview = useMemo(
+        () => getBoundedGraphView(queryResultGraph, edgeLimit, {
+            vertexIds: queryResult?.property_preview_vertex_ids,
+            edgeIds: queryResult?.property_preview_edge_ids,
+        }),
+        [queryResultGraph, edgeLimit,
+            queryResult?.property_preview_vertex_ids, queryResult?.property_preview_edge_ids]
+    );
+    const graphTruncated = queryResult?.graph_truncated || graphLimit.exceeded;
+    const [activeView, setActiveView] = useState(1);
     const handleViewFullJson = useCallback(() => setActiveView(3), []);
     useEffect(() => {
-        setActiveView(graphLimit.exceeded ? 2 : 1);
-    }, [graphLimit.exceeded, queryResultGraph]);
+        setActiveView(1);
+    }, [queryResult]);
+    const jsonPreview = useMemo(() => String(activeView) === '3'
+        ? getBoundedJsonPreview(queryResultJson?.data ?? []) : null,
+    [activeView, queryResultJson]);
+    const jsonViewContent = jsonPreview?.content !== null && typeof jsonPreview?.content === 'object'
+        ? jsonPreview.content : {value: jsonPreview?.content};
 
     const GRAPH_VIEW = t('analysis.query_result.graph');
     const TABLE_VIEW = t('analysis.query_result.table');
     const JSON_VIEW = 'JSON';
     const preview = useMemo(
-        () => getPreviewContent(queryResultTable, jsonViewContent),
-        [jsonViewContent, queryResultTable]
+        () => graphLimit.nodeCount === 0 && graphLimit.edgeCount === 0
+            ? getPreviewContent(queryResultTable, queryResultJson) : {content: [], truncated: false},
+        [graphLimit.nodeCount, graphLimit.edgeCount, queryResultJson, queryResultTable]
     );
     const serializedPreview = useMemo(() => serializePreview(preview), [preview]);
     const renderTab = type => {
@@ -172,31 +169,19 @@ const QueryResult = props => {
             />
         </div>
     );
-    const graphView = graphLimit.exceeded && !queryProgress ? (
-        <div className={c.viewNotice}>
-            <Alert
-                showIcon
-                type="warning"
-                title={t('analysis.query_result.graph_limit_title')}
-                description={t('analysis.query_result.graph_limit_description', {
-                    nodes: graphLimit.nodeCount,
-                    edges: graphLimit.edgeCount,
-                    nodeLimit: GRAPH_NODE_LIMIT,
-                    edgeLimit: GRAPH_EDGE_LIMIT,
-                })}
+    const graphView = nonGraphResult && !queryProgress ? nonGraphPreview : (
+        <>
+            <GraphResult
+                fitHeight={height !== undefined}
+                data={graphPreview}
+                isQueryMode={isQueryMode}
+                queryStatus={queryStatus}
+                queryMessage={queryMessage}
+                queryProgress={queryProgress}
+                asyncTaskId={asyncTaskResult}
+                {...args}
             />
-        </div>
-    ) : nonGraphResult && !queryProgress ? nonGraphPreview : (
-        <GraphResult
-            fitHeight={height !== undefined}
-            data={queryResultGraph}
-            isQueryMode={isQueryMode}
-            queryStatus={queryStatus}
-            queryMessage={queryMessage}
-            queryProgress={queryProgress}
-            asyncTaskId={asyncTaskResult}
-            {...args}
-        />
+        </>
     );
 
     return (
@@ -204,6 +189,30 @@ const QueryResult = props => {
             className={`${c.queryResult} ${height !== undefined ? c.sized : ''}`}
             style={height !== undefined ? {height, '--analysis-result-height': `${height}px`} : undefined}
         >
+            {queryResult?.properties_truncated && queryStatus === GRAPH_STATUS.SUCCESS && (
+                <Alert showIcon type="info" title={t('analysis.query_result.properties_preview', {
+                    limit: queryResult.property_preview_limit || 256,
+                })} />
+            )}
+            {queryResult?.result_truncated && queryStatus === GRAPH_STATUS.SUCCESS && (
+                <Alert showIcon type="warning"
+                    title={t('analysis.query_result.result_preview_truncated', {limit: queryResult.result_limit || 1000})} />
+            )}
+            {queryResult?.default_limit_applied && queryStatus === GRAPH_STATUS.SUCCESS && (
+                <Alert showIcon type="info"
+                    title={t('analysis.query_result.default_limit_applied', {limit: queryResult.default_limit || 300})} />
+            )}
+            {graphTruncated && !queryProgress && (
+                <Alert
+                    showIcon
+                    type="warning"
+                    title={t('analysis.query_result.graph_limit_title')}
+                    description={t('analysis.query_result.graph_limit_description', {
+                        nodeLimit: GRAPH_NODE_LIMIT,
+                        edgeLimit,
+                    })}
+                />
+            )}
             <Tabs
                 tabPlacement="left"
                 className={c.queryResultTabs}
@@ -229,13 +238,18 @@ const QueryResult = props => {
                     {
                         label: renderTab(JSON_VIEW),
                         key: 3,
-                        children: <JsonView
-                            jsonViewContent={jsonViewContent}
-                            queryStatus={queryStatus}
-                            isQueryMode={isQueryMode}
-                            queryMessage={queryMessage}
-                            asyncTaskId={asyncTaskResult}
-                        />,
+                        children: <>
+                            {jsonPreview?.truncated && (
+                                <Alert showIcon type="info" title={t('analysis.query_result.json_preview_truncated')} />
+                            )}
+                            <JsonView
+                                jsonViewContent={jsonViewContent}
+                                queryStatus={queryStatus}
+                                isQueryMode={isQueryMode}
+                                queryMessage={queryMessage}
+                                asyncTaskId={asyncTaskResult}
+                            />
+                        </>,
                     },
                 ]}
             />

@@ -158,9 +158,9 @@ public class HubbleOptions extends OptionHolder {
     public static final ConfigOption<Integer> GREMLIN_SUFFIX_LIMIT =
             new ConfigOption<>(
                     "gremlin.suffix_limit",
-                    "The limit suffix to be added to gremlin statement.",
+                    "Default result limit for ordinary interactive Gremlin reads.",
                     rangeInt(1, 800000),
-                    250
+                    300
             );
 
     public static final ConfigOption<Integer> GREMLIN_VERTEX_DEGREE_LIMIT =

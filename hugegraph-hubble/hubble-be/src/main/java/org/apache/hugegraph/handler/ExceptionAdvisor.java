@@ -273,6 +273,31 @@ public class ExceptionAdvisor {
                request.getRequestURI().startsWith("/api/v1.3/operations");
     }
 
+    private static final int QUERY_MESSAGE_LIMIT = 2048;
+    private static final String QUERY_MESSAGE_SUFFIX = "… [message truncated]";
+    private static final Pattern QUERY_ROUTE = Pattern.compile(
+            "/graphspaces/[^/]+/graphs/[^/]+/(?:gremlin-query|cypher)(?:/|$)");
+
+    private String queryMessage(String message) {
+        if (message == null || message.length() <= QUERY_MESSAGE_LIMIT ||
+            !(RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes)) {
+            return message;
+        }
+        HttpServletRequest request = this.getRequest();
+        String uri = request.getRequestURI();
+        if (uri == null || !QUERY_ROUTE.matcher(uri).find()) {
+            return message;
+        }
+        // Limit only the final resolved and redacted text, never structured
+        // upstream errors or arguments needed by error-code/i18n formatting.
+        int end = QUERY_MESSAGE_LIMIT - QUERY_MESSAGE_SUFFIX.length();
+        if (Character.isHighSurrogate(message.charAt(end - 1)) &&
+            Character.isLowSurrogate(message.charAt(end))) {
+            end--;
+        }
+        return message.substring(0, end) + QUERY_MESSAGE_SUFFIX;
+    }
+
     private static final Pattern URL = Pattern.compile(
             "(?i)https?://[^\\s]+", Pattern.CASE_INSENSITIVE);
     private static final String SENSITIVE_KEY =
@@ -349,14 +374,17 @@ public class ExceptionAdvisor {
                 strArgs[i] = args[i] != null ? args[i].toString() : "?";
             }
         }
-        message = handleErrorCode(message);
+        // Parse complete upstream JSON before redaction or truncation can
+        // remove fields/delimiters; redact the resolved key before localization
+        // because missing-key diagnostics may log it.
+        message = sanitize(handleErrorCode(message));
 
         try {
             message = this.messageSourceHandler.getMessage(message, strArgs);
         } catch (Throwable e) {
             log.error("hubble.message_resolution_failed");
         }
-        return sanitize(message);
+        return this.queryMessage(sanitize(message));
     }
 
     private String handleErrorCode(String message) {

@@ -69,6 +69,47 @@ public final class ReadOnlyCypher {
         new Parser(tokenize(query)).query();
     }
 
+    /** Add common final-output limits without inferring intermediate query results. */
+    public static PreviewQuery preview(String query, int defaultLimit, int maximum) {
+        PreviewQuery unchanged = new PreviewQuery(query, false);
+        if (query == null || query.isBlank() || query.length() > MAX_LENGTH ||
+            defaultLimit <= 0 || maximum <= 0) {
+            return unchanged;
+        }
+        Parser parser;
+        try {
+            parser = new Parser(tokenize(query));
+            parser.query();
+        } catch (ExternalException ignored) {
+            return unchanged;
+        }
+        if (parser.collection) {
+            throw new ExternalException("gremlin.preview.collection_requires_async");
+        }
+        if (parser.finalLimitStart < 0) {
+            int insertion = parser.insertionPosition;
+            return new PreviewQuery(query.substring(0, insertion) + " LIMIT " + Math.min(defaultLimit, maximum) +
+                                    query.substring(insertion), true);
+        }
+        if (parser.finalLimitEnd == parser.finalLimitStart + 1) {
+            Token literal = parser.tokens.get(parser.finalLimitStart);
+            if (literal.kind == Kind.NUMBER) {
+                try {
+                    if (Long.parseLong(literal.text) > maximum) {
+                        return new PreviewQuery(query.substring(0, literal.offset) + maximum +
+                                                query.substring(literal.offset + literal.text.length()), false);
+                    }
+                } catch (NumberFormatException ignored) {
+                    // Expressions and unsupported literals retain Server semantics.
+                }
+            }
+        }
+        return unchanged;
+    }
+
+    public record PreviewQuery(String query, boolean defaultLimitApplied) {
+    }
+
     private static ExternalException invalid() {
         return new ExternalException("text2gql.cypher.read-only");
     }
@@ -116,12 +157,12 @@ public final class ReadOnlyCypher {
                 position++;
                 kind = Kind.SYMBOL;
             }
-            tokens.add(new Token(kind, query.substring(start, position)));
+            tokens.add(new Token(kind, query.substring(start, position), start));
             if (tokens.size() > MAX_TOKENS) {
                 throw invalid();
             }
         }
-        tokens.add(new Token(Kind.END, ""));
+        tokens.add(new Token(Kind.END, "", query.length()));
         return tokens;
     }
 
@@ -201,10 +242,12 @@ public final class ReadOnlyCypher {
 
         private final Kind kind;
         private final String text;
+        private final int offset;
 
-        private Token(Kind kind, String text) {
+        private Token(Kind kind, String text, int offset) {
             this.kind = kind;
             this.text = text;
+            this.offset = offset;
         }
     }
 
@@ -212,6 +255,10 @@ public final class ReadOnlyCypher {
 
         private final List<Token> tokens;
         private int position;
+        private int finalLimitStart = -1;
+        private int finalLimitEnd = -1;
+        private int insertionPosition;
+        private boolean collection;
 
         private Parser(List<Token> tokens) {
             this.tokens = tokens;
@@ -228,15 +275,20 @@ public final class ReadOnlyCypher {
                     this.where();
                 } else if (this.consume("WITH")) {
                     this.projections();
-                    this.modifiers();
+                    this.modifiers(false);
                     this.where();
+                } else if (this.consume("UNWIND")) {
+                    this.expression(0, 0);
+                    this.expect("AS");
+                    this.identifier();
                 } else {
                     throw invalid();
                 }
             }
             this.expect("RETURN");
             this.projections();
-            this.modifiers();
+            this.modifiers(true);
+            this.insertionPosition = this.current().offset;
             this.consume(";");
             if (this.current().kind != Kind.END) {
                 throw invalid();
@@ -261,7 +313,7 @@ public final class ReadOnlyCypher {
             } while (this.consume(","));
         }
 
-        private void modifiers() {
+        private void modifiers(boolean finalReturn) {
             if (this.consume("ORDER")) {
                 this.expect("BY");
                 do {
@@ -275,7 +327,12 @@ public final class ReadOnlyCypher {
                 this.expression(0, 0);
             }
             if (this.consume("LIMIT")) {
+                int start = this.position;
                 this.expression(0, 0);
+                if (finalReturn) {
+                    this.finalLimitStart = start;
+                    this.finalLimitEnd = this.position;
+                }
             }
         }
 
@@ -497,6 +554,7 @@ public final class ReadOnlyCypher {
             if (!FUNCTIONS.contains(name)) {
                 throw invalid();
             }
+            this.collection |= "collect".equals(name) || "range".equals(name);
             this.position++;
             this.expect("(");
             if (this.consume("*")) {

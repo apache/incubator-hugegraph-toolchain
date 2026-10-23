@@ -187,6 +187,34 @@ test('expansion accepts an edge-only response and sends the raw business query u
     expect(message.warning).not.toHaveBeenCalled();
 });
 
+test('expansion marks only partial vertex and edge properties before merging', async () => {
+    const responseGraph = {vertices: [
+        {id: 'partial', label: 'person', properties: {name: 'prefix… [preview 256/300 chars]'}},
+        {id: 'complete', label: 'person', properties: {name: 'Alice'}},
+    ], edges: [
+        {id: 'partial-edge', source: 0, target: 'partial', properties: {name: 'prefix'}},
+        {id: 'complete-edge', source: 0, target: 'complete', properties: {weight: 1}},
+    ]};
+    api.analysis.putExecutionQuery.mockResolvedValue({status: 200, data: {
+        graph_view: responseGraph, properties_truncated: true,
+        property_preview_vertex_ids: ['partial'], property_preview_edge_ids: ['partial-edge'],
+    }});
+    const owner = createController();
+    const view = renderHook(() => useAnalysisGraph(initial));
+    act(() => view.result.current.onReady(owner));
+
+    await act(async () => { await view.result.current.expand({vertex_id: 0, vertex_label: 'person'}); });
+
+    const merged = owner.mergeData.mock.calls[0][0];
+    expect(merged.nodes[0].data.raw).toMatchObject({'~hubble_properties_preview': true,
+        properties: responseGraph.vertices[0].properties});
+    expect(merged.edges[0].data.raw['~hubble_properties_preview']).toBe(true);
+    expect(merged.nodes[1].data.raw['~hubble_properties_preview']).toBeUndefined();
+    expect(merged.edges[1].data.raw['~hubble_properties_preview']).toBeUndefined();
+    expect(responseGraph.vertices[0]['~hubble_properties_preview']).toBeUndefined();
+    expect(responseGraph.edges[0]['~hubble_properties_preview']).toBeUndefined();
+});
+
 test('an expansion response from an earlier result never reaches the controller', async () => {
     const pending = deferred();
     api.analysis.putExecutionQuery.mockReturnValue(pending.promise);
@@ -322,6 +350,41 @@ const partial = {vertices: [{id: 1, label: 'person'}], edges: [
     {id: 'waiting', source: 1, target: 'later', label: 'knows', properties: {kept: true}},
 ]};
 
+test('partial expansions preserve complete records and complete responses upgrade partial typed IDs', async () => {
+    const complete = {vertices: [
+        {id: 1, label: 'person', properties: {name: 'Alice'}},
+        {id: '1', label: 'person', properties: {name: 'old prefix'}, '~hubble_properties_preview': true},
+    ], edges: [
+        {id: 7, source: 1, target: '1', label: 'knows', properties: {weight: 42}},
+        {id: '7', source: '1', target: 1, label: 'knows', properties: {weight: 'old prefix'},
+            '~hubble_properties_preview': true},
+    ]};
+    const responseGraph = {vertices: [
+        {id: 1, label: 'person', properties: {name: 'prefix'}},
+        {id: '1', label: 'person', properties: {name: 'Bob'}},
+    ], edges: [
+        {id: 7, source: 1, target: '1', label: 'knows', properties: {weight: 'prefix'}},
+        {id: '7', source: '1', target: 1, label: 'knows', properties: {weight: 99}},
+    ]};
+    api.analysis.putExecutionQuery.mockResolvedValue({status: 200, data: {
+        graph_view: responseGraph, property_preview_vertex_ids: [1], property_preview_edge_ids: [7],
+    }});
+    const owner = observableController(complete);
+    const view = renderHook(() => useAnalysisGraph({...initial, data: complete}));
+    act(() => view.result.current.onReady(owner));
+
+    await act(async () => { await view.result.current.expand({vertex_id: 1}); });
+
+    const exported = view.result.current.currentRawData();
+    expect(exported.vertices.find(vertex => vertex.id === 1)).toEqual(complete.vertices[0]);
+    expect(exported.edges.find(edge => edge.id === 7)).toEqual(complete.edges[0]);
+    expect(exported.vertices.find(vertex => vertex.id === '1')).toEqual(responseGraph.vertices[1]);
+    expect(exported.edges.find(edge => edge.id === '7')).toEqual(responseGraph.edges[1]);
+    expect(exported.vertices.every(vertex => !vertex['~hubble_properties_preview'])).toBe(true);
+    expect(exported.edges.every(edge => !edge['~hubble_properties_preview'])).toBe(true);
+    expect(responseGraph.vertices[0]['~hubble_properties_preview']).toBeUndefined();
+});
+
 test('renders the valid partial graph while preserving detached dangling raw edges in JSON exports', () => {
     const input = JSONbig.parse('{"vertices":[{"id":1},{"id":"1"},{"id":900719925474099312345}],'
         + '"edges":[{"id":1,"source":1,"target":"1"},{"id":"1","source":1,"target":"later"},'
@@ -358,6 +421,27 @@ test('retains missing edges through an incomplete expansion and promotes them on
     expect(owner.mergeData).toHaveBeenLastCalledWith(expect.objectContaining({edges: [
         expect.objectContaining({id: 'edge:string:waiting'}),
     ]}), {preserveAppearance: true});
+});
+
+test('expansion retains a partial edge marker through pending export and endpoint promotion', async () => {
+    const owner = observableController(partial);
+    const view = renderHook(() => useAnalysisGraph({...initial, data: partial}));
+    act(() => view.result.current.onReady(owner));
+    api.analysis.putExecutionQuery.mockResolvedValueOnce({status: 200, data: {graph_view: {
+        vertices: [], edges: [{id: 'partial-edge', source: 1, target: 'future', properties: {name: 'prefix'}}],
+    }, property_preview_vertex_ids: [], property_preview_edge_ids: ['partial-edge']}});
+    await act(async () => { await view.result.current.expand({vertex_id: 1}); });
+    expect(view.result.current.currentRawData().edges.find(edge => edge.id === 'partial-edge'))
+        .toMatchObject({'~hubble_properties_preview': true});
+
+    api.analysis.putExecutionQuery.mockResolvedValueOnce({status: 200, data: {graph_view: {
+        vertices: [{id: 'future', label: 'person', properties: {name: 'Alice'}}], edges: [],
+    }}});
+    await act(async () => { await view.result.current.expand({vertex_id: 1}); });
+    expect(owner.getSnapshot().data.edges.find(edge => edge.data.raw.id === 'partial-edge').data.raw)
+        .toMatchObject({'~hubble_properties_preview': true});
+    const complete = owner.getSnapshot().data.nodes.find(node => node.data.raw.id === 'future').data.raw;
+    expect(complete['~hubble_properties_preview']).toBeUndefined();
 });
 
 test('does not resurrect a pending edge after its known endpoint was deleted and then supplied again', async () => {

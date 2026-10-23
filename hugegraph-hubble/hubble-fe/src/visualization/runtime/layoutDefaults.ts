@@ -22,8 +22,11 @@ export const adaptiveLayoutDefaults = (layout: GraphLayout,
     nodes: readonly {style?: {size?: unknown}}[]): NonNullable<GraphLayout['options']> => {
     if (layout.type === 'd3-force') {
         const small = nodes.length <= 20;
+        // Static force ticks run on the main thread. Keep small graph quality while
+        // bounding the default work for larger previews; explicit options override this.
+        const iterations = Math.max(50, Math.round(30000 / Math.max(100, nodes.length)));
         return {link: {distance: small ? 180 : 100}, manyBody: {strength: small ? -800 : -250},
-            collide: {radius: small ? 40 : 28}, iterations: 300,
+            collide: {radius: small ? 40 : 28}, iterations,
             // Axis attraction contains disconnected nodes without pulling separate groups together.
             x: {strength: 0.05}, y: {strength: 0.05}};
     }

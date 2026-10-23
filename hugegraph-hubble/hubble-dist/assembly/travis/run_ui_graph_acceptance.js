@@ -269,8 +269,8 @@ async function executeQuery(page, config, fixture, prefix, navigate = true) {
     && request.method() === 'POST');
   await run.click();
   const request = await pending;
-  assert.equal(request.postDataJSON(), fixture.query,
-    'Actual browser POST did not submit the exact requested Gremlin query string');
+  assert.deepEqual(request.postDataJSON(), {content: fixture.query, preview: true},
+    'Actual browser POST did not submit the exact requested Gremlin query string with preview enabled');
   const response = await request.response();
   assert.ok(response, 'Actual browser Gremlin request did not receive a response');
   const data = await businessPayload(response, 'Real browser Gremlin query');

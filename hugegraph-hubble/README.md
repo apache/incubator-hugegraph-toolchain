@@ -91,6 +91,106 @@ Run Gremlin queries and inspect their graph, table, or JSON results without leav
 
 ![Hubble GQL traversal and graph visualization](docs/images/g6/query.png)
 
+### Bounded interactive previews
+
+Common Gremlin traversals and Cypher reads without an explicit bound receive the
+configured default limit (300). Interactive previews keep at most 1,000 result rows
+and display at most 1,000 vertices with the configured edge budget. A common terminal
+decimal limit above that budget still runs as a bounded preview, with a nonblocking
+reminder to use asynchronous mode for complete large results. Small results return
+normally even with a large requested limit; the editor query stays unchanged.
+
+Automatic limiting is syntax sugar for common reads. It does not evaluate numeric
+expressions, infer traversal cardinality or track nested collection shapes. Existing
+read-only validation for generated queries remains separate. Unrecognized manual
+scripts retain their native execution path and may not receive an upstream limit;
+use asynchronous mode for complex or large results.
+
+For common Gremlin reads, `limit`, `range` and `tail` preserve an explicit output
+bound. A following adjacency step such as `out()` starts a new output stream and
+receives the default bound. Non-preview API responses retain all returned query
+elements in Graph, JSON and Table views. Optional incident-edge sampling remains
+bounded; oversized vertex-only results skip it and report an incomplete graph view.
+
+Recognized collection builders (`fold`, `group`, `groupCount` and Cypher `collect`/`range`)
+use the existing asynchronous mode in interactive previews, including queries with
+an explicit input bound. This uniform rule keeps the full aggregation semantics
+without trying to prove which query shapes produce small collections.
+
+![A large explicit limit runs as a bounded preview with an asynchronous-mode reminder](docs/images/showcase/query-large-limit-preview.png)
+
+The 1,000-vertex ceiling is a resource guard, not a readability target. A controlled
+Chromium comparison in a 1,091 × 507 canvas, with two edges per vertex and two
+25% zoom-in clicks, found 30–50 vertices practical for reading local identifiers
+and relationships. At 100, identifiers were small; at 300–1,000, the current label
+policy hid identifiers at that camera setting. These observations are specific
+to the tested topology, label length, layout and viewport, not a human-user study.
+They do not change the implemented default 300 / ceiling 1,000 settings.
+[Comparison records and screenshot hashes](docs/images/showcase/query-readability-verification.json)
+cover 30, 50, 100, 300, 500 and 1,000 vertices.
+
+Preview edges use a bounded incident-edge sample and do not guarantee the complete
+induced subgraph of the displayed nodes.
+
+Large preview properties show a bounded prefix and their original length. Clipped
+properties are read-only; exported previews retain that marker and cannot be
+imported as complete graph data. No full-property request runs automatically.
+The property map is also limited to 20 entries, so even short properties beyond
+that width make the element partial and read-only. Complete individual properties
+are received by the SDK before projection; this includes collections returned by
+expressions such as Cypher split. These previews are not an upstream byte or
+execution budget.
+
+<details>
+<summary>Current query preview controls — native browser screenshots</summary>
+
+These screenshots use the locally compiled implementation at `73b2ad28` and
+synthetic fixtures. They show functional behavior, not a replay of the historical
+performance samples. [Verification records](docs/images/showcase/query-preview-verification.json)
+distinguish returned rows, canvas vertices, blocked requests and preview markers.
+
+Ordinary Gremlin and Cypher reads both receive the 300-row default:
+
+![Gremlin default output limit](docs/images/showcase/query-preview-default.png)
+![Cypher default output limit](docs/images/showcase/query-preview-cypher-default.png)
+
+A large explicit limit prompts async mode before submission. A request for exactly
+1,000 vertices can still display a bounded canvas:
+
+![Large explicit limit guidance](docs/images/showcase/query-limit-hint.png)
+![A 1000-vertex canvas](docs/images/showcase/query-preview-canvas-1000.png)
+
+The notice refers to output rows, including after a bounded adjacency traversal
+and scalar reduction. Explicit range/tail bounds are preserved:
+
+![Scalar result with an output-row notice](docs/images/showcase/query-preview-scalar-output.png)
+![Explicit range retained](docs/images/showcase/query-preview-explicit-range.png)
+![Explicit tail retained](docs/images/showcase/query-preview-explicit-tail.png)
+
+Large properties show a prefix and original length with editing disabled. Expansion
+uses the same property projection; the actual downloaded JSON retained partial
+markers for all three displayed vertices and both edges in this fixture:
+
+![Read-only property preview](docs/images/showcase/query-preview-properties-readonly.png)
+![Canvas after expansion](docs/images/showcase/query-preview-expansion.png)
+
+Non-preview API compatibility is verified separately: Graph/JSON/Table retained
+1,200 query items, versus 1,000 items with truncation metadata in preview mode.
+No screenshot is presented as a raw-API application screen or an upstream byte
+budget. Hosted CI and full UI acceptance remain separate checks.
+
+</details>
+
+The [local performance report](https://github.com/hugegraph/hugegraph-toolchain/pull/80)
+retains Chromium evidence for defaults, partial results, preflight, context
+switching and anonymous account/login visibility. A separate isolated PD/Store/Server
+fixture also verifies administrator and ordinary-member login, two-vertex Gremlin
+queries, account/GraphSpace visibility, denied access and logout in Chromium.
+
+![Interactive 1,000-vertex preview](https://github.com/hugegraph/hugegraph-toolchain/blob/06561300277881bd4310434b6ee1adfefdbddbbb/docs/performance/2026-10-22-hubble-hstore/screenshots/comparison/after-perf_large8192-vertices1000.png?raw=true)
+
+![Read-only large-property preview](https://github.com/hugegraph/hugegraph-toolchain/blob/06561300277881bd4310434b6ee1adfefdbddbbb/docs/performance/2026-10-22-hubble-hstore/screenshots/comparison/after-large-property-readonly.png?raw=true)
+
 ### Natural-language graph queries (Text2GQL)
 
 Open **Graph Query → GQL Traversal** and ask a question in the **Text2GQL**

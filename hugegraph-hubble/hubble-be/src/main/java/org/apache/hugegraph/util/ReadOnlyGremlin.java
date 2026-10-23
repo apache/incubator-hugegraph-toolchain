@@ -17,6 +17,7 @@
 
 package org.apache.hugegraph.util;
 
+import java.math.BigInteger;
 import java.util.Set;
 
 import org.apache.hugegraph.exception.ExternalException;
@@ -39,10 +40,20 @@ public final class ReadOnlyGremlin {
             "filter", "map", "flatMap", "identity", "constant", "as", "match", "is",
             "toList", "toSet", "next", "hasNext");
 
+    private static final Set<String> COLLECTIONS = Set.of("fold", "group", "groupCount");
+    private static final Set<String> CONSUMERS = Set.of("toList", "toSet", "next", "hasNext");
+
+    private static final Set<String> BOUNDS = Set.of("limit", "range", "tail");
+
+    private static final Set<String> ADJACENCY = Set.of(
+            "out", "in", "both", "outE", "inE", "bothE", "outV", "inV", "bothV", "otherV");
+
     private static final Set<String> PREDICATES = Set.of(
             "eq", "neq", "gt", "gte", "lt", "lte", "inside", "outside", "between", "within", "without",
             "and", "or", "not", "startingWith", "notStartingWith", "endingWith", "notEndingWith",
             "containing", "notContaining", "regex", "notRegex");
+
+    private static final Set<String> TEXT_PREDICATES = Set.of("contains");
 
     private static final Set<String> CONSTANTS = Set.of(
             "true", "false", "null", "asc", "desc", "shuffle", "local", "global", "keys", "values",
@@ -55,6 +66,10 @@ public final class ReadOnlyGremlin {
     }
 
     public static void validate(String query) {
+        parse(query);
+    }
+
+    static Syntax parse(String query) {
         if (query == null || query.isBlank() || query.length() > 10000) {
             throw invalid();
         }
@@ -72,6 +87,13 @@ public final class ReadOnlyGremlin {
         if (parser.position != query.length()) {
             throw invalid();
         }
+        int insertion = parser.consumerFollowed ? -1 :
+                        parser.consumerPosition >= 0 ? parser.consumerPosition : query.length();
+        return new Syntax(parser.explicitLimit, parser.collection, insertion);
+    }
+
+    // Syntactic facts only: no output, cardinality or collection-shape inference.
+    record Syntax(boolean explicitLimit, boolean collection, int limitPosition) {
     }
 
     private static ExternalException invalid() {
@@ -82,6 +104,10 @@ public final class ReadOnlyGremlin {
 
         private final String text;
         private int position;
+        private boolean explicitLimit;
+        private boolean collection;
+        private int consumerPosition = -1;
+        private boolean consumerFollowed;
 
         private Parser(String text) {
             this.text = text;
@@ -89,8 +115,24 @@ public final class ReadOnlyGremlin {
 
         private void chain(Set<String> methods, int depth) {
             while (this.consume('.')) {
-                if (!methods.contains(this.identifier())) {
+                int dotPosition = this.position - 1;
+                String name = this.identifier();
+                if (!methods.contains(name)) {
                     throw invalid();
+                }
+                if (methods == STEPS) {
+                    this.collection |= COLLECTIONS.contains(name);
+                    if (depth == 0) {
+                        if (ADJACENCY.contains(name)) {
+                            this.explicitLimit = false;
+                        } else if (BOUNDS.contains(name)) {
+                            this.explicitLimit = true;
+                        }
+                        this.consumerFollowed |= this.consumerPosition >= 0;
+                        if (CONSUMERS.contains(name)) {
+                            this.consumerPosition = dotPosition;
+                        }
+                    }
                 }
                 this.arguments(depth);
             }
@@ -128,22 +170,22 @@ public final class ReadOnlyGremlin {
                     } while (this.consume(','));
                     this.expect(']');
                 }
-            } else if (Character.isDigit(next) || next == '-') {
+            } else if (Character.isDigit(next) || next == '-' || next == '+') {
                 this.number();
             } else {
                 String name = this.identifier();
+                this.whitespace();
                 if ("__".equals(name)) {
                     this.expect('.');
-                    if (!STEPS.contains(this.identifier())) {
-                        throw invalid();
-                    }
-                    this.arguments(depth);
-                    this.chain(STEPS, depth);
-                } else if ("P".equals(name) || "TextP".equals(name)) {
+                    this.anonymousTraversal(this.identifier(), depth);
+                } else if (STEPS.contains(name) && this.next('(')) {
+                    this.anonymousTraversal(name, depth);
+                } else if ("P".equals(name) || "TextP".equals(name) || "Text".equals(name)) {
                     this.expect('.');
-                    this.predicate(this.identifier(), depth);
+                    this.predicate(this.identifier(), depth,
+                                   "Text".equals(name) ? TEXT_PREDICATES : PREDICATES);
                 } else if (PREDICATES.contains(name)) {
-                    this.predicate(name, depth);
+                    this.predicate(name, depth, PREDICATES);
                 } else {
                     if (this.consume('.')) {
                         name += "." + this.identifier();
@@ -155,8 +197,17 @@ public final class ReadOnlyGremlin {
             }
         }
 
-        private void predicate(String name, int depth) {
-            if (!PREDICATES.contains(name)) {
+        private void anonymousTraversal(String name, int depth) {
+            if (!STEPS.contains(name)) {
+                throw invalid();
+            }
+            this.collection |= COLLECTIONS.contains(name);
+            this.arguments(depth);
+            this.chain(STEPS, depth);
+        }
+
+        private void predicate(String name, int depth, Set<String> methods) {
+            if (!methods.contains(name)) {
                 throw invalid();
             }
             this.arguments(depth);
@@ -185,35 +236,90 @@ public final class ReadOnlyGremlin {
 
         private void number() {
             int start = this.position;
-            if (this.text.charAt(this.position) == '-') {
+            if (this.next('-') || this.next('+')) {
                 this.position++;
             }
-            this.digits();
-            if (this.consume('.')) {
-                this.digits();
-            }
-            if (this.position < this.text.length() &&
-                (this.text.charAt(this.position) == 'e' || this.text.charAt(this.position) == 'E')) {
-                this.position++;
-                if (!this.consume('-')) {
-                    this.consume('+');
+            int digitsStart = this.position;
+            int radix = 10;
+            boolean decimal = false;
+            if (this.next('0') && this.position + 1 < this.text.length()) {
+                char prefix = Character.toLowerCase(this.text.charAt(this.position + 1));
+                if (prefix == 'x' || prefix == 'b') {
+                    radix = prefix == 'x' ? 16 : 2;
+                    this.position += 2;
+                    digitsStart = this.position;
                 }
-                this.digits();
             }
-            if (this.position == start) {
+            this.digits(radix);
+            int digitsEnd = this.position;
+            if (radix == 10 && this.next('.')) {
+                decimal = true;
+                this.position++;
+                this.digits(10);
+            }
+            if (radix == 10 && (this.next('e') || this.next('E'))) {
+                decimal = true;
+                this.position++;
+                if (this.next('-') || this.next('+')) {
+                    this.position++;
+                }
+                this.digits(10);
+            }
+            char suffix = 0;
+            if (this.position < this.text.length()) {
+                char next = Character.toLowerCase(this.text.charAt(this.position));
+                if ("ilg".indexOf(next) >= 0 || radix == 10 && "df".indexOf(next) >= 0) {
+                    suffix = next;
+                    this.position++;
+                }
+            }
+            if (decimal && (suffix == 'i' || suffix == 'l')) {
+                throw invalid();
+            }
+            if (decimal || suffix == 'd' || suffix == 'f') {
+                return;
+            }
+            String digits = this.text.substring(digitsStart, digitsEnd).replace("_", "");
+            if (radix == 10 && digits.length() > 1 && digits.charAt(0) == '0') {
+                radix = 8;
+            }
+            try {
+                BigInteger value = new BigInteger(digits, radix);
+                if (this.text.charAt(start) == '-') {
+                    value = value.negate();
+                }
+                if (suffix == 'i') {
+                    value.intValueExact();
+                } else if (suffix == 'l') {
+                    value.longValueExact();
+                }
+                return;
+            } catch (NumberFormatException | ArithmeticException ignored) {
                 throw invalid();
             }
         }
 
-        private void digits() {
+        private void digits(int radix) {
             int start = this.position;
-            while (this.position < this.text.length() &&
-                   Character.isDigit(this.text.charAt(this.position))) {
+            boolean lastDigit = false;
+            while (this.position < this.text.length()) {
+                char next = this.text.charAt(this.position);
+                if (Character.digit(next, radix) >= 0 && next < 128) {
+                    lastDigit = true;
+                } else if (next == '_' && this.position > start) {
+                    lastDigit = false;
+                } else {
+                    break;
+                }
                 this.position++;
             }
-            if (start == this.position) {
+            if (start == this.position || !lastDigit) {
                 throw invalid();
             }
+        }
+
+        private boolean next(char expected) {
+            return this.position < this.text.length() && this.text.charAt(this.position) == expected;
         }
 
         private String identifier() {

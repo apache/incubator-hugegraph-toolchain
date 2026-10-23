@@ -20,6 +20,8 @@ package org.apache.hugegraph.handler;
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.common.Response;
 import org.apache.hugegraph.exception.ServerException;
+import org.apache.hugegraph.exception.ExternalException;
+import org.apache.hugegraph.rest.SerializeException;
 import org.apache.hugegraph.service.op.OperationsNodeNotFoundException;
 import org.apache.hugegraph.testutil.Assert;
 import org.junit.After;
@@ -36,6 +38,127 @@ public class ExceptionAdvisorStatusTest {
     @After
     public void tearDown() {
         RequestContextHolder.resetRequestAttributes();
+    }
+
+    @Test
+    public void testQueryDeserializeErrorsDoNotReturnTheOriginalLargeResult() {
+        String payload = "x".repeat(1024 * 1024) + "error-body-tail-canary";
+        for (String route : new String[]{"gremlin-query", "cypher"}) {
+            RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(
+                    new MockHttpServletRequest("POST", "/api/v1.3/graphspaces/DEFAULT/graphs/g/" + route)));
+            SerializeException failure = new SerializeException("Failed to deserialize: %s",
+                                         new IllegalArgumentException("name length exceeded"), payload);
+            Response response = advisor().exceptionHandler((Exception) failure);
+            Assert.assertEquals(Constant.STATUS_BAD_REQUEST, response.getStatus());
+            Assert.assertTrue(response.getMessage().startsWith("Failed to deserialize:"));
+            Assert.assertTrue(response.getMessage().length() <= 2048);
+            Assert.assertTrue(response.getMessage().endsWith("[message truncated]"));
+            Assert.assertFalse(response.getMessage().contains("error-body-tail-canary"));
+            Assert.assertNull(response.getCause());
+        }
+    }
+
+    @Test
+    public void testQueryMessageLimitDoesNotBreakSecretRedaction() {
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(
+                new MockHttpServletRequest("POST", "/api/v1.3/graphspaces/DEFAULT/graphs/g/gremlin-query")));
+        String secret = "private-canary".repeat(10000);
+        for (String message : new String[]{"Failed to deserialize: {\"password\":\"" + secret + "\"}",
+                                           "Failed to deserialize: -----BEGIN RSA PRIVATE KEY-----\n" +
+                                           secret + "\n-----END RSA PRIVATE KEY-----"}) {
+            Response response = advisor().exceptionHandler((Exception) new IllegalArgumentException(message));
+            Assert.assertFalse(response.getMessage().contains("private-canary"));
+            Assert.assertTrue(response.getMessage().contains("[REDACTED]"));
+            Assert.assertTrue(response.getMessage().length() <= 2048);
+        }
+    }
+
+    @Test
+    public void testQueryErrorArgumentsAreFormattedBeforeTheFinalLimit() {
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(
+                new MockHttpServletRequest("POST", "/api/v1.3/graphspaces/DEFAULT/graphs/g/gremlin-query")));
+        MessageSourceHandler messages = Mockito.mock(MessageSourceHandler.class);
+        Mockito.when(messages.getMessage(Mockito.anyString(), Mockito.any(String[].class)))
+               .thenAnswer(invocation -> {
+                   Object[] args = (Object[]) invocation.getRawArguments()[1];
+                   String argument = args[0].toString();
+                   Assert.assertTrue(argument.length() > 2048);
+                   Assert.assertFalse(argument.contains("[message truncated]"));
+                   return "Query failed: " + argument;
+               });
+        ExceptionAdvisor advisor = new ExceptionAdvisor();
+        ReflectionTestUtils.setField(advisor, "messageSourceHandler", messages);
+        Response response = advisor.exceptionHandler(new ExternalException(503, "gremlin.execute.failed",
+                                                      "detail " + "x".repeat(1024 * 1024)));
+        Assert.assertEquals(503, response.getStatus());
+        Assert.assertTrue(response.getMessage().startsWith("Query failed: detail"));
+        Assert.assertTrue(response.getMessage().length() <= 2048);
+        Assert.assertTrue(response.getMessage().endsWith("[message truncated]"));
+    }
+
+    @Test
+    public void testLongStructuredQueryErrorResolvesItsCodeBeforeTheFinalLimit() {
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(
+                new MockHttpServletRequest("POST", "/api/v1.3/graphspaces/DEFAULT/graphs/g/gremlin-query")));
+        String payload = "x".repeat(1024 * 1024);
+        String structured = "{\"message\":\"" + payload + "\",\"code\":\"104-001\"," +
+                            "\"attach\":[\"vertex-name\"]}";
+        ServerException failure = new ServerException(structured);
+        failure.status(HttpStatus.FORBIDDEN.value());
+
+        Response response = advisor().exceptionHandler(failure);
+
+        Assert.assertEquals(HttpStatus.FORBIDDEN.value(), response.getStatus());
+        Assert.assertEquals(ErrorCodeMessage.getErrorMessage("104-001", payload, "vertex-name"),
+                            response.getMessage());
+        Assert.assertFalse(response.getMessage().contains("[message truncated]"));
+        Assert.assertNull(response.getCause());
+
+        String longArgument = "vertex-name " + payload;
+        structured = "{\"code\":\"104-001\",\"message\":\"upstream failure\"," +
+                     "\"attach\":[\"" + longArgument + "\"]}";
+        Response bounded = advisor().exceptionHandler(new ExternalException(503, structured));
+
+        Assert.assertEquals(503, bounded.getStatus());
+        Assert.assertTrue(bounded.getMessage().startsWith("顶点 vertex-name "));
+        Assert.assertTrue(bounded.getMessage().length() <= 2048);
+        Assert.assertTrue(bounded.getMessage().endsWith("[message truncated]"));
+    }
+
+    @Test
+    public void testLongQueryMessageIsRedactedBeforeLocalizationDiagnostics() {
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(
+                new MockHttpServletRequest("POST", "/api/v1.3/graphspaces/DEFAULT/graphs/g/gremlin-query")));
+        MessageSourceHandler messages = Mockito.mock(MessageSourceHandler.class);
+        Mockito.when(messages.getMessage(Mockito.anyString(), Mockito.nullable(Object[].class)))
+               .thenAnswer(invocation -> {
+                   String message = invocation.getArgument(0);
+                   Assert.assertFalse(message.contains("private-canary"));
+                   return message;
+               });
+        ExceptionAdvisor advisor = new ExceptionAdvisor();
+        ReflectionTestUtils.setField(advisor, "messageSourceHandler", messages);
+        String message = "Failed to deserialize: {\"password\":\"" +
+                         "private-canary".repeat(10000) + "\"}";
+
+        Response response = advisor.exceptionHandler(new ExternalException(503, message));
+
+        Assert.assertEquals(503, response.getStatus());
+        Assert.assertTrue(response.getMessage().contains("[REDACTED]"));
+        Assert.assertTrue(response.getMessage().length() <= 2048);
+    }
+
+    @Test
+    public void testQueryShortErrorsAndOtherApiMessagesAreUnchanged() {
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(
+                new MockHttpServletRequest("POST", "/api/v1.3/graphspaces/DEFAULT/graphs/g/gremlin-query")));
+        Assert.assertEquals("syntax error", advisor().exceptionHandler(
+                            (Exception) new IllegalArgumentException("syntax error")).getMessage());
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(
+                new MockHttpServletRequest("GET", "/api/v1.3/graphs")));
+        String message = "x".repeat(8192);
+        Assert.assertEquals(message, advisor().exceptionHandler(
+                            (Exception) new IllegalArgumentException(message)).getMessage());
     }
 
     @Test

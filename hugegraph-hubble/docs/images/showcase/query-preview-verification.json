@@ -1,0 +1,176 @@
+{
+  "source_head": "73b2ad280703f9e8e70359d33790fb42443f6266",
+  "runtime_head": "73b2ad280703f9e8e70359d33790fb42443f6266",
+  "screenshots_from_native_chromium": true,
+  "api_mocked": false,
+  "performance_benchmark": false,
+  "image_postprocessing": false,
+  "images": [
+    {
+      "file": "query-preview-default.png",
+      "bytes": 183328,
+      "width": 1440,
+      "height": 1100,
+      "sha256": "4c3ebefd8c08b03d62397a254cb1634ad63b42244922b62b476723825b51a274"
+    },
+    {
+      "file": "query-limit-hint.png",
+      "bytes": 121111,
+      "width": 1440,
+      "height": 1100,
+      "sha256": "f862e9ec9c2a70794ad98760feb70a24cc0966e463bbc0aff56ab97a75a3c273"
+    },
+    {
+      "file": "query-preview-scalar-output.png",
+      "bytes": 112113,
+      "width": 1440,
+      "height": 1100,
+      "sha256": "af1a6130817437f8060734bbbb9e19050fb6cbada2649352886e0b458b6b212d"
+    },
+    {
+      "file": "query-preview-explicit-range.png",
+      "bytes": 118484,
+      "width": 1440,
+      "height": 1100,
+      "sha256": "9732a3166ffac99166b5bdb8dbbf65a635fb8fd00ffe35056659e7a51901d1fe"
+    },
+    {
+      "file": "query-preview-explicit-tail.png",
+      "bytes": 124525,
+      "width": 1440,
+      "height": 1100,
+      "sha256": "7a38da2fc98a2694071b77a4e2de53c88e35a7043ac2669b253d448e72e2a8f9"
+    },
+    {
+      "file": "query-preview-canvas-1000.png",
+      "bytes": 204302,
+      "width": 1440,
+      "height": 1100,
+      "sha256": "df16b7679002e2b24338c83c742394f3b01843abf6e9be390a91f0e88d07b1bf"
+    },
+    {
+      "file": "query-preview-cypher-default.png",
+      "bytes": 187563,
+      "width": 1440,
+      "height": 1100,
+      "sha256": "084f5bc562ac243342b8609373143923193c72e7f55668e053cbc8a354a3987d"
+    },
+    {
+      "file": "query-preview-properties-readonly.png",
+      "bytes": 150378,
+      "width": 1440,
+      "height": 1100,
+      "sha256": "2479504e6ec929a7f9ab43f6b23821ac10a7f91111c1b8f16c831950590ea122"
+    },
+    {
+      "file": "query-preview-expansion.png",
+      "bytes": 130741,
+      "width": 1440,
+      "height": 1100,
+      "sha256": "b3ddabbd17a9fb9b861aa91753cfb631282087efb27c6d0251db64d8884651d0"
+    }
+  ],
+  "query_cases": [
+    {
+      "image": "query-preview-default.png",
+      "language": "Gremlin",
+      "query": "g.V()",
+      "http": 200,
+      "result_rows": 300,
+      "default_limit_applied": true,
+      "graph_vertices": 300,
+      "execution_requests": 1
+    },
+    {
+      "image": "query-limit-hint.png",
+      "language": "Gremlin",
+      "query": "g.V().limit(10000)",
+      "execution_requests": 0,
+      "original_text_preserved": true,
+      "async_hint": true
+    },
+    {
+      "image": "query-preview-scalar-output.png",
+      "language": "Gremlin",
+      "query": "g.V().limit(10).out().count()",
+      "http": 200,
+      "result_rows": 1,
+      "default_limit_applied": true,
+      "graph_vertices": 0,
+      "execution_requests": 1,
+      "scalar_value": 10
+    },
+    {
+      "image": "query-preview-explicit-range.png",
+      "language": "Gremlin",
+      "query": "g.V().range(0,5)",
+      "http": 200,
+      "result_rows": 5,
+      "default_limit_applied": false,
+      "graph_vertices": 5,
+      "execution_requests": 1
+    },
+    {
+      "image": "query-preview-explicit-tail.png",
+      "language": "Gremlin",
+      "query": "g.V().limit(10).tail(5)",
+      "http": 200,
+      "result_rows": 5,
+      "default_limit_applied": false,
+      "graph_vertices": 5,
+      "execution_requests": 1
+    },
+    {
+      "image": "query-preview-canvas-1000.png",
+      "language": "Gremlin",
+      "query": "g.V().limit(1000)",
+      "http": 200,
+      "result_rows": 1000,
+      "default_limit_applied": false,
+      "graph_vertices": 1000,
+      "execution_requests": 1
+    },
+    {
+      "image": "query-preview-cypher-default.png",
+      "language": "Cypher",
+      "query": "MATCH (n) RETURN n",
+      "http": 200,
+      "result_rows": 300,
+      "default_limit_applied": true,
+      "graph_vertices": 300,
+      "execution_requests": 1
+    }
+  ],
+  "page_errors": [],
+  "large_property_checks": {
+    "initial_vertices": 1,
+    "expanded_vertices": 3,
+    "expanded_edges": 2,
+    "partial_vertex_markers": 3,
+    "partial_edge_markers": 2,
+    "maximum_property_string_length": 282,
+    "property_content_prefix": 256,
+    "readonly_edit_disabled": true,
+    "native_ui_and_download_passed": true
+  },
+  "api_compatibility_checks": {
+    "raw": {
+      "json": 1200,
+      "table": 1200,
+      "graph": 1200,
+      "result_truncated": false,
+      "graph_truncated": true
+    },
+    "preview": {
+      "json": 1000,
+      "graph": 1000,
+      "result_truncated": true
+    }
+  },
+  "limitations": [
+    "Functional observations only; historical performance measurements were not rerun.",
+    "A raw API response has no separate application screen; its counts are from native API checks.",
+    "Direct browser file navigation for an exported-content screenshot was denied. No retry or workaround was attempted; only the preceding UI/download marker observations are retained.",
+    "These checks do not establish total-canvas growth bounds after repeated expansion, upstream byte/execution limits, full UI acceptance or hosted CI success."
+  ]
+}
