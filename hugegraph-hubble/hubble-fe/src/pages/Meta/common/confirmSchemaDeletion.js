@@ -54,7 +54,12 @@ export default function confirmSchemaDeletion({graphspace, graph, names, title, 
     };
     const complete = close => {
         finished = true;
-        onComplete();
+        try {
+            onComplete();
+        }
+        catch {
+            // Deletion is already confirmed; a UI callback must not strand the modal.
+        }
         message.success({key: feedbackKey, content: t('common.msg.delete_success')});
         close();
     };
