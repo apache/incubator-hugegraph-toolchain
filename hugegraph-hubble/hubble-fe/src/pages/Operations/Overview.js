@@ -31,6 +31,7 @@ import {useTranslation} from 'react-i18next';
 import {Link, useLocation, useSearchParams} from 'react-router-dom';
 import {getDashboard} from '../../api/auth';
 import {getOverview} from '../../api/operations';
+import {ReadinessStatus} from './Readiness';
 import {normalizeDashboardUrl} from '../../modules/navigation/ConsoleItem/dashboard';
 import {
     ClusterTopology,
@@ -237,11 +238,11 @@ const Overview = () => {
             title: t('operations.status'),
             dataIndex: 'status',
             render: (status, node) => (
-                <HealthStatus
-                    status={status}
-                    reason={metricIssueReason(node)}
-                    stale={hasStaleMetrics(node)}
-                />
+                <span className='operations-node-status'>
+                    <HealthStatus status={status} reason={metricIssueReason(node)}
+                        stale={hasStaleMetrics(node)} />
+                    <ReadinessStatus readiness={node.readiness} />
+                </span>
             ),
         },
     ];
@@ -258,11 +259,11 @@ const Overview = () => {
             title: t('operations.status'),
             dataIndex: 'status',
             render: (status, node) => (
-                <HealthStatus
-                    status={status}
-                    reason={metricIssueReason(node)}
-                    stale={hasStaleMetrics(node)}
-                />
+                <span className='operations-node-status'>
+                    <HealthStatus status={status} reason={metricIssueReason(node)}
+                        stale={hasStaleMetrics(node)} />
+                    <ReadinessStatus readiness={node.readiness} />
+                </span>
             ),
         },
         {

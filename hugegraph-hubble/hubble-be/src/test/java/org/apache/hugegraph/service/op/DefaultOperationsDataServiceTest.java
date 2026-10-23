@@ -53,6 +53,36 @@ public class DefaultOperationsDataServiceTest {
     private static final Clock CLOCK = Clock.fixed(
             Instant.ofEpochMilli(2000L), ZoneOffset.UTC);
 
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testFailedRefreshMarksPreviousReadinessStale() throws Exception {
+        Snapshot original = fullSnapshot();
+        java.util.List<Node> readyNodes = original.getNodes().stream()
+                .map(node -> node.withReadiness(new OperationsModels.Readiness(
+                        "READY", 1000L, "STATE_FOLLOWER", null, false,
+                        Map.of("request_path", "/v1/ready", "http_status", 200))))
+                .collect(java.util.stream.Collectors.toList());
+        AtomicInteger calls = new AtomicInteger();
+        OperationsCollector collector = (client, metrics) -> {
+            if (calls.getAndIncrement() > 0) {
+                throw new UpstreamRequestException("upstream_timeout");
+            }
+            return new Snapshot(original.getStatus(), original.getObservedAt(), false, null,
+                                original.getSources(), readyNodes, original.getFacts());
+        };
+        DefaultOperationsDataService service = new DefaultOperationsDataService(collector, 5, CLOCK);
+        HugeClient client = client("token-a");
+        Set<String> capabilities = Set.of(OperationsCapabilityService.HEALTH_READ,
+                                          OperationsCapabilityService.TOPOLOGY_READ);
+        service.overview(client, capabilities, false);
+        Map<String, Object> response = service.overview(client, capabilities, true);
+        java.util.List<Node> nodes = (java.util.List<Node>) response.get("nodes");
+        Assert.assertTrue(nodes.stream().allMatch(node -> node.getReadiness().isStale()));
+        JsonNode serialized = new ObjectMapper().valueToTree(nodes.get(0));
+        Assert.assertEquals(1000L, serialized.path("readiness").path("observed_at").asLong());
+        Assert.assertTrue(serialized.path("readiness").path("stale").asBoolean());
+    }
+
     @Test
     public void testClusterHealthCopiesRetainRawStatesAndSerializeSafely() {
         SourceStatus source = new SourceStatus("PARTIAL", "UP", 2000L,

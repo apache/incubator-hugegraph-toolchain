@@ -47,7 +47,7 @@ const selectAttentionNodes = (nodes = [], limit = 5) => {
         return [];
     }
     return nodes.filter(node => node.status !== 'UP' || hasStaleMetrics(node)
-        || hasMetricIssues(node))
+        || hasMetricIssues(node) || !node.readiness?.stale && node.readiness?.status === 'NOT_READY')
         .sort((left, right) => {
             const status = (STATUS_PRIORITY[left.status] ?? 4)
                 - (STATUS_PRIORITY[right.status] ?? 4);

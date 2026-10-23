@@ -1471,6 +1471,112 @@ public class LiveOperationsCollectorTest {
                 16, deadlineMillis, Collections.singleton(pdBase), servers);
     }
 
+    @Test
+    public void testPdReadinessIsIndependentFromRegistrationAndRetains503State() throws Exception {
+        HttpServer pd = pdServer(200, cluster(), 200, stores());
+        context(pd, "/v1/ready", 503,
+                "{\"ready\":false,\"state\":\"STATE_ERROR\",\"isLeader\":false}");
+        LiveOperationsCollector collector = collector(true, pd);
+        try {
+            Snapshot snapshot = collector.collect(serverClient(), true);
+            OperationsModels.Node node = snapshot.getNodes().stream()
+                    .filter(item -> "PD".equals(item.getType())).findFirst().orElseThrow();
+            Assert.assertEquals("UP", node.getStatus());
+            Assert.assertEquals("DEGRADED", snapshot.getStatus());
+            Assert.assertEquals("NOT_READY", node.getReadiness().getStatus());
+            Assert.assertEquals("STATE_ERROR", node.getReadiness().getState());
+            Assert.assertEquals("pd_raft_error", node.getReadiness().getReason());
+            Assert.assertEquals(503, node.getReadiness().getDiagnostics().get("http_status"));
+        } finally {
+            collector.close();
+            pd.stop(0);
+        }
+    }
+
+    @Test
+    public void testStoreStartingAndOnlineDoNotRewritePdRegistration() throws Exception {
+        for (String state : new String[]{"STARTING", "ONLINE", "STOPPING"}) {
+            HttpServer pd = pdServer(200, cluster(), 200, stores());
+            context(pd, "/v1/ready", 200, "{\"ready\":true,\"state\":\"STATE_FOLLOWER\"}");
+            context(pd, "/-/state", 200, "{\"status\":0,\"text\":\"" + state + "\"}");
+            context(pd, "/v1/prom/targets/store", 200,
+                    targets("127.0.0.1:" + pd.getAddress().getPort()));
+            storeMetricContexts(pd);
+            LiveOperationsCollector collector = collector(true, pd);
+            try {
+                OperationsModels.Node node = store(collector.collect(serverClient(), true));
+                Assert.assertEquals("UP", node.getStatus());
+                Assert.assertEquals("ONLINE".equals(state) ? "READY" : "NOT_READY",
+                                    node.getReadiness().getStatus());
+                Assert.assertEquals(state, node.getReadiness().getState());
+                Assert.assertEquals("AVAILABLE", node.getMetricStatuses().get("system").getAvailability());
+            } finally {
+                collector.close();
+                pd.stop(0);
+            }
+        }
+    }
+
+    @Test
+    public void testMetricDeadlineRetainsAlreadyCompletedStoreReadiness() throws Exception {
+        HttpServer pd = pdServer(200, cluster(), 200, stores());
+        context(pd, "/v1/ready", 200, "{\"ready\":true,\"state\":\"STATE_FOLLOWER\"}");
+        context(pd, "/-/state", 200, "{\"status\":0,\"text\":\"ONLINE\"}");
+        context(pd, "/v1/prom/targets/store", 200,
+                targets("127.0.0.1:" + pd.getAddress().getPort()));
+        delayedContext(pd, "/metrics/system", 200, "{\"heap\":{\"used\":1}}", 1000L);
+        LiveOperationsCollector collector = collector(true, pd, null, 300);
+        try {
+            OperationsModels.Node node = store(collector.collect(serverClient(), true));
+            Assert.assertEquals("UP", node.getStatus());
+            Assert.assertEquals("READY", node.getReadiness().getStatus());
+            Assert.assertEquals("ONLINE", node.getReadiness().getState());
+            Assert.assertEquals(200, node.getReadiness().getDiagnostics().get("http_status"));
+            Assert.assertEquals("upstream_deadline", node.getMetricStatuses().get("system").getReason());
+        } finally {
+            collector.close();
+            pd.stop(0);
+        }
+    }
+
+    @Test
+    public void testSlowStoreReadinessSharesExistingCollectionDeadline() throws Exception {
+        HttpServer pd = pdServer(200, cluster(), 200, stores());
+        context(pd, "/v1/ready", 200, "{\"ready\":true,\"state\":\"STATE_FOLLOWER\"}");
+        delayedContext(pd, "/-/state", 200, "{\"status\":0,\"text\":\"ONLINE\"}", 1000L);
+        context(pd, "/v1/prom/targets/store", 200,
+                targets("127.0.0.1:" + pd.getAddress().getPort()));
+        LiveOperationsCollector collector = collector(true, pd, null, 100);
+        try {
+            long started = System.nanoTime();
+            OperationsModels.Node node = store(collector.collect(serverClient(), true));
+            long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
+            Assert.assertTrue("Readiness must share the bounded Store collection budget", elapsed < 900L);
+            Assert.assertEquals("UP", node.getStatus());
+            Assert.assertEquals("UNKNOWN", node.getReadiness().getStatus());
+            Assert.assertEquals("upstream_deadline", node.getReadiness().getReason());
+        } finally {
+            collector.close();
+            pd.stop(0);
+        }
+    }
+
+    @Test
+    public void testUnknownReadinessEndpointIsUnsupportedWithoutDowngradingRegistration() throws Exception {
+        HttpServer pd = pdServer(200, cluster(), 200, stores());
+        LiveOperationsCollector collector = collector(true, pd);
+        try {
+            OperationsModels.Node node = collector.collect(serverClient(), true).getNodes().stream()
+                    .filter(item -> "PD".equals(item.getType())).findFirst().orElseThrow();
+            Assert.assertEquals("UP", node.getStatus());
+            Assert.assertEquals("UNSUPPORTED", node.getReadiness().getStatus());
+            Assert.assertEquals("unsupported_version", node.getReadiness().getReason());
+        } finally {
+            collector.close();
+            pd.stop(0);
+        }
+    }
+
     private static LiveOperationsCollector collector(RecordingHttpClient http,
                                                       int threads,
                                                       int deadlineMillis) {
@@ -1699,6 +1805,13 @@ public class LiveOperationsCollectorTest {
             return this.response(target);
         }
 
+        @Override
+        public ProbeResponse probe(java.net.URI target, String username, String password,
+                                   Set<String> allowedTargets) {
+            throw new UpstreamRequestException("upstream_http_status_404", null,
+                                               Map.of("request_path", target.getPath(), "http_status", 404));
+        }
+
         private String response(java.net.URI target) {
             String path = target.getPath();
             if ("/v1/cluster".equals(path)) {
@@ -1795,6 +1908,13 @@ public class LiveOperationsCollectorTest {
         public String get(java.net.URI target, String username,
                           String password) {
             return this.response(target);
+        }
+
+        @Override
+        public ProbeResponse probe(java.net.URI target, String username, String password,
+                                   Set<String> allowedTargets) {
+            throw new UpstreamRequestException("upstream_http_status_404", null,
+                                               Map.of("request_path", target.getPath(), "http_status", 404));
         }
 
         private String response(java.net.URI target) {

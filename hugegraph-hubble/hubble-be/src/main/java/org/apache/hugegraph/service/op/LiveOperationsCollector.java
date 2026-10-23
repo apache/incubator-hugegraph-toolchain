@@ -51,6 +51,7 @@ import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.options.HubbleOptions;
 import org.apache.hugegraph.service.HugeClientPoolService;
 import org.apache.hugegraph.service.op.OperationsModels.Node;
+import org.apache.hugegraph.service.op.OperationsModels.Readiness;
 import org.apache.hugegraph.service.op.OperationsModels.MetricStatus;
 import org.apache.hugegraph.service.op.OperationsModels.Snapshot;
 import org.apache.hugegraph.service.op.OperationsModels.SourceStatus;
@@ -207,6 +208,12 @@ public class LiveOperationsCollector implements OperationsCollector {
             sources.put("stores", unsupported());
         }
         String status = this.overallStatus(sources);
+        if (nodes.stream().anyMatch(node -> node.getReadiness() != null &&
+                                           "NOT_READY".equals(node.getReadiness().getStatus()))) {
+            if (clusterReason == null) {
+                clusterReason = "service_not_ready";
+            }
+        }
         if (clusterReason != null && "UP".equals(status)) {
             status = "DEGRADED";
         }
@@ -490,6 +497,7 @@ public class LiveOperationsCollector implements OperationsCollector {
         }
         if (includeMetrics && clusterParsed) {
             pdStatus = this.collectPdMetrics(now, pdStatus, nodes, cluster);
+            this.collectPdReadiness(now, nodes, cluster);
         }
         if (includeMetrics && storesParsed) {
             storesStatus = this.collectStoreMetrics(stores, now, storesStatus,
@@ -504,6 +512,40 @@ public class LiveOperationsCollector implements OperationsCollector {
         sources.put("pd", pdStatus.withClusterHealth(clusterState, dataState));
         sources.put("stores", storesStatus);
         return clusterReason;
+    }
+
+    private void collectPdReadiness(long now, List<Node> nodes, String cluster) {
+        int selected = this.pdNodeIndex(nodes, cluster);
+        Readiness observed = selected < 0 ? null : this.probeReadiness(
+                "PD", URI.create(this.pdBase + "/v1/ready"),
+                this.pdUsername, this.pdPassword, Collections.emptySet(), now);
+        for (int i = 0; i < nodes.size(); i++) {
+            Node node = nodes.get(i);
+            if ("PD".equals(node.getType())) {
+                nodes.set(i, node.withReadiness(i == selected ? observed :
+                          new Readiness("UNKNOWN", null, null,
+                                        selected < 0 ? "readiness_target_unmapped" :
+                                        "readiness_not_probed", false, Collections.emptyMap())));
+            }
+        }
+    }
+
+    private Readiness probeReadiness(String type, URI target,
+                                     String username, String password,
+                                     Set<String> allowedTargets, long now) {
+        try {
+            OperationsHttpClient.ProbeResponse response = this.http.probe(
+                    target, username, password, allowedTargets);
+            return this.parser.parseReadiness(type, response.getBody(),
+                                              response.getStatus(), now);
+        } catch (RuntimeException e) {
+            String failure = metricReason(e);
+            Map<String, Object> details = new LinkedHashMap<>(diagnostics(e));
+            details.put("request_path", target.getRawPath());
+            return new Readiness("unsupported_version".equals(failure) ?
+                                 "UNSUPPORTED" : "UNKNOWN", now, null,
+                                 failure, false, details);
+        }
     }
 
     private String nodeStatus(List<Node> nodes, String type) {
@@ -717,7 +759,9 @@ public class LiveOperationsCollector implements OperationsCollector {
                         statuses.put(group, unavailableMetric(
                                      now, target.getReason()));
                     }
-                    nodes.set(i, copyNode(node, node.getMetrics(), statuses));
+                    nodes.set(i, copyNode(node, node.getMetrics(), statuses).withReadiness(
+                            new Readiness("UNKNOWN", now, null, target.getReason(),
+                                          false, Collections.emptyMap())));
                     continue;
                 }
                 allowedTargets.add(OperationsHttpClient.origin(
@@ -804,6 +848,10 @@ public class LiveOperationsCollector implements OperationsCollector {
                                                 job.getNode().getMetrics());
         Map<String, MetricStatus> statuses = new LinkedHashMap<>(
                                            job.getNode().getMetricStatuses());
+        Readiness readiness = this.probeReadiness(
+                "STORE", job.getTarget().resolve("/-/state"),
+                this.storeUsername, this.storePassword, allowedTargets, now);
+        job.readiness = readiness;
         int successfulGroups = 0;
         String failureReason = null;
         for (String group : STORE_METRIC_GROUPS) {
@@ -830,7 +878,8 @@ public class LiveOperationsCollector implements OperationsCollector {
                 statuses.put(group, metricStatus(e, now, true).withDiagnostics(details));
             }
         }
-        return new StoreMetricResult(copyNode(job.getNode(), metrics, statuses),
+        return new StoreMetricResult(copyNode(job.getNode(), metrics, statuses)
+                                     .withReadiness(readiness),
                                      successfulGroups, failureReason);
     }
 
@@ -874,7 +923,10 @@ public class LiveOperationsCollector implements OperationsCollector {
             for (String group : STORE_METRIC_GROUPS) {
                 statuses.put(group, failure);
             }
-            nodes.set(i, copyNode(node, node.getMetrics(), statuses));
+            nodes.set(i, copyNode(node, node.getMetrics(), statuses).withReadiness(
+                    node.getReadiness() == null ?
+                    new Readiness("UNKNOWN", failure.getObservedAt(), null, failure.getReason(),
+                                  false, failure.getDiagnostics()) : node.getReadiness()));
         }
     }
 
@@ -953,7 +1005,8 @@ public class LiveOperationsCollector implements OperationsCollector {
                                  Map<String, MetricStatus> statuses) {
         return new Node(node.getId(), node.getType(), node.getName(),
                         node.getRole(), node.getVersion(), node.getStatus(),
-                        node.getObservedAt(), metrics, statuses);
+                        node.getObservedAt(), metrics, statuses)
+                        .withReadiness(node.getReadiness());
     }
 
     private static SourceStatus withStatus(SourceStatus source,
@@ -1178,6 +1231,7 @@ public class LiveOperationsCollector implements OperationsCollector {
         private final int nodeIndex;
         private final Node node;
         private final URI target;
+        private volatile Readiness readiness;
 
         private StoreMetricJob(int nodeIndex, Node node, URI target) {
             this.nodeIndex = nodeIndex;
@@ -1218,9 +1272,12 @@ public class LiveOperationsCollector implements OperationsCollector {
             for (String group : STORE_METRIC_GROUPS) {
                 statuses.put(group, unavailableMetric(now, reason));
             }
-            return new StoreMetricResult(copyNode(job.getNode(),
-                                                   job.getNode().getMetrics(),
-                                                   statuses), 0, reason);
+            Readiness readiness = job.readiness == null ?
+                                  new Readiness("UNKNOWN", now, null, reason, false,
+                                                Collections.emptyMap()) : job.readiness;
+            Node failed = copyNode(job.getNode(), job.getNode().getMetrics(), statuses)
+                          .withReadiness(readiness);
+            return new StoreMetricResult(failed, 0, reason);
         }
 
         private Node getNode() {
