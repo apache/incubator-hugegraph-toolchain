@@ -65,3 +65,14 @@ test('maps every supported algorithm without falling back to the traverser index
             .not.toBe('https://hugegraph.apache.org/docs/clients/restful-api/traverser/');
     });
 });
+
+test('Vermeer algorithms link to Vermeer while interactive API docs stay unchanged', () => {
+    expect(getAlgorithmDocumentationUrl(ALGORITHM_NAME.PAGE_RANK, 'vermeer'))
+        .toBe('https://github.com/hugegraph/hugegraph-computer/tree/master/vermeer');
+    expect(getAlgorithmDocumentationUrl(ALGORITHM_NAME.SSSP, 'vermeer'))
+        .toContain('/master/vermeer');
+    expect(getAlgorithmDocumentationUrl(ALGORITHM_NAME.K_OUT, 'vermeer'))
+        .toMatch(/#321-k-out-api-get-basic-version$/);
+    expect(getAlgorithmDocumentationUrl(ALGORITHM_NAME.PAGE_RANK, 'computer'))
+        .toContain('/quickstart/hugegraph-computer/');
+});

@@ -20,6 +20,8 @@
  * @file 图分析组件 算法标题
  */
 
+import {useContext} from 'react';
+import GraphAnalysisContext from '../../../Context';
 import Highlighter from 'react-highlight-words';
 import {Typography, Tooltip, Button} from 'antd';
 import c from './index.module.scss';
@@ -61,7 +63,8 @@ const AlgorithmNameHeader = props => {
 
     );
     const displayName = getAlgorithmDisplayName(name, t);
-    const documentationUrl = getAlgorithmDocumentationUrl(name);
+    const {isVermeer} = useContext(GraphAnalysisContext);
+    const documentationUrl = getAlgorithmDocumentationUrl(name, isVermeer ? 'vermeer' : 'computer');
     const helpLinkLabel = t(isAlgorithmImplementationSource(name)
         ? 'analysis.algorithm.api_source'
         : 'analysis.algorithm.api_docs');

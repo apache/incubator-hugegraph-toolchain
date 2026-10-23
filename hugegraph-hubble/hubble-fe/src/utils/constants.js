@@ -106,13 +106,13 @@ export const EDGELABEL_TYPE_NAME = {
 export const Async_Task_Type = {
     '': 'analysis.async_task.type.all',
     gremlin: 'analysis.async_task.type.gremlin',
-    'computer-dis': 'analysis.async_task.type.algorithm',
     remove_schema: 'analysis.async_task.type.remove_schema',
     create_index: 'analysis.async_task.type.create_index',
     rebuild_index: 'analysis.async_task.type.rebuild_index',
     cypher: 'analysis.async_task.type.cypher',
-    'vermeer-task:load': 'analysis.async_task.type.vermeer_load',
-    'vermeer-task:compute': 'analysis.async_task.type.vermeer_compute',
+    'vermeer-task:load': 'analysis.async_task.type.vermeer_load_engine',
+    'vermeer-task:compute': 'analysis.async_task.type.vermeer_compute_engine',
+    'computer-dis': 'analysis.async_task.type.computer_legacy',
 };
 
 export const Async_Taskt_Status = {

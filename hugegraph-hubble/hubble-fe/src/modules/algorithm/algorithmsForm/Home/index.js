@@ -34,6 +34,7 @@ import _ from 'lodash';
 import {useTranslation} from 'react-i18next';
 import {clearPersistedAlgorithmForms} from '../algorithmFormPersistence';
 import {isKnownZeroCount} from '../../../../utils/graphStatistics';
+import {VERMEER_DOC} from '../algorithmDocs';
 
 const AlgorithmFormHome = props => {
     const {
@@ -75,11 +76,11 @@ const AlgorithmFormHome = props => {
                     {t('analysis.algorithm.traverser_docs')}
                 </a>
                 <a
-                    href="https://hugegraph.apache.org/docs/quickstart/hugegraph-computer/"
+                    href={VERMEER_DOC}
                     target="_blank"
                     rel="noreferrer"
                 >
-                    {t('analysis.algorithm.computer_docs')}
+                    {t('analysis.algorithm.vermeer_docs')}
                 </a>
                 <Button type='link' size='small' onClick={resetParameters}>
                     {t('analysis.algorithm.reset_parameters')}
