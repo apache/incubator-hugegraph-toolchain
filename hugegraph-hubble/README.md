@@ -882,3 +882,7 @@ cleanup and final status writes; inspect task metadata and Server loading mode b
 ## Graph switching
 
 Query execution waits until the graph context matches the current route, including keyboard shortcuts during a graph switch. Standalone Server 1.5 supports core graph, schema and data operations; GraphSpace management and PD mode require a newer server.
+
+## Query and submitted-task feedback
+
+See [query and submitted-task feedback](docs/query-task-feedback.md) for preview limits, task discovery, and failed-result recovery.

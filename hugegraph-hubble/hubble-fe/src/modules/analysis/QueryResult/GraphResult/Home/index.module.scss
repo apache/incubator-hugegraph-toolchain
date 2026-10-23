@@ -104,3 +104,19 @@
 .progressWithPanel {
     width: min(520px, calc(100% - 282px));
 }
+
+.previewNotice {
+    position: absolute;
+    bottom: 8px;
+    left: 210px;
+    z-index: 2;
+    max-width: calc(100% - 420px);
+}
+
+@media (max-width: 1000px) {
+    .previewNotice {
+        left: 12px;
+        bottom: 132px;
+        max-width: calc(100% - 24px);
+    }
+}

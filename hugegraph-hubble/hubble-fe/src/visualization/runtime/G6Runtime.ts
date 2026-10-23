@@ -19,15 +19,18 @@ import {DagreLayout, Graph, GraphEvent} from '@antv/g6';
 import type {Command, EdgeData as EngineEdge, GraphData as EngineData, GraphOptions, History, IPointerEvent,
     NodeData as EngineNode} from '@antv/g6';
 import type {GraphData, GraphEdge, GraphNode, NodeData, GraphStyle} from '../model/types';
-import {immutableCopy, mutableCopy} from '../model/ownership';
+import {mutableCopy} from '../model/ownership';
 import {labelFontScale, labelVisibility} from '../model/labels';
 import {PinBridge, registerExtensions} from './extensions';
 import {adaptiveLayoutDefaults} from './layoutDefaults';
 import type {ControllerOptions, GraphLayout, GraphRuntime, RuntimeEvent} from './types';
 
+// Native history recursively aligns fields on previous raw records even for
+// draws excluded from history. Give the engine writable copies; controller
+// snapshots retain separate immutable ownership.
 const toEngineData = (data: Partial<GraphData>): EngineData => ({
-    ...(data.nodes ? {nodes: data.nodes.map(node => ({...node, data: {...immutableCopy(node.data)}, style: mutableCopy(node.style)}))} : {}),
-    ...(data.edges ? {edges: data.edges.map(edge => ({...edge, data: {...immutableCopy(edge.data)}, style: mutableCopy(edge.style)}))} : {}),
+    ...(data.nodes ? {nodes: data.nodes.map(node => ({...node, data: {...mutableCopy(node.data)}, style: mutableCopy(node.style)}))} : {}),
+    ...(data.edges ? {edges: data.edges.map(edge => ({...edge, data: {...mutableCopy(edge.data)}, style: mutableCopy(edge.style)}))} : {}),
 });
 const readNodeData = (data: Record<string, unknown> | undefined): NodeData => {
     if (!data?.raw || typeof data.raw !== 'object' || Array.isArray(data.raw)) {

@@ -22,7 +22,7 @@
 
 import {useCallback, useContext, useEffect, useRef, useState} from 'react';
 import GraphAnalysisContext from '../../Context';
-import {useParams} from 'react-router-dom';
+import {useParams, useSearchParams} from 'react-router-dom';
 import {Alert, Button, Empty, Input, Space} from 'antd';
 import AsyncTaskDetail from '../Detail';
 import * as api from '../../../api/index';
@@ -33,7 +33,9 @@ const defaultPageParams = {page: 1, pageSize: 10};
 
 const AsyncTaskHome = () => {
     const {t} = useTranslation();
-    const {taskId} = useParams();
+    const {taskId: legacyTaskId} = useParams();
+    const [searchParams] = useSearchParams();
+    const taskId = searchParams.get('taskId') || legacyTaskId || '';
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [page, setPage] = useState(defaultPageParams.page);
     const [pageSize, setPageSize] = useState(defaultPageParams.pageSize);
@@ -47,6 +49,32 @@ const AsyncTaskHome = () => {
     const listRequest = useRef(null);
     const listPending = useRef(false);
     const listFailed = useRef(false);
+    const routeTaskId = useRef(taskId);
+    const submissionAttempts = useRef(0);
+    const submissionDiscovered = useRef(false);
+    const [submissionState, setSubmissionState] = useState('pending');
+    const hasActiveFilters = Boolean(search) || Object.values(filters).some(value => (
+        Array.isArray(value) ? value.length > 0 : Boolean(value)
+    ));
+    const submittedTask = searchParams.get('submitted') === '1' && taskId !== '' && search === taskId
+        && !Object.values(filters).some(value => value?.length);
+
+    useEffect(() => {
+        submissionAttempts.current = 0;
+        submissionDiscovered.current = false;
+        setSubmissionState('pending');
+    }, [graphSpace, graph, taskId, submittedTask]);
+
+    useEffect(() => {
+        if (routeTaskId.current === taskId) {
+            return;
+        }
+        routeTaskId.current = taskId;
+        setSearchCache(taskId);
+        setSearch(taskId);
+        setFilters({});
+        setPage(defaultPageParams.page);
+    }, [taskId]);
 
     const onPageChange = useCallback(
         (pagination, filters) => {
@@ -71,18 +99,38 @@ const AsyncTaskHome = () => {
                 'page_size': pageSize,
                 'page_no': page,
                 content: search,
-                status: task_status && task_status[0].toUpperCase(),
-                type: task_type && task_type[0],
+                status: task_status?.[0]?.toUpperCase(),
+                type: task_type?.[0],
             };
             try {
-                const response = await api.analysis.fetchManageTaskList(
-                    graphSpace, graph, params
-                );
+                const response = submittedTask
+                    ? await api.analysis.fetchManageTaskById(graphSpace, graph, taskId)
+                    : await api.analysis.fetchManageTaskList(graphSpace, graph, params);
                 if (listRequest.current !== request) {
                     return;
                 }
                 const {status, data} = response || {};
-                if (status !== 200) {
+                if (submittedTask && status === 200 && Array.isArray(data)) {
+                    const records = data.filter(task => String(task.id) === taskId);
+                    setAsyncManageTaskData({records, total: records.length});
+                    if (records.length > 0) {
+                        submissionDiscovered.current = true;
+                        setSubmissionState('found');
+                        listFailed.current = false;
+                    }
+                    else if (submissionDiscovered.current) {
+                        setSubmissionState('missing');
+                        listFailed.current = true;
+                    }
+                    else {
+                        submissionAttempts.current += 1;
+                        const delayed = submissionAttempts.current >= 30;
+                        setSubmissionState(delayed ? 'delayed' : 'pending');
+                        listFailed.current = delayed;
+                    }
+                    return;
+                }
+                if (status !== 200 || submittedTask) {
                     throw new Error('async task list unavailable');
                 }
                 setAsyncManageTaskData(data);
@@ -101,7 +149,7 @@ const AsyncTaskHome = () => {
                 }
             }
         },
-        [filters, pageSize, page, search, graphSpace, graph]
+        [filters, pageSize, page, search, graphSpace, graph, submittedTask, taskId]
     );
 
     useEffect(
@@ -110,6 +158,10 @@ const AsyncTaskHome = () => {
             if (graphSpace && graph) {
                 getAsynTaskList();
             }
+            return () => {
+                listRequest.current = null;
+                listPending.current = false;
+            };
         },
         [getAsynTaskList, graph, graphSpace]
     );
@@ -120,10 +172,10 @@ const AsyncTaskHome = () => {
                 if (!listPending.current && !listFailed.current) {
                     getAsynTaskList({background: true});
                 }
-            }, 5000);
+            }, submittedTask && submissionState === 'pending' ? 1000 : 5000);
         }
         return () => clearInterval(timer.current);
-    }, [getAsynTaskList, graph, graphSpace]);
+    }, [getAsynTaskList, graph, graphSpace, submittedTask, submissionState]);
 
     useEffect(() => () => {
         listRequest.current = null;
@@ -131,6 +183,8 @@ const AsyncTaskHome = () => {
     }, []);
 
     const retryList = useCallback(() => {
+        submissionAttempts.current = 0;
+        setSubmissionState('pending');
         listFailed.current = false;
         getAsynTaskList();
     }, [getAsynTaskList]);
@@ -141,6 +195,7 @@ const AsyncTaskHome = () => {
             setSearchCache(value);
             if (!value) {
                 setSearch(value);
+                setPage(defaultPageParams.page);
             }
         },
         []
@@ -148,8 +203,11 @@ const AsyncTaskHome = () => {
 
     const onSearch = useCallback(
         () => {
-            if (searchCache !== search) {
-                setSearch(searchCache);
+            const value = searchCache.trim();
+            setSearchCache(value);
+            if (value !== search) {
+                setSearch(value);
+                setPage(defaultPageParams.page);
             }
         },
         [search, searchCache]
@@ -162,9 +220,8 @@ const AsyncTaskHome = () => {
         setPage(defaultPageParams.page);
     }, []);
 
-    const hasActiveFilters = Boolean(search) || Object.values(filters).some(value => (
-        Array.isArray(value) ? value.length > 0 : Boolean(value)
-    ));
+    const showSubmittedPending = submittedTask
+        && (submissionState === 'pending' || submissionState === 'delayed') && !loadError;
 
     useEffect(
         () => {
@@ -212,6 +269,21 @@ const AsyncTaskHome = () => {
                         action={<Button size='small' onClick={retryList}>{t('common.action.retry')}</Button>}
                     />
                 )}
+                {showSubmittedPending && (
+                    <Alert
+                        showIcon
+                        type={submissionState === 'delayed' ? 'warning' : 'info'}
+                        title={t('analysis.async_task.submitted_pending', {taskId})}
+                        description={t(submissionState === 'delayed'
+                            ? 'analysis.async_task.submitted_delayed'
+                            : 'analysis.async_task.submitted_discovering')}
+                        action={submissionState === 'delayed' && (
+                            <Button size='small' onClick={retryList}>
+                                {t('analysis.async_task.retry_list')}
+                            </Button>
+                        )}
+                    />
+                )}
                 <div className={c.queryBar}>
                     <Input.Search
                         value={searchCache}
@@ -222,7 +294,7 @@ const AsyncTaskHome = () => {
                         style={{width: '215px'}}
                     />
                 </div>
-                {!loading && !loadError && asyncManageTaskData.total === 0 ? (
+                {showSubmittedPending ? null : !loading && !loadError && asyncManageTaskData.total === 0 ? (
                     <Empty
                         className={c.emptyJourney}
                         description={(

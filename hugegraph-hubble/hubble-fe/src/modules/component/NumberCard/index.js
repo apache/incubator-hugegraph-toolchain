@@ -56,11 +56,13 @@ const NumberCard = props => {
     const currentGraphEdges = getCountDisplay(currentGraphEdgesNum, t);
     const allGraphNodes = totalDisplay(allGraphNodesNum);
     const allGraphEdges = totalDisplay(allGraphEdgesNum);
-    const nodeSummary = t('analysis.canvas.number_card.node_summary', {
+    const hasNodeTotal = isKnownCount(allGraphNodesNum) || isLoadingCount(allGraphNodesNum);
+    const hasEdgeTotal = isKnownCount(allGraphEdgesNum) || isLoadingCount(allGraphEdgesNum);
+    const nodeSummary = t(`analysis.canvas.number_card.${hasNodeTotal ? 'node_summary' : 'node_summary_unknown'}`, {
         current: currentGraphNodes,
         total: allGraphNodes,
     });
-    const edgeSummary = t('analysis.canvas.number_card.edge_summary', {
+    const edgeSummary = t(`analysis.canvas.number_card.${hasEdgeTotal ? 'edge_summary' : 'edge_summary_unknown'}`, {
         current: currentGraphEdges,
         total: allGraphEdges,
     });
@@ -95,10 +97,12 @@ const NumberCard = props => {
                     <span className={c.numberCur} aria-hidden='true'>
                         {currentGraphNodes}
                     </span>
-                    <span aria-hidden='true'>/</span>
-                    <span className={c.numberAll} aria-hidden='true'>
-                        {allGraphNodes}
-                    </span>
+                    {hasNodeTotal ? <>
+                        <span aria-hidden='true'>/</span>
+                        <span className={c.numberAll} aria-hidden='true'>{allGraphNodes}</span>
+                    </> : <span className={c.currentOnly} aria-hidden='true'>
+                        {t('analysis.canvas.number_card.current_result')}
+                    </span>}
                 </div>
             </div>
             <div className={c.numberCardItem}>
@@ -114,10 +118,12 @@ const NumberCard = props => {
                     <span className={c.numberCur} aria-hidden='true'>
                         {currentGraphEdges}
                     </span>
-                    <span aria-hidden='true'>/</span>
-                    <span className={c.numberAll} aria-hidden='true'>
-                        {allGraphEdges}
-                    </span>
+                    {hasEdgeTotal ? <>
+                        <span aria-hidden='true'>/</span>
+                        <span className={c.numberAll} aria-hidden='true'>{allGraphEdges}</span>
+                    </> : <span className={c.currentOnly} aria-hidden='true'>
+                        {t('analysis.canvas.number_card.current_result')}
+                    </span>}
                 </div>
             </div>
         </div>

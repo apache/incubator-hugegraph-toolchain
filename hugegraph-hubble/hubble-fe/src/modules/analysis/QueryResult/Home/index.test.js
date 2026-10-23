@@ -50,8 +50,8 @@ jest.mock('react-i18next', () => ({
         },
     }),
 }));
-jest.mock('../GraphResult/Home', () => ({queryProgress, onRefreshGraphNums}) => (
-    <div>graph canvas {queryProgress && <span>{queryProgress.phase}</span>}
+jest.mock('../GraphResult/Home', () => ({queryProgress, onRefreshGraphNums, previewNotice}) => (
+    <div>graph canvas {previewNotice}{queryProgress && <span>{queryProgress.phase}</span>}
         <button onClick={() => onRefreshGraphNums?.()}>Refresh saved graph counts</button>
     </div>
 ));
@@ -336,13 +336,15 @@ it('does not traverse raw JSON before its tab is selected for a graph result', (
     expect(read).toHaveBeenCalledTimes(1);
 });
 
-it('shows server-provided default-limit and graph-truncation notices', () => {
+it('shows quiet preview status with optional details instead of stacked alerts', () => {
     render(<QueryResult isQueryMode queryStatus='success' queryResult={{
         default_limit_applied: true, default_limit: 300, graph_truncated: true,
         graph_view: {vertices: [{id: 1}], edges: []},
     }} />);
-    expect(screen.getByText('analysis.query_result.default_limit_applied')).toBeInTheDocument();
-    expect(screen.getByText('Graph limit')).toBeInTheDocument();
+    expect(screen.getByText(/analysis.query_result.default_limit_applied/)).toBeInTheDocument();
+    expect(screen.getByText(/Graph limit/)).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', {name: 'analysis.query_result.preview_details'})).toBeInTheDocument();
     expect(screen.getByText(/graph canvas/)).toBeInTheDocument();
 });
 
@@ -399,5 +401,49 @@ it('shows the server property truncation notice alongside bounded result views',
         properties_truncated: true, property_preview_limit: 256,
         graph_view: {vertices: [{id: 1}], edges: []},
     }} />);
+    expect(screen.getByText('analysis.query_result.properties_preview_summary')).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByText('analysis.query_result.properties_preview')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', {name: 'analysis.query_result.preview_details'}));
     expect(screen.getByText('analysis.query_result.properties_preview')).toBeInTheDocument();
+});
+
+
+it('keeps routine automatic limits as grey canvas text without alerts or extra details', () => {
+    render(<QueryResult isQueryMode queryStatus='success' queryResult={{
+        default_limit_applied: true, default_limit: 300,
+        graph_view: {vertices: [{id: 1}], edges: []},
+    }} />);
+    expect(screen.getByText('analysis.query_result.default_limit_applied').parentElement).toHaveClass('previewStatus');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', {name: 'analysis.query_result.preview_details'})).not.toBeInTheDocument();
+});
+
+it('scopes graph truncation details to the graph view', () => {
+    render(<QueryResult isQueryMode queryStatus='success' queryResult={{
+        graph_truncated: true,
+        graph_view: {vertices: [{id: 1}], edges: []},
+    }} />);
+    expect(screen.getByText('Graph limit')).toBeVisible();
+    fireEvent.click(screen.getByRole('tab', {name: 'Table'}));
+    expect(screen.queryByText('Graph limit')).not.toBeVisible();
+    expect(screen.getByText('table result')).toBeVisible();
+    fireEvent.click(screen.getByRole('tab', {name: 'JSON'}));
+    expect(screen.queryByText('Graph limit')).not.toBeVisible();
+    expect(screen.getByText('json result')).toBeVisible();
+});
+
+it.each([
+    {isQueryMode: true, queryStatus: 'failed'},
+    {isQueryMode: true, queryStatus: 'loading'},
+    {isQueryMode: false, queryStatus: 'success'},
+    {isQueryMode: true, queryStatus: 'success', queryProgress: {phase: 'waiting'}},
+])('hides stale preview status outside completed synchronous queries: %j', props => {
+    render(<QueryResult {...props} queryResult={{
+        properties_truncated: true, result_truncated: true, graph_truncated: true,
+        default_limit_applied: true,
+        graph_view: {vertices: [{id: 1}], edges: []},
+    }} />);
+    expect(screen.queryByText(/analysis.query_result.properties_preview_summary/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', {name: 'analysis.query_result.preview_details'})).not.toBeInTheDocument();
 });

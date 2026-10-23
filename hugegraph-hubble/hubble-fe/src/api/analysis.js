@@ -134,6 +134,13 @@ const fetchManageTaskList = (graphspace, graph, params) => {
     return request.get(`/graphspaces/${graphspace}/graphs/${graph}/async-tasks?`, {params});
 };
 
+export const fetchManageTaskById = (graphspace, graph, taskId) => {
+    return request.get(`/graphspaces/${graphspace}/graphs/${graph}/async-tasks/ids`, {
+        params: {ids: taskId},
+        suppressBusinessErrorToast: true,
+    });
+};
+
 const addFavoriate = (graphspace, graph, params) => {
     return request.post(`graphspaces/${graphspace}/graphs/${graph}/gremlin-collections`, params);
 };

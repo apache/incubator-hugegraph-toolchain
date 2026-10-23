@@ -18,6 +18,7 @@
 import type {Graph as NativeGraph, GraphOptions, GraphData as EngineData, NodeData, EdgeData} from '@antv/g6';
 import {CircularLayout, D3ForceLayout, DagreLayout, RadialLayout} from '@antv/layout';
 import {G6Runtime} from './G6Runtime';
+import {parseCommand} from '@antv/g6/lib/plugins/history/util';
 import {GraphController} from './GraphController';
 import type {GraphData} from '../model/types';
 import type {GraphLayout} from './types';
@@ -832,4 +833,47 @@ test.each([0, 300])('preserves explicit force iterations %s on a large preview',
         expect(mockEngine.setLayout).toHaveBeenLastCalledWith(expect.objectContaining({iterations}));
     }
     finally {runtime.stop(); runtime.destroy();}
+});
+
+
+test.each(['replace', 'patch'] as const)('%s detaches writable engine records for native history field alignment', async operation => {
+    const runtime = new G6Runtime(document.createElement('div'));
+    const controller = new GraphController(runtime);
+    const initial = data(2);
+    initial.edges = [{id: 'edge', source: '0', target: '1', data: {raw: {id: 'edge', properties: {name: 'full'}}}}];
+    initial.nodes[0].data.raw.properties = {name: 'full'};
+    try {
+        await controller.replaceData(initial, {layout: false, fit: false});
+        const firstSnapshot = controller.getSnapshot();
+        const previousNode = {...mockData.nodes[0]};
+        const previousEdge = {...mockData.edges[0]};
+        const next = data(2);
+        next.nodes[0].data.raw = {id: 0, properties: {name: 'prefix', added: 'new'}, '~hubble_properties_preview': true};
+        next.edges = [{id: 'edge', source: '0', target: '1', data: {raw: {
+            id: 'edge', properties: {name: 'prefix', added: 'new'}, '~hubble_properties_preview': true,
+        }}}];
+        // G6 parses history before beforeAddCommand can exclude a system draw.
+        // Its real alignFields mutates the previous record recursively.
+        mockEngine.draw.mockImplementationOnce(async () => {
+            parseCommand([
+                {type: 'NodeUpdated', original: previousNode, value: mockData.nodes[0]},
+                {type: 'EdgeUpdated', original: previousEdge, value: mockData.edges[0]},
+            ]);
+        });
+        if (operation === 'replace') {
+            await controller.replaceData(next, {layout: false, fit: false});
+        } else {
+            await controller.updateElements(next);
+        }
+        expect(controller.getSnapshot().status).toBe('ready');
+        expect(controller.getSnapshot().data.nodes[0].data.raw['~hubble_properties_preview']).toBe(true);
+        expect(controller.getSnapshot().data.edges[0].data.raw['~hubble_properties_preview']).toBe(true);
+        expect(initial.nodes[0].data.raw).not.toHaveProperty('~hubble_properties_preview');
+        expect(firstSnapshot.data.nodes[0].data.raw).not.toHaveProperty('~hubble_properties_preview');
+        expect(firstSnapshot.data.edges[0].data.raw.properties).toEqual({name: 'full'});
+        expect(Object.isFrozen(firstSnapshot.data.nodes[0].data.raw)).toBe(true);
+        await controller.replaceData(initial, {layout: false, fit: false});
+        expect(controller.getSnapshot().data.nodes[0].data.raw).not.toHaveProperty('~hubble_properties_preview');
+        expect(controller.getSnapshot().data.edges[0].data.raw).not.toHaveProperty('~hubble_properties_preview');
+    } finally { await controller.dispose(); }
 });

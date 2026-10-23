@@ -110,3 +110,12 @@ it('controls row expansion without opening a new browser tab', () => {
     expect(document.querySelector('.ant-table-row-expand-icon'))
         .not.toHaveClass('ant-table-row-expand-icon-expanded');
 });
+
+it('labels a failed task as an error and does not offer a complete result', () => {
+    renderDetail({task_status: 'failed'});
+    fireEvent.click(screen.getByRole('button', {name: 'analysis.async_task.action.check_reason'}));
+    expect(screen.getByText('analysis.async_task.result_failure_title')).toBeInTheDocument();
+    expect(screen.getByRole('link', {name: 'analysis.async_task.result_open_error'}))
+        .toHaveAttribute('href', '/asyncTasks/result/DEFAULT/hugegraph/4');
+    expect(screen.queryByText('analysis.async_task.result_open_full')).not.toBeInTheDocument();
+});

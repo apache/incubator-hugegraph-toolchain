@@ -29,6 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.apache.hugegraph.service.space.DirectVermeerService;
 import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.exception.ExternalException;
+import org.apache.hugegraph.exception.ServerException;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -45,6 +46,7 @@ public class AsyncTaskService {
     private static final String VERMEER_TASK_TYPE = "vermeer-task";
     private static final String VERMEER_TASK_LOAD = "vermeer-task:load";
     private static final String VERMEER_TASK_COMPUTE = "vermeer-task:compute";
+    private static final int MAX_TASK_ID_BATCH_SIZE = 32;
 
     public Task get(HugeClient client, int id) {
         if (id < 0) {
@@ -69,14 +71,14 @@ public class AsyncTaskService {
     }
 
     public List<Task> list(HugeClient client, List<Long> taskIds) {
+        E.checkArgument(taskIds.size() <= MAX_TASK_ID_BATCH_SIZE,
+                        "At most %s task IDs can be queried at once", MAX_TASK_ID_BATCH_SIZE);
         List<Long> serverIds = taskIds.stream().filter(id -> id >= 0).toList();
         List<Task> tasks = new ArrayList<>();
-        if (!serverIds.isEmpty()) {
-            tasks.addAll(client.task().list(serverIds));
-        }
+        tasks.addAll(this.listServerTasks(client, serverIds));
         for (Long id : taskIds) {
             if (id < 0) {
-                tasks.add(this.vermeer.task(client, Math.toIntExact(id), true));
+                tasks.add(this.vermeer.task(client, Math.toIntExact(id), false));
             }
         }
         for (Task task: tasks) {
@@ -94,6 +96,8 @@ public class AsyncTaskService {
             status = null;
         }
         List<Task> tasks = new ArrayList<>(client.task().list(status));
+        content = content.trim();
+        this.addExactIdTask(client, tasks, content);
         boolean vermeerUnavailable = false;
         if (this.vermeer != null && this.vermeer.configured() && this.vermeer.supported() &&
             (type.isEmpty() || type.startsWith(VERMEER_TASK_TYPE))) {
@@ -120,7 +124,8 @@ public class AsyncTaskService {
             }
             if (!content.isEmpty()) {
                 String taskId = String.valueOf(task.id());
-                if (!content.equals(taskId) && !task.name().contains(content)) {
+                if (!content.equals(taskId) &&
+                    (task.name() == null || !task.name().contains(content))) {
                     continue;
                 }
             }
@@ -128,6 +133,53 @@ public class AsyncTaskService {
         }
         result.sort(Comparator.comparing(Task::createTime).reversed());
         return new TaskPage(PageUtil.page(result, pageNo, pageSize), vermeerUnavailable);
+    }
+
+    private void addExactIdTask(HugeClient client, List<Task> tasks, String content) {
+        final long id;
+        try {
+            id = Long.parseLong(content);
+        } catch (NumberFormatException ignored) {
+            return;
+        }
+        if (id < 0 || tasks.stream().anyMatch(task -> task.id() == id)) {
+            return;
+        }
+        // A submitted task may be in the scheduler before its persisted
+        // list entry is visible. The IDs API returns metadata, not results.
+        tasks.addAll(this.listServerTasks(client, List.of(id)));
+    }
+
+    private List<Task> listServerTasks(HugeClient client, List<Long> ids) {
+        List<Long> remaining = ids;
+        while (!remaining.isEmpty()) {
+            try {
+                return client.task().list(remaining);
+            } catch (ServerException e) {
+                Long missing = missingTaskId(e, remaining);
+                if (missing == null) {
+                    throw e;
+                }
+                // The batch limit bounds upstream requests to 32. Each fallback
+                // removes a confirmed missing ID and preserves other metadata.
+                remaining = remaining.stream().filter(id -> !id.equals(missing)).toList();
+            }
+        }
+        return List.of();
+    }
+
+    private static Long missingTaskId(ServerException error, List<Long> ids) {
+        String notFound = "org.apache.hugegraph.exception.NotFoundException";
+        if (error.status() != 404 ||
+            (!notFound.equals(error.exception()) &&
+             !("class " + notFound).equals(error.exception()))) {
+            return null;
+        }
+        // Graph and route failures also use 404. Only a scheduler's missing
+        // requested task is an expected discovery delay.
+        return ids.stream().filter(id ->
+                ("Can't find task with id '" + id + "'").equals(error.message()))
+                  .findFirst().orElse(null);
     }
 
     public static class TaskPage extends Page<Task> {

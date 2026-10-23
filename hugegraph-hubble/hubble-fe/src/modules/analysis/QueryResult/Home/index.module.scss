@@ -204,3 +204,33 @@
     flex: 1;
     height: 0;
 }
+
+.previewStatus {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2px 8px;
+    padding: 4px 8px;
+    color: #595959;
+    font-size: 12px;
+    line-height: 20px;
+    background: rgba(255, 255, 255, 0.9);
+
+    :global(.ant-btn) {
+        color: inherit;
+        font-size: inherit;
+    }
+}
+
+.previewDetails {
+    max-width: min(420px, calc(100vw - 48px));
+    font-size: 12px;
+
+    p {
+        margin: 0 0 8px;
+    }
+
+    p:last-child {
+        margin-bottom: 0;
+    }
+}

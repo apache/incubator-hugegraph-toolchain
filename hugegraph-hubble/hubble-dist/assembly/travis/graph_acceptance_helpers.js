@@ -301,6 +301,11 @@ function assertExpandedGraph(before, incoming, clickedId) {
   return {graph: merged, addedVertexIds: addedVertices.map(vertex => vertex.id),
     addedEdgeIds: addedEdges.map(edge => edge.id), neighbors};
 }
+function hasCurrentGraphCount(labels, kind, count) {
+  const current = `${kind}: ${count} in this result`;
+  // Known totals use a comma; unavailable totals use the current-result semicolon.
+  return labels.some(label => label.startsWith(`${current}, `) || label.startsWith(`${current}; `));
+}
 function assertVisibleGraphStats({viewport, counts, minimaps, canvas}) {
   const inside = (inner, outer, name) => {
     assert.ok(inner.width > 0 && inner.height > 0, `${name} has no visible size`);
@@ -743,7 +748,7 @@ function assertLiveDragPixels(before, held, {point, target, neighbor}) {
   return {fills, edgeBands: bands, mouseReleased: false};
 }
 
-module.exports = {assertOverallPng, assertOffscreenPan, assertOverallPanInvariant, coloredBodyPixels, MINIMAP_PAINT_SELECTOR, uniqueDisplayId, gremlinIdLiteral, connectedPair, mergeRawGraph, assertExpandedGraph, assertVisibleGraphStats, assertVisibleGraphPanel,
+module.exports = {hasCurrentGraphCount, assertOverallPng, assertOffscreenPan, assertOverallPanInvariant, coloredBodyPixels, MINIMAP_PAINT_SELECTOR, uniqueDisplayId, gremlinIdLiteral, connectedPair, mergeRawGraph, assertExpandedGraph, assertVisibleGraphStats, assertVisibleGraphPanel,
   decodeScreenshot, screenshotAxes, screenshotOverlayRect, screenshotFringeRects, assertPngMatchesCanvas, dragTarget, dragEndpoint, assertLiveDragPixels, NeedsInput, argument, redact, publicHttpUrl, sha256, typedId, canonicalGraph,
   assertExportMatches, assertFixtureGraph, fixtureFromPrefix, loadPlaywright, chromePath,
   businessPayload, scopePath, pngDimensions, pixelEvidence, screenshot, canvasReady, findNode};

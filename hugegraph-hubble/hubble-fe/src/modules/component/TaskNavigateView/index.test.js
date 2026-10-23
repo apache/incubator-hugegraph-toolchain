@@ -17,21 +17,30 @@
 
 import {render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {MemoryRouter, Route, Routes, useParams} from 'react-router-dom';
+import {MemoryRouter, Route, Routes, useParams, useSearchParams} from 'react-router-dom';
 import {useTranslation} from 'react-i18next';
 import enAnalysis from '../../../i18n/resources/en-US/modules/analysis.json';
 import zhAnalysis from '../../../i18n/resources/zh-CN/modules/analysis.json';
 import TaskNavigateView from './index';
+import GraphAnalysisContext from '../../Context';
 
 jest.mock('react-i18next', () => ({useTranslation: jest.fn()}));
 
 const translate = resource => key => key.split('.').reduce((value, name) => value[name], resource);
-const TaskPage = () => <h1>Task {useParams().taskId}</h1>;
+const TaskPage = () => {
+    const {graphSpace, graph} = useParams();
+    const [search] = useSearchParams();
+    return <h1>{graphSpace} / {graph} / Task {search.get('taskId')} / submitted={search.get('submitted')}</h1>;
+};
 const showTask = props => render(
     <MemoryRouter initialEntries={['/query']} future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
         <Routes>
-            <Route path='/query' element={<TaskNavigateView taskId='1234567890' {...props} />} />
-            <Route path='/asyncTasks/:taskId' element={<TaskPage />} />
+            <Route path='/query' element={(
+                <GraphAnalysisContext.Provider value={{graphSpace: 'memory space', graph: 'soc_graph'}}>
+                    <TaskNavigateView taskId='1234567890' {...props} />
+                </GraphAnalysisContext.Provider>
+            )} />
+            <Route path='/asyncTasks/:graphSpace/:graph' element={<TaskPage />} />
         </Routes>
     </MemoryRouter>
 );
@@ -50,7 +59,8 @@ it.each([['en-US', enAnalysis], ['zh-CN', zhAnalysis]])(
         expect(screen.getByText(labels.task_id)).toBeInTheDocument();
         expect(screen.getByText('1234567890')).toBeInTheDocument();
         await userEvent.click(screen.getByRole('button', {name: labels.view}));
-        expect(screen.getByRole('heading', {name: 'Task 1234567890'})).toBeInTheDocument();
+        expect(screen.getByRole('heading', {name: 'memory space / soc_graph / Task 1234567890 / submitted=1'}))
+            .toBeInTheDocument();
     }
 );
 

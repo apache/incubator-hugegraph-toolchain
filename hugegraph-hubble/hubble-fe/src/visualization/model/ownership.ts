@@ -54,7 +54,7 @@ const copyValue = <T>(value: T, freeze: boolean, seen = new WeakMap<object, obje
         ancestors.delete(value);
     }
 };
-/** Detach the caller once. G6 never mutates raw records; later snapshots reuse these frozen records. */
+/** Detach caller records. Controller snapshots can reuse these owned frozen records. */
 export const immutableCopy = <T>(value: T): T => copyValue(value, true);
-/** Engine style arrays must remain writable even when their public snapshot is frozen. */
+/** Engine data and style values must stay writable and detached from public snapshots. */
 export const mutableCopy = <T>(value: T): T => copyValue(value, false);

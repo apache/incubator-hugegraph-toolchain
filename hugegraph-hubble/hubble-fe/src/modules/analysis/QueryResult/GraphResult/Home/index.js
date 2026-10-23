@@ -68,6 +68,7 @@ const GraphResult = props => {
         queryStatus,
         queryMessage,
         queryProgress,
+        previewNotice,
         asyncTaskId,
         resetGraphStatus,
         panelType,
@@ -476,6 +477,7 @@ const GraphResult = props => {
             />
             <div ref={contentRef} className={c.content}>
                 {renderGraphView()}
+                {previewNotice && <div className={c.previewNotice}>{previewNotice}</div>}
                 {graphRenderMode !== CANVAS2D && renderRetainedProgress()}
             </div>
             <NumberCard

@@ -165,6 +165,19 @@ test('single-node queries preserve numeric IDs and safely quote string IDs witho
   assert.throws(() => connectedPair({vertices: [raw.vertices[0]], edges: []}), NeedsInput);
 });
 
+test('current graph counts accept known and unavailable totals without accepting a different count', () => {
+  const {hasCurrentGraphCount} = require('./graph_acceptance_helpers');
+  for (const suffix of [', 10 in the full graph', '; full-graph total not obtained']) {
+    const labels = [`Nodes: 3 in this result${suffix}`, `Edges: 2 in this result${suffix}`];
+    assert.ok(hasCurrentGraphCount(labels, 'Nodes', 3));
+    assert.ok(hasCurrentGraphCount(labels, 'Edges', 2));
+    assert.equal(hasCurrentGraphCount(labels, 'Nodes', 2), false);
+    assert.equal(hasCurrentGraphCount(labels, 'Nodes', 30), false);
+    assert.equal(hasCurrentGraphCount(labels, 'Edges', 3), false);
+  }
+  assert.equal(hasCurrentGraphCount(['Nodes: 3 in this result0'], 'Nodes', 3), false);
+});
+
 function statsFixture() {
   return {viewport: {x: 0, y: 0, width: 1000, height: 700}, canvas: {x: 100, y: 300, width: 900, height: 400},
     minimaps: [{x: 100, y: 600, width: 160, height: 100}],

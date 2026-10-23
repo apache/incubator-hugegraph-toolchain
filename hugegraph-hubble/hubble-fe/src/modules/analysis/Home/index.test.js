@@ -17,13 +17,19 @@
  */
 
 import {act, fireEvent, render, screen, waitFor} from '@testing-library/react';
+import {useSearchParams} from 'react-router-dom';
 import AnalysisHome, {extractQueryErrorMessage} from './index';
 import {message} from 'antd';
 import GraphAnalysisContext from '../../Context';
 import * as api from '../../../api';
-import {EXECUTION_LOGS_TYPE} from '../../../utils/constants';
+import {ANALYSIS_TYPE, EXECUTION_LOGS_TYPE} from '../../../utils/constants';
 import {setConfig} from '../../../utils/config';
-import {setUser} from '../../../utils/user';
+import {scopedStorageKey, setUser} from '../../../utils/user';
+
+jest.mock('react-router-dom', () => ({
+    ...jest.requireActual('react-router-dom'),
+    useSearchParams: jest.fn(),
+}));
 
 jest.mock('antd', () => ({message: {info: jest.fn()}}));
 
@@ -170,6 +176,7 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
+    useSearchParams.mockReturnValue([new URLSearchParams()]);
     setConfig({cypher_enabled: true});
     api.analysis.getText2GqlConfig.mockResolvedValue({status: 200, data: {available: false, reason: 'not_configured'}});
     window.localStorage.clear();
@@ -201,6 +208,34 @@ const homeFor = (graph = 'hugegraph', graphSpace = 'DEFAULT') => (
         <AnalysisHome />
     </GraphAnalysisContext.Provider>
 );
+
+it('opens a Cypher task recovery link in Cypher and restores its own saved draft', async () => {
+    useSearchParams.mockReturnValue([new URLSearchParams('language=cypher')]);
+    const draft = 'MATCH (n) RETURN n.name LIMIT 12';
+    localStorage.setItem(`${scopedStorageKey('hubble.query')}.DEFAULT.hugegraph.${ANALYSIS_TYPE.CYPHER}`, draft);
+    api.analysis.getCypherExecutionQuery.mockResolvedValue({status: 200, data: {}});
+
+    render(homeFor());
+
+    await waitFor(() => expect(screen.getByText('execution loading false')).toBeInTheDocument());
+    expect(screen.getByTestId('query-language')).toHaveTextContent('cypher');
+    expect(screen.getByTestId('query-content')).toHaveTextContent(draft);
+    fireEvent.click(screen.getByRole('button', {name: 'Run current'}));
+    await waitFor(() => expect(api.analysis.getCypherExecutionQuery).toHaveBeenCalled());
+    expect(api.analysis.getExecutionQuery).not.toHaveBeenCalled();
+});
+
+it.each([
+    ['unknown', true],
+    ['cypher', false],
+])('safely defaults an unsupported recovery language %s (Cypher enabled: %s)', async (language, enabled) => {
+    useSearchParams.mockReturnValue([new URLSearchParams({language})]);
+    setConfig({cypher_enabled: enabled});
+    render(homeFor());
+    await waitFor(() => expect(screen.getByText('execution loading false')).toBeInTheDocument());
+    expect(screen.getByTestId('query-language')).toHaveTextContent('gremlin');
+    expect(screen.getByTestId('query-content')).toHaveTextContent('g.V().limit(10)');
+});
 
 const waitForInitialData = async () => {
     expect(await screen.findByText('execution total 0')).toBeInTheDocument();
