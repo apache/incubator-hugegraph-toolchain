@@ -62,7 +62,6 @@ import org.apache.hugegraph.util.Ex;
 import org.apache.hugegraph.util.HubbleUtil;
 import org.apache.hugegraph.util.PageUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -1174,8 +1173,7 @@ public class LoadTaskService {
     /**
      * Update progress periodically
      */
-    @Async
-    @Scheduled(fixedDelay = 1 * 1000)
+    @Scheduled(fixedDelay = 1 * 1000, scheduler = "maintenanceScheduler")
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void updateLoadTaskProgress() {
         for (LoadTask task : this.runningTaskContainer.values()) {

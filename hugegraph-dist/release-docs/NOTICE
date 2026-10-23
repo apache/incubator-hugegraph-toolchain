@@ -537,7 +537,7 @@ For source see 'http://stephenc.github.com/findbugs-annotations/findbugs-annotat
 --
 This product includes error_prone_annotations
 
-incorporated from com.google.errorprone:error_prone_annotations:jar:2.3.3
+incorporated from com.google.errorprone:error_prone_annotations:jar:2.49.0
 
 For source see 'http://nexus.sonatype.org/oss-repository-hosting.html/error_prone_parent/error_prone_annotations/error_prone_annotations'.
 --

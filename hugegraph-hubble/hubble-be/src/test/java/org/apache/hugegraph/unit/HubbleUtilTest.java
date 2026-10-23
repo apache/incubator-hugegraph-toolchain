@@ -17,12 +17,11 @@
  */
 package org.apache.hugegraph.unit;
 
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.TimeZone;
 
 import org.apache.hugegraph.testutil.Assert;
 import org.apache.hugegraph.util.HubbleUtil;
@@ -54,27 +53,22 @@ public class HubbleUtilTest {
     public void testTimestampsBefore24Hours() {
         long[] timestamps = HubbleUtil.getTimestampsBefore24Hours("20240115 12:00:00");
 
-        // 2024-01-15 12:00:00 is parsed in the default time zone
-        long offset = TimeZone.getDefault().getOffset(1705320000000L) / 1000L;
-        long expected = 1705320000L - offset;
+        long expected = Instant.parse("2024-01-15T04:00:00Z").getEpochSecond();
         Assert.assertArrayEquals(new long[]{expected - 86400L, expected}, timestamps);
 
         long[] now = HubbleUtil.getTimestampsBefore24Hours();
         Assert.assertEquals(86400L, now[1] - now[0]);
 
-        Assert.assertThrows(RuntimeException.class, () -> {
+        Assert.assertThrows(DateTimeParseException.class, () -> {
             HubbleUtil.getTimestampsBefore24Hours("2024-01-15 12:00:00");
-        }, e -> {
-            Assert.assertTrue(e.getCause() instanceof java.text.ParseException);
         });
     }
 
     @Test
     public void testDateFormatDay() {
         Assert.assertEquals("2024-01-15", HubbleUtil.dateFormatDay("20240115"));
-        Date day = new GregorianCalendar(2024, Calendar.JANUARY, 15, 12, 0).getTime();
+        Date day = Date.from(Instant.parse("2024-01-15T04:00:00Z"));
         Assert.assertEquals("20240115", HubbleUtil.dateFormatDay(day));
-        Assert.assertEquals("202401", HubbleUtil.dateFormatMonth(day));
         Assert.assertThrows(RuntimeException.class, () -> {
             HubbleUtil.dateFormatDay("2024/01/15");
         });

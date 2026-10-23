@@ -18,12 +18,9 @@
 
 package org.apache.hugegraph.service.load;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -41,14 +38,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -65,10 +60,8 @@ import org.apache.hugegraph.exception.InternalException;
 import org.apache.hugegraph.mapper.load.FileMappingMapper;
 import org.apache.hugegraph.mapper.load.JobManagerMapper;
 import org.apache.hugegraph.options.HubbleOptions;
-import org.apache.hugegraph.util.Ex;
 import org.apache.hugegraph.util.HubbleUtil;
 import org.apache.hugegraph.util.PageUtil;
-import org.apache.hugegraph.util.StringUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -335,57 +328,10 @@ public class FileMappingService {
 
     public void extractColumns(FileMapping mapping) {
         File file = this.requirePathUnderUploadRoot(mapping.getPath());
-        BufferedReader reader;
-        try {
-            reader = new BufferedReader(new FileReader(file));
-        } catch (FileNotFoundException e) {
-            throw new InternalException("The file '%s' is not found", file);
-        }
         FileSetting setting = mapping.getFileSetting();
-        String delimiter = setting.getDelimiter();
-        Pattern pattern = Pattern.compile(setting.getSkippedLine());
-
-        String[] columnNames;
-        String[] columnValues;
-        try {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (!pattern.matcher(line).matches()) {
-                    break;
-                }
-            }
-            Ex.check(line != null,
-                     "The file has no data line can treat as header");
-
-            String[] firstLine = StringUtils.split(line, delimiter);
-            if (setting.isHasHeader()) {
-                // The first line as column names
-                columnNames = firstLine;
-                // The second line as column values
-                line = reader.readLine();
-                columnValues = StringUtil.split(line, delimiter);
-            } else {
-                // Let columns names as: column-1, column-2 ...
-                columnNames = new String[firstLine.length];
-                for (int i = 1; i <= firstLine.length; i++) {
-                    columnNames[i - 1] = "col-" + i;
-                }
-                // The first line as column values
-                columnValues = firstLine;
-            }
-        } catch (IOException e) {
-            throw new InternalException("Failed to read header and sample " +
-                                        "data from file '%s'", file);
-        } finally {
-            try {
-                reader.close();
-            } catch (IOException ignored) {
-                log.debug("Failed to close file mapping reader", ignored);
-            }
-        }
-
-        setting.setColumnNames(Arrays.asList(columnNames));
-        setting.setColumnValues(Arrays.asList(columnValues));
+        FilePreviewReader.Columns columns = FilePreviewReader.read(file.toPath(), setting);
+        setting.setColumnNames(columns.names());
+        setting.setColumnValues(columns.values());
     }
 
     public String moveToNextLevelDir(FileMapping mapping) {
@@ -454,14 +400,12 @@ public class FileMappingService {
         }
     }
 
-    @Async
-    @Scheduled(fixedRate = 10 * 60 * 1000)
+    @Scheduled(fixedRate = 10 * 60 * 1000, scheduler = "maintenanceScheduler")
     public void deleteOrphanedJobFiles() {
         this.cleanupMappings(this.listOrphanedJobFiles());
     }
 
-    @Async
-    @Scheduled(fixedRate = 10 * 60 * 1000)
+    @Scheduled(fixedRate = 10 * 60 * 1000, scheduler = "maintenanceScheduler")
     public void deleteUnfinishedFile() {
         QueryWrapper<FileMapping> query = Wrappers.query();
         query.in("file_status", FileMappingStatus.UPLOADING.getValue(),

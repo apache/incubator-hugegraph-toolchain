@@ -76,7 +76,7 @@ public class UserImportSafetyTest {
 
     @Test(expected = InternalException.class)
     public void testNullCsvFileHasActionableFailure() {
-        new UserService().readCsvByCsvReader(null);
+        new UserService().readUserCsv(null);
     }
 
     private static void assertInternalException(ThrowingRunnable runnable)

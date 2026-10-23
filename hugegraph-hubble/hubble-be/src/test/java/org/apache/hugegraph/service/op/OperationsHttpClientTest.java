@@ -30,6 +30,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.sun.net.httpserver.HttpServer;
 import org.junit.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 import org.apache.hugegraph.testutil.Assert;
 
@@ -129,15 +131,20 @@ public class OperationsHttpClientTest {
     @Test
     public void testDnsFailuresKeepOnlySafeRequestPaths() {
         OperationsHttpClient client = new OperationsHttpClient(1000, 1000, 64);
-        for (String path : new String[]{"/v1/cluster", "/v1/stores", "/actuator/prometheus"}) {
-            UpstreamRequestException error = (UpstreamRequestException) Assert.assertThrows(
-                    UpstreamRequestException.class, () -> client.get(URI.create(
-                    "http://private-pd-host.invalid:8620" + path + "?token=private-query"),
-                    "private-user", "private-password"));
-            Assert.assertEquals("upstream_unavailable", error.getMessage());
-            Assert.assertTrue(error.getCause() instanceof UnknownHostException);
-            Assert.assertEquals(Map.of("request_path", path), error.getDiagnostics());
-            Assert.assertFalse(error.getDiagnostics().toString().contains("private-"));
+        String host = "private-pd-host.invalid";
+        try (MockedStatic<InetAddress> dns = Mockito.mockStatic(InetAddress.class)) {
+            dns.when(() -> InetAddress.getAllByName(host))
+               .thenThrow(new UnknownHostException(host));
+            for (String path : new String[]{"/v1/cluster", "/v1/stores", "/actuator/prometheus"}) {
+                UpstreamRequestException error = (UpstreamRequestException) Assert.assertThrows(
+                        UpstreamRequestException.class, () -> client.get(URI.create(
+                        "http://" + host + ":8620" + path + "?token=private-query"),
+                        "private-user", "private-password"));
+                Assert.assertEquals("upstream_unavailable", error.getMessage());
+                Assert.assertTrue(error.getCause() instanceof UnknownHostException);
+                Assert.assertEquals(Map.of("request_path", path), error.getDiagnostics());
+                Assert.assertFalse(error.getDiagnostics().toString().contains("private-"));
+            }
         }
     }
 

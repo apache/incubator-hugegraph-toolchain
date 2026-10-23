@@ -26,6 +26,7 @@ import org.apache.hugegraph.controller.BaseController;
 import org.apache.hugegraph.entity.op.LogEntity;
 import org.apache.hugegraph.exception.InternalException;
 import org.apache.hugegraph.service.op.LogService;
+import org.apache.hugegraph.util.HubbleUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -37,13 +38,18 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 @RestController
 @RequestMapping(Constant.API_VERSION + "logs")
 public class LogController extends BaseController {
+
+    private static final DateTimeFormatter EXPORT_DATE_FORMAT =
+            DateTimeFormatter.ofPattern("uuuuMMddHHmmss", Locale.ROOT).withZone(HubbleUtil.TIME_ZONE);
+
     @Autowired
     LogService logService;
 
@@ -80,12 +86,10 @@ public class LogController extends BaseController {
     @PostMapping("export")
     public void export(HttpServletResponse response,
                        @RequestBody LogService.LogReq logReq) {
-        SimpleDateFormat dateFormat =
-                new SimpleDateFormat("yyyyMMddHHmmss");
         String start = logReq.startDatetime == null ?
-                       "begin" : dateFormat.format(logReq.startDatetime);
+                       "begin" : EXPORT_DATE_FORMAT.format(logReq.startDatetime.toInstant());
         String end = logReq.endDatetime == null ?
-                     "end" : dateFormat.format(logReq.endDatetime);
+                     "end" : EXPORT_DATE_FORMAT.format(logReq.endDatetime.toInstant());
         String fileName = String.format("log_%s_%s.txt", start, end);
 
         response.setCharacterEncoding("UTF-8");

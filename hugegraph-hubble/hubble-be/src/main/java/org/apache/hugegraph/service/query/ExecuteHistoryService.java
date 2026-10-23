@@ -24,7 +24,6 @@ import java.time.temporal.ChronoField;
 import org.apache.hugegraph.util.Ex;
 import com.google.common.collect.ImmutableMap;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -183,8 +182,7 @@ public class ExecuteHistoryService {
         }
     }
 
-    @Async
-    @Scheduled(fixedDelay = 24 * 60 * 60 * 1000)
+    @Scheduled(fixedDelay = 24 * 60 * 60 * 1000, scheduler = "maintenanceScheduler")
     public void removeExceedLimit() {
         // Do not wrap the complete cleanup in one transaction. Without an
         // outer transaction, each bounded mapper DELETE commits independently.

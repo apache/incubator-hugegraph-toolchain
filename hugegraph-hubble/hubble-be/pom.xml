@@ -29,10 +29,8 @@
     <artifactId>hubble-be</artifactId>
 
     <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <release.name>hugegraph-hubble</release.name>
         <final.name>${release.name}-${project.version}</final.name>
-        <java.version>17</java.version>
         <skip.dump>true</skip.dump>
         <java.inputs.script>
             ${project.basedir}/../hubble-dist/assembly/travis/check-java-build-inputs.py
@@ -92,12 +90,6 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-        <!--
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
-        -->
         <dependency>
             <groupId>org.elasticsearch.client</groupId>
             <artifactId>elasticsearch-rest-client</artifactId>
@@ -310,7 +302,6 @@
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
-            <version>3.17.3</version>
         </dependency>
         <!-- Use 'core' classifier to avoid embedded protobuf-java 2.5.0 conflict
              with hg-pd-grpc which requires protobuf-java 3.17.x -->
@@ -358,11 +349,9 @@
             <groupId>org.apache.calcite.avatica</groupId>
             <artifactId>avatica-core</artifactId>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/com.squareup.okhttp3/okhttp -->
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
-            <version>4.12.0</version>
         </dependency>
     </dependencies>
 
@@ -423,21 +412,6 @@
                     <failOnViolation>true</failOnViolation>
                 </configuration>
             </plugin>
-            <!--
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <addClasspath>true</addClasspath>
-                            <classpathPrefix>lib/</classpathPrefix>
-                            <mainClass>org.apache.hugegraph.HugeGraphHubble</mainClass>
-                        </manifest>
-                    </archive>
-                </configuration>
-            </plugin>
-            -->
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>

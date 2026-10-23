@@ -34,7 +34,6 @@ import lombok.NoArgsConstructor;
 @Builder
 public class TableView {
 
-    public static final TableView EMPTY = new TableView();
 
     public static final List<String> GENERAL_HEADER = ImmutableList.of(
             "result"
