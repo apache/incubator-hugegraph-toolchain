@@ -783,6 +783,10 @@ Then we should follow the [hubble workflow doc](https://hugegraph.apache.org/doc
 
 ## Browser acceptance
 
+The [2026-10-23 deployment regression report](docs/deployment-regressions-20261023.md)
+links the split fixes, browser fixture coverage and bounded rendering comparison.
+Screenshots are kept outside Git and referenced from the PR descriptions.
+
 Query and algorithm canvases, Schema views and graph-card previews share the G6 5.1.1
 visualization module. The screenshots show a running Hubble and Server with a
 small authenticated test dataset: [query](docs/images/g6/query.png),

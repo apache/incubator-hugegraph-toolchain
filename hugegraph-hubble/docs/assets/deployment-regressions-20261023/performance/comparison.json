@@ -1,0 +1,35 @@
+{
+  "scope": "Chromium UI with controlled API fixtures; warm action until idle canvas plus two frames. Two interleaved rounds, five samples per size per round. Not cluster throughput; shared executor load is uncontrolled.",
+  "baseline": "eef5afd29762f394667494b726afdce1b938214d",
+  "variants": {
+    "master": {
+      "100": {
+        "samples": 10,
+        "median_ms": 402.7,
+        "max_ms": 518.8,
+        "max_long_task_ms": 207
+      },
+      "300": {
+        "samples": 10,
+        "median_ms": 514.1,
+        "max_ms": 628.4,
+        "max_long_task_ms": 282
+      }
+    },
+    "candidate": {
+      "100": {
+        "samples": 10,
+        "median_ms": 357.2,
+        "max_ms": 441.4,
+        "max_long_task_ms": 210
+      },
+      "300": {
+        "samples": 10,
+        "median_ms": 451.0,
+        "max_ms": 505.4,
+        "max_long_task_ms": 257
+      }
+    }
+  },
+  "conclusion": "No rendering regression observed in these bounded fixture scenarios; this is not a production performance guarantee."
+}

@@ -1,0 +1,52 @@
+{
+  "status": "passed",
+  "observedAt": "2026-10-23T13:02:04.138Z",
+  "browserVersion": "154.0.8037.57",
+  "timezone": "Asia/Taipei",
+  "scope": "Actual Chromium UI against mocked API responses; not real-cluster acceptance",
+  "checks": [
+    {
+      "name": "authenticated login and GraphSpace/account visibility",
+      "status": "passed"
+    },
+    {
+      "name": "GraphSpace title date and header whitespace navigate exactly to selected space",
+      "status": "passed"
+    },
+    {
+      "name": "GraphSpace menu edit does not navigate and current quota is editable",
+      "status": "passed"
+    },
+    {
+      "name": "late GraphSpace details cannot overwrite a newly opened editor",
+      "status": "passed"
+    },
+    {
+      "name": "Graph context switches via actual header selectors",
+      "status": "passed"
+    },
+    {
+      "name": "routine query limit is quiet canvas note without unknown totals",
+      "status": "passed"
+    },
+    {
+      "name": "truncation is compact with details on demand",
+      "status": "passed"
+    },
+    {
+      "name": "async task ID remains visible in the selected graph and failure is actionable",
+      "status": "passed"
+    },
+    {
+      "name": "PD unmapped metrics have localized three-node source diagnostics",
+      "status": "passed"
+    },
+    {
+      "name": "anonymous GraphSpaces visible with account and mutation actions hidden",
+      "status": "passed"
+    }
+  ],
+  "unexpectedApi": [],
+  "pageErrors": [],
+  "failure": null
+}
