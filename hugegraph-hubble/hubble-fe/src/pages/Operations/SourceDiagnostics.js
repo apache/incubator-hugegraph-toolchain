@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import {Alert, Descriptions} from 'antd';
+import {Alert, Descriptions, Table} from 'antd';
 import {useEffect, useRef} from 'react';
 import {useTranslation} from 'react-i18next';
 import {displayNodeType, formatReason, HealthStatus} from './components';
@@ -26,7 +26,7 @@ import {sourceHealthStatus} from './sourceHealth';
 const SOURCE_TYPES = {server: 'SERVER', pd: 'PD', stores: 'STORE'};
 const DIAGNOSTICS_ID = 'operations-source-diagnostics';
 
-const DiagnosticRequest = ({diagnostics = {}}) => {
+const DiagnosticRequest = ({diagnostics = {}, owner}) => {
     const {t, i18n} = useTranslation();
     const bytes = value => {
         const formatted = formatBytes(value);
@@ -34,11 +34,13 @@ const DiagnosticRequest = ({diagnostics = {}}) => {
     };
     const responseBytes = bytes(diagnostics.response_bytes);
     const limit = bytes(diagnostics.max_response_bytes);
-    if (!diagnostics.request_path && !diagnostics.http_status && !responseBytes && !limit) {
+    const failedGraphs = Number.isSafeInteger(diagnostics.failed_graphs) && diagnostics.failed_graphs >= 0
+        ? diagnostics.failed_graphs : null;
+    if (!diagnostics.request_path && !diagnostics.http_status && !responseBytes && !limit && failedGraphs === null) {
         return null;
     }
     return (
-        <Descriptions size='small' column={{xs: 1, sm: 2, lg: 3}} items={[
+        <Descriptions title={owner} size='small' column={{xs: 1, sm: 2, lg: 3}} items={[
             diagnostics.request_path && {
                 key: 'request', label: t('operations.diagnostic_request'),
                 children: <code>{diagnostics.request_path}</code>,
@@ -52,7 +54,48 @@ const DiagnosticRequest = ({diagnostics = {}}) => {
                     ? t('operations.diagnostic_size_at_least', {size: responseBytes}) : responseBytes,
             },
             limit && {key: 'limit', label: t('operations.diagnostic_response_limit'), children: limit},
+            failedGraphs !== null && {key: 'failed-graphs', label: t('operations.metric_labels.failed_graphs'),
+                children: failedGraphs},
         ].filter(Boolean)} />
+    );
+};
+
+const PdMetricMapping = ({mapping, nodes}) => {
+    const {t} = useTranslation();
+    if (!mapping) {
+        return null;
+    }
+    const unavailable = t('operations.unavailable');
+    const comparison = matches => t(matches ? 'operations.diagnostic_address_matches'
+        : 'operations.diagnostic_address_differs');
+    return (
+        <div>
+            <h4>{t('operations.diagnostic_pd_address_comparison')}</h4>
+            <Descriptions size='small' column={{xs: 1, md: 3}} items={[
+                {key: 'configured', label: t('operations.diagnostic_pd_configured_address'),
+                    children: <code>{mapping.configured_origin || unavailable}</code>},
+                {key: 'status', label: t('operations.diagnostic_pd_mapping_result'),
+                    children: t(`operations.diagnostic_pd_mapping_${mapping.status}`, {defaultValue: unavailable})},
+                {key: 'count', label: t('operations.diagnostic_pd_matching_nodes'),
+                    children: `${mapping.matched_nodes ?? 0} / ${mapping.discovered_nodes ?? 0}`},
+            ]} />
+            <Table size='small' pagination={false} rowKey='node_id' dataSource={mapping.members ?? []}
+                columns={[
+                    {key: 'node', title: t('operations.node_identity'), render: (_, member) => (
+                        nodes.find(node => node.id === member.node_id)?.name ?? member.node_id
+                    )},
+                    {dataIndex: 'origin', title: t('operations.diagnostic_pd_member_address'),
+                        render: origin => <code>{origin || unavailable}</code>},
+                    {dataIndex: 'origin_matches', title: t('operations.diagnostic_pd_origin_comparison'),
+                        render: (matches, member) => member.endpoint_valid ? comparison(matches) : unavailable},
+                    {dataIndex: 'base_path_matches', title: t('operations.diagnostic_pd_path_comparison'),
+                        render: (matches, member) => member.endpoint_valid ? comparison(matches) : unavailable},
+                ]} />
+            <p>{t('operations.diagnostic_pd_address_privacy')}</p>
+            {mapping.omitted_members > 0 && <p>{t('operations.diagnostic_pd_omitted_members', {
+                count: mapping.omitted_members,
+            })}</p>}
+        </div>
     );
 };
 
@@ -86,55 +129,105 @@ const SourceDiagnostics = ({sources = {}, sourceName, nodes = [], focus = false,
                         ['UNAVAILABLE', 'MALFORMED'].includes(status.availability)
                             || status.stale && status.availability !== 'UNSUPPORTED'
                             || status.availability === 'UNSUPPORTED'
-                                && status.reason === 'unsupported_version'
+                                && ['unsupported_version', 'pd_metrics_unmapped'].includes(status.reason)
                                 && (source.availability === 'PARTIAL'
                                     || ['DOWN', 'DEGRADED'].includes(source.status))
                     )).map(([group, status]) => ({node, group, status}))
                 ));
+                const unmappedPd = type === 'PD' && (source.reason === 'pd_metrics_unmapped'
+                    || failures.some(({status}) => status.reason === 'pd_metrics_unmapped'));
+                const mapping = source.diagnostics?.pd_metric_mapping;
+                const DetailsContainer = recovered ? 'div' : 'details';
+                const requestOwner = !source.diagnostics?.request_path && failures.length === 1
+                    && (failures[0].status.diagnostics?.request_path
+                        || Number.isSafeInteger(failures[0].status.diagnostics?.failed_graphs))
+                    ? failures[0] : null;
+                const requestDetails = source.diagnostics?.request_path ? source.diagnostics
+                    : requestOwner?.status.diagnostics;
+                const groups = source.diagnostics?.failed_metric_groups
+                    ?? [...new Set(failures.map(({group}) => group))];
+                const affected = source.diagnostics?.affected_node_count
+                    ?? new Set(failures.map(({node}) => node.id)).size;
                 return (
                     <div key={source.name}>
                         <h4>{displayNodeType(type)} <HealthStatus status={sourceHealthStatus(source)} /></h4>
                         <Alert showIcon type={recovered ? 'success' : 'warning'}
                             title={recovered ? t('operations.diagnostic_recovered')
+                                : unmappedPd ? t(source.status === 'UP' ? 'operations.diagnostic_pd_online_unmapped'
+                                    : 'operations.diagnostic_pd_unmapped')
                                 : formatReason(source.reason, t) || t('operations.diagnostic_reason_unavailable')}
-                            description={t(recovered ? 'operations.diagnostic_recovered_help'
+                            description={unmappedPd ? mapping && t('operations.diagnostic_pd_mapping_summary', {
+                                matched: mapping.matched_nodes ?? 0, discovered: mapping.discovered_nodes ?? 0,
+                                result: t(`operations.diagnostic_pd_mapping_${mapping.status}`),
+                            }) : recovered ? t('operations.diagnostic_recovered_help')
+                                : affected > 0 ? t('operations.diagnostic_impact_summary', {
+                                    count: affected, groups: groups.map(group => t(`operations.metric_${group}`,
+                                        {defaultValue: group})).join(', '),
+                                }) : undefined} />
+                        {!unmappedPd && <DiagnosticRequest diagnostics={requestDetails}
+                            owner={requestOwner ? `${requestOwner.node.name} · ${t(
+                                `operations.metric_${requestOwner.group}`, {defaultValue: requestOwner.group}
+                            )}` : undefined} />}
+                        {source.cluster_state === 'Cluster_Not_Ready' && <p className='operations-readiness-note'>
+                            {t('operations.diagnostic_pd_not_ready')}
+                        </p>}
+                        <DetailsContainer className={recovered ? undefined : 'operations-diagnostic-details'}>
+                        {!recovered && <>
+                            <summary>{t(unmappedPd ? 'operations.diagnostic_pd_check_addresses'
+                                : 'operations.diagnostic_check_details')}</summary>
+                            <p>{t(unmappedPd ? 'operations.diagnostic_pd_mapping_action'
                                 : source.reason?.includes('response_too_large')
                                     ? 'operations.diagnostic_large_response_action'
-                                    : 'operations.diagnostic_check_source_action')} />
-                        <DiagnosticRequest diagnostics={source.diagnostics} />
+                                    : 'operations.diagnostic_check_source_action')}</p>
+                        </>}
+                        {source.diagnostics !== requestDetails && <DiagnosticRequest diagnostics={source.diagnostics} />}
+                        {unmappedPd && <PdMetricMapping mapping={mapping} nodes={nodes} />}
+                        {source.cluster_state === 'Cluster_Not_Ready' && <p>
+                            {t('operations.reason_cluster_not_ready')}
+                        </p>}
                         {source.diagnostics?.affected_node_count > 0 && (
                             <p>{t('operations.diagnostic_affected_nodes')}: {source.diagnostics.affected_node_count}
                                 {' · '}{t('operations.diagnostic_failed_groups')}: {
-                                    source.diagnostics.failed_metric_groups?.join(', ')
+                                    source.diagnostics.failed_metric_groups?.map(group => t(`operations.metric_${group}`,
+                                        {defaultValue: group})).join(', ')
                                         || t('operations.unavailable')}
                             </p>
                         )}
                         <Descriptions size='small' column={{xs: 1, sm: 2, lg: 3}} items={[
                             {key: 'health', label: t('operations.source_topology_status'),
                                 children: source.status ?? t('operations.status_unknown')},
+                            source.cluster_state && {key: 'cluster', label: t('operations.source_cluster_state'),
+                                children: source.cluster_state},
+                            source.data_state && {key: 'data', label: t('operations.source_data_state'),
+                                children: source.data_state},
                             {key: 'collection', label: t('operations.source_collection_status'),
                                 children: t(`operations.availability_${(source.availability ?? 'UNKNOWN').toLowerCase()}`,
                                     {defaultValue: source.availability ?? t('operations.unavailable')})},
                             {key: 'observed', label: t('operations.last_observed'), children: time(source.observed_at)},
-                            {key: 'success', label: t('operations.last_success'), children: time(source.last_success_at)},
+                            {key: 'success', label: t(unmappedPd ? 'operations.diagnostic_topology_last_success'
+                                : 'operations.last_success'), children: time(source.last_success_at)},
                             {key: 'fresh', label: t('operations.diagnostic_freshness'),
-                                children: t(source.stale ? 'operations.stale' : source.fresh
+                                children: t(source.stale ? 'operations.stale'
+                                    : unmappedPd ? 'operations.diagnostic_metrics_not_collected' : source.fresh
                                     ? 'operations.diagnostic_fresh' : 'operations.unavailable')},
-                        ]} />
-                        {failures.length > 0 ? (
+                        ].filter(Boolean)} />
+                        {failures.length > 0 && !(unmappedPd && mapping) ? (
                             <div>
                                 <strong>{t(complete ? 'operations.diagnostic_affected_metrics_snapshot'
                                     : 'operations.diagnostic_affected_metrics')}</strong>
                                 <ul>{failures.map(({node, group, status}) => (
                                     <li key={`${node.id}-${group}`}>
-                                        {node.name} · {group}: {formatReason(status.reason, t)
-                                            || t('operations.unavailable')}
-                                        <DiagnosticRequest diagnostics={status.diagnostics} />
+                                        {node.name} · {group}{!unmappedPd && `: ${formatReason(status.reason, t)
+                                            || t('operations.unavailable')}`}
+                                        {status.diagnostics !== requestDetails && (
+                                            <DiagnosticRequest diagnostics={status.diagnostics} />
+                                        )}
                                     </li>
                                 ))}</ul>
                             </div>
-                        ) : !recovered && <p>{t(complete ? 'operations.diagnostic_no_node_details_snapshot'
+                        ) : !recovered && !unmappedPd && <p>{t(complete ? 'operations.diagnostic_no_node_details_snapshot'
                             : 'operations.diagnostic_no_node_details')}</p>}
+                        </DetailsContainer>
                     </div>
                 );
             })}

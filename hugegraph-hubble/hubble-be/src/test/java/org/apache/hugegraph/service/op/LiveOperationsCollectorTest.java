@@ -27,6 +27,7 @@ import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -641,12 +642,46 @@ public class LiveOperationsCollectorTest {
         Assert.assertEquals(0, probes.get());
         Assert.assertEquals("PARTIAL", snapshot.getSources().get("pd").getAvailability());
         Assert.assertEquals("pd_metrics_unmapped", snapshot.getSources().get("pd").getReason());
+        Assert.assertEquals("UP", snapshot.getSources().get("pd").getStatus());
+        Assert.assertEquals(1, snapshot.getSources().get("pd").getDiagnostics()
+                .get("affected_node_count"));
+        Assert.assertEquals(List.of("system"), snapshot.getSources().get("pd").getDiagnostics()
+                .get("failed_metric_groups"));
         OperationsModels.Node leader = snapshot.getNodes().stream()
                 .filter(node -> "PD".equals(node.getType()))
                 .findFirst().orElseThrow(AssertionError::new);
         Assert.assertEquals("LEADER", leader.getRole());
         Assert.assertFalse(leader.getMetrics().containsKey("system"));
+        Assert.assertEquals("UNAVAILABLE", leader.getMetricStatuses().get("system").getAvailability());
         Assert.assertEquals("pd_metrics_unmapped", leader.getMetricStatuses().get("system").getReason());
+    }
+
+    @Test
+    public void testUnmatchedPdMetricsReportsEveryDiscoveredNodeWithoutMarkingItDown()
+           throws IOException {
+        String cluster = new ObjectMapper().writeValueAsString(Map.of("status", 0,
+                "data", Map.of("state", "Cluster_OK", "pdList", List.of(
+                        Map.of("restUrl", "http://pd-a:8620", "state", "Up", "role", "Leader"),
+                        Map.of("restUrl", "http://pd-b:8620", "state", "Up", "role", "Follower"),
+                        Map.of("restUrl", "http://pd-c:8620", "state", "Up", "role", "Follower")))));
+        HttpServer pd = pdServer(200, cluster, 200, stores());
+        Snapshot snapshot;
+        try {
+            snapshot = collector(true, pd).collect(serverClient(), true);
+        } finally {
+            pd.stop(0);
+        }
+
+        Assert.assertEquals("UP", snapshot.getSources().get("pd").getStatus());
+        Assert.assertEquals(3, snapshot.getSources().get("pd").getDiagnostics().get("affected_node_count"));
+        for (OperationsModels.Node node : snapshot.getNodes()) {
+            if ("PD".equals(node.getType())) {
+                Assert.assertEquals("UP", node.getStatus());
+                Assert.assertFalse(node.getMetrics().containsKey("system"));
+                Assert.assertEquals("UNAVAILABLE", node.getMetricStatuses().get("system").getAvailability());
+                Assert.assertEquals("pd_metrics_unmapped", node.getMetricStatuses().get("system").getReason());
+            }
+        }
     }
 
     @Test
@@ -1513,6 +1548,49 @@ public class LiveOperationsCollectorTest {
                             snapshot.getSources().get("pd").getReason());
         Assert.assertEquals(Map.of("request_path", "/v1/members"),
                             snapshot.getSources().get("pd").getDiagnostics());
+    }
+
+    @Test
+    public void testMalformedPdMembersDoNotEnterMetricMappingOrHideOtherSources()
+           throws IOException {
+        for (String memberField : new String[]{"", ",\"pdList\":null",
+                                                ",\"pdList\":{}", ",\"pdList\":123"}) {
+            String payload = "{\"status\":0,\"data\":{\"state\":\"Cluster_OK\"," +
+                             "\"pdLeader\":{\"restUrl\":\"http://private-canary:8620/private-path\"}" +
+                             memberField + "}}";
+            HttpServer pd = pdServer(200, payload, 200, stores());
+            pd.removeContext("/actuator/prometheus");
+            AtomicInteger metricRequests = new AtomicInteger();
+            pd.createContext("/actuator/prometheus", exchange -> {
+                metricRequests.incrementAndGet();
+                exchange.sendResponseHeaders(500, -1);
+                exchange.close();
+            });
+            context(pd, "/v1/prom/targets/store", 200,
+                    targets("127.0.0.1:" + pd.getAddress().getPort()));
+            storeMetricContexts(pd);
+            LiveOperationsCollector collector = collector(true, pd);
+            Snapshot snapshot;
+            try {
+                snapshot = collector.collect(serverClient(), true);
+            } finally {
+                collector.close();
+                pd.stop(0);
+            }
+
+            OperationsModels.SourceStatus source = snapshot.getSources().get("pd");
+            Assert.assertEquals("MALFORMED", source.getAvailability());
+            Assert.assertEquals("malformed_response", source.getReason());
+            Assert.assertEquals(Set.of("request_path"), source.getDiagnostics().keySet());
+            Assert.assertTrue(Set.of("/v1/cluster", "/v1/members")
+                                 .contains(source.getDiagnostics().get("request_path")));
+            Assert.assertEquals(0, metricRequests.get());
+            Assert.assertFalse(snapshot.getNodes().stream().anyMatch(node -> "PD".equals(node.getType())));
+            Assert.assertEquals("AVAILABLE", snapshot.getSources().get("server").getAvailability());
+            Assert.assertEquals("AVAILABLE", snapshot.getSources().get("stores").getAvailability());
+            Assert.assertFalse(new ObjectMapper().writeValueAsString(snapshot).contains("private-canary"));
+            Assert.assertFalse(new ObjectMapper().writeValueAsString(snapshot).contains("private-path"));
+        }
     }
 
     private static LiveOperationsCollector collector(boolean pdEnabled,
