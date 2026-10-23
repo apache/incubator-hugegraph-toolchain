@@ -41,7 +41,7 @@ const formatPercent = percent => {
 
 const formatUnlimitedPercent = () => '--';
 
-const TitleField = ({item, onClick, onKeyDown}) => {
+const TitleField = ({item, onKeyDown}) => {
     const {t} = useTranslation();
     const displayName = item.name === 'DEFAULT'
         ? t('graphspace.default_name')
@@ -54,7 +54,6 @@ const TitleField = ({item, onClick, onKeyDown}) => {
                 ellipsis={{tooltip: displayName}}
                 title={`${displayName}`}
                 aria-label={displayName}
-                onClick={onClick}
                 onKeyDown={onKeyDown}
                 role='button'
                 tabIndex={0}
@@ -86,6 +85,15 @@ const GraphSpaceCard = ({
     const handleGotoGraph = useCallback(() => {
         navigate(`/graphspace/${item.name}`);
     }, [item, navigate]);
+
+    const handleCardClick = useCallback(event => {
+        // Dropdown menus use a portal, but their clicks still bubble through
+        // the card in React. Keep those actions separate from navigation.
+        if (event.target.closest('a, button, [role="menu"], [role="menuitem"]')) {
+            return;
+        }
+        handleGotoGraph();
+    }, [handleGotoGraph]);
 
     const handleEdit = useCallback(() => {
         editGraphspace(item);
@@ -158,10 +166,10 @@ const GraphSpaceCard = ({
                 padding: '0 24px 24px 20px',
             }}}
             className={style.card}
+            onClick={handleCardClick}
             title={(
                 <TitleField
                     item={item}
-                    onClick={handleGotoGraph}
                     onKeyDown={handleGotoGraphKeyDown}
                 />
             )}
@@ -169,7 +177,7 @@ const GraphSpaceCard = ({
 
             extra={(
                 <Space.Compact>
-                    <Button href={`/graphspace/${item.name}`}>{t('graphspace.card.enter')}</Button>
+                    <Button onClick={handleGotoGraph}>{t('graphspace.card.enter')}</Button>
                     <Dropdown menu={getMenu(item)} trigger={['click']}>
                         <Button icon={<EllipsisOutlined />} aria-label={t('common.action.more')} />
                     </Dropdown>
@@ -184,28 +192,31 @@ const GraphSpaceCard = ({
                                 ? t('graphspace.card.daily_snapshot', {date: statisticDate})
                                 : t('graphspace.card.daily_update')}
                         </Typography.Text>
-                        <span aria-label={t('graphspace.card.statistic_help')}>
-                            <Tooltip title={(
-                                <>
-                                    <div>{t('graphspace.card.daily_update')}</div>
-                                    {statisticDate && (
-                                        <div>{t('graphspace.card.last_update', {
-                                            date: statisticDate,
-                                        })}
-                                        </div>
-                                    )}
-                                </>
-                            )}
-                            >
-                                <InfoCircleOutlined />
-                            </Tooltip>
-                        </span>
+                        <Tooltip title={(
+                            <>
+                                <div>{t('graphspace.card.daily_update')}</div>
+                                {statisticDate && (
+                                    <div>{t('graphspace.card.last_update', {
+                                        date: statisticDate,
+                                    })}
+                                    </div>
+                                )}
+                            </>
+                        )}
+                            trigger={['hover', 'focus', 'click']}
+                        >
+                            <Button
+                                type='text'
+                                size='small'
+                                aria-label={t('graphspace.card.statistic_help')}
+                                icon={<InfoCircleOutlined />}
+                            />
+                        </Tooltip>
                     </Space>,
                 ] : undefined}
         >
             <div
                 className={style.card_content}
-                onClick={handleGotoGraph}
                 onKeyDown={handleGotoGraphKeyDown}
                 role='button'
                 tabIndex={0}

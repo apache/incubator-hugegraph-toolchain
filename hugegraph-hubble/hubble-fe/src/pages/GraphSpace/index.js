@@ -101,18 +101,44 @@ const GraphSpace = () => {
     }, []);
 
     const deleteGraphspace = useCallback(graphspace => {
-        Modal.confirm({
+        let deleting = false;
+        const confirmation = Modal.confirm({
             title: t('graphspace.delete_confirm'),
-            content: t('graphspace.delete_content'),
-            onOk: () => {
-                return api.manage.delGraphSpace(graphspace, PAGE_ERROR_CONFIG).then(res => {
-                    if (res.status === 200) {
-                        message.success(t('common.msg.delete_success'));
-                        setRefresh(value => !value);
-                        return;
+            content: (
+                <Space orientation='vertical'>
+                    <strong>{graphspace}</strong>
+                    <span>{t('graphspace.delete_content')}</span>
+                </Space>
+            ),
+            onOk: close => {
+                if (deleting) {
+                    return;
+                }
+                deleting = true;
+                confirmation.update({
+                    okButtonProps: {loading: true, disabled: true},
+                    cancelButtonProps: {disabled: true},
+                    keyboard: false,
+                });
+                // The close callback keeps the dialog open without rejecting a
+                // promise from Ant Design's click handler on an API failure.
+                api.manage.delGraphSpace(graphspace, PAGE_ERROR_CONFIG).then(res => {
+                    if (res.status !== 200) {
+                        throw new Error('GraphSpace deletion failed');
                     }
+                    message.success(t('common.msg.delete_success'));
+                    setRefresh(value => !value);
+                    close();
+                }).catch(() => {
                     message.error(t('common.msg.operation_failed'));
-                }).catch(() => message.error(t('common.msg.operation_failed')));
+                }).finally(() => {
+                    deleting = false;
+                    confirmation.update({
+                        okButtonProps: {loading: false, disabled: false},
+                        cancelButtonProps: {disabled: false},
+                        keyboard: true,
+                    });
+                });
             },
         });
     }, [t]);
@@ -127,11 +153,13 @@ const GraphSpace = () => {
 
     const handleSearch = useCallback(value => {
         setGraphspacename(value);
+        setPagination(value => ({...value, current: 1}));
         setRefresh(value => !value);
     }, []);
 
     const handleDatePickerChange = useCallback((_, val) => {
         setDateData(val);
+        setPagination(value => ({...value, current: 1}));
         setRefresh(value => !value);
     }, []);
 
@@ -273,6 +301,11 @@ const GraphSpace = () => {
                 return;
             }
             if (res.status === 200) {
+                const lastPage = Math.max(1, Math.ceil(res.data.total / pageSize));
+                if (current > lastPage) {
+                    setPagination(value => ({...value, total: res.data.total, current: lastPage}));
+                    return;
+                }
                 setData(res.data.records);
                 setPagination(value => ({...value, total: res.data.total}));
                 return;
@@ -432,6 +465,11 @@ const GraphSpace = () => {
                                     rowKey='name'
                                     pagination={pagination}
                                     onChange={handleTable}
+                                    locale={{emptyText: loading || listError ? null : (
+                                        <Empty description={t(graphspacename || dateData
+                                            ? 'graphspace.no_matches' : 'graphspace.empty')}
+                                        />
+                                    )}}
                                 />
                             </>
                         )
