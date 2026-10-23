@@ -154,8 +154,8 @@ export {getGraphList, getGraph, addGraph, updateGraph, delGraph, getDefaultGraph
     getGraphStatistic, updateGraphStatistic, cloneGraph};
 
 // meta property
-const getMetaPropertyList = (graphspace, graph, params) => {
-    return request.get(`/graphspaces/${graphspace}/graphs/${graph}/schema/propertykeys`, {params});
+const getMetaPropertyList = (graphspace, graph, params, config = {}) => {
+    return request.get(`/graphspaces/${graphspace}/graphs/${graph}/schema/propertykeys`, {...config, params});
 };
 
 const addMetaProperty = (graphspace, graph, data, config) => {
@@ -173,7 +173,7 @@ const updateMetaProperty = () => {};
 const delMetaProperty = (graphspace, graph, data, config) => {
     const {names} = data;
     const str = names.map(name => 'names=' + encodeURIComponent(name)).join('&');
-    const skip_using = String(names.length !== 1);
+    const skip_using = String(data.skip_using ?? (names.length !== 1));
 
     // return request.delete(`/graphspaces/${graphspace}/graphs/${graph}/schema/propertykeys`, data);
     return request.delete(
@@ -184,8 +184,8 @@ const delMetaProperty = (graphspace, graph, data, config) => {
 export {getMetaPropertyList, addMetaProperty, updateMetaProperty, delMetaProperty, checkMetaProperty};
 
 // meta vertex
-const getMetaVertexList = (graphspace, graph, params) => {
-    return request.get(`/graphspaces/${graphspace}/graphs/${graph}/schema/vertexlabels`, {params});
+const getMetaVertexList = (graphspace, graph, params, config = {}) => {
+    return request.get(`/graphspaces/${graphspace}/graphs/${graph}/schema/vertexlabels`, {...config, params});
 };
 
 const getMetaVertex = (graphspace, graph, name) => {
@@ -222,7 +222,7 @@ const delMetaVertex = (graphspace, graph, data, config) => {
 
     const {names} = data;
     const str = names.map(name => 'names=' + encodeURIComponent(name)).join('&');
-    const skip_using = String(names.length !== 1);
+    const skip_using = String(data.skip_using ?? (names.length !== 1));
 
     return request.delete(
         `/graphspaces/${graphspace}/graphs/${graph}/schema/vertexlabels?${str}&skip_using=${skip_using}`,
@@ -233,8 +233,8 @@ export {getMetaVertexList, addMetaVertex, updateMetaVertex, delMetaVertex, check
     getMetaVertexNew, addMetaVertexNew, getMetaVertexLink};
 
 // meta edge
-const getMetaEdgeList = (graphspace, graph, params) => {
-    return request.get(`/graphspaces/${graphspace}/graphs/${graph}/schema/edgelabels`, {params});
+const getMetaEdgeList = (graphspace, graph, params, config = {}) => {
+    return request.get(`/graphspaces/${graphspace}/graphs/${graph}/schema/edgelabels`, {...config, params});
 };
 
 const getMetaEdge = (graphspace, graph, name) => {
@@ -254,7 +254,7 @@ const delMetaEdge = (graphspace, graph, data, config) => {
 
     const {names} = data;
     const str = names.map(name => 'names=' + encodeURIComponent(name)).join('&');
-    const skip_using = String(names.length !== 1);
+    const skip_using = String(data.skip_using ?? (names.length !== 1));
 
     return request.delete(
         `/graphspaces/${graphspace}/graphs/${graph}/schema/edgelabels?${str}&skip_using=${skip_using}`,

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import {Table, Row, Col, Space, Button, message, Modal} from 'antd';
+import {Table, Row, Col, Space, Button, message} from 'antd';
 import {useState, useCallback} from 'react';
 import {EditPropertyLayer} from './EditLayer';
 import * as api from '../../../api';
@@ -25,9 +25,8 @@ import {useTranslation} from 'react-i18next';
 import RowActionButton from '../../../components/RowActionButton';
 import useMetaTable from '../common/useMetaTable';
 import MetaTableStatus from '../common/MetaTableStatus';
+import confirmSchemaDeletion from '../common/confirmSchemaDeletion';
 
-const PROPERTY_IN_USE_KEY = 'schema.property.in_use';
-const DELETE_REQUEST_CONFIG = {suppressBusinessErrorToast: true};
 
 const PropertyTable = ({noHeader, forceRefresh, canWrite = true}) => {
     const [editLayerVisible, setEditLayerVisible] = useState(false);
@@ -37,66 +36,21 @@ const PropertyTable = ({noHeader, forceRefresh, canWrite = true}) => {
     const {t} = useTranslation();
 
     const removeProperty = useCallback((names, isBatch) => {
-        api.manage.checkMetaProperty(graphspace, graph, {names}, DELETE_REQUEST_CONFIG).then(res => {
-            if (res.status !== 200) {
-                message.error(t('schema.delete_failed'));
-                return;
-            }
-
-            const inUse = names.filter(name => res.data[name] === true);
-            if (inUse.length > 0) {
-                message.error(t(PROPERTY_IN_USE_KEY, {names: inUse.join(',')}));
-                return;
-            }
-
-            let deleting = false;
-            const confirmation = Modal.confirm({
-                title: t('schema.property.delete_confirm'),
-                content: (
-                    <div style={{overflowWrap: 'anywhere'}}>
-                        <div><code>{graphspace}/{graph}</code></div>
-                        <div><code>{names.join(', ')}</code></div>
-                        <div>{t('schema.common.delete_warning')}</div>
-                    </div>
-                ),
-                onOk: close => {
-                    if (deleting) {
-                        return;
-                    }
-                    deleting = true;
-                    confirmation.update({
-                        okButtonProps: {loading: true, disabled: true},
-                        cancelButtonProps: {disabled: true}, keyboard: false,
-                    });
-                    // Own closing explicitly: rejected static-modal promises surface as
-                    // unhandled browser errors in Ant Design, but a failed delete is retryable.
-                    api.manage.delMetaProperty(
-                        graphspace, graph, {names}, DELETE_REQUEST_CONFIG
-                    ).then(res => {
-                        if (res.status !== 200) {
-                            throw new Error('Schema deletion failed');
-                        }
-                        if (isBatch) {
-                            setSelectedItems([]);
-                        }
-                        message.success(t('common.msg.delete_success'));
-                        setRefresh(!refresh);
-                        close();
-                    }).catch(() => {
-                        message.error(t('schema.delete_failed'));
-                    }).finally(() => {
-                        deleting = false;
-                        confirmation.update({
-                            okButtonProps: {loading: false, disabled: false},
-                            cancelButtonProps: {disabled: false}, keyboard: true,
-                        });
-                    });
-                },
-            });
-        }).catch(() => {
-            message.error(t('schema.delete_failed'));
+        confirmSchemaDeletion({
+            graphspace, graph, names, t,
+            title: t('schema.property.delete_confirm'),
+            warning: <div>{t('schema.common.delete_warning')}</div>,
+            list: api.manage.getMetaPropertyList,
+            remove: api.manage.delMetaProperty,
+            checkUsage: api.manage.checkMetaProperty,
+            inUseKey: 'schema.property.in_use',
+            onRefresh: () => setRefresh(value => !value),
+            onComplete: () => {
+                if (isBatch) setSelectedItems([]);
+                setRefresh(value => !value);
+            },
         });
-    }, [graph, graphspace, refresh, t]);
+    }, [graph, graphspace, t]);
 
     const fetchPage = useCallback(params => api.manage.getMetaPropertyList(
         graphspace, graph, params

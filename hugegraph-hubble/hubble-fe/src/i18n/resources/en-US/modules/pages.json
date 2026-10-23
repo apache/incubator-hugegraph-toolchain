@@ -975,6 +975,9 @@
     "list_failed": "Schema data could not be loaded. Check the Server connection and retry.",
     "retry": "Retry schema data",
     "delete_failed": "Delete failed. Check the server connection and retry.",
+    "delete_pending": "Deletion is not yet confirmed; these targets are still present: {{names}}. Check status, or retry deletion if the asynchronous task failed.",
+    "delete_check_status": "Check status",
+    "delete_retry": "Retry deletion",
     "title": "Metadata Management",
     "identity": {
       "graph_unavailable": "Unable to load the current graph.",

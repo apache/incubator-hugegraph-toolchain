@@ -37,18 +37,22 @@ jest.mock('./common/useMetaTable', () => () => ({
 jest.mock('../../api', () => ({manage: {
     checkMetaProperty: jest.fn(), checkMetaVertex: jest.fn(),
     delMetaProperty: jest.fn(), delMetaVertex: jest.fn(), delMetaEdge: jest.fn(),
-    getMetaPropertyList: jest.fn(), getMetaVertexList: jest.fn(),
+    getMetaPropertyList: jest.fn(), getMetaVertexList: jest.fn(), getMetaEdgeList: jest.fn(),
 }}));
 
+let existing;
 beforeEach(() => {
+    existing = {Property: [{name: 'audit_label'}], Vertex: [{name: 'audit_label'}], Edge: [{name: 'audit_label'}]};
     jest.clearAllMocks();
     window.matchMedia = jest.fn().mockImplementation(query => ({
         matches: false, media: query, addListener: jest.fn(), removeListener: jest.fn(),
     }));
     api.manage.checkMetaProperty.mockResolvedValue({status: 200, data: {audit_label: false}});
     api.manage.checkMetaVertex.mockResolvedValue({status: 200, data: {audit_label: false}});
-    api.manage.getMetaPropertyList.mockResolvedValue({status: 200, data: {records: []}});
-    api.manage.getMetaVertexList.mockResolvedValue({status: 200, data: {records: []}});
+    for (const type of ['Property', 'Vertex', 'Edge']) {
+        api.manage[`getMeta${type}List`].mockImplementation(async () => ({status: 200,
+            data: {records: existing[type], total: existing[type].length}}));
+    }
     jest.spyOn(Modal, 'confirm').mockImplementation(() => ({update: jest.fn()}));
     jest.spyOn(message, 'error').mockImplementation(() => {});
     jest.spyOn(message, 'success').mockImplementation(() => {});
@@ -66,7 +70,10 @@ test.each(tables)('%s deletion keeps confirmation retryable on business and tran
         api.manage[operation]
             .mockResolvedValueOnce({status: 500})
             .mockRejectedValueOnce(new Error('network unavailable'))
-            .mockResolvedValueOnce({status: 200});
+            .mockImplementationOnce(async () => {
+                existing[operation.replace('delMeta', '')] = [];
+                return {status: 200};
+            });
         await act(async () => { render(<Table />); });
         fireEvent.click(screen.getByRole('button', {name: /^common\.(?:action\.)?delete$/}));
         await waitFor(() => expect(Modal.confirm).toHaveBeenCalledTimes(1));
@@ -82,13 +89,24 @@ test.each(tables)('%s deletion keeps confirmation retryable on business and tran
             .toHaveBeenLastCalledWith(expect.objectContaining({
                 okButtonProps: {loading: false, disabled: false},
             })));
-        act(() => { onOk(close); });
+        const retry = () => {
+            if (_name === 'property') act(() => onOk(close));
+            else {
+                const content = Modal.confirm.mock.results[0].value.update.mock.calls.at(-1)[0].content;
+                const view = render(content);
+                fireEvent.click(screen.getByRole('button', {name: 'schema.delete_retry'}));
+                view.unmount();
+            }
+        };
+        retry();
         await waitFor(() => expect(message.error).toHaveBeenCalledTimes(2));
         expect(close).not.toHaveBeenCalled();
         expect(message.success).not.toHaveBeenCalled();
-        act(() => { onOk(close); });
+        await waitFor(() => expect(Modal.confirm.mock.results[0].value.update)
+            .toHaveBeenLastCalledWith(expect.objectContaining({okButtonProps: {loading: false, disabled: false}})));
+        retry();
         await waitFor(() => expect(close).toHaveBeenCalledTimes(1));
         expect(api.manage[operation]).toHaveBeenLastCalledWith('DEFAULT', 'audit',
-            {names: ['audit_label']}, {suppressBusinessErrorToast: true});
+            {names: ['audit_label'], skip_using: false}, {suppressBusinessErrorToast: true});
         expect(message.success).toHaveBeenCalledTimes(1);
     });

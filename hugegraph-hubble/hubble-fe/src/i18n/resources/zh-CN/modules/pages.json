@@ -975,6 +975,9 @@
     "list_failed": "Schema 数据暂时无法加载，请检查 Server 连接后重试。",
     "retry": "重试 Schema 数据",
     "delete_failed": "删除失败，请检查 Server 连接后重试。",
+    "delete_pending": "删除结果待核实，以下目标仍存在：{{names}}。请检查状态；若异步任务失败，可重试删除。",
+    "delete_check_status": "检查状态",
+    "delete_retry": "重试删除",
     "title": "元数据管理",
     "identity": {
       "graph_unavailable": "无法加载当前图信息。",

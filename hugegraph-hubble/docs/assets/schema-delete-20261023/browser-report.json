@@ -1,10 +1,14 @@
 {
   "status": "passed",
-  "observedAt": "2026-10-23T13:03:09.890Z",
+  "observedAt": "2026-10-23T13:46:26.183Z",
   "base": "http://127.0.0.1:3002",
   "browserVersion": "154.0.8037.57",
-  "scope": "Actual Chromium UI with intercepted in-memory API fixtures. Performance measures warm UI action to idle canvas plus two animation frames; does not measure Server or cluster throughput.",
+  "scope": "Actual Chromium UI with intercepted in-memory API fixtures. Performance measures warm UI action through response completion and the current query/canvas busy-to-idle cycle plus two animation frames; does not measure Server or cluster throughput.",
   "checks": [
+    {
+      "name": "00 authenticated GraphSpace/account visibility and graph context switching",
+      "status": "passed"
+    },
     {
       "name": "01 schema create validates required name and supports keyboard submission",
       "status": "passed"
@@ -19,6 +23,34 @@
     },
     {
       "name": "02 edge schema delete failure stays open and retries successfully",
+      "status": "passed"
+    },
+    {
+      "name": "02 propertykeys lost response reconciles completed deletion without repeat",
+      "status": "passed"
+    },
+    {
+      "name": "02 vertexlabels lost response reconciles completed deletion without repeat",
+      "status": "passed"
+    },
+    {
+      "name": "02 edgelabels lost response reconciles completed deletion without repeat",
+      "status": "passed"
+    },
+    {
+      "name": "02 partial batch retries remaining names and revalidates newly used properties",
+      "status": "passed"
+    },
+    {
+      "name": "02 asynchronous pending deletion checks status and requires explicit retry",
+      "status": "passed"
+    },
+    {
+      "name": "02 asynchronous pending-lost deletion checks status and requires explicit retry",
+      "status": "passed"
+    },
+    {
+      "name": "02 anonymous mode keeps GraphSpaces and schema CRUD, hides accounts",
       "status": "passed"
     },
     {
@@ -62,6 +94,74 @@
       ]
     },
     {
+      "operation": "property-delete",
+      "names": [
+        "LostProperty"
+      ]
+    },
+    {
+      "operation": "vertexlabels-delete",
+      "names": [
+        "LostVertex"
+      ]
+    },
+    {
+      "operation": "edgelabels-delete",
+      "names": [
+        "LostEdge"
+      ]
+    },
+    {
+      "operation": "property-delete",
+      "names": [
+        "PartialA"
+      ]
+    },
+    {
+      "operation": "property-delete",
+      "names": [
+        "PartialB"
+      ]
+    },
+    {
+      "operation": "vertexlabels-delete",
+      "names": [
+        "PendingVertex"
+      ]
+    },
+    {
+      "operation": "vertexlabels-delete",
+      "names": [
+        "PendingVertex"
+      ]
+    },
+    {
+      "operation": "vertexlabels-delete",
+      "names": [
+        "PendingVertex"
+      ]
+    },
+    {
+      "operation": "vertexlabels-delete",
+      "names": [
+        "PendingVertex"
+      ]
+    },
+    {
+      "operation": "property-create",
+      "value": {
+        "name": "AnonymousProperty",
+        "data_type": "TEXT",
+        "cardinality": "SINGLE"
+      }
+    },
+    {
+      "operation": "property-delete",
+      "names": [
+        "AnonymousProperty"
+      ]
+    },
+    {
       "operation": "vertex-create",
       "value": {
         "properties": {
@@ -86,78 +186,78 @@
     {
       "count": 100,
       "samples": 5,
-      "p50ActionMs": 358.9,
-      "maxActionMs": 470,
-      "maxLongTaskMs": 178
+      "p50ActionMs": 359.6,
+      "maxActionMs": 440.2,
+      "maxLongTaskMs": 173
     },
     {
       "count": 300,
       "samples": 5,
-      "p50ActionMs": 498.5,
-      "maxActionMs": 562,
-      "maxLongTaskMs": 237
+      "p50ActionMs": 490,
+      "maxActionMs": 547.8,
+      "maxLongTaskMs": 244
     }
   ],
   "performanceSamples": [
     {
       "count": 100,
       "repeat": 1,
-      "actionMs": 470,
-      "maxLongTaskMs": 178
+      "actionMs": 439.8,
+      "maxLongTaskMs": 160
     },
     {
       "count": 100,
       "repeat": 2,
-      "actionMs": 358.9,
-      "maxLongTaskMs": 157
+      "actionMs": 359.6,
+      "maxLongTaskMs": 164
     },
     {
       "count": 100,
       "repeat": 3,
-      "actionMs": 347.7,
-      "maxLongTaskMs": 138
+      "actionMs": 335.3,
+      "maxLongTaskMs": 143
     },
     {
       "count": 100,
       "repeat": 4,
-      "actionMs": 430.3,
-      "maxLongTaskMs": 174
+      "actionMs": 440.2,
+      "maxLongTaskMs": 173
     },
     {
       "count": 100,
       "repeat": 5,
-      "actionMs": 291.9,
-      "maxLongTaskMs": 122
+      "actionMs": 341.1,
+      "maxLongTaskMs": 128
     },
     {
       "count": 300,
       "repeat": 1,
-      "actionMs": 515.6,
-      "maxLongTaskMs": 237
+      "actionMs": 547.8,
+      "maxLongTaskMs": 244
     },
     {
       "count": 300,
       "repeat": 2,
-      "actionMs": 396.6,
-      "maxLongTaskMs": 192
+      "actionMs": 472.2,
+      "maxLongTaskMs": 197
     },
     {
       "count": 300,
       "repeat": 3,
-      "actionMs": 562,
-      "maxLongTaskMs": 228
+      "actionMs": 490,
+      "maxLongTaskMs": 239
     },
     {
       "count": 300,
       "repeat": 4,
-      "actionMs": 424.4,
+      "actionMs": 420.7,
       "maxLongTaskMs": 188
     },
     {
       "count": 300,
       "repeat": 5,
-      "actionMs": 498.5,
-      "maxLongTaskMs": 222
+      "actionMs": 491.7,
+      "maxLongTaskMs": 225
     }
   ],
   "pageErrors": [],
