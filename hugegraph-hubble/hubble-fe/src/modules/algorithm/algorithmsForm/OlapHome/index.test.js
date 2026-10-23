@@ -159,4 +159,46 @@ test('does not carry Computer opt-in or a late capability response into another 
         .toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByTestId('olap-item')).not.toBeInTheDocument();
     expect(api.analysis.getOlapCapability).toHaveBeenCalledTimes(1);
+
+    view.rerender(home());
+    expect(screen.getByRole('button', {name: 'analysis.algorithm.computer_legacy_entry'}))
+        .toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByTestId('olap-item')).not.toBeInTheDocument();
+    expect(api.analysis.getOlapCapability).toHaveBeenCalledTimes(1);
+});
+
+test('returning to a previously enabled graph requires a new Computer opt-in', async () => {
+    api.analysis.getOlapCapability.mockResolvedValue({status: 200, data: {available: true}});
+    const view = renderHome();
+    expandComputer();
+    await screen.findByText('analysis.algorithm.computer_legacy_ready');
+
+    view.rerender(home({isVermeer: false, graphStatus: 'LOADED'}, 'other'));
+    view.rerender(home());
+
+    expect(screen.getByRole('button', {name: 'analysis.algorithm.computer_legacy_entry'}))
+        .toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByTestId('olap-item')).not.toBeInTheDocument();
+    expect(api.analysis.getOlapCapability).toHaveBeenCalledTimes(1);
+    expandComputer();
+    await screen.findByText('analysis.algorithm.computer_legacy_ready');
+    expect(api.analysis.getOlapCapability).toHaveBeenCalledTimes(2);
+});
+
+test('ignores graph A capability after graph B has explicitly opted in', async () => {
+    let resolveA;
+    api.analysis.getOlapCapability
+        .mockReturnValueOnce(new Promise(done => { resolveA = done; }))
+        .mockResolvedValueOnce({status: 200, data: {available: false}});
+    const view = renderHome();
+    expandComputer();
+    view.rerender(home({isVermeer: false, graphStatus: 'LOADED'}, 'other'));
+    expandComputer();
+    await screen.findByText('analysis.algorithm.computer_legacy_unavailable');
+
+    await act(async () => resolveA({status: 200, data: {available: true}}));
+
+    expect(screen.getByText('analysis.algorithm.computer_legacy_unavailable')).toBeInTheDocument();
+    expect(screen.queryByTestId('olap-item')).not.toBeInTheDocument();
+    expect(api.analysis.getOlapCapability).toHaveBeenCalledTimes(2);
 });

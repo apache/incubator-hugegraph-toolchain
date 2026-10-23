@@ -19,8 +19,12 @@ const {chromium} = require('../../../hubble-fe/node_modules/playwright');
 const fs = require('fs');
 const path = require('path');
 const assert = require('node:assert/strict');
+const {execFileSync} = require('node:child_process');
+const codeCommit = execFileSync('git', ['rev-parse', 'HEAD'], {
+ cwd: path.resolve(__dirname, '../../../..'), encoding: 'utf8',
+}).trim();
 const base = process.env.HUBBLE_UI_BASE || 'http://127.0.0.1:3004';
-const output = '/tmp/hubble-vermeer-first-evidence';
+const output = process.env.HUBBLE_UI_EVIDENCE_DIR || '/tmp/hubble-vermeer-first-evidence';
 fs.mkdirSync(output, {recursive:true});
 const checks = [];
 let runnerError = null;
@@ -98,10 +102,10 @@ async function check(name,fn){try{await fn();checks.push({name,status:'passed'})
   assert.equal(state.capabilityCalls,0);
   assert.equal(await page.getByText('Vermeer · OLAP 全图计算',{exact:true}).locator('..').locator('.ant-collapse-item').count(),9);
   assert.equal(await page.getByText('Computer 兼容入口（按需展开）',{exact:true}).count(),0);
-  assert((await page.getByRole('link',{name:'Vermeer 图计算指南',exact:true}).getAttribute('href')).includes('/master/vermeer'));
+  assert.equal(await page.getByRole('link',{name:'Vermeer 图计算指南',exact:true}).getAttribute('href'),'https://github.com/apache/hugegraph-computer/tree/master/vermeer');
   await searchFor('PageRank');
   await pagerank().waitFor();
-  assert((await pagerank().getByRole('link').getAttribute('href')).includes('/master/vermeer'));
+  assert.equal(await pagerank().getByRole('link').getAttribute('href'),'https://github.com/apache/hugegraph-computer/tree/master/vermeer');
   const run=pagerank().locator('.ant-collapse-header button');
   assert.equal(await run.isDisabled(),false);
   await pagerank().scrollIntoViewIfNeeded(); await screenshot(page,'02-vermeer-ready');
@@ -132,8 +136,26 @@ async function check(name,fn){try{await fn();checks.push({name,status:'passed'})
   await toggle.click(); await pagerank().waitFor();
   await page.getByText('下方算法使用 Computer 兼容接口，任务不会发送到 Vermeer',{exact:false}).waitFor();
   assert.equal(state.capabilityCalls,1);
-  assert((await pagerank().getByRole('link').getAttribute('href')).includes('/quickstart/hugegraph-computer/'));
+  assert((await pagerank().getByRole('link').getAttribute('href')).includes('/quickstart/computing/hugegraph-computer/'));
   await screenshot(page,'07-computer-opt-in');
+ });
+ await check('Computer opt-in is cleared after graph A to B to A',async()=>{
+  const calls=state.capabilityCalls;
+  const toggle=page.getByRole('button',{name:'Computer 兼容入口（按需展开）',exact:true});
+  for(const [label,graph] of [['测试图','second'],['记忆图','hugegraph']]) {
+   await page.getByRole('combobox',{name:'当前图',exact:true}).click();
+   await page.locator('.ant-select-item-option').filter({hasText:label}).click();
+   await page.waitForURL('**/algorithms/DEFAULT/'+graph);
+   await page.getByRole('button',{name:'Computer 兼容入口（按需展开）',exact:true,expanded:false}).waitFor();
+   assert.equal(await toggle.getAttribute('aria-expanded'),'false');
+   assert.equal(await pagerank().count(),0);
+   assert.equal(state.capabilityCalls,calls);
+  }
+  await screenshot(page,'12-computer-return-collapsed');
+  await toggle.click(); await pagerank().waitFor();
+  assert.equal(state.capabilityCalls,calls+1);
+  assert.equal(await page.getByRole('link',{name:'Computer 配置文档',exact:true}).getAttribute('href'),
+   'https://hugegraph.apache.org/docs/quickstart/computing/hugegraph-computer/#6-built-in-algorithms-and-development');
  });
  await check('unavailable Computer capability stays non-runnable after opt-in',async()=>{
   state.computerAvailable=false; await goAlgorithms(); await searchFor('PageRank');
@@ -165,7 +187,7 @@ async function check(name,fn){try{await fn();checks.push({name,status:'passed'})
   assert.equal(anonymous.state.capabilityCalls,0); await screenshot(anonymous.page,'11-context-switched');
  });
  }catch(e){runnerError=e.message;process.exitCode=1;console.error(e.stack);for(const ctx of browser.contexts()){for(const p of ctx.pages()){console.log('PAGE',p.url(),await p.locator('body').innerText());await p.screenshot({path:path.join(output,'failure.png'),fullPage:true});}}}finally{
-  fs.writeFileSync(path.join(output,'browser-report.json'),JSON.stringify({scope:'Actual Chromium UI with explicit API fixtures; not live-engine end-to-end acceptance',codeCommit:'4b2596d9188920d653686390ba80690a0f3e0295',screenshotLocation:'Outside Git; see PR description for screenshot evidence status',checks,runnerError,unexpectedApi:[...unexpected],pageErrors:errors},null,2)+'\n');
+  fs.writeFileSync(path.join(output,'browser-report.json'),JSON.stringify({scope:'Actual Chromium UI with explicit API fixtures; not live-engine end-to-end acceptance',codeCommit,screenshotLocation:'Outside Git; see PR description for screenshot evidence status',checks,runnerError,unexpectedApi:[...unexpected],pageErrors:errors},null,2)+'\n');
   await browser.close();
  }
  if(checks.some(x=>x.status==='failed')||unexpected.size||errors.length)process.exitCode=1;

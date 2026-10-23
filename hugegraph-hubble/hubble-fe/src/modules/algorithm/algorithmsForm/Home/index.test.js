@@ -75,6 +75,6 @@ test('promotes Vermeer documentation and keeps Computer documentation in its com
     renderForm({vertexCount: 1, edgeCount: 1});
 
     expect(screen.getByRole('link', {name: 'analysis.algorithm.vermeer_docs'}))
-        .toHaveAttribute('href', 'https://github.com/hugegraph/hugegraph-computer/tree/master/vermeer');
+        .toHaveAttribute('href', 'https://github.com/apache/hugegraph-computer/tree/master/vermeer');
     expect(screen.queryByText('analysis.algorithm.computer_docs')).not.toBeInTheDocument();
 });

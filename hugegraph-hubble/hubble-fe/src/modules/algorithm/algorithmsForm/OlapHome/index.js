@@ -110,6 +110,10 @@ const OlapFormHome = props => {
         ? computerCapability.available : null;
 
     useEffect(() => {
+        setLegacyScope(null);
+    }, [scope, isVermeer]);
+
+    useEffect(() => {
         let cancelled = false;
         if (!legacyExpanded || !graphSpace || !graph) {
             setComputerCapability(null);
