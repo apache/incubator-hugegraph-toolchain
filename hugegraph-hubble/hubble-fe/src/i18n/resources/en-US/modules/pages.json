@@ -1278,7 +1278,7 @@
     "diagnostic_large_response_action": "Inspect the endpoint and response size below. Check for excessive payload or missing pagination before changing the collection response limit.",
     "diagnostic_check_source_action": "Check the affected request, node metric groups and upstream logs, then refresh to confirm recovery.",
     "reason_pd_metrics_unmapped": "The configured PD endpoint could not be matched to a discovered PD node",
-    "diagnostic_pd_mapping_action": "PD topology was discovered, but CPU, JVM memory and other system metrics were not collected because the configured endpoint could not be uniquely matched to a member's restUrl in /v1/cluster. Compare the addresses below with pd.server in hugegraph-hubble.properties; a scheme-less address uses server.protocol. Use a reachable member address or correct its advertised restUrl. A proxy or load-balancer address may not identify one node. Restart Hubble after changing its configuration, then refresh.",
+    "diagnostic_pd_mapping_action": "PD topology was discovered, but CPU, JVM memory and other system metrics were not collected because the configured endpoint could not be uniquely matched to a member's restUrl in the PD member list. Compare the addresses below with pd.server in hugegraph-hubble.properties; a scheme-less address uses server.protocol. Use a reachable member address or correct its advertised restUrl. A proxy or load-balancer address may not identify one node. Restart Hubble after changing its configuration, then refresh.",
     "diagnostic_topology_last_success": "Last topology success",
     "diagnostic_metrics_not_collected": "System metrics not collected",
     "diagnostic_pd_address_comparison": "PD address comparison",

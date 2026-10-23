@@ -138,9 +138,9 @@ test.each(['UNAVAILABLE', 'UNSUPPORTED'])(
 
         expect(screen.getByText('PD nodes are online; system metrics could not be attributed'))
             .toBeInTheDocument();
-        expect(screen.getByText(/PD topology was discovered.*restUrl in \/v1\/cluster/)).not.toBeVisible();
+        expect(screen.getByText(/PD topology was discovered.*restUrl in the PD member list/)).not.toBeVisible();
         fireEvent.click(screen.getByText('Check addresses and how to fix'));
-        expect(screen.getByText(/PD topology was discovered.*restUrl in \/v1\/cluster/)).toBeInTheDocument();
+        expect(screen.getByText(/PD topology was discovered.*restUrl in the PD member list/)).toBeInTheDocument();
         expect(screen.getByText('Last topology success')).toBeInTheDocument();
         expect(screen.getByText('System metrics not collected')).toBeInTheDocument();
         for (const id of [1, 2, 3]) {
