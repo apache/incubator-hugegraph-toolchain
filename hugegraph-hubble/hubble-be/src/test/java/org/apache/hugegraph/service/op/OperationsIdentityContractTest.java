@@ -77,6 +77,7 @@ public class OperationsIdentityContractTest {
         }
 
         Assert.assertTrue(http.pdRequests > 0);
+        Assert.assertEquals(1, http.memberRequests);
         Assert.assertEquals(1, http.dedicatedRequests);
         Assert.assertEquals(1, http.pdMetricRequests);
         Assert.assertEquals(dedicatedStatus == 200 ? 0 : 1, http.legacyRequests);
@@ -112,6 +113,7 @@ public class OperationsIdentityContractTest {
 
         private final List<Capture> captures = new ArrayList<>();
         private int pdRequests;
+        private int memberRequests;
         private int storeRequests;
         private int dedicatedRequests;
         private int legacyRequests;
@@ -162,8 +164,9 @@ public class OperationsIdentityContractTest {
             this.pdRequests++;
             Assert.assertEquals(this.pdScheme, target.getScheme());
             switch (target.getPath()) {
-                case "/v1/cluster":
-                    return cluster();
+                case "/v1/members":
+                    this.memberRequests++;
+                    return members();
                 case "/v1/stores":
                     return stores();
                 case "/v1/prom/targets/store":
@@ -183,7 +186,7 @@ public class OperationsIdentityContractTest {
             }
         }
 
-        private static String cluster() {
+        private static String members() {
             return "{\"status\":0,\"data\":{\"state\":\"Cluster_OK\"," +
                    "\"pdList\":[{\"restUrl\":\"pd.internal:8620\",\"state\":\"Up\"}],\"stores\":[]}}";
         }

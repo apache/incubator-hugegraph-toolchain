@@ -135,7 +135,7 @@ public class OperationsHttpClientTest {
         try (MockedStatic<InetAddress> dns = Mockito.mockStatic(InetAddress.class)) {
             dns.when(() -> InetAddress.getAllByName(host))
                .thenThrow(new UnknownHostException(host));
-            for (String path : new String[]{"/v1/cluster", "/v1/stores", "/actuator/prometheus"}) {
+            for (String path : new String[]{"/v1/members", "/v1/stores", "/actuator/prometheus"}) {
                 UpstreamRequestException error = (UpstreamRequestException) Assert.assertThrows(
                         UpstreamRequestException.class, () -> client.get(URI.create(
                         "http://" + host + ":8620" + path + "?token=private-query"),
@@ -151,7 +151,7 @@ public class OperationsHttpClientTest {
     @Test
     public void testRejectedDnsAnswersKeepOnlySafeRequestPaths() {
         OperationsHttpClient client = new OperationsHttpClient(1000, 1000, 64);
-        for (String path : new String[]{"/v1/cluster", "/v1/stores", "/actuator/prometheus"}) {
+        for (String path : new String[]{"/v1/members", "/v1/stores", "/actuator/prometheus"}) {
             UpstreamRequestException error = (UpstreamRequestException) Assert.assertThrows(
                     UpstreamRequestException.class, () -> client.get(URI.create(
                     "http://localhost:8620" + path + "?token=private-query"),

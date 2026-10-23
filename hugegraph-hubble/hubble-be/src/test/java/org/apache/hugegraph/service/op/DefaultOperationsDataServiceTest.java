@@ -58,7 +58,7 @@ public class DefaultOperationsDataServiceTest {
         SourceStatus source = new SourceStatus("PARTIAL", "UP", 2000L,
                                                1000L, true, false,
                                                "data_fault")
-                .withDiagnostics(Collections.singletonMap("request_path", "/v1/cluster"));
+                .withDiagnostics(Collections.singletonMap("request_path", "/v1/members"));
         SourceStatus withHealth = source.withClusterHealth(
                                   "Cluster_OK", "PState_Fault");
         Assert.assertEquals(source.getDiagnostics(), withHealth.getDiagnostics());
@@ -120,7 +120,7 @@ public class DefaultOperationsDataServiceTest {
                 }
                 SourceStatus failure = new SourceStatus("UNAVAILABLE", "UNKNOWN",
                         2000L, null, false, false, reason)
-                        .withDiagnostics(Collections.singletonMap("request_path", "/v1/cluster"));
+                        .withDiagnostics(Collections.singletonMap("request_path", "/v1/members"));
                 return new Snapshot("DEGRADED", 2000L, false, null,
                         Collections.singletonMap("pd", failure), Collections.emptyList(), Collections.emptyMap());
             };
@@ -137,7 +137,7 @@ public class DefaultOperationsDataServiceTest {
             Assert.assertEquals("Cluster_OK", pd.getClusterState());
             Assert.assertEquals("PState_Fault", pd.getDataState());
             Assert.assertEquals(reason, pd.getReason());
-            Assert.assertEquals(Collections.singletonMap("request_path", "/v1/cluster"), pd.getDiagnostics());
+            Assert.assertEquals(Collections.singletonMap("request_path", "/v1/members"), pd.getDiagnostics());
             Assert.assertEquals("UP", pd.getStatus());
             Assert.assertEquals(Long.valueOf(1000L), pd.getLastSuccessAt());
             Assert.assertTrue(pd.isStale());
