@@ -13,7 +13,8 @@ collapsed and checks that graph's capability only after expansion. An unavailabl
 Computer capability cannot expose runnable forms. Graph changes invalidate the
 opt-in and ignore late responses from the previous graph. Existing deployments
 can still use the compatibility entry; its documentation and task labels identify
-Computer explicitly.
+Computer explicitly. Returning to a previously selected graph also requires a new
+explicit opt-in; its earlier capability result is not reused.
 
 Vermeer algorithm links point to Vermeer documentation. Interactive traversal
 links keep their API-specific references. Task types name the actual backend.
@@ -24,16 +25,18 @@ configured or healthy Vermeer service.
 ## Verification
 
 Based on remote master `eef5afd29762f394667494b726afdce1b938214d`.
-Product code verified at `4b2596d9188920d653686390ba80690a0f3e0295`:
+Product code verified at `b1dc8380deb5e5967e568e7318546a2ce54aea48`:
 
-- Six focused Jest suites / 47 tests passed, including capability opt-in, late
-  response isolation, supported algorithm sets, submission and task type mapping.
-- TypeScript, locale consistency, targeted ESLint and Vite production build passed.
-- Independent code review found no actionable issues.
-- Chromium exercised 9 checks with 11 captures: authenticated login, anonymous
+- Four focused Jest suites / 56 tests passed, including graph A→B→A opt-in reset,
+  late A capability after B opted in, all nine engine-specific documentation URLs,
+  supported algorithm sets, and locale copy rules.
+- TypeScript and targeted ESLint passed. Initial implementation also passed six
+  suites / 47 tests, locale consistency, and the Vite production build.
+- Chromium exercised 10 checks with 12 captures: authenticated login, anonymous
   account/GraphSpace visibility, graph context switching, loaded and unloaded
   Vermeer, PageRank submission route and payload, unsupported Louvain, collapsed
-  Computer opt-in and unavailable capability, and both task engine labels.
+  Computer opt-in and unavailable capability, return-to-graph opt-in reset, and
+  both task engine labels.
   Uncaught page errors, caught error toasts and unexpected API routes were zero.
 
 The browser uses explicit API fixtures against the actual running frontend.
@@ -52,4 +55,5 @@ node hugegraph-hubble/hubble-dist/assembly/travis/vermeer_first_browser.cjs
 ```
 
 The runner writes screenshots and its report to `/tmp/hubble-vermeer-first-evidence`.
-`HUBBLE_UI_BASE` and `CHROMIUM_PATH` can override the frontend URL and Chromium executable.
+`HUBBLE_UI_BASE`, `HUBBLE_UI_EVIDENCE_DIR`, and `CHROMIUM_PATH` can override the frontend
+URL, output directory, and Chromium executable. The report records the checked-out commit.

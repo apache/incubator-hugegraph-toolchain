@@ -1,6 +1,6 @@
 {
   "scope": "Actual Chromium UI with explicit API fixtures; not live-engine end-to-end acceptance",
-  "codeCommit": "4b2596d9188920d653686390ba80690a0f3e0295",
+  "codeCommit": "b1dc8380deb5e5967e568e7318546a2ce54aea48",
   "screenshotLocation": "Outside Git; see PR description for screenshot evidence status",
   "checks": [
     {
@@ -24,6 +24,10 @@
       "status": "passed"
     },
     {
+      "name": "Computer opt-in is cleared after graph A to B to A",
+      "status": "passed"
+    },
+    {
       "name": "unavailable Computer capability stays non-runnable after opt-in",
       "status": "passed"
     },
@@ -40,7 +44,7 @@
       "status": "passed"
     }
   ],
+  "runnerError": null,
   "unexpectedApi": [],
-  "pageErrors": [],
-  "runnerError": null
+  "pageErrors": []
 }

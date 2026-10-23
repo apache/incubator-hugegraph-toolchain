@@ -151,6 +151,8 @@ async function check(name,fn){try{await fn();checks.push({name,status:'passed'})
    assert.equal(await pagerank().count(),0);
    assert.equal(state.capabilityCalls,calls);
   }
+  await searchFor('PageRank');
+  await toggle.scrollIntoViewIfNeeded();
   await screenshot(page,'12-computer-return-collapsed');
   await toggle.click(); await pagerank().waitFor();
   assert.equal(state.capabilityCalls,calls+1);
