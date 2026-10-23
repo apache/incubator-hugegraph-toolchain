@@ -1,6 +1,6 @@
 {
   "status": "passed",
-  "observedAt": "2026-10-23T14:31:06.447Z",
+  "observedAt": "2026-10-23T16:25:42.975Z",
   "browserVersion": "154.0.8037.57",
   "timezone": "Asia/Taipei",
   "scope": "Actual Chromium UI against mocked API responses; not real-cluster acceptance",
@@ -49,6 +49,9 @@
   "unexpectedApi": [],
   "pageErrors": [],
   "failure": null,
-  "sourceCommit": "f4e791069a2448127846f835327059dd5bd2518a",
-  "runnerGitBlob": "48f277bf4b73411c0cdf5c758d5886fd192e2df3"
+  "runnerGitBlob": "1dcc1bc8942a530a8bdbdbd18f9d0eb1a1a46388",
+  "launcherGitBlob": "43c043c07658ce4d560464901ba4f5d1a7b1fe76",
+  "sourceCommit": "8b1019a3f8616d2e5cc0056ed2884eca3ca791e7",
+  "frontendSourceTree": "c68f61779142ead4b62ac66add3cd0c2ff2c233c",
+  "runnerSourceCommit": "6ff337fef0b0ffeaf5138e50ad4b0a26e1194187"
 }
