@@ -18,6 +18,7 @@ The separately authorized, bounded GraphSpace notification fix is proposed in
 - [Toolchain #89](https://github.com/hugegraph/hugegraph-toolchain/pull/89): Vermeer load permission configuration guidance.
 - [Toolchain #90](https://github.com/hugegraph/hugegraph-toolchain/pull/90): recoverable property/vertex-label/edge-label deletion.
 - [Toolchain #91](https://github.com/hugegraph/hugegraph-toolchain/pull/91): explicit Vermeer-first OLAP entry and optional Computer compatibility entry.
+- [Toolchain #93](https://github.com/hugegraph/hugegraph-toolchain/pull/93): minimap bounds and viewport-mask synchronization after canvas resize.
 
 Screenshots remain outside Git. Browser evidence is linked from the PR
 descriptions and the [issue record](https://chatgpt.com/space/page_62cf6a23a284819196000f124fdd6990).
@@ -39,7 +40,9 @@ this documentation PR alone does not change application behavior.
 | 30: `pd metrics unmapped` has no useful diagnosis | A configured PD endpoint could not be uniquely matched to an advertised member. Missing system metrics were classified as unsupported and filtered out of node diagnostics. | Keep node registration status intact, classify collection as unavailable, list affected metrics and show safe endpoint comparisons with match counts and actionable configuration guidance. |
 | 31: Re-querying the same IDs fails in G6 | Native history aligns fields by mutating an earlier raw record, which was frozen. | Copy writable engine data at the boundary; retain immutable controller snapshots. |
 | 32: GraphSpace CRUD loses context | Failed saves replaced the form, failed deletes closed confirmation, and filters/deleting the last row could leave the wrong page selected. | Preserve form state and deletion targets, block duplicate mutation, keep failures retryable, and reset or retreat pagination. |
-| 33: Schema deletion cannot retry in place | Failed DELETE requests closed the static confirmation. | Keep confirmation open after failure, show the exact graph and names, and close only after success for properties and both label types. |
+| 33: Schema deletion cannot retry in place | Failed DELETE requests closed the static confirmation. A lost response or partial batch can leave an uncertain result. | Re-read complete schema and dependencies, delete only remaining eligible targets, and retain the exact graph/names. Accepted or uncertain async deletion checks status first; only explicit retry resubmits. Report success only after absence is confirmed. |
+| 34: OLAP engine is unclear | Vermeer and Computer were not clearly distinguished and optional Computer capability checks ran by default. | Make Vermeer the default entry, show actual task engine labels and expose Computer only after explicit opt-in. |
+| 35: Minimap is clipped after a query or canvas resize | Reproduced on unchanged remote master: G6 writes fixed surface dimensions, hiding host layout changes from the surface observer; its minimap also retains an inline pixel top offset. | Observe the actual canvas host and anchor the minimap to its bottom. Reapply the current zoom through the public API to refresh its viewport mask without changing the camera. Keep the browser bounds assertion unchanged. |
 
 ## Why PD-backed data can still show inconsistent quotas
 
@@ -67,7 +70,9 @@ cluster readiness signal and is shown separately from collection status.
 
 The diagnostic page compares the configured PD origin with member REST origins
 from `/v1/cluster`, shows whether origin and base path match, and distinguishes
-no match from multiple matching nodes. It displays at most ten members. It
+no match from multiple matching nodes. It displays at most ten members, prioritizing exact origin/base-path matches;
+counts still use the complete deduplicated set. Each failed Server or Store
+request retains its owning node, metric group, request path and HTTP status. It
 does not expose userinfo, URL parameters or base-path contents.
 
 Check `pd.server` in `hugegraph-hubble.properties` and `server.protocol` when no
@@ -96,23 +101,56 @@ they verify the running frontend rather than a deployed PD/Store/Server cluster.
 See [the browser evidence](assets/deployment-regressions-20261023/browser-report.json).
 Live cluster acceptance, image publication and deployment remain separate.
 
+The combined source at `7d2fbf4e` passed all 216 frontend suites / 2,301 tests
+and all 95 focused backend tests. Full frontend ESLint, locale validation,
+TypeScript and production build passed; Vite retains its existing large-chunk
+warning. The default backend suite also ran the newly registered Vermeer tests;
+three unrelated GraphSpace controller failures reproduce on unchanged remote
+master with the locally installed SDK. The full backend suite is therefore not
+reported as green.
+
 The combined Chromium run passed all ten login, anonymous-access, graph-context,
 query, delayed-task, GraphSpace and PD-diagnostic scenarios. Separate browser
-runners cover 20 GraphSpace CRUD steps and seven schema/data scenarios, including
-failure/retry for all three changed schema-delete paths. Canvas removal is a
-view operation; it is not described as persistent data deletion.
+runners passed 20 GraphSpace CRUD steps, 15 schema/data scenarios, five monitoring
+scenarios, nine Vermeer interactions and 12 localized OLAP state checks. Schema
+coverage includes all three delete paths, lost responses, partial batches,
+changed dependencies and explicit retry after uncertain asynchronous submission.
+Canvas removal is a view operation; it is not described as persistent data deletion.
+
+The acceptance runner also passed with a trailing slash in `HUBBLE_URL`.
+It uses a configured Chromium executable, an available system Chromium, or the
+Playwright-managed browser. A deliberately failed run preserved distinct
+screenshots for two browser contexts instead of overwriting one failure image.
+
+After adding #93, combined commit `a6157fc1e7a0ba912368cd68555f5ad5f30cac98`
+passed 119 focused visualization tests, production build, TypeScript and locale
+validation. Chromium checked minimap bounds at seven stages: initial/repeated
+query, panel toggles, settled layout, larger/smaller viewport and Table → Graph
+navigation. The independent #93 branch also verified that a zoomed minimap mask
+updates immediately after resize without changing the camera. The existing
+minimap failure in #88/#89 CI reproduces on master and is addressed by #93;
+those independent branches do not themselves contain #93.
 
 ## Bounded rendering comparison
 
 Identical intercepted API fixtures ran against remote master `eef5afd2` and the
-combined candidate in Chromium 154.0.8037.57. Each size used two interleaved
-rounds of five warm queries. Timing covers the query action until the canvas is
-idle plus two animation frames; it excludes Server work.
+combined candidate `a6157fc1e7a0ba912368cd68555f5ad5f30cac98` in Chromium
+154.0.8037.57. Each size used two interleaved rounds of five warm queries,
+in baseline/candidate/candidate/baseline order. Timing waits for the exact
+response, the current query/canvas busy-to-idle cycle, and two animation frames;
+it excludes Server work.
+
+The record pins both commits, frontend source trees, every split PR head and
+the official runner's Git blob/SHA256. Every served source file was checked
+against its commit before and after the run. The temporary execution copy only
+replaces the Playwright import with the installed absolute dependency path;
+its separate hash is recorded. These fresh measurements replace the earlier
+comparison that lacked an exact candidate revision.
 
 | Vertices | Master median | Candidate median | Master maximum | Candidate maximum |
 | --- | --- | --- | --- | --- |
-| 100 | 402.7 ms | 357.2 ms | 518.8 ms | 441.4 ms |
-| 300 | 514.1 ms | 451.0 ms | 628.4 ms | 505.4 ms |
+| 100 | 396.55 ms | 339.45 ms | 519.0 ms | 453.0 ms |
+| 300 | 506.50 ms | 465.55 ms | 659.9 ms | 608.9 ms |
 
 No rendering regression was observed in these bounded scenarios. Shared executor
 load was uncontrolled, so these numbers do not establish a production speedup
