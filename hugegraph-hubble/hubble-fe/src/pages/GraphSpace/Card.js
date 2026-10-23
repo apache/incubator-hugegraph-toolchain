@@ -192,22 +192,26 @@ const GraphSpaceCard = ({
                                 ? t('graphspace.card.daily_snapshot', {date: statisticDate})
                                 : t('graphspace.card.daily_update')}
                         </Typography.Text>
-                        <span aria-label={t('graphspace.card.statistic_help')}>
-                            <Tooltip title={(
-                                <>
-                                    <div>{t('graphspace.card.daily_update')}</div>
-                                    {statisticDate && (
-                                        <div>{t('graphspace.card.last_update', {
-                                            date: statisticDate,
-                                        })}
-                                        </div>
-                                    )}
-                                </>
-                            )}
-                            >
-                                <InfoCircleOutlined />
-                            </Tooltip>
-                        </span>
+                        <Tooltip title={(
+                            <>
+                                <div>{t('graphspace.card.daily_update')}</div>
+                                {statisticDate && (
+                                    <div>{t('graphspace.card.last_update', {
+                                        date: statisticDate,
+                                    })}
+                                    </div>
+                                )}
+                            </>
+                        )}
+                            trigger={['hover', 'focus', 'click']}
+                        >
+                            <Button
+                                type='text'
+                                size='small'
+                                aria-label={t('graphspace.card.statistic_help')}
+                                icon={<InfoCircleOutlined />}
+                            />
+                        </Tooltip>
                     </Space>,
                 ] : undefined}
         >

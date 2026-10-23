@@ -83,6 +83,27 @@ test('does not navigate when opening the menu or editing through its portal', as
     expect(mockNavigate).not.toHaveBeenCalled();
 });
 
+test('keeps statistics help available through icon clicks and the keyboard without navigating', async () => {
+    render(<GraphSpaceCard item={{
+        name: 'space', nickname: 'Space',
+        statistic: {vertex: 12, edge: 3, date: '2026-10-23'},
+    }} />);
+    const help = screen.getByLabelText('graphspace.card.statistic_help');
+    for (const target of [help.querySelector('span'), help.querySelector('svg')]) {
+        await userEvent.click(target);
+        expect(mockNavigate).not.toHaveBeenCalled();
+    }
+    expect(help).toHaveAttribute('type', 'button');
+    await userEvent.unhover(help);
+    await userEvent.tab();
+    await userEvent.tab({shift: true});
+    expect(help).toHaveFocus();
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('graphspace.card.daily_update');
+    expect(screen.getByRole('tooltip')).toHaveTextContent('graphspace.card.last_update');
+    await userEvent.keyboard('{Enter} ');
+    expect(mockNavigate).not.toHaveBeenCalled();
+});
+
 test('does not expose a default GraphSpace mutation action', async () => {
     const handleSetDefault = jest.fn();
     const item = {
