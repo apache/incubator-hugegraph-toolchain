@@ -28,8 +28,8 @@ const output = process.env.HUBBLE_UI_EVIDENCE_DIR
     || path.join(hubbleRoot, 'docs/assets/operations-diagnostics-20261023/after');
 const now = 1792757451000;
 const scenario = process.env.HUBBLE_UI_SCENARIO;
-assert(!scenario || ['overview', 'server', 'store', 'PD'].includes(scenario),
-    'HUBBLE_UI_SCENARIO must be overview, server, store, or PD');
+assert(!scenario || ['overview', 'server', 'store', 'PD', 'ownership'].includes(scenario),
+    'HUBBLE_UI_SCENARIO must be overview, server, store, PD, or ownership');
 const checks = [];
 const pageErrors = [];
 const unexpectedApi = new Set();
@@ -169,6 +169,7 @@ async function check(name, action) {
             assert.equal(await page.locator('.operations-source-strip').getByText('Store', {exact: true}).count(), 0);
             const diagnostics = page.locator('#operations-source-diagnostics');
             await diagnostics.getByText('后端指标获取失败的图数', {exact: true}).waitFor();
+            await diagnostics.getByText('Server 1 · 后端', {exact: true}).waitFor();
             assert.equal(await diagnostics.getByText('2', {exact: true}).isVisible(), true);
             await capture(page, '02-server-backend-unavailable');
         });
@@ -177,6 +178,7 @@ async function check(name, action) {
             await page.getByRole('heading', {name: 'Store 1', exact: true}).waitFor();
             await page.getByText('/metrics/system', {exact: true}).first().waitFor();
             await page.getByText('503', {exact: true}).first().waitFor();
+            await page.getByText('Store 1 · 系统', {exact: true}).waitFor();
             assert.equal(await page.getByText('upstream rejected', {exact: true}).count(), 0);
             await capture(page, '03-store-system-request-failed');
             await page.locator('summary').filter({hasText: '采集详情与修复方法'}).click();
@@ -192,6 +194,41 @@ async function check(name, action) {
             await page.getByText('http://pd-service:8620', {exact: true}).waitFor();
             await page.getByText('尚未采集系统指标', {exact: false}).first().waitFor();
             await capture(page, '05-pd-diagnostics-expanded');
+        });
+        await check('ownership keeps multiple node failures attached to their nodes and groups', async () => {
+            nodes.push({...server, id: 'server-2', name: 'Server 2', metric_statuses: {
+                backend: failed('backend_metrics_failed', {failed_graphs: 7}),
+            }});
+            sources.server.diagnostics.affected_node_count = 2;
+            await page.goto(base + '/operations/nodes?type=SERVER&source=server#operations-source-diagnostics');
+            const diagnostics = page.locator('#operations-source-diagnostics');
+            const disclosure = diagnostics.locator('summary');
+            await disclosure.waitFor();
+            assert.equal(await diagnostics.getByText('2', {exact: true}).isVisible(), false);
+            assert.equal(await diagnostics.getByText('7', {exact: true}).isVisible(), false);
+            await capture(page, '06-multiple-server-failures-collapsed');
+            await disclosure.click();
+            for (const [name, count] of [['Server 1', '2'], ['Server 2', '7']]) {
+                const row = diagnostics.locator('li').filter({hasText: `${name} · backend`});
+                assert.equal(await row.getByText(count, {exact: true}).isVisible(), true);
+            }
+            await capture(page, '07-multiple-server-failures-expanded');
+
+            nodes.push({...store, id: 'store-2', name: 'Store 2', metric_statuses: {
+                raft: failed('upstream_rejected', {request_path: '/metrics/raft', http_status: 502}),
+            }});
+            sources.stores.diagnostics = {affected_node_count: 2, failed_metric_groups: ['system', 'raft']};
+            await page.goto(base + '/operations/nodes?type=STORE&source=stores#operations-source-diagnostics');
+            await disclosure.waitFor();
+            assert.equal(await diagnostics.getByText('/metrics/system', {exact: true}).isVisible(), false);
+            assert.equal(await diagnostics.getByText('/metrics/raft', {exact: true}).isVisible(), false);
+            await disclosure.click();
+            for (const [name, group, status] of [['Store 1', 'system', '503'], ['Store 2', 'raft', '502']]) {
+                const row = diagnostics.locator('li').filter({hasText: `${name} · ${group}`});
+                assert.equal(await row.getByText(`/metrics/${group}`, {exact: true}).isVisible(), true);
+                assert.equal(await row.getByText(status, {exact: true}).isVisible(), true);
+            }
+            await capture(page, '08-multiple-store-request-owners');
         });
     }
     catch (error) {

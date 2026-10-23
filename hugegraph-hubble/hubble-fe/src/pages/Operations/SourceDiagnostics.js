@@ -26,7 +26,7 @@ import {sourceHealthStatus} from './sourceHealth';
 const SOURCE_TYPES = {server: 'SERVER', pd: 'PD', stores: 'STORE'};
 const DIAGNOSTICS_ID = 'operations-source-diagnostics';
 
-const DiagnosticRequest = ({diagnostics = {}}) => {
+const DiagnosticRequest = ({diagnostics = {}, owner}) => {
     const {t, i18n} = useTranslation();
     const bytes = value => {
         const formatted = formatBytes(value);
@@ -40,7 +40,7 @@ const DiagnosticRequest = ({diagnostics = {}}) => {
         return null;
     }
     return (
-        <Descriptions size='small' column={{xs: 1, sm: 2, lg: 3}} items={[
+        <Descriptions title={owner} size='small' column={{xs: 1, sm: 2, lg: 3}} items={[
             diagnostics.request_path && {
                 key: 'request', label: t('operations.diagnostic_request'),
                 children: <code>{diagnostics.request_path}</code>,
@@ -138,9 +138,12 @@ const SourceDiagnostics = ({sources = {}, sourceName, nodes = [], focus = false,
                     || failures.some(({status}) => status.reason === 'pd_metrics_unmapped'));
                 const mapping = source.diagnostics?.pd_metric_mapping;
                 const DetailsContainer = recovered ? 'div' : 'details';
+                const requestOwner = !source.diagnostics?.request_path && failures.length === 1
+                    && (failures[0].status.diagnostics?.request_path
+                        || Number.isSafeInteger(failures[0].status.diagnostics?.failed_graphs))
+                    ? failures[0] : null;
                 const requestDetails = source.diagnostics?.request_path ? source.diagnostics
-                    : failures.find(({status}) => status.diagnostics?.request_path
-                        || Number.isSafeInteger(status.diagnostics?.failed_graphs))?.status.diagnostics;
+                    : requestOwner?.status.diagnostics;
                 const groups = source.diagnostics?.failed_metric_groups
                     ?? [...new Set(failures.map(({group}) => group))];
                 const affected = source.diagnostics?.affected_node_count
@@ -161,7 +164,10 @@ const SourceDiagnostics = ({sources = {}, sourceName, nodes = [], focus = false,
                                     count: affected, groups: groups.map(group => t(`operations.metric_${group}`,
                                         {defaultValue: group})).join(', '),
                                 }) : undefined} />
-                        {!unmappedPd && <DiagnosticRequest diagnostics={requestDetails} />}
+                        {!unmappedPd && <DiagnosticRequest diagnostics={requestDetails}
+                            owner={requestOwner ? `${requestOwner.node.name} · ${t(
+                                `operations.metric_${requestOwner.group}`, {defaultValue: requestOwner.group}
+                            )}` : undefined} />}
                         {source.cluster_state === 'Cluster_Not_Ready' && <p className='operations-readiness-note'>
                             {t('operations.diagnostic_pd_not_ready')}
                         </p>}

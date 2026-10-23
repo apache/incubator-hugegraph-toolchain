@@ -1301,7 +1301,7 @@
     "diagnostic_pd_path_comparison": "基础路径",
     "diagnostic_address_matches": "一致",
     "diagnostic_address_differs": "不一致",
-    "diagnostic_pd_address_privacy": "地址只显示协议、主机和端口；基础路径仅显示比较结果，不显示内容。凭据和 URL 参数不会展示。",
+    "diagnostic_pd_address_privacy": "地址只显示协议、主机和端口；基础路径仅显示比较结果，不显示内容。凭据和 URL 参数不会展示",
     "diagnostic_pd_omitted_members": "此处省略了另外 {{count}} 个成员的比较结果",
     "diagnostic_freshness": "数据时效",
     "diagnostic_fresh": "最新",

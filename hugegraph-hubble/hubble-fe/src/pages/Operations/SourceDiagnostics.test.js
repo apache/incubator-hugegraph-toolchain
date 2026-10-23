@@ -250,6 +250,7 @@ test('keeps the failed request visible while disclosing supporting collection de
     })).toHaveLength(1);
     expect(screen.getByText('影响 1 个节点 · 指标：系统')).toBeVisible();
     expect(screen.getByText('/metrics/system')).toBeVisible();
+    expect(screen.getByText('Store 1 · 系统', {exact: true})).toBeVisible();
     const nodeDetails = screen.getByText(/Store 1 · system/);
     expect(nodeDetails).not.toBeVisible();
     fireEvent.click(screen.getByText('采集详情与修复方法'));
@@ -264,5 +265,51 @@ test('shows the current failed-graph count before expanding Server diagnostics',
     }}]} />);
     expect(screen.getByText('Graphs with failed backend metrics')).toBeVisible();
     expect(screen.getByText('2', {exact: true})).toBeVisible();
+    expect(screen.getByText('Server 1 · Backend', {exact: true})).toBeVisible();
     expect(screen.getByText(/Server 1 · backend/)).not.toBeVisible();
+});
+
+test('keeps multiple Server failed-graph counts attached to their owning nodes', () => {
+    render(<SourceDiagnostics sourceName='server' sources={{server: {
+        status: 'UP', availability: 'PARTIAL', reason: 'backend_metrics_failed',
+    }}} nodes={[['server-1', 'Server A', 2], ['server-2', 'Server B', 7]].map(([id, name, count]) => ({
+        id, name, type: 'SERVER', metric_statuses: {backend: {
+            availability: 'UNAVAILABLE', reason: 'backend_metrics_failed', diagnostics: {failed_graphs: count},
+        }},
+    }))} />);
+
+    expect(screen.getByText('2', {exact: true})).not.toBeVisible();
+    expect(screen.getByText('7', {exact: true})).not.toBeVisible();
+    fireEvent.click(screen.getByText('Collection details and how to fix'));
+    for (const [name, count] of [['Server A', '2'], ['Server B', '7']]) {
+        const row = screen.getByText(new RegExp(`${name} · backend`)).closest('li');
+        expect(within(row).getByText(count, {exact: true})).toBeVisible();
+    }
+});
+
+test('keeps multiple Store request paths and HTTP statuses attached to their metric groups', () => {
+    render(<SourceDiagnostics sourceName='stores' sources={{stores: {
+        status: 'UP', availability: 'PARTIAL', reason: 'store_metrics_partial',
+    }}} nodes={[
+        {id: 'store-1', name: 'Store A', type: 'STORE', metric_statuses: {system: {
+            availability: 'UNAVAILABLE', reason: 'upstream_rejected',
+            diagnostics: {request_path: '/metrics/system', http_status: 503},
+        }}},
+        {id: 'store-2', name: 'Store B', type: 'STORE', metric_statuses: {raft: {
+            availability: 'UNAVAILABLE', reason: 'upstream_rejected',
+            diagnostics: {request_path: '/metrics/raft', http_status: 502},
+        }}},
+    ]} />);
+
+    expect(screen.getByText('/metrics/system')).not.toBeVisible();
+    expect(screen.getByText('/metrics/raft')).not.toBeVisible();
+    fireEvent.click(screen.getByText('Collection details and how to fix'));
+    const first = screen.getByText(/Store A · system/).closest('li');
+    const second = screen.getByText(/Store B · raft/).closest('li');
+    expect(within(first).getByText('/metrics/system')).toBeVisible();
+    expect(within(first).getByText('503', {exact: true})).toBeVisible();
+    expect(within(first).queryByText('/metrics/raft')).not.toBeInTheDocument();
+    expect(within(second).getByText('/metrics/raft')).toBeVisible();
+    expect(within(second).getByText('502', {exact: true})).toBeVisible();
+    expect(within(second).queryByText('/metrics/system')).not.toBeInTheDocument();
 });

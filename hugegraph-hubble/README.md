@@ -845,7 +845,7 @@ python3 hubble-dist/assembly/travis/test_run_live_hubble_smoke.py
 
 The [Operations diagnostics audit](docs/operations-diagnostics-20261023.md) covers
 Cluster Overview, Server/Store node details and PD address matching. Before/after
-Chromium screenshots are attached to [PR #87](https://github.com/hugegraph/hugegraph-toolchain/pull/87),
+Chromium screenshot evidence is linked from [PR #87](https://github.com/hugegraph/hugegraph-toolchain/pull/87),
 not stored in the repository. Run its [browser fixture](hubble-dist/assembly/travis/run_ui_operations_diagnostics.js)
 against the running frontend with `node hubble-dist/assembly/travis/run_ui_operations_diagnostics.js`;
 configure `HUBBLE_URL`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` and `HUBBLE_UI_EVIDENCE_DIR`

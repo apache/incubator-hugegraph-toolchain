@@ -1301,7 +1301,7 @@
     "diagnostic_pd_path_comparison": "Base path",
     "diagnostic_address_matches": "Matches",
     "diagnostic_address_differs": "Differs",
-    "diagnostic_pd_address_privacy": "Origins show only the scheme, host and port. Base paths are compared without displaying their contents. Credentials and URL parameters are omitted.",
+    "diagnostic_pd_address_privacy": "Origins show only the scheme, host and port. Base paths are compared without displaying their contents. Credentials and URL parameters are omitted",
     "diagnostic_pd_omitted_members": "{{count}} more members are omitted from this comparison",
     "diagnostic_freshness": "Data freshness",
     "diagnostic_fresh": "Fresh",

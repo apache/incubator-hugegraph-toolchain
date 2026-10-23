@@ -7,7 +7,7 @@ as a process outage.
 
 Screenshots were captured from the running frontend in Chromium with deterministic
 API fixtures. They are UI evidence, not observations of the user's deployed cluster.
-Before/after images are attached to [PR #87](https://github.com/hugegraph/hugegraph-toolchain/pull/87)
+Before/after image evidence is linked from [PR #87](https://github.com/hugegraph/hugegraph-toolchain/pull/87)
 rather than stored in the repository.
 
 ## Flow and findings
@@ -40,9 +40,13 @@ rather than stored in the repository.
   diagnostic membership, and redaction of URL credentials, parameters and paths.
 - Frontend tests cover disclosures, visible request evidence and failed-graph
   counts, independent topology health, current-source scoping and timestamp labels.
+- A single failed metric shown before disclosure includes its owning node and
+  metric group. With multiple failures, every request/status or failed-graph count
+  stays inside its own node/group row; no arbitrary first value appears source-wide.
 - [Browser report](assets/operations-diagnostics-20261023/after/browser-report.json)
   and [reproducible runner](../hubble-dist/assembly/travis/run_ui_operations_diagnostics.js)
-  cover the four flows above. The native disclosure controls support keyboard
+  cover the four flows above and multiple Server/Store diagnostic ownership.
+  The native disclosure controls support keyboard
   interaction; these checks do not establish complete accessibility conformance.
 - Actual PD connection addresses, cluster readiness, authentication enforcement,
   upstream recovery and multi-Server behavior still require deployment validation.
