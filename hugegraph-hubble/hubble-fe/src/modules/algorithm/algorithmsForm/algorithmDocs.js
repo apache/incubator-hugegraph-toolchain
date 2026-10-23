@@ -22,9 +22,10 @@ import {
 
 const TRAVERSER_DOC = 'https://hugegraph.apache.org/docs/clients/restful-api/traverser/';
 const RANK_DOC = 'https://hugegraph.apache.org/docs/clients/restful-api/rank/';
-const COMPUTER_DOC
-    = 'https://hugegraph.apache.org/docs/quickstart/hugegraph-computer/'
-    + '#4-built-in-algorithms-document';
+export const VERMEER_DOC = 'https://github.com/apache/hugegraph-computer/tree/master/vermeer';
+export const COMPUTER_DOC
+    = 'https://hugegraph.apache.org/docs/quickstart/computing/hugegraph-computer/'
+    + '#6-built-in-algorithms-and-development';
 const SERVER_SOURCE
     = 'https://github.com/apache/hugegraph/blob/'
     + 'b12425c2032bf0d21a97b8221f42a18055c2982f/'
@@ -90,9 +91,13 @@ OLAP_KEYS.forEach(key => {
     docsByAlgorithm[ALGORITHM_NAME[key]] = COMPUTER_DOC;
 });
 
-export const getAlgorithmDocumentationUrl = name => (
-    docsByAlgorithm[getCanonicalAlgorithmName(name)] || TRAVERSER_DOC
-);
+export const getAlgorithmDocumentationUrl = (name, engine = 'computer') => {
+    const canonicalName = getCanonicalAlgorithmName(name);
+    if (engine === 'vermeer' && OLAP_KEYS.some(key => ALGORITHM_NAME[key] === canonicalName)) {
+        return VERMEER_DOC;
+    }
+    return docsByAlgorithm[canonicalName] || TRAVERSER_DOC;
+};
 
 export const isAlgorithmImplementationSource = name => (
     Object.prototype.hasOwnProperty.call(

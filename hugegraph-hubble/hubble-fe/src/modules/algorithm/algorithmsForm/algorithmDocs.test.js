@@ -34,7 +34,7 @@ test('links rank and batch algorithms to their official documentation', () => {
     expect(getAlgorithmDocumentationUrl(ALGORITHM_NAME.RANK_API))
         .toContain('/restful-api/rank/');
     expect(getAlgorithmDocumentationUrl(ALGORITHM_NAME.PAGE_RANK))
-        .toContain('/quickstart/hugegraph-computer/#4-built-in-algorithms-document');
+        .toContain('/quickstart/computing/hugegraph-computer/#6-built-in-algorithms-and-development');
 });
 
 test.each([
@@ -64,4 +64,27 @@ test('maps every supported algorithm without falling back to the traverser index
         expect(getAlgorithmDocumentationUrl(name))
             .not.toBe('https://hugegraph.apache.org/docs/clients/restful-api/traverser/');
     });
+});
+
+test('Vermeer algorithms link to Vermeer while interactive API docs stay unchanged', () => {
+    expect(getAlgorithmDocumentationUrl(ALGORITHM_NAME.PAGE_RANK, 'vermeer'))
+        .toBe('https://github.com/apache/hugegraph-computer/tree/master/vermeer');
+    expect(getAlgorithmDocumentationUrl(ALGORITHM_NAME.SSSP, 'vermeer'))
+        .toContain('/master/vermeer');
+    expect(getAlgorithmDocumentationUrl(ALGORITHM_NAME.K_OUT, 'vermeer'))
+        .toMatch(/#321-k-out-api-get-basic-version$/);
+    expect(getAlgorithmDocumentationUrl(ALGORITHM_NAME.PAGE_RANK, 'computer'))
+        .toContain('/quickstart/computing/hugegraph-computer/');
+});
+
+test.each([
+    'PAGE_RANK', 'WEAKLY_CONNECTED_COMPONENT', 'LABEL_PROPAGATION_ALGORITHM',
+    'DEGREE_CENTRALIT', 'CLOSENESS_CENTRALITY', 'BETWEENNESS_CENTRALITY',
+    'TRIANGLE_COUNT', 'K_CORE', 'SSSP',
+])('%s links to the canonical documentation for its selected engine', key => {
+    expect(getAlgorithmDocumentationUrl(ALGORITHM_NAME[key], 'vermeer'))
+        .toBe('https://github.com/apache/hugegraph-computer/tree/master/vermeer');
+    expect(getAlgorithmDocumentationUrl(ALGORITHM_NAME[key], 'computer'))
+        .toBe('https://hugegraph.apache.org/docs/quickstart/computing/hugegraph-computer/'
+            + '#6-built-in-algorithms-and-development');
 });

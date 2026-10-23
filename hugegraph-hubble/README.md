@@ -76,6 +76,7 @@ remain unverified because no live cluster is configured in this test environment
 ## Product Tour
 
 For Hubble and the Go computing engine, see the [Vermeer development environment](docs/vermeer-development.md).
+The [Vermeer-first OLAP guide](docs/vermeer-first-olap.md) covers engine labels, loading, and the optional Computer compatibility path.
 
 ![Vermeer PageRank task results](docs/images/vermeer/async-results.png)
 

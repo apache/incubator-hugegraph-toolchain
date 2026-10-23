@@ -22,7 +22,7 @@
 
 import {AlgorithmPanelGroup} from '../AlgorithmPanel';
 import {useContext, useEffect, useState} from 'react';
-import {Alert, Tooltip} from 'antd';
+import {Button} from 'antd';
 import * as api from '../../../../api';
 import GraphAnalysisContext from '../../../Context';
 import _ from 'lodash';
@@ -30,11 +30,11 @@ import {
     GRAPH_LOAD_STATUS,
     isAlgorithmNameMatched,
     useTranslatedConstants,
-    TEXT_PATH,
 } from '../../../../utils/constants';
 import OlapItem from '../Olap/OlapItem';
 import c from './index.module.scss';
 import {useTranslation} from 'react-i18next';
+import {COMPUTER_DOC} from '../algorithmDocs';
 
 
 
@@ -49,7 +49,7 @@ const OlapFormHome = props => {
         graphSpace,
         graph,
     } =  props;
-    const {ALGORITHM_NAME, ALGORITHM_MODE} = useTranslatedConstants();
+    const {ALGORITHM_NAME} = useTranslatedConstants();
     const {t} = useTranslation();
     const {
         PAGE_RANK,
@@ -101,34 +101,43 @@ const OlapFormHome = props => {
     ];
 
 
-    const {OLAP} = ALGORITHM_MODE;
     const {isVermeer, graphStatus} = useContext(GraphAnalysisContext);
-    const [computerAvailable, setComputerAvailable] = useState(null);
+    const scope = JSON.stringify([graphSpace, graph]);
+    const [legacyScope, setLegacyScope] = useState(null);
+    const legacyExpanded = !isVermeer && legacyScope === scope;
+    const [computerCapability, setComputerCapability] = useState(null);
+    const computerAvailable = computerCapability?.scope === scope
+        ? computerCapability.available : null;
+
+    useEffect(() => {
+        setLegacyScope(null);
+    }, [scope, isVermeer]);
 
     useEffect(() => {
         let cancelled = false;
-        if (isVermeer || !graphSpace || !graph) {
-            setComputerAvailable(null);
+        if (!legacyExpanded || !graphSpace || !graph) {
+            setComputerCapability(null);
             return undefined;
         }
-        setComputerAvailable(null);
+        setComputerCapability(null);
         api.analysis.getOlapCapability(graphSpace, graph, {
             suppressBusinessErrorToast: true,
         }).then(response => {
             if (!cancelled) {
-                setComputerAvailable(
-                    response?.status === 200 && response?.data?.available === true
-                );
+                setComputerCapability({
+                    scope,
+                    available: response?.status === 200 && response?.data?.available === true,
+                });
             }
         }).catch(() => {
             if (!cancelled) {
-                setComputerAvailable(false);
+                setComputerCapability({scope, available: false});
             }
         });
         return () => {
             cancelled = true;
         };
-    }, [graph, graphSpace, isVermeer]);
+    }, [graph, graphSpace, legacyExpanded, scope]);
 
     const getSearchedList = (arr, value) => {
         return arr.filter(item => isAlgorithmNameMatched(item, value, t));
@@ -161,34 +170,44 @@ const OlapFormHome = props => {
         ),
     })).filter(group => !_.isEmpty(group.items));
     const isEmptyBasicOlap = _.isEmpty(visibleGroups);
-    const shouldDisableForm = isVermeer
-        ? graphStatus !== GRAPH_LOAD_STATUS.LOADED
-        : computerAvailable !== true;
-    const capabilityTitle = computerAvailable === false
-        ? 'analysis.algorithm.computer_unavailable_title'
-        : 'analysis.algorithm.computer_environment_title';
-    const capabilityDescription = computerAvailable === false
-        ? 'analysis.algorithm.computer_unavailable_description'
-        : 'analysis.algorithm.computer_environment_description';
+    const vermeerStatus = !isVermeer ? 'vermeer_not_connected'
+        : graphStatus === GRAPH_LOAD_STATUS.LOADED ? 'vermeer_ready' : 'vermeer_load_first';
+    const computerStatus = computerAvailable === false ? 'computer_legacy_unavailable'
+        : computerAvailable === true ? 'computer_legacy_ready' : 'computer_checking';
 
     return (
         <div>
-            {!isEmptyBasicOlap && (
+            <div className={c.algorithmCatagery}>
+                {t('analysis.algorithm.vermeer_olap')}
+            </div>
+            <p className={c.engineHint}>
+                {t(`analysis.algorithm.${vermeerStatus}`)}
+            </p>
+            {isVermeer && isEmptyBasicOlap && search && (
+                <p className={c.engineHint}>{t('analysis.algorithm.vermeer_no_match')}</p>
+            )}
+            {!isVermeer && (
                 <>
-                    <Tooltip title={shouldDisableForm ? t(TEXT_PATH.ALGORITHM_COMMON + '.query_tooltip') : ''}>
-                        <div className={c.algorithmCatagery}>{OLAP}</div>
-                    </Tooltip>
-                    {!isVermeer && (
-                        <Alert
-                            showIcon
-                            type={shouldDisableForm ? 'warning' : 'info'}
-                            title={t(capabilityTitle)}
-                            description={t(capabilityDescription)}
-                        />
+                    <Button
+                        type='link'
+                        size='small'
+                        className={c.legacyToggle}
+                        aria-expanded={legacyExpanded}
+                        onClick={() => setLegacyScope(legacyExpanded ? null : scope)}
+                    >
+                        {t('analysis.algorithm.computer_legacy_entry')}
+                    </Button>
+                    {legacyExpanded && (
+                        <p className={c.engineHint}>
+                            {t(`analysis.algorithm.${computerStatus}`)}{' '}
+                            <a href={COMPUTER_DOC} target='_blank' rel='noreferrer'>
+                                {t('analysis.algorithm.computer_legacy_docs')}
+                            </a>
+                        </p>
                     )}
                 </>
             )}
-            {(isVermeer || computerAvailable === true) && visibleGroups.map(group => (
+            {(isVermeer || (legacyExpanded && computerAvailable === true)) && visibleGroups.map(group => (
                 <div key={group.key}>
                     <div className={c.algorithmGoal}>
                         {t(`analysis.algorithm.group.${group.key}`)}

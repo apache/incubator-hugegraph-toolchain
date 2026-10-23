@@ -70,3 +70,11 @@ test.each([0, '0'])('lets the server validate Louvain after an approximate zero 
     renderForm({vertexCount: 0, edgeCount, approximate: true, scan_limit: 100000});
     expect(screen.getByTestId('olap-readiness')).toHaveTextContent('true');
 });
+
+test('promotes Vermeer documentation and keeps Computer documentation in its compatibility entry', () => {
+    renderForm({vertexCount: 1, edgeCount: 1});
+
+    expect(screen.getByRole('link', {name: 'analysis.algorithm.vermeer_docs'}))
+        .toHaveAttribute('href', 'https://github.com/apache/hugegraph-computer/tree/master/vermeer');
+    expect(screen.queryByText('analysis.algorithm.computer_docs')).not.toBeInTheDocument();
+});
