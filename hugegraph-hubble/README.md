@@ -791,12 +791,12 @@ Then we should follow the [hubble workflow doc](https://hugegraph.apache.org/doc
 
 ## Browser acceptance
 
-The [2026-10-23 deployment regression report](docs/deployment-regressions-20261023.md)
-links the split fixes, browser fixture coverage and bounded rendering comparison.
-Screenshots are kept outside Git and referenced from the PR descriptions.
+The [browser regression guide](docs/browser-regression-guide.md) describes
+fixture checks, diagnostic configuration and live verification boundaries. Keep
+one-time reports and screenshots outside Git, in CI artifacts or PR attachments.
 
-The manual deployment regression runner checks the combined fixes linked in that
-report against an already running frontend. Its API responses are fixtures; it
+The manual deployment regression runner checks the supported flows against an
+already running frontend. Its API responses are fixtures; it
 does not establish real-cluster acceptance and is separate from the distribution
 gate below. From `hugegraph-hubble`, with frontend dependencies installed:
 
