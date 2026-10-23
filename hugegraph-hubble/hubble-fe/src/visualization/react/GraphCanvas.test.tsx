@@ -110,6 +110,25 @@ test.each(['interactive', 'preview', 'thumbnail'] as const)('%s owns its observe
     await flush();
 });
 
+test('resizes with its host even when the renderer pins the surface dimensions', async () => {
+    factory.mockImplementationOnce(surface => {
+        surface.style.width = '800px';
+        surface.style.height = '600px';
+        const controller = makeController();
+        controllers.push(controller);
+        return controller as unknown as ReturnType<typeof createGraphController>;
+    });
+    render(<GraphCanvas data={data} style={{height: 240}} />);
+    const host = screen.getByRole('region');
+    const observer = observers[0];
+    expect(observer.observe).toHaveBeenCalledWith(host);
+    const entries = [{target: host, contentRect: {width: 640, height: 240}}] as unknown as ResizeObserverEntry[];
+    act(() => observer.callback(entries, {} as ResizeObserver));
+    expect(controllers[0].resize).toHaveBeenLastCalledWith(640, 240);
+    expect(factory).toHaveBeenCalledTimes(1);
+    await flush();
+});
+
 test('rebuilds on theme changes, rejects stale callbacks and isolates multiple instances', async () => {
     const click = jest.fn(); const error = jest.fn(); const ready = jest.fn();
     const {rerender, unmount} = render(<><GraphCanvas data={data} onClick={click} onError={error} onReady={ready} /><GraphCanvas data={data} /></>);

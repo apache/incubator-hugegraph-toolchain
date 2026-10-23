@@ -37,11 +37,13 @@
     
     :global(.g6-minimap) {
         position: absolute !important;
+        // G6's initial pixel top does not follow later canvas resizes.
+        top: auto !important;
         bottom: 0px;
         border: 1px solid rgba(0, 0, 0, 0.1);
         left: 0px;
         background-color: #FFF;
-        margin: 0 0 -1px -1px;
+        margin: 0;
     }
 
     :global(.hiddenMiniMap) {
