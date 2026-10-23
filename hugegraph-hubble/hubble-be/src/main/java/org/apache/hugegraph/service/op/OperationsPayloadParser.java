@@ -305,16 +305,9 @@ public class OperationsPayloadParser {
         if (configured == null) {
             return null;
         }
-        JsonNode cluster = this.data(clusterPayload, "pd_cluster");
-        List<JsonNode> members = new ArrayList<>();
-        this.requiredArray(cluster, "pdList", "pd_cluster").forEach(members::add);
-        JsonNode leader = cluster.get("pdLeader");
-        if (leader != null && leader.isObject()) {
-            members.add(leader);
-        }
         String scheme = URI.create(configuredBase).getScheme();
         String matchedId = null;
-        for (JsonNode member : members) {
+        for (JsonNode member : this.pdMembers(clusterPayload)) {
             String endpoint = canonicalPdEndpoint(this.text(member, "restUrl"), scheme);
             if (configured.equals(endpoint)) {
                 String id = this.pdId(member);
@@ -325,6 +318,58 @@ public class OperationsPayloadParser {
             }
         }
         return matchedId;
+    }
+
+    Map<String, Object> pdMetricMappingDiagnostics(String clusterPayload, String configuredBase) {
+        String configured = canonicalPdEndpoint(configuredBase, null);
+        String configuredOrigin = endpointOrigin(configured);
+        String scheme = configured == null ? null : URI.create(configured).getScheme();
+        Map<String, Map<String, Object>> members = new LinkedHashMap<>();
+        int matched = 0;
+        for (JsonNode member : this.pdMembers(clusterPayload)) {
+            String id = this.pdId(member);
+            if (id == null || members.containsKey(id)) {
+                continue;
+            }
+            String endpoint = canonicalPdEndpoint(this.text(member, "restUrl"), scheme);
+            String origin = endpointOrigin(endpoint);
+            boolean exact = configured != null && configured.equals(endpoint);
+            if (exact) {
+                matched++;
+            }
+            Map<String, Object> comparison = new LinkedHashMap<>();
+            comparison.put("node_id", id);
+            comparison.put("endpoint_valid", endpoint != null);
+            comparison.put("origin", origin);
+            comparison.put("origin_matches", configuredOrigin != null && configuredOrigin.equals(origin));
+            comparison.put("base_path_matches", configured != null && endpoint != null &&
+                    URI.create(configured).getRawPath().equals(URI.create(endpoint).getRawPath()));
+            members.put(id, comparison);
+        }
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("configured_origin", configuredOrigin);
+        result.put("status", configured == null ? "invalid_endpoint" : matched > 1 ? "ambiguous" :
+                             matched == 0 ? "no_match" : "matched");
+        result.put("matched_nodes", matched);
+        result.put("discovered_nodes", members.size());
+        result.put("members", members.values().stream().limit(10).toList());
+        result.put("omitted_members", Math.max(0, members.size() - 10));
+        return result;
+    }
+
+    private List<JsonNode> pdMembers(String clusterPayload) {
+        JsonNode cluster = this.data(clusterPayload, "pd_cluster");
+        List<JsonNode> members = new ArrayList<>();
+        this.requiredArray(cluster, "pdList", "pd_cluster").forEach(members::add);
+        JsonNode leader = cluster.get("pdLeader");
+        if (leader != null && leader.isObject()) {
+            members.add(leader);
+        }
+        return members;
+    }
+
+    private static String endpointOrigin(String endpoint) {
+        return endpoint == null ? null : OperationsHttpClient.origin(URI.create(endpoint));
     }
 
     private static String canonicalPdEndpoint(String address, String configuredScheme) {

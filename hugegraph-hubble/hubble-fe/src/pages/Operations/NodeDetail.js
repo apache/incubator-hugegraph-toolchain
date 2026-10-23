@@ -22,7 +22,6 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 import {useLocation, useNavigate, useParams} from 'react-router-dom';
 import {useTranslation} from 'react-i18next';
 import {getNode} from '../../api/operations';
-import {isPdEnabled} from '../../utils/config';
 import {
     displayNodeType,
     HealthStatus,
@@ -346,12 +345,12 @@ const MetricGroup = ({group, name, values, status = {}, emptyMessage}) => {
     );
     const availability = status.availability ?? 'UNSUPPORTED';
     const emptyState = EMPTY_STATE_BY_AVAILABILITY[availability] ?? 'unavailable';
-    const lastObservedAt = status.stale
-        ? status.last_success_at ?? status.observed_at
-        : status.observed_at ?? status.last_success_at;
-    const lastObserved = lastObservedAt ? formatObservedAt(
-        lastObservedAt, i18n.language, t('operations.unavailable')
-    ) : null;
+    const showLastSuccess = status.last_success_at != null
+        && (status.stale || status.observed_at == null);
+    const displayedAt = showLastSuccess ? status.last_success_at : status.observed_at;
+    const displayedTime = displayedAt == null ? null : formatObservedAt(
+        displayedAt, i18n.language, t('operations.unavailable')
+    );
     const availabilityLabel = t(`operations.availability_${availability.toLowerCase()}`, {
         defaultValue: availability,
     });
@@ -382,8 +381,8 @@ const MetricGroup = ({group, name, values, status = {}, emptyMessage}) => {
             )}
             {status.stale && <span>{t('operations.stale')}</span>}
             {reasonLabel && <span>{reasonLabel}</span>}
-            {lastObserved && (
-                <span>{t('operations.last_observed')}: {lastObserved}</span>
+            {displayedTime && (
+                <span>{t(showLastSuccess ? 'operations.last_success' : 'operations.last_observed')}: {displayedTime}</span>
             )}
         </div>
     );
@@ -443,7 +442,6 @@ const MetricGroup = ({group, name, values, status = {}, emptyMessage}) => {
 
 const NodeDetail = () => {
     const {t, i18n} = useTranslation();
-    const pdMode = isPdEnabled();
     const {nodeId} = useParams();
     const navigate = useNavigate();
     const location = useLocation();
@@ -578,8 +576,7 @@ const NodeDetail = () => {
             )}
             <SourceStrip
                 sources={data?.sources}
-                sourceNames={pdMode ? undefined : ['server']}
-                detailed
+                sourceNames={[SOURCE_BY_TYPE[node.type] ?? 'server']}
             />
             {selectAttentionSources({[SOURCE_BY_TYPE[node.type]]: source}).length > 0 && (
                 <SourceDiagnostics sources={data?.sources}

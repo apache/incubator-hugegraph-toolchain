@@ -366,14 +366,14 @@ test('renders each metric group from its own metric status', async () => {
     expect(within(drive).getByText('Unavailable')).toBeInTheDocument();
     expect(within(drive).getByText('7')).toBeInTheDocument();
     expect(within(drive).getByText(/Stale/)).toBeInTheDocument();
-    expect(within(drive).getByText(/Last observed/)).toBeInTheDocument();
+    expect(within(drive).getByText(/Last success/)).toBeInTheDocument();
     const formatter = new Intl.DateTimeFormat('en-US', {
         dateStyle: 'medium',
         timeStyle: 'medium',
     });
     expect(drive).toHaveTextContent(formatter.format(new Date(1000)));
     expect(drive).not.toHaveTextContent(formatter.format(new Date(2000)));
-    expect(within(drive).queryByText(/Last success/)).not.toBeInTheDocument();
+    expect(within(drive).queryByText(/Last observed/)).not.toBeInTheDocument();
 
     const raft = screen.getByRole('heading', {name: 'Raft'}).closest('section');
     expect(within(raft).getByText('Unsupported')).toBeInTheDocument();
@@ -425,7 +425,8 @@ test('hides metric groups that do not apply to a PD node', async () => {
 
     const sources = screen.getByRole('region', {name: 'Source freshness'});
     expect(within(sources).getByText('PD')).toBeInTheDocument();
-    expect(within(sources).getByText('Store')).toBeInTheDocument();
+    expect(within(sources).queryByText('Store')).not.toBeInTheDocument();
+    expect(within(sources).queryByText('Server')).not.toBeInTheDocument();
     expect(screen.getByRole('heading', {name: 'System'}))
         .toBeInTheDocument();
 
@@ -434,6 +435,28 @@ test('hides metric groups that do not apply to a PD node', async () => {
     expect(screen.queryByRole('heading', {name: 'Storage & partitions'}))
         .not.toBeInTheDocument();
     expect(screen.queryByText('Unsupported by this service version')).not.toBeInTheDocument();
+});
+
+test.each([
+    [{stale: true, observed_at: 5000, last_success_at: 1000}, 'Last success', 1000],
+    [{stale: true, observed_at: 5000}, 'Last observed', 5000],
+    [{stale: false, last_success_at: 1000}, 'Last success', 1000],
+    [{stale: false, observed_at: 5000, last_success_at: 1000}, 'Last observed', 5000],
+])('labels the metric timestamp by its actual field: %j', async (status, label, timestamp) => {
+    getNode.mockResolvedValue({
+        ...response,
+        node: {...response.node, metrics: {system: {uptime_seconds: 10}}, metric_statuses: {
+            system: {availability: 'UNAVAILABLE', reason: 'upstream_timeout',
+                ...status},
+        }},
+    });
+    renderDetail();
+    const group = (await screen.findByRole('heading', {name: 'System'})).closest('section');
+    const formatted = new Intl.DateTimeFormat('en-US', {dateStyle: 'medium', timeStyle: 'medium'})
+        .format(new Date(timestamp));
+    expect(within(group).getByText(`${label}: ${formatted}`)).toBeVisible();
+    expect(within(group).queryByText(label === 'Last success' ? /^Last observed:/ : /^Last success:/))
+        .not.toBeInTheDocument();
 });
 
 test('presents native metric labels, units and capacity instead of raw keys', async () => {

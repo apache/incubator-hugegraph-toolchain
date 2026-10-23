@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "observedAt": "2026-10-23T12:54:13.281Z",
+  "scope": "Actual Chromium UI with mocked API data; not live-cluster acceptance",
+  "browserVersion": "154.0.8037.57",
+  "checks": [
+    {
+      "name": "PD source diagnostics are compact and address details expand",
+      "status": "passed"
+    }
+  ],
+  "pageErrors": [],
+  "unexpectedApi": [],
+  "failure": null
+}

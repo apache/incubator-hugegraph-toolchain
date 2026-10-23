@@ -27,6 +27,7 @@ import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -556,12 +557,46 @@ public class LiveOperationsCollectorTest {
         Assert.assertEquals(0, probes.get());
         Assert.assertEquals("PARTIAL", snapshot.getSources().get("pd").getAvailability());
         Assert.assertEquals("pd_metrics_unmapped", snapshot.getSources().get("pd").getReason());
+        Assert.assertEquals("UP", snapshot.getSources().get("pd").getStatus());
+        Assert.assertEquals(1, snapshot.getSources().get("pd").getDiagnostics()
+                .get("affected_node_count"));
+        Assert.assertEquals(List.of("system"), snapshot.getSources().get("pd").getDiagnostics()
+                .get("failed_metric_groups"));
         OperationsModels.Node leader = snapshot.getNodes().stream()
                 .filter(node -> "PD".equals(node.getType()))
                 .findFirst().orElseThrow(AssertionError::new);
         Assert.assertEquals("LEADER", leader.getRole());
         Assert.assertFalse(leader.getMetrics().containsKey("system"));
+        Assert.assertEquals("UNAVAILABLE", leader.getMetricStatuses().get("system").getAvailability());
         Assert.assertEquals("pd_metrics_unmapped", leader.getMetricStatuses().get("system").getReason());
+    }
+
+    @Test
+    public void testUnmatchedPdMetricsReportsEveryDiscoveredNodeWithoutMarkingItDown()
+           throws IOException {
+        String cluster = new ObjectMapper().writeValueAsString(Map.of("status", 0,
+                "data", Map.of("state", "Cluster_OK", "pdList", List.of(
+                        Map.of("restUrl", "http://pd-a:8620", "state", "Up", "role", "Leader"),
+                        Map.of("restUrl", "http://pd-b:8620", "state", "Up", "role", "Follower"),
+                        Map.of("restUrl", "http://pd-c:8620", "state", "Up", "role", "Follower")))));
+        HttpServer pd = pdServer(200, cluster, 200, stores());
+        Snapshot snapshot;
+        try {
+            snapshot = collector(true, pd).collect(serverClient(), true);
+        } finally {
+            pd.stop(0);
+        }
+
+        Assert.assertEquals("UP", snapshot.getSources().get("pd").getStatus());
+        Assert.assertEquals(3, snapshot.getSources().get("pd").getDiagnostics().get("affected_node_count"));
+        for (OperationsModels.Node node : snapshot.getNodes()) {
+            if ("PD".equals(node.getType())) {
+                Assert.assertEquals("UP", node.getStatus());
+                Assert.assertFalse(node.getMetrics().containsKey("system"));
+                Assert.assertEquals("UNAVAILABLE", node.getMetricStatuses().get("system").getAvailability());
+                Assert.assertEquals("pd_metrics_unmapped", node.getMetricStatuses().get("system").getReason());
+            }
+        }
     }
 
     @Test

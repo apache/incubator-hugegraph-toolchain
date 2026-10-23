@@ -593,6 +593,22 @@ test('shows failed sources even when discovery returned no nodes', async () => {
         .toBeInTheDocument();
 });
 
+test('names failed metric groups beside a node that remains online', async () => {
+    getOverview.mockResolvedValue({
+        status: 'DEGRADED', observed_at: 1000, facts: {},
+        sources: {server: {status: 'UP', availability: 'PARTIAL', reason: 'backend_metrics_failed'}},
+        nodes: [{id: 'server-a', name: 'Server A', type: 'SERVER', status: 'UP', metric_statuses: {
+            backend: {availability: 'UNAVAILABLE', reason: 'backend_metrics_failed'},
+        }}],
+    });
+    renderOverview();
+    const attention = await screen.findByRole('region', {name: 'Items needing attention'});
+    expect(within(attention).getByRole('columnheader', {name: 'Failed metric groups'})).toBeVisible();
+    const row = within(attention).getByText('Server A').closest('tr');
+    expect(within(row).getByText('Backend')).toBeVisible();
+    expect(within(row).getByText('UP', {exact: true})).toBeVisible();
+});
+
 test('switches between the topology and an accessible node list', async () => {
     getOverview.mockResolvedValue({
         status: 'UP',

@@ -134,6 +134,50 @@ public class OperationsPayloadParserTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    public void testPdMappingDiagnosticsExplainMismatchWithoutExposingPrivateUrlParts() {
+        OperationsPayloadParser parser = new OperationsPayloadParser(MAPPER);
+        Map<String, Object> result = parser.pdMetricMappingDiagnostics(pdCluster(
+                "http://pd-node:8620/private-base-path",
+                "http://pd-service:8620/different-private-path",
+                "http://private-user:private-password@pd-node:8620/path?token=private-query"),
+                "http://pd-service:8620/private-base-path");
+
+        Assert.assertEquals("no_match", result.get("status"));
+        Assert.assertEquals("http://pd-service:8620", result.get("configured_origin"));
+        Assert.assertEquals(0, result.get("matched_nodes"));
+        Assert.assertEquals(3, result.get("discovered_nodes"));
+        List<Map<String, Object>> members = (List<Map<String, Object>>) result.get("members");
+        Assert.assertEquals(false, members.get(0).get("origin_matches"));
+        Assert.assertEquals(true, members.get(0).get("base_path_matches"));
+        Assert.assertEquals(true, members.get(1).get("origin_matches"));
+        Assert.assertEquals(false, members.get(1).get("base_path_matches"));
+        Assert.assertEquals(false, members.get(2).get("endpoint_valid"));
+        Assert.assertNull(members.get(2).get("origin"));
+        Assert.assertFalse(result.toString().contains("private"));
+        Assert.assertFalse(result.toString().contains("token="));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testPdMappingDiagnosticsReportAmbiguityAndBoundMemberDetails() {
+        OperationsPayloadParser parser = new OperationsPayloadParser(MAPPER);
+        String[] addresses = new String[12];
+        addresses[0] = "http://pd-node:8620";
+        addresses[1] = "HTTP://PD-NODE:8620/";
+        for (int i = 2; i < addresses.length; i++) {
+            addresses[i] = "http://pd-" + i + ":8620";
+        }
+        Map<String, Object> result = parser.pdMetricMappingDiagnostics(pdCluster(addresses), addresses[0]);
+
+        Assert.assertEquals("ambiguous", result.get("status"));
+        Assert.assertEquals(2, result.get("matched_nodes"));
+        Assert.assertEquals(12, result.get("discovered_nodes"));
+        Assert.assertEquals(10, ((List<Map<String, Object>>) result.get("members")).size());
+        Assert.assertEquals(2, result.get("omitted_members"));
+    }
+
+    @Test
     public void testOmitsIncompleteOrOverflowingSizeFacts() {
         String cluster = "{\"status\":0,\"data\":{" +
                          "\"pdList\":[],\"dataSize\":9223372036854775807}}";

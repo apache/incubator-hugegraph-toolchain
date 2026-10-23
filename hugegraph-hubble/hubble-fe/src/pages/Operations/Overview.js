@@ -252,8 +252,11 @@ const Overview = () => {
             render: name => <strong>{name ?? unavailable}</strong>,
         },
         {title: t('operations.tier_header'), dataIndex: 'type', render: displayNodeType},
-        {title: t('operations.role'), dataIndex: 'role',
-            render: (value, node) => nodeRoleLabel(node, t)},
+        {title: t('operations.diagnostic_failed_groups'), key: 'metrics', render: (_, node) => (
+            Object.entries(node.metric_statuses ?? {})
+                .filter(([, metric]) => ['UNAVAILABLE', 'MALFORMED'].includes(metric.availability) || metric.stale)
+                .map(([group]) => t(`operations.metric_${group}`, {defaultValue: group})).join(', ') || '—'
+        )},
         {
             title: t('operations.status'),
             dataIndex: 'status',
@@ -518,30 +521,29 @@ const Overview = () => {
                                 const type = source.name === 'stores'
                                     ? 'STORE' : source.name.toUpperCase();
                                 return (
-                                    <Alert
-                                        className='operations-source-attention'
+                                    <div
+                                        className='operations-source-attention operations-source-attention-row'
                                         key={source.name}
-                                        type='warning'
-                                        showIcon
-                                        title={t('operations.source_attention', {
+                                    >
+                                        <div>
+                                        <strong>{t('operations.source_attention', {
                                             source: displayNodeType(type),
-                                        })}
-                                        description={t(
+                                        })}</strong>
+                                        <p>{t(
                                             `operations.reason_${source.reason}`,
                                             {
                                                 defaultValue: source.reason
                                                     ? source.reason.replaceAll('_', ' ')
                                                     : t('operations.status_degraded_help'),
                                             }
-                                        )}
-                                        action={(
+                                        )}</p>
+                                        </div>
                                             <Link to={`/operations/nodes?type=${type}&source=${source.name}#${DIAGNOSTICS_ID}`}>
                                                 {t('operations.view_source_diagnostics', {
                                                     source: displayNodeType(type),
                                                 })}
                                             </Link>
-                                        )}
-                                    />
+                                    </div>
                                 );
                             })}
                             {attentionNodes.length > 0 ? (

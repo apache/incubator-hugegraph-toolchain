@@ -144,6 +144,10 @@
     background: var(--workbench-color-surface);
 }
 
+.operations-node-detail .operations-source-strip {
+    grid-template-columns: minmax(0, 1fr);
+}
+
 .operations-workbench {
     min-width: 0;
     padding: 20px;
@@ -461,6 +465,20 @@
     margin-bottom: 12px;
 }
 
+.operations-source-attention-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--workbench-color-border);
+
+    > div { flex: 1 1 240px; }
+    > a { flex-shrink: 0; }
+    p { margin-top: 4px; }
+}
+
 .operations-nodes-healthy {
     padding-top: 2px;
 }
@@ -533,6 +551,7 @@
 
 .operations-source-diagnostics {
     margin-bottom: 16px;
+    scroll-margin-top: calc(var(--workbench-header-height) + 16px);
 
     h4 {
         display: flex;
@@ -542,6 +561,29 @@
     }
 
     code { overflow-wrap: anywhere; }
+
+    .operations-readiness-note {
+        margin: 10px 0;
+        color: var(--workbench-color-text-secondary);
+    }
+
+    .operations-diagnostic-details {
+        margin-top: 12px;
+
+        > summary {
+            width: fit-content;
+            padding: 4px 0;
+            color: var(--workbench-color-brand);
+            cursor: pointer;
+        }
+
+        > summary:focus-visible {
+            outline: none;
+            box-shadow: var(--workbench-focus-ring);
+        }
+
+        &[open] > summary { margin-bottom: 8px; }
+    }
 }
 
 .operations-nodes-table .ant-table {
