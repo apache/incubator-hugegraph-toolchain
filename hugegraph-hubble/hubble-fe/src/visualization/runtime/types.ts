@@ -101,7 +101,7 @@ export interface GraphRuntime {
     visibility(ids: string[], visible: boolean): Promise<void>;
     fitView(): Promise<void>;
     zoomBy(factor: number): Promise<void>;
-    resize(width: number, height: number): void;
+    resize(width: number, height: number): void | Promise<void>;
     exportPng(): Promise<string>;
     history(action: 'undo' | 'redo' | 'clear'): Promise<void>;
     historyState(): {canUndo: boolean; canRedo: boolean};

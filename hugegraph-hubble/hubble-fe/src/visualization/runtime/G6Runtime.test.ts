@@ -56,7 +56,9 @@ const mockEngine = {
         }
     }),
     getZoom: jest.fn(() => mockZoom),
+    zoomTo: jest.fn(async (zoom: number, _animation: boolean) => { mockZoom = zoom; }),
     getSize: jest.fn(() => [mockViewport.width, mockViewport.height]),
+    resize: jest.fn((width: number, height: number) => { mockViewport.width = width; mockViewport.height = height; }),
     getCanvasByViewport: jest.fn(([x, y]: number[]) =>
         [(x - mockViewport.x) / mockZoom, (y - mockViewport.y) / mockZoom]),
     getViewportByCanvas: jest.fn(([x, y]: number[]) =>
@@ -195,6 +197,28 @@ const nodeState = (state: string, datum: NodeData) => {
 beforeEach(() => {
     jest.clearAllMocks(); mockZoom = 1; mockHandlers.clear();
     mockViewport = {width: 800, height: 600, x: 0, y: 0};
+});
+
+test('resizing refreshes an active minimap without changing the viewport camera', async () => {
+    const runtime = new G6Runtime(document.createElement('div'), {minimap: true});
+    try {
+        await runtime.resize(800, 480);
+        expect(mockEngine.zoomTo).not.toHaveBeenCalled();
+        await runtime.replace(data(4), null);
+        mockZoom = 2;
+        mockViewport.x = 35;
+        mockViewport.y = -20;
+        mockEngine.getPluginInstance.mockReturnValueOnce({} as never);
+        await runtime.resize(640, 240);
+        expect(mockEngine.resize).toHaveBeenLastCalledWith(640, 240);
+        expect(mockEngine.zoomTo).toHaveBeenCalledWith(2, false);
+        expect(mockViewport).toEqual({width: 640, height: 240, x: 35, y: -20});
+        expect(mockZoom).toBe(2);
+        await runtime.resize(640, 240);
+        expect(mockEngine.zoomTo).toHaveBeenCalledTimes(1);
+        await runtime.resize(640, 320);
+        expect(mockEngine.zoomTo).toHaveBeenCalledTimes(1);
+    } finally { runtime.stop(); runtime.destroy(); }
 });
 
 test.each<{name: string; options: GraphLayout['options']; first: number; last: number}>([
