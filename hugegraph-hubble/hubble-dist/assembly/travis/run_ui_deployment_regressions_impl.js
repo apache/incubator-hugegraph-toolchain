@@ -301,7 +301,7 @@ catch (e) {
             await page.getByText('任务结果超过服务端限制', { exact: true }).waitFor();
             await page.getByText(/结果大小为 74\.24 MiB，服务端上限为 16\.00 MiB/).waitFor();
             await page.getByText(/减少返回条数或仅返回需要的属性后重新提交/).waitFor();
-            await page.getByRole('button', { name: '调整查询', exact: true }).waitFor();
+            await page.getByRole('link', { name: '调整查询', exact: true }).waitFor();
             await screenshot(page, 'async-task-result-limit');
         });
         await check('PD unmapped metrics have localized three-node source diagnostics', async () => {
