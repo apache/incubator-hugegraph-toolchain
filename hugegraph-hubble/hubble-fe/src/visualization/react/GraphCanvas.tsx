@@ -129,7 +129,8 @@ export const GraphCanvas = (props: GraphCanvasProps) => {
 
     useEffect(() => {
         const surface = surfaceRef.current;
-        if (!surface) {
+        const container = containerRef.current;
+        if (!surface || !container) {
             return;
         }
         const generation = ++generationRef.current;
@@ -179,15 +180,17 @@ export const GraphCanvas = (props: GraphCanvasProps) => {
                     }
                 }
             };
-            const rect = surface.getBoundingClientRect();
+            // G6 writes pixel dimensions to its surface. Observe the host so
+            // those dimensions cannot hide later layout changes from us.
+            const rect = container.getBoundingClientRect();
             resize(rect.width, rect.height, false);
             observer = new ResizeObserver(entries => {
-                const entry = entries.find(item => item.target === surface);
+                const entry = entries.find(item => item.target === container);
                 if (entry) {
                     resize(entry.contentRect.width, entry.contentRect.height);
                 }
             });
-            observer.observe(surface);
+            observer.observe(container);
             replaceData(instance, initial.data, true);
             command(() => Promise.resolve(initial.onReady?.(owned)), generation);
         }
