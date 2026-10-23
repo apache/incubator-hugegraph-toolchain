@@ -13,7 +13,8 @@ state, a safe reason, and request-path/HTTP evidence.
   responses remain `UNKNOWN`, and HTTP 404 is `UNSUPPORTED`.
 - Store: `GET /-/state` requires `status: 0` and `text: ONLINE`, `STARTING` or
   `STOPPING`. Only `ONLINE` is `READY`. The request uses the existing matched,
-  trusted Store target and shares its thread pool and overall collection deadline.
+  trusted Store target. Probes run in a separate bounded executor alongside metrics
+  and share the overall waiting cutoff; a slow probe does not occupy a metric worker.
 - Hubble probes only the PD member that matches the configured endpoint exactly.
   Other members are explicitly `UNKNOWN` / `readiness_not_probed`; an ambiguous
   or unmapped configured endpoint is never assigned to a member by guesswork.
@@ -44,7 +45,19 @@ HUBBLE_UI_EVIDENCE_DIR=/tmp/hubble-readiness-evidence \
 node hubble-dist/assembly/travis/run_ui_readiness.js
 ```
 
-It checks PD/Store details, node list and overview with deterministic API responses;
-it does not establish deployed-cluster acceptance. Before/after screenshots are
-kept outside Git and linked from the PR to the regression record. Actual endpoint
-availability, credentials, proxy routing and recovery need deployment validation.
+It checks PD/Store details, node list and overview in both anonymous mode and an
+administrator session. Authenticated scenarios enter credentials through the
+actual login form, establish a fixture HttpOnly session cookie, and verify the
+subsequent context/session requests; no user or authentication state is preseeded.
+The runner also switches GraphSpace and graph using the header selectors and
+checks route context, identity-scoped persistence and scoped API requests. Account
+and GraphSpace controls are checked for anonymous, administrator and ordinary
+read-only users, including the restricted account deep link. The JSON report
+records the request paths, HTTP statuses and session presence without credentials.
+These are Chromium client checks against deterministic API fixtures, not a
+live-backend authentication test or deployed-cluster acceptance. Set
+`HUBBLE_UI_REVISION` to record the frontend revision and whether it is a combined
+integration build; the report also records `HUBBLE_URL` and does not infer an
+isolated-PR exact-head result. Before/after screenshots are kept outside Git and
+linked from the PR to the regression record. Actual endpoint availability,
+credentials, proxy routing and recovery need deployment validation.

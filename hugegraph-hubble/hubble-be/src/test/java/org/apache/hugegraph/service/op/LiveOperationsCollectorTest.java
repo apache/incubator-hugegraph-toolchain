@@ -1581,6 +1581,7 @@ public class LiveOperationsCollectorTest {
             String base = "http://127.0.0.1:" + pd.getAddress().getPort();
             String payload = cluster().replace("http://pd:8620", base + "/pd");
             context(pd, "/pd/v1/cluster", 200, payload);
+            context(pd, "/pd/v1/members", 200, payload);
             context(pd, "/pd/v1/stores", 200, "{\"status\":0,\"data\":{\"stores\":[]}}");
             context(pd, "/pd/v1/prom/targets/store", 200, "[]");
             context(pd, "/pd/actuator/prometheus", 200, "process_uptime_seconds 12\n");
