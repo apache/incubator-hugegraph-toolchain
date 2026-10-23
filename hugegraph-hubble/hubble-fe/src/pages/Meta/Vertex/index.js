@@ -59,29 +59,49 @@ const VertexTable = ({canWrite = true}) => {
                 return;
             }
 
-            Modal.confirm({
+            let deleting = false;
+            const confirmation = Modal.confirm({
                 title: t('schema.vertex.delete_confirm'),
                 content: (
-                    <><div>{t('schema.delete_irreversible')}</div>
+                    <div style={{overflowWrap: 'anywhere'}}>
+                        <div><code>{graphspace}/{graph}</code></div>
+                        <div><code>{names.join(', ')}</code></div>
+                        <div>{t('schema.delete_irreversible')}</div>
                         <div>{t('schema.delete_task_hint')}</div>
-                    </>),
-                onOk: () => api.manage.delMetaVertex(
-                    graphspace, graph, {names}, DELETE_REQUEST_CONFIG
-                ).then(res => {
-                    if (res.status !== 200) {
-                        message.error(t('schema.delete_failed'));
+                    </div>),
+                onOk: close => {
+                    if (deleting) {
                         return;
                     }
-
-                    if (isBatch) {
-                        setSelectedItems([]);
-                    }
-
-                    message.success(t('common.delete_success'));
-                    setRefresh(!refresh);
-                }).catch(() => {
-                    message.error(t('schema.delete_failed'));
-                }),
+                    deleting = true;
+                    confirmation.update({
+                        okButtonProps: {loading: true, disabled: true},
+                        cancelButtonProps: {disabled: true}, keyboard: false,
+                    });
+                    // Own closing explicitly: rejected static-modal promises surface as
+                    // unhandled browser errors in Ant Design, but a failed delete is retryable.
+                    api.manage.delMetaVertex(
+                        graphspace, graph, {names}, DELETE_REQUEST_CONFIG
+                    ).then(res => {
+                        if (res.status !== 200) {
+                            throw new Error('Schema deletion failed');
+                        }
+                        if (isBatch) {
+                            setSelectedItems([]);
+                        }
+                        message.success(t('common.delete_success'));
+                        setRefresh(!refresh);
+                        close();
+                    }).catch(() => {
+                        message.error(t('schema.delete_failed'));
+                    }).finally(() => {
+                        deleting = false;
+                        confirmation.update({
+                            okButtonProps: {loading: false, disabled: false},
+                            cancelButtonProps: {disabled: false}, keyboard: true,
+                        });
+                    });
+                },
             });
         }).catch(() => {
             message.error(t('schema.delete_failed'));

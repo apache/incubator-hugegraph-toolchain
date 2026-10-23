@@ -1,0 +1,166 @@
+{
+  "status": "passed",
+  "observedAt": "2026-10-23T13:03:09.890Z",
+  "base": "http://127.0.0.1:3002",
+  "browserVersion": "154.0.8037.57",
+  "scope": "Actual Chromium UI with intercepted in-memory API fixtures. Performance measures warm UI action to idle canvas plus two animation frames; does not measure Server or cluster throughput.",
+  "checks": [
+    {
+      "name": "01 schema create validates required name and supports keyboard submission",
+      "status": "passed"
+    },
+    {
+      "name": "02 schema delete cancel does not mutate; failed delete stays retryable",
+      "status": "passed"
+    },
+    {
+      "name": "02 vertex schema delete failure stays open and retries successfully",
+      "status": "passed"
+    },
+    {
+      "name": "02 edge schema delete failure stays open and retries successfully",
+      "status": "passed"
+    },
+    {
+      "name": "03 canvas vertex create and property update persist to API fixture",
+      "status": "passed"
+    },
+    {
+      "name": "04 repeated 100 and 300 vertex query rendering and responsiveness",
+      "status": "passed"
+    },
+    {
+      "name": "05 empty result and failed query can be retried",
+      "status": "passed"
+    }
+  ],
+  "mutations": [
+    {
+      "operation": "property-create",
+      "value": {
+        "name": "ui_audit_property",
+        "data_type": "TEXT",
+        "cardinality": "SINGLE"
+      }
+    },
+    {
+      "operation": "property-delete",
+      "names": [
+        "ui_audit_property"
+      ]
+    },
+    {
+      "operation": "vertexlabels-delete",
+      "names": [
+        "AuditVertex"
+      ]
+    },
+    {
+      "operation": "edgelabels-delete",
+      "names": [
+        "AuditEdge"
+      ]
+    },
+    {
+      "operation": "vertex-create",
+      "value": {
+        "properties": {
+          "name": "Browser created"
+        },
+        "label": "Memory",
+        "id": "2"
+      }
+    },
+    {
+      "operation": "vertex-update",
+      "value": {
+        "id": "1",
+        "label": "Memory",
+        "properties": {
+          "name": "Browser updated"
+        }
+      }
+    }
+  ],
+  "metrics": [
+    {
+      "count": 100,
+      "samples": 5,
+      "p50ActionMs": 358.9,
+      "maxActionMs": 470,
+      "maxLongTaskMs": 178
+    },
+    {
+      "count": 300,
+      "samples": 5,
+      "p50ActionMs": 498.5,
+      "maxActionMs": 562,
+      "maxLongTaskMs": 237
+    }
+  ],
+  "performanceSamples": [
+    {
+      "count": 100,
+      "repeat": 1,
+      "actionMs": 470,
+      "maxLongTaskMs": 178
+    },
+    {
+      "count": 100,
+      "repeat": 2,
+      "actionMs": 358.9,
+      "maxLongTaskMs": 157
+    },
+    {
+      "count": 100,
+      "repeat": 3,
+      "actionMs": 347.7,
+      "maxLongTaskMs": 138
+    },
+    {
+      "count": 100,
+      "repeat": 4,
+      "actionMs": 430.3,
+      "maxLongTaskMs": 174
+    },
+    {
+      "count": 100,
+      "repeat": 5,
+      "actionMs": 291.9,
+      "maxLongTaskMs": 122
+    },
+    {
+      "count": 300,
+      "repeat": 1,
+      "actionMs": 515.6,
+      "maxLongTaskMs": 237
+    },
+    {
+      "count": 300,
+      "repeat": 2,
+      "actionMs": 396.6,
+      "maxLongTaskMs": 192
+    },
+    {
+      "count": 300,
+      "repeat": 3,
+      "actionMs": 562,
+      "maxLongTaskMs": 228
+    },
+    {
+      "count": 300,
+      "repeat": 4,
+      "actionMs": 424.4,
+      "maxLongTaskMs": 188
+    },
+    {
+      "count": 300,
+      "repeat": 5,
+      "actionMs": 498.5,
+      "maxLongTaskMs": 222
+    }
+  ],
+  "pageErrors": [],
+  "unexpectedApi": [],
+  "failure": null
+}
