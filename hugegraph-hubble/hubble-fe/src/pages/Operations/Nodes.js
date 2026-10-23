@@ -21,7 +21,8 @@ import {CopyOutlined, CrownOutlined, SearchOutlined} from '@ant-design/icons';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Link, useLocation, useNavigate, useSearchParams} from 'react-router-dom';
 import {useTranslation} from 'react-i18next';
-import {getNodes} from '../../api/operations';
+import {getNodes, getOverview} from '../../api/operations';
+import SourceDiagnostics, {DIAGNOSTICS_ID, SOURCE_TYPES} from './SourceDiagnostics';
 import {isPdEnabled} from '../../utils/config';
 import {
     displayNodeType,
@@ -121,14 +122,20 @@ const Nodes = () => {
         sort: searchParams.get('sort') || 'name',
         order: searchParams.get('order') || 'asc',
     }), [pdMode, searchParams]);
+    const sourceName = searchParams.get('source');
+    const selectedSource = SOURCE_TYPES[sourceName] ? sourceName : undefined;
     const [searchValue, setSearchValue] = useState(params.query ?? '');
 
-    const load = useCallback(async () => {
+    const load = useCallback(async (refresh = false) => {
         const request = ++requestSequence.current;
         setLoading(true);
         setError(null);
         try {
-            const response = await getNodes(params);
+            let response = await getNodes(refresh ? {...params, refresh: true} : params);
+            if (selectedSource && !response.sources) {
+                const overview = await getOverview();
+                response = {...response, sources: overview.sources};
+            }
             if (request === requestSequence.current) {
                 if (pdMode) {
                     setData(response);
@@ -158,7 +165,7 @@ const Nodes = () => {
                 setLoading(false);
             }
         }
-    }, [params, pdMode]);
+    }, [params, pdMode, selectedSource]);
 
     useEffect(() => {
         load();
@@ -275,11 +282,18 @@ const Nodes = () => {
                         {data.stale && <strong>{t('operations.stale')}</strong>}
                     </div>
                 </div>
-                <RefreshButton loading={loading} onClick={load} />
+                <RefreshButton loading={loading} onClick={() => load(true)} />
             </header>
             {error && (
                 <Alert type='warning' showIcon title={t('operations.load_failed')} />
             )}
+            <SourceDiagnostics
+                sources={data.sources}
+                sourceName={selectedSource}
+                nodes={data.diagnostic_nodes ?? data.items}
+                complete={Array.isArray(data.diagnostic_nodes)}
+                focus={Boolean(selectedSource) && !loading && location.hash === `#${DIAGNOSTICS_ID}`}
+            />
             <section className='operations-surface'>
                 <div className='operations-filter-row'>
                     <Space wrap className='operations-filters'>

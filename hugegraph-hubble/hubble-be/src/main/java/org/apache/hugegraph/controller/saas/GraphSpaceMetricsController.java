@@ -19,12 +19,13 @@
 package org.apache.hugegraph.controller.saas;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.hugegraph.util.DateUtil;
+import org.apache.hugegraph.util.HubbleUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,8 +35,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import org.apache.hugegraph.api.graph.GraphMetricsAPI;
-// TODO fix import
-//import org.apache.hugegraph.client.api.graph.GraphMetricsAPI;
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.controller.BaseController;
 import org.apache.hugegraph.driver.HugeClient;
@@ -58,8 +57,6 @@ public class GraphSpaceMetricsController extends BaseController {
             @DateTimeFormat(pattern = "yyyyMMdd") String to) {
         HugeClient client = this.authClient(graphSpace, null);
         Set<String> graphs = g.listGraphNames(client, graphSpace, "");
-
-        List<GraphMetricsController.EvCountEntity> result = new ArrayList<>();
 
         Map<String, GraphMetricsAPI.TypeCount> gsTypeCounts = new HashMap<>();
 
@@ -85,7 +82,7 @@ public class GraphSpaceMetricsController extends BaseController {
         HugeClient client = this.authClient(graphSpace, null);
         Set<String> graphs = g.listGraphNames(client, graphSpace, "");
 
-        String today = GraphMetricsController.SAFE_DATE_FORMAT.format(DateUtil.now());
+        String today = HubbleUtil.dateFormatDay(new Date());
 
         // 获取当前日期前14天的记录
         List<String> dateRange = GraphMetricsController.getRangeDate(today, -13);

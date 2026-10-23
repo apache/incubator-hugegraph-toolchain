@@ -59,6 +59,12 @@ public class OperationsController extends BaseController {
         return this.dataService.overview(client, capabilities, refresh);
     }
 
+    public Map<String, Object> nodes(String type, String status, String query,
+                                     int page, int pageSize, String sort,
+                                     String order) {
+        return this.nodes(type, status, query, page, pageSize, sort, order, false);
+    }
+
     @GetMapping("nodes")
     public Map<String, Object> nodes(
             @RequestParam(required = false) String type,
@@ -68,7 +74,8 @@ public class OperationsController extends BaseController {
             @RequestParam(name = "page_size", defaultValue = "20")
             int pageSize,
             @RequestParam(defaultValue = "name") String sort,
-            @RequestParam(defaultValue = "asc") String order) {
+            @RequestParam(defaultValue = "asc") String order,
+            @RequestParam(defaultValue = "false") boolean refresh) {
         HugeClient client = this.authClient(null, null);
         Set<String> capabilities = this.currentCapabilities(client);
         this.requireTopology(capabilities);
@@ -79,7 +86,7 @@ public class OperationsController extends BaseController {
             throw new IllegalArgumentException("Invalid operations page");
         }
         return this.dataService.nodes(client, capabilities, type, status,
-                                      query, page, pageSize, sort, order);
+                                      query, page, pageSize, sort, order, refresh);
     }
 
     @GetMapping("nodes/{nodeId}")

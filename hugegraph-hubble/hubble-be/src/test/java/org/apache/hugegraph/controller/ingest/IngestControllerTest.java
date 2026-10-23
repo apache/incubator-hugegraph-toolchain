@@ -20,6 +20,7 @@ package org.apache.hugegraph.controller.ingest;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -165,6 +166,32 @@ public class IngestControllerTest {
         Assert.assertEquals(Constant.STATUS_OK, response.getStatus());
         Assert.assertEquals(Collections.singletonList("name"),
                             response.getData());
+    }
+
+    @Test
+    public void testDatasourceSchemaUsesConfiguredEncodingAndCsvQuoting() throws Exception {
+        Path dataFile = Files.createTempFile("hubble-ingest-schema", ".csv");
+        try {
+            Files.writeString(dataFile, "\"姓名,别名\",城市\n李明,北京\n", Charset.forName("GB18030"));
+            IngestController controller = new IngestController();
+            DatasourceService datasourceService = Mockito.mock(DatasourceService.class);
+            FileMappingService fileMappingService = Mockito.mock(FileMappingService.class);
+            this.setField(controller, "datasourceService", datasourceService);
+            this.setField(controller, "fileMappingService", fileMappingService);
+            Datasource datasource = new Datasource();
+            datasource.setDatasourceConfig(Map.of("type", "FILE", "path", dataFile.toString(),
+                                                 "format", "CSV", "charset", "GB18030"));
+            Mockito.when(datasourceService.get(1)).thenReturn(datasource);
+            Mockito.when(fileMappingService.requirePathUnderUploadRoot(dataFile.toString()))
+                   .thenReturn(dataFile.toFile());
+
+            Response response = controller.datasourceSchema(1);
+
+            Assert.assertEquals(Constant.STATUS_OK, response.getStatus());
+            Assert.assertEquals(List.of("姓名,别名", "城市"), response.getData());
+        } finally {
+            Files.deleteIfExists(dataFile);
+        }
     }
 
     @Test

@@ -25,10 +25,13 @@ import java.net.URI;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.sun.net.httpserver.HttpServer;
 import org.junit.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 import org.apache.hugegraph.testutil.Assert;
 
@@ -125,12 +128,90 @@ public class OperationsHttpClientTest {
         }
     }
 
-    @Test(expected = UpstreamResponseTooLargeException.class)
-    public void testCapsResponseBody() throws IOException {
+    @Test
+    public void testDnsFailuresKeepOnlySafeRequestPaths() {
+        OperationsHttpClient client = new OperationsHttpClient(1000, 1000, 64);
+        String host = "private-pd-host.invalid";
+        try (MockedStatic<InetAddress> dns = Mockito.mockStatic(InetAddress.class)) {
+            dns.when(() -> InetAddress.getAllByName(host))
+               .thenThrow(new UnknownHostException(host));
+            for (String path : new String[]{"/v1/cluster", "/v1/stores", "/actuator/prometheus"}) {
+                UpstreamRequestException error = (UpstreamRequestException) Assert.assertThrows(
+                        UpstreamRequestException.class, () -> client.get(URI.create(
+                        "http://" + host + ":8620" + path + "?token=private-query"),
+                        "private-user", "private-password"));
+                Assert.assertEquals("upstream_unavailable", error.getMessage());
+                Assert.assertTrue(error.getCause() instanceof UnknownHostException);
+                Assert.assertEquals(Map.of("request_path", path), error.getDiagnostics());
+                Assert.assertFalse(error.getDiagnostics().toString().contains("private-"));
+            }
+        }
+    }
+
+    @Test
+    public void testRejectedDnsAnswersKeepOnlySafeRequestPaths() {
+        OperationsHttpClient client = new OperationsHttpClient(1000, 1000, 64);
+        for (String path : new String[]{"/v1/cluster", "/v1/stores", "/actuator/prometheus"}) {
+            UpstreamRequestException error = (UpstreamRequestException) Assert.assertThrows(
+                    UpstreamRequestException.class, () -> client.get(URI.create(
+                    "http://localhost:8620" + path + "?token=private-query"),
+                    "private-user", "private-password"));
+            Assert.assertEquals("upstream_unavailable", error.getMessage());
+            Assert.assertTrue(error.getCause() instanceof IllegalArgumentException);
+            Assert.assertEquals(Map.of("request_path", path), error.getDiagnostics());
+        }
+    }
+
+    @Test
+    public void testCapsResponseBodyWithSafeExactSizeDiagnostics()
+           throws IOException {
         HttpServer server = server(200, "0123456789", null, null);
         OperationsHttpClient client = new OperationsHttpClient(1000, 1000, 8);
         try {
-            client.get(uri(server, "/"), null, null);
+            UpstreamResponseTooLargeException error =
+                    (UpstreamResponseTooLargeException) Assert.assertThrows(
+                    UpstreamResponseTooLargeException.class, () -> client.get(
+                    uri(server, "/metrics/system?token=private-query"),
+                    "private-user", "private-password"));
+
+            Assert.assertEquals(Map.of("request_path", "/metrics/system",
+                                       "max_response_bytes", 8L,
+                                       "response_bytes", 10L,
+                                       "response_size_exact", true),
+                                error.getDiagnostics());
+            Assert.assertFalse(error.getDiagnostics().toString()
+                                    .contains("private-"));
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    public void testChunkedResponseReportsOnlyObservedSizeLowerBound()
+           throws IOException {
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        server.createContext("/", exchange -> {
+            exchange.sendResponseHeaders(200, 0);
+            exchange.getResponseBody().write(
+                    "0123456789".getBytes(StandardCharsets.UTF_8));
+            exchange.close();
+        });
+        server.start();
+        OperationsHttpClient client = new OperationsHttpClient(1000, 1000, 8);
+        try {
+            UpstreamResponseTooLargeException error =
+                    (UpstreamResponseTooLargeException) Assert.assertThrows(
+                    UpstreamResponseTooLargeException.class, () -> client.get(
+                    uri(server, "/metrics/drive?token=private-query"),
+                    "private-user", "private-password"));
+            Map<String, Object> diagnostics = error.getDiagnostics();
+
+            Assert.assertEquals("/metrics/drive", diagnostics.get("request_path"));
+            Assert.assertEquals(8L, diagnostics.get("max_response_bytes"));
+            long observed = ((Number) diagnostics.get("response_bytes")).longValue();
+            Assert.assertTrue(observed > 8L && observed <= 10L);
+            Assert.assertEquals(false, diagnostics.get("response_size_exact"));
+            Assert.assertFalse(diagnostics.toString().contains("private-"));
         } finally {
             server.stop(0);
         }

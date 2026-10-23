@@ -173,6 +173,37 @@ const NodeHistoryControls = () => {
     );
 };
 
+test.each([
+    ['en-US', 'Graphs with failed backend metrics', 'Some graph backend metrics failed'],
+    ['zh-CN', '后端指标获取失败的图数', '部分图的后端指标获取失败'],
+])('shows current backend failure count over cached successful values in %s', async (
+    language, label, reason
+) => {
+    await i18n.changeLanguage(language);
+    getNode.mockResolvedValue({
+        ...response,
+        node: {
+            id: 'server-safe', name: 'Server A', type: 'SERVER', status: 'UP',
+            metrics: {backend: {graphs: 2, nodes: 4, failed_graphs: 0}},
+            metric_statuses: {backend: {
+                availability: 'UNAVAILABLE', reason: 'backend_metrics_failed',
+                stale: true, last_success_at: 1000, observed_at: 2000,
+                diagnostics: {failed_graphs: 1},
+            }},
+        },
+    });
+
+    renderDetail();
+    await screen.findByRole('heading', {name: 'Server A'});
+    const backend = screen.getByRole('heading', {
+        name: i18n.t('operations.metric_server_backend'),
+    }).closest('section');
+    const count = within(backend).getByText(label).closest('.operations-statistic-card');
+    expect(count).toHaveTextContent('1');
+    expect(count).not.toHaveTextContent('0');
+    expect(backend).toHaveTextContent(reason);
+});
+
 test('keeps null metrics safe and distinguishes unavailable groups', async () => {
     getNode.mockResolvedValue(response);
 
@@ -180,7 +211,7 @@ test('keeps null metrics safe and distinguishes unavailable groups', async () =>
 
     expect(await screen.findByRole('heading', {name: 'Store A'})).toBeInTheDocument();
     expect(screen.getAllByText('Unavailable').length).toBeGreaterThan(0);
-    expect(screen.getByText(/TIMEOUT/)).toBeInTheDocument();
+    expect(screen.getAllByText(/TIMEOUT/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Stale/i).length).toBeGreaterThan(0);
     expect(screen.queryByText('undefined')).not.toBeInTheDocument();
     const identity = screen.getByRole('region', {name: 'Node identity'});

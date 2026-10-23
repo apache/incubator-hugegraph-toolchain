@@ -25,14 +25,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hugegraph.api.graph.GraphMetricsAPI;
-// TODO fix import
-//import org.apache.hugegraph.client.api.graph.GraphMetricsAPI;
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.controller.BaseController;
-import org.apache.hugegraph.date.SafeDateFormat;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.exception.HugeException;
-import org.apache.hugegraph.util.DateUtil;
+import org.apache.hugegraph.util.HubbleUtil;
 import org.apache.hugegraph.util.E;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,9 +40,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.text.DecimalFormat;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Calendar;
+import java.util.Date;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -58,14 +58,12 @@ public class GraphMetricsController extends BaseController {
     private static final Logger LOG = LoggerFactory.getLogger(
             GraphMetricsController.class);
 
-    public static final SafeDateFormat SAFE_DATE_FORMAT = new SafeDateFormat("yyyyMMdd");
-
     @GetMapping("schema")
     public Object schemaMetrics(@PathVariable("graphspace") String graphSpace,
                                 @PathVariable("graph") String graph) {
 
         HugeClient client = this.authClient(graphSpace, graph);
-        String today = SAFE_DATE_FORMAT.format(DateUtil.now());
+        String today = HubbleUtil.dateFormatDay(new Date());
 
         // 获取当前日期前14天的记录
         List<String> dateRange = getRangeDate(today, -13);
@@ -163,7 +161,7 @@ public class GraphMetricsController extends BaseController {
 
     private PerEvEntity calGrowthRates(HugeClient client, String type,
                                        String schema) {
-        String today = SAFE_DATE_FORMAT.format(DateUtil.now());
+        String today = HubbleUtil.dateFormatDay(new Date());
         List<String> last4Days = getRangeDate(today, -3);
         GraphMetricsAPI.TypeCounts last3TypeCount =
                 client.graph().getTypeCounts(last4Days.get(0), last4Days.get(2));
@@ -264,39 +262,38 @@ public class GraphMetricsController extends BaseController {
             map = Collections.emptyMap();
         }
 
-        SchemaCount<Long> s1 = new SchemaCount<>(0L, 0L, 0L, 0L);
-        SchemaCount<Long> s2 = new SchemaCount<>(0L, 0L, 0L, 0L);
-        // 统计近一周的前一周
-        for (int i = 0; i < 7; i++) {
-            GraphMetricsAPI.TypeCount typeCount = map.get(dateRange.get(i));
-            if (typeCount == null) {
-                continue;
-            }
-            s1.pk = s1.pk + typeCount.getSchemas().get("pk_count");
-            s1.vl = s1.vl + typeCount.getSchemas().get("vl_count");
-            s1.el = s1.el + typeCount.getSchemas().get("el_count");
-            s1.il = s1.il + typeCount.getSchemas().get("il_count");
-        }
+        SchemaCount<Long> previous = sumSchemaCounts(map, dateRange.subList(0, 7));
+        SchemaCount<Long> current = sumSchemaCounts(map, dateRange.subList(7, 13));
+        current.pk += todaySchema.pk;
+        current.vl += todaySchema.vl;
+        current.el += todaySchema.el;
+        current.il += todaySchema.il;
+        return new SchemaCount<>(growthRate(previous.pk, current.pk),
+                                 growthRate(previous.vl, current.vl),
+                                 growthRate(previous.el, current.el),
+                                 growthRate(previous.il, current.il));
+    }
 
-        // 近一周：取最近6天的数据 + 当天数据用实时数据
-        s2.pk = s2.pk + todaySchema.pk;
-        s2.vl = s2.vl + todaySchema.vl;
-        s2.el = s2.el + todaySchema.el;
-        s2.il = s2.il + todaySchema.il;
-        for (int i = 7; i < 13; i++) {
-            GraphMetricsAPI.TypeCount typeCount = map.get(dateRange.get(i));
-            if (typeCount == null) {
+    private static SchemaCount<Long> sumSchemaCounts(
+            Map<String, GraphMetricsAPI.TypeCount> counts, List<String> dates) {
+        SchemaCount<Long> total = new SchemaCount<>(0L, 0L, 0L, 0L);
+        for (String date : dates) {
+            GraphMetricsAPI.TypeCount count = counts.get(date);
+            if (count == null || count.getSchemas() == null) {
                 continue;
             }
-            s2.pk = s2.pk + typeCount.getSchemas().get("pk_count");
-            s2.vl = s2.vl + typeCount.getSchemas().get("vl_count");
-            s2.el = s2.el + typeCount.getSchemas().get("el_count");
-            s2.il = s2.il + typeCount.getSchemas().get("il_count");
+            Map<String, Long> schemas = count.getSchemas();
+            total.pk += schemaCount(schemas, "pk_count");
+            total.vl += schemaCount(schemas, "vl_count");
+            total.el += schemaCount(schemas, "el_count");
+            total.il += schemaCount(schemas, "il_count");
         }
-        return new SchemaCount<>(growthRate(s1.pk, s2.pk),
-                                 growthRate(s1.vl, s2.vl),
-                                 growthRate(s1.el, s2.el),
-                                 growthRate(s1.il, s2.il));
+        return total;
+    }
+
+    private static long schemaCount(Map<String, Long> schemas, String key) {
+        Long count = schemas.get(key);
+        return count == null ? 0L : count;
     }
 
     /**
@@ -317,32 +314,18 @@ public class GraphMetricsController extends BaseController {
         if (num2 == 0) {
             return -1.0;
         }
-        // 保留两位小数
-        DecimalFormat decimalFormat = new DecimalFormat("#.##");
-        String formattedResult =
-                decimalFormat.format((num2 - num1) / ((double) num1));
-        return Double.parseDouble(formattedResult);
+        return BigDecimal.valueOf(num2).subtract(BigDecimal.valueOf(num1))
+                         .divide(BigDecimal.valueOf(num1), 2, RoundingMode.HALF_EVEN)
+                         .doubleValue();
     }
 
     public static List<String> getRangeDate(String start, int days) {
-        List<String> dateList = new ArrayList<>();
-        try {
-            Calendar calendar = Calendar.getInstance();
-            calendar.setTime(SAFE_DATE_FORMAT.parse(start));
-
-            for (int i = 0; i <= Math.abs(days); i++) {
-                dateList.add(SAFE_DATE_FORMAT.format(calendar.getTime()));
-                if (days > 0) {
-                    calendar.add(Calendar.DAY_OF_MONTH, 1);
-                } else {
-                    calendar.add(Calendar.DAY_OF_MONTH, -1);
-                }
-            }
-
-        } catch (Exception e) {
-            LOG.error("Failed to parse graph metrics date range", e);
-        }
-        return dateList.stream().sorted().collect(Collectors.toList());
+        LocalDate date = LocalDate.parse(start, DateTimeFormatter.BASIC_ISO_DATE);
+        LocalDate first = days < 0 ? date.plusDays(days) : date;
+        LocalDate last = days > 0 ? date.plusDays(days) : date;
+        return first.datesUntil(last.plusDays(1))
+                    .map(DateTimeFormatter.BASIC_ISO_DATE::format)
+                    .collect(Collectors.toList());
     }
 
     @Data

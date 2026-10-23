@@ -21,6 +21,10 @@ package org.apache.hugegraph.unit;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -42,6 +46,8 @@ import org.apache.hugegraph.service.query.QueryService;
 import org.apache.hugegraph.service.schema.VertexLabelService;
 import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.constant.IdStrategy;
+import org.apache.hugegraph.structure.graph.Edge;
+import org.apache.hugegraph.structure.graph.Path;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.gremlin.ResultSet;
 import org.apache.hugegraph.testutil.Assert;
@@ -257,6 +263,125 @@ public class QueryServiceTest {
         Assert.assertEquals(502, cypherError.status());
         Assert.assertEquals("gremlin.server.authentication-failed",
                             cypherError.getMessage());
+    }
+
+    @Test
+    public void testEmptyResultsAreIsolatedAcrossQueryLanguages() throws Exception {
+        HugeClient client = this.mockClient(this.mockGremlin());
+        CypherManager cypher = Mockito.mock(CypherManager.class);
+        Mockito.when(cypher.cypher(Mockito.anyString())).thenReturn(this.resultSet());
+        Mockito.when(client.cypher()).thenReturn(cypher);
+        QueryService service = this.serviceWithConfig();
+
+        GremlinResult first = service.executeGremlinQuery(client, new GremlinQuery("g.V()"));
+        first.getGraphView().getStatistics().put("stale", true);
+        first.getTableView().setHeader(List.of("stale"));
+        first.getTableView().setRows(List.of("stale"));
+
+        GremlinResult second = service.executeCypherQuery(client, "MATCH (n) RETURN n");
+        GremlinResult third = service.executeGremlinQuery(client, new GremlinQuery("g.V()"));
+        ObjectMapper mapper = new ObjectMapper();
+        for (GremlinResult result : List.of(second, third)) {
+            Assert.assertEquals(GremlinResult.Type.EMPTY, result.getType());
+            Assert.assertNull(result.getJsonView().getData());
+            Assert.assertEquals(mapper.readTree("{\"header\":null,\"rows\":null}"),
+                                mapper.valueToTree(result.getTableView()));
+            Assert.assertEquals(mapper.readTree("{\"vertices\":null,\"edges\":null,\"statistics\":{}}"),
+                                mapper.valueToTree(result.getGraphView()));
+            Assert.assertNotSame(first.getTableView(), result.getTableView());
+            Assert.assertNotSame(first.getGraphView(), result.getGraphView());
+        }
+    }
+
+    @Test
+    public void testScalarQueriesHaveTheSameResultShape() throws Exception {
+        ResultSet data = this.resultSet(1, "name", Map.of("count", 2));
+        HugeClient client = this.mockClient(this.mockGremlin(data));
+        CypherManager cypher = Mockito.mock(CypherManager.class);
+        Mockito.when(cypher.cypher(Mockito.anyString())).thenReturn(data);
+        Mockito.when(client.cypher()).thenReturn(cypher);
+        QueryService service = this.serviceWithConfig();
+
+        GremlinResult gremlin = service.executeGremlinQuery(client, new GremlinQuery("g.V().count()"));
+        GremlinResult cypherResult = service.executeCypherQuery(client, "RETURN 1");
+
+        Assert.assertEquals(GremlinResult.Type.GENERAL, gremlin.getType());
+        Assert.assertEquals(List.of("result"), gremlin.getTableView().getHeader());
+        Assert.assertEquals(List.of(Map.of("result", 1), Map.of("result", "name"),
+                                   Map.of("result", Map.of("count", 2))), gremlin.getTableView().getRows());
+        ObjectMapper mapper = new ObjectMapper();
+        Assert.assertEquals(mapper.valueToTree(gremlin), mapper.valueToTree(cypherResult));
+    }
+
+    @Test
+    public void testPathTablePreservesScalarAndNullValues() throws Exception {
+        Vertex vertex = new Vertex("person");
+        vertex.id("marko");
+        Edge edge = new Edge("knows");
+        edge.id("edge1");
+        Path path = new Path(Arrays.asList(vertex, edge, "step", null));
+        HugeClient client = this.mockClient(this.mockGremlin(this.resultSet(path)));
+        QueryService service = this.serviceWithConfig();
+
+        GremlinResult result = service.executeGremlinQuery(client, new GremlinQuery("g.V().path()"));
+
+        Assert.assertEquals(GremlinResult.Type.PATH, result.getType());
+        Assert.assertEquals(List.of("path"), result.getTableView().getHeader());
+        Assert.assertEquals(List.of(Map.of("path", Arrays.asList("marko", "edge1", "step", null))),
+                            result.getTableView().getRows());
+        Assert.assertEquals(List.of(path), result.getJsonView().getData());
+        Assert.assertNull(result.getGraphView().getVertices());
+        Assert.assertTrue(result.getGraphView().getStatistics().isEmpty());
+    }
+
+    @Test
+    public void testEdgeTableFiltersOtherResultTypes() throws Exception {
+        Vertex source = new Vertex("person");
+        source.id("marko");
+        Vertex target = new Vertex("person");
+        target.id("vadas");
+        Edge first = new Edge("knows");
+        first.id("edge1");
+        first.sourceId(source.id());
+        first.targetId(target.id());
+        Edge second = new Edge("knows");
+        second.id("edge2");
+        second.sourceId(source.id());
+        second.targetId(target.id());
+        HugeClient client = this.mockClient(this.mockGremlin(this.resultSet(first, second, "scalar"),
+                                                            this.resultSet(source, target)));
+        QueryService service = this.serviceWithConfig();
+
+        GremlinResult result = service.executeGremlinQuery(client, new GremlinQuery("g.E()"));
+
+        Assert.assertEquals(GremlinResult.Type.EDGE, result.getType());
+        Assert.assertEquals(List.of("id", "label", "source", "target", "properties"),
+                            result.getTableView().getHeader());
+        Assert.assertEquals(List.of(first, second), result.getTableView().getRows());
+        Assert.assertEquals(List.of(first, second, "scalar"), result.getJsonView().getData());
+        Assert.assertEquals(2, result.getGraphView().getVertices().size());
+        Assert.assertEquals(2, result.getGraphView().getEdges().size());
+    }
+
+    @Test
+    public void testCypherNodeRowsBuildVertexViews() throws Exception {
+        Map<String, Object> node = Map.of("_type", "node", "_id", "marko", "_label", "person", "name", "Marko");
+        HugeClient client = this.mockClient(this.mockGremlin());
+        CypherManager cypher = Mockito.mock(CypherManager.class);
+        Mockito.when(cypher.cypher(Mockito.anyString())).thenReturn(this.resultSet(Map.of("n", node)));
+        Mockito.when(client.cypher()).thenReturn(cypher);
+        QueryService service = this.serviceWithConfig();
+
+        GremlinResult result = service.executeCypherQuery(client, "MATCH (n) RETURN n");
+
+        Assert.assertEquals(GremlinResult.Type.VERTEX, result.getType());
+        Assert.assertEquals(List.of("id", "label", "properties"), result.getTableView().getHeader());
+        Vertex vertex = (Vertex) result.getTableView().getRows().get(0);
+        Assert.assertEquals("marko", vertex.id());
+        Assert.assertEquals("person", vertex.label());
+        Assert.assertEquals("Marko", vertex.property("name"));
+        Assert.assertEquals(1, result.getGraphView().getVertices().size());
+        Assert.assertTrue(result.getGraphView().getEdges().isEmpty());
     }
 
     private QueryService serviceWithConfig() throws Exception {

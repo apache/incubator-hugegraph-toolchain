@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -107,28 +108,30 @@ public class OperationsHttpClient {
                 int status = response.code();
                 if (status < 200 || status >= 300) {
                     throw new UpstreamRequestException(
-                              "upstream_http_status_" + status);
+                              "upstream_http_status_" + status, null,
+                              Map.of("request_path", target.getRawPath(), "http_status", status));
                 }
                 ResponseBody body = response.body();
                 if (body == null) {
-                    throw new UpstreamRequestException("upstream_empty_body");
+                    throw new UpstreamRequestException("upstream_empty_body", null,
+                                                       Map.of("request_path", target.getRawPath()));
                 }
                 if (body.contentLength() > this.maxResponseBytes) {
-                    throw new UpstreamResponseTooLargeException();
+                    throw new UpstreamResponseTooLargeException(
+                            target.getRawPath(), this.maxResponseBytes, body.contentLength(), true);
                 }
                 try (InputStream input = body.byteStream()) {
-                    return this.readLimited(input);
+                    return this.readLimited(input, target.getRawPath());
                 }
             }
         } catch (UpstreamRequestException e) {
             throw e;
         } catch (SocketTimeoutException e) {
-            throw new UpstreamRequestException("upstream_timeout", e);
-        } catch (UnknownHostException e) {
-            throw new IllegalArgumentException("Unresolvable operations target",
-                                               e);
-        } catch (IOException e) {
-            throw new UpstreamRequestException("upstream_unavailable", e);
+            throw new UpstreamRequestException("upstream_timeout", e,
+                                               Map.of("request_path", target.getRawPath()));
+        } catch (IOException | IllegalArgumentException e) {
+            throw new UpstreamRequestException("upstream_unavailable", e,
+                                               Map.of("request_path", target.getRawPath()));
         }
     }
 
@@ -226,7 +229,7 @@ public class OperationsHttpClient {
         return '[' + host + ']';
     }
 
-    private String readLimited(InputStream input) throws IOException {
+    private String readLimited(InputStream input, String path) throws IOException {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         byte[] buffer = new byte[Math.min(4096, this.maxResponseBytes + 1)];
         int total = 0;
@@ -234,7 +237,8 @@ public class OperationsHttpClient {
         while ((read = input.read(buffer)) >= 0) {
             total += read;
             if (total > this.maxResponseBytes) {
-                throw new UpstreamResponseTooLargeException();
+                throw new UpstreamResponseTooLargeException(
+                          path, this.maxResponseBytes, total, false);
             }
             output.write(buffer, 0, read);
         }

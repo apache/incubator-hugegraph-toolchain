@@ -16,23 +16,24 @@
  * under the License.
  */
 
-package org.apache.hugegraph.license;
-
-public final class ServerInfo {
-
-    private final String serverId;
-    private final MachineInfo machineInfo;
-
-    public ServerInfo(String serverId) {
-        this.serverId = serverId;
-        this.machineInfo = new MachineInfo();
+// Source health includes collection quality; a collection failure alone does
+// not establish that the nodes reported by the source are down.
+export const sourceHealthStatus = (source = {}) => {
+    const {status = 'UNKNOWN', availability = 'UNSUPPORTED', stale = false} = source;
+    if (status === 'DOWN') {
+        return 'DOWN';
     }
-
-    public String serverId() {
-        return this.serverId;
+    if (status === 'DEGRADED') {
+        return 'DEGRADED';
     }
-
-    public MachineInfo machineInfo() {
-        return this.machineInfo;
+    if (availability === 'UNSUPPORTED') {
+        return 'UNKNOWN';
     }
-}
+    if (availability === 'PARTIAL' || stale) {
+        return 'DEGRADED';
+    }
+    if (status !== 'UP') {
+        return 'UNKNOWN';
+    }
+    return availability === 'AVAILABLE' ? 'UP' : 'DEGRADED';
+};

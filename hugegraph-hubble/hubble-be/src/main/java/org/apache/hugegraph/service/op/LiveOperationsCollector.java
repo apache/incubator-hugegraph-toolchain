@@ -232,7 +232,7 @@ public class LiveOperationsCollector implements OperationsCollector {
                 return;
             }
             this.collectSingleServer(client, this.serverIdentity,
-                                     "HugeGraph Server", includeMetrics, now,
+                                     "Server", includeMetrics, now,
                                      sources, nodes);
             return;
         }
@@ -393,9 +393,18 @@ public class LiveOperationsCollector implements OperationsCollector {
                 metricStatuses.put("system", metricStatus(e, now, false));
             }
             try {
-                metrics.put("backend", this.safeBackendMetrics(
-                            client.metrics().backend()));
-                metricStatuses.put("backend", availableMetric(now));
+                Map<String, Object> backend = this.safeBackendMetrics(
+                                              client.metrics().backend());
+                metrics.put("backend", backend);
+                if (((Number) backend.get("failed_graphs")).longValue() > 0L) {
+                    partial = true;
+                    reason = mergeServerReason(reason, "backend_metrics_failed");
+                    metricStatuses.put("backend", unavailableMetric(
+                                       now, "backend_metrics_failed")
+                            .withDiagnostics(Map.of("failed_graphs", backend.get("failed_graphs"))));
+                } else {
+                    metricStatuses.put("backend", availableMetric(now));
+                }
             } catch (RuntimeException e) {
                 partial = true;
                 reason = mergeServerReason(reason, metricReason(e));
@@ -416,7 +425,7 @@ public class LiveOperationsCollector implements OperationsCollector {
     }
 
     private static String serverName(String url) {
-        return "HugeGraph Server " +
+        return "Server " +
                stableId("server", url).substring("server-".length());
     }
 
@@ -432,16 +441,18 @@ public class LiveOperationsCollector implements OperationsCollector {
             cluster = this.get("/v1/cluster");
             pdStatus = available("UP", now);
         } catch (RuntimeException e) {
-            pdStatus = unavailable(reason(e), now);
+            pdStatus = unavailable(reason(e), now).withDiagnostics(diagnostics(e));
         }
         try {
             stores = this.get("/v1/stores");
             storesStatus = available("UP", now);
         } catch (RuntimeException e) {
-            storesStatus = unavailable(reason(e), now);
+            storesStatus = unavailable(reason(e), now).withDiagnostics(diagnostics(e));
         }
         boolean clusterParsed = false;
         boolean storesParsed = false;
+        String clusterState = null;
+        String dataState = null;
         if (cluster != null) {
             try {
                 Topology topology = this.parser.parseTopology(cluster,
@@ -450,11 +461,17 @@ public class LiveOperationsCollector implements OperationsCollector {
                 this.mergeNodes(nodes, topology.getNodes());
                 facts.putAll(topology.getFacts());
                 clusterReason = topology.getReason();
+                clusterState = topology.getClusterState();
+                dataState = topology.getDataState();
                 pdStatus = available(this.nodeStatus(topology.getNodes(), "PD"),
                                      now);
+                if (dataState != null && !"PState_Normal".equalsIgnoreCase(dataState)) {
+                    pdStatus = new SourceStatus("PARTIAL", pdStatus.getStatus(),
+                                                now, now, true, false, clusterReason);
+                }
                 clusterParsed = true;
             } catch (MalformedUpstreamException e) {
-                pdStatus = malformed(now);
+                pdStatus = malformed(now).withDiagnostics(Map.of("request_path", "/v1/cluster"));
             }
         }
         if (stores != null) {
@@ -468,11 +485,11 @@ public class LiveOperationsCollector implements OperationsCollector {
                 this.reconcileStoreFacts(nodes, facts);
                 storesParsed = true;
             } catch (MalformedUpstreamException e) {
-                storesStatus = malformed(now);
+                storesStatus = malformed(now).withDiagnostics(Map.of("request_path", "/v1/stores"));
             }
         }
         if (includeMetrics && clusterParsed) {
-            pdStatus = this.collectPdMetrics(now, pdStatus, nodes);
+            pdStatus = this.collectPdMetrics(now, pdStatus, nodes, cluster);
         }
         if (includeMetrics && storesParsed) {
             storesStatus = this.collectStoreMetrics(stores, now, storesStatus,
@@ -484,7 +501,7 @@ public class LiveOperationsCollector implements OperationsCollector {
             this.applyStoreMetricStatus(nodes, this.metricStatus(storesStatus,
                                                                  now));
         }
-        sources.put("pd", pdStatus);
+        sources.put("pd", pdStatus.withClusterHealth(clusterState, dataState));
         sources.put("stores", storesStatus);
         return clusterReason;
     }
@@ -564,13 +581,21 @@ public class LiveOperationsCollector implements OperationsCollector {
     }
 
     private SourceStatus collectPdMetrics(long now, SourceStatus status,
-                                          List<Node> nodes) {
-        int index = this.pdNodeIndex(nodes);
+                                          List<Node> nodes, String cluster) {
+        int index = this.pdNodeIndex(nodes, cluster);
         if (index < 0) {
+            for (int i = 0; i < nodes.size(); i++) {
+                Node node = nodes.get(i);
+                if ("PD".equals(node.getType())) {
+                    Map<String, MetricStatus> statuses = new LinkedHashMap<>(node.getMetricStatuses());
+                    statuses.put("system", unsupportedMetric(now, "pd_metrics_unmapped"));
+                    nodes.set(i, copyNode(node, node.getMetrics(), statuses));
+                }
+            }
             return new SourceStatus("PARTIAL", status.getStatus(), now,
                                     status.getLastSuccessAt(), false, false,
                                     preferredReason(status,
-                                                    "pd_metrics_unmapped"));
+                                                    "pd_metrics_unmapped"), status.getDiagnostics());
         }
         Map<String, Object> system = null;
         MetricStatus selectedStatus;
@@ -583,7 +608,9 @@ public class LiveOperationsCollector implements OperationsCollector {
                                   Collections.emptySet(), "text/plain"));
             selectedStatus = availableMetric(now);
         } catch (RuntimeException e) {
-            selectedStatus = metricStatus(e, now, true);
+            Map<String, Object> details = new LinkedHashMap<>(diagnostics(e));
+            details.putIfAbsent("request_path", "/actuator/prometheus");
+            selectedStatus = metricStatus(e, now, true).withDiagnostics(details);
             failureReason = selectedStatus.getReason();
         }
         for (int i = 0; i < nodes.size(); i++) {
@@ -611,7 +638,7 @@ public class LiveOperationsCollector implements OperationsCollector {
         if (failureReason != null) {
             return new SourceStatus("PARTIAL", status.getStatus(), now,
                                     status.getLastSuccessAt(), false, false,
-                                    preferredReason(status, failureReason));
+                                    preferredReason(status, failureReason), selectedStatus.getDiagnostics());
         }
         return status;
     }
@@ -621,34 +648,52 @@ public class LiveOperationsCollector implements OperationsCollector {
         return status.getReason() == null ? fallback : status.getReason();
     }
 
-    private int pdNodeIndex(List<Node> nodes) {
-        String configuredId = stableId("pd", this.pdBase);
-        int first = -1;
+    private int pdNodeIndex(List<Node> nodes, String cluster) {
+        String configuredId = this.parser.pdMetricNodeId(cluster, this.pdBase);
         for (int i = 0; i < nodes.size(); i++) {
             Node node = nodes.get(i);
             if (!"PD".equals(node.getType())) {
                 continue;
             }
-            if (configuredId.equals(node.getId())) {
+            if (node.getId().equals(configuredId)) {
                 return i;
             }
-            if ("LEADER".equals(node.getRole())) {
-                first = i;
-            } else if (first < 0) {
-                first = i;
-            }
         }
-        return first;
+        return -1;
     }
 
     private SourceStatus collectStoreMetrics(String stores, long now,
                                              SourceStatus status,
                                              List<Node> nodes) {
         try {
-            Map<String, String> restAddresses =
-                    this.parser.parseStoreRestAddresses(stores);
-            Map<String, URI> targets = this.parser.parseStoreMetricTargets(
-                                       this.get("/v1/prom/targets-all"));
+            Map<String, String> restAddresses;
+            try {
+                restAddresses = this.parser.parseStoreRestAddresses(stores);
+            } catch (MalformedUpstreamException e) {
+                Map<String, Object> details = Map.of("request_path", "/v1/stores");
+                this.applyStoreMetricStatus(nodes, metricStatus(e, now, true).withDiagnostics(details));
+                return metricFailureStatus(status, now, 0, metricReason(e)).withDiagnostics(details);
+            }
+            String targetPath = "/v1/prom/targets/store";
+            String targetPayload;
+            try {
+                targetPayload = this.get(targetPath);
+            } catch (UpstreamRequestException e) {
+                if (!"upstream_http_status_404".equals(e.getMessage()) &&
+                    !"upstream_http_status_405".equals(e.getMessage())) {
+                    throw e;
+                }
+                targetPath = "/v1/prom/targets-all";
+                targetPayload = this.get(targetPath);
+            }
+            Map<String, URI> targets;
+            try {
+                targets = this.parser.parseStoreMetricTargets(targetPayload);
+            } catch (MalformedUpstreamException e) {
+                Map<String, Object> details = Map.of("request_path", targetPath);
+                this.applyStoreMetricStatus(nodes, metricStatus(e, now, true).withDiagnostics(details));
+                return metricFailureStatus(status, now, 0, metricReason(e)).withDiagnostics(details);
+            }
             Set<String> allowedTargets = new java.util.LinkedHashSet<>();
             boolean partial = false;
             int successfulGroups = 0;
@@ -700,12 +745,8 @@ public class LiveOperationsCollector implements OperationsCollector {
                     result = StoreMetricResult.failure(
                              job, "upstream_unavailable", now);
                 }
-                Node node = result.getNode();
-                if (result.getSuccessfulGroups() == 0 &&
-                    directStoreFailure(result.getFailureReason())) {
-                    node = copyNodeWithStatus(node, "DOWN");
-                }
-                nodes.set(job.getNodeIndex(), node);
+                // Metric transport failures do not override PD-reported node health.
+                nodes.set(job.getNodeIndex(), result.getNode());
                 successfulGroups += result.getSuccessfulGroups();
                 if (result.getFailureReason() != null) {
                     partial = true;
@@ -714,8 +755,8 @@ public class LiveOperationsCollector implements OperationsCollector {
                 }
             }
             if (partial) {
-                return metricFailureStatus(status, now, successfulGroups,
-                                           failureReason);
+                return metricFailureStatus(status, now, successfulGroups, failureReason)
+                       .withDiagnostics(storeFailureSummary(nodes));
             }
             return status;
         } catch (InterruptedException e) {
@@ -726,8 +767,34 @@ public class LiveOperationsCollector implements OperationsCollector {
                                        "upstream_interrupted");
         } catch (RuntimeException e) {
             this.applyStoreFailureStatuses(nodes, now, e);
-            return metricFailureStatus(status, now, 0, metricReason(e));
+            return metricFailureStatus(status, now, 0, metricReason(e))
+                   .withDiagnostics(diagnostics(e));
         }
+    }
+
+    private static Map<String, Object> storeFailureSummary(List<Node> nodes) {
+        int affected = 0;
+        Set<String> groups = new java.util.LinkedHashSet<>();
+        for (Node node : nodes) {
+            if (!"STORE".equals(node.getType())) {
+                continue;
+            }
+            boolean failed = false;
+            for (Map.Entry<String, MetricStatus> entry : node.getMetricStatuses().entrySet()) {
+                String availability = entry.getValue().getAvailability();
+                if ("UNAVAILABLE".equals(availability) || "MALFORMED".equals(availability) ||
+                    "UNSUPPORTED".equals(availability) &&
+                    "unsupported_version".equals(entry.getValue().getReason())) {
+                    failed = true;
+                    groups.add(entry.getKey());
+                }
+            }
+            if (failed) {
+                affected++;
+            }
+        }
+        return Map.of("affected_node_count", affected,
+                      "failed_metric_groups", new ArrayList<>(groups));
     }
 
     private StoreMetricResult collectStoreMetric(StoreMetricJob job,
@@ -747,8 +814,8 @@ public class LiveOperationsCollector implements OperationsCollector {
                                                       "upstream_deadline"));
                 continue;
             }
+            URI endpoint = job.getTarget().resolve("/metrics/" + group);
             try {
-                URI endpoint = job.getTarget().resolve("/metrics/" + group);
                 String payload = this.http.get(endpoint, this.storeUsername,
                                                this.storePassword,
                                                allowedTargets);
@@ -757,17 +824,14 @@ public class LiveOperationsCollector implements OperationsCollector {
                 successfulGroups++;
             } catch (RuntimeException e) {
                 failureReason = mergeReason(failureReason, metricReason(e));
-                statuses.put(group, metricStatus(e, now, true));
+                Map<String, Object> details = new LinkedHashMap<>(diagnostics(e));
+                details.put("request_path", endpoint.getRawPath());
+                details.put("metric_group", group);
+                statuses.put(group, metricStatus(e, now, true).withDiagnostics(details));
             }
         }
         return new StoreMetricResult(copyNode(job.getNode(), metrics, statuses),
                                      successfulGroups, failureReason);
-    }
-
-    private static boolean directStoreFailure(String reason) {
-        return "upstream_unavailable".equals(reason) ||
-               "upstream_timeout".equals(reason) ||
-               "upstream_deadline".equals(reason);
     }
 
     private static StoreTarget storeTarget(String nodeId,
@@ -817,12 +881,14 @@ public class LiveOperationsCollector implements OperationsCollector {
     private MetricStatus metricStatus(SourceStatus source, long now) {
         if ("MALFORMED".equals(source.getAvailability())) {
             return new MetricStatus("MALFORMED", now, null, false, false,
-                                    source.getReason());
+                                    source.getReason(), source.getDiagnostics());
         }
         if ("UNSUPPORTED".equals(source.getAvailability())) {
-            return unsupportedMetric(now, source.getReason());
+            return unsupportedMetric(now, source.getReason())
+                   .withDiagnostics(source.getDiagnostics());
         }
-        return unavailableMetric(now, source.getReason());
+        return unavailableMetric(now, source.getReason())
+               .withDiagnostics(source.getDiagnostics());
     }
 
     private static SourceStatus metricFailureStatus(SourceStatus status,
@@ -857,13 +923,18 @@ public class LiveOperationsCollector implements OperationsCollector {
                                              boolean versionedEndpoint) {
         String reason = metricReason(error);
         if (versionedEndpoint && "unsupported_version".equals(reason)) {
-            return unsupportedMetric(now, reason);
+            return unsupportedMetric(now, reason).withDiagnostics(diagnostics(error));
         }
         if (error instanceof MalformedUpstreamException) {
             return new MetricStatus("MALFORMED", now, null, false, false,
-                                    reason);
+                                    reason, diagnostics(error));
         }
-        return unavailableMetric(now, reason);
+        return unavailableMetric(now, reason).withDiagnostics(diagnostics(error));
+    }
+
+    private static Map<String, Object> diagnostics(RuntimeException error) {
+        return error instanceof UpstreamRequestException ?
+               ((UpstreamRequestException) error).getDiagnostics() : Collections.emptyMap();
     }
 
     private static MetricStatus availableMetric(long now) {
@@ -885,19 +956,12 @@ public class LiveOperationsCollector implements OperationsCollector {
                         node.getObservedAt(), metrics, statuses);
     }
 
-    private static Node copyNodeWithStatus(Node node, String status) {
-        return new Node(node.getId(), node.getType(), node.getName(),
-                        node.getRole(), node.getVersion(), status,
-                        node.getObservedAt(), node.getMetrics(),
-                        node.getMetricStatuses());
-    }
-
     private static SourceStatus withStatus(SourceStatus source,
                                            String status) {
         return new SourceStatus(source.getAvailability(), status,
                                 source.getObservedAt(),
                                 source.getLastSuccessAt(), source.isFresh(),
-                                source.isStale(), source.getReason());
+                                source.isStale(), source.getReason(), source.getDiagnostics());
     }
 
     private String get(String path) {
@@ -927,6 +991,7 @@ public class LiveOperationsCollector implements OperationsCollector {
             Map<String, Map<String, Object>> upstream) {
         long graphs = 0L;
         long nodes = 0L;
+        long failures = 0L;
         Map<String, Long> backends = new LinkedHashMap<>();
         if (upstream != null) {
             for (Map<String, Object> graph : upstream.values()) {
@@ -934,6 +999,9 @@ public class LiveOperationsCollector implements OperationsCollector {
                     continue;
                 }
                 graphs++;
+                if (graph.get("exception") != null) {
+                    failures++;
+                }
                 Object nodeCount = graph.get("nodes");
                 if (nodeCount instanceof Number) {
                     nodes += ((Number) nodeCount).longValue();
@@ -948,6 +1016,7 @@ public class LiveOperationsCollector implements OperationsCollector {
         }
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("graphs", graphs);
+        result.put("failed_graphs", failures);
         result.put("nodes", nodes);
         result.put("backend_counts", backends);
         return result;
@@ -977,7 +1046,9 @@ public class LiveOperationsCollector implements OperationsCollector {
     private String overallStatus(Map<String, SourceStatus> sources) {
         List<SourceStatus> supported = sources.values().stream()
                 .filter(source -> !"UNSUPPORTED".equals(
-                                  source.getAvailability()))
+                                  source.getAvailability()) ||
+                                  "DOWN".equals(source.getStatus()) ||
+                                  "DEGRADED".equals(source.getStatus()))
                 .collect(java.util.stream.Collectors.toList());
         if (!supported.isEmpty() && supported.stream().allMatch(
                                       LiveOperationsCollector::failedSource)) {

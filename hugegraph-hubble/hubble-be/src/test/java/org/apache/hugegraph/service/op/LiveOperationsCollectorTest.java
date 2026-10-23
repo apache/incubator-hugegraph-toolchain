@@ -58,6 +58,7 @@ public class LiveOperationsCollectorTest {
         Assert.assertEquals("UP", snapshot.getStatus());
         Assert.assertEquals(1, snapshot.getNodes().size());
         Assert.assertEquals("SERVER", snapshot.getNodes().get(0).getType());
+        Assert.assertEquals("Server", snapshot.getNodes().get(0).getName());
         Assert.assertTrue(snapshot.getNodes().get(0).getMetrics()
                                   .containsKey("system"));
         Assert.assertTrue(snapshot.getNodes().get(0).getMetrics()
@@ -70,6 +71,69 @@ public class LiveOperationsCollectorTest {
                             snapshot.getSources().get("pd").getAvailability());
         Assert.assertEquals("UNSUPPORTED",
                             snapshot.getSources().get("stores").getAvailability());
+    }
+
+    @Test
+    public void testEmbeddedBackendFailureDoesNotExposeExceptionOrReportSuccess() {
+        HugeClient client = serverClient();
+        for (boolean allFailed : new boolean[]{false, true}) {
+            Map<String, Map<String, Object>> backend = new LinkedHashMap<>();
+            backend.put("private-graph", Map.of("backend", "hstore",
+                                               "exception", "private-password /private/path"));
+            if (!allFailed) {
+                backend.put("healthy-graph", Map.of("backend", "hstore", "nodes", 2));
+            }
+            Mockito.when(client.metrics().backend()).thenReturn(backend);
+            Snapshot snapshot = collector(false, null).collect(client, true);
+            OperationsModels.Node server = snapshot.getNodes().get(0);
+            MetricStatus status = server.getMetricStatuses().get("backend");
+
+            Assert.assertEquals("DEGRADED", snapshot.getStatus());
+            Assert.assertEquals("UNAVAILABLE", status.getAvailability());
+            Assert.assertEquals("backend_metrics_failed", status.getReason());
+            Assert.assertEquals(Collections.singletonMap("failed_graphs", 1L), status.getDiagnostics());
+            Assert.assertEquals("UP", server.getStatus());
+            Assert.assertEquals("AVAILABLE", server.getMetricStatuses()
+                                                   .get("system").getAvailability());
+            @SuppressWarnings("unchecked")
+            Map<String, Object> summary = (Map<String, Object>) server.getMetrics().get("backend");
+            Assert.assertEquals(1L, summary.get("failed_graphs"));
+            Assert.assertEquals(allFailed ? 1L : 2L, summary.get("graphs"));
+            Assert.assertFalse(summary.toString().contains("private"));
+            Assert.assertFalse(summary.toString().contains("exception"));
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testBackendFailureRetainsCurrentCountWhenSuccessfulValuesAreCached() {
+        HugeClient client = serverClient();
+        Mockito.when(client.metrics().backend()).thenReturn(
+                Map.of("healthy-graph", Map.of("backend", "hstore", "nodes", 2)),
+                Map.of("private-graph", Map.of("backend", "hstore", "exception", "private-message")));
+        LiveOperationsCollector collector = collector(false, null);
+        DefaultOperationsDataService service = new DefaultOperationsDataService(collector, 5, CLOCK);
+        Set<String> capabilities = Set.of(OperationsCapabilityService.HEALTH_READ,
+                                         OperationsCapabilityService.TOPOLOGY_READ,
+                                         OperationsCapabilityService.METRICS_READ);
+        try {
+            service.overview(client, capabilities, false);
+            Map<String, Object> result = service.overview(client, capabilities, true);
+            OperationsModels.Node server = ((java.util.List<OperationsModels.Node>) result.get("nodes")).get(0);
+            MetricStatus backend = server.getMetricStatuses().get("backend");
+
+            Assert.assertEquals("UNAVAILABLE", backend.getAvailability());
+            Assert.assertEquals("backend_metrics_failed", backend.getReason());
+            Assert.assertEquals(Collections.singletonMap("failed_graphs", 1L), backend.getDiagnostics());
+            Assert.assertTrue(backend.isStale());
+            Assert.assertEquals(Long.valueOf(2000L), backend.getLastSuccessAt());
+            Map<String, Object> oldMetrics = (Map<String, Object>) server.getMetrics().get("backend");
+            Assert.assertEquals(0L, oldMetrics.get("failed_graphs"));
+            Assert.assertEquals(2L, oldMetrics.get("nodes"));
+            Assert.assertFalse(backend.getDiagnostics().toString().contains("private"));
+        } finally {
+            collector.close();
+        }
     }
 
     @Test
@@ -115,6 +179,11 @@ public class LiveOperationsCollectorTest {
         Assert.assertEquals(2L, snapshot.getNodes().stream()
                                 .filter(node -> "SERVER".equals(node.getType()))
                                 .count());
+        snapshot.getNodes().stream()
+                .filter(node -> "SERVER".equals(node.getType()))
+                .forEach(node -> Assert.assertEquals(
+                         "Server " + node.getId().substring("server-".length()),
+                         node.getName()));
         Assert.assertEquals("UP", snapshot.getSources().get("server")
                                           .getStatus());
         Assert.assertEquals("AVAILABLE",
@@ -328,6 +397,32 @@ public class LiveOperationsCollectorTest {
     }
 
     @Test
+    public void testDataFailureDegradesCollectionWithoutMarkingPdProcessDown()
+           throws IOException {
+        HttpServer pd = pdServer(200, cluster().replace(
+                "\"state\":\"Cluster_OK\"", "\"state\":\"Cluster_OK\",\"dataState\":\"PState_Fault\""),
+                200, stores());
+        Snapshot snapshot;
+        try {
+            snapshot = collector(true, pd).collect(serverClient(), false);
+        } finally {
+            pd.stop(0);
+        }
+
+        OperationsModels.SourceStatus source = snapshot.getSources().get("pd");
+        Assert.assertEquals("DEGRADED", snapshot.getStatus());
+        Assert.assertEquals("data_fault", snapshot.getReason());
+        Assert.assertEquals("PARTIAL", source.getAvailability());
+        Assert.assertEquals("UP", source.getStatus());
+        Assert.assertEquals("data_fault", source.getReason());
+        Assert.assertEquals("Cluster_OK", source.getClusterState());
+        Assert.assertEquals("PState_Fault", source.getDataState());
+        Assert.assertTrue(snapshot.getNodes().stream()
+                .filter(node -> "PD".equals(node.getType()))
+                .allMatch(node -> "UP".equals(node.getStatus())));
+    }
+
+    @Test
     public void testOfflinePdDegradesPdSourceWhileClusterHasQuorum()
            throws IOException {
         String cluster = "{\"status\":0,\"data\":{" +
@@ -391,7 +486,8 @@ public class LiveOperationsCollectorTest {
         HttpServer pd = HttpServer.create(new InetSocketAddress(0), 0);
         String storePayload = stores().replace(
                 "PD_TEST_PORT", String.valueOf(pd.getAddress().getPort()));
-        context(pd, "/v1/cluster", 200, notReady);
+        context(pd, "/v1/cluster", 200, notReady.replace(
+                "http://pd:8620", "http://127.0.0.1:" + pd.getAddress().getPort()));
         context(pd, "/v1/stores", 200, storePayload);
         context(pd, "/actuator/prometheus", 500, "unavailable");
         pd.start();
@@ -435,6 +531,163 @@ public class LiveOperationsCollectorTest {
 
         Assert.assertEquals("UP", snapshot.getSources().get("pd").getStatus());
         Assert.assertEquals(0, http.leaderRequests());
+    }
+
+    @Test
+    public void testUnmatchedPdAddressNeverAttributesMetricsToLeader()
+           throws IOException {
+        HttpServer pd = pdServer(200, cluster().replace("http://pd:8620",
+                                                        "http://pd-alias:8620"),
+                                 200, stores());
+        AtomicInteger probes = new AtomicInteger();
+        pd.removeContext("/actuator/prometheus");
+        pd.createContext("/actuator/prometheus", exchange -> {
+            probes.incrementAndGet();
+            exchange.sendResponseHeaders(500, -1);
+            exchange.close();
+        });
+        Snapshot snapshot;
+        try {
+            snapshot = collector(true, pd).collect(serverClient(), true);
+        } finally {
+            pd.stop(0);
+        }
+
+        Assert.assertEquals(0, probes.get());
+        Assert.assertEquals("PARTIAL", snapshot.getSources().get("pd").getAvailability());
+        Assert.assertEquals("pd_metrics_unmapped", snapshot.getSources().get("pd").getReason());
+        OperationsModels.Node leader = snapshot.getNodes().stream()
+                .filter(node -> "PD".equals(node.getType()))
+                .findFirst().orElseThrow(AssertionError::new);
+        Assert.assertEquals("LEADER", leader.getRole());
+        Assert.assertFalse(leader.getMetrics().containsKey("system"));
+        Assert.assertEquals("pd_metrics_unmapped", leader.getMetricStatuses().get("system").getReason());
+    }
+
+    @Test
+    public void testPdMetricsAttachToMatchedFollowerRatherThanLeader()
+           throws IOException {
+        String cluster = "{\"status\":0,\"data\":{\"state\":\"Cluster_OK\"," +
+                         "\"pdList\":[{\"restUrl\":\"http://pd-leader:8620\"," +
+                         "\"state\":\"Up\",\"role\":\"Leader\"},{" +
+                         "\"restUrl\":\"http://pd:8620\",\"state\":\"Up\"," +
+                         "\"role\":\"Follower\"}],\"pdLeader\":{" +
+                         "\"restUrl\":\"http://pd-leader:8620\",\"state\":\"Up\"}}}";
+        HttpServer pd = pdServer(200, cluster, 200, stores());
+        Snapshot snapshot;
+        try {
+            snapshot = collector(true, pd).collect(serverClient(), true);
+        } finally {
+            pd.stop(0);
+        }
+
+        Assert.assertEquals("AVAILABLE", snapshot.getSources().get("pd").getAvailability());
+        for (OperationsModels.Node node : snapshot.getNodes()) {
+            if (!"PD".equals(node.getType())) {
+                continue;
+            }
+            boolean leader = "LEADER".equals(node.getRole());
+            Assert.assertEquals(!leader, node.getMetrics().containsKey("system"));
+            Assert.assertEquals(leader ? "UNSUPPORTED" : "AVAILABLE",
+                                node.getMetricStatuses().get("system").getAvailability());
+        }
+    }
+
+    @Test
+    public void testPdMetricsMatchCanonicalAdvertisedUrl() throws IOException {
+        for (String address : new String[]{"http://pd:8620/", "PD_TEST_AUTHORITY"}) {
+            HttpServer pd = pdServer(200, cluster().replace("http://pd:8620", address),
+                                     200, stores());
+            Snapshot snapshot;
+            try {
+                snapshot = collector(true, pd).collect(serverClient(), true);
+            } finally {
+                pd.stop(0);
+            }
+
+            Assert.assertEquals("AVAILABLE", snapshot.getSources().get("pd").getAvailability());
+            OperationsModels.Node node = snapshot.getNodes().stream()
+                    .filter(value -> "PD".equals(value.getType()))
+                    .findFirst().orElseThrow(AssertionError::new);
+            Assert.assertTrue(node.getMetrics().containsKey("system"));
+            Assert.assertEquals("AVAILABLE", node.getMetricStatuses().get("system").getAvailability());
+        }
+    }
+
+    @Test
+    public void testStoreTargetsPreferDedicatedEndpointWithoutBroadDiscovery()
+           throws IOException {
+        HttpServer pd = pdServer(200, cluster(), 200, stores());
+        context(pd, "/v1/prom/targets/store", 200,
+                targets("127.0.0.1:" + pd.getAddress().getPort()));
+        AtomicInteger fallback = fallbackTargets(pd);
+        storeMetricContexts(pd);
+        Snapshot snapshot;
+        try {
+            snapshot = collector(true, pd).collect(serverClient(), true);
+        } finally {
+            pd.stop(0);
+        }
+
+        Assert.assertEquals(0, fallback.get());
+        Assert.assertEquals("AVAILABLE", snapshot.getSources().get("stores").getAvailability());
+    }
+
+    @Test
+    public void testMalformedTargetDiscoveryRetainsActualPreferredOrFallbackPath()
+           throws IOException {
+        for (boolean preferred : new boolean[]{true, false}) {
+            HttpServer pd = pdServer(200, cluster(), 200, stores());
+            context(pd, "/v1/prom/targets/store", preferred ? 200 : 404, "{bad");
+            AtomicInteger legacyRequests = new AtomicInteger();
+            pd.createContext("/v1/prom/targets-all", exchange -> {
+                legacyRequests.incrementAndGet();
+                byte[] bytes = "{bad".getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(200, bytes.length);
+                exchange.getResponseBody().write(bytes);
+                exchange.close();
+            });
+            Snapshot snapshot;
+            try {
+                snapshot = collector(true, pd).collect(serverClient(), true);
+            } finally {
+                pd.stop(0);
+            }
+
+            String path = preferred ? "/v1/prom/targets/store" : "/v1/prom/targets-all";
+            Assert.assertEquals(preferred ? 0 : 1, legacyRequests.get());
+            OperationsModels.SourceStatus source = snapshot.getSources().get("stores");
+            Assert.assertEquals("PARTIAL", source.getAvailability());
+            Assert.assertEquals("malformed_response", source.getReason());
+            Assert.assertEquals(Collections.singletonMap("request_path", path), source.getDiagnostics());
+            for (String group : new String[]{"system", "drive", "raft"}) {
+                MetricStatus status = store(snapshot).getMetricStatuses().get(group);
+                Assert.assertEquals("MALFORMED", status.getAvailability());
+                Assert.assertEquals(Collections.singletonMap("request_path", path), status.getDiagnostics());
+            }
+        }
+    }
+
+    @Test
+    public void testStoreTargetsFallbackOnlyWhenEndpointIsUnsupported()
+           throws IOException {
+        for (int status : new int[]{404, 405, 401, 403, 500, 200}) {
+            HttpServer pd = pdServer(200, cluster(), 200, stores());
+            context(pd, "/v1/prom/targets/store", status, "{malformed");
+            AtomicInteger fallback = fallbackTargets(pd);
+            storeMetricContexts(pd);
+            Snapshot snapshot;
+            try {
+                snapshot = collector(true, pd).collect(serverClient(), true);
+            } finally {
+                pd.stop(0);
+            }
+
+            boolean unsupported = status == 404 || status == 405;
+            Assert.assertEquals(unsupported ? 1 : 0, fallback.get());
+            Assert.assertEquals(unsupported ? "AVAILABLE" : "PARTIAL",
+                                snapshot.getSources().get("stores").getAvailability());
+        }
     }
 
     @Test
@@ -483,7 +736,7 @@ public class LiveOperationsCollectorTest {
     }
 
     @Test
-    public void testDirectMetricFailureOverridesStaleStoreRegistration() {
+    public void testDirectMetricFailurePreservesPdStoreStatus() {
         RecordingHttpClient http = new RecordingHttpClient(
                 storesWithDifferentRestAddresses(),
                 targets("127.0.0.1:8520", "127.0.0.1:9520"));
@@ -498,13 +751,46 @@ public class LiveOperationsCollectorTest {
 
         Assert.assertEquals("UP",
                             snapshot.getSources().get("pd").getStatus());
-        Assert.assertEquals("DEGRADED",
+        Assert.assertEquals("UP",
                             snapshot.getSources().get("stores").getStatus());
+        Assert.assertEquals("PARTIAL",
+                            snapshot.getSources().get("stores").getAvailability());
         Assert.assertEquals(Long.valueOf(2L),
                             snapshot.getFacts().get("stores"));
-        Assert.assertEquals(Long.valueOf(1L),
+        Assert.assertEquals(Long.valueOf(2L),
                             snapshot.getFacts().get("stores_up"));
+        Assert.assertEquals(0L, snapshot.getNodes().stream()
+                .filter(node -> "STORE".equals(node.getType()))
+                .filter(node -> "DOWN".equals(node.getStatus()))
+                .count());
         Assert.assertEquals(1L, snapshot.getNodes().stream()
+                .filter(node -> "STORE".equals(node.getType()))
+                .filter(node -> "upstream_unavailable".equals(
+                        node.getMetricStatuses().get("system").getReason()))
+                .count());
+    }
+
+    @Test
+    public void testDirectMetricFailurePreservesPdReportedDownStore() {
+        RecordingHttpClient http = new RecordingHttpClient(
+                storesWithDifferentRestAddresses().replace("\"Up\"", "\"Offline\""),
+                targets("127.0.0.1:8520", "127.0.0.1:9520"));
+        http.unavailableAuthority("127.0.0.1:9520");
+        LiveOperationsCollector collector = collector(http, 4, 1000);
+        Snapshot snapshot;
+        try {
+            snapshot = collector.collect(serverClient(), true);
+        } finally {
+            collector.close();
+        }
+
+        Assert.assertEquals("DOWN",
+                            snapshot.getSources().get("stores").getStatus());
+        Assert.assertEquals("PARTIAL",
+                            snapshot.getSources().get("stores").getAvailability());
+        Assert.assertEquals(Long.valueOf(0L),
+                            snapshot.getFacts().get("stores_up"));
+        Assert.assertEquals(2L, snapshot.getNodes().stream()
                 .filter(node -> "STORE".equals(node.getType()))
                 .filter(node -> "DOWN".equals(node.getStatus()))
                 .count());
@@ -523,6 +809,8 @@ public class LiveOperationsCollectorTest {
 
         Assert.assertEquals("MALFORMED",
                             snapshot.getSources().get("stores").getAvailability());
+        Assert.assertEquals(Map.of("request_path", "/v1/stores"),
+                            snapshot.getSources().get("stores").getDiagnostics());
         Assert.assertTrue(snapshot.getNodes().stream()
                                   .anyMatch(node -> "PD".equals(node.getType())));
         Assert.assertEquals(2L, snapshot.getFacts().get("graphs"));
@@ -556,6 +844,164 @@ public class LiveOperationsCollectorTest {
     }
 
     @Test
+    public void testUnsupportedStoreMetricsDoNotHideConfirmedTopologyFailures()
+           throws IOException {
+        for (String status : new String[]{"UP", "DEGRADED", "DOWN"}) {
+            String stores = stores();
+            if ("DOWN".equals(status)) {
+                stores = stores.replace("\"Up\"", "\"Offline\"");
+            } else if ("DEGRADED".equals(status)) {
+                stores = stores.replace("}]}}", "},{\"storeId\":\"2\",\"address\":\"127.0.0.1:8501\"," +
+                        "\"restAddress\":\"127.0.0.1:PD_TEST_PORT\",\"state\":\"Offline\"}]}}");
+            }
+            String cluster = cluster().replace("http://pd:8620", "http://127.0.0.1:PD_TEST_PORT");
+            HttpServer pd = pdServer(200, cluster, 200, stores);
+            context(pd, "/v1/prom/targets-all", 200,
+                    targets("127.0.0.1:" + pd.getAddress().getPort()));
+            Snapshot snapshot;
+            try {
+                snapshot = collector(true, pd).collect(serverClient(), true);
+            } finally {
+                pd.stop(0);
+            }
+
+            Assert.assertEquals("UNSUPPORTED", snapshot.getSources().get("stores").getAvailability());
+            Assert.assertEquals(status, snapshot.getSources().get("stores").getStatus());
+            Assert.assertEquals("UP".equals(status) ? "UP" : "DEGRADED", snapshot.getStatus());
+        }
+    }
+
+    @Test
+    public void testPartialStoreMetricsIncludeUnsupportedGroupDiagnostics()
+           throws IOException {
+        HttpServer pd = pdServer(200, cluster(), 200, stores());
+        String base = "127.0.0.1:" + pd.getAddress().getPort();
+        context(pd, "/v1/prom/targets-all", 200, targets(base));
+        context(pd, "/metrics/system", 200, "{\"heap\":{\"used\":1}}");
+        context(pd, "/metrics/drive", 200, "{\"disk\":{\"total_space\":10}}");
+        context(pd, "/metrics/raft", 404, "private-response");
+        Snapshot snapshot;
+        try {
+            snapshot = collector(true, pd).collect(serverClient(), true);
+        } finally {
+            pd.stop(0);
+        }
+
+        Assert.assertEquals("PARTIAL", snapshot.getSources().get("stores").getAvailability());
+        Assert.assertEquals(Map.of("affected_node_count", 1,
+                                   "failed_metric_groups", Collections.singletonList("raft")),
+                            snapshot.getSources().get("stores").getDiagnostics());
+        MetricStatus metric = store(snapshot).getMetricStatuses().get("raft");
+        Assert.assertEquals("UNSUPPORTED", metric.getAvailability());
+        Assert.assertEquals(Map.of("request_path", "/metrics/raft", "http_status", 404,
+                                   "metric_group", "raft"), metric.getDiagnostics());
+    }
+
+    @Test
+    public void testMalformedStoreRestAddressRetainsDiscoveryPath() throws IOException {
+        HttpServer pd = pdServer(200, cluster(), 200,
+                stores().replace("127.0.0.1:PD_TEST_PORT", "invalid address"));
+        Snapshot snapshot;
+        try {
+            snapshot = collector(true, pd).collect(serverClient(), true);
+        } finally {
+            pd.stop(0);
+        }
+        Assert.assertEquals("malformed_response", snapshot.getSources().get("stores").getReason());
+        Assert.assertEquals(Map.of("request_path", "/v1/stores"),
+                            snapshot.getSources().get("stores").getDiagnostics());
+        for (String group : new String[]{"system", "drive", "raft"}) {
+            MetricStatus status = store(snapshot).getMetricStatuses().get(group);
+            Assert.assertEquals("MALFORMED", status.getAvailability());
+            Assert.assertEquals(Map.of("request_path", "/v1/stores"), status.getDiagnostics());
+        }
+    }
+
+    @Test
+    public void testStoreFailureSummaryExcludesTopologyPlaceholders() {
+        RecordingHttpClient http = new RecordingHttpClient(storesWithDifferentRestAddresses(),
+                targets("127.0.0.1:8520", "127.0.0.1:9520"));
+        http.unavailableAuthority("127.0.0.1:8520");
+        LiveOperationsCollector collector = collector(http, 4, 1000);
+        Snapshot snapshot;
+        try {
+            snapshot = collector.collect(serverClient(), true);
+        } finally {
+            collector.close();
+        }
+        Assert.assertEquals("PARTIAL", snapshot.getSources().get("stores").getAvailability());
+        Assert.assertEquals(Map.of("affected_node_count", 1,
+                                  "failed_metric_groups", Arrays.asList("system", "drive", "raft")),
+                            snapshot.getSources().get("stores").getDiagnostics());
+        Assert.assertEquals(1L, snapshot.getNodes().stream().filter(node -> "STORE".equals(node.getType()))
+                .filter(node -> "topology_fields_unavailable".equals(
+                        node.getMetricStatuses().get("backend").getReason())).count());
+    }
+
+    @Test
+    public void testMalformedMetricDiscoveryResponsesRetainPaths()
+           throws IOException {
+        for (String path : new String[]{"/actuator/prometheus", "/v1/prom/targets-all"}) {
+            HttpServer pd = pdServer(200, cluster(), 200, stores());
+            if ("/actuator/prometheus".equals(path)) {
+                pd.removeContext(path);
+            }
+            context(pd, path, 200, "private-malformed-response");
+            Snapshot snapshot;
+            try {
+                snapshot = collector(true, pd).collect(serverClient(), true);
+            } finally {
+                pd.stop(0);
+            }
+
+            String type = "/actuator/prometheus".equals(path) ? "PD" : "STORE";
+            String source = "PD".equals(type) ? "pd" : "stores";
+            Assert.assertEquals("malformed_response", snapshot.getSources().get(source).getReason());
+            Assert.assertEquals(Map.of("request_path", path),
+                                snapshot.getSources().get(source).getDiagnostics());
+            snapshot.getNodes().stream().filter(node -> type.equals(node.getType()))
+                    .flatMap(node -> node.getMetricStatuses().values().stream())
+                    .filter(status -> "MALFORMED".equals(status.getAvailability()))
+                    .forEach(status -> Assert.assertEquals(Map.of("request_path", path),
+                                                          status.getDiagnostics()));
+            Assert.assertTrue(snapshot.getNodes().stream().filter(node -> type.equals(node.getType()))
+                    .flatMap(node -> node.getMetricStatuses().values().stream())
+                    .anyMatch(status -> "MALFORMED".equals(status.getAvailability())));
+        }
+    }
+
+    @Test
+    public void testOversizedDiscoveryResponsesKeepSourceDiagnostics()
+           throws IOException {
+        for (String path : new String[]{"/v1/stores", "/v1/cluster",
+                                        "/v1/prom/targets-all"}) {
+            HttpServer pd = pdServer(200, "/v1/cluster".equals(path) ?
+                                          "x".repeat(9000) : cluster(),
+                                     200, "/v1/stores".equals(path) ?
+                                          "x".repeat(9000) : stores());
+            if ("/v1/prom/targets-all".equals(path)) {
+                context(pd, path, 200, "x".repeat(9000));
+            }
+            Snapshot snapshot;
+            try {
+                snapshot = collector(true, pd).collect(
+                           serverClient(), "/v1/prom/targets-all".equals(path));
+            } finally {
+                pd.stop(0);
+            }
+
+            String source = "/v1/cluster".equals(path) ? "pd" : "stores";
+            Assert.assertEquals("response_too_large",
+                                snapshot.getSources().get(source).getReason());
+            Assert.assertEquals(Map.of("request_path", path,
+                                       "max_response_bytes", 8192L,
+                                       "response_bytes", 9000L,
+                                       "response_size_exact", true),
+                                snapshot.getSources().get(source).getDiagnostics());
+        }
+    }
+
+    @Test
     public void testStoreMetricFailureKeepsSpecificSafeReason()
            throws IOException {
         HttpServer pd = pdServer(200, cluster(), 200, stores());
@@ -584,6 +1030,15 @@ public class LiveOperationsCollectorTest {
                                                 .get("system").getAvailability());
         Assert.assertEquals("response_too_large", store.getMetricStatuses()
                                                    .get("system").getReason());
+        Assert.assertEquals(Map.of("request_path", "/metrics/system",
+                                   "max_response_bytes", 8192L,
+                                   "response_bytes", 9000L,
+                                   "response_size_exact", true,
+                                   "metric_group", "system"),
+                            store.getMetricStatuses().get("system").getDiagnostics());
+        Assert.assertEquals(Map.of("affected_node_count", 1,
+                                   "failed_metric_groups", Collections.singletonList("system")),
+                            snapshot.getSources().get("stores").getDiagnostics());
         Assert.assertEquals("AVAILABLE", store.getMetricStatuses()
                                               .get("drive").getAvailability());
         Assert.assertEquals("AVAILABLE", store.getMetricStatuses()
@@ -615,6 +1070,8 @@ public class LiveOperationsCollectorTest {
                                               .get("system").getAvailability());
         Assert.assertEquals("malformed_response", store.getMetricStatuses()
                                                    .get("system").getReason());
+        Assert.assertEquals(Map.of("request_path", "/metrics/system", "metric_group", "system"),
+                            store.getMetricStatuses().get("system").getDiagnostics());
         Assert.assertEquals("AVAILABLE", store.getMetricStatuses()
                                               .get("drive").getAvailability());
         Assert.assertEquals("AVAILABLE", store.getMetricStatuses()
@@ -904,10 +1361,15 @@ public class LiveOperationsCollectorTest {
                                     .getAvailability());
         Assert.assertEquals("upstream_deadline",
                             snapshot.getSources().get("stores").getReason());
-        Assert.assertEquals("DOWN",
+        Assert.assertEquals("UP",
                             snapshot.getSources().get("stores").getStatus());
-        Assert.assertEquals(Long.valueOf(0L),
+        Assert.assertEquals(Long.valueOf(30L),
                             snapshot.getFacts().get("stores_up"));
+        Assert.assertTrue(snapshot.getNodes().stream()
+                .filter(node -> "STORE".equals(node.getType()))
+                .allMatch(node -> "UP".equals(node.getStatus()) &&
+                                  "UNAVAILABLE".equals(node.getMetricStatuses()
+                                                         .get("system").getAvailability())));
         Assert.assertEquals(0, http.activeRequests());
     }
 
@@ -937,13 +1399,15 @@ public class LiveOperationsCollectorTest {
                 .filter(node -> "upstream_deadline".equals(
                         node.getMetricStatuses().get("system").getReason()))
                 .count());
-        Assert.assertEquals(1L, snapshot.getNodes().stream()
+        Assert.assertEquals(0L, snapshot.getNodes().stream()
                 .filter(node -> "STORE".equals(node.getType()))
                 .filter(node -> "DOWN".equals(node.getStatus()))
                 .count());
-        Assert.assertEquals("DEGRADED",
+        Assert.assertEquals("UP",
                             snapshot.getSources().get("stores").getStatus());
-        Assert.assertEquals(Long.valueOf(1L),
+        Assert.assertEquals("PARTIAL",
+                            snapshot.getSources().get("stores").getAvailability());
+        Assert.assertEquals(Long.valueOf(2L),
                             snapshot.getFacts().get("stores_up"));
     }
 
@@ -962,6 +1426,8 @@ public class LiveOperationsCollectorTest {
                             snapshot.getSources().get("pd").getAvailability());
         Assert.assertEquals("malformed_response",
                             snapshot.getSources().get("pd").getReason());
+        Assert.assertEquals(Map.of("request_path", "/v1/cluster"),
+                            snapshot.getSources().get("pd").getDiagnostics());
     }
 
     private static LiveOperationsCollector collector(boolean pdEnabled,
@@ -1055,12 +1521,36 @@ public class LiveOperationsCollectorTest {
         return client;
     }
 
+    private static void storeMetricContexts(HttpServer pd) {
+        context(pd, "/metrics/system", 200, "{\"heap\":{\"used\":1}}");
+        context(pd, "/metrics/drive", 200, "{\"disk\":{\"total_space\":10}}");
+        context(pd, "/metrics/raft", 200, "{\"0\":{\"enabled\":true}}");
+    }
+
+    private static AtomicInteger fallbackTargets(HttpServer pd) {
+        AtomicInteger calls = new AtomicInteger();
+        pd.createContext("/v1/prom/targets-all", exchange -> {
+            calls.incrementAndGet();
+            byte[] bytes = targets("127.0.0.1:" + pd.getAddress().getPort())
+                           .getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, bytes.length);
+            exchange.getResponseBody().write(bytes);
+            exchange.close();
+        });
+        return calls;
+    }
+
     private static HttpServer pdServer(int clusterStatus, String cluster,
                                        int storesStatus, String stores)
                                        throws IOException {
         HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        cluster = cluster.replace("PD_TEST_PORT",
+                                  String.valueOf(server.getAddress().getPort()));
         stores = stores.replace("PD_TEST_PORT",
                                 String.valueOf(server.getAddress().getPort()));
+        cluster = cluster.replace("http://pd:8620",
+                                  "http://127.0.0.1:" + server.getAddress().getPort())
+                         .replace("PD_TEST_AUTHORITY", "127.0.0.1:" + server.getAddress().getPort());
         context(server, "/v1/cluster", clusterStatus, cluster);
         context(server, "/v1/stores", storesStatus, stores);
         context(server, "/actuator/prometheus", 200,
@@ -1217,7 +1707,8 @@ public class LiveOperationsCollectorTest {
             if ("/v1/stores".equals(path)) {
                 return this.stores;
             }
-            if ("/v1/prom/targets-all".equals(path)) {
+            if ("/v1/prom/targets/store".equals(path) ||
+                "/v1/prom/targets-all".equals(path)) {
                 return this.targets;
             }
             if ("/actuator/prometheus".equals(path)) {

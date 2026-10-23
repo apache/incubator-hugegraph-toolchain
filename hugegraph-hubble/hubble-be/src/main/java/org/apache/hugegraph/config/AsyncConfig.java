@@ -19,6 +19,7 @@
 package org.apache.hugegraph.config;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.context.annotation.Bean;
@@ -27,6 +28,7 @@ import org.springframework.context.annotation.DependsOn;
 import org.springframework.scheduling.annotation.AsyncConfigurer;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 @Configuration
 @EnableAsync
@@ -42,24 +44,7 @@ public class AsyncConfig implements AsyncConfigurer {
                 try {
                     super.destroy();
                 } finally {
-                    // A native shutdown may throw after initiating shutdown.
-                    // Drain in that case too; never await a pool still accepting.
-                    if (this.getThreadPoolExecutor().isShutdown()) {
-                        boolean interrupted = false;
-                        try {
-                            while (!this.getThreadPoolExecutor().isTerminated()) {
-                                try {
-                                    this.getThreadPoolExecutor().awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-                                } catch (InterruptedException e) {
-                                    interrupted = true;
-                                }
-                            }
-                        } finally {
-                            if (interrupted) {
-                                Thread.currentThread().interrupt();
-                            }
-                        }
-                    }
+                    awaitTermination(this.getThreadPoolExecutor());
                 }
             }
         };
@@ -68,5 +53,50 @@ public class AsyncConfig implements AsyncConfigurer {
         taskExecutor.setQueueCapacity(1024);
         taskExecutor.setWaitForTasksToCompleteOnShutdown(true);
         return taskExecutor;
+    }
+
+    @Bean
+    @DependsOn("dataSource")
+    public ThreadPoolTaskScheduler maintenanceScheduler() {
+        ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler() {
+            @Override
+            public void destroy() {
+                try {
+                    super.destroy();
+                } finally {
+                    awaitTermination(this.getScheduledExecutor());
+                }
+            }
+        };
+        // One slot for each periodic method keeps slow cleanup from blocking
+        // progress updates. Native periodic tasks cannot overlap themselves.
+        scheduler.setPoolSize(4);
+        scheduler.setThreadNamePrefix("hubble-maintenance-");
+        scheduler.setRemoveOnCancelPolicy(true);
+        scheduler.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
+        scheduler.setWaitForTasksToCompleteOnShutdown(true);
+        return scheduler;
+    }
+
+    private static void awaitTermination(ExecutorService executor) {
+        // A native shutdown may throw after initiating shutdown.
+        // Drain in that case too; never await a pool still accepting.
+        if (!executor.isShutdown()) {
+            return;
+        }
+        boolean interrupted = false;
+        try {
+            while (!executor.isTerminated()) {
+                try {
+                    executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+                } catch (InterruptedException e) {
+                    interrupted = true;
+                }
+            }
+        } finally {
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 }

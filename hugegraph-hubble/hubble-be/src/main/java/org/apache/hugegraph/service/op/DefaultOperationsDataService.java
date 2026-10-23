@@ -103,7 +103,17 @@ public class DefaultOperationsDataService implements OperationsDataService {
                                      String type, String status, String query,
                                      int page, int pageSize, String sort,
                                      String order) {
-        Snapshot snapshot = this.snapshot(client, capabilities, false);
+        return this.nodes(client, capabilities, type, status, query,
+                          page, pageSize, sort, order, false);
+    }
+
+    @Override
+    public Map<String, Object> nodes(HugeClient client,
+                                     Set<String> capabilities,
+                                     String type, String status, String query,
+                                     int page, int pageSize, String sort,
+                                     String order, boolean refresh) {
+        Snapshot snapshot = this.snapshot(client, capabilities, refresh);
         String normalizedType = normalize(type);
         String normalizedStatus = normalize(status);
         String normalizedQuery = normalize(query);
@@ -121,6 +131,8 @@ public class DefaultOperationsDataService implements OperationsDataService {
         int from = (int) Math.min(requestedFrom, filtered.size());
         int to = Math.min(from + pageSize, filtered.size());
         Map<String, Object> result = new LinkedHashMap<>();
+        result.put("sources", snapshot.getSources());
+        result.put("diagnostic_nodes", diagnosticNodes(snapshot));
         result.put("items", new ArrayList<>(filtered.subList(from, to)));
         result.put("total", filtered.size());
         result.put("page", page);
@@ -128,6 +140,36 @@ public class DefaultOperationsDataService implements OperationsDataService {
         result.put("observed_at", snapshot.getObservedAt());
         result.put("stale", snapshot.isStale());
         return result;
+    }
+
+    private static List<Map<String, Object>> diagnosticNodes(Snapshot snapshot) {
+        List<Map<String, Object>> diagnostics = new ArrayList<>();
+        for (Node node : snapshot.getNodes()) {
+            String sourceName = "SERVER".equals(node.getType()) ? "server" :
+                                "STORE".equals(node.getType()) ? "stores" : "pd";
+            SourceStatus source = snapshot.getSources().get(sourceName);
+            Map<String, MetricStatus> failures = new LinkedHashMap<>();
+            node.getMetricStatuses().forEach((group, status) -> {
+                if (metricFailed(status) ||
+                    status.isStale() && !"UNSUPPORTED".equals(status.getAvailability()) ||
+                    "UNSUPPORTED".equals(status.getAvailability()) &&
+                    "unsupported_version".equals(status.getReason()) && source != null &&
+                    ("PARTIAL".equals(source.getAvailability()) ||
+                     "DOWN".equals(source.getStatus()) || "DEGRADED".equals(source.getStatus()))) {
+                    failures.put(group, status);
+                }
+            });
+            if (!failures.isEmpty()) {
+                Map<String, Object> diagnostic = new LinkedHashMap<>();
+                diagnostic.put("id", node.getId());
+                diagnostic.put("type", node.getType());
+                diagnostic.put("name", node.getName());
+                diagnostic.put("status", node.getStatus());
+                diagnostic.put("metric_statuses", failures);
+                diagnostics.add(diagnostic);
+            }
+        }
+        return diagnostics;
     }
 
     private Comparator<Node> nodeComparator(String sort, String order) {
@@ -250,7 +292,9 @@ public class DefaultOperationsDataService implements OperationsDataService {
                     sources.put(sourceName, new SourceStatus(
                                 source.getAvailability(), source.getStatus(),
                                 source.getObservedAt(), source.getLastSuccessAt(),
-                                false, true, source.getReason()));
+                                false, true, source.getReason(), source.getDiagnostics())
+                            .withClusterHealth(source.getClusterState(),
+                                               source.getDataState()));
                 }
                 continue;
             }
@@ -262,7 +306,11 @@ public class DefaultOperationsDataService implements OperationsDataService {
             sources.put(sourceName, new SourceStatus(
                     source.getAvailability(), old.getStatus(),
                     source.getObservedAt(), old.getLastSuccessAt(), false,
-                    true, source.getReason()));
+                    true, source.getReason(), source.getDiagnostics())
+                            .withClusterHealth(source.getClusterState() == null ?
+                                               old.getClusterState() : source.getClusterState(),
+                                               source.getDataState() == null ?
+                                               old.getDataState() : source.getDataState()));
             String nodeType = nodeType(sourceName);
             if (nodeType != null) {
                 nodes.removeIf(node -> nodeType.equals(node.getType()));
@@ -336,7 +384,7 @@ public class DefaultOperationsDataService implements OperationsDataService {
                 statuses.put(group, new MetricStatus(
                              status.getAvailability(), status.getObservedAt(),
                              oldStatus.getLastSuccessAt(), false, true,
-                             status.getReason()));
+                             status.getReason(), status.getDiagnostics()));
                 nodeStale = true;
             }
             if (nodeStale) {
@@ -358,7 +406,8 @@ public class DefaultOperationsDataService implements OperationsDataService {
             MetricStatus staleStatus = status.getLastSuccessAt() == null ?
                     status : new MetricStatus(
                     source.getAvailability(), source.getObservedAt(),
-                    status.getLastSuccessAt(), false, true, source.getReason());
+                    status.getLastSuccessAt(), false, true, source.getReason(),
+                    source.getDiagnostics());
             statuses.put(group, staleStatus);
         });
         return copyNode(node, node.getMetrics(), statuses);
