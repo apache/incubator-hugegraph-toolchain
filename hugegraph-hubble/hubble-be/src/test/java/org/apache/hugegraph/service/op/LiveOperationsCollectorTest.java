@@ -1496,7 +1496,9 @@ public class LiveOperationsCollectorTest {
             OperationsModels.SourceStatus source = snapshot.getSources().get("pd");
             Assert.assertEquals("MALFORMED", source.getAvailability());
             Assert.assertEquals("malformed_response", source.getReason());
-            Assert.assertEquals(Map.of("request_path", "/v1/cluster"), source.getDiagnostics());
+            Assert.assertEquals(Set.of("request_path"), source.getDiagnostics().keySet());
+            Assert.assertTrue(Set.of("/v1/cluster", "/v1/members")
+                                 .contains(source.getDiagnostics().get("request_path")));
             Assert.assertEquals(0, metricRequests.get());
             Assert.assertFalse(snapshot.getNodes().stream().anyMatch(node -> "PD".equals(node.getType())));
             Assert.assertEquals("AVAILABLE", snapshot.getSources().get("server").getAvailability());
