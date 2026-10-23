@@ -154,6 +154,78 @@ public class AsyncTaskServiceTest {
     }
 
     @Test
+    public void testExistingIdsUseOneMetadataRequest() {
+        List<Long> ids = List.of(80001L, 80002L);
+        List<Task> existing = List.of(task(80001L, "first", "running"),
+                                      task(80002L, "second", "success"));
+        Mockito.when(this.tasks.list(ids)).thenReturn(existing);
+
+        Assert.assertEquals(existing, this.service.list(this.client, ids));
+        Mockito.verify(this.tasks).list(ids);
+        Mockito.verifyNoMoreInteractions(this.tasks);
+    }
+
+    @Test
+    public void testMissingIdRetainsExistingServerAndVermeerTasks() {
+        DirectVermeerService vermeer = Mockito.mock(DirectVermeerService.class);
+        ReflectionTestUtils.setField(this.service, "vermeer", vermeer);
+        Task server = task(80001L, "g.V()", "running");
+        Task compute = task(-7L, "pagerank", "success");
+        Mockito.when(this.tasks.list(List.of(80001L, 80002L))).thenThrow(missingTask(80002L));
+        Mockito.when(this.tasks.list(List.of(80001L))).thenReturn(List.of(server));
+        Mockito.when(vermeer.task(this.client, -7, false)).thenReturn(compute);
+
+        Assert.assertEquals(List.of(server, compute), this.service.list(
+                this.client, List.of(80001L, 80002L, -7L)));
+        Mockito.verify(this.tasks).list(List.of(80001L, 80002L));
+        Mockito.verify(this.tasks).list(List.of(80001L));
+        Mockito.verifyNoMoreInteractions(this.tasks);
+    }
+
+    @Test
+    public void testMultipleMissingIdsAreExcludedUntilExistingMetadataIsFound() {
+        Task existing = task(80001L, "g.V()", "running");
+        Mockito.when(this.tasks.list(List.of(80001L, 80002L, 80003L)))
+               .thenThrow(missingTask(80002L));
+        Mockito.when(this.tasks.list(List.of(80001L, 80003L))).thenThrow(missingTask(80003L));
+        Mockito.when(this.tasks.list(List.of(80001L))).thenReturn(List.of(existing));
+
+        Assert.assertEquals(List.of(existing), this.service.list(
+                this.client, List.of(80001L, 80002L, 80003L)));
+        Mockito.verify(this.tasks).list(List.of(80001L, 80002L, 80003L));
+        Mockito.verify(this.tasks).list(List.of(80001L, 80003L));
+        Mockito.verify(this.tasks).list(List.of(80001L));
+        Mockito.verifyNoMoreInteractions(this.tasks);
+    }
+
+    @Test
+    public void testAllMissingIdsStopWithoutAnEmptyIdsRequest() {
+        Mockito.when(this.tasks.list(List.of(80002L, 80003L))).thenThrow(missingTask(80002L));
+        Mockito.when(this.tasks.list(List.of(80003L))).thenThrow(missingTask(80003L));
+
+        Assert.assertTrue(this.service.list(this.client, List.of(80002L, 80003L)).isEmpty());
+        Mockito.verify(this.tasks).list(List.of(80002L, 80003L));
+        Mockito.verify(this.tasks).list(List.of(80003L));
+        Mockito.verifyNoMoreInteractions(this.tasks);
+    }
+
+    @Test
+    public void testBatchFallbackStillPropagatesUnrelatedFailure() {
+        Mockito.when(this.tasks.list(List.of(80001L, 80002L))).thenThrow(missingTask(80002L));
+        for (int status : List.of(404, 503)) {
+            ServerException failure = new ServerException("Graph 'hugegraph' does not exist");
+            failure.status(status);
+            Mockito.doThrow(failure).when(this.tasks).list(List.of(80001L));
+            try {
+                this.service.list(this.client, List.of(80001L, 80002L));
+                Assert.fail("Expected unrelated fallback failure to propagate");
+            } catch (ServerException e) {
+                Assert.assertSame(failure, e);
+            }
+        }
+    }
+
+    @Test
     public void testVermeerIdPollingDoesNotFetchResultValues() {
         DirectVermeerService vermeer = Mockito.mock(DirectVermeerService.class);
         ReflectionTestUtils.setField(this.service, "vermeer", vermeer);

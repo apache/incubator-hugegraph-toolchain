@@ -72,15 +72,7 @@ public class AsyncTaskService {
     public List<Task> list(HugeClient client, List<Long> taskIds) {
         List<Long> serverIds = taskIds.stream().filter(id -> id >= 0).toList();
         List<Task> tasks = new ArrayList<>();
-        if (!serverIds.isEmpty()) {
-            try {
-                tasks.addAll(client.task().list(serverIds));
-            } catch (ServerException e) {
-                if (!isMissingTask(e, serverIds)) {
-                    throw e;
-                }
-            }
-        }
+        tasks.addAll(this.listServerTasks(client, serverIds));
         for (Long id : taskIds) {
             if (id < 0) {
                 tasks.add(this.vermeer.task(client, Math.toIntExact(id), false));
@@ -150,28 +142,41 @@ public class AsyncTaskService {
         if (id < 0 || tasks.stream().anyMatch(task -> task.id() == id)) {
             return;
         }
-        try {
-            // A submitted task may be in the scheduler before its persisted
-            // list entry is visible. The IDs API returns metadata, not results.
-            tasks.addAll(client.task().list(List.of(id)));
-        } catch (ServerException e) {
-            if (!isMissingTask(e, List.of(id))) {
-                throw e;
-            }
-        }
+        // A submitted task may be in the scheduler before its persisted
+        // list entry is visible. The IDs API returns metadata, not results.
+        tasks.addAll(this.listServerTasks(client, List.of(id)));
     }
 
-    private static boolean isMissingTask(ServerException error, List<Long> ids) {
+    private List<Task> listServerTasks(HugeClient client, List<Long> ids) {
+        List<Long> remaining = ids;
+        while (!remaining.isEmpty()) {
+            try {
+                return client.task().list(remaining);
+            } catch (ServerException e) {
+                Long missing = missingTaskId(e, remaining);
+                if (missing == null) {
+                    throw e;
+                }
+                // Each fallback removes a confirmed missing ID, so discovery
+                // is bounded and preserves the other requested metadata.
+                remaining = remaining.stream().filter(id -> !id.equals(missing)).toList();
+            }
+        }
+        return List.of();
+    }
+
+    private static Long missingTaskId(ServerException error, List<Long> ids) {
         String notFound = "org.apache.hugegraph.exception.NotFoundException";
         if (error.status() != 404 ||
             (!notFound.equals(error.exception()) &&
              !("class " + notFound).equals(error.exception()))) {
-            return false;
+            return null;
         }
         // Graph and route failures also use 404. Only a scheduler's missing
         // requested task is an expected discovery delay.
-        return ids.stream().anyMatch(id ->
-                ("Can't find task with id '" + id + "'").equals(error.message()));
+        return ids.stream().filter(id ->
+                ("Can't find task with id '" + id + "'").equals(error.message()))
+                  .findFirst().orElse(null);
     }
 
     public static class TaskPage extends Page<Task> {

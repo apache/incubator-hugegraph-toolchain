@@ -139,18 +139,18 @@
       "expand_failed": "展开失败",
       "no_more_neighbors": "不存在更多邻接点",
       "graph_limit_title": "关联图为部分预览",
-      "graph_limit_description": "部分节点或边未包含在画布中，可能受预览上限或关联数据补全影响。画布上限为 {{nodeLimit}} 个点、{{edgeLimit}} 条边；可缩小查询范围或直接查询目标边。",
+      "graph_limit_description": "部分节点或边未包含在画布中，可能受预览上限或关联数据补全影响。画布上限为 {{nodeLimit}} 个点、{{edgeLimit}} 条边；可缩小查询范围或直接查询目标边",
       "default_limit_applied": "已自动限制为 {{limit}} 条",
-      "large_query_preview": "本次同步查询最多预览 {{limit}} 条结果；编辑器中的原语句保持不变。可缩小查询范围或仅返回所需属性；异步任务也受 Server 结果大小限制。",
-      "json_preview_truncated": "当前 JSON 仅为条数、深度及属性长度受限的预览。",
-      "result_preview_truncated": "结果已截断，当前最多预览 {{limit}} 条。",
+      "large_query_preview": "本次同步查询最多预览 {{limit}} 条结果；编辑器中的原语句保持不变。可缩小查询范围或仅返回所需属性；异步任务也受 Server 结果大小限制",
+      "json_preview_truncated": "当前 JSON 仅为条数、深度及属性长度受限的预览",
+      "result_preview_truncated": "结果已截断，当前最多预览 {{limit}} 条",
       "properties_preview": "部分属性已截断或省略；长文本仅展示前 {{limit}} 个字符及原始长度；预览属性不可编辑",
       "properties_preview_read_only": "当前属性包含截断预览，已禁止编辑；请基于原始数据进行修改",
       "result_preview_summary": "结果条数已截断",
       "properties_preview_summary": "部分属性为只读预览",
       "json_preview_summary": "JSON 为部分预览",
       "preview_details": "预览说明",
-      "preview_limits_hint": "可缩小查询范围或仅返回所需属性。异步任务也受 Server 结果大小限制。"
+      "preview_limits_hint": "可缩小查询范围或仅返回所需属性。异步任务也受 Server 结果大小限制"
     },
     "canvas": {
       "graph_canvas": "图画布",

@@ -139,18 +139,18 @@
       "expand_failed": "Failed to expand",
       "no_more_neighbors": "No more adjacent vertices",
       "graph_limit_title": "Partial linked graph",
-      "graph_limit_description": "Some nodes or edges are not included in the canvas because of preview bounds or incomplete linked-data retrieval. The canvas supports up to {{nodeLimit}} nodes and {{edgeLimit}} edges. Narrow the query or query the required edges directly.",
+      "graph_limit_description": "Some nodes or edges are not included in the canvas because of preview bounds or incomplete linked-data retrieval. The canvas supports up to {{nodeLimit}} nodes and {{edgeLimit}} edges. Narrow the query or query the required edges directly",
       "default_limit_applied": "Automatically limited to {{limit}} rows",
-      "large_query_preview": "This synchronous query previews at most {{limit}} results; your editor query is unchanged. Narrow the query or return only the required properties. Async tasks also have a Server result-size limit.",
-      "json_preview_truncated": "This JSON preview is limited in items, depth and property length.",
-      "result_preview_truncated": "The result was truncated to at most {{limit}} items.",
+      "large_query_preview": "This synchronous query previews at most {{limit}} results; your editor query is unchanged. Narrow the query or return only the required properties. Async tasks also have a Server result-size limit",
+      "json_preview_truncated": "This JSON preview is limited in items, depth and property length",
+      "result_preview_truncated": "The result was truncated to at most {{limit}} items",
       "properties_preview": "Some properties are partial or omitted; Long text shows the first {{limit}} characters and its original length; Preview properties cannot be edited",
       "properties_preview_read_only": "These properties contain truncated previews and cannot be edited; Use the original data for changes",
       "result_preview_summary": "Result rows truncated",
       "properties_preview_summary": "Some properties are read-only previews",
       "json_preview_summary": "Partial JSON preview",
       "preview_details": "Preview details",
-      "preview_limits_hint": "Narrow the query or return only the required properties. Async tasks also have a Server result-size limit."
+      "preview_limits_hint": "Narrow the query or return only the required properties. Async tasks also have a Server result-size limit"
     },
     "canvas": {
       "graph_canvas": "Graph canvas",
