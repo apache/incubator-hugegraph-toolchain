@@ -94,6 +94,7 @@ public class OperationsPayloadParserTest {
                 {"https://pd.example:8620", "PD.EXAMPLE:8620"},
                 {"https://pd.example", "pd.example:443"},
                 {"http://[::1]:8620", "[::1]:8620"},
+                {"http://[2001:DB8::1]:8620", "http://[2001:db8::1]:8620/"},
                 {"https://pd.example:8620/pd", "pd.example:8620/pd"}
         };
         for (String[] urls : equivalent) {
@@ -123,6 +124,8 @@ public class OperationsPayloadParserTest {
         Assert.assertNull(parser.pdMetricNodeId(pdCluster("not-a-uri"), "http://pd.example:8620"));
         Assert.assertNull(parser.pdMetricNodeId(pdCluster("pd.example:8620"), "https://pd-alias.example:8620"));
         Assert.assertNull(parser.pdMetricNodeId(pdCluster("http://pd.example:8620"), "https://pd.example:8620"));
+        Assert.assertNull(parser.pdMetricNodeId(pdCluster("http://[::1]:8620"),
+                                               "http://[0:0:0:0:0:0:0:1]:8620"));
     }
 
     private static String pdCluster(String... addresses) {

@@ -33,6 +33,30 @@ rather than stored in the repository.
    `pd.server` / `server.protocol` settings and restart/refresh steps. Endpoint
    ambiguity is preserved; metrics are never assigned to a leader by guesswork.
 
+## Access and endpoint matching
+
+In authenticated Server mode, operations health, topology and metric capabilities
+are granted only to the global `ADMIN` level. GraphSpace administrators and
+ordinary users receive HTTP 403 from the overview and node endpoints before the
+data service runs. Configured/member origins are intentional administrator
+diagnostics; credentials, URL parameters and base-path contents are not exposed.
+In Server non-auth mode these read endpoints are available without a login, as
+with the existing global operations view; Hubble does not invent a user role.
+
+Endpoint matching lowercases the scheme and host, fills the standard HTTP/HTTPS
+port, normalizes path dot segments and ignores one optional trailing slash. A
+member address without a scheme inherits the configured scheme. Proxy base paths
+must otherwise match exactly, including case and escaped path spelling. A proxy
+or load-balancer origin is not treated as an alias of its backend member.
+Bracketed IPv6 literals are supported and host case is normalized; equivalent
+compressed/expanded IPv6 spellings are not resolved to guess a member identity.
+
+A missing, null or non-array `pdList` is a malformed `/v1/cluster` response. The
+collector preserves that source diagnosis and skips PD metric matching, rather
+than trying to recover a topology from `pdLeader` alone. Other healthy sources
+remain available. The strict parser is retained so malformed data cannot appear
+as a successful but empty PD topology.
+
 ## Verification and limits
 
 - Backend collector/parser tests cover unmatched identities, canonical matches,

@@ -1465,6 +1465,47 @@ public class LiveOperationsCollectorTest {
                             snapshot.getSources().get("pd").getDiagnostics());
     }
 
+    @Test
+    public void testMalformedPdMembersDoNotEnterMetricMappingOrHideOtherSources()
+           throws IOException {
+        for (String memberField : new String[]{"", ",\"pdList\":null",
+                                                ",\"pdList\":{}", ",\"pdList\":123"}) {
+            String payload = "{\"status\":0,\"data\":{\"state\":\"Cluster_OK\"," +
+                             "\"pdLeader\":{\"restUrl\":\"http://private-canary:8620/private-path\"}" +
+                             memberField + "}}";
+            HttpServer pd = pdServer(200, payload, 200, stores());
+            pd.removeContext("/actuator/prometheus");
+            AtomicInteger metricRequests = new AtomicInteger();
+            pd.createContext("/actuator/prometheus", exchange -> {
+                metricRequests.incrementAndGet();
+                exchange.sendResponseHeaders(500, -1);
+                exchange.close();
+            });
+            context(pd, "/v1/prom/targets/store", 200,
+                    targets("127.0.0.1:" + pd.getAddress().getPort()));
+            storeMetricContexts(pd);
+            LiveOperationsCollector collector = collector(true, pd);
+            Snapshot snapshot;
+            try {
+                snapshot = collector.collect(serverClient(), true);
+            } finally {
+                collector.close();
+                pd.stop(0);
+            }
+
+            OperationsModels.SourceStatus source = snapshot.getSources().get("pd");
+            Assert.assertEquals("MALFORMED", source.getAvailability());
+            Assert.assertEquals("malformed_response", source.getReason());
+            Assert.assertEquals(Map.of("request_path", "/v1/cluster"), source.getDiagnostics());
+            Assert.assertEquals(0, metricRequests.get());
+            Assert.assertFalse(snapshot.getNodes().stream().anyMatch(node -> "PD".equals(node.getType())));
+            Assert.assertEquals("AVAILABLE", snapshot.getSources().get("server").getAvailability());
+            Assert.assertEquals("AVAILABLE", snapshot.getSources().get("stores").getAvailability());
+            Assert.assertFalse(new ObjectMapper().writeValueAsString(snapshot).contains("private-canary"));
+            Assert.assertFalse(new ObjectMapper().writeValueAsString(snapshot).contains("private-path"));
+        }
+    }
+
     private static LiveOperationsCollector collector(boolean pdEnabled,
                                                       HttpServer pd) {
         return collector(pdEnabled, pd, 1000, 8192);
