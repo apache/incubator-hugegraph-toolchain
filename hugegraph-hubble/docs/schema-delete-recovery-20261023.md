@@ -12,7 +12,8 @@ Errors retain a single localized message; raw backend responses are not displaye
 
 ## Browser evidence
 
-Screenshots are kept outside Git and attached in the pull request description.
+Screenshots are kept outside Git; the evidence destination is the
+[PR #90 description](https://github.com/hugegraph/hugegraph-toolchain/pull/90).
 
 The reproduction was captured before editing the source. Final screenshots were inspected
 from Chromium 154.0.8037.57, 1440×1000 viewport, against an isolated checkout of
